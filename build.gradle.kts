@@ -1,10 +1,10 @@
 import org.codehaus.groovy.ast.tools.GeneralUtils.args
 
 plugins {
-    kotlin("multiplatform") version "2.1.20"
-    kotlin("plugin.serialization") version "2.1.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.20"
-    id("org.jetbrains.compose") version "1.8.1"
+    kotlin("multiplatform")
+    kotlin("plugin.serialization") version "2.2.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.0"
+    id("org.jetbrains.compose")
 }
 
 repositories {
@@ -27,7 +27,7 @@ kotlin {
         browser {
             runTask {
                 args("-t")
-                devServer = devServer.copy(port = 4040, open = true)
+                devServer = devServer.copy(port = 4080, open = true)
             }
             commonWebpackConfig {
                 outputFileName = "main.js"
@@ -45,18 +45,27 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.ui)
-                implementation(compose.components.resources)
+                // Removed compose.components.resources as it's causing runtime errors and not directly used
 
                 implementation("app.softwork:routing-compose:0.4.0")
                 implementation(npm("marked", "15.0.7"))
+                implementation(npm("@paulmillr/qr", "0.2.0"))
+                implementation(npm("@babylonjs/core", "8.18.0"))
+                implementation(npm("@babylonjs/materials", "8.18.0"))
+                implementation(npm("@babylonjs/loaders", "8.18.0"))
+                implementation(npm("shell-quote", "1.8.3"))
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.13")
 
                 // Ktor client
-                implementation("io.ktor:ktor-client-core:3.1.3")
-                implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("io.ktor:ktor-client-core:3.2.2")
+                implementation("io.ktor:ktor-client-content-negotiation:3.2.2")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+                
+                // Add shared module dependency
+                implementation(project(":shared"))
             }
         }
 

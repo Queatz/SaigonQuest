@@ -1,0 +1,114 @@
+@file:OptIn(ExperimentalTime::class)
+
+package database
+
+import com.arangodb.ArangoDB
+import com.arangodb.ArangoDatabase
+import com.arangodb.entity.CollectionType
+import com.arangodb.model.CollectionCreateOptions
+import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import java.io.IOException
+import kotlin.time.Instant
+import kotlin.time.ExperimentalTime
+
+object ArangoConfig {
+    private const val HOST = "localhost"
+    private const val PORT = 8529
+    private const val DB_NAME = "saigon_quest"
+    private const val USERNAME = "saigonquest"
+    private const val PASSWORD = "saigonquest" // Use environment variables in production
+    
+    // Custom serializer for kotlinx.datetime.Instant that extends StdSerializer<Instant>
+    private class KotlinxInstantSerializer : StdSerializer<Instant>(Instant::class.java) {
+        @Throws(IOException::class)
+        override fun serialize(value: Instant, gen: JsonGenerator, provider: SerializerProvider) {
+            // Convert to string and write as raw ISO string value
+            gen.writeString(value.toString())
+        }
+    }
+    
+    // Custom deserializer for kotlinx.datetime.Instant that extends StdDeserializer<Instant>
+    private class KotlinxInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
+        @Throws(IOException::class)
+        override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Instant {
+            // Get the current value as a string
+            val text = p.valueAsString
+            
+            // Parse the string to Instant
+            return Instant.parse(text)
+        }
+    }
+    
+    // Create a custom module for handling kotlinx.datetime.Instant
+    private val kotlinxDateTimeModule = SimpleModule("KotlinxDateTimeModule").apply {
+        addSerializer(Instant::class.java, KotlinxInstantSerializer())
+        addDeserializer(Instant::class.java, KotlinxInstantDeserializer())
+    }
+    
+    // Configure Jackson ObjectMapper with JSR310 module for handling Java 8 date/time types
+    private val objectMapper = ObjectMapper().apply {
+        registerModule(JavaTimeModule())
+        registerModule(kotlinxDateTimeModule)
+        registerKotlinModule()
+        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    }
+    
+    private val jacksonSerde = JacksonSerdeImpl(objectMapper)
+    
+    private val arangoDB = ArangoDB.Builder()
+        .host(HOST, PORT)
+        .user(USERNAME)
+        .password(PASSWORD)
+        .serde(jacksonSerde)
+        .build()
+    
+    val db: ArangoDatabase by lazy {
+        // DB must be created by root user
+        // if (!arangoDB.getDatabases().contains(DB_NAME)) {
+        //     arangoDB.createDatabase(DB_NAME)
+        // }
+
+        val database = arangoDB.db(DB_NAME)
+        
+        // Initialize collections
+        CollectionsConfig.initializeCollections(database)
+        
+        database
+    }
+    
+    fun shutdown() {
+        arangoDB.shutdown()
+    }
+}
+
+object CollectionsConfig {
+    // Collection names
+    const val WORLDS_COLLECTION = "worlds"
+    const val USERS_COLLECTION = "users"
+    const val OBJECTS_COLLECTION = "objects"
+    
+    // Collection definitions
+    private val collections = mapOf(
+        WORLDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        USERS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        OBJECTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+    )
+    
+    fun initializeCollections(database: ArangoDatabase) {
+        val existingCollections = database.collections.map { it.name }
+        
+        collections.forEach { (collectionName, options) ->
+            if (!existingCollections.contains(collectionName)) {
+                database.createCollection(collectionName, options)
+            }
+        }
+    }
+}

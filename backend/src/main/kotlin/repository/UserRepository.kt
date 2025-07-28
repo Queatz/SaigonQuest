@@ -1,0 +1,151 @@
+@file:OptIn(ExperimentalTime::class)
+
+package repository
+
+import com.arangodb.ArangoCollection
+import com.arangodb.entity.DocumentCreateEntity
+import com.arangodb.entity.DocumentUpdateEntity
+import com.arangodb.model.DocumentCreateOptions
+import com.arangodb.model.DocumentReadOptions
+import com.arangodb.model.DocumentUpdateOptions
+import database.ArangoConfig
+import database.CollectionsConfig
+import kotlinx.serialization.json.Json
+import models.User
+import java.security.MessageDigest
+import java.util.UUID
+import kotlin.time.ExperimentalTime
+
+class UserRepository {
+    private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.USERS_COLLECTION)
+    private val json = Json { ignoreUnknownKeys = true }
+    
+    /**
+     * Creates a new user in the database
+     */
+    fun create(user: User): User {
+        val result: DocumentCreateEntity<User> = collection.insertDocument(
+            user,
+            DocumentCreateOptions().returnNew(true)
+        )
+        
+        return result.new
+    }
+    
+    /**
+     * Gets a user by their ID (key)
+     */
+    fun getById(id: String): User? {
+        return try {
+            collection.getDocument(
+                id,
+                User::class.java,
+                DocumentReadOptions()
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    /**
+     * Gets a user by their visitor ID
+     */
+    fun getByVisitorId(visitorId: String): User? {
+        val query = "FOR u IN @@collection FILTER u.visitorId == @visitorId RETURN u"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION,
+            "visitorId" to visitorId
+        )
+        
+        val users = ArangoConfig.db.query(query, User::class.java, bindVars).toList()
+        return users.firstOrNull()
+    }
+    
+    /**
+     * Gets a user by their username
+     */
+    fun getByUsername(username: String): User? {
+        val query = "FOR u IN @@collection FILTER u.username == @username RETURN u"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION,
+            "username" to username
+        )
+        
+        val users = ArangoConfig.db.query(query, User::class.java, bindVars).toList()
+        return users.firstOrNull()
+    }
+    
+    /**
+     * Updates a user in the database
+     */
+    fun update(id: String, user: User): User? {
+        val existingUser = getById(id) ?: return null
+        
+        // Preserve the original key and creation date
+        user.key = existingUser.key
+        
+        val result: DocumentUpdateEntity<User> = collection.updateDocument(
+            id,
+            user,
+            DocumentUpdateOptions().returnNew(true)
+        )
+        
+        return result.new
+    }
+    
+    /**
+     * Creates a new visitor user with a unique visitor ID
+     */
+    fun createVisitor(): User {
+        val visitorId = UUID.randomUUID().toString()
+        val user = User(
+            username = "visitor-${visitorId.substring(0, 8)}",
+            isPlayer = false,
+            visitorId = visitorId
+        )
+        
+        return create(user)
+    }
+    
+    /**
+     * Upgrades a visitor to a player with a username and password
+     */
+    fun upgradeToPlayer(id: String, username: String, password: String): User? {
+        val user = getById(id) ?: return null
+        
+        // Check if username is already taken
+        if (getByUsername(username) != null) {
+            return null
+        }
+        
+        user.username = username
+        user.passwordHash = hashPassword(password)
+        user.isPlayer = true
+        
+        return update(id, user)
+    }
+    
+    /**
+     * Authenticates a user with username and password
+     */
+    fun authenticate(username: String, password: String): User? {
+        val user = getByUsername(username) ?: return null
+        
+        // Check if password matches
+        if (user.passwordHash != hashPassword(password)) {
+            return null
+        }
+        
+        return user
+    }
+    
+    /**
+     * Hashes a password using SHA-256
+     */
+    private fun hashPassword(password: String): String {
+        val bytes = password.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        return digest.fold("") { str, it -> str + "%02x".format(it) }
+    }
+}

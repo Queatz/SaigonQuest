@@ -7,10 +7,13 @@ pluginManagement {
     }
 
     plugins {
-        kotlin("multiplatform") version "2.1.20"
-        id("org.jetbrains.compose") version "1.8.1"
+        kotlin("multiplatform") version "2.2.0"
+        id("org.jetbrains.compose") version "1.9.0-beta01"
     }
 }
 
-rootProject.name = "compose-html"
+rootProject.name = "saigon-quest"
+
+include(":shared")
+include(":backend")
 
