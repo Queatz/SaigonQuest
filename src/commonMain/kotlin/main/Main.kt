@@ -6,10 +6,12 @@ import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 import main.theme.Styles
 import main.components.SceneComponent
+import main.theme.NodeEditorStyles
 
 fun main() {
     renderComposableInBody {
         Style(Styles)
+        Style(NodeEditorStyles)
 
         BrowserRouter(
             initPath = "/"

@@ -4,8 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import main.api.ObjectApi
+import main.theme.Styles
 import models.Object
 import models.Rotation
 import models.Scale
@@ -13,7 +16,6 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
-import kotlin.js.Promise
 
 /**
  * A dialog for creating and editing objects.
@@ -39,6 +41,8 @@ fun ObjectEditorDialog(
             objectModel?.categories?.joinToString(", ") ?: ""
         ) 
     }
+    var file by remember { mutableStateOf(objectModel?.file ?: "") }
+    var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -47,6 +51,9 @@ fun ObjectEditorDialog(
     // Determine if we're editing or creating
     val isEditing = objectModel != null
     val dialogTitle = if (isEditing) "Edit Object" else "Create Object"
+    
+    // Create a coroutine scope for async operations
+    val coroutineScope = rememberCoroutineScope()
     
     // Function to handle form submission
     val handleSubmit = {
@@ -62,13 +69,17 @@ fun ObjectEditorDialog(
             // Update existing object
             objectModel!!.copy(
                 title = title,
-                categories = categoryList
+                categories = categoryList,
+                file = file,
+                collection = collection
             )
         } else {
             // Create new object
             Object(
                 title = title,
                 categories = categoryList,
+                file = file,
+                collection = collection,
                 data = "{}",
                 worldId = worldId,
                 position = models.Position(0f, 0f, 0f),
@@ -77,77 +88,49 @@ fun ObjectEditorDialog(
             )
         }
         
-        val promise = if (isEditing) {
-            ObjectApi.updateObject(objectModel!!.key, newObject)
-        } else {
-            ObjectApi.createObject(newObject)
-        }
-        
-        promise
-            .then { savedObject ->
+        coroutineScope.launch {
+            try {
+                val savedObject = if (isEditing) {
+                    ObjectApi.updateObject(objectModel!!.key, newObject)
+                } else {
+                    ObjectApi.createObject(newObject)
+                }
+                
                 isSubmitting = false
                 onSave(savedObject)
                 onClose()
-                Promise.resolve(Unit)
-            }
-            .catch { error ->
+            } catch (error: Exception) {
                 isSubmitting = false
                 errorMessage = error.message ?: "An error occurred"
-                Promise.resolve(Unit)
             }
+        }
     }
     
     // Main dialog container
     Div(
         attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.vh)
-                backgroundColor(rgba(0, 0, 0, 0.7))
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                // Make dialog interactive
-                property("pointer-events", "auto")
-                // Set high z-index to appear above other UI
-                property("z-index", "1000")
-            }
+            classes(Styles.overlayBase)
+            // Add click outside to close
+            onClick { onClose() }
         }
     ) {
         // Dialog content
         Div(
             attrs = {
-                style {
-                    width(90.percent)
-                    property("max-width", "600px")
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                }
+                classes(Styles.objectEditorDialogContent)
+                // Stop propagation to prevent closing when clicking inside the dialog
+                onClick { it.stopPropagation() }
             }
         ) {
             // Dialog header
             Div(
                 attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
+                    classes(Styles.objectEditorDialogHeader)
                 }
             ) {
                 H3(
                     attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
+                        classes(Styles.objectEditorDialogTitle)
                     }
                 ) {
                     Text(dialogTitle)
@@ -155,13 +138,7 @@ fun ObjectEditorDialog(
                 
                 Button(
                     attrs = {
-                        style {
-                            backgroundColor(Color.transparent)
-                            property("border", "0")
-                            color(Color.white)
-                            cursor("pointer")
-                            fontSize(20.px)
-                        }
+                        classes(Styles.objectEditorDialogCloseButton)
                         onClick { onClose() }
                     }
                 ) {
@@ -172,24 +149,14 @@ fun ObjectEditorDialog(
             // Form content
             Div(
                 attrs = {
-                    style {
-                        property("flex-grow", "1")
-                        padding(16.px)
-                        property("overflow-y", "auto")
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        property("gap", "16px")
-                    }
+                    classes(Styles.objectEditorDialogFormContent)
                 }
             ) {
                 // Error message
                 if (errorMessage.isNotEmpty()) {
                     P(
                         attrs = {
-                            style {
-                                color(Color.red)
-                                margin(0.px)
-                            }
+                            classes(Styles.objectEditorDialogErrorMessage)
                         }
                     ) {
                         Text(errorMessage)
@@ -197,81 +164,65 @@ fun ObjectEditorDialog(
                 }
                 
                 // Title field
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            property("gap", "4px")
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            style {
-                                color(Color.white)
-                                fontSize(14.px)
-                            }
-                        }
-                    ) {
+                Div {
+                    P {
                         Text("Title")
                     }
-                    
                     Input(
                         type = InputType.Text,
                         attrs = {
-                            style {
-                                width(100.percent)
-                                padding(8.px)
-                                backgroundColor(rgba(255, 255, 255, 0.1))
-                                color(Color.white)
-                                property("border", "1px solid rgba(255, 255, 255, 0.2)")
-                                property("border-radius", "4px")
-                                outline("none")
-                            }
+                            classes(Styles.inputField)
+                            placeholder("Object title")
                             value(title)
                             onInput { event -> title = event.value }
-                            placeholder("Enter object title")
                         }
                     )
                 }
                 
                 // Categories field
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            property("gap", "4px")
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            style {
-                                color(Color.white)
-                                fontSize(14.px)
-                            }
-                        }
-                    ) {
+                Div {
+                    P {
                         Text("Categories (comma-separated)")
                     }
-                    
                     Input(
                         type = InputType.Text,
                         attrs = {
-                            style {
-                                width(100.percent)
-                                padding(8.px)
-                                backgroundColor(rgba(255, 255, 255, 0.1))
-                                color(Color.white)
-                                property("border", "1px solid rgba(255, 255, 255, 0.2)")
-                                property("border-radius", "4px")
-                                outline("none")
-                            }
+                            classes(Styles.inputField)
+                            placeholder("e.g. furniture, interactive, decoration")
                             value(categories)
                             onInput { event -> categories = event.value }
-                            placeholder("Enter categories separated by commas")
+                        }
+                    )
+                }
+                
+                // File field
+                Div {
+                    P {
+                        Text("File (without .glb)")
+                    }
+                    Input(
+                        type = InputType.Text,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder("e.g. world1")
+                            value(file)
+                            onInput { event -> file = event.value }
+                        }
+                    )
+                }
+                
+                // Collection field
+                Div {
+                    P {
+                        Text("Collection")
+                    }
+                    Input(
+                        type = InputType.Text,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder("e.g. chair_collection")
+                            value(collection)
+                            onInput { event -> collection = event.value }
                         }
                     )
                 }
@@ -279,22 +230,7 @@ fun ObjectEditorDialog(
                 // Logic Editor preview
                 Div(
                     attrs = {
-                        style {
-                            width(100.percent)
-                            height(200.px)
-                            backgroundColor(rgba(20, 20, 20, 0.5))
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                            color(Color.white)
-                            property("border", "1px solid rgba(255, 255, 255, 0.3)")
-                            property("border-radius", "4px")
-                            marginTop(16.px)
-                            cursor("pointer")
-                            // Add hover effect
-                            property("transition", "background-color 0.2s, border-color 0.2s")
-                        }
+                        classes(Styles.objectEditorDialogLogicPreview)
                         // Make the entire div clickable to open the logic editor
                         onClick {
                             // Create a current object with the form data
@@ -303,7 +239,9 @@ fun ObjectEditorDialog(
                                     title = title,
                                     categories = categories.split(",")
                                         .map { it.trim() }
-                                        .filter { it.isNotEmpty() }
+                                        .filter { it.isNotEmpty() },
+                                    file = file,
+                                    collection = collection
                                 )
                             } else {
                                 Object(
@@ -311,7 +249,10 @@ fun ObjectEditorDialog(
                                     categories = categories.split(",")
                                         .map { it.trim() }
                                         .filter { it.isNotEmpty() },
+                                    file = file,
+                                    collection = collection,
                                     worldId = worldId,
+                                    data = "{}",
                                     position = models.Position(0f, 0f, 0f),
                                     rotation = Rotation(0f, 0f, 0f),
                                     scale = Scale(1f, 1f, 1f)
@@ -327,12 +268,7 @@ fun ObjectEditorDialog(
                     // Title for the logic editor section
                     H4(
                         attrs = {
-                            style {
-                                margin(0.px)
-                                marginBottom(8.px)
-                                fontSize(16.px)
-                                fontWeight("bold")
-                            }
+                            classes(Styles.objectEditorDialogLogicTitle)
                         }
                     ) {
                         Text("Logic Editor")
@@ -341,12 +277,7 @@ fun ObjectEditorDialog(
                     // Preview of the logic data or a placeholder message
                     Div(
                         attrs = {
-                            style {
-                                fontSize(14.px)
-                                color(rgba(255, 255, 255, 0.7))
-                                textAlign("center")
-                                padding(0.px, 16.px)
-                            }
+                            classes(Styles.objectEditorDialogLogicDescription)
                         }
                     ) {
                         if (objectModel?.data != null && objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
@@ -370,26 +301,13 @@ fun ObjectEditorDialog(
             // Footer with action buttons
             Div(
                 attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.FlexEnd)
-                        property("gap", "8px")
-                        property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
+                    classes(Styles.objectEditorDialogFooter)
                 }
             ) {
                 // Cancel button
                 Button(
                     attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(rgba(255, 255, 255, 0.1))
-                            color(Color.white)
-                            property("border", "1px solid rgba(255, 255, 255, 0.2)")
-                            property("border-radius", "4px")
-                            cursor("pointer")
-                        }
+                        classes(Styles.objectEditorDialogCancelButton)
                         onClick { onClose() }
                     }
                 ) {
@@ -399,15 +317,8 @@ fun ObjectEditorDialog(
                 // Save button
                 Button(
                     attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(if (isSubmitting) rgba(100, 100, 100, 0.5) else rgba(0, 120, 255, 0.7))
-                            color(Color.white)
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            cursor(if (isSubmitting) "default" else "pointer")
-                            marginLeft(8.px)
-                        }
+                        classes(Styles.objectEditorDialogSaveButton)
+                        classes(if (isSubmitting) Styles.objectEditorDialogSaveButtonInactive else Styles.objectEditorDialogSaveButtonActive)
                         // Only allow clicking if not submitting
                         onClick { if (!isSubmitting) handleSubmit() }
                     }

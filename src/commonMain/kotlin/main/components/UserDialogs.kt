@@ -3,6 +3,7 @@ package main.components
 import androidx.compose.runtime.*
 import models.User
 import main.theme.Theme
+import main.theme.Styles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.attributes.InputType
@@ -14,56 +15,34 @@ import org.jetbrains.compose.web.attributes.placeholder
 @Composable
 fun VisitorDialog(
     onClose: () -> Unit,
-    onRegister: (username: String, password: String) -> Unit,
+    onRegister: (username: String, password: String, yearOfBirth: Int?, sex: String?) -> Unit,
     onLogin: (username: String, password: String) -> Unit
 ) {
     var isLoginMode by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var yearOfBirth by remember { mutableStateOf<Int?>(null) }
+    var sex by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     
     // Dialog overlay
     Div(
         attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.percent)
-                backgroundColor(rgba(0, 0, 0, 0.5))
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                property("z-index", "1000")
-                // Make dialog interactive
-                property("pointer-events", "auto")
-            }
+            classes(Styles.overlayBase)
             onClick { onClose() }
         }
     ) {
         // Dialog content
         Div(
             attrs = {
-                style {
-                    width(320.px)
-                    backgroundColor(Theme.colors.background)
-                    property("border-radius", "8px")
-                    padding(16.px)
-                    property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.2)")
-                }
+                classes(Styles.dialogContent)
                 onClick { it.stopPropagation() }
             }
         ) {
             // Dialog header
             H3(
                 attrs = {
-                    style {
-                        margin(0.px)
-                        marginBottom(16.px)
-                        color(Theme.colors.primary)
-                        property("text-align", "center")
-                    }
+                    classes(Styles.dialogHeader)
                 }
             ) {
                 Text(if (isLoginMode) "Log In" else "Create Account")
@@ -172,6 +151,184 @@ fun VisitorDialog(
                 }
             }
             
+            // Year of Birth dropdown (only in registration mode)
+            if (!isLoginMode) {
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginBottom(4.px)
+                                fontSize(14.px)
+                                color(Theme.colors.onBackground)
+                            }
+                        }
+                    ) {
+                        Text("Year of Birth")
+                    }
+                    
+                    // Create a select element for year of birth
+                    org.jetbrains.compose.web.dom.Select(
+                        attrs = {
+                            style {
+                                width(100.percent)
+                                padding(8.px)
+                                property("border-radius", "4px")
+                                property("border", "1px solid ${Theme.colors.outline}")
+                                property("box-sizing", "border-box")
+                            }
+                            onChange { event ->
+                                val selectedValue = event.target.value
+                                yearOfBirth = if (selectedValue.isNotEmpty()) {
+                                    selectedValue.toInt()
+                                } else {
+                                    null
+                                }
+                            }
+                        }
+                    ) {
+                        // Add a default empty option
+                        org.jetbrains.compose.web.dom.Option(
+                            value = "",
+                            attrs = {
+                                if (yearOfBirth == null) {
+                                    attr("selected", "selected")
+                                }
+                            }
+                        ) {
+                            Text("Select year")
+                        }
+                        
+                        // Add options for years (from current year - 100 to current year)
+                        val currentYear = 2025 // Hardcoded current year
+                        for (year in currentYear - 100..currentYear) {
+                            org.jetbrains.compose.web.dom.Option(
+                                value = year.toString(),
+                                attrs = {
+                                    if (yearOfBirth == year) {
+                                        attr("selected", "selected")
+                                    }
+                                }
+                            ) {
+                                Text(year.toString())
+                            }
+                        }
+                    }
+                }
+                
+                // Sex selection (only in registration mode)
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginBottom(4.px)
+                                fontSize(14.px)
+                                color(Theme.colors.onBackground)
+                            }
+                        }
+                    ) {
+                        Text("Sex")
+                    }
+                    
+                    // Radio buttons for Boy/Girl
+                    Div(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                property("gap", "16px")
+                            }
+                        }
+                    ) {
+                        // Boy option
+                        Div(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Flex)
+                                    alignItems(AlignItems.Center)
+                                }
+                            }
+                        ) {
+                            Input(
+                                type = InputType.Radio,
+                                attrs = {
+                                    attr("name", "sex")
+                                    value("Boy")
+                                    if (sex == "Boy") {
+                                        checked(true)
+                                    }
+                                    onChange {
+                                        if (it.value) {
+                                            sex = "Boy"
+                                        }
+                                    }
+                                }
+                            )
+                            Label(
+                                attrs = {
+                                    style {
+                                        marginLeft(4.px)
+                                        fontSize(14.px)
+                                        color(Theme.colors.onBackground)
+                                    }
+                                }
+                            ) {
+                                Text("Boy")
+                            }
+                        }
+                        
+                        // Girl option
+                        Div(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Flex)
+                                    alignItems(AlignItems.Center)
+                                }
+                            }
+                        ) {
+                            Input(
+                                type = InputType.Radio,
+                                attrs = {
+                                    attr("name", "sex")
+                                    value("Girl")
+                                    if (sex == "Girl") {
+                                        checked(true)
+                                    }
+                                    onChange {
+                                        if (it.value) {
+                                            sex = "Girl"
+                                        }
+                                    }
+                                }
+                            )
+                            Label(
+                                attrs = {
+                                    style {
+                                        marginLeft(4.px)
+                                        fontSize(14.px)
+                                        color(Theme.colors.onBackground)
+                                    }
+                                }
+                            ) {
+                                Text("Girl")
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Action buttons
             Div(
                 attrs = {
@@ -214,7 +371,7 @@ fun VisitorDialog(
                             if (isLoginMode) {
                                 onLogin(username, password)
                             } else {
-                                onRegister(username, password)
+                                onRegister(username, password, yearOfBirth, sex)
                             }
                         }
                     }
@@ -257,45 +414,21 @@ fun PlayerDialog(
     // Dialog overlay
     Div(
         attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.percent)
-                backgroundColor(rgba(0, 0, 0, 0.5))
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                property("z-index", "1000")
-                // Make dialog interactive
-                property("pointer-events", "auto")
-            }
+            classes(Styles.overlayBase)
             onClick { onClose() }
         }
     ) {
         // Dialog content
         Div(
             attrs = {
-                style {
-                    width(320.px)
-                    backgroundColor(Theme.colors.background)
-                    property("border-radius", "8px")
-                    padding(16.px)
-                    property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.2)")
-                }
+                classes(Styles.dialogContent)
                 onClick { it.stopPropagation() }
             }
         ) {
             // Dialog header
             H3(
                 attrs = {
-                    style {
-                        margin(0.px)
-                        marginBottom(16.px)
-                        color(Theme.colors.primary)
-                        property("text-align", "center")
-                    }
+                    classes(Styles.dialogHeader)
                 }
             ) {
                 Text("My Profile")

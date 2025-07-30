@@ -4,61 +4,51 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.serialization.json.Json
-import main.api.ObjectApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import main.api.NotificationApi
 import main.api.UserApi
-import main.theme.Theme
+import main.api.WorldApi
+import main.components.inventory.InventoryDialog
+import main.components.nodeeditor.LogicEditorDialog
+import main.components.`object`.ObjectsDialog
+import main.components.`object`.ObjectsPanel
+import main.theme.Styles
+import main.components.WorldEdit
 import models.Object
 import models.User
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.AlignItems
+import models.World
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginRight
-import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
-import kotlin.js.Promise
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
+import main.components.WorldTitle
+
 
 /**
  * A component that renders a responsive UI overlay for the 3D world scene.
@@ -67,13 +57,67 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun WorldUI() {
     // State for UI elements
-    var isChatOpen by remember { mutableStateOf(false) }
-    var isInventoryOpen by remember { mutableStateOf(false) }
-    var isProfileOpen by remember { mutableStateOf(false) }
-    var isWorldEditOpen by remember { mutableStateOf(false) }
-    var isObjectEditorOpen by remember { mutableStateOf(false) }
-    var isLogicEditorOpen by remember { mutableStateOf(false) }
+    var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.None) }
+    
+    // State for UI elements that are not part of the panel system
     var isFullscreen by remember { mutableStateOf(false) }
+    var isQrDialogOpen by remember { mutableStateOf(false) }
+    
+    // State for unread notification count
+    var unreadNotificationCount by remember { mutableStateOf(0) }
+    
+    // Coroutine scope for launching async operations
+    val scope = rememberCoroutineScope()
+    
+    // Function to fetch unread notification count
+    fun fetchUnreadNotificationCount() {
+        scope.launch {
+            try {
+                val count = NotificationApi.getUnreadCount()
+                unreadNotificationCount = count
+            } catch (e: Exception) {
+                console.error("Error fetching unread notification count", e)
+            }
+        }
+    }
+    
+    // Fetch unread notification count when the component is first rendered
+    LaunchedEffect(Unit) {
+        fetchUnreadNotificationCount()
+        
+        // Periodically refresh the unread count (every 30 seconds)
+        while (true) {
+            delay(30000) // 30 seconds
+            fetchUnreadNotificationCount()
+        }
+    }
+    
+    // Refresh unread count when notifications panel is closed
+    LaunchedEffect(currentPanel) {
+        if (currentPanel != SidePanelState.Notifications) {
+            // Small delay to allow any "mark as read" operations to complete
+            delay(500)
+            fetchUnreadNotificationCount()
+        }
+    }
+    
+    // Helper function to update the panel state
+    fun updatePanelState(newState: SidePanelState) {
+        // Update the currentPanel state
+        currentPanel = newState
+    }
+    
+    // Helper function to toggle a panel
+    fun togglePanel(panelState: SidePanelState) {
+        if (currentPanel == panelState) {
+            // If the panel is already open, close it
+            updatePanelState(SidePanelState.None)
+        } else {
+            // Otherwise, open the requested panel
+            updatePanelState(panelState)
+        }
+    }
+    
     
     // State for the current object being edited
     var currentEditingObject by remember { mutableStateOf<Object?>(null) }
@@ -86,26 +130,60 @@ fun WorldUI() {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
     
+    // State for current world
+    var currentWorld by remember { mutableStateOf<World?>(null) }
+    var isWorldLoading by remember { mutableStateOf(true) }
+    var worldErrorMessage by remember { mutableStateOf("") }
+    
     // Fetch current user on component initialization
-    DisposableEffect(Unit) {
+    LaunchedEffect(Unit) {
         // Use the UserApi to fetch the current user
         isLoading = true
         errorMessage = ""
         
-        UserApi.getCurrentUser()
-            .then { user: User ->
-                currentUser = user
-                isLoading = false
-                Promise.resolve(Unit)
-            }
-            .catch { error: dynamic ->
-                console.error("Error fetching user", error)
-                errorMessage = error.message ?: "Failed to load user"
-                isLoading = false
-                Promise.resolve(Unit)
-            }
+        try {
+            val user = UserApi.getCurrentUser()
+            currentUser = user
+            isLoading = false
+        } catch (error: Exception) {
+            console.error("Error fetching user", error)
+            errorMessage = error.message ?: "Failed to load user"
+            isLoading = false
+        }
+    }
+    
+    // Track the current URL path for world loading
+    var currentPath by remember { mutableStateOf(window.location.pathname) }
+    
+    // Update currentPath when URL changes
+    DisposableEffect(Unit) {
+        val popStateListener: (dynamic) -> Unit = {
+            currentPath = window.location.pathname
+        }
         
-        onDispose { }
+        window.addEventListener("popstate", popStateListener)
+        
+        onDispose {
+            window.removeEventListener("popstate", popStateListener)
+        }
+    }
+    
+    // Fetch current world when path changes
+    LaunchedEffect(currentPath) {
+        // Get current world URL from the pathname
+        val worldUrl = currentPath.substring(1)
+        isWorldLoading = true
+        worldErrorMessage = ""
+        
+        try {
+            val world = WorldApi.getWorldByUrl(worldUrl)
+            currentWorld = world
+            isWorldLoading = false
+        } catch (error: Exception) {
+            console.error("Error fetching world", error)
+            worldErrorMessage = error.message ?: "Failed to load world"
+            isWorldLoading = false
+        }
     }
     
     // Update isMobile state on window resize
@@ -124,11 +202,11 @@ fun WorldUI() {
     // Function to toggle fullscreen mode
     fun toggleFullscreen() {
         try {
-            val doc = document.asDynamic()
+            val doc = document
             
             if (doc.fullscreenElement == null) {
                 // Enter fullscreen mode
-                document.documentElement.asDynamic().requestFullscreen()
+                document.documentElement?.requestFullscreen()
                 // State will be updated by the fullscreenchange event listener
             } else {
                 // Exit fullscreen mode
@@ -143,7 +221,7 @@ fun WorldUI() {
     // Update fullscreen state when fullscreen changes
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
-            isFullscreen = document.asDynamic().fullscreenElement != null
+            isFullscreen = document.fullscreenElement != null
         }
         
         document.addEventListener("fullscreenchange", fullscreenChangeListener)
@@ -168,207 +246,213 @@ fun WorldUI() {
         }
     ) {
         // World name and subtitle (center top)
-        Div(
-            attrs = {
-                style {
-                    position(Position.Absolute)
-                    top(20.px)
-                    left(50.percent)
-                    property("transform", "translateX(-50%)")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    alignItems(AlignItems.Center)
-                    // Make text elements interactive
-                    property("pointer-events", "auto")
-                }
-            }
-        ) {
-            H2(
-                attrs = {
-                    style {
-                        margin(0.px)
-                        color(Color.white)
-                        property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
-                    }
-                }
-            ) {
-                Text("Jacob's House")
-            }
-            
-            P(
-                attrs = {
-                    style {
-                        margin(0.px)
-                        color(Color.white)
-                        property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
-                    }
-                }
-            ) {
-                Text("Thảo Điền")
-            }
-        }
+        WorldTitle(
+            currentWorld = currentWorld,
+            isWorldLoading = isWorldLoading,
+            worldErrorMessage = worldErrorMessage,
+            currentPanel = currentPanel,
+            isMobile = isMobile
+        )
         
         // Top right UI elements (notifications, fullscreen, and edit world)
         Div(
             attrs = {
+                classes(Styles.topRightContainer)
                 style {
-                    position(Position.Absolute)
-                    top(20.px)
-                    // Adjust right position when chat is open on desktop
-                    if (isChatOpen && !isMobile.value) {
-                        right(340.px) // 20px original padding + 320px chat panel width
+                    // Adjust right position when any side panel is open on desktop
+                    if ((currentPanel == SidePanelState.Chat || 
+                         currentPanel == SidePanelState.WorldEdit || 
+                         currentPanel == SidePanelState.Notifications || 
+                         currentPanel == SidePanelState.ObjectsPanel ||
+                         currentPanel == SidePanelState.Friends) && !isMobile.value) {
+                        right(340.px) // 20px original padding + 320px panel width
                     } else {
                         right(20.px)
                     }
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "10px")
                 }
             }
         ) {
-            // Notifications button
-            CircleButton(
-                onClick = { /* Handle notifications click */ },
-                icon = "🔔"
-            )
-            
             // Fullscreen button
             CircleButton(
                 onClick = { toggleFullscreen() },
-                icon = if (isFullscreen) "⤓" else "⤢"
+                icon = if (isFullscreen) "⤓" else "⤢",
+                badgeCount = 0
             )
             
-            // Edit world button
+            // Notifications button
             CircleButton(
-                onClick = { isWorldEditOpen = !isWorldEditOpen },
-                icon = "✏️"
+                onClick = { togglePanel(SidePanelState.Notifications) },
+                icon = "🔔",
+                badgeCount = unreadNotificationCount
             )
             
-            // Create object button
+            // Friends button
             CircleButton(
-                onClick = { isObjectEditorOpen = !isObjectEditorOpen },
-                icon = "🧩"
+                onClick = { togglePanel(SidePanelState.Friends) },
+                icon = "👥",
+                badgeCount = 0
             )
+            
+            // QR code button (not part of the panel system)
+            CircleButton(
+                onClick = { isQrDialogOpen = true },
+                icon = "📱",
+                badgeCount = 0
+            )
+            
+            // Edit world button - only visible if the current user is the owner of the world
+            if (currentUser?.key == currentWorld?.userId) {
+                CircleButton(
+                    onClick = { togglePanel(SidePanelState.WorldEdit) },
+                    icon = "✏️",
+                    badgeCount = 0
+                )
+                
+                // Objects button - only visible if the current user is the owner of the world
+                CircleButton(
+                    onClick = { togglePanel(SidePanelState.ObjectsPanel) },
+                    icon = "🧩",
+                    badgeCount = 0
+                )
+            }
         }
         
         // Bottom right UI elements (profile and chat)
         Div(
             attrs = {
+                classes(Styles.bottomRightContainer)
                 style {
-                    position(Position.Absolute)
-                    bottom(20.px)
-                    // Adjust right position when chat is open on desktop
-                    if (isChatOpen && !isMobile.value) {
-                        right(340.px) // 20px original padding + 320px chat panel width
+                    // Adjust right position when any side panel is open on desktop
+                    if ((currentPanel == SidePanelState.Chat || 
+                         currentPanel == SidePanelState.WorldEdit || 
+                         currentPanel == SidePanelState.Notifications || 
+                         currentPanel == SidePanelState.ObjectsPanel ||
+                         currentPanel == SidePanelState.Friends) && !isMobile.value) {
+                        right(340.px) // 20px original padding + 320px panel width
                     } else {
                         right(20.px)
                     }
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "10px")
                 }
             }
         ) {
             // World Chat button
             CircleButton(
-                onClick = { isChatOpen = !isChatOpen },
-                icon = "💬"
+                onClick = { togglePanel(SidePanelState.Chat) },
+                icon = "💬",
+                badgeCount = 3,
+                isChat = true
             )
             
             // My profile button
             CircleButton(
-                onClick = { /* Handle profile click */ },
-                icon = "👤"
+                onClick = { togglePanel(SidePanelState.Profile) },
+                icon = "👤",
+                badgeCount = 0
             )
         }
         
         // Inventory tray (center bottom)
-        Div(
-            attrs = {
-                style {
-                    position(Position.Absolute)
-                    bottom(20.px)
-                    left(50.percent)
-                    property("transform", "translateX(-50%)")
-                    display(DisplayStyle.Flex)
-                    property("gap", "4px")
+        InventoryTray(
+            onOpenInventory = { 
+                updatePanelState(SidePanelState.Inventory) 
+            },
+            currentPanel = currentPanel,
+            isMobile = isMobile
+        )
+        
+        // Panel rendering based on currentPanel state
+        when (currentPanel) {
+            SidePanelState.Chat -> {
+                // Responsive chat component that adapts between mobile and desktop
+                Chat(
+                    isMobile = isMobile.value,
+                    onClose = { updatePanelState(SidePanelState.None) }
+                )
+            }
+            
+            SidePanelState.WorldEdit -> {
+                // Responsive world edit component that adapts between mobile and desktop
+                WorldEdit(
+                    currentWorld = null, // For now, always create new world
+                    isMobile = isMobile.value,
+                    onClose = { updatePanelState(SidePanelState.None) },
+                    onSave = { world ->
+                        // Handle saved world
+                        console.log("World saved: ${world.title}")
+                    }
+                )
+            }
+            
+            SidePanelState.Notifications -> {
+                // Responsive notifications component that adapts between mobile and desktop
+                Notifications(
+                    isMobile = isMobile.value,
+                    onClose = { updatePanelState(SidePanelState.None) },
+                    onNotificationClick = { notification ->
+                        // Handle notification click
+                        console.log("Notification clicked: ${notification.title}")
+                        // Mark notification as read or perform other actions
+                    }
+                )
+            }
+            
+            SidePanelState.Friends -> {
+                // Responsive friends component that adapts between mobile and desktop
+                Friends(
+                    isMobile = isMobile.value,
+                    onClose = { updatePanelState(SidePanelState.None) }
+                )
+            }
+            
+            SidePanelState.ObjectsPanel -> {
+                if (isMobile.value) {
+                    // Mobile: Dialog
+                    ObjectsDialog(
+                        onClose = { updatePanelState(SidePanelState.None) },
+                        onOpenObjectEditor = { 
+                            updatePanelState(SidePanelState.ObjectEditor)
+                        },
+                        objectManager = null // We'll pass the actual ObjectManager in a real implementation
+                    )
+                } else {
+                    // Desktop: Side panel
+                    ObjectsPanel(
+                        onClose = { updatePanelState(SidePanelState.None) },
+                        onOpenObjectEditor = { 
+                            updatePanelState(SidePanelState.ObjectEditor)
+                        },
+                        objectManager = null // We'll pass the actual ObjectManager in a real implementation
+                    )
                 }
             }
-        ) {
-            // Create 5 inventory boxes
-            repeat(5) { index ->
-                InventoryBox(
-                    onClick = { 
-                        if (index == 4) {
-                            // Last box opens inventory dialog
-                            isInventoryOpen = true
-                        }
-                    },
-                    content = if (index == 4) "+" else ""
-                )
-            }
-        }
-        
-        // World Chat panel/dialog
-        if (isChatOpen) {
-            if (isMobile.value) {
-                // Mobile: Dialog
-                ChatDialog(onClose = { isChatOpen = false })
-            } else {
-                // Desktop: Side panel
-                ChatPanel(onClose = { isChatOpen = false })
-            }
-        }
-        
-        // World Edit panel/dialog
-        if (isWorldEditOpen) {
-            if (isMobile.value) {
-                // Mobile: Dialog
-                WorldEditDialog(
-                    currentWorld = null, // For now, always create new world
-                    onClose = { isWorldEditOpen = false },
-                    onSave = { world ->
-                        // Handle saved world
-                        console.log("World saved: ${world.title}")
-                    }
-                )
-            } else {
-                // Desktop: Side panel
-                WorldEditPanel(
-                    currentWorld = null, // For now, always create new world
-                    onClose = { isWorldEditOpen = false },
-                    onSave = { world ->
-                        // Handle saved world
-                        console.log("World saved: ${world.title}")
-                    }
-                )
-            }
+            
+            else -> {} // No panel to render
         }
         
         // Object Editor dialog
-        if (isObjectEditorOpen) {
+        if (currentPanel == SidePanelState.ObjectEditor) {
             // Get current world ID from the URL path
             val currentWorldId = window.location.pathname.substring(1)
             
             ObjectEditorDialog(
                 objectModel = null, // For now, always create new object
                 worldId = currentWorldId,
-                onClose = { isObjectEditorOpen = false },
+                onClose = { updatePanelState(SidePanelState.None) },
                 onSave = { obj ->
                     // Handle saved object
                     console.log("Object saved: ${obj.title}")
-                    isObjectEditorOpen = false
+                    updatePanelState(SidePanelState.None)
                 },
                 onOpenLogicEditor = { obj ->
                     // Open the Logic Editor dialog with the object
                     currentEditingObject = obj
-                    isLogicEditorOpen = true
+                    updatePanelState(SidePanelState.LogicEditor)
                 }
             )
         }
         
         // Logic Editor dialog
-        if (isLogicEditorOpen && currentEditingObject != null) {
+        if (currentPanel == SidePanelState.LogicEditor && currentEditingObject != null) {
             // Get current world ID from the URL path
             val currentWorldId = window.location.pathname.substring(1)
             
@@ -376,30 +460,35 @@ fun WorldUI() {
                 objectModel = currentEditingObject,
                 worldId = currentWorldId,
                 onClose = { 
-                    isLogicEditorOpen = false 
+                    updatePanelState(SidePanelState.None)
                     currentEditingObject = null
                 },
                 onSave = { updatedObj ->
                     // Handle saved object with updated logic
                     console.log("Object logic updated: ${updatedObj.title}")
-                    isLogicEditorOpen = false
+                    updatePanelState(SidePanelState.None)
                     currentEditingObject = null
                 }
             )
         }
         
         // Inventory dialog
-        if (isInventoryOpen) {
-            InventoryDialog(onClose = { isInventoryOpen = false })
+        if (currentPanel == SidePanelState.Inventory) {
+            InventoryDialog(onClose = { updatePanelState(SidePanelState.None) })
+        }
+        
+        // QR code dialog - not part of the main panel system, kept separate
+        if (isQrDialogOpen) {
+            QrDialog(onClose = { isQrDialogOpen = false })
         }
         
         // Profile dialog
-        if (isProfileOpen && currentUser != null) {
+        if (currentPanel == SidePanelState.Profile && currentUser != null) {
             if (currentUser!!.isPlayer) {
                 // Player dialog for logout
                 PlayerDialog(
                     user = currentUser!!,
-                    onClose = { isProfileOpen = false },
+                    onClose = { updatePanelState(SidePanelState.None) },
                     onLogout = {
                         // Implement logout functionality
                         // For now, just create a new visitor user
@@ -410,25 +499,27 @@ fun WorldUI() {
                         ).apply {
                             key = "visitor-" + Random.nextInt(1000)
                         }
-                        isProfileOpen = false
+                        updatePanelState(SidePanelState.None)
                     }
                 )
             } else {
                 // Visitor dialog for login/registration
                 VisitorDialog(
-                    onClose = { isProfileOpen = false },
-                    onRegister = { username, password ->
+                    onClose = { updatePanelState(SidePanelState.None) },
+                    onRegister = { username, password, yearOfBirth, sex ->
                         // Implement registration functionality
                         // For now, just create a new player user
                         if (username.isNotEmpty() && password.length >= 8) {
                             currentUser = User(
                                 username = username,
                                 isPlayer = true,
-                                visitorId = currentUser!!.visitorId
+                                visitorId = currentUser!!.visitorId,
+                                yearOfBirth = yearOfBirth,
+                                sex = sex
                             ).apply {
                                 key = "player-" + Random.nextInt(1000)
                             }
-                            isProfileOpen = false
+                            updatePanelState(SidePanelState.None)
                         }
                     },
                     onLogin = { username, password ->
@@ -442,12 +533,13 @@ fun WorldUI() {
                             ).apply {
                                 key = "player-" + Random.nextInt(1000)
                             }
-                            isProfileOpen = false
+                            updatePanelState(SidePanelState.None)
                         }
                     }
                 )
             }
         }
+        
         
         // Bottom text with 8px font size
         Div(
@@ -469,685 +561,11 @@ fun WorldUI() {
     }
 }
 
-/**
- * A circular button with a red dot indicator.
- */
-@Composable
-fun CircleButton(onClick: () -> Unit, icon: String) {
-    Div(
-        attrs = {
-            style {
-                width(48.px)
-                height(48.px)
-                property("border-radius", "50%")
-                backgroundColor(Color.white)
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                position(Position.Relative)
-                cursor("pointer")
-                // Make button interactive
-                property("pointer-events", "auto")
-            }
-            onClick { onClick() }
-        }
-    ) {
-        // Button content (icon)
-        Text(icon)
-        
-        // Red dot indicator
-        Div(
-            attrs = {
-                style {
-                    position(Position.Absolute)
-                    top(4.px)
-                    right(4.px)
-                    width(8.px)
-                    height(8.px)
-                    property("border-radius", "50%")
-                    backgroundColor(Color.red)
-                }
-            }
-        )
-    }
-}
 
-/**
- * An inventory box.
- */
-@Composable
-fun InventoryBox(onClick: () -> Unit, content: String = "") {
-    Div(
-        attrs = {
-            style {
-                width(48.px)
-                height(48.px)
-                backgroundColor(rgba(255, 255, 255, 0.2))
-                property("border", "1px solid rgba(255, 255, 255, 0.5)")
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                cursor("pointer")
-                // Make box interactive
-                property("pointer-events", "auto")
-            }
-            onClick { onClick() }
-        }
-    ) {
-        Text(content)
-    }
-}
 
-/**
- * A chat panel for desktop view.
- */
-@Composable
-fun ChatPanel(onClose: () -> Unit) {
-    Div(
-        attrs = {
-            style {
-                position(Position.Absolute)
-                top(0.px)
-                right(0.px)
-                width(320.px)
-                height(100.vh)
-                backgroundColor(rgba(0, 0, 0, 0.7))
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                // Make panel interactive
-                property("pointer-events", "auto")
-            }
-        }
-    ) {
-        // Chat header
-        Div(
-            attrs = {
-                style {
-                    padding(16.px)
-                    display(DisplayStyle.Flex)
-                    justifyContent(JustifyContent.SpaceBetween)
-                    alignItems(AlignItems.Center)
-                    property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-                }
-            }
-        ) {
-            H3(
-                attrs = {
-                    style {
-                        margin(0.px)
-                        color(Color.white)
-                    }
-                }
-            ) {
-                Text("World Chat")
-            }
-            
-            Button(
-                attrs = {
-                    style {
-                        backgroundColor(Color.transparent)
-                        property("border", "0")
-                        color(Color.white)
-                        cursor("pointer")
-                        fontSize(20.px)
-                    }
-                    onClick { onClose() }
-                }
-            ) {
-                Text("×")
-            }
-        }
-        
-        // Chat messages (currently empty)
-        Div(
-            attrs = {
-                style {
-                    property("flex-grow", "1")
-                    padding(16.px)
-                    property("overflow-y", "auto")
-                }
-            }
-        ) {
-            // Empty chat message placeholder
-            P(
-                attrs = {
-                    style {
-                        color(rgba(255, 255, 255, 0.5))
-                        property("text-align", "center")
-                    }
-                }
-            ) {
-                Text("No messages yet")
-            }
-        }
-        
-        // Chat input
-        Div(
-            attrs = {
-                style {
-                    padding(16.px)
-                    display(DisplayStyle.Flex)
-                    property("gap", "8px")
-                    property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
-                }
-            }
-        ) {
-            // Emote button
-            Div(
-                attrs = {
-                    style {
-                        width(40.px)
-                        height(40.px)
-                        backgroundColor(rgba(255, 255, 255, 0.1))
-                        property("border-radius", "4px")
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        cursor("pointer")
-                    }
-                }
-            ) {
-                Text("😀")
-            }
-            
-            // Text input
-            Input(
-                type = InputType.Text,
-                attrs = {
-                    style {
-                        property("flex-grow", "1")
-                        padding(8.px)
-                        backgroundColor(rgba(255, 255, 255, 0.1))
-                        property("border", "0")
-                        property("border-radius", "4px")
-                        color(Color.white)
-                    }
-                    placeholder("Type a message...")
-                }
-            )
-            
-            // Send button
-            Button(
-                attrs = {
-                    style {
-                        padding(8.px, 16.px)
-                        backgroundColor(Theme.colors.primary)
-                        color(Theme.colors.onPrimary)
-                        property("border", "0")
-                        property("border-radius", "4px")
-                        cursor("pointer")
-                    }
-                }
-            ) {
-                Text("Send")
-            }
-        }
-        
-        // Emote picker (hidden by default)
-        Div(
-            attrs = {
-                style {
-                    display(DisplayStyle.None)
-                    position(Position.Absolute)
-                    bottom(80.px)
-                    left(16.px)
-                    backgroundColor(rgba(0, 0, 0, 0.9))
-                    padding(8.px)
-                    property("border-radius", "4px")
-                    display(DisplayStyle.Grid)
-                    property("grid-template-columns", "repeat(5, 1fr)")
-                    property("gap", "8px")
-                }
-            }
-        ) {
-            // Sample emojis
-            listOf("😀", "😂", "😍", "🎮", "👍").forEach { emoji ->
-                Div(
-                    attrs = {
-                        style {
-                            padding(8.px)
-                            cursor("pointer")
-                            property("text-align", "center")
-                        }
-                    }
-                ) {
-                    Text(emoji)
-                }
-            }
-        }
-    }
-}
+// SidePanel component has been moved to its own file: SidePanel.kt
 
-/**
- * A chat dialog for mobile view.
- */
-@Composable
-fun ChatDialog(onClose: () -> Unit) {
-    Div(
-        attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.vh)
-                backgroundColor(rgba(0, 0, 0, 0.7))
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                // Make dialog interactive
-                property("pointer-events", "auto")
-            }
-        }
-    ) {
-        Div(
-            attrs = {
-                style {
-                    width(90.percent)
-                    property("max-width", "400px")
-                    height(80.vh)
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                }
-            }
-        ) {
-            // Chat header
-            Div(
-                attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
-                }
-            ) {
-                H3(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
-                    }
-                ) {
-                    Text("World Chat")
-                }
-                
-                Button(
-                    attrs = {
-                        style {
-                            backgroundColor(Color.transparent)
-                            property("border", "0")
-                            color(Color.white)
-                            cursor("pointer")
-                            fontSize(20.px)
-                        }
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("×")
-                }
-            }
-            
-            // Chat messages (currently empty)
-            Div(
-                attrs = {
-                    style {
-                        property("flex-grow", "1")
-                        padding(16.px)
-                        property("overflow-y", "auto")
-                    }
-                }
-            ) {
-                // Empty chat message placeholder
-                P(
-                    attrs = {
-                        style {
-                            color(rgba(255, 255, 255, 0.5))
-                            property("text-align", "center")
-                        }
-                    }
-                ) {
-                    Text("No messages yet")
-                }
-            }
-            
-            // Chat input
-            Div(
-                attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        property("gap", "8px")
-                        property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
-                }
-            ) {
-                // Emote button
-                Div(
-                    attrs = {
-                        style {
-                            width(40.px)
-                            height(40.px)
-                            backgroundColor(rgba(255, 255, 255, 0.1))
-                            property("border-radius", "4px")
-                            display(DisplayStyle.Flex)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                            cursor("pointer")
-                        }
-                    }
-                ) {
-                    Text("😀")
-                }
-                
-                // Text input
-                Input(
-                    type = InputType.Text,
-                    attrs = {
-                        style {
-                            property("flex-grow", "1")
-                            padding(8.px)
-                            backgroundColor(rgba(255, 255, 255, 0.1))
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            color(Color.white)
-                        }
-                        placeholder("Type a message...")
-                    }
-                )
-                
-                // Send button
-                Button(
-                    attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(Theme.colors.primary)
-                            color(Theme.colors.onPrimary)
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            cursor("pointer")
-                        }
-                    }
-                ) {
-                    Text("Send")
-                }
-            }
-        }
-    }
-}
 
-/**
- * An inventory dialog that displays the user's objects and allows them to be dragged into the world.
- */
-@Composable
-fun InventoryDialog(onClose: () -> Unit) {
-    // State for objects
-    var objects by remember { mutableStateOf<List<Object>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
-    
-    // Get current world ID from the URL path
-    val currentWorldId = window.location.pathname.substring(1)
-    
-    // Load objects when the dialog is opened
-    DisposableEffect(Unit) {
-        isLoading = true
-        errorMessage = ""
-        
-        ObjectApi.getObjectsByWorldId(currentWorldId)
-            .then { objectList ->
-                objects = objectList
-                isLoading = false
-                Promise.resolve(Unit)
-            }
-            .catch { error ->
-                console.error("Error loading objects", error)
-                errorMessage = error.message ?: "Failed to load objects"
-                isLoading = false
-                Promise.resolve(Unit)
-            }
-        
-        onDispose { }
-    }
-    
-    // JSON serializer
-    val json = Json { 
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-    }
-    
-    // Function to handle drag start
-    fun handleDragStart(event: dynamic, obj: Object) {
-        // Set the drag data
-        event.dataTransfer.setData("application/json", json.encodeToString(obj))
-        // Set a custom drag image (optional)
-        val dragImage = document.createElement("div") as HTMLElement
-        dragImage.style.width = "48px"
-        dragImage.style.height = "48px"
-        dragImage.style.backgroundColor = "rgba(0, 120, 255, 0.7)"
-        dragImage.style.borderRadius = "4px"
-        document.body?.appendChild(dragImage)
-        event.dataTransfer.setDragImage(dragImage, 24, 24)
-        // Remove the drag image element after it's been used
-        window.setTimeout({ document.body?.removeChild(dragImage) }, 0)
-    }
-    
-    Div(
-        attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.vh)
-                backgroundColor(rgba(0, 0, 0, 0.7))
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                // Make dialog interactive
-                property("pointer-events", "auto")
-            }
-        }
-    ) {
-        Div(
-            attrs = {
-                style {
-                    width(90.percent)
-                    property("max-width", "600px")
-                    height(80.vh)
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                }
-            }
-        ) {
-            // Inventory header
-            Div(
-                attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
-                }
-            ) {
-                H3(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
-                    }
-                ) {
-                    Text("Objects")
-                }
-                
-                // Create new object button
-                Button(
-                    attrs = {
-                        style {
-                            backgroundColor(rgba(0, 120, 255, 0.7))
-                            color(Color.white)
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            padding(4.px, 8.px)
-                            marginRight(8.px)
-                            cursor("pointer")
-                            fontSize(14.px)
-                        }
-                        onClick { 
-                            // Open object editor dialog
-                            window.dispatchEvent(Event("openObjectEditor"))
-                            onClose()
-                        }
-                    }
-                ) {
-                    Text("+ New")
-                }
-                
-                Button(
-                    attrs = {
-                        style {
-                            backgroundColor(Color.transparent)
-                            property("border", "0")
-                            color(Color.white)
-                            cursor("pointer")
-                            fontSize(20.px)
-                        }
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("×")
-                }
-            }
-            
-            // Loading or error message
-            if (isLoading) {
-                Div(
-                    attrs = {
-                        style {
-                            padding(16.px)
-                            color(Color.white)
-                            property("text-align", "center")
-                        }
-                    }
-                ) {
-                    Text("Loading objects...")
-                }
-            } else if (errorMessage.isNotEmpty()) {
-                Div(
-                    attrs = {
-                        style {
-                            padding(16.px)
-                            color(Color.red)
-                            property("text-align", "center")
-                        }
-                    }
-                ) {
-                    Text(errorMessage)
-                }
-            } else if (objects.isEmpty()) {
-                Div(
-                    attrs = {
-                        style {
-                            padding(16.px)
-                            color(rgba(255, 255, 255, 0.7))
-                            property("text-align", "center")
-                        }
-                    }
-                ) {
-                    Text("No objects yet. Click '+ New' to create one.")
-                }
-            } else {
-                // Inventory grid
-                Div(
-                    attrs = {
-                        style {
-                            padding(16.px)
-                            display(DisplayStyle.Grid)
-                            property("grid-template-columns", "repeat(auto-fill, minmax(80px, 1fr))")
-                            property("gap", "12px")
-                            property("overflow-y", "auto")
-                            property("flex-grow", "1")
-                            property("align-content", "flex-start")
-                        }
-                    }
-                ) {
-                    // Display objects
-                    objects.forEach { obj ->
-                        Div(
-                            attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    flexDirection(FlexDirection.Column)
-                                    alignItems(AlignItems.Center)
-                                    property("gap", "4px")
-                                }
-                            }
-                        ) {
-                            // Object box (draggable)
-                            Div(
-                                attrs = {
-                                    style {
-                                        width(64.px)
-                                        height(64.px)
-                                        backgroundColor(rgba(0, 120, 255, 0.3))
-                                        property("border", "1px solid rgba(0, 120, 255, 0.7)")
-                                        property("border-radius", "4px")
-                                        display(DisplayStyle.Flex)
-                                        justifyContent(JustifyContent.Center)
-                                        alignItems(AlignItems.Center)
-                                        cursor("grab")
-                                        // Make box interactive
-                                        property("pointer-events", "auto")
-                                        // Make box draggable
-                                        property("draggable", "true")
-                                    }
-                                    // Set up drag events
-                                    onDragStart { event ->
-                                        // Use the handleDragStart function
-                                        handleDragStart(event.nativeEvent, obj)
-                                    }
-                                    onClick { 
-                                        // Open object editor dialog with this object
-                                        window.asDynamic().currentEditingObject = obj
-                                        window.dispatchEvent(Event("openObjectEditor"))
-                                        onClose()
-                                    }
-                                }
-                            ) {
-                                // Display a cube icon
-                                Span {
-                                    Text("□")
-                                }
-                            }
-                            
-                            // Object title
-                            Span(
-                                attrs = {
-                                    style {
-                                        color(Color.white)
-                                        fontSize(12.px)
-                                        property("text-align", "center")
-                                        property("word-break", "break-word")
-                                        property("max-width", "80px")
-                                    }
-                                }
-                            ) {
-                                Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+
+
+

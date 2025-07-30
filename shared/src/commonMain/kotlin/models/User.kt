@@ -1,5 +1,6 @@
 package models
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.time.Clock
@@ -13,7 +14,10 @@ data class User(
     var isPlayer: Boolean = false,
     var visitorId: String = "",
     var passwordHash: String = "",
-    var lastActive: Instant = Clock.System.now()
+    @Contextual
+    var lastActive: Instant = Clock.System.now(),
+    var yearOfBirth: Int? = null,
+    var sex: String? = null
 ) : BaseModel() {
     // Transient fields that won't be serialized
     @Transient

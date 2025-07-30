@@ -84,8 +84,13 @@ Located in `src/commonMain/kotlin/lib/Marked.kt`, this wrapper provides access t
 implementation(npm("marked", "15.0.7"))
 ```
 
-## Kotlin/JS Code Guidelines
+## Compose Code Style Guidelines
 
+- **No more than 1 @Composable fun per file**
+
+## Kotlin/JS Code Style Guidelines
+
+- **750 lines max in one file**: Split larger files into smaller ones 
 - **Avoid JS Promises**: Use Kotlin coroutines instead 
 - **Always use Ktor for networking**
 - **Avoid using `js()`, `dynamic` and `asDynamic()` at all costs:** Implement the interface in the correct library file instead.
@@ -95,9 +100,15 @@ implementation(npm("marked", "15.0.7"))
 
 ## Code Style and Development Guidelines
 
+- **Clean up as you go**: Always go the extra mile and look for chances to clean up or remove dead code and imports
 - **No duplicate code**: Always create reusabe code instead of duplicatating code
+- **Plan for the future**: Structure code well, prefer to create new files for new classes and objects
 - **Package Structure**: Follow the existing package structure, with common code in `src/commonMain` and platform-specific code in `src/jsMain`.
 - **Naming Conventions**: Use standard Kotlin naming conventions (camelCase for variables and functions, PascalCase for classes and interfaces).
 - **Routing**: Use the Route sealed interface for type-safe routing, and the extension functions in RouterExtensions.kt for navigation.
 - **UI Components**: Place reusable UI components in the `main/components` package.
 - **Styling**: Use the theme system defined in `main/theme` for consistent styling.
+
+## Tips
+
+Do not run `./gradlew run` as it will never complete!

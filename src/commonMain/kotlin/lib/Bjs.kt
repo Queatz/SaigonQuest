@@ -103,6 +103,9 @@ external class Scene(engine: Engine? = definedExternally) {
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
 
+    fun enableDepthRenderer(camera: Camera? = definedExternally): DepthRenderer
+    fun disableDepthRenderer()
+    fun getDepthRenderer(): DepthRenderer?
     fun render()
     fun dispose()
     fun createPickingRay(x: Int, y: Int, world: Matrix, camera: Camera? = definedExternally): Ray
@@ -467,10 +470,25 @@ external class DefaultRenderingPipeline(
     var bloomWeight: Float
     var bloomKernel: Float
     var bloomScale: Float
+    var grainEnabled: Boolean
+    /**
+     * The grain effect configuration object
+     */
+    var grain: GrainEffect
     var sharpenEnabled: Boolean
     var sharpen: ImageProcessingPostProcess
-    var hdrEnabled: Boolean
-
+    /**
+     * Enables image processing
+     */
+    var imageProcessingEnabled: Boolean
+    /**
+     * The image processing configuration
+     */
+    var imageProcessing: ImageProcessingConfiguration
+    /**
+     * Enables tone mapping
+     */
+    var toneMappingEnabled: Boolean
 }
 
 external class DepthOfFieldEffect {
@@ -484,9 +502,65 @@ external class ImageProcessingPostProcess {
     var colorAmount: Float
 }
 
+/**
+ * The ImageProcessingConfiguration class is used to configure image processing effects.
+ */
+external class ImageProcessingConfiguration {
+    /**
+     * The contrast level (0.0-2.0)
+     */
+    var contrast: Float
+    
+    /**
+     * The exposure level (0.0-2.0)
+     */
+    var exposure: Float
+}
+
+/**
+ * The GrainEffect is used to add film grain to the rendering.
+ */
+external class GrainEffect {
+    /**
+     * The intensity of the grain effect (0.0-1.0)
+     */
+    var intensity: Float
+}
+
 external class DepthOfFieldEffectBlurLevel {
     companion object {
+        val Low: Int
+        val Medium: Int
         val High: Int
+    }
+}
+
+/**
+ * The DepthRenderer is used to generate depth textures for a scene.
+ * These textures can be used for various effects like depth of field, SSAO, etc.
+ */
+external class DepthRenderer(scene: Scene, type: Int = definedExternally) {
+    /**
+     * Gets the depth map texture from the renderer.
+     * This texture contains the depth values of the scene from the camera's perspective.
+     */
+    fun getDepthMap(): Texture
+    
+    /**
+     * Disposes the depth renderer and releases its resources.
+     */
+    fun dispose()
+    
+    companion object {
+        /**
+         * RGBA texture type.
+         */
+        val DEPTH_TEXTURE_TYPE: Int
+        
+        /**
+         * Depth texture type.
+         */
+        val DEPTH_RENDERER_DEPTH_TYPE: Int
     }
 }
 
@@ -498,18 +572,95 @@ external class LensRenderingPipeline(
     cameras: Array<Camera>
 )
 
+/**
+ * Interface for SSAO (Screen Space Ambient Occlusion) options.
+ * Used to configure the SSAO2RenderingPipeline.
+ */
+external interface SSAOOptions {
+    /**
+     * The radius of the SSAO effect (0.0-1.0)
+     * Lower values create more subtle effect
+     */
+    val radius: Float
+    
+    /**
+     * The strength of the SSAO effect (0.0-1.0)
+     * Lower values create more subtle effect
+     */
+    val totalStrength: Float
+    
+    /**
+     * The number of samples used for the SSAO calculation
+     * Higher values provide better quality but lower performance
+     */
+    val samples: Int
+    
+    /**
+     * The maximum Z depth for the SSAO effect
+     * Should match camera maxZ
+     */
+    val maxZ: Float
+}
+
+/**
+ * Render pipeline to produce SSAO (Screen Space Ambient Occlusion) effect.
+ * Properties should be set after creating the instance.
+ */
 external class SSAO2RenderingPipeline(
     name: String,
     scene: Scene,
-    options: dynamic,
-    cameras: Array<ArcRotateCamera>
+    ratio: dynamic = definedExternally,
+    cameras: Array<Camera> = definedExternally,
+    forceGeometryBuffer: Boolean = definedExternally,
+    textureType: Int = definedExternally
 ) {
+    /**
+     * The radius around the analyzed pixel used by the SSAO post-process. Default value is 2.0
+     */
     var radius: Float
+    
+    /**
+     * The output strength of the SSAO post-process. Default value is 1.0.
+     */
     var totalStrength: Float
+    
+    /**
+     * Number of samples used for the SSAO calculations. Default value is 8.
+     */
     var samples: Int
+    
+    /**
+     * If bilateral blur should be used
+     */
     var bypassBlur: Boolean
+    
+    /**
+     * Number of samples used for bilateral filtering
+     */
     var bilateralSamples: Int
+    
+    /**
+     * Maximum depth value to still render AO. Default value is 100.0.
+     */
     var maxZ: Float
+    
+    /**
+     * In order to save performances, SSAO radius is clamped on close geometry. This ratio changes by how much.
+     * Default value is 0.2.
+     */
+    var minZAspect: Float
+    
+    /**
+     * The base color of the SSAO post-process. The final result is "base + ssao" between [0, 1].
+     * Default value is 0.
+     */
+    var base: Float
+    
+    /**
+     * Used in SSAO calculations to compensate for accuracy issues with depth values.
+     * Default value is 0.02.
+     */
+    var epsilon: Float
 }
 
 external interface CreatePlaneOptions {
@@ -533,6 +684,19 @@ external interface CreateGroundOptions {
 
 external interface TextureOptions {
     val samplingMode: Int? get() = definedExternally
+}
+
+external interface CreateBoxOptions {
+    val width: Float? get() = definedExternally
+    val height: Float? get() = definedExternally
+    val depth: Float? get() = definedExternally
+    val updatable: Boolean? get() = definedExternally
+}
+
+external interface CreateDiscOptions {
+    val radius: Float? get() = definedExternally
+    val tessellation: Int? get() = definedExternally
+    val updatable: Boolean? get() = definedExternally
 }
 
 external interface DynamicTextureOptions {

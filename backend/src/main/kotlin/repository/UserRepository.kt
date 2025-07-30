@@ -108,9 +108,9 @@ class UserRepository {
     }
     
     /**
-     * Upgrades a visitor to a player with a username and password
+     * Upgrades a visitor to a player with a username, password, year of birth, and sex
      */
-    fun upgradeToPlayer(id: String, username: String, password: String): User? {
+    fun upgradeToPlayer(id: String, username: String, password: String, yearOfBirth: Int? = null, sex: String? = null): User? {
         val user = getById(id) ?: return null
         
         // Check if username is already taken
@@ -121,6 +121,8 @@ class UserRepository {
         user.username = username
         user.passwordHash = hashPassword(password)
         user.isPlayer = true
+        user.yearOfBirth = yearOfBirth
+        user.sex = sex
         
         return update(id, user)
     }

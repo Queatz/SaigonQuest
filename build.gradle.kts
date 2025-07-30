@@ -53,7 +53,7 @@ kotlin {
                 implementation(npm("@babylonjs/core", "8.18.0"))
                 implementation(npm("@babylonjs/materials", "8.18.0"))
                 implementation(npm("@babylonjs/loaders", "8.18.0"))
-                implementation(npm("shell-quote", "1.8.3"))
+                implementation(npm("shell-quote", "1.8.3")) // force version
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.13")
 
                 // Ktor client

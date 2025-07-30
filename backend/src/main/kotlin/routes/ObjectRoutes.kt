@@ -29,20 +29,24 @@ fun Routing.configureObjectRoutes() {
                     ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
                 )
                 
-                // Check if the world exists and belongs to the user
-                val world = worldRepository.getById(obj.worldId) ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    ErrorResponse(message = "World not found", code = HttpStatusCode.BadRequest.value)
-                )
-                
-                if (world.userId != userId) {
-                    return@post call.respond(
-                        HttpStatusCode.Forbidden,
-                        ErrorResponse(
-                            message = "You don't have permission to add objects to this world",
-                            code = HttpStatusCode.Forbidden.value
+                // Objects are not required to be related to a world
+                // Only validate world ownership if a worldId is provided
+                if (obj.worldId.isNotEmpty()) {
+                    val world = worldRepository.getById(obj.worldId)
+                    
+                    // If worldId is provided but world doesn't exist, that's still valid
+                    // as objects don't need to be related to worlds
+                    
+                    // If world exists, check if user has permission
+                    if (world != null && world.userId != userId) {
+                        return@post call.respond(
+                            HttpStatusCode.Forbidden,
+                            ErrorResponse(
+                                message = "You don't have permission to add objects to this world",
+                                code = HttpStatusCode.Forbidden.value
+                            )
                         )
-                    )
+                    }
                 }
                 
                 val createdObject = objectRepository.create(obj)
@@ -99,20 +103,21 @@ fun Routing.configureObjectRoutes() {
                     ErrorResponse(message = "Object not found", code = HttpStatusCode.NotFound.value)
                 )
                 
-                // Check if the world belongs to the user
-                val world = worldRepository.getById(existingObject.worldId) ?: return@put call.respond(
-                    HttpStatusCode.BadRequest,
-                    ErrorResponse(message = "World not found", code = HttpStatusCode.BadRequest.value)
-                )
-                
-                if (world.userId != userId) {
-                    return@put call.respond(
-                        HttpStatusCode.Forbidden,
-                        ErrorResponse(
-                            message = "You don't have permission to update objects in this world",
-                            code = HttpStatusCode.Forbidden.value
+                // Objects are not required to be related to a world
+                // Only validate world ownership if a worldId is provided
+                if (existingObject.worldId.isNotEmpty()) {
+                    val world = worldRepository.getById(existingObject.worldId)
+                    
+                    // If world exists, check if user has permission
+                    if (world != null && world.userId != userId) {
+                        return@put call.respond(
+                            HttpStatusCode.Forbidden,
+                            ErrorResponse(
+                                message = "You don't have permission to update objects in this world",
+                                code = HttpStatusCode.Forbidden.value
+                            )
                         )
-                    )
+                    }
                 }
                 
                 val updatedObject = objectRepository.update(id, objUpdate)
@@ -146,20 +151,21 @@ fun Routing.configureObjectRoutes() {
                     ErrorResponse(message = "Object not found", code = HttpStatusCode.NotFound.value)
                 )
                 
-                // Check if the world belongs to the user
-                val world = worldRepository.getById(existingObject.worldId) ?: return@delete call.respond(
-                    HttpStatusCode.BadRequest,
-                    ErrorResponse(message = "World not found", code = HttpStatusCode.BadRequest.value)
-                )
-                
-                if (world.userId != userId) {
-                    return@delete call.respond(
-                        HttpStatusCode.Forbidden,
-                        ErrorResponse(
-                            message = "You don't have permission to delete objects in this world",
-                            code = HttpStatusCode.Forbidden.value
+                // Objects are not required to be related to a world
+                // Only validate world ownership if a worldId is provided
+                if (existingObject.worldId.isNotEmpty()) {
+                    val world = worldRepository.getById(existingObject.worldId)
+                    
+                    // If world exists, check if user has permission
+                    if (world != null && world.userId != userId) {
+                        return@delete call.respond(
+                            HttpStatusCode.Forbidden,
+                            ErrorResponse(
+                                message = "You don't have permission to delete objects in this world",
+                                code = HttpStatusCode.Forbidden.value
+                            )
                         )
-                    )
+                    }
                 }
                 
                 val success = objectRepository.delete(id)

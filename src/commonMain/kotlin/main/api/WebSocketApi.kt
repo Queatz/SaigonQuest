@@ -4,11 +4,13 @@ import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import models.ChatMessage
 import models.Object
 import models.Position
 import models.User
 import org.w3c.dom.WebSocket
+import kotlin.time.Clock
 
 /**
  * API client for WebSocket operations
@@ -21,6 +23,8 @@ import org.w3c.dom.WebSocket
  * - removeObject: Removes an object from the world
  * - updatePlayerPosition: Updates a player's position
  * - playerInteract: Sends a player interaction with an object
+ * - sendChatMessage: Sends a chat message to all users in the same world
+ * - receiveChatMessage: Receives a chat message from another user
  * 
  * Usage:
  * 1. Connect to the WebSocket server:
@@ -30,26 +34,26 @@ import org.w3c.dom.WebSocket
  *    WebSocketApi.addListener("addObject") { message ->
  *        // Handle addObject event
  *    }
+ *    WebSocketApi.addListener("receiveChatMessage") { message ->
+ *        // Handle receiveChatMessage event
+ *    }
  * 
  * 3. Send messages:
  *    WebSocketApi.addObject(objectModel)
  *    WebSocketApi.removeObject(objectId)
  *    WebSocketApi.updatePlayerPosition(position)
  *    WebSocketApi.playerInteract(objectId)
+ *    WebSocketApi.sendChatMessage(worldId, messageText)
  * 
  * 4. Disconnect when done:
  *    WebSocketApi.disconnect()
  */
+@OptIn(kotlin.time.ExperimentalTime::class)
 object WebSocketApi {
     private val scope = MainScope()
     private var socket: WebSocket? = null
     private val listeners = mutableMapOf<String, MutableList<(WebSocketMessage) -> Unit>>()
-    val json = Json {
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-    }
-
+    
     /**
      * Connect to the WebSocket server
      */
@@ -73,7 +77,7 @@ object WebSocketApi {
         socket?.onmessage = { event ->
             val messageData = event.data.toString()
             try {
-                val message = json.decodeFromString<WebSocketMessage>(messageData)
+                val message = ApiClient.json.decodeFromString<WebSocketMessage>(messageData)
 
                 // Validate that the action is one we expect
                 if (WebSocketMessage.VALID_ACTIONS.contains(message.action)) {
@@ -118,8 +122,8 @@ object WebSocketApi {
      * Send a message to the WebSocket server with an Object
      */
     private fun sendObjectMessage(action: String, data: Object) {
-        val message = WebSocketMessage(action, json.encodeToString(data))
-        val messageString = json.encodeToString(message)
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
         socket?.send(messageString)
     }
 
@@ -127,8 +131,8 @@ object WebSocketApi {
      * Send a message to the WebSocket server with a String
      */
     private fun sendStringMessage(action: String, data: String) {
-        val message = WebSocketMessage(action, json.encodeToString(data))
-        val messageString = json.encodeToString(message)
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
         socket?.send(messageString)
     }
 
@@ -136,8 +140,8 @@ object WebSocketApi {
      * Send a message to the WebSocket server with a PlayerPositionData
      */
     private fun sendPlayerPositionMessage(action: String, data: PlayerPositionData) {
-        val message = WebSocketMessage(action, json.encodeToString(data))
-        val messageString = json.encodeToString(message)
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
         socket?.send(messageString)
     }
 
@@ -145,8 +149,8 @@ object WebSocketApi {
      * Send a message to the WebSocket server with a PlayerInteractData
      */
     private fun sendPlayerInteractMessage(action: String, data: PlayerInteractData) {
-        val message = WebSocketMessage(action, json.encodeToString(data))
-        val messageString = json.encodeToString(message)
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
         socket?.send(messageString)
     }
 
@@ -154,8 +158,8 @@ object WebSocketApi {
      * Send a message to the WebSocket server with a TriggerEventData
      */
     private fun sendTriggerEventMessage(action: String, data: TriggerEventData) {
-        val message = WebSocketMessage(action, json.encodeToString(data))
-        val messageString = json.encodeToString(message)
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
         socket?.send(messageString)
     }
 
@@ -183,13 +187,18 @@ object WebSocketApi {
      * @param isPlayer True if this is a player (authenticated user), false if it's a visitor
      */
     fun updatePlayerPosition(position: Position, isPlayer: Boolean) {
-        UserApi.getCurrentUser().then { user ->
-            val positionData = PlayerPositionData(
-                position = position,
-                isPlayer = isPlayer,
-                userId = user.key
-            )
-            sendPlayerPositionMessage("updatePlayerPosition", positionData)
+        scope.launch {
+            try {
+                val user = UserApi.getCurrentUser()
+                val positionData = PlayerPositionData(
+                    position = position,
+                    isPlayer = isPlayer,
+                    userId = user.key
+                )
+                sendPlayerPositionMessage("updatePlayerPosition", positionData)
+            } catch (e: Exception) {
+                console.error("Error updating player position", e)
+            }
         }
     }
     
@@ -203,13 +212,18 @@ object WebSocketApi {
      * @param isPlayer True if this is a player (authenticated user), false if it's a visitor
      */
     fun playerInteract(objectId: String, isPlayer: Boolean) {
-        UserApi.getCurrentUser().then { user ->
-            val interactData = PlayerInteractData(
-                objectId = objectId,
-                isPlayer = isPlayer,
-                userId = user.key
-            )
-            sendPlayerInteractMessage("playerInteract", interactData)
+        scope.launch {
+            try {
+                val user = UserApi.getCurrentUser()
+                val interactData = PlayerInteractData(
+                    objectId = objectId,
+                    isPlayer = isPlayer,
+                    userId = user.key
+                )
+                sendPlayerInteractMessage("playerInteract", interactData)
+            } catch (e: Exception) {
+                console.error("Error sending player interaction", e)
+            }
         }
     }
     
@@ -230,6 +244,42 @@ object WebSocketApi {
             userId = userId
         )
         sendTriggerEventMessage("triggerObjectEvent", eventData)
+    }
+    
+    /**
+     * Send a message to the WebSocket server with a ChatMessage
+     */
+    private fun sendChatMessageData(action: String, data: ChatMessage) {
+        val message = WebSocketMessage(action, ApiClient.json.encodeToString(data))
+        val messageString = ApiClient.json.encodeToString(message)
+        socket?.send(messageString)
+    }
+    
+    /**
+     * Send a chat message to all users in the same world
+     * 
+     * This sends a chat message to all users in the same world.
+     * The server will broadcast this to all clients including the sender.
+     * 
+     * @param worldId The ID of the world where the message is being sent
+     * @param messageText The content of the message
+     */
+    fun sendChatMessage(worldId: String, messageText: String) {
+        scope.launch {
+            try {
+                val user = UserApi.getCurrentUser()
+                val chatMessage = ChatMessage(
+                    worldId = worldId,
+                    userId = user.key,
+                    username = user.username,
+                    message = messageText,
+                    timestamp = Clock.System.now().toEpochMilliseconds()
+                )
+                sendChatMessageData("sendChatMessage", chatMessage)
+            } catch (e: Exception) {
+                console.error("Error sending chat message", e)
+            }
+        }
     }
 
     /**
@@ -283,7 +333,9 @@ data class WebSocketMessage(
             "removeObject", 
             "updatePlayerPosition", 
             "playerInteract", 
-            "triggerObjectEvent"
+            "triggerObjectEvent",
+            "sendChatMessage",
+            "receiveChatMessage"
         )
     }
 }

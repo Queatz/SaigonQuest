@@ -7,38 +7,31 @@ package main.api
  * It handles user authentication, registration, and profile management.
  * 
  * Key features:
- * - Uses Ktor HttpClient with ContentNegotiation for JSON serialization
- * - Converts between suspend functions and Promises using kotlinx.coroutines.promise
+ * - Uses shared ApiClient for HttpClient and Json configuration
+ * - Uses Kotlin coroutines for asynchronous operations
  * - Manages authentication tokens and visitor IDs in localStorage
  * - Provides error handling with detailed error messages
- * 
- * Note: This implementation replaces the previous window.fetch implementation
- * with a more idiomatic Kotlin approach using Ktor.
  */
 
-import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 import models.User
-import kotlin.js.Promise
-import main.api.ApiConstants
 
 // Data classes for request/response (matching backend)
 @Serializable
 data class VisitorRequest(val visitorId: String = "")
 
 @Serializable
-data class UpgradeRequest(val username: String, val password: String)
+data class UpgradeRequest(val username: String, val password: String, val yearOfBirth: Int? = null, val sex: String? = null)
 
 @Serializable
 data class LoginRequest(val username: String, val password: String)
@@ -53,29 +46,28 @@ object UserApi {
     private const val TOKEN_STORAGE_KEY = "auth_token"
     private const val VISITOR_ID_STORAGE_KEY = "visitor_id"
     
-    private val scope = MainScope()
-    
-    // Create a Ktor HttpClient with JSON serialization
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
-        }
-    }
+    private val scope = CoroutineScope(Dispatchers.Default)
     
     /**
      * Gets the current user from local storage or creates a new visitor
      */
-    fun getCurrentUser(): Promise<User> {
+    suspend fun getCurrentUser(): User {
         // Check if we have a token
         val token = getToken()
         
         return if (token != null) {
             // We have a token, get the current user
-            fetchCurrentUser()
+            try {
+                fetchCurrentUser()
+            } catch (e: Exception) {
+                // If fetching current user fails, fall back to visitor
+                val visitorId = getVisitorId()
+                if (visitorId != null) {
+                    createOrGetVisitor(visitorId)
+                } else {
+                    createOrGetVisitor("")
+                }
+            }
         } else {
             // No token, check if we have a visitor ID
             val visitorId = getVisitorId()
@@ -93,174 +85,127 @@ object UserApi {
     /**
      * Creates a new visitor or gets an existing one
      */
-    fun createOrGetVisitor(visitorId: String): Promise<User> {
+    suspend fun createOrGetVisitor(visitorId: String): User {
         val request = VisitorRequest(visitorId)
         
-        return scope.promise {
-            try {
-                val response = client.post("${ApiConstants.API_BASE_URL}/user/visitor") {
-                    contentType(ContentType.Application.Json)
-                    accept(ContentType.Application.Json)
-                    setBody(request)
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/visitor") {
+                contentType(ContentType.Application.Json)
+                accept(ContentType.Application.Json)
+                setBody(request)
+            }
+            
+            // Check if response has a content type
+            if (response.contentType() == null) {
+                // Handle missing content type by parsing the response body as text first
+                val responseText = response.bodyAsText()
+                try {
+                    // Try to parse the text as JSON
+                    val authResponse = ApiClient.json.decodeFromString<AuthResponse>(responseText)
+                    
+                    // Save token and visitor ID
+                    saveToken(authResponse.token)
+                    saveVisitorId(authResponse.user.visitorId)
+                    
+                    return authResponse.user
+                } catch (e: Exception) {
+                    println("Error parsing response text: ${e.message}")
+                    throw e
                 }
-                
+            } else {
+                // Normal flow when content type is present
                 val authResponse: AuthResponse = response.body()
-
-                // Save token and visitor ID
-                saveToken(authResponse.token)
-                saveVisitorId(authResponse.user.visitorId)
-
-                authResponse.user
-            } catch (e: Exception) {
-                println("Error creating visitor: ${e.message}")
-                throw e
-            }
-        }
-    }
-    
-    /**
-     * Upgrades a visitor to a player
-     */
-    fun upgradeToPlayer(username: String, password: String): Promise<User> {
-        val request = UpgradeRequest(username, password)
-        
-        return scope.promise {
-            try {
-                val response = client.post("${ApiConstants.API_BASE_URL}/user/upgrade") {
-                    contentType(ContentType.Application.Json)
-                    bearerAuth(getToken() ?: "")
-                    setBody(request)
-                }
-                
-                if (response.status.isSuccess()) {
-                    val authResponse: AuthResponse = response.body()
-                    
-                    // Save new token
-                    saveToken(authResponse.token)
-                    
-                    authResponse.user
-                } else {
-                    throw Error(response.bodyAsText())
-                }
-            } catch (e: Exception) {
-                println("Error upgrading to player: ${e.message}")
-                throw e
-            }
-        }
-    }
-    
-    /**
-     * Logs in a user with username and password
-     */
-    fun login(username: String, password: String): Promise<User> {
-        val request = LoginRequest(username, password)
-        
-        return scope.promise {
-            try {
-                val response = client.post("${ApiConstants.API_BASE_URL}/user/login") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
-                
-                if (response.status.isSuccess()) {
-                    val authResponse: AuthResponse = response.body()
-                    
-                    // Save token
-                    saveToken(authResponse.token)
-                    
-                    authResponse.user
-                } else {
-                    throw Error(response.bodyAsText())
-                }
-            } catch (e: Exception) {
-                println("Error logging in: ${e.message}")
-                throw e
-            }
-        }
-    }
-    
-    /**
-     * Fetches the current user
-     */
-    fun fetchCurrentUser(): Promise<User> {
-        return scope.promise {
-            try {
-                val response = client.get("${ApiConstants.API_BASE_URL}/user/me") {
-                    bearerAuth(getToken() ?: "")
-                }
-                
-                if (response.status.isSuccess()) {
-                    response.body<User>()
-                } else {
-                    // Token is invalid, clear it
-                    clearToken()
-                    
-                    // Create or get visitor instead
-                    val visitorId = getVisitorId()
-                    if (visitorId != null) {
-                        createOrGetVisitorSuspend(visitorId)
-                    } else {
-                        createOrGetVisitorSuspend("")
-                    }
-                }
-            } catch (e: Exception) {
-                println("Error fetching current user: ${e.message}")
-                
-                // Handle network errors by creating a visitor
-                clearToken()
-                
-                val visitorId = getVisitorId()
-                if (visitorId != null) {
-                    createOrGetVisitorSuspend(visitorId)
-                } else {
-                    createOrGetVisitorSuspend("")
-                }
-            }
-        }
-    }
-    
-    /**
-     * Suspend version of createOrGetVisitor for internal use
-     */
-    private suspend fun createOrGetVisitorSuspend(visitorId: String): User {
-        val request = VisitorRequest(visitorId)
-        
-        val response = client.post("${ApiConstants.API_BASE_URL}/user/visitor") {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            setBody(request)
-        }
-        
-        // Check if response has a content type
-        if (response.contentType() == null) {
-            // Handle missing content type by parsing the response body as text first
-            val responseText = response.bodyAsText()
-            try {
-                // Try to parse the text as JSON with a properly configured Json instance
-                val json = Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                }
-                val authResponse = json.decodeFromString<AuthResponse>(responseText)
                 
                 // Save token and visitor ID
                 saveToken(authResponse.token)
                 saveVisitorId(authResponse.user.visitorId)
                 
                 return authResponse.user
-            } catch (e: Exception) {
-                println("Error parsing response text: ${e.message}")
-                throw e
             }
-        } else {
-            // Normal flow when content type is present
-            val authResponse: AuthResponse = response.body()
+        } catch (e: Exception) {
+            println("Error creating visitor: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Upgrades a visitor to a player
+     */
+    suspend fun upgradeToPlayer(username: String, password: String, yearOfBirth: Int? = null, sex: String? = null): User {
+        val request = UpgradeRequest(username, password, yearOfBirth, sex)
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/upgrade") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(getToken() ?: "")
+                setBody(request)
+            }
             
-            // Save token and visitor ID
-            saveToken(authResponse.token)
-            saveVisitorId(authResponse.user.visitorId)
+            if (response.status.isSuccess()) {
+                val authResponse: AuthResponse = response.body()
+                
+                // Save new token
+                saveToken(authResponse.token)
+                
+                return authResponse.user
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            println("Error upgrading to player: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Logs in a user with username and password
+     */
+    suspend fun login(username: String, password: String): User {
+        val request = LoginRequest(username, password)
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/login") {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
             
-            return authResponse.user
+            if (response.status.isSuccess()) {
+                val authResponse: AuthResponse = response.body()
+                
+                // Save token
+                saveToken(authResponse.token)
+                
+                return authResponse.user
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            println("Error logging in: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Fetches the current user
+     */
+    suspend fun fetchCurrentUser(): User {
+        try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/user/me") {
+                bearerAuth(getToken() ?: "")
+            }
+            
+            if (response.status.isSuccess()) {
+                return response.body<User>()
+            } else {
+                // Token is invalid, clear it
+                clearToken()
+                throw Error("Invalid token")
+            }
+        } catch (e: Exception) {
+            println("Error fetching current user: ${e.message}")
+            // Clear token on error
+            clearToken()
+            throw e
         }
     }
     
