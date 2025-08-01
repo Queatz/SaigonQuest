@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import lib.marked
+import lib.marked.parse
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
 
@@ -34,9 +35,13 @@ fun Md(content: String) {
             }
         }
 
-        marked.parse(
+        // Create options object with renderer
+        val options: dynamic = object {}
+        options.renderer = renderer
+        
+        parse(
             text = content.replace("\n", "  \n"),
-            options = js("{ renderer: renderer }")
+            options = options
         )
     }
     var element by remember { mutableStateOf<Element?>(null) }

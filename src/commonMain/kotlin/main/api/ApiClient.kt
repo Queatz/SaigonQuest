@@ -22,6 +22,8 @@ object ApiClient {
         prettyPrint = true
         isLenient = true
         ignoreUnknownKeys = true
+        encodeDefaults = true  // Ensure default values are encoded
+        classDiscriminator = "type"  // Use "type" as the discriminator for polymorphic serialization
     }
 
     /**

@@ -3,6 +3,7 @@ package main.components.world
 import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
+import lib.Color4
 import lib.DirectionalLight
 import lib.HemisphericLight
 import lib.PBRMaterial
@@ -39,6 +40,9 @@ class WorldLoader(private val scene: Scene) {
     // Shadow manager for global shadow handling
     private var shadowManager: ShadowManager? = null
     
+    // Occlusion manager for fading objects that obstruct the player's view
+    private var occlusionManager: OcclusionManager? = null
+    
     /**
      * Sets up lighting for the scene.
      * Creates a hemispheric light for ambient lighting and a directional light for shadows.
@@ -74,6 +78,9 @@ class WorldLoader(private val scene: Scene) {
             shadowManager = ShadowManager(scene, light)
             println("[DEBUG] Shadow manager initialized")
         }
+        
+        // Initialize the occlusion manager for fading objects that obstruct the player's view
+        occlusionManager = OcclusionManager(scene)
     }
     
     /**
@@ -93,9 +100,9 @@ class WorldLoader(private val scene: Scene) {
             // Store the world data
             currentWorld = world
             
-            // Connect to WebSocket for real-time updates
-            WebSocketApi.connect(url)
-            
+            // Set the scene background color from the world model
+            setSceneBackgroundColor(world.backgroundColor)
+
             // Determine the file to load
             val worldFile = if (world.file.isNotEmpty()) "${world.file}.glb" else "world.glb"
             
@@ -166,11 +173,11 @@ class WorldLoader(private val scene: Scene) {
                 metallic = 0.3f
                 roughness = 0.6f
                 
-                // Ensure material is fully opaque for proper depth texture rendering
+                // Initialize with default alpha settings
+                // Note: We don't set transparencyMode or alphaMode here
+                // to allow OcclusionManager to configure them properly
                 alpha = 1.0f
                 disableDepthWrite = false  // Enable depth writing
-                transparencyMode = 0       // OPAQUE mode (0)
-                alphaMode = 0              // ALPHA_DISABLE mode (0)
                 
                 // Use the existing material's colors if available
                 val existingMaterial = mesh.material
@@ -183,7 +190,7 @@ class WorldLoader(private val scene: Scene) {
                     println("[DEBUG] Creating new material for ${mesh.name}")
                 }
                 
-                println("[DEBUG] Material settings for ${mesh.name}: alpha=${alpha}, disableDepthWrite=${disableDepthWrite}, transparencyMode=${transparencyMode}, alphaMode=${alphaMode}")
+                println("[DEBUG] Initial material settings for ${mesh.name}: alpha=${alpha}, disableDepthWrite=${disableDepthWrite}")
             }
             
             // Assign the PBR material to the mesh
@@ -204,6 +211,11 @@ class WorldLoader(private val scene: Scene) {
                 println("[DEBUG] Configured mesh for shadows: ${mesh.name} (both caster and receiver)")
             } ?: run {
                 println("[ERROR] Shadow manager is null! Cannot configure shadows for ${mesh.name}")
+            }
+            
+            // Register mesh with occlusion manager for fading when it obstructs the player's view
+            occlusionManager?.let { manager ->
+                manager.registerMesh(mesh)
             }
         }
         
@@ -270,13 +282,49 @@ class WorldLoader(private val scene: Scene) {
     }
     
     /**
+     * Gets the occlusion manager for fading objects that obstruct the player's view.
+     * 
+     * @return The occlusion manager, or null if not initialized
+     */
+    fun getOcclusionManager(): OcclusionManager? {
+        return occlusionManager
+    }
+    
+    /**
+     * Sets the scene background color from a hex color string.
+     * 
+     * @param hexColor The hex color string (e.g., "#FF0000" for red)
+     */
+    private fun setSceneBackgroundColor(hexColor: String) {
+        try {
+            // Convert hex color string to Color3
+            val color3 = Color3.FromHexString(hexColor)
+            
+            // Convert Color3 to Color4 with alpha=1 (fully opaque)
+            val color4 = color3.toColor4()
+            color4.a = 1.0f
+            
+            // Set the scene's clear color
+            scene.clearColor = color4
+            
+            println("[DEBUG] Set scene background color to $hexColor")
+        } catch (e: Exception) {
+            println("[ERROR] Failed to set background color: ${e.message}")
+        }
+    }
+    
+    /**
      * Disposes of the world loader resources.
-     * Cleans up lights, shadow manager, and disconnects from WebSocket.
+     * Cleans up lights, shadow manager, occlusion manager, and disconnects from WebSocket.
      */
     fun dispose() {
         // Dispose of shadow manager
         shadowManager?.dispose()
         shadowManager = null
+        
+        // Dispose of occlusion manager
+        occlusionManager?.dispose()
+        occlusionManager = null
         
         // Set lights to null to allow garbage collection
         hemisphericLight = null

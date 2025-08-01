@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import main.theme.NodeEditorStyles
+import org.w3c.dom.HTMLElement
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.top
@@ -42,7 +44,7 @@ fun NodeElement(
     onPortDragMove: (Float, Float) -> Unit = { _, _ -> },
     onPortDragEnd: (Float, Float) -> Unit = { _, _ -> },
     onDrag: (String, Float, Float) -> Unit,
-    zoomLevel: Float = 1f
+    controller: NodeEditorController
 ) {
     // Use the NodeData properties
     val type = node.type
@@ -63,9 +65,9 @@ fun NodeElement(
     val handleGlobalMouseMove = remember {
         { event: Event ->
             if (isDragging && event is MouseEvent) {
-                // Calculate delta and adjust for zoom level
-                val deltaX = (event.clientX.toFloat() - dragStartX) / zoomLevel
-                val deltaY = (event.clientY.toFloat() - dragStartY) / zoomLevel
+                // Calculate delta (no zoom adjustment needed)
+                val deltaX = event.clientX.toFloat() - dragStartX
+                val deltaY = event.clientY.toFloat() - dragStartY
                 onDrag(id, nodeStartX + deltaX, nodeStartY + deltaY)
                 event.stopPropagation()
                 event.preventDefault()
@@ -105,6 +107,26 @@ fun NodeElement(
         "action" -> NodeEditorStyles.actionNodeColor
         "input" -> NodeEditorStyles.inputNodeColor
         else -> NodeEditorStyles.defaultNodeColor
+    }
+    
+    // Effect to register the node element with the controller
+    DisposableEffect(id) {
+        // Use a small delay to ensure the DOM element is rendered
+        val timeoutId = window.setTimeout({
+            // Find the node element by its data attribute
+            val nodeElement = document.querySelector("[data-node-id='$id']") as? HTMLElement
+            if (nodeElement != null) {
+                // Register the node element with the controller
+                controller.registerNodeElement(id, nodeElement)
+            }
+        }, 100) // 100ms delay
+        
+        onDispose {
+            // Unregister the node element when the component is disposed
+            controller.unregisterNodeElement(id)
+            // Clear the timeout
+            window.clearTimeout(timeoutId)
+        }
     }
     
     Div(

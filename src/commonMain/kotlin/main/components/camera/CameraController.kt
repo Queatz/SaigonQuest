@@ -1,15 +1,17 @@
 package main.components.camera
 
 import lib.ArcRotateCamera
+import lib.Color4
 import lib.CreateSphereOptions
 import lib.DefaultRenderingPipeline
 import lib.DepthOfFieldEffectBlurLevel
+import lib.ImageProcessingPostProcess
 import lib.Mesh
 import lib.MeshBuilder
 import lib.SSAO2RenderingPipeline
 import lib.Scene
-import lib.StandardMaterial
 import lib.Vector3
+import lib.VignetteEffect
 import kotlin.math.PI
 
 /**
@@ -32,6 +34,9 @@ class CameraController(private val scene: Scene) {
     
     // Rendering pipeline for post-processing effects
     private val pipeline: DefaultRenderingPipeline
+    
+    // Vignette post-process effect
+    private var vignettePostProcess: ImageProcessingPostProcess
     
     // Animation properties
     private var targetPosition: Vector3? = null
@@ -76,57 +81,77 @@ class CameraController(private val scene: Scene) {
             scene = scene,
             cameras = arrayOf(camera)
         )
+
+        val fancy = false
         
         pipeline.apply {
-            // Enable bloom for better lighting effects
-            bloomEnabled = true
-            bloomThreshold = 0.5f
-            bloomWeight = 0.5f
-            bloomKernel = 64f
-        
-            // Enable depth of field
-            depthOfFieldEnabled = true
-            depthOfField.focalLength = 120f
-            depthOfField.fStop = 1.4f
-            depthOfField.focusDistance = 10_000f // millimeters
-            depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium // Set blur level to Low for better quality
-        
-            // Enable grain effect for subtle film grain appearance
-            grainEnabled = true
-            grain.intensity = 0.1f  // Set grain intensity to 0.05
-        
-            // Enable image processing with enhanced contrast and exposure
-            imageProcessingEnabled = true
-            imageProcessing.contrast = 1.25f
-            imageProcessing.exposure = 1.25f
-        
-            // Enable tone mapping
-            toneMappingEnabled = true
+            if (fancy) {
+                // Enable bloom for better lighting effects
+                bloomEnabled = true
+                bloomThreshold = 0.5f
+                bloomWeight = 0.5f
+                bloomKernel = 64f
+
+                // Enable depth of field
+                depthOfFieldEnabled = true
+                depthOfField.focalLength = 120f
+                depthOfField.fStop = 1.4f
+                depthOfField.focusDistance = 10_000f // millimeters
+                depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium // Set blur level to Low for better quality
+
+                // Enable grain effect for subtle film grain appearance
+                grainEnabled = true
+                grain.intensity = 0.1f  // Set grain intensity to 0.05
+
+                // Enable image processing with enhanced contrast and exposure
+                imageProcessingEnabled = true
+                imageProcessing.contrast = 1.25f
+                imageProcessing.exposure = 1.25f
+
+                // Enable tone mapping
+                toneMappingEnabled = true
+            }
 
             println("[DEBUG] Rendering pipeline configured with depth texture, bloom, DOF, image processing, and tone mapping")
         }
         
-        // Set up SSAO (Screen Space Ambient Occlusion) for subtle ambient occlusion
-        // Create SSAO pipeline with subtle settings
-        val ssao = SSAO2RenderingPipeline(
-            name = "ssao",
-            scene = scene,
-            ratio = 1.0, // Full resolution
-            cameras = arrayOf(camera)
-        )
+        // Create a separate ImageProcessingPostProcess for vignette effect
+        // This approach allows adding vignette without modifying the DefaultRenderingPipeline
+        vignettePostProcess = ImageProcessingPostProcess("vignette", 1.0f, camera)
+        
+        // Enable and configure the vignette effect directly on the post process
+        vignettePostProcess.vignetteEnabled = true
+        vignettePostProcess.vignetteStretch = 2.5f
+        vignettePostProcess.vignetteColor = Color4(0f, 0f, 0f, 0f)
+        
+        // Set initial vignette weight based on current radius
+        updateVignetteWeight()
+        
+        println("[DEBUG] Vignette effect added using ImageProcessingPostProcess")
 
-        // Configure SSAO for subtle effect
-        ssao.apply {
-            // Fine-tune SSAO settings
-            radius = 2f  // Small radius for subtle effect (default is 2.0)
-            totalStrength = 0.25f  // Subtle strength (default is 1.0)
-            samples = 8  // Moderate sample count for quality/performance balance (default is 8)
-            maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
-            minZAspect = 0.2f  // Default value
-            base = 0f  // Default value
-            epsilon = 0.02f  // Default value
+        if (fancy) {
+            // Set up SSAO (Screen Space Ambient Occlusion) for subtle ambient occlusion
+            // Create SSAO pipeline with subtle settings
+            val ssao = SSAO2RenderingPipeline(
+                name = "ssao",
+                scene = scene,
+                ratio = 1.0, // Full resolution
+                cameras = arrayOf(camera)
+            )
 
-            println("[DEBUG] SSAO pipeline configured with subtle settings")
+            // Configure SSAO for subtle effect
+            ssao.apply {
+                // Fine-tune SSAO settings
+                radius = 2f  // Small radius for subtle effect (default is 2.0)
+                totalStrength = 0.25f  // Subtle strength (default is 1.0)
+                samples = 8  // Moderate sample count for quality/performance balance (default is 8)
+                maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
+                minZAspect = 0.2f  // Default value
+                base = 0f  // Default value
+                epsilon = 0.02f  // Default value
+
+                println("[DEBUG] SSAO pipeline configured with subtle settings")
+            }
         }
         
         // Create the camera target (will be positioned later when player is created)
@@ -170,6 +195,7 @@ class CameraController(private val scene: Scene) {
      */
     fun updateAnimation(): Boolean {
         updateDepthOfFieldFocus()
+        updateVignetteWeight()
 
         if (!isAnimating || targetPosition == null || cameraTarget == null) {
             return false
@@ -249,6 +275,25 @@ class CameraController(private val scene: Scene) {
     }
     
     /**
+     * Updates the vignette weight based on the camera radius.
+     * - When radius=4 (min), vignetteWeight = 8
+     * - When radius=12 (max), vignetteWeight = 2
+     */
+    private fun updateVignetteWeight() {
+        // Constants for the linear interpolation
+        val minRadius = camera.lowerRadiusLimit
+        val maxRadius = camera.upperRadiusLimit
+        val maxWeight = 8f  // Weight when radius is at minimum
+        val minWeight = 2f  // Weight when radius is at maximum
+        
+        // Calculate the vignette weight using linear interpolation
+        val weight = maxWeight - (camera.radius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
+        
+        // Update the vignette weight
+        vignettePostProcess.vignetteWeight = weight
+    }
+    
+    /**
      * Gets the camera.
      * 
      * @return The camera
@@ -275,6 +320,32 @@ class CameraController(private val scene: Scene) {
     fun setInitialTargetPosition(position: Vector3) {
         cameraTarget?.position = position
         updateCameraTargetImmediate(position)
+    }
+    
+    /**
+     * Focuses the camera on a specific position in the scene.
+     * This animates the camera movement to the target position.
+     * 
+     * @param position The position to focus on
+     */
+    fun focusOnPosition(position: Vector3) {
+        // Ensure the camera target exists
+        if (cameraTarget == null) {
+            createCameraTarget()
+        }
+        
+        // Reset animation state to ensure consistent behavior when called multiple times
+        isAnimating = false
+        targetPosition = null
+        
+        // Update the camera target with animation
+        updateCameraTarget(position)
+        
+        // Set a fixed radius for consistent zoom level when focusing on objects
+        // This ensures the camera is always at the same distance when locating objects
+        camera.radius = 10.0f // Fixed distance that works well for viewing objects
+        
+        console.log("Camera focused on position (${position.x}, ${position.y}, ${position.z})")
     }
     
     /**

@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import web.cssom.opacity
 
 /**
  * A component that displays the world title and subtitle at the center top of the UI.
@@ -89,6 +90,7 @@ fun WorldTitle(
                     margin(0.px)
                     color(Color.white)
                     property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
+                    opacity(.5)
                 }
             }
         ) {

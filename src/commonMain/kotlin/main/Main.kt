@@ -4,11 +4,16 @@ import app.softwork.routingcompose.BrowserRouter
 import app.softwork.routingcompose.Router
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
+import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
 import main.theme.NodeEditorStyles
 
 fun main() {
+    // Initialize WebSocketConnectionManager
+    WebSocketConnectionManager.initialize()
+    console.log("WebSocketConnectionManager initialized")
+    
     renderComposableInBody {
         Style(Styles)
         Style(NodeEditorStyles)

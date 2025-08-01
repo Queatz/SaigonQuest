@@ -7,6 +7,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import main.api.ObjectApi
 import main.theme.Styles
 import models.Object
@@ -284,7 +288,11 @@ fun ObjectEditorDialog(
                             // Show a preview of the logic data
                             Text("Click to edit object logic (${
                                 try {
-                                    val nodeCount = js("Object.keys(JSON.parse(objectModel.data).nodes || {}).length")
+                                    // Parse the JSON data using kotlinx.serialization
+                                    val json = Json { ignoreUnknownKeys = true }
+                                    val jsonObject = json.parseToJsonElement(objectModel.data).jsonObject
+                                    val nodes = jsonObject["nodes"]?.jsonObject ?: JsonObject(emptyMap())
+                                    val nodeCount = nodes.size
                                     "$nodeCount nodes configured"
                                 } catch (e: Exception) {
                                     "Logic data available"

@@ -13,6 +13,7 @@ import main.api.ChatApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import models.ChatMessage
+import models.WebSocketAction
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -74,10 +75,15 @@ fun ChatMessages(worldId: String) {
     // Set up WebSocket listener for new messages
     DisposableEffect(worldId) {
         // Add listener for chat messages
-        WebSocketApi.addListener("receiveChatMessage") { message ->
+        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
-                val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                messages = (messages + chatMessage).sortedBy { msg -> msg.timestamp }
+                // Check if the message is valid
+                if (message.isValid()) {
+                    val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    messages = (messages + chatMessage).sortedBy { msg -> msg.timestamp }
+                } else {
+                    console.error("Invalid chat message received: ${message.action}, ${message.data}")
+                }
             } catch (e: Exception) {
                 console.error("Error parsing chat message", e)
             }
@@ -85,7 +91,7 @@ fun ChatMessages(worldId: String) {
         
         // Remove listener when component is disposed
         onDispose {
-            WebSocketApi.removeAllListeners("receiveChatMessage")
+            WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
         }
     }
     
@@ -272,11 +278,22 @@ private fun formatTimestamp(timestamp: Long): String {
     
     val messageDate = Date(date.getFullYear(), date.getMonth(), date.getDate())
     
-    val timeString = date.toLocaleTimeString(arrayOf("hour", "minute"))
+    // Format time as HH:MM using standard JavaScript methods
+    val hours = date.getHours().toString().padStart(2, '0')
+    val minutes = date.getMinutes().toString().padStart(2, '0')
+    val timeString = "$hours:$minutes"
     
     return when {
         messageDate.getTime() == today.getTime() -> "Today, $timeString"
         messageDate.getTime() == yesterday.getTime() -> "Yesterday, $timeString"
-        else -> "${date.toLocaleDateString(arrayOf("month", "day"))}, $timeString"
+        else -> {
+            // Format date as MMM DD using standard JavaScript methods
+            val month = when(date.getMonth()) {
+                0 -> "Jan"; 1 -> "Feb"; 2 -> "Mar"; 3 -> "Apr"; 4 -> "May"; 5 -> "Jun"
+                6 -> "Jul"; 7 -> "Aug"; 8 -> "Sep"; 9 -> "Oct"; 10 -> "Nov"; else -> "Dec"
+            }
+            val day = date.getDate().toString()
+            "$month $day, $timeString"
+        }
     }
 }

@@ -5,13 +5,14 @@ import androidx.compose.runtime.remember
 import kotlinx.browser.window
 import lib.BinaryUtils
 import lib.Qr
+import lib.Vector3
 import main.theme.Styles
+import main.components.generatePrintImage
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.StyleScope
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
@@ -36,11 +37,44 @@ import org.jetbrains.compose.web.dom.Text
 
 /**
  * A dialog that displays a QR code of the current location.
+ * 
+ * @param onClose Callback when the dialog is closed
+ * @param onPrint Callback when the print button is clicked, with the generated image URL
+ * @param playerPosition The current position of the player in the world (optional)
+ * @param worldTitle The title of the current world
+ * @param worldSubtitle The subtitle of the current world
+ * @param worldDescription The description of the current world (optional)
  */
 @Composable
-fun QrDialog(onClose: () -> Unit) {
-    // Remember the current URL
-    val currentUrl = remember { window.location.href }
+fun QrDialog(
+    onClose: () -> Unit, 
+    onPrint: (String) -> Unit,
+    playerPosition: Vector3? = null,
+    worldTitle: String = "Saigon.Quest",
+    worldSubtitle: String = "Virtual World",
+    worldDescription: String = ""
+) {
+    // Get the current URL and append player position if available
+    val currentUrl = remember(playerPosition) { 
+        val baseUrl = window.location.href
+        
+        // If player position is provided, append it to the URL
+        if (playerPosition != null) {
+            // Truncate coordinates to 2 decimal places
+            val x = (playerPosition.x * 100).toInt() / 100.0
+            val y = (playerPosition.y * 100).toInt() / 100.0
+            val z = (playerPosition.z * 100).toInt() / 100.0
+            
+            // Log for testing
+            console.log("Adding player position to QR URL: $x,$y,$z")
+            
+            // Append position to URL
+            "$baseUrl?at=$x,$y,$z"
+        } else {
+            console.log("No player position available for QR URL")
+            baseUrl
+        }
+    }
     
     // Generate QR code as data URL
     val qrDataUrl = remember(currentUrl) {
@@ -96,23 +130,63 @@ fun QrDialog(onClose: () -> Unit) {
                         }
                     }
                 ) {
-                    Text("Share Your In-Game Location")
+                    Text("Share this world")
                 }
                 
-                // Close button
-                Button(
+                // Button container for Print and Close buttons
+                Div(
                     attrs = {
                         style {
-                            backgroundColor(Color.transparent)
-                            property("border", "0")
-                            color(Color.white)
-                            cursor("pointer")
-                            fontSize(20.px)
+                            display(DisplayStyle.Flex)
+                            alignItems(AlignItems.Center)
+                            property("gap", "8px")
                         }
-                        onClick { onClose() }
                     }
                 ) {
-                    Text("×")
+                    // Print button
+                    Button(
+                        attrs = {
+                            style {
+                                backgroundColor(Color.transparent)
+                                property("border", "0")
+                                color(Color.white)
+                                cursor("pointer")
+                                fontSize(16.px)
+                                padding(4.px, 8.px)
+                            }
+                            onClick { 
+                                // Generate the print image and show dialog
+                                generatePrintImage(
+                                    url = currentUrl,
+                                    worldTitle = worldTitle,
+                                    worldSubtitle = worldSubtitle,
+                                    worldDescription = worldDescription,
+                                    onComplete = { imageUrl ->
+                                        onPrint(imageUrl)
+                                        onClose() // Close the QR dialog when print is clicked
+                                    }
+                                )
+                            }
+                        }
+                    ) {
+                        Text("🖨️ Print")
+                    }
+                    
+                    // Close button
+                    Button(
+                        attrs = {
+                            style {
+                                backgroundColor(Color.transparent)
+                                property("border", "0")
+                                color(Color.white)
+                                cursor("pointer")
+                                fontSize(20.px)
+                            }
+                            onClick { onClose() }
+                        }
+                    ) {
+                        Text("×")
+                    }
                 }
             }
             
@@ -144,15 +218,15 @@ fun QrDialog(onClose: () -> Unit) {
                         }
                     }
                 ) {
-                    // Display QR code as image with pixelized rendering
-                    org.jetbrains.compose.web.dom.Img(
+                    // Display QR code as image with pixelated rendering
+                    Img(
                         src = qrDataUrl,
                         attrs = {
                             style {
                                 width(100.percent)
                                 height(100.percent)
                                 property("object-fit", "contain")
-                                // Add pixelized image rendering
+                                // Add pixelated image rendering (linear interpolation disabled)
                                 property("image-rendering", "pixelated")
                                 property("image-rendering", "-moz-crisp-edges")
                                 property("image-rendering", "crisp-edges")

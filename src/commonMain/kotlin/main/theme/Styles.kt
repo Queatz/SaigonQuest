@@ -32,6 +32,7 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.rgba
@@ -39,6 +40,68 @@ import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.cursor
 
 object Styles : StyleSheet() {
+    // Loading screen styles
+    val loadingScreenContainer by style {
+        position(Position.Absolute)
+        top(0.px)
+        left(0.px)
+        width(100.percent)
+        height(100.vh)
+        backgroundColor(Color.black)
+        color(Color.white)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        property("z-index", "10")
+        padding(16.px)
+        property("text-align", "center")
+        property("overflow", "hidden")
+        property("box-sizing", "border-box")
+    }
+    
+    val loadingScreenButtonContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Row)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        property("gap", "16px")
+        property("margin-top", "24px")
+    }
+    
+    val loadingScreenPrimaryButton by style {
+        padding(12.px, 24.px)
+        backgroundColor(rgba(0, 120, 255, 0.7))
+        color(Color.white)
+        property("border", "0")
+        property("border-radius", "4px")
+        cursor("pointer")
+        fontSize(16.px)
+    }
+    
+    val loadingScreenSecondaryButton by style {
+        padding(12.px, 24.px)
+        backgroundColor(rgba(255, 255, 255, 0.2))
+        color(Color.white)
+        property("border", "0")
+        property("border-radius", "4px")
+        cursor("pointer")
+        fontSize(16.px)
+    }
+    
+    // Canvas styles
+    val canvasBase by style {
+        width(100.percent)
+        height(100.vh)
+        display(DisplayStyle.Block)
+    }
+    
+    val canvasLowGraphics by style {
+        property("image-rendering", "pixelated")
+        property("image-rendering", "-moz-crisp-edges")
+        property("image-rendering", "crisp-edges")
+    }
+    
     // Common styles for panels and dialogs
     val overlayBase by style {
         position(Position.Fixed)
@@ -192,6 +255,11 @@ object Styles : StyleSheet() {
         property("flex-shrink", "0")
         // Make button interactive
         property("pointer-events", "auto")
+
+        dark(self) {
+            backgroundColor(Color.black)
+            color(Color.white)
+        }
     }
     
     val badgeBase by style {
@@ -441,6 +509,76 @@ object Styles : StyleSheet() {
     val objectEditorDialogErrorMessage by style {
         color(Color.red)
         margin(0.px)
+    }
+    
+    // Toggle Switch styles
+    val toggleSwitchContainer by style {
+        display(DisplayStyle.InlineBlock)
+        position(Position.Relative)
+        width(40.px)
+        height(24.px)
+        cursor("pointer")
+    }
+    
+    val toggleSwitchInput by style {
+        // Hide the default checkbox but keep it accessible
+        property("opacity", "0")
+        width(0.px)
+        height(0.px)
+        position(Position.Absolute)
+    }
+    
+    val toggleSwitchTrack by style {
+        position(Position.Absolute)
+        cursor("pointer")
+        property("top", "0")
+        property("left", "0")
+        property("right", "0")
+        property("bottom", "0")
+        property("border-radius", "12px")
+        property("transition", "background-color 0.3s")
+    }
+    
+    val toggleSwitchKnob by style {
+        position(Position.Absolute)
+        property("content", "''")
+        height(18.px)
+        width(18.px)
+        property("top", "3px")
+        backgroundColor(Theme.colors.onPrimary)
+        property("border-radius", "50%")
+        property("transition", "left 0.3s")
+    }
+    
+    // Language Switcher styles
+    val languageSwitcherContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Row)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.SpaceBetween)
+        borderRadius(18.px)
+        backgroundColor(Theme.colors.surfaceVariant)
+        property("overflow", "hidden")
+        cursor("pointer")
+    }
+    
+    val languageSwitcherOption by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        padding(8.px, 16.px)  // Increased padding for better appearance
+        cursor("pointer")
+        property("transition", "background-color 0.3s, color 0.3s")
+    }
+    
+    val languageSwitcherOptionActive by style {
+        backgroundColor(Theme.colors.primary)
+        color(Theme.colors.onPrimary)
+    }
+    
+    val languageSwitcherOptionInactive by style {
+        backgroundColor(Color.transparent)
+        color(Theme.colors.onSurfaceVariant)
     }
 
     init {

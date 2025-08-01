@@ -1,13 +1,11 @@
 package main.components.nodeeditor
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import kotlinx.browser.document
 import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
-import main.utils.getElementFromPoint
-import main.utils.getAttributeSafe
+import org.w3c.dom.HTMLElement
 
 /**
  * Controller for the Node Editor that centralizes state management and operations.
@@ -15,10 +13,14 @@ import main.utils.getAttributeSafe
  *
  * @param initialNodes Initial map of nodes
  * @param initialConnections Initial list of connections
+ * @param canvasElement Reference to the canvas element (optional, can be set later)
+ * @param wrapperElement Reference to the wrapper element (optional, can be set later)
  */
 class NodeEditorController(
     initialNodes: Map<String, NodeData> = emptyMap(),
-    initialConnections: List<Connection> = emptyList()
+    initialConnections: List<Connection> = emptyList(),
+    canvasElement: HTMLElement? = null,
+    wrapperElement: HTMLElement? = null
 ) {
     // Node state
     var nodes by mutableStateOf(initialNodes)
@@ -30,66 +32,88 @@ class NodeEditorController(
     var selectedConnection by mutableStateOf<Connection?>(null)
         private set
     
-    // Canvas state
-    var zoomLevel by mutableStateOf(1f)
+    // Element references
+    var canvasElement: HTMLElement? = canvasElement
         private set
-    var panX by mutableStateOf(0f)
+    var wrapperElement: HTMLElement? = wrapperElement
         private set
-    var panY by mutableStateOf(0f)
-        private set
-    var isDraggingCanvas by mutableStateOf(false)
-        private set
-    var isClickingEmptyArea by mutableStateOf(false)
-        private set
-    var dragStartX by mutableStateOf(0f)
-        private set
-    var dragStartY by mutableStateOf(0f)
-        private set
+    private val nodeElements = mutableMapOf<String, HTMLElement>()
     
-    // Connection state
-    var connectionStartNode by mutableStateOf<String?>(null)
-        private set
-    var connectionStartPort by mutableStateOf<PortData?>(null)
-        private set
-    var connectionStartX by mutableStateOf(0f)
-        private set
-    var connectionStartY by mutableStateOf(0f)
-        private set
-    var connectionCurrentX by mutableStateOf(0f)
-        private set
-    var connectionCurrentY by mutableStateOf(0f)
-        private set
-    var isDraggingConnection by mutableStateOf(false)
-        private set
-    var potentialTargetPort by mutableStateOf<Pair<String, String>?>(null) // (nodeId, portId)
-        private set
+    // Connection state properties delegated to ConnectionManager
+    val connectionStartNode get() = connectionManager.connectionStartNode
+    val connectionStartPort get() = connectionManager.connectionStartPort
+    val connectionStartX get() = connectionManager.connectionStartX
+    val connectionStartY get() = connectionManager.connectionStartY
+    val connectionCurrentX get() = connectionManager.connectionCurrentX
+    val connectionCurrentY get() = connectionManager.connectionCurrentY
+    val isDraggingConnection get() = connectionManager.isDraggingConnection
+    val isDraggingConnectionC @Composable get() = connectionManager.isDraggingConnection
+    val potentialTargetPort get() = connectionManager.potentialTargetPort
     
     // Command history for undo/redo
     private val history = NodeEditorHistory()
     
+    // Connection manager for handling connection operations
+    private val connectionManager = ConnectionManager(history)
+    
+    /**
+     * Sets the canvas element reference.
+     *
+     * @param element The canvas element
+     */
+    fun setCanvasElement(element: HTMLElement) {
+        canvasElement = element
+    }
+    
+    /**
+     * Sets the wrapper element reference.
+     *
+     * @param element The wrapper element
+     */
+    fun setWrapperElement(element: HTMLElement) {
+        wrapperElement = element
+    }
+    
+    /**
+     * Registers a node element reference.
+     *
+     * @param nodeId The ID of the node
+     * @param element The node element
+     */
+    fun registerNodeElement(nodeId: String, element: HTMLElement) {
+        nodeElements[nodeId] = element
+    }
+    
+    /**
+     * Unregisters a node element reference.
+     *
+     * @param nodeId The ID of the node
+     */
+    fun unregisterNodeElement(nodeId: String) {
+        nodeElements.remove(nodeId)
+    }
+    
     /**
      * Converts screen coordinates to canvas coordinates.
      * This is used when handling mouse events to convert the mouse position to canvas coordinates.
+     * It's also used to convert DOM element positions (which are in screen space) to canvas coordinates.
      *
      * @param screenX X coordinate in screen space
      * @param screenY Y coordinate in screen space
+     * @param isElementPosition Whether the coordinates are from a DOM element's getBoundingClientRect()
      * @return Pair of X and Y coordinates in canvas space
      */
-    fun screenToCanvasCoordinates(screenX: Float, screenY: Float): Pair<Float, Float> {
-        // Get the canvas element's bounding rect
-        val canvasElement = getDocument().getElementById("nodeEditorCanvas")
+    fun screenToCanvasCoordinates(screenX: Float, screenY: Float, isElementPosition: Boolean = false): Pair<Float, Float> {
+        // Use the stored canvas element reference
         val rect = canvasElement?.getBoundingClientRectSafe()
-        
+    
         if (rect != null) {
             // Calculate the position relative to the canvas
             val relativeX = screenX - rect.left.toFloat()
             val relativeY = screenY - rect.top.toFloat()
-            
-            // Apply inverse of the zoom and pan transformations
-            val canvasX = relativeX / zoomLevel - panX
-            val canvasY = relativeY / zoomLevel - panY
-            
-            return Pair(canvasX, canvasY)
+        
+            // Simple conversion without zoom or pan
+            return Pair(relativeX, relativeY)
         } else {
             // Fallback if we can't get the canvas rect
             return Pair(screenX, screenY)
@@ -99,26 +123,43 @@ class NodeEditorController(
     /**
      * Converts canvas coordinates to screen coordinates.
      * This is used when rendering elements to convert canvas positions to screen positions.
+     * It's the inverse operation of screenToCanvasCoordinates.
      *
      * @param canvasX X coordinate in canvas space
      * @param canvasY Y coordinate in canvas space
+     * @param forElementPositioning Whether the result will be used for positioning DOM elements
      * @return Pair of X and Y coordinates in screen space
      */
-    fun canvasToScreenCoordinates(canvasX: Float, canvasY: Float): Pair<Float, Float> {
-        // Get the canvas element's bounding rect
-        val canvasElement = getDocument().getElementById("nodeEditorCanvas")
+    fun canvasToScreenCoordinates(canvasX: Float, canvasY: Float, forElementPositioning: Boolean = false): Pair<Float, Float> {
+        // Use the stored canvas element reference
         val rect = canvasElement?.getBoundingClientRectSafe()
-        
+    
         if (rect != null) {
-            // Apply zoom and pan transformations
-            val relativeX = (canvasX + panX) * zoomLevel
-            val relativeY = (canvasY + panY) * zoomLevel
+            // Simple conversion without zoom or pan
+            val screenX = canvasX + rect.left.toFloat()
+            val screenY = canvasY + rect.top.toFloat()
+        
+            // For element positioning, we might need to adjust the coordinates
+            // to account for the fact that the element will be placed inside
+            // an already-transformed container
+            if (forElementPositioning) {
+                // If the coordinates will be used for positioning elements inside the connection layer,
+                // we need to adjust them relative to the canvas wrapper
+                val wrapperRect = wrapperElement?.getBoundingClientRectSafe()
             
-            // Calculate the position relative to the screen
-            val screenX = relativeX + rect.left.toFloat()
-            val screenY = relativeY + rect.top.toFloat()
+                if (wrapperRect != null) {
+                    // Adjust coordinates relative to the canvas wrapper
+                    val wrapperX = screenX - wrapperRect.left.toFloat()
+                    val wrapperY = screenY - wrapperRect.top.toFloat()
+                    return Pair(wrapperX, wrapperY)
+                }
             
-            return Pair(screenX, screenY)
+                // Fallback to screen coordinates if wrapper rect is not available
+                return Pair(screenX, screenY)
+            } else {
+                // For normal screen coordinates, return as is
+                return Pair(screenX, screenY)
+            }
         } else {
             // Fallback if we can't get the canvas rect
             return Pair(canvasX, canvasY)
@@ -149,6 +190,12 @@ class NodeEditorController(
         // Select the new node
         selectedNode = id
         
+        // Add a small delay before updating canvas size to allow the DOM to render the node
+        kotlinx.browser.window.setTimeout({
+            // Update canvas size to accommodate the new node
+            updateCanvasSize()
+        }, 10) // 10ms delay as requested
+        
         return id
     }
     
@@ -169,6 +216,9 @@ class NodeEditorController(
         // Update the nodes and connections
         nodes = result.first
         connections = result.second
+        
+        // Update canvas size after deleting the node
+        updateCanvasSize()
     }
     
     /**
@@ -194,6 +244,9 @@ class NodeEditorController(
                 
                 // Update the nodes map
                 nodes = updatedNodes
+                
+                // Update canvas size to accommodate the moved node
+                updateCanvasSize()
             }
         }
     }
@@ -211,6 +264,12 @@ class NodeEditorController(
         
         // Update the nodes map
         nodes = updatedNodes
+        
+        // If the position changed, update canvas size
+        val oldNode = nodes[nodeId]
+        if (oldNode != null && (oldNode.x != updatedNode.x || oldNode.y != updatedNode.y)) {
+            updateCanvasSize()
+        }
     }
     
     /**
@@ -248,19 +307,8 @@ class NodeEditorController(
      * @param portY The y position of the port in screen coordinates
      */
     fun startConnection(nodeId: String, port: PortData, portX: Float, portY: Float) {
-        connectionStartNode = nodeId
-        connectionStartPort = port
-
-        // Convert the port position from screen coordinates to canvas coordinates
-        val (canvasX, canvasY) = screenToCanvasCoordinates(portX, portY)
-        
-        // Store both the original port position and the current mouse position
-        // in canvas coordinates to ensure proper alignment with the transformed canvas
-        connectionStartX = canvasX
-        connectionStartY = canvasY
-        connectionCurrentX = canvasX
-        connectionCurrentY = canvasY
-        isDraggingConnection = true
+        // Use fixed values for zoom and pan (no zoom, no pan)
+        connectionManager.startConnection(nodeId, port, portX, portY, 1f, 0f, 0f)
     }
     
     /**
@@ -270,101 +318,8 @@ class NodeEditorController(
      * @param screenY The current y position of the mouse in screen coordinates
      */
     fun updateConnectionPreview(screenX: Float, screenY: Float) {
-        // Convert the mouse position from screen coordinates to canvas coordinates
-        val (canvasX, canvasY) = screenToCanvasCoordinates(screenX, screenY)
-        
-        // Update the current connection position with the canvas coordinates
-        // This ensures the connection preview aligns properly with the transformed canvas
-        connectionCurrentX = canvasX
-        connectionCurrentY = canvasY
-
-        // Find if there's a potential target port at the current position
-        // Use the same approach as in handlePortDragEnd but just for detection
-        val searchRadius = 15 // pixels
-        val searchPoints = listOf(
-            Pair(screenX, screenY),                           // Center
-            Pair(screenX - searchRadius, screenY),            // Left
-            Pair(screenX + searchRadius, screenY),            // Right
-            Pair(screenX, screenY - searchRadius),            // Top
-            Pair(screenX, screenY + searchRadius),            // Bottom
-            Pair(screenX - searchRadius, screenY - searchRadius), // Top-left
-            Pair(screenX + searchRadius, screenY - searchRadius), // Top-right
-            Pair(screenX - searchRadius, screenY + searchRadius), // Bottom-left
-            Pair(screenX + searchRadius, screenY + searchRadius)  // Bottom-right
-        )
-        
-        var portElement: org.w3c.dom.Element? = null
-        
-        // Try each point until we find a port element
-        for ((pointX, pointY) in searchPoints) {
-            // Get the element at this point
-            val element = getDocument().getElementFromPoint(pointX, pointY)
-            if (element == null) continue
-            
-            // Check if the element is a port
-            var currentElement = element
-            var attempts = 0
-            
-            // Try to find a port element by checking the current element and its parents
-            while (currentElement != null && attempts < 5) {
-                val portType = currentElement.getAttributeSafe("data-port-type")
-                if (portType != null) {
-                    // Found a port element
-                    portElement = currentElement
-                    break
-                }
-                
-                // Check if any of the children are port elements
-                val children = currentElement.children
-                var foundInChildren = false
-                for (i in 0 until children.length) {
-                    val child = children.item(i)
-                    if (child != null && child is org.w3c.dom.Element) {
-                        val childPortType = child.getAttributeSafe("data-port-type")
-                        if (childPortType != null) {
-                            portElement = child
-                            foundInChildren = true
-                            break
-                        }
-                    }
-                }
-                
-                if (foundInChildren) {
-                    break
-                }
-                
-                // Try the parent element
-                currentElement = currentElement.parentElement
-                attempts++
-            }
-            
-            // If we found a port element, stop searching
-            if (portElement != null) {
-                break
-            }
-        }
-        
-        // Check if we found a valid target port
-        if (portElement != null) {
-            val portType = portElement.getAttributeSafe("data-port-type")
-            val portId = portElement.getAttributeSafe("data-port-id")
-            val portNodeId = portElement.getAttributeSafe("data-port-node")
-            
-            // If it's an input port and not from the same node as the source
-            if (portType == PortType.INPUT.name.lowercase() && 
-                portNodeId != null && 
-                portId != null && 
-                portNodeId != connectionStartNode) {
-                // Update potential target port
-                potentialTargetPort = Pair(portNodeId.toString(), portId.toString())
-            } else {
-                // Not a valid target
-                potentialTargetPort = null
-            }
-        } else {
-            // No port element found
-            potentialTargetPort = null
-        }
+        // Use fixed values for zoom and pan (no zoom, no pan)
+        connectionManager.updateConnectionPreview(screenX, screenY, 1f, 0f, 0f)
     }
     
     /**
@@ -374,113 +329,17 @@ class NodeEditorController(
      * @param screenY The y position of the mouse in screen coordinates
      */
     fun completeConnection(screenX: Float, screenY: Float) {
-        // Find if there's an input port at the current position
-        // Use a more robust approach to find the port element
-
-        // Try multiple points around the cursor to increase the hit area
-        val searchRadius = 25 // pixels (increased for better detection)
-        val searchPoints = listOf(
-            Pair(screenX, screenY),                           // Center
-            Pair(screenX - searchRadius, screenY),            // Left
-            Pair(screenX + searchRadius, screenY),            // Right
-            Pair(screenX, screenY - searchRadius),            // Top
-            Pair(screenX, screenY + searchRadius),            // Bottom
-            Pair(screenX - searchRadius, screenY - searchRadius), // Top-left
-            Pair(screenX + searchRadius, screenY - searchRadius), // Top-right
-            Pair(screenX - searchRadius, screenY + searchRadius), // Bottom-left
-            Pair(screenX + searchRadius, screenY + searchRadius)  // Bottom-right
-        )
-        
-        var portElement: org.w3c.dom.Element? = null
-        
-        // Try each point until we find a port element
-        for ((pointX, pointY) in searchPoints) {
-            // Get the element at this point
-            val element = getDocument().getElementFromPoint(pointX, pointY)
-            if (element == null) continue
-            
-            // Check if the element is a port
-            var currentElement = element
-            var attempts = 0
-            
-            // Try to find a port element by checking the current element and its parents
-            while (currentElement != null && attempts < 5) {
-                val portType = currentElement.getAttributeSafe("data-port-type")
-                if (portType != null) {
-                    // Found a port element
-                    portElement = currentElement
-                    break
-                }
-                
-                // Check if any of the children are port elements
-                val children = currentElement.children
-                var foundInChildren = false
-                for (i in 0 until children.length) {
-                    val child = children.item(i)
-                    if (child != null && child is org.w3c.dom.Element) {
-                        val childPortType = child.getAttributeSafe("data-port-type")
-                        if (childPortType != null) {
-                            portElement = child
-                            foundInChildren = true
-                            break
-                        }
-                    }
-                }
-                
-                if (foundInChildren) {
-                    break
-                }
-                
-                // Try the parent element
-                currentElement = currentElement.parentElement
-                attempts++
-            }
-            
-            // If we found a port element, stop searching
-            if (portElement != null) {
-                break
-            }
+        val updatedConnections = connectionManager.completeConnection(screenX, screenY, connections)
+        if (updatedConnections != null) {
+            connections = updatedConnections
         }
-        
-        // Check if we found a port element
-        if (portElement != null) {
-            val portType = portElement.getAttributeSafe("data-port-type")
-            val portId = portElement.getAttributeSafe("data-port-id")
-            val portNodeId = portElement.getAttributeSafe("data-port-node")
-            
-            // If it's an input port and not from the same node as the source
-            if (portType == PortType.INPUT.name.lowercase() && portNodeId != null && portId != null && portNodeId != connectionStartNode) {
-                // Found a valid target port for connection
-                
-                // Create a new connection
-                val newConnection = Connection(
-                    sourceId = connectionStartNode!!,
-                    sourcePortId = connectionStartPort!!.id,
-                    targetId = portNodeId.toString(),
-                    targetPortId = portId.toString()
-                )
-                
-                // Create and execute the add connection command
-                val command = AddConnectionCommand(connections, newConnection)
-                val updatedConnections = history.executeCommand(command) as List<Connection>
-                
-                // Update the connections list
-                connections = updatedConnections
-            }
-        }
-        
-        // Reset the connection state
-        cancelConnection()
     }
     
     /**
      * Cancels the current connection being created.
      */
     fun cancelConnection() {
-        isDraggingConnection = false
-        connectionStartNode = null
-        connectionStartPort = null
-        potentialTargetPort = null
+        connectionManager.cancelConnection()
     }
     
     /**
@@ -489,104 +348,12 @@ class NodeEditorController(
      * @param connection The connection to delete
      */
     fun deleteConnection(connection: Connection) {
-        // Create and execute the delete connection command
-        val command = DeleteConnectionCommand(connections, connection)
-        val updatedConnections = history.executeCommand(command) as List<Connection>
-        
-        // Update the connections list
-        connections = updatedConnections
+        connections = connectionManager.deleteConnection(connections, connection)
         
         // Clear the selection if this was the selected connection
         if (connection == selectedConnection) {
             selectedConnection = null
         }
-    }
-    
-    /**
-     * Handles zooming of the canvas.
-     *
-     * @param delta The zoom delta (positive for zoom in, negative for zoom out)
-     * @param mouseX The x position of the mouse in screen coordinates
-     * @param mouseY The y position of the mouse in screen coordinates
-     */
-    fun zoom(delta: Float, mouseX: Float, mouseY: Float) {
-        // Calculate new zoom level with constraints
-        val newZoom = (zoomLevel + delta).coerceIn(0.5f, 2.0f)
-        
-        // Only update if zoom level changed
-        if (newZoom != zoomLevel) {
-            // Get the canvas element's bounding rect
-            val canvasElement = getDocument().getElementById("nodeEditorCanvas")
-            val rect = canvasElement?.getBoundingClientRectSafe()
-            
-            if (rect != null) {
-                // Calculate the mouse position relative to the canvas
-                val relativeX = mouseX - rect.left
-                val relativeY = mouseY - rect.top
-                
-                // Convert to canvas coordinates before zooming
-                val canvasX = relativeX / zoomLevel - panX
-                val canvasY = relativeY / zoomLevel - panY
-                
-                // Calculate how this position would change after zooming
-                val newCanvasX = relativeX / newZoom - panX
-                val newCanvasY = relativeY / newZoom - panY
-                
-                // Adjust pan to keep the point under the cursor in the same position
-                panX += (newCanvasX - canvasX).toFloat()
-                panY += (newCanvasY - canvasY).toFloat()
-                
-                // Update zoom level
-                zoomLevel = newZoom
-            } else {
-                // Fallback if we can't get the canvas rect
-                zoomLevel = newZoom
-            }
-        }
-    }
-    
-    /**
-     * Starts panning the canvas.
-     *
-     * @param screenX The x position of the mouse in screen coordinates
-     * @param screenY The y position of the mouse in screen coordinates
-     * @param isEmptyArea Whether the mouse is over an empty area of the canvas
-     */
-    fun startPanning(screenX: Float, screenY: Float, isEmptyArea: Boolean) {
-        isDraggingCanvas = true
-        isClickingEmptyArea = isEmptyArea
-        dragStartX = screenX
-        dragStartY = screenY
-    }
-    
-    /**
-     * Updates the pan position while dragging.
-     *
-     * @param screenX The current x position of the mouse in screen coordinates
-     * @param screenY The current y position of the mouse in screen coordinates
-     */
-    fun updatePan(screenX: Float, screenY: Float) {
-        if (isDraggingCanvas) {
-            // Calculate the delta movement
-            val deltaX = (screenX - dragStartX) / zoomLevel
-            val deltaY = (screenY - dragStartY) / zoomLevel
-            
-            // Update pan position
-            panX += deltaX
-            panY += deltaY
-            
-            // Update drag start position
-            dragStartX = screenX
-            dragStartY = screenY
-        }
-    }
-    
-    /**
-     * Stops panning the canvas.
-     */
-    fun stopPanning() {
-        isDraggingCanvas = false
-        isClickingEmptyArea = false
     }
     
     /**
@@ -650,5 +417,60 @@ class NodeEditorController(
      */
     fun serializeToJson(): String {
         return serializeNodeData(nodes, connections)
+    }
+    
+    /**
+     * Calculates the required canvas size based on node positions.
+     * This ensures the canvas is large enough to accommodate all nodes with some padding.
+     * Uses the available space (parent size) as initial values and actual node heights.
+     * 
+     * @return Pair of width and height for the canvas
+     */
+    private fun calculateRequiredCanvasSize(): Pair<Float, Float> {
+        // Use wrapper element dimensions as initial values if available
+        var maxX = wrapperElement?.getBoundingClientRectSafe()?.width?.toFloat() ?: 800f
+        var maxY = wrapperElement?.getBoundingClientRectSafe()?.height?.toFloat() ?: 600f
+        
+        // If there are no nodes, return the parent size
+        if (nodes.isEmpty()) {
+            return Pair(maxX, maxY)
+        }
+        
+        // Find the rightmost and bottommost positions of all nodes
+        // Add node width and padding
+        for ((nodeId, node) in nodes) {
+            // Get the actual node element if available
+            val nodeElement = nodeElements[nodeId]
+            
+            // Get the actual width and height of the node element, or use defaults
+            val nodeWidth = nodeElement?.getBoundingClientRectSafe()?.width?.toFloat() ?: 180f
+            val nodeHeight = nodeElement?.getBoundingClientRectSafe()?.height?.toFloat() ?: 150f
+            
+            // Calculate the right and bottom edges with padding
+            val nodeRight = node.x + nodeWidth + 16f // Node width + padding
+            val nodeBottom = node.y + nodeHeight + 16f // Actual node height + padding
+            
+            if (nodeRight > maxX) {
+                maxX = nodeRight
+            }
+            
+            if (nodeBottom > maxY) {
+                maxY = nodeBottom
+            }
+        }
+        
+        return Pair(maxX, maxY)
+    }
+    
+    /**
+     * Updates the canvas size in the DOM based on the required size.
+     * This ensures the canvas is large enough to accommodate all nodes.
+     */
+    private fun updateCanvasSize() {
+        val (width, height) = calculateRequiredCanvasSize()
+        
+        // Update the canvas size using the stored reference
+        canvasElement?.style?.width = "${width}px"
+        canvasElement?.style?.height = "${height}px"
     }
 }

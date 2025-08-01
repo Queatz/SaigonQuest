@@ -47,7 +47,7 @@ fun RenderNode(controller: NodeEditorController, id: String, node: NodeData) {
         onDrag = { nodeId, x, y ->
             controller.moveNode(nodeId, x, y)
         },
-        zoomLevel = controller.zoomLevel
+        controller = controller
     )
 }
 

@@ -1,0 +1,482 @@
+package main.components.player
+
+import lib.Color3
+import lib.CreateBoxOptions
+import lib.Mesh
+import lib.MeshBuilder
+import lib.PBRMaterial
+import lib.Scene
+import lib.Vector3
+import main.api.UserApi
+import main.api.WebSocketApi
+import main.api.WebSocketConnectionManager
+import main.components.world.WorldObjectHandle
+import main.components.world.WorldObjectManager
+import kotlinx.coroutines.launch
+import models.PlayerPositionData
+import models.Position
+import models.UserJoinData
+import models.UserLeaveData
+import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+
+/**
+ * Controller for managing other players in the 3D scene.
+ * 
+ * This class handles:
+ * - Creating and removing meshes for other players
+ * - Updating other players' positions
+ * - Applying animations when players move
+ * - Adding join/leave effects
+ */
+class OtherPlayersController(private val scene: Scene) {
+    
+    // Map of player meshes by userId
+    private val playerMeshes = mutableMapOf<String, Mesh>()
+    
+    // Map of player target positions by userId
+    private val playerTargetPositions = mutableMapOf<String, Vector3>()
+    
+    // Map of player join/leave animation times by userId
+    private val playerAnimationTimes = mutableMapOf<String, Double>()
+    
+    // Map of username text billboard handles by userId
+    private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    
+    // Reference to the world object manager for creating text billboards
+    private var worldObjectManager: WorldObjectManager? = null
+    
+    // Base movement speed in units per second for framerate-independent movement
+    private val baseMovementSpeed = 3.0f
+    
+    // Time tracking for framerate-independent movement
+    private var lastFrameTime = 0.0
+    
+    // Animation duration in seconds
+    private val joinLeaveDuration = 0.5
+    
+    // Coroutine scope for async operations
+    private val scope = CoroutineScope(Dispatchers.Default)
+    
+    // Current user ID
+    private var myUserId: String? = null
+    
+    /**
+     * Sets the world object manager for creating text billboards
+     * 
+     * @param manager The world object manager instance
+     */
+    fun setWorldObjectManager(manager: WorldObjectManager) {
+        worldObjectManager = manager
+        console.log("OtherPlayersController: WorldObjectManager set")
+    }
+    
+    /**
+     * Get the current player's position
+     */
+    private fun getPlayerPosition(): Position {
+        val playerController = main.components.SceneManager.getPlayerController()
+        val playerPos = playerController?.getPlayerPosition()
+        
+        return if (playerPos != null) {
+            Position(playerPos.x, playerPos.y, playerPos.z)
+        } else {
+            Position(0f, 0f, 0f)
+        }
+    }
+    
+    /**
+     * Initialize the controller and set up WebSocket listeners
+     */
+    fun initialize() {
+        // Get current user ID
+        scope.launch {
+            try {
+                val user = UserApi.getCurrentUser()
+                myUserId = user.key
+                console.log("OtherPlayersController: Current user ID: $myUserId")
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error getting current user", e)
+            }
+        }
+        
+        console.log("OtherPlayersController: Setting up WebSocket listeners")
+        
+        // Set up WebSocket listeners
+        WebSocketApi.addUserJoinListener { joinData ->
+            console.log("OtherPlayersController: Received USER_JOIN event: ${joinData.userId}, ${joinData.username}")
+            handleUserJoin(joinData)
+            
+            // When a new user joins, send our own join notification to ensure they see us
+            if (joinData.userId != myUserId) {
+                scope.launch {
+                    try {
+                        val worldId = WebSocketApi.getCurrentWorldId()
+                        if (worldId != null) {
+                            val user = UserApi.getCurrentUser()
+                            val playerPosition = getPlayerPosition()
+                            console.log("OtherPlayersController: Sending reciprocal USER_JOIN notification to new user: ${joinData.userId}")
+                            WebSocketApi.sendUserJoin(worldId, playerPosition, user.isPlayer)
+                        }
+                    } catch (e: Exception) {
+                        console.error("OtherPlayersController: Error sending reciprocal join notification", e)
+                    }
+                }
+            }
+        }
+        
+        WebSocketApi.addUserLeaveListener { leaveData ->
+            console.log("OtherPlayersController: Received USER_LEAVE event: ${leaveData.userId}")
+            handleUserLeave(leaveData)
+        }
+        
+        WebSocketApi.addPlayerPositionListener { positionData ->
+            console.log("OtherPlayersController: Received UPDATE_PLAYER_POSITION event: ${positionData.userId}")
+            handlePlayerPosition(positionData)
+        }
+        
+        // Force a user join notification for the current user to trigger updates for all clients
+        scope.launch {
+            try {
+                // Use WebSocketConnectionManager to check connection state
+                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                    val user = UserApi.getCurrentUser()
+                    val worldId = WebSocketConnectionManager.currentWorldId.value
+                    if (worldId != null) {
+                        val playerPosition = getPlayerPosition()
+                        console.log("OtherPlayersController: Sending explicit USER_JOIN notification")
+                        WebSocketApi.sendUserJoin(worldId, playerPosition, user.isPlayer)
+                    } else {
+                        console.warn("OtherPlayersController: WebSocket is connected but no worldId available")
+                    }
+                } else {
+                    console.warn("OtherPlayersController: Cannot send USER_JOIN notification - WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                }
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error sending explicit join notification", e)
+            }
+        }
+        
+        // Set up animation loop
+        scene.registerBeforeRender {
+            updatePlayerPositions()
+        }
+    }
+    
+    /**
+     * Handle user join event
+     */
+    private fun handleUserJoin(joinData: UserJoinData) {
+        // Don't create a mesh for the current user
+        if (joinData.userId == myUserId) {
+            console.log("OtherPlayersController: Ignoring join event for current user")
+            return
+        }
+        
+        console.log("OtherPlayersController: User joined: ${joinData.username} (${joinData.userId})")
+        
+        // Check if we already have this player
+        if (playerMeshes.containsKey(joinData.userId)) {
+            console.log("OtherPlayersController: Player ${joinData.userId} already exists, updating position")
+            
+            // Update target position
+            playerTargetPositions[joinData.userId] = Vector3(
+                joinData.position.x,
+                joinData.position.y,
+                joinData.position.z
+            )
+            return
+        }
+        
+        console.log("OtherPlayersController: Creating new player mesh for ${joinData.userId}")
+        
+        // Create player mesh with username
+        createPlayerMesh(
+            userId = joinData.userId,
+            position = Vector3(
+                joinData.position.x,
+                joinData.position.y,
+                joinData.position.z
+            ),
+            isPlayer = joinData.isPlayer,
+            username = joinData.username
+        )
+        
+        // Log the total number of other players
+        console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+    }
+    
+    /**
+     * Handle user leave event
+     */
+    private fun handleUserLeave(leaveData: UserLeaveData) {
+        console.log("OtherPlayersController: User left: ${leaveData.userId}")
+        
+        // Check if we have this player
+        if (!playerMeshes.containsKey(leaveData.userId)) {
+            console.log("OtherPlayersController: Player ${leaveData.userId} not found, ignoring leave event")
+            return
+        }
+        
+        // Start leave animation
+        playerMeshes[leaveData.userId]?.let { mesh ->
+            console.log("OtherPlayersController: Starting leave animation for ${leaveData.userId}")
+            playerAnimationTimes[leaveData.userId] = window.performance.now()
+            
+            // After animation completes, remove the mesh
+            window.setTimeout({
+                removePlayerMesh(leaveData.userId)
+                console.log("OtherPlayersController: Removed player mesh for ${leaveData.userId}")
+                console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+            }, (joinLeaveDuration * 1000).toInt())
+        }
+    }
+    
+    /**
+     * Handle player position update
+     */
+    private fun handlePlayerPosition(positionData: PlayerPositionData) {
+        // Don't update position for the current user
+        if (positionData.userId == myUserId) {
+            return
+        }
+        
+        // Update target position
+        val newPosition = Vector3(
+            positionData.position.x,
+            positionData.position.y,
+            positionData.position.z
+        )
+        
+        // Log position update
+        val existingMesh = playerMeshes[positionData.userId]
+        if (existingMesh != null) {
+            val currentPos = existingMesh.position
+            val distance = currentPos.subtract(newPosition).length()
+            
+            // Only log significant movements to reduce console spam
+            if (distance > 0.1f) {
+                console.log("OtherPlayersController: Updating position for ${positionData.userId}, distance moved: $distance")
+            }
+        } else {
+            console.log("OtherPlayersController: Received position update for unknown player: ${positionData.userId}")
+        }
+        
+        playerTargetPositions[positionData.userId] = newPosition
+        
+        // Create player mesh if it doesn't exist
+        if (!playerMeshes.containsKey(positionData.userId)) {
+            console.log("OtherPlayersController: Creating player mesh from position update for ${positionData.userId}")
+            createPlayerMesh(
+                userId = positionData.userId,
+                position = newPosition,
+                isPlayer = positionData.isPlayer,
+                username = null // No username available in position data
+            )
+            console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+        }
+    }
+    
+    /**
+     * Create a mesh for another player
+     * 
+     * @param userId The user ID of the player
+     * @param position The position of the player
+     * @param isPlayer Whether the user is a player or visitor
+     * @param username The username to display above the player (optional)
+     */
+    private fun createPlayerMesh(userId: String, position: Vector3, isPlayer: Boolean, username: String? = null) {
+        // Remove existing mesh if any
+        removePlayerMesh(userId)
+        
+        // Create player box
+        val mesh = MeshBuilder.CreateBox("player-$userId", 
+            object : CreateBoxOptions {
+                override val width = 0.05f
+                override val height = 1.0f
+                override val depth = 0.25f
+            }, scene)
+        
+        // Create player material
+        val playerMaterial = PBRMaterial("playerMaterial-$userId", scene).apply {
+            // Different color for players vs visitors
+            if (isPlayer) {
+                albedoColor = Color3(0.2f, 0.4f, 0.8f) // Blue for players
+                emissiveColor = Color3(0.1f, 0.1f, 0.3f)
+            } else {
+                albedoColor = Color3(0.8f, 0.4f, 0.2f) // Orange for visitors
+                emissiveColor = Color3(0.3f, 0.1f, 0.1f)
+            }
+            metallic = 0.1f
+            roughness = 0.2f
+        }
+        mesh.material = playerMaterial
+        
+        // Position player
+        mesh.position = position
+        
+        // Start with scale 0 for join animation
+        mesh.scaling = Vector3(0f, 0f, 0f)
+        
+        // Store mesh
+        playerMeshes[userId] = mesh
+        playerTargetPositions[userId] = position
+        playerAnimationTimes[userId] = window.performance.now()
+        
+        // Create username text billboard if WorldObjectManager is available
+        worldObjectManager?.let { manager ->
+            // Get username for this user
+            scope.launch {
+                try {
+                    // Calculate position above the player (adjust Y value as needed)
+                    val textPosition = Vector3(position.x, position.y + 1.2f, position.z)
+                    
+                    // Use the provided username if available, otherwise use a default name
+                    val displayUsername = username ?: "Player-$userId"
+                    
+                    // Create the text billboard with the username
+                    val textHandle = manager.createTextBillboard(
+                        text = displayUsername,
+                        position = textPosition,
+                        fontSize = 18,
+                        textColor = "white"
+                    )
+                    
+                    // Store the text handle
+                    if (textHandle != null) {
+                        usernameTextHandles[userId] = textHandle
+                    }
+                    
+                    // Try to get the actual username from the server if possible
+                    // This would be a more advanced feature requiring additional API calls
+                    // For now, we'll use the default username
+                } catch (e: Exception) {
+                    console.error("OtherPlayersController: Error creating username text for $userId", e)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Remove a player mesh and associated resources
+     */
+    private fun removePlayerMesh(userId: String) {
+        // Dispose and remove the player mesh
+        playerMeshes[userId]?.dispose()
+        playerMeshes.remove(userId)
+        
+        // Remove the player's target position and animation time
+        playerTargetPositions.remove(userId)
+        playerAnimationTimes.remove(userId)
+        
+        // Remove the username text billboard if it exists
+        usernameTextHandles[userId]?.let { textHandle ->
+            textHandle.remove()
+            console.log("OtherPlayersController: Removed username text for $userId")
+        }
+        usernameTextHandles.remove(userId)
+    }
+    
+    /**
+     * Update player positions and animations
+     */
+    private fun updatePlayerPositions() {
+        // Calculate delta time for framerate-independent movement
+        val currentTime = window.performance.now()
+        val deltaTime = if (lastFrameTime > 0) {
+            // Convert to seconds and cap at a reasonable value to prevent huge jumps after pauses
+            minOf((currentTime - lastFrameTime) / 1000.0, 0.1)
+        } else {
+            // First frame, use a small default value
+            0.016 // ~60fps
+        }
+        lastFrameTime = currentTime
+        
+        // Calculate the movement speed for this frame based on delta time
+        val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
+        
+        // Update each player
+        playerMeshes.forEach { (userId, mesh) ->
+            // Handle join/leave animations
+            val animStartTime = playerAnimationTimes[userId] ?: currentTime
+            val animElapsed = (currentTime - animStartTime) / 1000.0 // in seconds
+            
+            if (animElapsed < joinLeaveDuration) {
+                // Join animation (scale up)
+                val progress = (animElapsed / joinLeaveDuration).toFloat()
+                mesh.scaling = Vector3(progress, progress, progress)
+            } else if (!playerTargetPositions.containsKey(userId)) {
+                // Leave animation (scale down)
+                val progress = 1.0f - (animElapsed / joinLeaveDuration).toFloat()
+                if (progress > 0) {
+                    mesh.scaling = Vector3(progress, progress, progress)
+                }
+            } else {
+                // Normal scale
+                mesh.scaling = Vector3(1f, 1f, 1f)
+                
+                // Move towards target position
+                val targetPos = playerTargetPositions[userId]
+                if (targetPos != null) {
+                    val currentPos = mesh.position
+                    val direction = targetPos.subtract(currentPos)
+                    val distance = direction.length()
+                    
+                    // If we're close enough, snap to target position
+                    if (distance < 0.1f) {
+                        mesh.position = targetPos
+                        
+                        // Update username text billboard position if it exists
+                        usernameTextHandles[userId]?.let { textHandle ->
+                            // Position the text billboard above the player
+                            textHandle.position = Vector3(
+                                targetPos.x,
+                                targetPos.y + 1.2f,
+                                targetPos.z
+                            )
+                        }
+                    } else {
+                        // Normalize direction and apply speed
+                        direction.normalize()
+                        direction.scaleInPlace(minOf(frameMovementSpeed, distance))
+                        val newPosition = currentPos.add(direction)
+                        mesh.position = newPosition
+                        
+                        // Update username text billboard position if it exists
+                        usernameTextHandles[userId]?.let { textHandle ->
+                            // Position the text billboard above the player
+                            textHandle.position = Vector3(
+                                newPosition.x,
+                                newPosition.y + 1.2f,
+                                newPosition.z
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Dispose of all resources
+     */
+    fun dispose() {
+        // Dispose of all player meshes
+        playerMeshes.values.forEach { it.dispose() }
+        playerMeshes.clear()
+        
+        // Remove all username text billboards
+        usernameTextHandles.values.forEach { it.remove() }
+        usernameTextHandles.clear()
+        
+        // Clear other tracking maps
+        playerTargetPositions.clear()
+        playerAnimationTimes.clear()
+        
+        // Clear the world object manager reference
+        worldObjectManager = null
+        
+        console.log("OtherPlayersController: Disposed all resources")
+    }
+}

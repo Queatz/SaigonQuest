@@ -8,6 +8,8 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import main.components.GraphicsSettings
+import main.components.LanguageSettings
 
 /**
  * Dialog for visitor users to register or login
@@ -411,6 +413,12 @@ fun PlayerDialog(
     onClose: () -> Unit,
     onLogout: () -> Unit
 ) {
+    // State to track low graphics mode
+    val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
+    
+    // State to track current language
+    val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
+    
     // Dialog overlay
     Div(
         attrs = {
@@ -467,6 +475,97 @@ fun PlayerDialog(
                     }
                 ) {
                     Text("Player Account")
+                }
+            }
+            
+            // Language switcher
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        justifyContent(JustifyContent.SpaceBetween)
+                        alignItems(AlignItems.Center)
+                        padding(8.px)
+                        marginBottom(16.px)
+                        backgroundColor(Theme.colors.surfaceVariant)
+                        property("border-radius", "4px")
+                    }
+                }
+            ) {
+                // Label
+                Span(
+                    attrs = {
+                        style {
+                            padding(8.px)
+                            color(Theme.colors.onSurfaceVariant)
+                        }
+                    }
+                ) {
+                    Text("Language")
+                }
+                
+                // Language switcher component
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            alignItems(AlignItems.Center)
+                            padding(8.px)
+                        }
+                    }
+                ) {
+                    LanguageSwitcher(
+                        onLanguageChange = { language ->
+                            currentLanguage.value = language
+                        }
+                    )
+                }
+            }
+            
+            // Low graphics mode toggle
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        justifyContent(JustifyContent.SpaceBetween)
+                        alignItems(AlignItems.Center)
+                        padding(8.px)
+                        marginBottom(16.px)
+                        backgroundColor(Theme.colors.surfaceVariant)
+                        property("border-radius", "4px")
+                    }
+                }
+            ) {
+                // Label
+                Span(
+                    attrs = {
+                        style {
+                            padding(8.px)
+                            color(Theme.colors.onSurfaceVariant)
+                        }
+                    }
+                ) {
+                    Text("Low Graphics Mode")
+                }
+                
+                // Toggle button
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            alignItems(AlignItems.Center)
+                            padding(8.px)
+                        }
+                    }
+                ) {
+                    ToggleSwitch(
+                        checked = isLowGraphicsMode.value,
+                        onCheckedChange = { newValue ->
+                            // Toggle low graphics mode
+                            isLowGraphicsMode.value = GraphicsSettings.toggleLowGraphicsMode()
+                        },
+                        id = "lowGraphicsToggle"
+                    )
                 }
             }
             

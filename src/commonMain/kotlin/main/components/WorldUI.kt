@@ -48,6 +48,11 @@ import org.jetbrains.compose.web.dom.Text
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import main.components.WorldTitle
+import main.components.TutorialBubble
+import main.components.SceneManager
+import main.utils.getBoundingClientRectSafe
+import main.utils.getDocument
+import org.w3c.dom.DOMRect
 
 
 /**
@@ -62,6 +67,10 @@ fun WorldUI() {
     // State for UI elements that are not part of the panel system
     var isFullscreen by remember { mutableStateOf(false) }
     var isQrDialogOpen by remember { mutableStateOf(false) }
+    
+    // State for print dialog
+    var showPrintDialog by remember { mutableStateOf(false) }
+    var printImageUrl by remember { mutableStateOf("") }
     
     // State for unread notification count
     var unreadNotificationCount by remember { mutableStateOf(0) }
@@ -130,6 +139,12 @@ fun WorldUI() {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
     
+    // State for tutorial bubble
+    var isTutorialBubbleVisible by remember { mutableStateOf(true) }
+    
+    // State for profile button position
+    var profileButtonRect by remember { mutableStateOf<DOMRect?>(null) }
+    
     // State for current world
     var currentWorld by remember { mutableStateOf<World?>(null) }
     var isWorldLoading by remember { mutableStateOf(true) }
@@ -190,9 +205,21 @@ fun WorldUI() {
     DisposableEffect(Unit) {
         val resizeListener: (dynamic) -> Unit = {
             isMobile.value = window.innerWidth <= 960
+            
+            // Update profile button position on resize
+            val profileButtonElement = getDocument().getElementById("profileButton")
+            if (profileButtonElement != null) {
+                profileButtonRect = profileButtonElement.getBoundingClientRectSafe()
+            }
         }
         
         window.addEventListener("resize", resizeListener)
+        
+        // Initial position calculation
+        val profileButtonElement = getDocument().getElementById("profileButton")
+        if (profileButtonElement != null) {
+            profileButtonRect = profileButtonElement.getBoundingClientRectSafe()
+        }
         
         onDispose {
             window.removeEventListener("resize", resizeListener)
@@ -293,13 +320,6 @@ fun WorldUI() {
                 badgeCount = 0
             )
             
-            // QR code button (not part of the panel system)
-            CircleButton(
-                onClick = { isQrDialogOpen = true },
-                icon = "📱",
-                badgeCount = 0
-            )
-            
             // Edit world button - only visible if the current user is the owner of the world
             if (currentUser?.key == currentWorld?.userId) {
                 CircleButton(
@@ -335,6 +355,13 @@ fun WorldUI() {
                 }
             }
         ) {
+            // QR code button (not part of the panel system)
+            CircleButton(
+                onClick = { isQrDialogOpen = true },
+                icon = "📱",
+                badgeCount = 0
+            )
+
             // World Chat button
             CircleButton(
                 onClick = { togglePanel(SidePanelState.Chat) },
@@ -345,9 +372,14 @@ fun WorldUI() {
             
             // My profile button
             CircleButton(
-                onClick = { togglePanel(SidePanelState.Profile) },
+                onClick = { 
+                    // Hide the tutorial bubble when profile button is clicked
+                    isTutorialBubbleVisible = false
+                    togglePanel(SidePanelState.Profile) 
+                },
                 icon = "👤",
-                badgeCount = 0
+                badgeCount = 0,
+                id = "profileButton"
             )
         }
         
@@ -363,8 +395,12 @@ fun WorldUI() {
         // Panel rendering based on currentPanel state
         when (currentPanel) {
             SidePanelState.Chat -> {
+                // Get current world ID from the URL path or use the current world's ID
+                val chatWorldId = currentWorld?.key ?: window.location.pathname.substring(1)
+                
                 // Responsive chat component that adapts between mobile and desktop
                 Chat(
+                    worldId = chatWorldId,
                     isMobile = isMobile.value,
                     onClose = { updatePanelState(SidePanelState.None) }
                 )
@@ -373,7 +409,7 @@ fun WorldUI() {
             SidePanelState.WorldEdit -> {
                 // Responsive world edit component that adapts between mobile and desktop
                 WorldEdit(
-                    currentWorld = null, // For now, always create new world
+                    currentWorld = currentWorld,
                     isMobile = isMobile.value,
                     onClose = { updatePanelState(SidePanelState.None) },
                     onSave = { world ->
@@ -405,6 +441,9 @@ fun WorldUI() {
             }
             
             SidePanelState.ObjectsPanel -> {
+                // Get the ObjectManager from SceneManager
+                val objectManager = SceneManager.getObjectManager()
+                
                 if (isMobile.value) {
                     // Mobile: Dialog
                     ObjectsDialog(
@@ -412,7 +451,13 @@ fun WorldUI() {
                         onOpenObjectEditor = { 
                             updatePanelState(SidePanelState.ObjectEditor)
                         },
-                        objectManager = null // We'll pass the actual ObjectManager in a real implementation
+                        onEditObject = { objectId ->
+                            // Get the object by ID and open the editor with it
+                            // In a real implementation, we would fetch the object from the API
+                            // For now, we'll just open the editor
+                            updatePanelState(SidePanelState.ObjectEditor)
+                        },
+                        objectManager = objectManager
                     )
                 } else {
                     // Desktop: Side panel
@@ -421,7 +466,13 @@ fun WorldUI() {
                         onOpenObjectEditor = { 
                             updatePanelState(SidePanelState.ObjectEditor)
                         },
-                        objectManager = null // We'll pass the actual ObjectManager in a real implementation
+                        onEditObject = { objectId ->
+                            // Get the object by ID and open the editor with it
+                            // In a real implementation, we would fetch the object from the API
+                            // For now, we'll just open the editor
+                            updatePanelState(SidePanelState.ObjectEditor)
+                        },
+                        objectManager = objectManager
                     )
                 }
             }
@@ -479,7 +530,28 @@ fun WorldUI() {
         
         // QR code dialog - not part of the main panel system, kept separate
         if (isQrDialogOpen) {
-            QrDialog(onClose = { isQrDialogOpen = false })
+            // Get player position from SceneManager if available
+            val playerPosition = SceneManager.getPlayerController()?.getPlayerPosition()
+            
+            QrDialog(
+                onClose = { isQrDialogOpen = false },
+                onPrint = { imageUrl ->
+                    printImageUrl = imageUrl
+                    showPrintDialog = true
+                },
+                playerPosition = playerPosition,
+                worldTitle = currentWorld?.title ?: "Saigon.Quest",
+                worldSubtitle = currentWorld?.subtitle ?: "3D World",
+                worldDescription = currentWorld?.description ?: ""
+            )
+        }
+        
+        // Print dialog - shown when print button is clicked in QR dialog
+        if (showPrintDialog) {
+            PrintDialog(
+                imageUrl = printImageUrl,
+                onClose = { showPrintDialog = false }
+            )
         }
         
         // Profile dialog
@@ -557,6 +629,21 @@ fun WorldUI() {
             }
         ) {
             Text("Saigon.Quest v0.1 - © 2025 Saigon.Quest")
+        }
+        
+        // Tutorial bubble for non-player users - positioned at root level to avoid affecting parent layout
+        if (currentUser != null && !currentUser!!.isPlayer && isTutorialBubbleVisible && profileButtonRect != null) {
+            // Calculate position based on the profile button's bounding box
+            val buttonRect = profileButtonRect!!
+            val bubbleLeft = buttonRect.left - 180 // Position to the left of the profile button
+            val bubbleTop = buttonRect.top + (buttonRect.height / 2) - 15 // Align vertically with the middle of the button
+            
+            TutorialBubble(
+                text = "Create your player",
+                positionLeft = bubbleLeft.toInt(),
+                positionTop = bubbleTop.toInt(),
+                onDismiss = { isTutorialBubbleVisible = false }
+            )
         }
     }
 }

@@ -23,6 +23,7 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:3.2.2")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
     implementation("io.ktor:ktor-server-cors:3.2.2")
+    implementation("io.ktor:ktor-server-websockets:3.2.2")
     
     // Ktor JWT Authentication
     implementation("io.ktor:ktor-server-auth:3.2.2")
@@ -37,7 +38,9 @@ dependencies {
     // Jackson modules for date/time handling
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
-    
+    implementation("org.glassfish:jakarta.json:2.0.1")
+
+
     // KotlinX Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")

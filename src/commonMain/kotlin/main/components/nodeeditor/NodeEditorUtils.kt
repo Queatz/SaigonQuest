@@ -1,8 +1,6 @@
 package main.components.nodeeditor
 
-import kotlin.js.json
 import kotlin.js.Date
-import kotlin.js.JSON
 
 /**
  * Parse node data from JSON string.
@@ -12,58 +10,13 @@ import kotlin.js.JSON
  */
 fun parseNodes(jsonData: String): Map<String, NodeData> {
     try {
-        val data = JSON.parse<dynamic>(jsonData)
-        val result = mutableMapOf<String, NodeData>()
+        // Use the NodeEditorJsonUtil to parse the JSON string
+        val nodeEditorData = NodeEditorJsonUtil.parseNodeEditorData(jsonData)
         
-        if (data.nodes != undefined) {
-            val nodes = data.nodes
-            for (key in js("Object").keys(nodes)) {
-                val node = nodes[key]
-                val nodeId = key as String
-                
-                // Parse inputs
-                val inputs = mutableListOf<PortData>()
-                if (node.inputs != undefined) {
-                    val nodeInputs = node.inputs
-                    for (i in 0 until (nodeInputs.length as? Int ?: 0)) {
-                        val input = nodeInputs[i]
-                        inputs.add(PortData(
-                            id = input.id as? String ?: "${nodeId}_in_$i",
-                            name = input.name as? String ?: "Input $i",
-                            type = PortType.INPUT,
-                            dataType = input.dataType as? String ?: "any"
-                        ))
-                    }
-                }
-                
-                // Parse outputs
-                val outputs = mutableListOf<PortData>()
-                if (node.outputs != undefined) {
-                    val nodeOutputs = node.outputs
-                    for (i in 0 until (nodeOutputs.length as? Int ?: 0)) {
-                        val output = nodeOutputs[i]
-                        outputs.add(PortData(
-                            id = output.id as? String ?: "${nodeId}_out_$i",
-                            name = output.name as? String ?: "Output $i",
-                            type = PortType.OUTPUT,
-                            dataType = output.dataType as? String ?: "any"
-                        ))
-                    }
-                }
-                
-                // Create the node with inputs and outputs
-                result[nodeId] = NodeData(
-                    type = node.type as? String ?: "",
-                    x = (node.x as? Number)?.toFloat() ?: 0f,
-                    y = (node.y as? Number)?.toFloat() ?: 0f,
-                    label = node.label as? String ?: "Node",
-                    inputs = inputs,
-                    outputs = outputs
-                )
-            }
+        // Convert the NodeDataJson objects to NodeData objects
+        return nodeEditorData.nodes.mapValues { (_, nodeDataJson) ->
+            NodeEditorJsonUtil.convertToNodeData(nodeDataJson)
         }
-        
-        return result
     } catch (e: Exception) {
         console.error("Error parsing nodes", e)
         return emptyMap()
@@ -78,34 +31,13 @@ fun parseNodes(jsonData: String): Map<String, NodeData> {
  */
 fun parseConnections(jsonData: String): List<Connection> {
     try {
-        val data = JSON.parse<dynamic>(jsonData)
-        val result = mutableListOf<Connection>()
+        // Use the NodeEditorJsonUtil to parse the JSON string
+        val nodeEditorData = NodeEditorJsonUtil.parseNodeEditorData(jsonData)
         
-        if (data.connections != undefined) {
-            val connections = data.connections
-            for (i in 0 until connections.length) {
-                val conn = connections[i]
-                
-                // Extract connection data
-                val sourceId = conn.sourceId as? String ?: conn.source?.id as? String ?: ""
-                val sourcePortId = conn.sourcePortId as? String ?: conn.source?.portId as? String ?: ""
-                val targetId = conn.targetId as? String ?: conn.target?.id as? String ?: ""
-                val targetPortId = conn.targetPortId as? String ?: conn.target?.portId as? String ?: ""
-                
-                // Only add valid connections
-                if (sourceId.isNotEmpty() && sourcePortId.isNotEmpty() && 
-                    targetId.isNotEmpty() && targetPortId.isNotEmpty()) {
-                    result.add(Connection(
-                        sourceId = sourceId,
-                        sourcePortId = sourcePortId,
-                        targetId = targetId,
-                        targetPortId = targetPortId
-                    ))
-                }
-            }
+        // Convert the ConnectionJson objects to Connection objects
+        return nodeEditorData.connections.map { connectionJson ->
+            NodeEditorJsonUtil.convertToConnection(connectionJson)
         }
-        
-        return result
     } catch (e: Exception) {
         console.error("Error parsing connections", e)
         return emptyList()
@@ -120,58 +52,24 @@ fun parseConnections(jsonData: String): List<Connection> {
  * @return A JSON string representing the node editor data
  */
 fun serializeNodeData(nodes: Map<String, NodeData>, connections: List<Connection>): String {
-    val nodesObj = js("{}")
-    
-    for ((id, node) in nodes) {
-        // Convert NodeData back to a JS object
-        val nodeObj = js("{}")
-        nodeObj["type"] = node.type
-        nodeObj["x"] = node.x
-        nodeObj["y"] = node.y
-        nodeObj["label"] = node.label
-        
-        // Serialize input ports
-        val inputsArray = js("[]")
-        for (input in node.inputs) {
-            val inputObj = js("{}")
-            inputObj["id"] = input.id
-            inputObj["name"] = input.name
-            inputObj["dataType"] = input.dataType
-            inputsArray.push(inputObj)
-        }
-        nodeObj["inputs"] = inputsArray
-        
-        // Serialize output ports
-        val outputsArray = js("[]")
-        for (output in node.outputs) {
-            val outputObj = js("{}")
-            outputObj["id"] = output.id
-            outputObj["name"] = output.name
-            outputObj["dataType"] = output.dataType
-            outputsArray.push(outputObj)
-        }
-        nodeObj["outputs"] = outputsArray
-        
-        nodesObj[id] = nodeObj
+    // Convert the NodeData objects to NodeDataJson objects
+    val nodeDataJsonMap = nodes.mapValues { (_, nodeData) ->
+        NodeEditorJsonUtil.convertToNodeDataJson(nodeData)
     }
     
-    // Serialize connections
-    val connectionsArray = js("[]")
-    for (connection in connections) {
-        val connectionObj = js("{}")
-        connectionObj["sourceId"] = connection.sourceId
-        connectionObj["sourcePortId"] = connection.sourcePortId
-        connectionObj["targetId"] = connection.targetId
-        connectionObj["targetPortId"] = connection.targetPortId
-        connectionsArray.push(connectionObj)
+    // Convert the Connection objects to ConnectionJson objects
+    val connectionJsonList = connections.map { connection ->
+        NodeEditorJsonUtil.convertToConnectionJson(connection)
     }
     
-    val data = json(
-        "nodes" to nodesObj,
-        "connections" to connectionsArray
+    // Create a NodeEditorDataJson object
+    val nodeEditorData = NodeEditorDataJson(
+        nodes = nodeDataJsonMap,
+        connections = connectionJsonList
     )
     
-    return JSON.stringify(data)
+    // Use the NodeEditorJsonUtil to serialize the data
+    return NodeEditorJsonUtil.serializeNodeEditorData(nodeEditorData)
 }
 
 /**

@@ -7,7 +7,6 @@ import kotlinx.browser.document
 import main.theme.NodeEditorStyles
 import org.jetbrains.compose.web.css.CSSColorValue
 import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.position
@@ -16,13 +15,7 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.ElementScope
-import org.jetbrains.compose.web.dom.Style
-import org.w3c.dom.Element
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.svg.SVGElement
 import web.cssom.AtRules.Companion.property
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.random.Random
 
@@ -38,6 +31,7 @@ import kotlin.random.Random
  * @param isSelected Whether this connection is currently selected
  * @param onClick Callback when the connection is clicked
  * @param connectionId Optional identifier for the connection (for debugging)
+ * @param isInConnectionLayer Whether this connection is being rendered in the separate connection layer
  */
 @Composable
 fun BezierConnection(
@@ -49,68 +43,11 @@ fun BezierConnection(
     thickness: Float = 3f,
     isSelected: Boolean = false,
     onClick: (() -> Unit)? = null,
-    connectionId: String? = null
+    connectionId: String? = null,
+    isInConnectionLayer: Boolean = false
 ) {
-    // Calculate control points for the bezier curve
-    // We want the curve to start and end horizontally, but with a more natural curve
-    
-    // Calculate horizontal and vertical distances between points
-    val horizontalDistance = abs(targetX - sourceX)
-    val verticalDistance = abs(targetY - sourceY)
-    
-    // Calculate the total distance between points (Euclidean distance)
-    val totalDistance = kotlin.math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance)
-    
-    // Calculate a factor for the control point distance based on the total distance
-    // This creates more natural curves for both short and long connections
-    val distanceFactor = kotlin.math.min(0.5f, totalDistance / 500f + 0.2f)
-    
-    // Calculate the control point distances
-    // For short connections, this will be shorter, for long connections, it will be longer
-    // but never more than 50% of the total distance
-    val controlDistance = totalDistance * distanceFactor
-    
-    // Handle special cases for vertical or horizontal alignments
-    val controlPoint1X: Float
-    val controlPoint1Y: Float
-    val controlPoint2X: Float
-    val controlPoint2Y: Float
-    
-    // Check if points are vertically aligned (or nearly so)
-    if (horizontalDistance < 10f) {
-        // Add some horizontal curve for vertical connections
-        val sideOffset = 50f
-        val direction = if (targetY > sourceY) 1 else -1 // Determine if target is below or above source
-        
-        // Create an S-curve for vertical connections
-        controlPoint1X = sourceX + sideOffset * direction
-        controlPoint1Y = sourceY + verticalDistance * 0.25f
-        controlPoint2X = targetX + sideOffset * direction
-        controlPoint2Y = targetY - verticalDistance * 0.25f
-    } 
-    // Check if points are horizontally aligned (or nearly so)
-    else if (verticalDistance < 10f) {
-        // Add some vertical curve for horizontal connections
-        val vertOffset = 50f
-        val direction = if (targetX > sourceX) 1 else -1 // Determine if target is to the right or left of source
-        
-        // Create a slight arc for horizontal connections
-        controlPoint1X = sourceX + horizontalDistance * 0.25f
-        controlPoint1Y = sourceY - vertOffset * direction
-        controlPoint2X = targetX - horizontalDistance * 0.25f
-        controlPoint2Y = targetY - vertOffset * direction
-    }
-    // Normal case: create horizontal tangents with adaptive control point distances
-    else {
-        controlPoint1X = sourceX + controlDistance
-        controlPoint1Y = sourceY
-        controlPoint2X = targetX - controlDistance
-        controlPoint2Y = targetY
-    }
-    
-    // Create the SVG path for the bezier curve
-    val path = "M $sourceX $sourceY " +
-               "C $controlPoint1X $controlPoint1Y, $controlPoint2X $controlPoint2Y, $targetX $targetY"
+    // Create the SVG path for the bezier curve using the utility function
+    val path = BezierCurveUtils.createPathString(sourceX, sourceY, targetX, targetY)
     
     // Determine the color and thickness based on selection state
     val actualColor = if (isSelected) rgba(100, 200, 255, 0.9) else color
@@ -122,9 +59,24 @@ fun BezierConnection(
     // Render the connection using an SVG path
     Div(
         attrs = {
-            classes(NodeEditorStyles.connectionLine)
-            if (isSelected) {
-                classes(NodeEditorStyles.connectionSelected)
+            // Apply different styles based on whether we're in the connection layer
+            if (isInConnectionLayer) {
+                // For the connection layer, use absolute positioning relative to the wrapper
+                style {
+                    position(Position.Absolute)
+                    left(0.px)
+                    top(0.px)
+                    width(0.px)
+                    height(0.px)
+                    property("pointer-events", if (onClick != null) "auto" else "none")
+                    property("z-index", if (isSelected) "3" else "2")
+                }
+            } else {
+                // For the canvas, use the standard connection styles
+                classes(NodeEditorStyles.connectionLine)
+                if (isSelected) {
+                    classes(NodeEditorStyles.connectionSelected)
+                }
             }
             
             // Add click handler if provided
@@ -146,11 +98,23 @@ fun BezierConnection(
             attrs = {
                 classes(NodeEditorStyles.connectionSvgContainer)
                 id(svgContainerId)
+                
+                // If in connection layer, make the container cover the entire wrapper
+                if (isInConnectionLayer) {
+                    style {
+                        position(Position.Fixed)
+                        left(0.px)
+                        top(0.px)
+                        property("width", "100%")
+                        property("height", "100%")
+                        property("pointer-events", "none")
+                    }
+                }
             }
         )
         
         // Use DisposableEffect to create and manage the SVG element
-        DisposableEffect(path, actualColor, actualThickness, svgContainerId) {
+        DisposableEffect(path, actualColor, actualThickness, svgContainerId, isInConnectionLayer) {
             // Get the container element
             val container = document.getElementById(svgContainerId)
             
@@ -168,6 +132,23 @@ fun BezierConnection(
                 pathElement.setAttribute("stroke", actualColor.toString())
                 pathElement.setAttribute("stroke-width", actualThickness.toString())
                 pathElement.setAttribute("fill", "none")
+                
+                // Add additional attributes for the connection layer
+                if (isInConnectionLayer) {
+                    // Make the path clickable if onClick is provided
+                    if (onClick != null) {
+                        pathElement.setAttribute("style", "cursor: pointer; pointer-events: stroke;")
+                    } else {
+                        pathElement.setAttribute("style", "pointer-events: none;")
+                    }
+                    
+                    // Add a class for styling
+                    if (isSelected) {
+                        pathElement.setAttribute("class", "connection-path-selected")
+                    } else {
+                        pathElement.setAttribute("class", "connection-path-normal")
+                    }
+                }
                 
                 // Append path to SVG
                 svg.appendChild(pathElement)

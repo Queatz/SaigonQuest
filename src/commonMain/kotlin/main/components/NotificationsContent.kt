@@ -8,6 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import main.api.NotificationApi
 import models.Notification
 import org.jetbrains.compose.web.css.AlignItems
@@ -347,15 +350,16 @@ private fun formatTimestamp(timestamp: Long): String {
     }
     
     // For older dates, just return a simple date string
-    // Create a JavaScript Date object from the timestamp
-    val date = js("new Date(timestamp)")
+    // Create a Kotlin datetime object from the timestamp
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     
     // Get month name (abbreviated)
     val months = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    val month = months[js("date.getMonth()") as Int]
+    val month = months[localDateTime.month.ordinal]
     
     // Get day of month
-    val day = js("date.getDate()") as Int
+    val day = localDateTime.dayOfMonth
     
     return "$month $day"
 }

@@ -21,6 +21,7 @@ import org.w3c.dom.HTMLElement
  * @param currentY Current Y coordinate of the mouse
  * @param isValidTarget Whether there is a valid target port under the cursor
  * @param thickness Thickness of the preview connection
+ * @param isInConnectionLayer Whether this preview is being rendered in the separate connection layer
  */
 @Composable
 fun ConnectionPreview(
@@ -29,7 +30,8 @@ fun ConnectionPreview(
     currentX: Float,
     currentY: Float,
     isValidTarget: Boolean = false,
-    thickness: Float = 2f
+    thickness: Float = 2f,
+    isInConnectionLayer: Boolean = false
 ) {
     // Determine color based on whether there's a valid target
     val color = if (isValidTarget) rgba(0, 255, 100, 0.8) else rgba(100, 200, 255, 0.8)
@@ -41,7 +43,8 @@ fun ConnectionPreview(
         targetX = currentX,
         targetY = currentY,
         color = color,
-        thickness = thickness
+        thickness = thickness,
+        isInConnectionLayer = isInConnectionLayer
     )
     
     // Add a visual indicator at the source port
@@ -54,6 +57,12 @@ fun ConnectionPreview(
                 left((sourceX - 6).px)
                 top((sourceY - 6).px)
                 backgroundColor(color)
+                
+                // If in connection layer, make sure it's visible above the canvas
+                if (isInConnectionLayer) {
+                    property("z-index", "3")
+                    property("pointer-events", "none") // Don't interfere with mouse events
+                }
             }
         }
     )
@@ -61,7 +70,14 @@ fun ConnectionPreview(
     // Add a visual indicator at the cursor position
     Div(
         attrs = {
+            // Apply the base cursor style
             classes(NodeEditorStyles.connectionPreviewCursor)
+            
+            // Apply the pulse animation class if there's a valid target
+            if (isValidTarget) {
+                classes(NodeEditorStyles.connectionPreviewPulse)
+            }
+            
             style {
                 // Center the cursor indicator on the current mouse position
                 left((currentX - 8).px)
@@ -72,37 +88,12 @@ fun ConnectionPreview(
                 property("border-color", color.toString())
                 property("box-shadow", "0 0 12px ${color.toString()}")
                 
-                // Add animation effect if there's a valid target
-                if (isValidTarget) {
-                    property("animation", "pulse 1.5s infinite")
+                // If in connection layer, make sure it's visible above the canvas
+                if (isInConnectionLayer) {
+                    property("z-index", "3")
+                    property("pointer-events", "none") // Don't interfere with mouse events
                 }
             }
         }
     )
-    
-    // Add a keyframe animation for the pulse effect using the DOM API
-    DisposableEffect(Unit) {
-        // Check if the style element already exists
-        val styleId = "pulse-animation-style"
-        var styleElement = document.getElementById(styleId) as? HTMLElement
-        
-        // If the style element doesn't exist, create it
-        if (styleElement == null) {
-            styleElement = document.createElement("style") as HTMLElement
-            styleElement.id = styleId
-            styleElement.innerHTML = """
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.2); opacity: 0.8; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-            """.trimIndent()
-            
-            // Append the style element to the document head
-            document.head?.appendChild(styleElement)
-        }
-        
-        // Cleanup function (we don't remove the style element since it might be used by other instances)
-        onDispose { }
-    }
 }

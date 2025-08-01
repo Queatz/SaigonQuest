@@ -13,6 +13,12 @@ import lib.StandardMaterial
 import lib.Vector3
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.WebSocketConnectionManager
+import main.components.world.CharacterDirection
+import main.components.world.SpriteSheet
+import main.components.world.TextBillboard
+import main.components.world.WorldObjectHandle
+import main.components.world.WorldObjectManager
 import models.Position
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
@@ -37,8 +43,17 @@ import kotlin.math.abs
  */
 class PlayerController(private val scene: Scene) {
     
-    // The player mesh
+    // The player mesh (for compatibility with existing code)
     private var player: Mesh? = null
+    
+    // The player character handle
+    private var playerHandle: WorldObjectHandle? = null
+    
+    // Username text billboard handle
+    private var usernameTextHandle: WorldObjectHandle? = null
+    
+    // Current player direction
+    private var playerDirection: CharacterDirection = CharacterDirection.S
     
     // Target position for click-to-move
     private var playerTargetPosition: Vector3? = null
@@ -71,30 +86,95 @@ class PlayerController(private val scene: Scene) {
     private val giveUpTimeThreshold = 1.0 // Time in seconds to give up if movement is minimal
     
     /**
-     * Creates the player mesh.
+     * Creates the player character or mesh.
      * 
      * @param startPosition The starting position for the player
+     * @param worldObjectManager Optional WorldObjectManager to create a character instead of a box
      */
-    fun createPlayer(startPosition: Vector3) {
-        // Create player box
-        player = MeshBuilder.CreateBox("player", 
-            object : CreateBoxOptions {
-                override val width = 0.05f
-                override val height = 1.0f
-                override val depth = 0.25f
-            }, scene)
+    fun createPlayer(startPosition: Vector3, worldObjectManager: WorldObjectManager? = null) {
+        if (worldObjectManager != null) {
+            // Create a sprite sheet for the player
+            val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
         
-        // Create player material
-        val playerMaterial = PBRMaterial("playerMaterial", scene).apply {
-            albedoColor = Color3(0.2f, 0.4f, 0.8f)
-            metallic = 0.1f
-            roughness = 0.2f
-            emissiveColor = Color3(0.1f, 0.1f, 0.3f)
+            // Create the player character using the WorldObjectManager
+            playerHandle = worldObjectManager.createCharacter(
+                spriteSheet = spriteSheet,
+                direction = playerDirection,
+                position = startPosition
+            )
+        
+            // Create a simple box for collision detection
+            // This is needed because we can't directly access the character's mesh
+            player = MeshBuilder.CreateBox("player_collision", 
+                object : CreateBoxOptions {
+                    override val width = 0.05f
+                    override val height = 1.0f
+                    override val depth = 0.25f
+                }, scene)
+        
+            // Make the collision box invisible
+            player?.isVisible = false
+        
+            // Position the collision box
+            player?.position = startPosition
+            
+            // Add username text above the player
+            // Start with a default username
+            val defaultUsername = "Player"
+            
+            // Calculate position above the player (adjust Y value as needed)
+            val textPosition = Vector3(startPosition.x, startPosition.y + 1.2f, startPosition.z)
+            
+            // Create the text billboard with default text
+            usernameTextHandle = worldObjectManager.createTextBillboard(
+                text = defaultUsername,
+                position = textPosition,
+                fontSize = 18,
+                textColor = "white"
+            )
+            
+            // Update the username asynchronously
+            coroutineScope.launch {
+                try {
+                    // Get the current user's username
+                    val user = UserApi.getCurrentUser()
+                    
+                    // Create a new text billboard with the actual username
+                    // First remove the old one
+                    usernameTextHandle?.remove()
+                    
+                    // Create a new one with the correct username
+                    usernameTextHandle = worldObjectManager.createTextBillboard(
+                        text = user.username,
+                        position = textPosition,
+                        fontSize = 18,
+                        textColor = "white"
+                    )
+                } catch (e: Exception) {
+                    console.error("Error getting username", e)
+                }
+            }
+        } else {
+            // Fallback to creating a visible box (for backward compatibility)
+            player = MeshBuilder.CreateBox("player", 
+                object : CreateBoxOptions {
+                    override val width = 0.05f
+                    override val height = 1.0f
+                    override val depth = 0.25f
+                }, scene)
+        
+            // Create player material
+            val playerMaterial = PBRMaterial("playerMaterial", scene).apply {
+                albedoColor = Color3(0.2f, 0.4f, 0.8f)
+                metallic = 0.1f
+                roughness = 0.2f
+                emissiveColor = Color3(0.1f, 0.1f, 0.3f)
+            }
+            player?.material = playerMaterial
+        
+            // Position player
+            player?.position = startPosition
         }
-        player?.material = playerMaterial
-        
-        // Position player
-        player?.position = startPosition
     }
     
     /**
@@ -286,6 +366,7 @@ class PlayerController(private val scene: Scene) {
     /**
      * Updates the player's position based on movement direction or target position.
      * Uses delta time to ensure consistent movement speed regardless of framerate.
+     * Also updates the player's direction based on movement.
      * 
      * @param moveDirection The direction to move in (from keyboard input)
      * @return The new position if movement occurred, null otherwise
@@ -312,6 +393,10 @@ class PlayerController(private val scene: Scene) {
         // Handle keyboard movement
         if (moveDirection.length() > 0f) {
             finalMoveDirection = moveDirection.scale(frameMovementSpeed)
+            
+            // Update player direction based on movement
+            updatePlayerDirection(moveDirection)
+            
             // Cancel click-to-move if keyboard movement is active
             stopMovement()
         }
@@ -332,6 +417,9 @@ class PlayerController(private val scene: Scene) {
                 direction.normalize()
                 direction.scaleInPlace(min(frameMovementSpeed, distance))
                 finalMoveDirection = direction
+                
+                // Update player direction based on movement
+                updatePlayerDirection(direction)
             }
         }
         
@@ -379,18 +467,39 @@ class PlayerController(private val scene: Scene) {
                     // Update player position
                     player!!.position = validPos
                     
-                    // Send player position update via WebSocket
+                    // Update character position to match player position
+                    playerHandle?.position = validPos
+                    
+                    // Update username text position to be above the player
+                    usernameTextHandle?.position = Vector3(
+                        validPos.x,
+                        validPos.y + 1.2f,
+                        validPos.z
+                    )
+                    
+                    // Send player position update via WebSocket only if connected
                     coroutineScope.launch {
                         try {
-                            val user = UserApi.getCurrentUser()
-                            WebSocketApi.updatePlayerPosition(
-                                position = Position(
-                                    x = validPos.x,
-                                    y = validPos.y,
-                                    z = validPos.z
-                                ),
-                                isPlayer = user.isPlayer
-                            )
+                            // Check connection state using WebSocketConnectionManager
+                            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                                val user = UserApi.getCurrentUser()
+                                val success = WebSocketApi.updatePlayerPosition(
+                                    position = Position(
+                                        x = validPos.x,
+                                        y = validPos.y,
+                                        z = validPos.z
+                                    ),
+                                    isPlayer = user.isPlayer
+                                )
+                                if (!success) {
+                                    console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                                }
+                            } else {
+                                // Don't spam the console with warnings - only log occasionally
+                                if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
+                                    console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                                }
+                            }
                         } catch (e: Exception) {
                             console.error("Error updating player position", e)
                         }
@@ -434,10 +543,64 @@ class PlayerController(private val scene: Scene) {
     }
     
     /**
+     * Updates the player's direction based on movement.
+     * Maps a Vector3 movement direction to a CharacterDirection enum value.
+     * 
+     * @param moveDirection The direction vector to map
+     */
+    private fun updatePlayerDirection(moveDirection: Vector3) {
+        // Normalize the direction vector to get a unit vector
+        val normalizedDirection = moveDirection.clone()
+        if (normalizedDirection.length() > 0) {
+            normalizedDirection.normalize()
+        }
+        
+        // Get the x and z components (horizontal plane)
+        val x = normalizedDirection.x
+        val z = normalizedDirection.z
+        
+        // Determine the direction based on the angle
+        // We use 8 directions (N, NE, E, SE, S, SW, W, NW)
+        val newDirection = when {
+            // North (z < 0)
+            z < -0.7f && x > -0.3f && x < 0.3f -> CharacterDirection.N
+            // Northeast
+            z < -0.3f && x > 0.3f -> CharacterDirection.NE
+            // East (x > 0)
+            x > 0.7f && z > -0.3f && z < 0.3f -> CharacterDirection.E
+            // Southeast
+            z > 0.3f && x > 0.3f -> CharacterDirection.SE
+            // South (z > 0)
+            z > 0.7f && x > -0.3f && x < 0.3f -> CharacterDirection.S
+            // Southwest
+            z > 0.3f && x < -0.3f -> CharacterDirection.SW
+            // West (x < 0)
+            x < -0.7f && z > -0.3f && z < 0.3f -> CharacterDirection.W
+            // Northwest
+            z < -0.3f && x < -0.3f -> CharacterDirection.NW
+            // Default to current direction if movement is ambiguous
+            else -> playerDirection
+        }
+        
+        // Only update if the direction has changed
+        if (newDirection != playerDirection) {
+            playerDirection = newDirection
+            
+            // Update the character's direction if we have a player handle
+            playerHandle?.let { handle ->
+                // Use the new updateDirection method to update the character's direction
+                handle.updateDirection(playerDirection)
+            }
+        }
+    }
+    
+    /**
      * Disposes of the player controller resources.
      */
     fun dispose() {
         player?.dispose()
         moveCircle?.dispose()
+        playerHandle?.remove()
+        usernameTextHandle?.remove()
     }
 }

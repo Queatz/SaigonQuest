@@ -8,10 +8,16 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
+import routes.configureChatRoutes
 import routes.configureHealthRoutes
+import routes.configureNotificationRoutes
 import routes.configureObjectRoutes
 import routes.configureUserRoutes
+import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
@@ -41,6 +47,14 @@ fun Application.module() {
         anyHost()
     }
     
+    // Install WebSockets
+    install(WebSockets) {
+        pingPeriod = 15.seconds
+        timeout = 60.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
+    
     // Install Authentication with JWT
     install(Authentication) {
         JwtConfig.configureKtorAuth(this)
@@ -52,5 +66,8 @@ fun Application.module() {
         configureWorldRoutes()
         configureUserRoutes()
         configureObjectRoutes()
+        configureChatRoutes()
+        configureNotificationRoutes()
+        configureWebSocketRoutes()
     }
 }

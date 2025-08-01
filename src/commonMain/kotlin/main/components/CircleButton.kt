@@ -15,11 +15,18 @@ import org.jetbrains.compose.web.dom.Text
  * @param isChat Flag to indicate if this is a chat button, which will have a larger badge
  */
 @Composable
-fun CircleButton(onClick: () -> Unit, icon: String, badgeCount: Int? = -1, isChat: Boolean = false) {
+fun CircleButton(
+    onClick: () -> Unit,
+    icon: String,
+    badgeCount: Int? = -1,
+    isChat: Boolean = false,
+    id: String? = null
+) {
     Div(
         attrs = {
             classes(Styles.circleButton)
             onClick { onClick() }
+            id?.let { id(it) }
         }
     ) {
         // Button content (icon)

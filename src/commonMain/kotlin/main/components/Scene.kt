@@ -17,41 +17,23 @@ import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
+import main.utils.createObjectDropEvent
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
 import main.components.`object`.ObjectManager
+import main.components.`object`.SceneObjectManager
 import main.components.player.PlayerController
+import main.components.player.OtherPlayersController
 import main.components.world.WorldLoader
+import main.components.world.WorldObjectManager
 import main.components.SceneManager
 import main.components.WorldEdit
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.vh
-import org.jetbrains.compose.web.css.width
+import main.components.LoadingScreen
+import main.components.GraphicsSettings
+import main.theme.Styles
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
@@ -62,6 +44,22 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
 import org.jetbrains.compose.web.css.Position as PositionCss
+import org.w3c.dom.DragEvent
+
+/**
+ * Helper function to dispatch an object drop event with the necessary data.
+ * 
+ * @param x The x coordinate of the drop
+ * @param y The y coordinate of the drop
+ * @param data The JSON data of the dropped object
+ */
+private fun dispatchObjectDropEvent(x: Int, y: Int, data: String) {
+    // Create a custom event using the utility function
+    val customEvent = createObjectDropEvent(x, y, data)
+    
+    // Dispatch the event
+    window.dispatchEvent(customEvent)
+}
 
 /**
  * A component that renders a BabylonJS scene with a 3D model.
@@ -95,6 +93,9 @@ fun SceneComponent(url: String) {
     // State to track if we're on mobile
     val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
     
+    // State to track low graphics mode
+    val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
+    
     // Get the router for navigation
     val router = Router.current
     
@@ -110,122 +111,79 @@ fun SceneComponent(url: String) {
             window.removeEventListener("resize", resizeListener)
         }
     }
+    
+    // Observe changes to graphics settings
+    LaunchedEffect(Unit) {
+        // Create a coroutine that watches for changes to the graphics mode
+        while (true) {
+            // Check if the graphics mode has changed
+            val currentMode = GraphicsSettings.isLowGraphicsModeEnabled()
+            if (isLowGraphicsMode.value != currentMode) {
+                isLowGraphicsMode.value = currentMode
+            }
+            delay(100) // Check every 100ms
+        }
+    }
 
     // Set up the canvas with CSS
+    // Use isLowGraphicsMode.value as a key to ensure the style is updated when the mode changes
+    val currentGraphicsMode = isLowGraphicsMode.value
+    
     Canvas(
         attrs = {
             id(canvasId)
-            style {
-                width(100.percent)
-                height(100.vh)
-                display(DisplayStyle.Block)
+            
+            // Apply base canvas styles
+            classes(Styles.canvasBase)
+            
+            // Apply low graphics mode styles if enabled
+            if (currentGraphicsMode) {
+                classes(Styles.canvasLowGraphics)
+                console.log("Applied pixelated rendering to canvas (low graphics mode)")
+            } else {
+                console.log("Using standard rendering for canvas (normal graphics mode)")
             }
+
+            ref {
+                it.focus()
+
+                onDispose {}
+            }
+
             // Add drag and drop event listeners
-            attr("ondragover", "event.preventDefault();")
-            attr("ondrop", "event.preventDefault(); window.dispatchEvent(new CustomEvent('objectDrop', {detail: {x: event.clientX, y: event.clientY, data: event.dataTransfer.getData('application/json')}}));")
+            onDragOver { event -> 
+                event.preventDefault()
+            }
+            onDrop { event ->
+                event.preventDefault()
+                
+                // Get the necessary data from the event
+                val clientX = event.nativeEvent.asDynamic().clientX as Int
+                val clientY = event.nativeEvent.asDynamic().clientY as Int
+                val data = event.nativeEvent.asDynamic().dataTransfer.getData("application/json") as String
+                
+                // Use the helper function to dispatch the custom event
+                dispatchObjectDropEvent(clientX, clientY, data)
+            }
         }
     )
     
     // Loading screen or error message
-    if (!isLoaded.value && !showWorldEditPanel.value && !showLoginDialog.value) {
-        Div(
-            attrs = {
-                style {
-                    position(PositionCss.Absolute)
-                    top(0.px)
-                    left(0.px)
-                    width(100.percent)
-                    height(100.vh)
-                    backgroundColor(Color.black)
-                    color(Color.white)
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    justifyContent(JustifyContent.Center)
-                    alignItems(AlignItems.Center)
-                    property("z-index", "10")
-                    padding(16.px)
-                    textAlign("center")
-                }
-            }
-        ) {
-            if (loadingFailed.value) {
-                // Error message when world loading fails
-                H2 {
-                    Text(errorMessage.value)
-                }
-                
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Row)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                            gap(16.px)
-                            marginTop(24.px)
-                        }
-                    }
-                ) {
-                    // Create this world or Login button
-                    Button(
-                        attrs = {
-                            style {
-                                padding(12.px, 24.px)
-                                backgroundColor(rgba(0, 120, 255, 0.7))
-                                color(Color.white)
-                                property("border", "0")
-                                property("border-radius", "4px")
-                                cursor("pointer")
-                                fontSize(16.px)
-                            }
-                            onClick { 
-                                // Check if user is logged in
-                                if (UserApi.getToken() != null) {
-                                    // User is logged in, show world edit panel
-                                    showWorldEditPanel.value = true
-                                } else {
-                                    // User is not logged in, show login dialog
-                                    showLoginDialog.value = true
-                                }
-                            }
-                        }
-                    ) {
-                        // Show different text based on login status
-                        Text(if (UserApi.getToken() != null) "Claim this World" else "Login and Claim this World")
-                    }
-                    
-                    // Go back button
-                    Button(
-                        attrs = {
-                            style {
-                                padding(12.px, 24.px)
-                                backgroundColor(rgba(255, 255, 255, 0.2))
-                                color(Color.white)
-                                property("border", "0")
-                                property("border-radius", "4px")
-                                cursor("pointer")
-                                fontSize(16.px)
-                            }
-                            onClick { 
-                                router.navigate("/")
-                            }
-                        }
-                    ) {
-                        Text("[ Go back ]")
-                    }
-                }
-            } else {
-                // Normal loading message
-                Span {
-                    Text("Loading Saigon.Quest world...")
-                }
-            }
-        }
-    }
+    LoadingScreen(
+        isLoaded = isLoaded.value,
+        loadingFailed = loadingFailed.value,
+        errorMessage = errorMessage.value,
+        showWorldEditPanel = showWorldEditPanel.value,
+        showLoginDialog = showLoginDialog.value,
+        onShowWorldEditPanel = { showWorldEditPanel.value = true },
+        onShowLoginDialog = { showLoginDialog.value = true },
+        onNavigateHome = { router.navigate("/") }
+    )
     
     // Show world edit panel if requested
     if (showWorldEditPanel.value) {
         WorldEdit(
+            currentWorld = currentWorld.value,
             isMobile = isMobile.value,
             onClose = { showWorldEditPanel.value = false },
             onSave = { newWorld ->
@@ -329,7 +287,20 @@ fun SceneComponent(url: String) {
 
         // Create the engine
         val engine = Engine(canvas, true)
-
+        
+        // Set hardware scaling level based on graphics mode
+        engine.setHardwareScalingLevel(GraphicsSettings.getEngineScalingFactor())
+        
+        // Create an observer for graphics mode changes
+        val graphicsModeObserver: () -> Unit = {
+            // Update hardware scaling level when graphics mode changes
+            engine.setHardwareScalingLevel(GraphicsSettings.getEngineScalingFactor())
+            console.log("Graphics mode changed. Low graphics mode: ${GraphicsSettings.isLowGraphicsModeEnabled()}, Scaling factor: ${GraphicsSettings.getEngineScalingFactor()}")
+        }
+        
+        // Register the observer with GraphicsSettings
+        GraphicsSettings.addObserver(graphicsModeObserver)
+        
         // Handle window resize
         val resizeHandler = { _: Event ->
             engine.resize()
@@ -338,6 +309,9 @@ fun SceneComponent(url: String) {
 
         // Create the scene
         val scene = Scene(engine)
+        
+        // Register scene with SceneManager for global access
+        SceneManager.setScene(scene)
         
         // Initialize BabylonJS loaders before loading the 3D model
         initializeBabylonJSLoaders()
@@ -348,9 +322,21 @@ fun SceneComponent(url: String) {
         SceneManager.setCameraController(cameraController)
         
         val playerController = PlayerController(scene)
+        // Register player controller with SceneManager for global access
+        SceneManager.setPlayerController(playerController)
+        
+        // Create other players controller for multiplayer
+        val otherPlayersController = OtherPlayersController(scene)
+        // Register other players controller with SceneManager for global access
+        SceneManager.setOtherPlayersController(otherPlayersController)
+        
         val inputHandler = InputHandler(scene, playerController, cameraController)
         val worldLoader = WorldLoader(scene)
-        val objectManager = ObjectManager(scene, cameraController)
+        val objectManager = SceneObjectManager(scene, cameraController)
+        val worldObjectManager = WorldObjectManager(scene)
+        
+        // Register object manager with SceneManager for global access
+        SceneManager.setObjectManager(objectManager)
         
         // Set up object drop handler
         val objectDropHandler: (Event) -> Unit = { event ->
@@ -382,8 +368,8 @@ fun SceneComponent(url: String) {
                 // Find a valid starting position for the player
                 val startPosition = playerController.findValidStartPosition()
                 
-                // Create the player
-                playerController.createPlayer(startPosition)
+                // Create the player using the WorldObjectManager
+                playerController.createPlayer(startPosition, worldObjectManager)
                 
                 // Register player mesh as shadow caster and receiver
                 playerController.getPlayer()?.let { playerMesh ->
@@ -400,13 +386,44 @@ fun SceneComponent(url: String) {
                 
                 // Set initial camera target position
                 cameraController.setInitialTargetPosition(startPosition)
-                
+
                 // Set up input handling
                 inputHandler.setupKeyboardHandling()
                 inputHandler.setupPointerHandling()
                 
                 // Set up WebSocket listeners for objects
                 objectManager.setupWebSocketListeners()
+                
+                // Set up WebSocket listeners for world objects
+                worldObjectManager.setupWebSocketListeners()
+                
+                // Connect to WebSocket for real-time updates using the ConnectionManager
+                console.log("Connecting to WebSocket using ConnectionManager...")
+                WebSocketConnectionManager.connectToWorld(url)
+                
+                // Wait for WebSocket connection to be established
+                var connectionAttempts = 0
+                while (WebSocketConnectionManager.connectionState.value != WebSocketConnectionManager.ConnectionState.CONNECTED && connectionAttempts < 10) {
+                    console.log("Waiting for WebSocket connection to establish... Attempt ${connectionAttempts + 1}/10")
+                    delay(500) // Wait 500ms between checks
+                    connectionAttempts++
+                }
+                
+                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                    console.log("WebSocket connection established successfully!")
+                } else {
+                    console.warn("WebSocket connection not established after multiple attempts. Player movement may be limited.")
+                }
+                
+                console.log("Setting WorldObjectManager in other players controller...")
+                
+                // Set the WorldObjectManager in the OtherPlayersController for username display
+                otherPlayersController.setWorldObjectManager(worldObjectManager)
+                
+                console.log("Initializing other players controller...")
+                
+                // Initialize other players controller for multiplayer
+                otherPlayersController.initialize()
                 
                 // Mark as loaded to hide loading screen
                 isLoaded.value = true
@@ -433,16 +450,30 @@ fun SceneComponent(url: String) {
             // Calculate movement direction from input
             val moveDirection = inputHandler.calculateMovementDirection()
             
-            // Update player position
-            val newPosition = playerController.updatePlayerPosition(moveDirection)
-            
-            // Update camera target if player moved
-            if (newPosition != null) {
-                cameraController.updateCameraTarget(newPosition)
+            // Only update player position if WebSocket is connected
+            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                // Update player position
+                val newPosition = playerController.updatePlayerPosition(moveDirection)
+                
+                // Update camera target if player moved
+                if (newPosition != null) {
+                    cameraController.updateCameraTarget(newPosition)
+                }
+            } else {
+                // If not connected, just log a message (but not too frequently)
+                if (window.performance.now() % 1000 < 16) { // Log roughly once per second
+                    console.log("Waiting for WebSocket connection before allowing player movement...")
+                }
             }
             
             // Update camera animation
             cameraController.updateAnimation()
+            
+            // Update world objects
+            worldObjectManager.update(scene.deltaTime)
+            
+            // Update occlusion fading effect
+            worldLoader.getOcclusionManager()?.update()
         }
         
         // Start the render loop
@@ -458,10 +489,18 @@ fun SceneComponent(url: String) {
             window.removeEventListener("resize", resizeHandler)
             window.removeEventListener("objectDrop", objectDropHandler)
             
+            // Unregister the graphics mode observer
+            GraphicsSettings.removeObserver(graphicsModeObserver)
+            
+            // Disconnect from WebSocket
+            WebSocketConnectionManager.disconnectFromWorld(url)
+            
             // Dispose controllers
             cameraController.dispose()
             playerController.dispose()
+            otherPlayersController.dispose()
             objectManager.dispose()
+            worldObjectManager.dispose()
             worldLoader.dispose()
             
             // Clear SceneManager references

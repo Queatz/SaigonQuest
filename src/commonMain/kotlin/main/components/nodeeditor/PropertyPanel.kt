@@ -27,6 +27,16 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import web.cssom.AtRules.Companion.property
+import kotlinx.serialization.json.Json
+// Import the node data types and parser
+import main.components.nodeeditor.NodeDataType
+import main.components.nodeeditor.TextNodeData
+import main.components.nodeeditor.ButtonsNodeData
+import main.components.nodeeditor.TeleportNodeData
+import main.components.nodeeditor.SoundNodeData
+import main.components.nodeeditor.EffectNodeData
+import main.components.nodeeditor.EmptyNodeData
+import main.components.nodeeditor.NodeDataParser
 
 /**
  * A panel for editing node properties.
@@ -52,52 +62,43 @@ fun PropertyPanel(
     var effectType by remember { mutableStateOf("") }
     
     // Initialize additional properties based on node type and existing data
-    val nodeData = try {
-        js("JSON.parse(node.data || '{}')")
-    } catch (e: Exception) {
-        js("{}")
-    }
+    val typedNodeData = NodeDataParser.parseNodeData(node.type, node.label, node.data)
     
-    when (node.type) {
-        "dialogue" -> {
-            if (node.label == "Present text") {
-                textContent = js("nodeData.text || ''").toString()
-            } else if (node.label == "Show buttons") {
-                buttonLabels = js("nodeData.buttons || ''").toString()
-            }
-        }
-        "action" -> {
-            when (node.label) {
-                "Teleport player" -> targetPosition = js("nodeData.position || '0,0,0'").toString()
-                "Play sound" -> soundFile = js("nodeData.sound || ''").toString()
-                "Show effect" -> effectType = js("nodeData.effect || ''").toString()
-            }
-        }
+    when (typedNodeData) {
+        is TextNodeData -> textContent = typedNodeData.text
+        is ButtonsNodeData -> buttonLabels = typedNodeData.buttons
+        is TeleportNodeData -> targetPosition = typedNodeData.position
+        is SoundNodeData -> soundFile = typedNodeData.sound
+        is EffectNodeData -> effectType = typedNodeData.effect
+        else -> { /* No specific data to initialize */ }
     }
     
     // Function to update the node
     val updateNode = {
         // Create updated node data
-        val updatedData = when (node.type) {
+        val updatedNodeData: NodeDataType = when (node.type) {
             "dialogue" -> {
                 if (node.label == "Present text") {
-                    js("JSON.stringify({text: textContent})")
+                    TextNodeData(text = textContent)
                 } else if (node.label == "Show buttons") {
-                    js("JSON.stringify({buttons: buttonLabels})")
+                    ButtonsNodeData(buttons = buttonLabels)
                 } else {
-                    "{}"
+                    EmptyNodeData()
                 }
             }
             "action" -> {
                 when (node.label) {
-                    "Teleport player" -> js("JSON.stringify({position: targetPosition})")
-                    "Play sound" -> js("JSON.stringify({sound: soundFile})")
-                    "Show effect" -> js("JSON.stringify({effect: effectType})")
-                    else -> "{}"
+                    "Teleport player" -> TeleportNodeData(position = targetPosition)
+                    "Play sound" -> SoundNodeData(sound = soundFile)
+                    "Show effect" -> EffectNodeData(effect = effectType)
+                    else -> EmptyNodeData()
                 }
             }
-            else -> "{}"
-        }.toString()
+            else -> EmptyNodeData()
+        }
+        
+        // Serialize the node data to a JSON string
+        val updatedData = NodeDataParser.serializeNodeData(updatedNodeData)
         
         // Create updated node
         val updatedNode = node.copy(

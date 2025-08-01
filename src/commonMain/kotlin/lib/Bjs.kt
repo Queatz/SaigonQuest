@@ -7,6 +7,16 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.KeyboardEvent
 
+/**
+ * Interface for mesh metadata
+ */
+external interface MeshMetadata {
+    /**
+     * Original material of the mesh (used for restoring after effects)
+     */
+    var originalMaterial: Material?
+}
+
 abstract external class AbstractMesh {
     var isVisible: Boolean
     var position: Vector3
@@ -21,6 +31,7 @@ abstract external class AbstractMesh {
     var instancedBuffers: dynamic
     var actionManager: ActionManager?
     var name: String
+    var metadata: MeshMetadata?
 
     fun getVerticesData(kind: String): Array<Float>?
     fun setVerticesData(kind: String, data: Array<Float>, updatable: Boolean)
@@ -28,7 +39,12 @@ abstract external class AbstractMesh {
     fun registerInstancedBuffer(name: String, size: Int)
     fun addRotation(x: Float, y: Float, z: Float)
     fun dispose()
-
+    
+    /**
+     * Gets the bounding info of the mesh
+     * @return The bounding info of the mesh
+     */
+    fun getBoundingInfo(): BoundingInfo
 }
 
 external class CascadedShadowGenerator(
@@ -103,6 +119,18 @@ external class Scene(engine: Engine? = definedExternally) {
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
 
+    /**
+     * Gets the engine that created this scene
+     * @return The engine that created this scene
+     */
+    fun getEngine(): Engine
+    
+    /**
+     * Gets the transform matrix used to project to screen space
+     * @return The transform matrix
+     */
+    fun getTransformMatrix(): Matrix
+    
     fun enableDepthRenderer(camera: Camera? = definedExternally): DepthRenderer
     fun disableDepthRenderer()
     fun getDepthRenderer(): DepthRenderer?
@@ -148,11 +176,12 @@ external class LinesMesh(name: String = definedExternally, scene: Scene = define
      */
     fun updateVerticesData(kind: String, data: Array<Float>, updateExtends: Boolean = definedExternally)
 }
+
 external class MeshBuilder {
     companion object {
-        fun CreateGround(name: String, options: dynamic = definedExternally, scene: Scene = definedExternally): Mesh
-        fun CreatePlane(name: String, options: dynamic = definedExternally, scene: Scene = definedExternally): Mesh
-        fun CreateSphere(name: String, options: dynamic = definedExternally, scene: Scene = definedExternally): Mesh
+        fun CreateGround(name: String, options: CreateGroundOptions = definedExternally, scene: Scene = definedExternally): Mesh
+        fun CreatePlane(name: String, options: CreatePlaneOptions = definedExternally, scene: Scene = definedExternally): Mesh
+        fun CreateSphere(name: String, options: CreateSphereOptions = definedExternally, scene: Scene = definedExternally): Mesh
         /**
          * Create a tube along the given path to represent a thick line.
          * Options: { path: Array<Vector3>, radius: Float, updatable?: Boolean }
@@ -176,7 +205,6 @@ external class MeshBuilder {
     }
 }
 
-
 abstract external class Material {
     var backFaceCulling: Boolean
     var alphaMode: Int
@@ -186,6 +214,8 @@ abstract external class Material {
     var zOffsetUnits: Float
     var cullBackFaces: Boolean
     var transparencyMode: Int
+    var alphaTestCutoff: Float
+
     var disableColorWrite: Boolean
     var disableDepthWrite: Boolean
     var alpha: Float
@@ -198,6 +228,9 @@ abstract external class Material {
 
     companion object {
         val MATERIAL_ALPHATEST: Int
+        val MATERIAL_OPAQUE: Int
+        val MATERIAL_ALPHABLEND: Int
+        val MATERIAL_ALPHATESTANDBLEND: Int
     }
 }
 
@@ -213,11 +246,23 @@ external class StandardMaterial(name: String, scene: Scene) : Material {
     var useAlphaFromDiffuseTexture: Boolean
 }
 
-open external class Texture(url: String, scene: Scene, options: dynamic = definedExternally) {
+/**
+ * Represents a texture in the scene.
+ * 
+ * @param url The URL of the texture
+ * @param scene The scene the texture belongs to
+ * @param options Options to configure the texture
+ */
+open external class Texture(url: String, scene: Scene, options: TextureOptions = definedExternally) {
     var hasAlpha: Boolean
     var wrapU: Int
     var wrapV: Int
     var url: String
+    var uOffset: Float
+    var vOffset: Float
+    var uScale: Float
+    var vScale: Float
+    val samplingMode: Int
 
     fun dispose()
 
@@ -248,6 +293,8 @@ external class Engine(
     fun setHardwareScalingLevel(scalingLevel: Int)
     fun resize()
     fun dispose()
+    fun getRenderWidth(): Int
+    fun getRenderHeight(): Int
 
     companion object {
         val TEXTUREFORMAT_ALPHA: Int
@@ -263,6 +310,48 @@ external class ShadowGenerator(mapSize: Int, light: DirectionalLight) {
     fun removeShadowCaster(mesh: AbstractMesh)
 }
 
+/**
+ * Class representing the bounding information of a mesh
+ */
+external class BoundingInfo {
+    /**
+     * The minimum vector of the bounding box
+     */
+    val minimum: Vector3
+    
+    /**
+     * The maximum vector of the bounding box
+     */
+    val maximum: Vector3
+    
+    /**
+     * Checks if a point is inside the bounding box
+     * 
+     * @param point The point to check
+     * @return True if the point is inside the bounding box, false otherwise
+     */
+    fun isInside(point: Vector3): Boolean
+}
+
+/**
+ * Class representing a vector with 2 coordinates (x, y)
+ */
+external class Vector2(x: Float = definedExternally, y: Float = definedExternally) {
+    var x: Float
+    var y: Float
+    
+    fun normalize(): Vector2
+    fun length(): Float
+    fun clone(): Vector2
+    
+    companion object {
+        fun Zero(): Vector2
+    }
+}
+
+/**
+ * Class representing a vector with 3 coordinates (x, y, z)
+ */
 external class Vector3(x: Float = definedExternally, y: Float = definedExternally, z: Float = definedExternally) {
     var x: Float
     var y: Float
@@ -295,6 +384,17 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
         fun Distance(v1: Vector3, v2: Vector3): Float
         fun Lerp(start: Vector3, end: Vector3, amount: Float): Vector3
         fun Dot(left: Vector3, right: Vector3): Float
+        
+        /**
+         * Projects a 3D point to screen space
+         * 
+         * @param vector The vector to project
+         * @param world The world matrix
+         * @param transform The transformation matrix
+         * @param viewport The viewport
+         * @return The projected vector
+         */
+        fun Project(vector: Vector3, world: Matrix, transform: Matrix, viewport: Viewport): Vector3
     }
 }
 
@@ -320,12 +420,32 @@ external class Quaternion {
     }
 }
 
+/**
+ * Class representing a viewport in screen space
+ */
+external class Viewport(x: Float, y: Float, width: Float, height: Float) {
+    var x: Float
+    var y: Float
+    var width: Float
+    var height: Float
+    
+    /**
+     * Converts viewport coordinates to global screen coordinates
+     * 
+     * @param renderWidth The width of the render target
+     * @param renderHeight The height of the render target
+     * @return The global viewport
+     */
+    fun toGlobal(renderWidth: Int, renderHeight: Int): Viewport
+}
+
 abstract external class Camera {
     var minZ: Float
     var maxZ: Float
     var position: Vector3
     var fov: Float
     var globalPosition: Vector3
+    var viewport: Viewport
 
     fun getDirection(direction: Vector3): Vector3
     fun getForwardRay(length: Float = definedExternally): Ray
@@ -497,9 +617,69 @@ external class DepthOfFieldEffect {
     var focusDistance: Float
 }
 
+/**
+ * The ImageProcessingPostProcess is used to apply image processing effects to the scene.
+ * It can be used for various effects including vignette, color grading, etc.
+ */
 external class ImageProcessingPostProcess {
+    /**
+     * The amount of edge enhancement to apply
+     */
     var edgeAmount: Float
+    
+    /**
+     * The amount of color enhancement to apply
+     */
     var colorAmount: Float
+    
+    /**
+     * Whether the vignette effect is enabled
+     */
+    var vignetteEnabled: Boolean
+    
+    /**
+     * The weight of the vignette effect (0.0-10.0)
+     * Higher values create a stronger darkening effect at the edges
+     */
+    var vignetteWeight: Float
+    
+    /**
+     * Controls how far the vignette extends from the edges (0.0-10.0)
+     * Higher values make the vignette cover more of the screen
+     */
+    var vignetteStretch: Float
+    
+    /**
+     * The color of the vignette
+     */
+    var vignetteColor: Color4
+    
+    /**
+     * The vignette effect configuration
+     * @deprecated Use vignetteWeight, vignetteStretch, and vignetteColor directly instead
+     */
+    var vignette: VignetteEffect
+    
+    /**
+     * Creates a new ImageProcessingPostProcess
+     * 
+     * @param name The name of the post process
+     * @param ratio The ratio of the post process (1.0 for full resolution)
+     * @param camera The camera to attach the post process to
+     * @param samplingMode The sampling mode to use (default: Texture.BILINEAR_SAMPLINGMODE)
+     * @param engine The engine to use for rendering (default: null, uses current engine)
+     * @param reusable Whether the post process can be reused (default: false)
+     * @param textureType The type of texture to use (default: Engine.TEXTURETYPE_UNSIGNED_INT)
+     */
+    constructor(
+        name: String, 
+        ratio: Float, 
+        camera: Camera, 
+        samplingMode: Int = definedExternally,
+        engine: Engine? = definedExternally,
+        reusable: Boolean = definedExternally,
+        textureType: Int = definedExternally
+    )
 }
 
 /**
@@ -525,6 +705,29 @@ external class GrainEffect {
      * The intensity of the grain effect (0.0-1.0)
      */
     var intensity: Float
+}
+
+/**
+ * The VignetteEffect is used to add a vignette effect to the rendering.
+ * This darkens the edges of the screen to create a frame-like appearance.
+ */
+external interface VignetteEffect {
+    /**
+     * The intensity of the vignette effect (0.0-1.0)
+     * Higher values create a stronger darkening effect at the edges
+     */
+    var intensity: Float
+    
+    /**
+     * Controls how far the vignette extends from the edges (0.0-1.0)
+     * Higher values make the vignette cover more of the screen
+     */
+    var stretch: Float
+    
+    /**
+     * The color of the vignette (typically black)
+     */
+    var color: Color4
 }
 
 external class DepthOfFieldEffectBlurLevel {
@@ -562,6 +765,63 @@ external class DepthRenderer(scene: Scene, type: Int = definedExternally) {
          */
         val DEPTH_RENDERER_DEPTH_TYPE: Int
     }
+}
+
+/**
+ * The Effect class represents a shader effect (vertex and fragment shader pair).
+ * It is used to apply custom shader code to materials.
+ */
+external class Effect {
+    /**
+     * Sets a float value on the shader
+     */
+    fun setFloat(name: String, value: Float)
+    
+    /**
+     * Sets a Vector2 value on the shader
+     */
+    fun setVector2(name: String, value: Vector2)
+    
+    /**
+     * Sets a Vector3 value on the shader
+     */
+    fun setVector3(name: String, value: Vector3)
+    
+    /**
+     * Sets a Matrix value on the shader
+     */
+    fun setMatrix(name: String, matrix: Matrix)
+    
+    /**
+     * Sets a texture on the shader
+     */
+    fun setTexture(name: String, texture: Texture)
+
+    /**
+     * Gets the fragment shader source code
+     * @return The fragment shader source code as a string
+     */
+    fun getFragmentShaderSource(): String
+    
+    fun isReady(): Boolean
+}
+
+/**
+ * The ShaderStore is a static object that manages shader code.
+ * This is the main repository for all shader code used in BabylonJS.
+ */
+external object ShaderStore {
+    /**
+     * Stores the shader code for vertex shaders
+     * Access using: ShaderStore.ShadersStore["shaderName" + "VertexShader"]
+     */
+    val ShadersStore: dynamic
+    
+    /**
+     * Stores the shader code for fragment shaders
+     * Access using: ShaderStore.ShadersStore["shaderName" + "PixelShader"]
+     */
+    val IncludesShadersStore: dynamic
 }
 
 external class LensRenderingPipeline(
@@ -682,8 +942,72 @@ external interface CreateGroundOptions {
     val subdivisions: Int? get() = definedExternally
 }
 
+/**
+ * Interface for texture creation options.
+ * Used to configure textures when creating a new Texture instance.
+ */
 external interface TextureOptions {
+    /**
+     * The sampling mode to be used by the texture.
+     * Determines how the texture is sampled when rendered.
+     * Use constants like NEAREST_SAMPLINGMODE for pixel art or TRILINEAR_SAMPLINGMODE for smooth textures.
+     */
     val samplingMode: Int? get() = definedExternally
+    
+    /**
+     * Defines if the texture should build mip maps.
+     * Set to true to disable mipmap generation.
+     * Default is false.
+     */
+    val noMipmap: Boolean? get() = definedExternally
+    
+    /**
+     * Defines if the texture should be flipped on the Y axis during loading.
+     * Default is true for BabylonJS to match WebGL requirements.
+     */
+    val invertY: Boolean? get() = definedExternally
+    
+    /**
+     * Defines if the texture contains alpha values that should be used.
+     * Default is false.
+     */
+    val hasAlpha: Boolean? get() = definedExternally
+    
+    /**
+     * Defines if mip maps should be generated for this texture.
+     * Default is true.
+     */
+    val generateMipMaps: Boolean? get() = definedExternally
+    
+    /**
+     * The texture address mode for U coordinates.
+     * Use constants like CLAMP_ADDRESSMODE to control texture wrapping.
+     */
+    val wrapU: Int? get() = definedExternally
+    
+    /**
+     * The texture address mode for V coordinates.
+     * Use constants like CLAMP_ADDRESSMODE to control texture wrapping.
+     */
+    val wrapV: Int? get() = definedExternally
+    
+    /**
+     * The format of the texture.
+     * Determines how the texture data is stored.
+     */
+    val format: Int? get() = definedExternally
+    
+    /**
+     * The type of the texture.
+     * Determines how the texture is processed.
+     */
+    val type: Int? get() = definedExternally
+    
+    /**
+     * Defines if the texture should be created as a cube texture.
+     * Default is false.
+     */
+    val isCube: Boolean? get() = definedExternally
 }
 
 external interface CreateBoxOptions {
@@ -772,21 +1096,89 @@ external class GridMaterial(name: String, scene: Scene) : Material {
 }
 
 /**
+ * Interface for shader material options
+ */
+external interface ShaderMaterialOptions {
+    /**
+     * Array of attribute names used in the shader
+     */
+    var attributes: Array<String>
+    
+    /**
+     * Array of uniform names used in the shader
+     */
+    var uniforms: Array<String>
+    
+    /**
+     * Array of sampler names used in the shader
+     */
+    var samplers: Array<String>
+    
+    /**
+     * The vertex shader code
+     */
+    val vertexSource: String? get() = definedExternally
+    
+    /**
+     * The fragment shader code
+     */
+    val fragmentSource: String? get() = definedExternally
+}
+
+/**
  * The PBRMaterial is the default material used in Physically Based Rendering.
  * This material is the most advanced one in the babylon.js library.
  */
-external class PBRMaterial(name: String, scene: Scene) : Material {
+/**
+ * ShaderMaterial is used to create custom shaders in BabylonJS
+ */
+external class ShaderMaterial(name: String, scene: Scene, options: ShaderMaterialOptions) : Material {
+    /**
+     * Sets a float value on the shader
+     * @param name The name of the uniform
+     * @param value The float value
+     */
+    fun setFloat(name: String, value: Float)
+    
+    /**
+     * Sets a Vector2 value on the shader
+     * @param name The name of the uniform
+     * @param value The Vector2 value
+     */
+    fun setVector2(name: String, value: Vector2)
+    
+    /**
+     * Sets a Vector3 value on the shader
+     * @param name The name of the uniform
+     * @param value The Vector3 value
+     */
+    fun setVector3(name: String, value: Vector3)
+    
+    /**
+     * Sets the vertex shader code
+     * @param code The vertex shader code
+     */
+    fun setVertexShader(code: String)
+
+    /**
+     * Sets the fragment shader code
+     * @param code The fragment shader code
+     */
+    fun setFragmentShader(code: String)
+}
+
+open external class PBRMaterial(name: String, scene: Scene) : Material {
     var albedoColor: Color3
     var metallic: Float
     var roughness: Float
     var emissiveColor: Color3
     var emissiveIntensity: Float
     var reflectivityColor: Color3
-    var albedoTexture: Texture
-    var metallicTexture: Texture
-    var roughnessTexture: Texture
-    var emissiveTexture: Texture
-    var bumpTexture: Texture
+    var albedoTexture: Texture?
+    var metallicTexture: Texture?
+    var roughnessTexture: Texture?
+    var emissiveTexture: Texture?
+    var bumpTexture: Texture?
     var lightmapTexture: Texture
     var refractionTexture: Texture
     var ambientTexture: Texture
@@ -803,11 +1195,80 @@ external class PBRMaterial(name: String, scene: Scene) : Material {
     var enableSpecularAntiAliasing: Boolean
     var realTimeFiltering: Boolean
     var realTimeFilteringQuality: Int
+    
+    /**
+     * Observable triggered when the material is bound to a mesh
+     */
+    val onBindObservable: Observable<Material>
+    
+    /**
+     * Gets the current effect (shader)
+     */
+    fun getEffect(): Effect?
+    
+    /**
+     * Custom shader name resolver
+     * 
+     * @param shaderName The name of the shader
+     * @param uniforms The list of uniforms
+     * @param uniformBuffers The list of uniform buffers
+     * @param samplers The list of samplers
+     * @param defines The list of defines
+     * @param attributes The list of attributes
+     * @param options The options to customize the shader
+     * @return The resolved shader name or options
+     */
+    var customShaderNameResolve: ((
+        shaderName: String,
+        uniforms: dynamic,
+        uniformBuffers: dynamic,
+        samplers: dynamic,
+        defines: dynamic,
+        attributes: dynamic,
+        options: dynamic
+    ) -> dynamic)?
 }
 
 /**
  * Class used to load scene from files such as .gltf, .glb, .babylon, etc.
  */
+/**
+ * Tools class provides utility functions for BabylonJS.
+ */
+external class Tools {
+    companion object {
+        /**
+         * Creates a screenshot of the scene using the active camera.
+         * 
+         * @param engine The engine to use for rendering
+         * @param camera The camera to use for rendering
+         * @param options The screenshot options (width, height)
+         * @param onSuccess A callback with the screenshot data URL when successful
+         */
+        fun CreateScreenshot(
+            engine: Engine,
+            camera: Camera?,
+            options: ScreenshotOptions = definedExternally,
+            onSuccess: (String) -> Unit
+        )
+    }
+}
+
+/**
+ * Interface for screenshot options.
+ */
+external interface ScreenshotOptions {
+    /**
+     * Width of the screenshot
+     */
+    val width: Int
+    
+    /**
+     * Height of the screenshot
+     */
+    val height: Int
+}
+
 external class SceneLoader {
     companion object {
         /**
@@ -874,4 +1335,104 @@ external class SceneLoader {
             pluginExtension: String? = definedExternally
         ): dynamic
     }
+}
+
+/**
+ * Interface for EffectWrapper options.
+ */
+external interface EffectWrapperOptions {
+    /**
+     * Name of the effect
+     */
+    val name: String
+    
+    /**
+     * Vertex shader code
+     */
+    val vertexShader: String
+    
+    /**
+     * Fragment shader code
+     */
+    val fragmentShader: String
+    
+    /**
+     * Names of the samplers used in the shader
+     */
+    val samplerNames: Array<String>
+    
+    /**
+     * Names of the uniforms used in the shader
+     */
+    val uniformNames: Array<String>
+    
+    /**
+     * Whether to use the shader store
+     */
+    val useShaderStore: Boolean
+
+    val allowEmptySourceTexture: Boolean
+    
+    /**
+     * Attributes used in the shader
+     */
+    val attributes: Array<String>?
+    
+    /**
+     * Defines used in the shader
+     */
+    val defines: Array<String>?
+    
+    /**
+     * The engine to use for rendering
+     */
+    val engine: Engine?
+}
+
+/**
+ * Wraps an effect to be used for rendering
+ */
+external class EffectWrapper {
+    /**
+     * Name of the effect
+     */
+    var name: String
+    
+    /**
+     * Vertex shader code
+     */
+    var vertexShader: String
+    
+    /**
+     * Fragment shader code
+     */
+    var fragmentShader: String
+    
+    /**
+     * Names of the samplers used in the shader
+     */
+    var samplerNames: Array<String>
+    
+    /**
+     * Names of the uniforms used in the shader
+     */
+    var uniformNames: Array<String>
+    
+    /**
+     * Whether to use the shader store
+     */
+    var useShaderStore: Boolean
+    
+    /**
+     * The effect instance
+     */
+    var effect: Effect
+        get() = definedExternally
+        set(value) = definedExternally
+    
+    /**
+     * Creates a new EffectWrapper
+     * @param options Options to create the effect
+     */
+    constructor(options: EffectWrapperOptions)
 }

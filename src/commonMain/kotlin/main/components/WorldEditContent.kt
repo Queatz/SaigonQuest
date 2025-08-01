@@ -8,8 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import lib.Color3
+import lib.Color4
 import main.api.UserApi
 import main.api.WorldApi
+import main.components.SceneManager
 import main.theme.Styles
 import models.User
 import models.World
@@ -55,12 +58,42 @@ fun WorldEditContent(
     onClose: () -> Unit,
     onSave: (World) -> Unit
 ) {
+    /**
+     * Updates the scene background color from a hex color string.
+     * 
+     * @param hexColor The hex color string (e.g., "#FF0000" for red)
+     */
+    fun updateSceneBackgroundColor(hexColor: String) {
+        try {
+            // Get the scene from SceneManager
+            val scene = SceneManager.getScene()
+            
+            if (scene != null) {
+                // Convert hex color string to Color3
+                val color3 = Color3.FromHexString(hexColor)
+                
+                // Convert Color3 to Color4 with alpha=1 (fully opaque)
+                val color4 = color3.toColor4()
+                color4.a = 1.0f
+                
+                // Set the scene's clear color
+                scene.clearColor = color4
+                
+                println("[DEBUG] Updated scene background color to $hexColor")
+            } else {
+                println("[ERROR] Cannot update background color: Scene is null")
+            }
+        } catch (e: Exception) {
+            println("[ERROR] Failed to update background color: ${e.message}")
+        }
+    }
     // State for form fields
     var title by remember { mutableStateOf(currentWorld?.title ?: "") }
     var subtitle by remember { mutableStateOf(currentWorld?.subtitle ?: "") }
     var description by remember { mutableStateOf(currentWorld?.description ?: "") }
     var url by remember { mutableStateOf(currentWorld?.url ?: "") }
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
+    var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#000000") }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -90,6 +123,12 @@ fun WorldEditContent(
         }
     }
     
+    // Apply initial background color when component is mounted
+    LaunchedEffect(Unit) {
+        // Apply the initial background color
+        updateSceneBackgroundColor(backgroundColor)
+    }
+    
     // Determine if the current user is the owner of the world
     val isOwner = if (isEditing && currentUser != null) {
         currentWorld?.userId == currentUser?.key
@@ -113,7 +152,8 @@ fun WorldEditContent(
                 subtitle = subtitle,
                 description = description,
                 url = url,
-                file = file
+                file = file,
+                backgroundColor = backgroundColor
             )
         } else {
             // Create new world
@@ -122,7 +162,8 @@ fun WorldEditContent(
                 subtitle = subtitle,
                 description = description,
                 url = url,
-                file = file
+                file = file,
+                backgroundColor = backgroundColor
             )
         }
         
@@ -402,6 +443,77 @@ fun WorldEditContent(
                     }
                 }
             )
+        }
+        
+        // Background Color field
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) {
+                Text("Background Color")
+            }
+            
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                    }
+                }
+            ) {
+                Input(
+                    type = InputType.Color,
+                    attrs = {
+                        style {
+                            property("width", "50px")
+                            property("height", "30px")
+                            property("padding", "0")
+                            property("border", "none")
+                            if (!fieldsEnabled) {
+                                property("opacity", "0.7")
+                                property("cursor", "not-allowed")
+                            }
+                        }
+                        value(backgroundColor)
+                        if (fieldsEnabled) {
+                            onInput { event -> 
+                                backgroundColor = event.value
+                                // Update the scene background color in real-time
+                                updateSceneBackgroundColor(event.value)
+                            }
+                        }
+                        if (!fieldsEnabled) {
+                            attr("disabled", "true")
+                        }
+                    }
+                )
+                
+                // Display the hex color value next to the color picker
+                Div(
+                    attrs = {
+                        style {
+                            color(Color.white)
+                            fontSize(14.px)
+                        }
+                    }
+                ) {
+                    Text(backgroundColor)
+                }
+            }
         }
     }
     

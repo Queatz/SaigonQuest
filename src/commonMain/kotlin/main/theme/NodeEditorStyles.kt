@@ -12,6 +12,7 @@ import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
@@ -161,29 +162,29 @@ object NodeEditorStyles : StyleSheet() {
     // Canvas wrapper styles
     val nodeEditorCanvasWrapper by style {
         property("flex-grow", "1")
-        backgroundColor(rgba(40, 40, 40, 0.8))
-        padding(16.px)
+        property("width", "0") // Set width to 0 to prevent squishing side panels
+        backgroundColor(rgba(35, 35, 40, 0.85)) // Slightly different tint for the padded area
+        padding(50.px) // Set consistent padding to 16px on all sides
         position(Position.Relative) // Important: This makes absolute positioning of children work
-        property("overflow", "hidden") // Hide scrollbars to make canvas feel infinite
+        property("overflow", "auto") // Enable scrollbars
         // Grid background removed as requested
     }
-    
+
     // Canvas styles
     val nodeEditorCanvas by style {
-        width(10000.px) // Much larger width to make canvas feel infinite
-        height(10000.px) // Much larger height to make canvas feel infinite
-        position(Position.Absolute)
+        width(100.percent) // Reasonable width that allows scrolling
+        height(100.percent) // Reasonable height that allows scrolling
+        position(Position.Relative) // Changed to relative positioning
+        flex(1)
         property("overflow", "visible")
-        property("left", "-5000px") // Center the canvas
-        property("top", "-5000px") // Center the canvas
+        backgroundColor(rgba(40, 40, 40, 0.8)) // Original background color for the usable area
+        property("border", "2px dotted rgba(255, 255, 255, 0.3)") // Dotted border for usable area
+        // Ensure the canvas never gets smaller than the available space
+        // Account for padding (16px on each side) and border (2px on each side)
+        property("min-width", "calc(100% - 36px)") // 100% - (16px*2 + 2px*2)
+        property("min-height", "calc(100% - 36px)") // 100% - (16px*2 + 2px*2)
     }
-    
-    // Canvas with zoom styles
-    val nodeEditorCanvasZoomed by style {
-        property("transform-origin", "0 0")
-        property("transition", "transform 0.2s ease-out")
-    }
-    
+
     val emptyCanvasMessage by style {
         width(100.percent)
         height(100.percent)
@@ -191,8 +192,6 @@ object NodeEditorStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         color(Color.white)
-        property("border", "2px dashed rgba(255, 255, 255, 0.3)")
-        property("border-radius", "8px")
     }
     
     // Sidebar styles
@@ -449,6 +448,7 @@ object NodeEditorStyles : StyleSheet() {
         fontSize(14.px)
         property("resize", "vertical")
         property("min-height", "80px")
+        property("box-sizing", "border-box")
     }
     
     val propertyButton by style {
