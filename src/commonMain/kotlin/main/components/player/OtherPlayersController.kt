@@ -8,15 +8,21 @@ import lib.PBRMaterial
 import lib.Scene
 import lib.Vector3
 import main.api.UserApi
+import main.api.ApiClient
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
+import main.components.shadow.ShadowManager
+import main.components.world.CharacterDirection
+import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import kotlinx.coroutines.launch
+import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
 import models.UserJoinData
 import models.UserLeaveData
+import models.WebSocketAction
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +38,10 @@ import kotlinx.coroutines.Dispatchers
  */
 class OtherPlayersController(private val scene: Scene) {
     
-    // Map of player meshes by userId
+    // Map of player handles by userId
+    private val playerHandles = mutableMapOf<String, WorldObjectHandle>()
+    
+    // Map of player meshes by userId (for backward compatibility)
     private val playerMeshes = mutableMapOf<String, Mesh>()
     
     // Map of player target positions by userId
@@ -44,8 +53,17 @@ class OtherPlayersController(private val scene: Scene) {
     // Map of username text billboard handles by userId
     private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
     
+    // Map of chat message text billboard handles by userId
+    private val chatMessageTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    
+    // Map of chat message removal timeouts by userId
+    private val chatMessageTimeouts = mutableMapOf<String, Int>()
+    
     // Reference to the world object manager for creating text billboards
     private var worldObjectManager: WorldObjectManager? = null
+    
+    // Reference to the shadow manager for configuring shadows
+    private var shadowManager: ShadowManager? = null
     
     // Base movement speed in units per second for framerate-independent movement
     private val baseMovementSpeed = 3.0f
@@ -70,6 +88,43 @@ class OtherPlayersController(private val scene: Scene) {
     fun setWorldObjectManager(manager: WorldObjectManager) {
         worldObjectManager = manager
         console.log("OtherPlayersController: WorldObjectManager set")
+    }
+    
+    /**
+     * Sets the shadow manager for configuring shadows
+     * 
+     * @param manager The shadow manager instance
+     */
+    fun setShadowManager(manager: ShadowManager) {
+        shadowManager = manager
+        console.log("OtherPlayersController: ShadowManager set")
+        
+        // Configure shadows for existing players
+        configureShadowsForPlayers(manager)
+    }
+    
+    /**
+     * Configure shadow casting for a specific player
+     * 
+     * @param userId The user ID of the player
+     */
+    private fun configureShadowForPlayer(userId: String) {
+        // Get the player handle
+        val handle = playerHandles[userId] ?: return
+        
+        // Get the shadow manager
+        val manager = shadowManager ?: return
+        
+        // Configure shadow casting for the player
+        handle.mesh.let { mesh ->
+            // Add the mesh as a shadow caster
+            manager.addShadowCaster(mesh)
+            
+            // Configure the mesh as a shadow receiver
+            manager.configureShadowReceiver(mesh)
+            
+            console.log("OtherPlayersController: Configured shadows for player $userId")
+        }
     }
     
     /**
@@ -134,6 +189,24 @@ class OtherPlayersController(private val scene: Scene) {
         WebSocketApi.addPlayerPositionListener { positionData ->
             console.log("OtherPlayersController: Received UPDATE_PLAYER_POSITION event: ${positionData.userId}")
             handlePlayerPosition(positionData)
+        }
+        
+        // Add listener for chat messages
+        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                // Check if the message is valid
+                if (message.isValid()) {
+                    val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    console.log("OtherPlayersController: Received RECEIVE_CHAT_MESSAGE event: ${chatMessage.userId}, ${chatMessage.message}")
+                    
+                    // Display the chat message above the player's head
+                    displayChatMessage(chatMessage.userId, chatMessage.message)
+                } else {
+                    console.error("OtherPlayersController: Invalid chat message received: ${message.action}, ${message.data}")
+                }
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error parsing chat message", e)
+            }
         }
         
         // Force a user join notification for the current user to trigger updates for all clients
@@ -279,7 +352,7 @@ class OtherPlayersController(private val scene: Scene) {
     }
     
     /**
-     * Create a mesh for another player
+     * Create a character for another player
      * 
      * @param userId The user ID of the player
      * @param position The position of the player
@@ -287,82 +360,96 @@ class OtherPlayersController(private val scene: Scene) {
      * @param username The username to display above the player (optional)
      */
     private fun createPlayerMesh(userId: String, position: Vector3, isPlayer: Boolean, username: String? = null) {
-        // Remove existing mesh if any
+        // Remove existing player if any
         removePlayerMesh(userId)
         
-        // Create player box
-        val mesh = MeshBuilder.CreateBox("player-$userId", 
-            object : CreateBoxOptions {
-                override val width = 0.05f
-                override val height = 1.0f
-                override val depth = 0.25f
-            }, scene)
-        
-        // Create player material
-        val playerMaterial = PBRMaterial("playerMaterial-$userId", scene).apply {
-            // Different color for players vs visitors
-            if (isPlayer) {
-                albedoColor = Color3(0.2f, 0.4f, 0.8f) // Blue for players
-                emissiveColor = Color3(0.1f, 0.1f, 0.3f)
-            } else {
-                albedoColor = Color3(0.8f, 0.4f, 0.2f) // Orange for visitors
-                emissiveColor = Color3(0.3f, 0.1f, 0.1f)
-            }
-            metallic = 0.1f
-            roughness = 0.2f
+        // Get the world object manager
+        val manager = worldObjectManager
+        if (manager == null) {
+            console.error("OtherPlayersController: WorldObjectManager not set, cannot create character")
+            return
         }
-        mesh.material = playerMaterial
         
-        // Position player
-        mesh.position = position
+        // Create a sprite sheet for the player
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+        
+        // Default direction (south)
+        val direction = CharacterDirection.S
+        
+        // Create the player character using the WorldObjectManager
+        val playerHandle = manager.createCharacter(
+            spriteSheet = spriteSheet,
+            direction = direction,
+            position = position
+        )
+        
+        if (playerHandle == null) {
+            console.error("OtherPlayersController: Failed to create character for $userId")
+            return
+        }
         
         // Start with scale 0 for join animation
-        mesh.scaling = Vector3(0f, 0f, 0f)
+        playerHandle.scale = Vector3(0f, 0f, 0f)
         
-        // Store mesh
-        playerMeshes[userId] = mesh
+        // Store the player handle
+        playerHandles[userId] = playerHandle
+        
+        // Store the mesh for backward compatibility
+        playerHandle.mesh.let { mesh ->
+            playerMeshes[userId] = mesh as Mesh
+        }
+        
+        // Store target position and animation time
         playerTargetPositions[userId] = position
         playerAnimationTimes[userId] = window.performance.now()
+        
+        // Configure shadow casting for the player if shadow manager is available
+        configureShadowForPlayer(userId)
         
         // Create username text billboard if WorldObjectManager is available
         worldObjectManager?.let { manager ->
             // Get username for this user
-            scope.launch {
-                try {
-                    // Calculate position above the player (adjust Y value as needed)
-                    val textPosition = Vector3(position.x, position.y + 1.2f, position.z)
-                    
-                    // Use the provided username if available, otherwise use a default name
-                    val displayUsername = username ?: "Player-$userId"
-                    
-                    // Create the text billboard with the username
-                    val textHandle = manager.createTextBillboard(
-                        text = displayUsername,
-                        position = textPosition,
-                        fontSize = 18,
-                        textColor = "white"
-                    )
-                    
-                    // Store the text handle
-                    if (textHandle != null) {
-                        usernameTextHandles[userId] = textHandle
-                    }
-                    
-                    // Try to get the actual username from the server if possible
-                    // This would be a more advanced feature requiring additional API calls
-                    // For now, we'll use the default username
-                } catch (e: Exception) {
-                    console.error("OtherPlayersController: Error creating username text for $userId", e)
+            try {
+                // Calculate position above the player (adjust Y value as needed)
+                val textPosition = Vector3(position.x, position.y + .5f, position.z)
+
+                // Use the provided username if available, otherwise use a default name
+                val displayUsername = username ?: "Player-$userId"
+
+                // Create the text billboard with the username
+                val textHandle = manager.createTextBillboard(
+                    text = displayUsername,
+                    position = textPosition,
+                    fontSize = 18,
+                    textColor = "white"
+                )
+
+                // Store the text handle
+                if (textHandle != null) {
+                    usernameTextHandles[userId] = textHandle
                 }
+
+                // Try to get the actual username from the server if possible
+                // This would be a more advanced feature requiring additional API calls
+                // For now, we'll use the default username
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error creating username text for $userId", e)
             }
         }
     }
     
     /**
-     * Remove a player mesh and associated resources
+     * Remove a player and associated resources
      */
     private fun removePlayerMesh(userId: String) {
-        // Dispose and remove the player mesh
+        // Remove the player handle if it exists
+        playerHandles[userId]?.let { handle ->
+            handle.remove()
+            console.log("OtherPlayersController: Removed player handle for $userId")
+        }
+        playerHandles.remove(userId)
+        
+        // For backward compatibility, also dispose and remove the player mesh
         playerMeshes[userId]?.dispose()
         playerMeshes.remove(userId)
         
@@ -397,7 +484,7 @@ class OtherPlayersController(private val scene: Scene) {
         val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
         
         // Update each player
-        playerMeshes.forEach { (userId, mesh) ->
+        playerHandles.forEach { (userId, handle) ->
             // Handle join/leave animations
             val animStartTime = playerAnimationTimes[userId] ?: currentTime
             val animElapsed = (currentTime - animStartTime) / 1000.0 // in seconds
@@ -405,34 +492,34 @@ class OtherPlayersController(private val scene: Scene) {
             if (animElapsed < joinLeaveDuration) {
                 // Join animation (scale up)
                 val progress = (animElapsed / joinLeaveDuration).toFloat()
-                mesh.scaling = Vector3(progress, progress, progress)
+                handle.scale = Vector3(progress, progress, progress)
             } else if (!playerTargetPositions.containsKey(userId)) {
                 // Leave animation (scale down)
                 val progress = 1.0f - (animElapsed / joinLeaveDuration).toFloat()
                 if (progress > 0) {
-                    mesh.scaling = Vector3(progress, progress, progress)
+                    handle.scale = Vector3(progress, progress, progress)
                 }
             } else {
                 // Normal scale
-                mesh.scaling = Vector3(1f, 1f, 1f)
+                handle.scale = Vector3(1f, 1f, 1f)
                 
                 // Move towards target position
                 val targetPos = playerTargetPositions[userId]
                 if (targetPos != null) {
-                    val currentPos = mesh.position
+                    val currentPos = handle.position
                     val direction = targetPos.subtract(currentPos)
                     val distance = direction.length()
                     
                     // If we're close enough, snap to target position
                     if (distance < 0.1f) {
-                        mesh.position = targetPos
+                        handle.position = targetPos
                         
                         // Update username text billboard position if it exists
                         usernameTextHandles[userId]?.let { textHandle ->
                             // Position the text billboard above the player
                             textHandle.position = Vector3(
                                 targetPos.x,
-                                targetPos.y + 1.2f,
+                                targetPos.y + .5f,
                                 targetPos.z
                             )
                         }
@@ -441,14 +528,14 @@ class OtherPlayersController(private val scene: Scene) {
                         direction.normalize()
                         direction.scaleInPlace(minOf(frameMovementSpeed, distance))
                         val newPosition = currentPos.add(direction)
-                        mesh.position = newPosition
+                        handle.position = newPosition
                         
                         // Update username text billboard position if it exists
                         usernameTextHandles[userId]?.let { textHandle ->
                             // Position the text billboard above the player
                             textHandle.position = Vector3(
                                 newPosition.x,
-                                newPosition.y + 1.2f,
+                                newPosition.y + .5f,
                                 newPosition.z
                             )
                         }
@@ -459,10 +546,107 @@ class OtherPlayersController(private val scene: Scene) {
     }
     
     /**
+     * Configure shadow casting for all other players
+     * 
+     * @param shadowManager The shadow manager to use for configuring shadows
+     */
+    fun configureShadowsForPlayers(shadowManager: ShadowManager) {
+        // Configure shadow casting for all player handles
+        playerHandles.forEach { (userId, handle) ->
+            handle.mesh.let { mesh ->
+                // Add the mesh as a shadow caster
+                shadowManager.addShadowCaster(mesh)
+                
+                // Configure the mesh as a shadow receiver
+                shadowManager.configureShadowReceiver(mesh)
+                
+                console.log("OtherPlayersController: Configured shadows for player $userId")
+            }
+        }
+    }
+    
+    /**
+     * Displays a chat message above a player's head
+     * 
+     * @param userId The ID of the user who sent the message
+     * @param message The message content
+     */
+    fun displayChatMessage(userId: String, message: String) {
+        // Don't display messages for the current user (handled by PlayerController)
+        if (userId == myUserId) {
+            return
+        }
+        
+        // Get the world object manager
+        val manager = worldObjectManager ?: return
+        
+        // Get the player's position
+        val playerPosition = playerHandles[userId]?.position ?: return
+        
+        // Remove existing chat message if any
+        removeChatMessage(userId)
+        
+        // Truncate message to first 16 characters
+        val displayText = if (message.length > 16) message.substring(0, 16) else message
+        
+        // Calculate position above the username (adjust Y value as needed)
+        // Username is at y + .5f, so put chat message at y + .8f
+        val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
+        
+        // Create the text billboard with the chat message
+        val textHandle = manager.createTextBillboard(
+            text = displayText,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "black",
+            backgroundColor = "white"
+        )
+        
+        // Store the text handle
+        if (textHandle != null) {
+            chatMessageTextHandles[userId] = textHandle
+            
+            // Set a timeout to remove the message after 2 seconds
+            val timeoutId = window.setTimeout({
+                removeChatMessage(userId)
+            }, 2000)
+            
+            // Store the timeout ID
+            chatMessageTimeouts[userId] = timeoutId
+            
+            console.log("OtherPlayersController: Displayed chat message for $userId: $displayText")
+        }
+    }
+    
+    /**
+     * Removes a chat message from above a player's head
+     * 
+     * @param userId The ID of the user whose message should be removed
+     */
+    private fun removeChatMessage(userId: String) {
+        // Clear any existing timeout
+        chatMessageTimeouts[userId]?.let { timeoutId ->
+            window.clearTimeout(timeoutId)
+            chatMessageTimeouts.remove(userId)
+        }
+        
+        // Remove the text billboard if it exists
+        chatMessageTextHandles[userId]?.let { textHandle ->
+            textHandle.remove()
+            chatMessageTextHandles.remove(userId)
+            console.log("OtherPlayersController: Removed chat message for $userId")
+        }
+    }
+
+    /**
      * Dispose of all resources
      */
     fun dispose() {
-        // Dispose of all player meshes
+        // Remove all player handles
+        playerHandles.values.forEach { it.remove() }
+        playerHandles.clear()
+        
+        // For backward compatibility, also dispose of all player meshes
         playerMeshes.values.forEach { it.dispose() }
         playerMeshes.clear()
         
@@ -470,12 +654,26 @@ class OtherPlayersController(private val scene: Scene) {
         usernameTextHandles.values.forEach { it.remove() }
         usernameTextHandles.clear()
         
+        // Remove all chat message text billboards
+        chatMessageTextHandles.values.forEach { it.remove() }
+        chatMessageTextHandles.clear()
+        
+        // Clear all chat message timeouts
+        chatMessageTimeouts.forEach { (_, timeoutId) -> window.clearTimeout(timeoutId) }
+        chatMessageTimeouts.clear()
+        
+        // Remove WebSocket listeners
+        WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
+        
         // Clear other tracking maps
         playerTargetPositions.clear()
         playerAnimationTimes.clear()
         
         // Clear the world object manager reference
         worldObjectManager = null
+        
+        // Clear the shadow manager reference
+        shadowManager = null
         
         console.log("OtherPlayersController: Disposed all resources")
     }

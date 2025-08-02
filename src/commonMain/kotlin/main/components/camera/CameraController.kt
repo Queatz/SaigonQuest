@@ -11,8 +11,8 @@ import lib.MeshBuilder
 import lib.SSAO2RenderingPipeline
 import lib.Scene
 import lib.Vector3
-import lib.VignetteEffect
 import kotlin.math.PI
+import main.components.GraphicsSettings
 
 /**
  * Controller for managing the camera in the 3D scene.
@@ -56,6 +56,9 @@ class CameraController(private val scene: Scene) {
             // Set camera constraints
             this.lowerRadiusLimit = 4f // Min constraint
             this.upperRadiusLimit = 12f // Max constraint
+            this.lowerBetaLimit = (15f * PI / 180f).toFloat() // 85 degrees in radians
+            this.upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
+
             this.wheelPrecision = 100f
 
             // Set a narrow FOV (default is ~0.8 radians/45 degrees)
@@ -81,11 +84,9 @@ class CameraController(private val scene: Scene) {
             scene = scene,
             cameras = arrayOf(camera)
         )
-
-        val fancy = false
         
         pipeline.apply {
-            if (fancy) {
+            if (GraphicsSettings.isPrettyGraphicsEnabled()) {
                 // Enable bloom for better lighting effects
                 bloomEnabled = true
                 bloomThreshold = 0.5f
@@ -129,7 +130,7 @@ class CameraController(private val scene: Scene) {
         
         println("[DEBUG] Vignette effect added using ImageProcessingPostProcess")
 
-        if (fancy) {
+        if (GraphicsSettings.isPrettyGraphicsEnabled()) {
             // Set up SSAO (Screen Space Ambient Occlusion) for subtle ambient occlusion
             // Create SSAO pipeline with subtle settings
             val ssao = SSAO2RenderingPipeline(
@@ -156,6 +157,12 @@ class CameraController(private val scene: Scene) {
         
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
+        
+        // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
+        GraphicsSettings.addObserver { updatePipelineSettings() }
+        
+        // Initial update of pipeline settings based on current settings
+        updatePipelineSettings()
     }
     
     /**
@@ -358,9 +365,88 @@ class CameraController(private val scene: Scene) {
     }
     
     /**
+     * Updates the pipeline settings based on the pretty graphics setting.
+     * This method can be called when the pretty graphics setting changes.
+     */
+    fun updatePipelineSettings() {
+        val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
+        
+        pipeline.apply {
+            // Update bloom settings
+            bloomEnabled = isPrettyEnabled
+            if (isPrettyEnabled) {
+                bloomThreshold = 0.5f
+                bloomWeight = 0.5f
+                bloomKernel = 64f
+            }
+            
+            // Update depth of field settings
+            depthOfFieldEnabled = isPrettyEnabled
+            if (isPrettyEnabled) {
+                depthOfField.focalLength = 120f
+                depthOfField.fStop = 1.4f
+                depthOfField.focusDistance = 10_000f
+                depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
+            }
+            
+            // Update grain effect settings
+            grainEnabled = isPrettyEnabled
+            if (isPrettyEnabled) {
+                grain.intensity = 0.1f
+            }
+            
+            // Update image processing settings
+            imageProcessingEnabled = isPrettyEnabled
+            if (isPrettyEnabled) {
+                imageProcessing.contrast = 1.25f
+                imageProcessing.exposure = 1.25f
+            }
+            
+            // Update tone mapping settings
+            toneMappingEnabled = isPrettyEnabled
+        }
+        
+        // Handle SSAO pipeline
+        // Note: This is a simplified approach. In a real implementation, you might want to
+        // store a reference to the SSAO pipeline and update it, or create/dispose it as needed.
+        if (isPrettyEnabled) {
+            // Create SSAO pipeline with subtle settings
+            val ssao = SSAO2RenderingPipeline(
+                name = "ssao",
+                scene = scene,
+                ratio = 1.0, // Full resolution
+                cameras = arrayOf(camera)
+            )
+            
+            // Configure SSAO for subtle effect
+            ssao.apply {
+                // Fine-tune SSAO settings
+                radius = 2f  // Small radius for subtle effect (default is 2.0)
+                totalStrength = 0.25f  // Subtle strength (default is 1.0)
+                samples = 8  // Moderate sample count for quality/performance balance (default is 8)
+                maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
+                minZAspect = 0.2f  // Default value
+                base = 0f  // Default value
+                epsilon = 0.02f  // Default value
+            }
+        }
+        
+        println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
+    }
+    
+    /**
+     * Observer for graphics settings changes.
+     */
+    private val graphicsSettingsObserver: () -> Unit = {
+        updatePipelineSettings()
+    }
+    
+    /**
      * Disposes of the camera controller resources.
      */
     fun dispose() {
+        // Remove the observer when disposing
+        GraphicsSettings.removeObserver(graphicsSettingsObserver)
         cameraTarget?.dispose()
     }
 }

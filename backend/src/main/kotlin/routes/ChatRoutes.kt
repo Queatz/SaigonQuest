@@ -151,5 +151,43 @@ fun Routing.configureChatRoutes() {
                 call.respond(HttpStatusCode.Created, savedMessage)
             }
         }
+        
+        // Update or delete a chat message - requires authentication
+        authenticate {
+            put("/{messageId}") {
+                val messageId = call.parameters["messageId"] ?: return@put call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing messageId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
+                )
+                
+                // Get updated message from request
+                val updatedMessage = call.receive<ChatMessage>()
+                
+                // Ensure the message exists and belongs to the user
+                val result = if (updatedMessage.deleted) {
+                    // Delete message
+                    chatRepository.deleteMessage(messageId, userId)
+                } else {
+                    // Update message
+                    chatRepository.updateMessage(messageId, updatedMessage)
+                }
+                
+                if (result != null) {
+                    call.respond(result)
+                } else {
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "Message not found or you don't have permission to modify it", code = HttpStatusCode.NotFound.value)
+                    )
+                }
+            }
+        }
     }
 }

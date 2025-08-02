@@ -468,6 +468,10 @@ external class ArcRotateCamera(
     var wheelPrecision: Float
     var lowerRadiusLimit: Float
     var upperRadiusLimit: Float
+    var lowerAlphaLimit: Float
+    var upperAlphaLimit: Float
+    var lowerBetaLimit: Float
+    var upperBetaLimit: Float
     var inertialRadiusOffset: Float
     var inertialAlphaOffset: Float
     var inertialBetaOffset: Float
@@ -609,6 +613,10 @@ external class DefaultRenderingPipeline(
      * Enables tone mapping
      */
     var toneMappingEnabled: Boolean
+    /**
+     * Enables fog rendering in the pipeline
+     */
+    var fogEnabled: Boolean
 }
 
 external class DepthOfFieldEffect {

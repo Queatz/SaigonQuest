@@ -6,14 +6,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlinx.browser.window
+import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.ChatApi
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.components.common.Spinner
 import models.ChatMessage
 import models.WebSocketAction
+import kotlin.js.js
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -22,16 +25,19 @@ import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.cssRem
+import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
@@ -42,7 +48,8 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import kotlin.js.Date
-import kotlin.time.Duration.Companion.milliseconds
+import main.theme.Styles
+import org.w3c.dom.HTMLDivElement
 
 /**
  * A component that displays chat messages and handles sending new messages.
@@ -56,6 +63,40 @@ fun ChatMessages(worldId: String) {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     
+    // State for selected message (for editing/deleting)
+    var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
+    
+    // Coroutine scope for launching async operations
+    val scope = rememberCoroutineScope()
+    
+    // Reference to the messages container for scrolling
+    val messagesContainerRef = remember { mutableStateOf<HTMLDivElement?>(null) }
+    
+    // Function to scroll to the bottom of the messages container with smooth scrolling
+    fun scrollToBottom() {
+        try {
+            messagesContainerRef.value?.let {
+                it.scrollTo(0.0, it.scrollHeight.toDouble())
+            }
+        } catch (e: Exception) {
+            console.error("Error scrolling to bottom", e)
+        }
+    }
+    
+    // Function to smooth scroll to the bottom of the messages container
+    fun smoothScrollToBottom() {
+        try {
+            messagesContainerRef.value?.let {
+                // Use scrollTo with behavior: smooth
+                js("it.scrollTo({top: it.scrollHeight, left: 0, behavior: 'smooth'})")
+            }
+        } catch (e: Exception) {
+            console.error("Error smooth scrolling to bottom", e)
+            // Fallback to regular scrolling if smooth scrolling fails
+            scrollToBottom()
+        }
+    }
+    
     // Load historical messages on component initialization
     LaunchedEffect(worldId) {
         isLoading = true
@@ -65,6 +106,9 @@ fun ChatMessages(worldId: String) {
             val chatMessages = ChatApi.getChatMessages(worldId)
             messages = chatMessages.toList().sortedBy { it.timestamp }
             isLoading = false
+            
+            // Scroll to bottom after initial messages are loaded
+            scrollToBottom()
         } catch (e: Exception) {
             console.error("Error loading chat messages", e)
             error = "Failed to load messages"
@@ -74,13 +118,16 @@ fun ChatMessages(worldId: String) {
     
     // Set up WebSocket listener for new messages
     DisposableEffect(worldId) {
-        // Add listener for chat messages
+        // Add listener for new chat messages
         WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
                 // Check if the message is valid
                 if (message.isValid()) {
                     val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
                     messages = (messages + chatMessage).sortedBy { msg -> msg.timestamp }
+                    
+                    // Smooth scroll to bottom when a new message is received
+                    smoothScrollToBottom()
                 } else {
                     console.error("Invalid chat message received: ${message.action}, ${message.data}")
                 }
@@ -89,76 +136,135 @@ fun ChatMessages(worldId: String) {
             }
         }
         
-        // Remove listener when component is disposed
+        // Add listener for updated chat messages
+        WebSocketApi.addListener(WebSocketAction.UPDATE_CHAT_MESSAGE) { message ->
+            try {
+                // Check if the message is valid
+                if (message.isValid()) {
+                    val updatedMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    
+                    // Find and replace the message in the list
+                    messages = messages.map { msg ->
+                        if (msg.key == updatedMessage.key) updatedMessage else msg
+                    }
+                } else {
+                    console.error("Invalid chat message update received: ${message.action}, ${message.data}")
+                }
+            } catch (e: Exception) {
+                console.error("Error parsing chat message update", e)
+            }
+        }
+        
+        // Add listener for deleted chat messages
+        WebSocketApi.addListener(WebSocketAction.DELETE_CHAT_MESSAGE) { message ->
+            try {
+                // Check if the message is valid
+                if (message.isValid()) {
+                    val deletedMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    
+                    // Find and replace the message in the list
+                    messages = messages.map { msg ->
+                        if (msg.key == deletedMessage.key) deletedMessage else msg
+                    }
+                } else {
+                    console.error("Invalid chat message delete received: ${message.action}, ${message.data}")
+                }
+            } catch (e: Exception) {
+                console.error("Error parsing chat message delete", e)
+            }
+        }
+        
+        // Remove listeners when component is disposed
         onDispose {
             WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
+            WebSocketApi.removeAllListeners(WebSocketAction.UPDATE_CHAT_MESSAGE)
+            WebSocketApi.removeAllListeners(WebSocketAction.DELETE_CHAT_MESSAGE)
         }
+    }
+    
+    // Smooth scroll to bottom whenever messages change
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty() && !isLoading) {
+            smoothScrollToBottom()
+        }
+    }
+    
+    // Show dialog for editing/deleting a message
+    selectedMessage?.let { currentMessage ->
+        ChatMessageDialog(
+            message = currentMessage,
+            onClose = { selectedMessage = null },
+            onEdit = { newText ->
+                // Update the message using WebSocketApi
+                WebSocketApi.updateChatMessage(currentMessage, newText) { success ->
+                    if (success) {
+                        console.log("Message updated successfully")
+                    } else {
+                        console.error("Failed to update message: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                    }
+                }
+                
+                // Also update via ChatApi for persistence
+                scope.launch {
+                    try {
+                        val updatedMessage = ChatApi.updateChatMessage(currentMessage, newText)
+                        console.log("Message updated in database")
+                        
+                        // Update the message in the UI with the server response
+                        messages = messages.map { msg ->
+                            if (msg.key == updatedMessage.key) updatedMessage else msg
+                        }
+                    } catch (e: Exception) {
+                        console.error("Error updating message in database", e)
+                    }
+                }
+            },
+            onDelete = {
+                // Delete the message using WebSocketApi
+                WebSocketApi.deleteChatMessage(currentMessage) { success ->
+                    if (success) {
+                        console.log("Message deleted successfully")
+                    } else {
+                        console.error("Failed to delete message: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                    }
+                }
+                
+                // Also delete via ChatApi for persistence
+                scope.launch {
+                    try {
+                        val deletedMessage = ChatApi.deleteChatMessage(currentMessage)
+                        console.log("Message deleted in database")
+                        
+                        // Update the message in the UI with the server response
+                        messages = messages.map { msg ->
+                            if (msg.key == deletedMessage.key) deletedMessage else msg
+                        }
+                    } catch (e: Exception) {
+                        console.error("Error deleting message in database", e)
+                    }
+                }
+            }
+        )
     }
     
     // Display messages
     Div(
         attrs = {
-            style {
-                padding(16.px)
-                property("overflow-y", "auto")
-                property("flex-grow", "1")
-                display(DisplayStyle.Flex)
-                property("flex-direction", "column")
+            classes(Styles.chatMessagesContainer)
+            ref { element -> 
+                messagesContainerRef.value = element
+                onDispose { }
             }
         }
     ) {
         if (isLoading) {
-            // Loading indicator with spinner
-            Div(
-                attrs = {
-                    style {
-                        // Spinner container
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        gap(16.px)
-                        width(100.percent)
-                    }
-                }
-            ) {
-                // Spinner element
-                Div(
-                    attrs = {
-                        style {
-                            width(40.px)
-                            height(40.px)
-                            property("border", "4px solid rgba(255, 255, 255, 0.1)")
-                            property("border-top", "4px solid rgba(255, 255, 255, 0.8)")
-                            property("border-radius", "50%")
-                            property("animation", "spin 1s linear infinite")
-                            // Define the animation
-                            property("@keyframes spin", "{0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}")
-                        }
-                    }
-                )
-                
-                // Loading text
-                P(
-                    attrs = {
-                        style {
-                            color(rgba(255, 255, 255, 0.5))
-                            property("text-align", "center")
-                            margin(0.px)
-                        }
-                    }
-                ) {
-                    Text("Loading messages...")
-                }
-            }
+            // Use the reusable Spinner component
+            Spinner(message = "Loading messages...")
         } else if (error != null) {
             // Error message
             P(
                 attrs = {
-                    style {
-                        color(rgba(255, 0, 0, 0.7))
-                        property("text-align", "center")
-                    }
+                    classes(Styles.chatErrorText)
                 }
             ) {
                 Text(error ?: "Unknown error")
@@ -167,10 +273,7 @@ fun ChatMessages(worldId: String) {
             // Empty state
             P(
                 attrs = {
-                    style {
-                        color(rgba(255, 255, 255, 0.5))
-                        property("text-align", "center")
-                    }
+                    classes(Styles.chatEmptyText)
                 }
             ) {
                 Text("No messages yet")
@@ -178,7 +281,12 @@ fun ChatMessages(worldId: String) {
         } else {
             // Display messages
             messages.forEach { chatMessage ->
-                ChatMessageItem(chatMessage)
+                ChatMessageItem(
+                    message = chatMessage,
+                    onMessageClick = { message ->
+                        selectedMessage = message
+                    }
+                )
             }
         }
     }
@@ -188,9 +296,13 @@ fun ChatMessages(worldId: String) {
  * A component that displays a single chat message.
  *
  * @param message The chat message to display
+ * @param onMessageClick Callback when the message is clicked (only for user's own messages)
  */
 @Composable
-fun ChatMessageItem(message: ChatMessage) {
+fun ChatMessageItem(
+    message: ChatMessage,
+    onMessageClick: (ChatMessage) -> Unit
+) {
     // Get current user to determine if this message is from the current user
     val currentUserId = remember { mutableStateOf("") }
     
@@ -207,45 +319,48 @@ fun ChatMessageItem(message: ChatMessage) {
     
     Div(
         attrs = {
-            style {
-                marginBottom(12.px)
-                padding(8.px)
-                property("border-radius", "4px")
-                backgroundColor(if (isCurrentUser) rgba(0, 100, 200, 0.1) else rgba(50, 50, 50, 0.2))
+            classes(Styles.chatMessageItem)
+            classes(if (isCurrentUser) Styles.chatMessageItemCurrentUser else Styles.chatMessageItemOtherUser)
+            
+            // Add click handler for user's own messages
+            if (isCurrentUser) {
+                onClick { onMessageClick(message) }
             }
         }
     ) {
         // Username and timestamp
         Div(
             attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    property("justify-content", "space-between")
-                    marginBottom(4.px)
-                }
+                classes(Styles.chatMessageHeader)
             }
         ) {
             // Username
             Span(
                 attrs = {
-                    style {
-                        fontWeight("bold")
-                        color(if (isCurrentUser) rgba(100, 200, 255, 1.0) else rgba(200, 200, 200, 1.0))
-                    }
+                    classes(Styles.chatMessageUsername)
+                    classes(if (isCurrentUser) Styles.chatMessageUsernameCurrentUser else Styles.chatMessageUsernameOtherUser)
                 }
             ) {
                 Text(message.username)
             }
             
-            // Timestamp
+            // Timestamp with edited indicator
             Span(
                 attrs = {
-                    style {
-                        fontSize(12.px)
-                        color(rgba(150, 150, 150, 0.8))
-                    }
+                    classes(Styles.chatMessageTimestamp)
                 }
             ) {
+                // Show edited indicator if the message has been edited
+                if (message.edited) {
+                    Span(
+                        attrs = {
+                            classes(Styles.chatMessageEditedIndicator)
+                        }
+                    ) {
+                        Text("•")
+                    }
+                }
+                
                 Text(formatTimestamp(message.timestamp))
             }
         }
@@ -253,13 +368,17 @@ fun ChatMessageItem(message: ChatMessage) {
         // Message content
         P(
             attrs = {
-                style {
-                    margin(0.px)
-                    color(Color.white)
+                classes(Styles.chatMessageContent)
+                if (message.deleted) {
+                    classes(Styles.chatMessageContentDeleted)
                 }
             }
         ) {
-            Text(message.message)
+            if (message.deleted) {
+                Text("Deleted")
+            } else {
+                Text(message.message)
+            }
         }
     }
 }

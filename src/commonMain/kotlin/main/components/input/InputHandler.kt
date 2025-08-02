@@ -1,6 +1,5 @@
 package main.components.input
 
-import lib.AbstractMesh
 import lib.KeyboardEventTypes
 import lib.KeyboardInfo
 import lib.Matrix
@@ -131,6 +130,11 @@ class InputHandler(
             }
         }
         
+        // Handle object hovering for non-dragging pointer moves
+        if (info.type == PointerEventTypes.POINTERMOVE && !isObjectBeingDragged) {
+            handleObjectHovering()
+        }
+        
         // Normal player/camera movement handling
         when (info.type) {
             PointerEventTypes.POINTERDOWN -> {
@@ -252,7 +256,7 @@ class InputHandler(
                         // Get world meshes from both controllers to ensure we have all possible meshes
                         val playerWorldMeshes = playerController.getWorldMeshes()
                         val objectWorldMeshes = objectManager.getWorldMeshes()
-                        val player = playerController.getPlayer()
+                        val player = playerController.getCollider()
                         val moveCircle = playerController.getMoveCircle()
                         
                         console.log("Ray casting with ${playerWorldMeshes.size} player world meshes and ${objectWorldMeshes.size} object world meshes")
@@ -333,6 +337,56 @@ class InputHandler(
     }
     
     /**
+     * Handles object hovering to show outline effect
+     */
+    private fun handleObjectHovering() {
+        if (objectManager == null) {
+            console.log("[DEBUG_HOVER] ObjectManager is null, cannot handle hovering")
+            return
+        }
+        
+        // Create a ray from the camera through the pointer position
+        val ray = scene.createPickingRay(
+            scene.pointerX,
+            scene.pointerY,
+            Matrix.Identity(),
+            cameraController.getCamera()
+        )
+        
+        // Check for intersection with object meshes
+        var closestDistance = Float.MAX_VALUE
+        var closestObjectId: String? = null
+        
+        // Get the number of object meshes
+        val objectMeshes = objectManager.getObjectMeshes()
+        console.log("[DEBUG_HOVER] Checking ${objectMeshes.size} object meshes for hover")
+        
+        // Check each object mesh for intersection
+        for ((objectId, mesh) in objectMeshes) {
+            val hit = ray.intersectsMesh(mesh)
+            if (hit.pickedPoint != null) {
+                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                if (distance < closestDistance) {
+                    closestDistance = distance
+                    closestObjectId = objectId
+                    console.log("[DEBUG_HOVER] Found intersection with object: $objectId at distance: $distance")
+                }
+            }
+        }
+        
+        // If we found an object, highlight it
+        if (closestObjectId != null) {
+            console.log("[DEBUG_HOVER] Highlighting object: $closestObjectId")
+            val success = objectManager.highlightObject(closestObjectId)
+            console.log("[DEBUG_HOVER] Highlight success: $success")
+        } else {
+            // If no object is hovered, remove any existing highlight
+            console.log("[DEBUG_HOVER] No object found, removing highlight")
+            objectManager.unhighlightObject()
+        }
+    }
+    
+    /**
      * Handles click-to-move functionality.
      */
     private fun handleClickToMove() {
@@ -350,7 +404,7 @@ class InputHandler(
         
         // Get world meshes for collision detection
         val worldMeshes = playerController.getWorldMeshes()
-        val player = playerController.getPlayer()
+        val player = playerController.getCollider()
         val moveCircle = playerController.getMoveCircle()
         
         for (mesh in worldMeshes) {

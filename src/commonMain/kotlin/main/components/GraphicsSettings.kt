@@ -13,15 +13,22 @@ import kotlinx.browser.localStorage
  */
 object GraphicsSettings {
     /**
-     * Storage key for localStorage
+     * Storage keys for localStorage
      */
     private const val GRAPHICS_MODE_STORAGE_KEY = "saigon_quest_graphics_mode"
+    private const val PRETTY_GRAPHICS_STORAGE_KEY = "saigon_quest_pretty_graphics"
     
     /**
      * State to track whether low graphics mode is enabled.
      * In low graphics mode, the world is rendered at 1/3 resolution.
      */
     private val _isLowGraphicsModeEnabled = mutableStateOf(loadGraphicsModeFromStorage())
+    
+    /**
+     * State to track whether pretty graphics mode is enabled.
+     * In pretty graphics mode, additional visual effects are enabled.
+     */
+    private val _isPrettyGraphicsEnabled = mutableStateOf(loadPrettyGraphicsFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -137,6 +144,79 @@ object GraphicsSettings {
             localStorage.setItem(GRAPHICS_MODE_STORAGE_KEY, enabled.toString())
         } catch (e: Exception) {
             console.error("Error saving graphics mode to localStorage", e)
+        }
+    }
+    
+    /**
+     * Get the current state of pretty graphics mode.
+     * 
+     * @return true if pretty graphics mode is enabled, false otherwise
+     */
+    fun isPrettyGraphicsEnabled(): Boolean {
+        return _isPrettyGraphicsEnabled.value
+    }
+    
+    /**
+     * Set the state of pretty graphics mode.
+     * 
+     * @param enabled true to enable pretty graphics mode, false to disable it
+     */
+    fun setPrettyGraphics(enabled: Boolean) {
+        val oldValue = _isPrettyGraphicsEnabled.value
+        _isPrettyGraphicsEnabled.value = enabled
+        
+        // Save to localStorage
+        savePrettyGraphicsToStorage(enabled)
+        
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
+    
+    /**
+     * Toggle the state of pretty graphics mode.
+     * 
+     * @return the new state of pretty graphics mode after toggling
+     */
+    fun togglePrettyGraphics(): Boolean {
+        val newValue = !_isPrettyGraphicsEnabled.value
+        _isPrettyGraphicsEnabled.value = newValue
+        
+        // Save to localStorage
+        savePrettyGraphicsToStorage(newValue)
+        
+        // Notify observers of the change
+        notifyObservers()
+        
+        return _isPrettyGraphicsEnabled.value
+    }
+    
+    /**
+     * Load pretty graphics setting from localStorage.
+     * 
+     * @return true if pretty graphics mode is enabled in localStorage, false otherwise
+     */
+    private fun loadPrettyGraphicsFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(PRETTY_GRAPHICS_STORAGE_KEY)
+            storedValue == "true"
+        } catch (e: Exception) {
+            console.error("Error loading pretty graphics mode from localStorage", e)
+            false
+        }
+    }
+    
+    /**
+     * Save pretty graphics setting to localStorage.
+     * 
+     * @param enabled true to save enabled state, false to save disabled state
+     */
+    private fun savePrettyGraphicsToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(PRETTY_GRAPHICS_STORAGE_KEY, enabled.toString())
+        } catch (e: Exception) {
+            console.error("Error saving pretty graphics mode to localStorage", e)
         }
     }
 }

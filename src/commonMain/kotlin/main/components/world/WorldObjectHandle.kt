@@ -1,5 +1,6 @@
 package main.components.world
 
+import lib.AbstractMesh
 import lib.Vector3
 
 /**
@@ -10,6 +11,8 @@ interface WorldObjectHandle {
      * The unique ID of the object
      */
     val id: String
+
+    var mesh: AbstractMesh
     
     /**
      * Position of the object in the 3D world

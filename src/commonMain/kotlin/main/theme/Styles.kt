@@ -38,6 +38,9 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.cursor
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.fontStyle
 
 object Styles : StyleSheet() {
     // Loading screen styles
@@ -118,6 +121,8 @@ object Styles : StyleSheet() {
         // Add background blur effect
         property("backdrop-filter", "blur(2px)")
         property("-webkit-backdrop-filter", "blur(2px)")
+        property("isolation", "isolate") // Creates a new stacking context
+        property("contain", "layout paint size") // Improves performance and isolation
     }
     
     // WorldUI styles
@@ -374,6 +379,71 @@ object Styles : StyleSheet() {
         property("text-align", "center")
     }
     
+    // Base dialog styles (for the new BaseDialog component)
+    val baseDialogContainer by style {
+        width(90.percent)
+        property("max-width", "400px")
+        backgroundColor(rgba(30, 30, 30, 0.95))
+        property("border-radius", "8px")
+        property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+    }
+    
+    val baseDialogHeader by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        padding(16.px)
+        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
+    }
+    
+    val baseDialogTitle by style {
+        margin(0.px)
+        color(Color.white)
+    }
+    
+    val baseDialogCloseButton by style {
+        backgroundColor(Color.transparent)
+        property("border", "0")
+        color(Color.white)
+        cursor("pointer")
+        fontSize(20.px)
+    }
+    
+    val baseDialogContent by style {
+        padding(24.px)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        property("flex-grow", "1")
+    }
+    
+    val baseDialogFooter by style {
+        padding(16.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.FlexEnd)
+        property("gap", "8px")
+        property("border-top", "1px solid rgba(255, 255, 255, 0.1)")
+    }
+    
+    val baseDialogButtonPrimary by style {
+        padding(8.px, 16.px)
+        backgroundColor(Theme.colors.primary)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        property("border-radius", "4px")
+        property("cursor", "pointer")
+    }
+    
+    val baseDialogButtonSecondary by style {
+        padding(8.px, 16.px)
+        backgroundColor(Color.transparent)
+        color(Theme.colors.primary)
+        property("border", "0")
+        property("border-radius", "4px")
+        property("cursor", "pointer")
+    }
+    
     // Common style for input elements with box-sizing: border-box
     val inputField by style {
         width(100.percent)
@@ -579,6 +649,106 @@ object Styles : StyleSheet() {
     val languageSwitcherOptionInactive by style {
         backgroundColor(Color.transparent)
         color(Theme.colors.onSurfaceVariant)
+    }
+    
+    // Chat Messages styles
+    val chatMessagesContainer by style {
+        padding(16.px)
+        property("overflow-y", "auto")
+        property("flex-grow", "1")
+        display(DisplayStyle.Flex)
+        property("flex-direction", "column")
+        height(0.cssRem)
+    }
+    
+    val chatLoadingContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        gap(16.px)
+        width(100.percent)
+    }
+    
+    val chatLoadingSpinner by style {
+        width(40.px)
+        height(40.px)
+        property("border", "4px solid rgba(255, 255, 255, 0.1)")
+        property("border-top", "4px solid rgba(255, 255, 255, 0.8)")
+        property("border-radius", "50%")
+        property("animation", "spin 1s linear infinite")
+        property("@keyframes spin", "{0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}")
+    }
+    
+    val chatLoadingText by style {
+        color(rgba(255, 255, 255, 0.5))
+        property("text-align", "center")
+        margin(0.px)
+    }
+    
+    val chatErrorText by style {
+        color(rgba(255, 0, 0, 0.7))
+        property("text-align", "center")
+    }
+    
+    val chatEmptyText by style {
+        color(rgba(255, 255, 255, 0.5))
+        property("text-align", "center")
+    }
+    
+    val chatMessageItem by style {
+        marginBottom(12.px)
+        padding(8.px)
+        property("border-radius", "4px")
+    }
+    
+    val chatMessageItemCurrentUser by style {
+        backgroundColor(rgba(0, 100, 200, 0.1))
+        cursor("pointer")
+    }
+    
+    val chatMessageItemOtherUser by style {
+        backgroundColor(rgba(50, 50, 50, 0.2))
+    }
+    
+    val chatMessageHeader by style {
+        display(DisplayStyle.Flex)
+        property("justify-content", "space-between")
+        marginBottom(4.px)
+    }
+    
+    val chatMessageUsername by style {
+        fontWeight("bold")
+    }
+    
+    val chatMessageUsernameCurrentUser by style {
+        color(rgba(100, 200, 255, 1.0))
+    }
+    
+    val chatMessageUsernameOtherUser by style {
+        color(rgba(200, 200, 200, 1.0))
+    }
+    
+    val chatMessageTimestamp by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        fontSize(12.px)
+        color(rgba(150, 150, 150, 0.8))
+    }
+    
+    val chatMessageEditedIndicator by style {
+        property("margin-right", "4px")
+        color(rgba(150, 150, 150, 0.8))
+    }
+    
+    val chatMessageContent by style {
+        margin(0.px)
+        color(Color.white)
+    }
+    
+    val chatMessageContentDeleted by style {
+        opacity(0.5)
+        fontStyle("italic")
     }
 
     init {

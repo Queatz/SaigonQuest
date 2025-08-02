@@ -1,5 +1,6 @@
 package main.components.`object`
 
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,7 +8,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import lib.AbstractMesh
 import lib.Color3
+import lib.Color4
 import lib.CreateSphereOptions
+import lib.GlowLayer
 import lib.MeshBuilder
 import lib.Scene
 import lib.StandardMaterial
@@ -42,6 +45,95 @@ class SceneObjectManager(
     // Drag state
     private var isDragging = false
     private var dragStartPosition: Vector3? = null
+    
+    // Track hovered object
+    private var hoveredObjectId: String? = null
+    
+    // Add a glow layer for the outline effect
+    private val glowLayer = GlowLayer("objectGlowLayer", scene)
+    
+    init {
+        // Configure the glow layer for white outline
+        // Increase intensity to make the glow more visible
+        glowLayer.intensity = 1.0f
+        glowLayer.blurKernelSize = 32f
+        
+        console.log("[DEBUG_GLOW] GlowLayer initialized with intensity: ${glowLayer.intensity}, blurKernelSize: ${glowLayer.blurKernelSize}")
+    }
+    
+    /**
+     * Highlights an object with a white outline when hovered
+     * 
+     * @param objectId The ID of the object to highlight
+     * @return true if the object was highlighted successfully, false otherwise
+     */
+    fun highlightObject(objectId: String): Boolean {
+        console.log("[DEBUG_GLOW] Attempting to highlight object: $objectId")
+        
+        // Remove highlight from previously hovered object
+        unhighlightObject()
+        
+        // Find the object mesh
+        val mesh = objectMeshes[objectId]
+        if (mesh != null) {
+            console.log("[DEBUG_GLOW] Found mesh for object: $objectId")
+            try {
+                // Add the mesh to the glow layer
+                console.log("[DEBUG_GLOW] Adding mesh to glow layer")
+                glowLayer.addIncludedOnlyMesh(mesh)
+                
+                // Store the hovered object ID
+                hoveredObjectId = objectId
+                
+                // Change cursor to grab
+                document.body?.style?.cursor = "grab"
+                console.log("[DEBUG_GLOW] Changed cursor to grab")
+                
+                console.log("[DEBUG_GLOW] Successfully highlighted object: $objectId")
+                return true
+            } catch (error: Exception) {
+                console.error("[DEBUG_GLOW] Error highlighting object", error)
+                return false
+            }
+        } else {
+            console.log("[DEBUG_GLOW] No mesh found for object: $objectId")
+        }
+        return false
+    }
+    
+    /**
+     * Removes highlight from the currently hovered object
+     */
+    fun unhighlightObject() {
+        console.log("[DEBUG_GLOW] Attempting to unhighlight object")
+        
+        hoveredObjectId?.let { objectId ->
+            console.log("[DEBUG_GLOW] Current hovered object: $objectId")
+            
+            val mesh = objectMeshes[objectId]
+            if (mesh != null) {
+                console.log("[DEBUG_GLOW] Found mesh for object: $objectId")
+                try {
+                    // Remove the mesh from the glow layer
+                    console.log("[DEBUG_GLOW] Removing mesh from glow layer")
+                    glowLayer.removeIncludedOnlyMesh(mesh)
+                    
+                    // Reset cursor
+                    document.body?.style?.cursor = "default"
+                    console.log("[DEBUG_GLOW] Reset cursor to default")
+                    
+                    console.log("[DEBUG_GLOW] Successfully unhighlighted object: $objectId")
+                } catch (error: Exception) {
+                    console.error("[DEBUG_GLOW] Error unhighlighting object", error)
+                }
+            } else {
+                console.log("[DEBUG_GLOW] No mesh found for object: $objectId")
+            }
+            hoveredObjectId = null
+        } ?: run {
+            console.log("[DEBUG_GLOW] No object currently highlighted")
+        }
+    }
     
     /**
      * Selects an object in the scene and highlights it
@@ -284,31 +376,64 @@ class SceneObjectManager(
      * @param obj The object to create
      */
     private fun createObjectInScene(obj: Object) {
-        console.log("Creating 3D representation for object: ${obj.key}")
+        console.log("[DEBUG_OBJECT] Creating 3D representation for object: ${obj.key}")
         
         try {
-            // Create a purple sphere to represent the object
+            // Check if this is a test object
+            val isTestObject = obj.key.startsWith("test_object_")
+            
+            // Create a sphere to represent the object
             val options: dynamic = object {}
-            options.diameter = 1.0
+            
+            // Make test objects larger for easier targeting
+            if (isTestObject) {
+                options.diameter = 2.0
+                console.log("[DEBUG_OBJECT] Creating test sphere with diameter: 2.0")
+            } else {
+                options.diameter = 1.0
+                console.log("[DEBUG_OBJECT] Creating sphere with diameter: 1.0")
+            }
+            
             val sphere = MeshBuilder.CreateSphere(obj.key, options, scene)
             
             // Set the position
-            sphere.position = Vector3(obj.position.x.toFloat(), obj.position.y.toFloat(), obj.position.z.toFloat())
+            val position = Vector3(obj.position.x.toFloat(), obj.position.y.toFloat(), obj.position.z.toFloat())
+            console.log("[DEBUG_OBJECT] Setting position to: (${position.x}, ${position.y}, ${position.z})")
+            sphere.position = position
             
-            // Create a purple material
+            // Create a material with appropriate color
+            console.log("[DEBUG_OBJECT] Creating material for object: ${obj.key}")
             val material = StandardMaterial("material_${obj.key}", scene)
-            material.diffuseColor = Color3(0.5f, 0f, 0.5f) // Purple color
+            
+            // Use bright red for test objects, purple for regular objects
+            if (isTestObject) {
+                material.diffuseColor = Color3(1.0f, 0f, 0f) // Bright red color for test objects
+                console.log("[DEBUG_OBJECT] Using bright red color for test object")
+            } else {
+                material.diffuseColor = Color3(0.5f, 0f, 0.5f) // Purple color for regular objects
+            }
+            
             material.specularColor = Color3(0.2f, 0.2f, 0.2f)
             
             // Apply the material to the sphere
+            console.log("[DEBUG_OBJECT] Applying material to sphere")
             sphere.material = material
             
             // Store the mesh in our map for future reference
+            console.log("[DEBUG_OBJECT] Storing mesh in objectMeshes map with key: ${obj.key}")
             objectMeshes[obj.key] = sphere
             
-            console.log("Successfully created 3D object: ${obj.key}")
+            // Verify the mesh was added to the map
+            val storedMesh = objectMeshes[obj.key]
+            if (storedMesh != null) {
+                console.log("[DEBUG_OBJECT] Successfully stored mesh in map. Current map size: ${objectMeshes.size}")
+            } else {
+                console.error("[DEBUG_OBJECT] Failed to store mesh in map!")
+            }
+            
+            console.log("[DEBUG_OBJECT] Successfully created 3D object: ${obj.key}")
         } catch (error: Exception) {
-            console.error("Error creating 3D object", error)
+            console.error("[DEBUG_OBJECT] Error creating 3D object", error)
             onError?.invoke("Failed to create 3D object: ${error.message ?: "Unknown error"}")
         }
     }
@@ -331,6 +456,9 @@ class SceneObjectManager(
                 draggingObjectId = objectId
                 isDragging = true
                 dragStartPosition = Vector3(mesh.position.x, mesh.position.y, mesh.position.z)
+                
+                // Change cursor to grabbing
+                document.body?.style?.cursor = "grabbing"
                 
                 console.log("Started dragging object: $objectId")
                 onSuccess?.invoke("Started moving object")
@@ -408,6 +536,13 @@ class SceneObjectManager(
                 draggingObjectId = null
                 dragStartPosition = null
                 
+                // Reset cursor to grab if we're still hovering over the object
+                if (hoveredObjectId == objectId) {
+                    document.body?.style?.cursor = "grab"
+                } else {
+                    document.body?.style?.cursor = "default"
+                }
+                
                 console.log("Ended dragging object: $objectId")
                 return true
             }
@@ -419,6 +554,9 @@ class SceneObjectManager(
             isDragging = false
             draggingObjectId = null
             dragStartPosition = null
+            
+            // Reset cursor
+            document.body?.style?.cursor = "default"
             
             return false
         }
@@ -533,21 +671,48 @@ class SceneObjectManager(
     private fun loadExistingObjects(worldId: String) {
         coroutineScope.launch {
             try {
-                console.log("Loading existing objects for world: $worldId")
+                console.log("[DEBUG_LOAD] Loading existing objects for world: $worldId")
                 
                 // Fetch objects from the API
                 val objects = ObjectApi.getObjectsByWorldId(worldId)
                 
-                console.log("Loaded ${objects.size} objects from API")
+                console.log("[DEBUG_LOAD] Loaded ${objects.size} objects from API")
                 
-                // Create 3D representations for each object
-                objects.forEach { obj ->
-                    createObjectInScene(obj)
+                if (objects.isEmpty()) {
+                    console.log("[DEBUG_LOAD] No objects found for world: $worldId")
+                    
+                    // Create a test object for debugging
+                    console.log("[DEBUG_LOAD] Creating a test object for debugging")
+                    val testObject = Object(
+                        title = "Test Object",
+                        worldId = worldId,
+                        position = models.Position(0f, 0.5f, 0f),  // Position at origin, slightly above ground
+                        rotation = models.Rotation(0f, 0f, 0f),
+                        scale = models.Scale(1f, 1f, 1f)
+                    ).apply {
+                        key = "test_object_${window.performance.now().toInt()}"
+                    }
+                    
+                    // Create the test object in the scene
+                    createObjectInScene(testObject)
+                    console.log("[DEBUG_LOAD] Created test object with ID: ${testObject.key}")
+                } else {
+                    // Create 3D representations for each object
+                    console.log("[DEBUG_LOAD] Creating 3D representations for ${objects.size} objects")
+                    objects.forEachIndexed { index, obj ->
+                        console.log("[DEBUG_LOAD] Creating object ${index + 1}/${objects.size}: ${obj.key}")
+                        createObjectInScene(obj)
+                    }
                 }
                 
-                console.log("Finished creating 3D objects")
+                // Verify the number of objects created
+                console.log("[DEBUG_LOAD] Finished creating 3D objects. Total objects in map: ${objectMeshes.size}")
+                
+                // List all object IDs for debugging
+                val objectIds = objectMeshes.keys.joinToString(", ")
+                console.log("[DEBUG_LOAD] Object IDs in map: $objectIds")
             } catch (error: Exception) {
-                console.error("Error loading existing objects", error)
+                console.error("[DEBUG_LOAD] Error loading existing objects", error)
                 onError?.invoke("Failed to load objects: ${error.message ?: "Unknown error"}")
             }
         }
@@ -563,10 +728,24 @@ class SceneObjectManager(
     }
     
     /**
+     * Gets all object meshes for intersection testing
+     * 
+     * @return Map of object IDs to their meshes
+     */
+    fun getObjectMeshes(): Map<String, AbstractMesh> {
+        return objectMeshes
+    }
+    
+    /**
      * Disposes resources when the scene is destroyed
      */
     fun dispose() {
-        // Implementation for disposing resources
+        // Dispose the glow layer
+        glowLayer.dispose()
+        
+        // Reset cursor
+        document.body?.style?.cursor = "default"
+        
         console.log("Disposing SceneObjectManager resources")
     }
 }

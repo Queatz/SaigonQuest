@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import org.w3c.dom.HTMLInputElement
 import kotlinx.coroutines.delay
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -14,6 +15,7 @@ import main.components.chat.ChatMessages
 import main.theme.Styles
 import main.theme.Theme
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.*
@@ -32,6 +34,9 @@ fun ChatContent(worldId: String) {
     var isWebSocketConnected by remember { mutableStateOf(false) }
     var lastError by remember { mutableStateOf<String?>(null) }
     var showEmotePopup by remember { mutableStateOf(false) }
+    
+    // Reference to the chat input element for auto-focus
+    val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
     
     // Default emotes
     val defaultEmotes = remember {
@@ -67,6 +72,15 @@ fun ChatContent(worldId: String) {
             }
             
             delay(10000) // Check every 10 seconds
+        }
+    }
+    
+    LaunchedEffect(chatInputRef) {
+        try {
+            delay(100)
+            chatInputRef.value?.focus()
+        } catch (e: Exception) {
+            console.error("Error focusing chat input", e)
         }
     }
     
@@ -226,6 +240,7 @@ fun ChatContent(worldId: String) {
                     placeholder(if (isAuthenticated) "Type a message..." else "Sign in to chat")
                     value(messageText)
                     onInput { messageText = it.value }
+                    autoFocus()
                     if (!isAuthenticated) {
                         disabled()
                     }
@@ -246,6 +261,13 @@ fun ChatContent(worldId: String) {
                                     }
                                 }
                             }
+                        }
+                    }
+                    // Use ref for auto-focus
+                    ref { element -> 
+                        chatInputRef.value = element
+                        onDispose {
+                            chatInputRef.value = null
                         }
                     }
                 }

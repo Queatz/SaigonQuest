@@ -12,7 +12,7 @@ import models.ChatMessage
 /**
  * Repository for chat message operations
  *
- * This repository provides methods for saving and retrieving chat messages,
+ * This repository provides methods for saving, retrieving, updating, and deleting chat messages,
  * as well as tracking unread messages per world.
  */
 class ChatRepository {
@@ -144,5 +144,66 @@ class ChatRepository {
         
         val results = ArangoConfig.db.query(query, Long::class.java, bindVars).toList()
         return results.firstOrNull() ?: 0
+    }
+    
+    /**
+     * Update a chat message
+     *
+     * @param messageKey The key of the message to update
+     * @param updatedMessage The updated message data
+     * @return The updated chat message, or null if the update failed
+     */
+    fun updateMessage(messageKey: String, updatedMessage: ChatMessage): ChatMessage? {
+        try {
+            // Ensure the message exists and belongs to the user trying to update it
+            val existingMessage = collection.getDocument(messageKey, ChatMessage::class.java)
+            
+            // Only update if the user IDs match
+            if (existingMessage.userId != updatedMessage.userId) {
+                return null
+            }
+            
+            // Update the message
+            collection.updateDocument(messageKey, updatedMessage)
+            
+            // Return the updated message
+            return collection.getDocument(messageKey, ChatMessage::class.java)
+        } catch (e: Exception) {
+            return null
+        }
+    }
+    
+    /**
+     * Delete a chat message (mark as deleted)
+     *
+     * @param messageKey The key of the message to delete
+     * @param userId The ID of the user trying to delete the message
+     * @return The updated (deleted) chat message, or null if the deletion failed
+     */
+    fun deleteMessage(messageKey: String, userId: String): ChatMessage? {
+        try {
+            // Ensure the message exists and belongs to the user trying to delete it
+            val existingMessage = collection.getDocument(messageKey, ChatMessage::class.java)
+            
+            // Only delete if the user IDs match
+            if (existingMessage.userId != userId) {
+                return null
+            }
+            
+            // Mark as deleted and clear message content
+            val deletedMessage = existingMessage.copy(
+                message = "",
+                deleted = true,
+                edited = false
+            )
+            
+            // Update the message
+            collection.updateDocument(messageKey, deletedMessage)
+            
+            // Return the updated message
+            return collection.getDocument(messageKey, ChatMessage::class.java)
+        } catch (e: Exception) {
+            return null
+        }
     }
 }

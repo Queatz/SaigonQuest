@@ -291,16 +291,78 @@ fun Routing.configureWebSocketRoutes() {
                                 WebSocketDebug.logMessage("BROADCASTING_LEAVE", "user: ${correctedLeaveData.userId}, world: $worldId", this)
                                 broadcastToWorld(worldId, json.encodeToString(broadcastMessage), activeConnections)
                             }
-                            WebSocketAction.ADD_OBJECT,
-                            WebSocketAction.REMOVE_OBJECT,
-                            WebSocketAction.PLAYER_INTERACT,
-                            WebSocketAction.TRIGGER_OBJECT_EVENT,
-                            WebSocketAction.RECEIVE_CHAT_MESSAGE -> {
-                                // These actions will be implemented as needed
-                                WebSocketDebug.logMessage("UNIMPLEMENTED_ACTION", "${message.action.name} not yet implemented on server", this)
+                            WebSocketAction.UPDATE_CHAT_MESSAGE -> {
+                                WebSocketDebug.logMessage("PROCESSING", "UPDATE_CHAT_MESSAGE action", this)
+                                
+                                // Parse chat message
+                                val chatMessage = json.decodeFromString<ChatMessage>(message.data)
+                                WebSocketDebug.logMessage("UPDATE_CHAT_MESSAGE", "key=${chatMessage.key}, userId=${chatMessage.userId}, message=${chatMessage.message}", this)
+                                
+                                // Update message in database
+                                WebSocketDebug.logMessage("UPDATING", "Updating chat message in database", this)
+                                try {
+                                    val updatedMessage = chatRepository.updateMessage(chatMessage.key, chatMessage)
+                                    
+                                    if (updatedMessage != null) {
+                                        WebSocketDebug.logMessage("UPDATED", "Message updated with ID: ${updatedMessage.key}", this)
+                                        
+                                        // Broadcast updated message to all clients in the same world
+                                        val broadcastMessage = WebSocketMessage(
+                                            action = WebSocketAction.UPDATE_CHAT_MESSAGE,
+                                            data = json.encodeToString(updatedMessage)
+                                        )
+                                        
+                                        val broadcastMessageString = json.encodeToString(broadcastMessage)
+                                        WebSocketDebug.logMessage("BROADCASTING", "To world: $worldId", this)
+                                        WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, this)
+                                        
+                                        broadcastToWorld(worldId, broadcastMessageString, activeConnections)
+                                    } else {
+                                        WebSocketDebug.logError("Failed to update message: ${chatMessage.key}", null, this)
+                                    }
+                                } catch (e: Exception) {
+                                    WebSocketDebug.logError("Error updating chat message in database", e, this)
+                                }
+                            }
+                            WebSocketAction.DELETE_CHAT_MESSAGE -> {
+                                WebSocketDebug.logMessage("PROCESSING", "DELETE_CHAT_MESSAGE action", this)
+                                
+                                // Parse chat message
+                                val chatMessage = json.decodeFromString<ChatMessage>(message.data)
+                                WebSocketDebug.logMessage("DELETE_CHAT_MESSAGE", "key=${chatMessage.key}, userId=${chatMessage.userId}", this)
+                                
+                                // Delete message in database
+                                WebSocketDebug.logMessage("DELETING", "Deleting chat message in database", this)
+                                try {
+                                    val deletedMessage = chatRepository.deleteMessage(chatMessage.key, chatMessage.userId)
+                                    
+                                    if (deletedMessage != null) {
+                                        WebSocketDebug.logMessage("DELETED", "Message deleted with ID: ${deletedMessage.key}", this)
+                                        
+                                        // Broadcast deleted message to all clients in the same world
+                                        val broadcastMessage = WebSocketMessage(
+                                            action = WebSocketAction.DELETE_CHAT_MESSAGE,
+                                            data = json.encodeToString(deletedMessage)
+                                        )
+                                        
+                                        val broadcastMessageString = json.encodeToString(broadcastMessage)
+                                        WebSocketDebug.logMessage("BROADCASTING", "To world: $worldId", this)
+                                        WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, this)
+                                        
+                                        broadcastToWorld(worldId, broadcastMessageString, activeConnections)
+                                    } else {
+                                        WebSocketDebug.logError("Failed to delete message: ${chatMessage.key}", null, this)
+                                    }
+                                } catch (e: Exception) {
+                                    WebSocketDebug.logError("Error deleting chat message in database", e, this)
+                                }
                             }
                             null -> {
                                 WebSocketDebug.logError("Received message with null action", null, this)
+                            }
+                            else -> {
+                                // These actions will be implemented as needed
+                                WebSocketDebug.logMessage("UNIMPLEMENTED_ACTION", "${message.action.name} not yet implemented on server", this)
                             }
                             // Add other message types here as needed
                         }

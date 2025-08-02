@@ -12,6 +12,7 @@ import lib.SceneLoader
 import lib.Vector3
 import main.api.WebSocketApi
 import main.api.WorldApi
+import main.components.SceneManager
 import main.components.shadow.ShadowManager
 import models.World
 import kotlin.coroutines.resume
@@ -102,6 +103,9 @@ class WorldLoader(private val scene: Scene) {
             
             // Set the scene background color from the world model
             setSceneBackgroundColor(world.backgroundColor)
+            
+            // Set the scene fog density from the world model
+            setSceneFogDensity(world.fogDensity)
 
             // Determine the file to load
             val worldFile = if (world.file.isNotEmpty()) "${world.file}.glb" else "world.glb"
@@ -307,9 +311,55 @@ class WorldLoader(private val scene: Scene) {
             // Set the scene's clear color
             scene.clearColor = color4
             
-            println("[DEBUG] Set scene background color to $hexColor")
+            // If fog is enabled (fogDensity > 0), update the fog color to match the background color
+            if (scene.fogDensity > 0.0f) {
+                scene.fogColor = color3
+                println("[DEBUG] Set scene background color to $hexColor and synced fog color")
+            } else {
+                println("[DEBUG] Set scene background color to $hexColor")
+            }
         } catch (e: Exception) {
             println("[ERROR] Failed to set background color: ${e.message}")
+        }
+    }
+    
+    /**
+     * Sets the scene fog density.
+     * 
+     * @param density The fog density value (0.0 to 1.0)
+     */
+    private fun setSceneFogDensity(density: Float) {
+        try {
+            // Get the rendering pipeline from the CameraController
+            val cameraController = SceneManager.getCameraController()
+            val pipeline = cameraController?.getPipeline()
+            
+            if (density > 0.0f) {
+                // Enable fog in the scene
+                scene.fogMode = Scene.Companion.FOGMODE_EXP2
+                
+                // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
+                scene.fogDensity = density * 0.1f
+                
+                // Set fog color to match background color
+                val clearColor = scene.clearColor
+                scene.fogColor = Color3(clearColor.r, clearColor.g, clearColor.b)
+                
+                // Enable fog in the rendering pipeline
+                pipeline?.fogEnabled = true
+                
+                println("[DEBUG] Set scene fog density to $density and enabled fog in pipeline")
+            } else {
+                // Disable fog by setting density to 0
+                scene.fogDensity = 0.0f
+                
+                // Disable fog in the rendering pipeline
+                pipeline?.fogEnabled = false
+                
+                println("[DEBUG] Disabled scene fog and disabled fog in pipeline")
+            }
+        } catch (e: Exception) {
+            println("[ERROR] Failed to set fog density: ${e.message}")
         }
     }
     

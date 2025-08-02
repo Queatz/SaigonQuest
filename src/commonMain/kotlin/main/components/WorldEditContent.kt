@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import lib.Color3
 import lib.Color4
+import lib.Scene
 import main.api.UserApi
 import main.api.WorldApi
 import main.components.SceneManager
@@ -17,6 +18,7 @@ import main.theme.Styles
 import models.User
 import models.World
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -42,8 +44,11 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
+import web.cssom.AtRules.Companion.property
+import web.cssom.HtmlAttributes.Companion.value
 
 /**
  * Content component for the world edit form.
@@ -79,12 +84,65 @@ fun WorldEditContent(
                 // Set the scene's clear color
                 scene.clearColor = color4
                 
-                println("[DEBUG] Updated scene background color to $hexColor")
+                // If fog is enabled (fogDensity > 0), update the fog color to match the background color
+                if (scene.fogDensity > 0.0f) {
+                    scene.fogColor = color3
+                    println("[DEBUG] Updated scene background color to $hexColor and synced fog color")
+                } else {
+                    println("[DEBUG] Updated scene background color to $hexColor")
+                }
             } else {
                 println("[ERROR] Cannot update background color: Scene is null")
             }
         } catch (e: Exception) {
             println("[ERROR] Failed to update background color: ${e.message}")
+        }
+    }
+    
+    /**
+     * Updates the scene fog density.
+     * 
+     * @param density The fog density value (0.0 to 1.0)
+     */
+    fun updateSceneFogDensity(density: Float) {
+        try {
+            // Get the scene from SceneManager
+            val scene = SceneManager.getScene()
+            
+            // Get the rendering pipeline from the CameraController
+            val cameraController = SceneManager.getCameraController()
+            val pipeline = cameraController?.getPipeline()
+            
+            if (scene != null) {
+                if (density > 0.0f) {
+                    // Enable fog in the scene
+                    scene.fogMode = Scene.Companion.FOGMODE_EXP2
+                    
+                    // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
+                    scene.fogDensity = density * 0.1f
+                    
+                    // Set fog color to match background color
+                    val clearColor = scene.clearColor
+                    scene.fogColor = Color3(clearColor.r, clearColor.g, clearColor.b)
+                    
+                    // Enable fog in the rendering pipeline
+                    pipeline?.fogEnabled = true
+                    
+                    println("[DEBUG] Updated scene fog density to $density and enabled fog in pipeline")
+                } else {
+                    // Disable fog by setting density to 0
+                    scene.fogDensity = 0.0f
+                    
+                    // Disable fog in the rendering pipeline
+                    pipeline?.fogEnabled = false
+                    
+                    println("[DEBUG] Disabled scene fog and disabled fog in pipeline")
+                }
+            } else {
+                println("[ERROR] Cannot update fog density: Scene is null")
+            }
+        } catch (e: Exception) {
+            println("[ERROR] Failed to update fog density: ${e.message}")
         }
     }
     // State for form fields
@@ -94,6 +152,7 @@ fun WorldEditContent(
     var url by remember { mutableStateOf(currentWorld?.url ?: "") }
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#000000") }
+    var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -123,10 +182,13 @@ fun WorldEditContent(
         }
     }
     
-    // Apply initial background color when component is mounted
+    // Apply initial background color and fog settings when component is mounted
     LaunchedEffect(Unit) {
         // Apply the initial background color
         updateSceneBackgroundColor(backgroundColor)
+        
+        // Apply the initial fog density
+        updateSceneFogDensity(fogDensity)
     }
     
     // Determine if the current user is the owner of the world
@@ -153,7 +215,8 @@ fun WorldEditContent(
                 description = description,
                 url = url,
                 file = file,
-                backgroundColor = backgroundColor
+                backgroundColor = backgroundColor,
+                fogDensity = fogDensity
             )
         } else {
             // Create new world
@@ -163,7 +226,8 @@ fun WorldEditContent(
                 description = description,
                 url = url,
                 file = file,
-                backgroundColor = backgroundColor
+                backgroundColor = backgroundColor,
+                fogDensity = fogDensity
             )
         }
         
@@ -512,6 +576,82 @@ fun WorldEditContent(
                     }
                 ) {
                     Text(backgroundColor)
+                }
+            }
+        }
+        
+        // Fog Density field
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                    property("margin-top", "16px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) {
+                Text("Fog Density")
+            }
+            
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                    }
+                }
+            ) {
+                // Slider for fog density
+                RangeInput(
+                    value = fogDensity,
+                    min = 0.0,
+                    max = 1.0,
+                    step = 0.001,
+                    attrs = {
+                        style {
+                            property("width", "200px")
+                            if (!fieldsEnabled) {
+                                property("opacity", "0.7")
+                                property("cursor", "not-allowed")
+                            }
+                        }
+                        
+                        // Set disabled state
+                        if (!fieldsEnabled) {
+                            disabled()
+                        }
+                        
+                        // Handle input event
+                        onInput { event -> 
+                            // Update the state
+                            fogDensity = event.value?.toFloat() ?: 0.0f
+                            // Update the scene fog density in real-time
+                            updateSceneFogDensity(fogDensity)
+                        }
+                    }
+                )
+                
+                // Display the fog density value next to the slider
+                Div(
+                    attrs = {
+                        style {
+                            color(Color.white)
+                            fontSize(14.px)
+                            property("min-width", "40px")
+                        }
+                    }
+                ) {
+                    Text(fogDensity.toString())
                 }
             }
         }

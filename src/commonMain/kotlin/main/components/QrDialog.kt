@@ -23,6 +23,7 @@ import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.margin
+import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
@@ -85,116 +86,44 @@ fun QrDialog(
         BinaryUtils.uint8ArrayToDataUrl(qrData, "image/gif")
     }
     
-    // Dialog container
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            // Add click outside to close
-            onClick { onClose() }
-        }
-    ) {
-        // Dialog content
-        Div(
-            attrs = {
-                style {
-                    width(90.percent)
-                    property("max-width", "400px")
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                }
-                // Stop propagation to prevent closing when clicking inside the dialog
-                onClick { it.stopPropagation() }
-            }
-        ) {
-            // Dialog header
-            Div(
+    // Use the BaseDialog component with print button in header
+    BaseDialog(
+        onClose = onClose,
+        title = "Share this world",
+        showCloseButton = true, // Show the standard close button
+        headerActions = {
+            // Print button in header
+            Button(
                 attrs = {
+                    classes(Styles.baseDialogCloseButton)
                     style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        padding(16.px)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
+                        fontSize(16.px)
+                        padding(4.px, 8.px)
+                    }
+                    onClick { 
+                        // Generate the print image and show dialog
+                        generatePrintImage(
+                            url = currentUrl,
+                            worldTitle = worldTitle,
+                            worldSubtitle = worldSubtitle,
+                            worldDescription = worldDescription,
+                            onComplete = { imageUrl ->
+                                onPrint(imageUrl)
+                                onClose() // Close the QR dialog when print is clicked
+                            }
+                        )
                     }
                 }
             ) {
-                // Dialog title
-                H3(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
-                    }
-                ) {
-                    Text("Share this world")
-                }
-                
-                // Button container for Print and Close buttons
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            alignItems(AlignItems.Center)
-                            property("gap", "8px")
-                        }
-                    }
-                ) {
-                    // Print button
-                    Button(
-                        attrs = {
-                            style {
-                                backgroundColor(Color.transparent)
-                                property("border", "0")
-                                color(Color.white)
-                                cursor("pointer")
-                                fontSize(16.px)
-                                padding(4.px, 8.px)
-                            }
-                            onClick { 
-                                // Generate the print image and show dialog
-                                generatePrintImage(
-                                    url = currentUrl,
-                                    worldTitle = worldTitle,
-                                    worldSubtitle = worldSubtitle,
-                                    worldDescription = worldDescription,
-                                    onComplete = { imageUrl ->
-                                        onPrint(imageUrl)
-                                        onClose() // Close the QR dialog when print is clicked
-                                    }
-                                )
-                            }
-                        }
-                    ) {
-                        Text("🖨️ Print")
-                    }
-                    
-                    // Close button
-                    Button(
-                        attrs = {
-                            style {
-                                backgroundColor(Color.transparent)
-                                property("border", "0")
-                                color(Color.white)
-                                cursor("pointer")
-                                fontSize(20.px)
-                            }
-                            onClick { onClose() }
-                        }
-                    ) {
-                        Text("×")
-                    }
-                }
+                Text("🖨️ Print")
             }
+        },
+        content = {
             
             // QR code container
             Div(
                 attrs = {
                     style {
-                        padding(24.px)
                         display(DisplayStyle.Flex)
                         flexDirection(FlexDirection.Column)
                         alignItems(AlignItems.Center)
@@ -249,6 +178,15 @@ fun QrDialog(
                     Text(currentUrl)
                 }
             }
+        },
+        actions = {
+            // Close button as an action
+            DialogButton(
+                onClick = onClose,
+                isPrimary = false
+            ) {
+                Text("Close")
+            }
         }
-    }
+    )
 }

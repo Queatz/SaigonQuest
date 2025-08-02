@@ -213,8 +213,6 @@ class OcclusionManager(private val scene: Scene) {
             
             // Add a handler for the onBindObservable to set uniforms when the material is bound
             customMaterial.onBindObservable.add { _ ->
-                console.log("[DEBUG] Material ${customMaterial.name} is being bound")
-                
                 // Get the effect after the material is bound
                 val effect = customMaterial.getEffect()
                 if (effect == null) {
@@ -224,7 +222,7 @@ class OcclusionManager(private val scene: Scene) {
                 
                 try {
                     // Skip if no player or camera
-                    val playerMesh = player ?: SceneManager.getPlayerController()?.getPlayer() ?: return@add
+                    val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return@add
                     val cam = camera ?: scene.activeCamera ?: return@add
                     
                     // Get player's world position
@@ -251,9 +249,6 @@ class OcclusionManager(private val scene: Scene) {
                     // Get current time for animations
                     val currentTime = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()  // Convert to seconds
                     
-                    console.log("[DEBUG] Setting uniforms during binding for material ${customMaterial.name}")
-                    console.log("[DEBUG] - screenSize = $screenSize")
-                    
                     // Set player position uniforms
                     effect.setVector3("playerScreenPos", playerScreenPos)
                     effect.setVector3("playerWorld", playerWorldPos)
@@ -271,8 +266,6 @@ class OcclusionManager(private val scene: Scene) {
                     
                     // Set time uniform for animations
                     effect.setFloat("time", currentTime)
-                    
-                    console.log("[DEBUG] Successfully set all uniforms during binding for material ${customMaterial.name}")
                 } catch (e: Exception) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
@@ -307,7 +300,7 @@ class OcclusionManager(private val scene: Scene) {
     fun update() {
         // Refresh player and camera references
         camera = scene.activeCamera
-        player = SceneManager.getPlayerController()?.getPlayer()
+        player = SceneManager.getPlayerController()?.getCollider()
     }
     
     /**

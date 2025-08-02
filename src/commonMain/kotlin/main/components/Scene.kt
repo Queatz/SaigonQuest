@@ -5,7 +5,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import app.softwork.routingcompose.Router
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -19,32 +18,19 @@ import lib.Scene
 import lib.initializeBabylonJSLoaders
 import main.utils.createObjectDropEvent
 import main.api.UserApi
-import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
-import main.components.`object`.ObjectManager
 import main.components.`object`.SceneObjectManager
 import main.components.player.PlayerController
 import main.components.player.OtherPlayersController
 import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
-import main.components.SceneManager
-import main.components.WorldEdit
-import main.components.LoadingScreen
-import main.components.GraphicsSettings
 import main.theme.Styles
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Canvas
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
-import org.jetbrains.compose.web.css.Position as PositionCss
-import org.w3c.dom.DragEvent
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -371,8 +357,11 @@ fun SceneComponent(url: String) {
                 // Create the player using the WorldObjectManager
                 playerController.createPlayer(startPosition, worldObjectManager)
                 
+                // Initialize chat message listener
+                playerController.initializeChatMessageListener()
+                
                 // Register player mesh as shadow caster and receiver
-                playerController.getPlayer()?.let { playerMesh ->
+                playerController.getPlayerHandle()?.mesh?.let { playerMesh ->
                     worldLoader.getShadowManager()?.let { shadowManager ->
                         shadowManager.addShadowCaster(playerMesh)
                         shadowManager.configureShadowReceiver(playerMesh)
@@ -381,7 +370,7 @@ fun SceneComponent(url: String) {
                 }
                 
                 // Set player mesh in object manager to exclude from collision detection
-                objectManager.setPlayerMesh(playerController.getPlayer())
+                objectManager.setPlayerMesh(playerController.getCollider())
                 objectManager.setMoveCircleMesh(playerController.getMoveCircle())
                 
                 // Set initial camera target position
@@ -424,6 +413,12 @@ fun SceneComponent(url: String) {
                 
                 // Initialize other players controller for multiplayer
                 otherPlayersController.initialize()
+                
+                // Set the shadow manager in the OtherPlayersController
+                worldLoader.getShadowManager()?.let { shadowManager ->
+                    otherPlayersController.setShadowManager(shadowManager)
+                    println("[DEBUG] Shadow manager set in OtherPlayersController")
+                }
                 
                 // Mark as loaded to hide loading screen
                 isLoaded.value = true

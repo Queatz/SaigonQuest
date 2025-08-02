@@ -6,6 +6,7 @@ import lib.CreatePlaneOptions
 import lib.DynamicTexture
 import lib.DynamicTextureOptions
 import lib.Engine
+import lib.Material
 import lib.Mesh
 import lib.MeshBuilder
 import lib.StandardMaterial
@@ -52,8 +53,6 @@ import lib.Vector3
 class TextBillboard(
     private val scene: Scene,
     text: String = "",
-    private val width: Int = 256,
-    private val height: Int = 64,
     private val fontSize: Int = 32,
     private val fontFamily: String = "Arial",
     private val textColor: String = "white",
@@ -66,10 +65,6 @@ class TextBillboard(
     // The dynamic texture for rendering text
     private var texture: DynamicTexture? = null
     
-    // Store texture dimensions for later use
-    private var textureWidth: Int = 512
-    private var textureHeight: Int = 128
-    
     // Current text value
     private var _text: String = text
     
@@ -77,8 +72,14 @@ class TextBillboard(
     var text: String
         get() = _text
         set(value) {
-            _text = value
-            updateTexture()
+            if (_text != value) {
+                _text = value
+                // Clean up existing resources
+                planeMesh?.dispose()
+                texture?.dispose()
+                // Recreate the plane with the new text
+                createTextPlane()
+            }
         }
     
     init {
@@ -87,22 +88,31 @@ class TextBillboard(
     }
     
     /**
-     * Creates a plane with a dynamic texture for the text
+     * Calculates the dimensions and aspect ratio for the text
+     * @return Triple of (estimatedWidth, estimatedHeight, aspectRatio)
      */
-    private fun createTextPlane() {
-        // Calculate texture dimensions with the correct aspect ratio
-        // We want the texture to have the same aspect ratio as the final plane
-        // First, estimate the text width based on font size and text length
+    private fun calculateTextDimensions(): Triple<Float, Float, Float> {
+        // Estimate the text width based on font size and text length
         val estimatedTextWidth = _text.length * fontSize * 0.6f
         val padding = fontSize * 0.2f
         val estimatedWidth = estimatedTextWidth + padding * 2
         val estimatedHeight = fontSize * 1.2f + padding * 2
         val aspectRatio = estimatedHeight / estimatedWidth
         
-        // Create a dynamic texture with dimensions that match the estimated aspect ratio
-        this.textureWidth = 512 // Base width for good resolution
-        this.textureHeight = (this.textureWidth * aspectRatio).toInt()
+        return Triple(estimatedWidth, estimatedHeight, aspectRatio)
+    }
+    
+    /**
+     * Creates a plane with a dynamic texture for the text
+     */
+    private fun createTextPlane() {
+        // Calculate texture dimensions with the correct aspect ratio
+        val (estimatedWidth, estimatedHeight, aspectRatio) = calculateTextDimensions()
         
+        // Create a dynamic texture with dimensions that match the estimated aspect ratio
+        val textureWidth = estimatedWidth.toInt()
+        val textureHeight = estimatedHeight.toInt()
+
         // Create the dynamic texture with the calculated dimensions
         texture = DynamicTexture(
             "text-texture-${id}",
@@ -117,7 +127,7 @@ class TextBillboard(
         )
         
         // Now create a plane with the same aspect ratio as the texture
-        val planeWidth = (estimatedWidth / 10f).coerceAtLeast(0.1f)
+        val planeWidth = (estimatedWidth / 100f).coerceAtLeast(0.1f)
         val planeHeight = planeWidth * aspectRatio
         
         planeMesh = MeshBuilder.CreatePlane(
@@ -134,16 +144,14 @@ class TextBillboard(
         val material = StandardMaterial("text-material-${id}", scene).apply {
             diffuseColor = Color3(1f, 1f, 1f)
             
-            // Set emissive color to white to ensure text is visible regardless of lighting
-            emissiveColor = Color3(1f, 1f, 1f)
-            
             // Disable lighting effects
             disableLighting = true
             
             // Use the dynamic texture
             // Use asDynamic() to bypass type checking since DynamicTexture is a subclass of Texture
-            asDynamic().diffuseTexture = texture
-            
+            diffuseTexture = texture!!
+            emissiveTexture = texture!!
+
             // Set texture to have alpha
             texture?.hasAlpha = true
             
@@ -151,7 +159,7 @@ class TextBillboard(
             useAlphaFromDiffuseTexture = true
             
             // Set transparency mode to ALPHA_BLEND (2)
-            transparencyMode = 2
+            transparencyMode = Material.MATERIAL_ALPHATEST
             
             // Disable backface culling for proper transparency
             backFaceCulling = false
@@ -162,15 +170,7 @@ class TextBillboard(
         
         // Set billboard mode to make the text always face the camera
         planeMesh?.billboardMode = Mesh.BILLBOARDMODE_ALL
-        
-        // Update the texture with the initial text
-        updateTexture()
-    }
-    
-    /**
-     * Updates the texture with the current text
-     */
-    private fun updateTexture() {
+
         texture?.let { tex ->
             // Get the canvas context
             val context = tex.getContext()
@@ -184,7 +184,28 @@ class TextBillboard(
             } else {
                 // Fill with the specified background color
                 context.asDynamic().fillStyle = backgroundColor
-                context.fillRect(0.0, 0.0, textureWidth.toDouble(), textureHeight.toDouble())
+                
+                // Draw a rounded rectangle with 6px corner radius
+                val cornerRadius = 6.0
+                val width = textureWidth.toDouble()
+                val height = textureHeight.toDouble()
+                
+                // Begin a new path
+                context.beginPath()
+                
+                // Draw the rounded rectangle path
+                context.moveTo(cornerRadius, 0.0)
+                context.lineTo(width - cornerRadius, 0.0)
+                context.quadraticCurveTo(width, 0.0, width, cornerRadius)
+                context.lineTo(width, height - cornerRadius)
+                context.quadraticCurveTo(width, height, width - cornerRadius, height)
+                context.lineTo(cornerRadius, height)
+                context.quadraticCurveTo(0.0, height, 0.0, height - cornerRadius)
+                context.lineTo(0.0, cornerRadius)
+                context.quadraticCurveTo(0.0, 0.0, cornerRadius, 0.0)
+                
+                // Fill the path
+                context.fill()
             }
             
             // Set up the text style
@@ -202,38 +223,8 @@ class TextBillboard(
             
             // Update the texture
             tex.update(true)
-            
-            // Update the plane dimensions based on the new text
-            updatePlaneDimensions()
         }
     }
-    
-    /**
-     * Updates the plane dimensions based on the current text
-     */
-    private fun updatePlaneDimensions() {
-        planeMesh?.let { mesh ->
-            // Estimate the text width based on font size and text length
-            val estimatedTextWidth = _text.length * fontSize * 0.6f
-            
-            // Calculate the aspect ratio based on estimated text dimensions
-            val padding = fontSize * 0.2f
-            val estimatedWidth = estimatedTextWidth + padding * 2
-            val estimatedHeight = fontSize * 1.2f + padding * 2
-            val aspectRatio = estimatedHeight / estimatedWidth
-            
-            // Update the stored texture dimensions (for future texture updates)
-            this.textureHeight = (this.textureWidth * aspectRatio).toInt()
-            
-            // Scale the width based on text length
-            val planeWidth = (estimatedWidth / 10f).coerceAtLeast(0.1f)
-            val planeHeight = planeWidth * aspectRatio
-            
-            // Update the mesh scaling
-            mesh.scaling = Vector3(planeWidth, planeHeight, 1f)
-        }
-    }
-    
     /**
      * Renders the text billboard in the scene
      */

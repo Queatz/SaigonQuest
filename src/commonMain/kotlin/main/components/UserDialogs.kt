@@ -413,35 +413,18 @@ fun PlayerDialog(
     onClose: () -> Unit,
     onLogout: () -> Unit
 ) {
-    // State to track low graphics mode
+    // State to track graphics settings
     val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
+    val isPrettyGraphics = remember { mutableStateOf(GraphicsSettings.isPrettyGraphicsEnabled()) }
     
     // State to track current language
     val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
     
-    // Dialog overlay
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            onClick { onClose() }
-        }
-    ) {
-        // Dialog content
-        Div(
-            attrs = {
-                classes(Styles.dialogContent)
-                onClick { it.stopPropagation() }
-            }
-        ) {
-            // Dialog header
-            H3(
-                attrs = {
-                    classes(Styles.dialogHeader)
-                }
-            ) {
-                Text("My Profile")
-            }
-            
+    // Use the BaseDialog component
+    BaseDialog(
+        onClose = onClose,
+        title = "My Profile",
+        content = {
             // User info
             Div(
                 attrs = {
@@ -523,51 +506,26 @@ fun PlayerDialog(
             }
             
             // Low graphics mode toggle
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        padding(8.px)
-                        marginBottom(16.px)
-                        backgroundColor(Theme.colors.surfaceVariant)
-                        property("border-radius", "4px")
-                    }
-                }
-            ) {
-                // Label
-                Span(
-                    attrs = {
-                        style {
-                            padding(8.px)
-                            color(Theme.colors.onSurfaceVariant)
-                        }
-                    }
-                ) {
-                    Text("Low Graphics Mode")
-                }
-                
-                // Toggle button
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            alignItems(AlignItems.Center)
-                            padding(8.px)
-                        }
-                    }
-                ) {
-                    ToggleSwitch(
-                        checked = isLowGraphicsMode.value,
-                        onCheckedChange = { newValue ->
-                            // Toggle low graphics mode
-                            isLowGraphicsMode.value = GraphicsSettings.toggleLowGraphicsMode()
-                        },
-                        id = "lowGraphicsToggle"
-                    )
-                }
-            }
+            GraphicsToggle(
+                label = "Low Graphics Mode",
+                checked = isLowGraphicsMode.value,
+                onCheckedChange = { newValue ->
+                    // Toggle low graphics mode
+                    isLowGraphicsMode.value = GraphicsSettings.toggleLowGraphicsMode()
+                },
+                id = "lowGraphicsToggle"
+            )
+            
+            // Pretty graphics toggle
+            GraphicsToggle(
+                label = "Pretty Graphics",
+                checked = isPrettyGraphics.value,
+                onCheckedChange = { newValue ->
+                    // Toggle pretty graphics mode
+                    isPrettyGraphics.value = GraphicsSettings.togglePrettyGraphics()
+                },
+                id = "prettyGraphicsToggle"
+            )
             
             // Logout button
             Button(
@@ -580,30 +538,22 @@ fun PlayerDialog(
                         property("border", "0")
                         property("border-radius", "4px")
                         property("cursor", "pointer")
+                        marginTop(16.px)
                     }
                     onClick { onLogout() }
                 }
             ) {
                 Text("Log Out")
             }
-            
+        },
+        actions = {
             // Close button
-            Button(
-                attrs = {
-                    style {
-                        width(100.percent)
-                        padding(8.px, 16.px)
-                        backgroundColor(Color.transparent)
-                        color(Theme.colors.primary)
-                        property("border", "0")
-                        marginTop(8.px)
-                        property("cursor", "pointer")
-                    }
-                    onClick { onClose() }
-                }
+            DialogButton(
+                onClick = onClose,
+                isPrimary = false
             ) {
                 Text("Close")
             }
         }
-    }
+    )
 }

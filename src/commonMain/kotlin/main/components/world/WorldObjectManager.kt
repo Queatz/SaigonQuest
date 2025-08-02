@@ -38,7 +38,7 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
         objects[obj.id] = obj
         
         // Return a handle to the object
-        return createObjectHandle(obj)
+        return createObjectHandle(obj, mesh)
     }
     
     /**
@@ -126,7 +126,8 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
      *     text = "Object Name",
      *     position = Vector3(x, y + 1.2f, z),
      *     fontSize = 18,
-     *     textColor = "white"
+     *     textColor = "white",
+     *     backgroundColor = "#00000080"  // Semi-transparent black background
      * )
      * 
      * // Later, you can update the position
@@ -140,19 +141,22 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
      * @param position The position in 3D space
      * @param fontSize The font size (default: 24)
      * @param textColor The text color (default: white)
+     * @param backgroundColor The background color (default: null, which means transparent). When a color is supplied, a rounded rectangle with 6px corner radius is rendered behind the text.
      * @return A handle to the created text billboard
      */
     fun createTextBillboard(
         text: String,
         position: Vector3,
         fontSize: Int = 24,
-        textColor: String = "white"
+        textColor: String = "white",
+        backgroundColor: String? = null
     ): WorldObjectHandle? {
         val textBillboard = TextBillboard(
             scene = scene,
             text = text,
             fontSize = fontSize,
-            textColor = textColor
+            textColor = textColor,
+            backgroundColor = backgroundColor ?: "transparent"
         )
         textBillboard.position = position
         
@@ -199,9 +203,11 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
     // Counter for generating unique IDs
     private var idCounter = 0
     
-    private fun createObjectHandle(obj: WorldObject): WorldObjectHandle {
+    private fun createObjectHandle(obj: WorldObject, mesh: AbstractMesh): WorldObjectHandle {
         return object : WorldObjectHandle {
             override val id: String = obj.id
+
+            override var mesh: AbstractMesh = mesh
             
             override var position: Vector3
                 get() = obj.position

@@ -902,6 +902,117 @@ object WebSocketApi {
             }
         }
     }
+    
+    /**
+     * Update a chat message
+     * 
+     * This updates a chat message and broadcasts the update to all users in the same world.
+     * 
+     * @param message The chat message to update
+     * @param newText The new text for the message
+     * @param callback A callback function that will be called with the result (true if successful, false otherwise)
+     */
+    fun updateChatMessage(message: ChatMessage, newText: String, callback: (Boolean) -> Unit) {
+        // Validate input parameters
+        if (message.key.isEmpty()) {
+            _lastError = "Cannot update chat message: message key is empty"
+            console.error(_lastError ?: "")
+            callback(false)
+            return
+        }
+
+        if (newText.isEmpty()) {
+            _lastError = "Cannot update chat message: new text is empty"
+            console.error(_lastError ?: "")
+            callback(false)
+            return
+        }
+
+        // Check connection status
+        if (!_isConnected) {
+            _lastError = "Cannot update chat message: WebSocket not connected"
+            console.warn(_lastError ?: "")
+            callback(false)
+            return
+        }
+
+        scope.launch {
+            try {
+                // Create updated message
+                val updatedMessage = message.copy(
+                    message = newText,
+                    edited = true
+                )
+
+                // Send update
+                console.log("Updating chat message: ${message.key} with text: $newText")
+                val success = sendChatMessageData(WebSocketAction.UPDATE_CHAT_MESSAGE, updatedMessage)
+
+                if (!success) {
+                    console.error("Failed to update chat message: ${_lastError ?: "Unknown error"}")
+                }
+
+                // Call the callback with the result
+                callback(success)
+            } catch (e: Exception) {
+                console.error("Error updating chat message", e)
+                _lastError = "Error updating chat message: ${e.message}"
+                callback(false)
+            }
+        }
+    }
+    
+    /**
+     * Delete a chat message
+     * 
+     * This marks a chat message as deleted and broadcasts the update to all users in the same world.
+     * 
+     * @param message The chat message to delete
+     * @param callback A callback function that will be called with the result (true if successful, false otherwise)
+     */
+    fun deleteChatMessage(message: ChatMessage, callback: (Boolean) -> Unit) {
+        // Validate input parameters
+        if (message.key.isEmpty()) {
+            _lastError = "Cannot delete chat message: message key is empty"
+            console.error(_lastError ?: "")
+            callback(false)
+            return
+        }
+
+        // Check connection status
+        if (!_isConnected) {
+            _lastError = "Cannot delete chat message: WebSocket not connected"
+            console.warn(_lastError ?: "")
+            callback(false)
+            return
+        }
+
+        scope.launch {
+            try {
+                // Create deleted message
+                val deletedMessage = message.copy(
+                    message = "",
+                    deleted = true,
+                    edited = false
+                )
+
+                // Send delete
+                console.log("Deleting chat message: ${message.key}")
+                val success = sendChatMessageData(WebSocketAction.DELETE_CHAT_MESSAGE, deletedMessage)
+
+                if (!success) {
+                    console.error("Failed to delete chat message: ${_lastError ?: "Unknown error"}")
+                }
+
+                // Call the callback with the result
+                callback(success)
+            } catch (e: Exception) {
+                console.error("Error deleting chat message", e)
+                _lastError = "Error deleting chat message: ${e.message}"
+                callback(false)
+            }
+        }
+    }
 
     /**
      * Add a listener for a specific action

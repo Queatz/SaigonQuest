@@ -11,15 +11,17 @@ import lib.Ray
 import lib.Scene
 import lib.StandardMaterial
 import lib.Vector3
+import main.api.ApiClient
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.world.CharacterDirection
 import main.components.world.SpriteSheet
-import main.components.world.TextBillboard
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
+import models.ChatMessage
 import models.Position
+import models.WebSocketAction
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,13 +46,19 @@ import kotlin.math.abs
 class PlayerController(private val scene: Scene) {
     
     // The player mesh (for compatibility with existing code)
-    private var player: Mesh? = null
+    private var collider: Mesh? = null
     
     // The player character handle
     private var playerHandle: WorldObjectHandle? = null
     
     // Username text billboard handle
     private var usernameTextHandle: WorldObjectHandle? = null
+    
+    // Chat message text billboard handle
+    private var chatMessageTextHandle: WorldObjectHandle? = null
+    
+    // Chat message timeout ID
+    private var chatMessageTimeoutId: Int? = null
     
     // Current player direction
     private var playerDirection: CharacterDirection = CharacterDirection.S
@@ -79,6 +87,9 @@ class PlayerController(private val scene: Scene) {
     // Coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     
+    // Reference to the world object manager for creating text billboards
+    private var worldObjectManager: WorldObjectManager? = null
+    
     // Properties for detecting minimal movement
     private var lastSignificantPosition: Vector3? = null
     private var timeWithMinimalMovement = 0.0
@@ -93,6 +104,9 @@ class PlayerController(private val scene: Scene) {
      */
     fun createPlayer(startPosition: Vector3, worldObjectManager: WorldObjectManager? = null) {
         if (worldObjectManager != null) {
+            // Store the WorldObjectManager for later use
+            this.worldObjectManager = worldObjectManager
+            
             // Create a sprite sheet for the player
             val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
         
@@ -105,7 +119,7 @@ class PlayerController(private val scene: Scene) {
         
             // Create a simple box for collision detection
             // This is needed because we can't directly access the character's mesh
-            player = MeshBuilder.CreateBox("player_collision", 
+            collider = MeshBuilder.CreateBox("player_collision",
                 object : CreateBoxOptions {
                     override val width = 0.05f
                     override val height = 1.0f
@@ -113,17 +127,17 @@ class PlayerController(private val scene: Scene) {
                 }, scene)
         
             // Make the collision box invisible
-            player?.isVisible = false
+            collider?.isVisible = false
         
             // Position the collision box
-            player?.position = startPosition
+            collider?.position = startPosition
             
             // Add username text above the player
             // Start with a default username
             val defaultUsername = "Player"
             
             // Calculate position above the player (adjust Y value as needed)
-            val textPosition = Vector3(startPosition.x, startPosition.y + 1.2f, startPosition.z)
+            val textPosition = Vector3(startPosition.x, startPosition.y + .5f, startPosition.z)
             
             // Create the text billboard with default text
             usernameTextHandle = worldObjectManager.createTextBillboard(
@@ -156,9 +170,9 @@ class PlayerController(private val scene: Scene) {
             }
         } else {
             // Fallback to creating a visible box (for backward compatibility)
-            player = MeshBuilder.CreateBox("player", 
+            collider = MeshBuilder.CreateBox("player",
                 object : CreateBoxOptions {
-                    override val width = 0.05f
+                    override val width = 0.25f
                     override val height = 1.0f
                     override val depth = 0.25f
                 }, scene)
@@ -170,10 +184,10 @@ class PlayerController(private val scene: Scene) {
                 roughness = 0.2f
                 emissiveColor = Color3(0.1f, 0.1f, 0.3f)
             }
-            player?.material = playerMaterial
+            collider?.material = playerMaterial
         
             // Position player
-            player?.position = startPosition
+            collider?.position = startPosition
         }
     }
     
@@ -200,8 +214,12 @@ class PlayerController(private val scene: Scene) {
      * 
      * @return The player mesh
      */
-    fun getPlayer(): Mesh? {
-        return player
+    fun getCollider(): Mesh? {
+        return collider
+    }
+
+    fun getPlayerHandle(): WorldObjectHandle? {
+        return playerHandle
     }
     
     /**
@@ -219,7 +237,7 @@ class PlayerController(private val scene: Scene) {
      * @return The player's position, or null if player doesn't exist
      */
     fun getPlayerPosition(): Vector3? {
-        return player?.position
+        return collider?.position
     }
     
     /**
@@ -327,7 +345,7 @@ class PlayerController(private val scene: Scene) {
         // Check if the ray intersects with any world mesh
         for (mesh in worldMeshes) {
             // Skip player and move circle meshes
-            if (mesh === player || mesh === moveCircle) continue
+            if (mesh === collider || mesh === moveCircle) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
@@ -351,7 +369,7 @@ class PlayerController(private val scene: Scene) {
         ray.direction = Vector3(0f, -1f, 0f)
         
         for (mesh in worldMeshes) {
-            if (mesh === player || mesh === moveCircle) continue
+            if (mesh === collider || mesh === moveCircle) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
@@ -372,7 +390,7 @@ class PlayerController(private val scene: Scene) {
      * @return The new position if movement occurred, null otherwise
      */
     fun updatePlayerPosition(moveDirection: Vector3): Vector3? {
-        if (player == null) return null
+        if (collider == null) return null
         
         // Calculate delta time for framerate-independent movement
         val currentTime = window.performance.now()
@@ -402,7 +420,7 @@ class PlayerController(private val scene: Scene) {
         }
         // Handle click-to-move
         else if (isMoving && playerTargetPosition != null) {
-            val currentPos = player!!.position
+            val currentPos = collider!!.position
             val targetPos = playerTargetPosition!!
             
             // Calculate direction and distance
@@ -426,7 +444,7 @@ class PlayerController(private val scene: Scene) {
         // Apply movement if there is any
         if (finalMoveDirection.length() > 0f) {
             // Calculate new position
-            val currentPos = player!!.position
+            val currentPos = collider!!.position
             val newPos = currentPos.add(finalMoveDirection)
             
             // Check if the new position is valid
@@ -465,7 +483,7 @@ class PlayerController(private val scene: Scene) {
                     }
                     
                     // Update player position
-                    player!!.position = validPos
+                    collider!!.position = validPos
                     
                     // Update character position to match player position
                     playerHandle?.position = validPos
@@ -473,7 +491,7 @@ class PlayerController(private val scene: Scene) {
                     // Update username text position to be above the player
                     usernameTextHandle?.position = Vector3(
                         validPos.x,
-                        validPos.y + 1.2f,
+                        validPos.y + .5f,
                         validPos.z
                     )
                     
@@ -595,12 +613,110 @@ class PlayerController(private val scene: Scene) {
     }
     
     /**
+     * Displays a chat message above the player's head
+     * 
+     * @param message The message content
+     */
+    fun displayChatMessage(message: String) {
+        // Get the player's position
+        val playerPosition = collider?.position ?: return
+        
+        // Remove existing chat message if any
+        removeChatMessage()
+        
+        // Truncate message to first 16 characters
+        val displayText = if (message.length > 16) message.substring(0, 16) else message
+        
+        // Calculate position above the username (adjust Y value as needed)
+        // Username is at y + .5f, so put chat message at y + .8f
+        val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
+        
+        // Use the stored WorldObjectManager
+        val manager = worldObjectManager ?: return
+        
+        // Create the text billboard with the chat message
+        chatMessageTextHandle = manager.createTextBillboard(
+            text = displayText,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "black",
+            backgroundColor = "white"
+        )
+        
+        // Set a timeout to remove the message after 2 seconds
+        chatMessageTimeoutId = window.setTimeout({
+            removeChatMessage()
+        }, 2000)
+        
+        console.log("PlayerController: Displayed chat message: $displayText")
+    }
+    
+    /**
+     * Removes a chat message from above the player's head
+     */
+    private fun removeChatMessage() {
+        // Clear any existing timeout
+        chatMessageTimeoutId?.let { timeoutId ->
+            window.clearTimeout(timeoutId)
+            chatMessageTimeoutId = null
+        }
+        
+        // Remove the text billboard if it exists
+        chatMessageTextHandle?.let { textHandle ->
+            textHandle.remove()
+            chatMessageTextHandle = null
+            console.log("PlayerController: Removed chat message")
+        }
+    }
+
+    /**
+     * Initializes the chat message listener
+     */
+    fun initializeChatMessageListener() {
+        // Add listener for chat messages
+        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                // Check if the message is valid
+                if (message.isValid()) {
+                    val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    console.log("PlayerController: Received RECEIVE_CHAT_MESSAGE event: ${chatMessage.userId}, ${chatMessage.message}")
+                    
+                    // Only display messages from the current user
+                    coroutineScope.launch {
+                        try {
+                            val user = UserApi.getCurrentUser()
+                            if (chatMessage.userId == user.key) {
+                                // Display the chat message above the player's head
+                                displayChatMessage(chatMessage.message)
+                            }
+                        } catch (e: Exception) {
+                            console.error("PlayerController: Error getting current user", e)
+                        }
+                    }
+                } else {
+                    console.error("PlayerController: Invalid chat message received: ${message.action}, ${message.data}")
+                }
+            } catch (e: Exception) {
+                console.error("PlayerController: Error parsing chat message", e)
+            }
+        }
+        
+        console.log("PlayerController: Chat message listener initialized")
+    }
+
+    /**
      * Disposes of the player controller resources.
      */
     fun dispose() {
-        player?.dispose()
+        collider?.dispose()
         moveCircle?.dispose()
         playerHandle?.remove()
         usernameTextHandle?.remove()
+        
+        // Remove chat message and clear timeout
+        removeChatMessage()
+        
+        // Remove WebSocket listeners
+        WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
     }
 }

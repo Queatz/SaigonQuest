@@ -32,3 +32,4 @@ data class InventoryItem(
     @Contextual
     var acquiredAt: Instant = Clock.System.now()
 ) : BaseModel()
+

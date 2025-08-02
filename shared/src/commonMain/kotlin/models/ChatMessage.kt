@@ -12,6 +12,8 @@ import kotlin.time.ExperimentalTime
  * @property username The username of the user who sent the message
  * @property message The content of the message
  * @property timestamp The time when the message was sent (milliseconds since epoch)
+ * @property edited Whether the message has been edited
+ * @property deleted Whether the message has been deleted
  */
 @OptIn(ExperimentalTime::class)
 @Serializable
@@ -20,5 +22,7 @@ data class ChatMessage(
     var userId: String = "",
     var username: String = "",
     var message: String = "",
-    var timestamp: Long = Clock.System.now().toEpochMilliseconds()
+    var timestamp: Long = Clock.System.now().toEpochMilliseconds(),
+    var edited: Boolean = false,
+    var deleted: Boolean = false
 ) : BaseModel()
