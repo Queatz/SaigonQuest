@@ -14,7 +14,6 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
@@ -23,6 +22,8 @@ import models.UserLeaveData
 import models.WebSocketAction
 import repository.ChatRepository
 import repository.UserRepository
+import routes.handlers.WebSocketHandler
+import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -57,14 +58,11 @@ fun Routing.configureWebSocketRoutes() {
     // Store active connections by worldId -> list of connections
     val activeConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
     
+    // Create handler factory
+    val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository)
+    
     // JSON serializer
-    val json = Json { 
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true  // Ensure default values are encoded
-        classDiscriminator = "type"  // Use "type" as the discriminator for polymorphic serialization
-    }
+    val json = utils.json
     
     // WebSocket route
     webSocket("/ws") {
@@ -193,179 +191,11 @@ fun Routing.configureWebSocketRoutes() {
                         val message = json.decodeFromString<WebSocketMessage>(text)
                         WebSocketDebug.logMessage("PARSED", "action=${message.action}, data length=${message.data.length}", this)
                         
-                        when (message.action) {
-                            WebSocketAction.SEND_CHAT_MESSAGE -> {
-                                WebSocketDebug.logMessage("PROCESSING", "SEND_CHAT_MESSAGE action", this)
-                                
-                                // Parse chat message
-                                val chatMessage = json.decodeFromString<ChatMessage>(message.data)
-                                WebSocketDebug.logMessage("CHAT_MESSAGE", "worldId=${chatMessage.worldId}, userId=${chatMessage.userId}, message=${chatMessage.message}", this)
-                                
-                                // Save message to database
-                                WebSocketDebug.logMessage("SAVING", "Saving chat message to database", this)
-                                try {
-                                    val savedMessage = chatRepository.saveMessage(chatMessage)
-                                    WebSocketDebug.logMessage("SAVED", "Message saved with ID: ${savedMessage.key}", this)
-                                    
-                                    // Broadcast message to all clients in the same world
-                                    val broadcastMessage = WebSocketMessage(
-                                        action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
-                                        data = json.encodeToString(savedMessage)
-                                    )
-                                    
-                                    val broadcastMessageString = json.encodeToString(broadcastMessage)
-                                    WebSocketDebug.logMessage("BROADCASTING", "To world: $worldId", this)
-                                    WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, this)
-                                    
-                                    broadcastToWorld(worldId, broadcastMessageString, activeConnections)
-                                } catch (e: Exception) {
-                                    WebSocketDebug.logError("Error saving chat message to database", e, this)
-                                }
-                            }
-                            WebSocketAction.UPDATE_PLAYER_POSITION -> {
-                                // Parse player position data
-                                val positionData = json.decodeFromString<PlayerPositionData>(message.data)
-                                WebSocketDebug.logMessage("POSITION_UPDATE", "from: ${connection.userId}, for: ${positionData.userId}, world: $worldId", this)
-                                
-                                // Broadcast position update to all other clients in the same world
-                                val broadcastMessage = WebSocketMessage(
-                                    action = WebSocketAction.UPDATE_PLAYER_POSITION,
-                                    data = message.data
-                                )
-                                
-                                WebSocketDebug.logMessage("BROADCASTING_POSITION", "user: ${positionData.userId}, world: $worldId", this)
-                                broadcastToWorld(worldId, json.encodeToString(broadcastMessage), activeConnections)
-                            }
-                            WebSocketAction.USER_JOIN -> {
-                                // Check if this is a heartbeat ping message
-                                if (message.data.contains("\"ping\":")) {
-                                    // This is a heartbeat ping, just log it and don't broadcast
-                                    WebSocketDebug.logMessage("HEARTBEAT_PING", "from: ${connection.userId}", this)
-                                } else {
-                                    try {
-                                        // Parse user join data
-                                        val joinData = json.decodeFromString<UserJoinData>(message.data)
-                                        WebSocketDebug.logMessage("USER_JOIN", "from: ${connection.userId}, for: ${joinData.userId}, world: ${joinData.worldId}", this)
-                                        
-                                        // Ensure the worldId in the join data matches the connection's worldId
-                                        val correctedJoinData = if (joinData.worldId != worldId) {
-                                            WebSocketDebug.logMessage("WORLD_MISMATCH", "message: ${joinData.worldId}, connection: $worldId", this)
-                                            joinData.copy(worldId = worldId)
-                                        } else {
-                                            joinData
-                                        }
-                                        
-                                        // Broadcast join notification to all clients in the same world
-                                        val broadcastMessage = WebSocketMessage(
-                                            action = WebSocketAction.USER_JOIN,
-                                            data = json.encodeToString(correctedJoinData)
-                                        )
-                                        
-                                        WebSocketDebug.logMessage("BROADCASTING_JOIN", "user: ${correctedJoinData.userId}, world: $worldId", this)
-                                        broadcastToWorld(worldId, json.encodeToString(broadcastMessage), activeConnections)
-                                    } catch (e: Exception) {
-                                        WebSocketDebug.logError("Error processing USER_JOIN message", e, this)
-                                        WebSocketDebug.logMessage("MALFORMED_DATA", message.data, this)
-                                    }
-                                }
-                            }
-                            WebSocketAction.USER_LEAVE -> {
-                                // Parse user leave data
-                                val leaveData = json.decodeFromString<UserLeaveData>(message.data)
-                                WebSocketDebug.logMessage("USER_LEAVE", "from: ${connection.userId}, for: ${leaveData.userId}, world: ${leaveData.worldId}", this)
-                                
-                                // Ensure the worldId in the leave data matches the connection's worldId
-                                val correctedLeaveData = if (leaveData.worldId != worldId) {
-                                    WebSocketDebug.logMessage("WORLD_MISMATCH", "message: ${leaveData.worldId}, connection: $worldId", this)
-                                    leaveData.copy(worldId = worldId)
-                                } else {
-                                    leaveData
-                                }
-                                
-                                // Broadcast leave notification to all clients in the same world
-                                val broadcastMessage = WebSocketMessage(
-                                    action = WebSocketAction.USER_LEAVE,
-                                    data = json.encodeToString(correctedLeaveData)
-                                )
-                                
-                                WebSocketDebug.logMessage("BROADCASTING_LEAVE", "user: ${correctedLeaveData.userId}, world: $worldId", this)
-                                broadcastToWorld(worldId, json.encodeToString(broadcastMessage), activeConnections)
-                            }
-                            WebSocketAction.UPDATE_CHAT_MESSAGE -> {
-                                WebSocketDebug.logMessage("PROCESSING", "UPDATE_CHAT_MESSAGE action", this)
-                                
-                                // Parse chat message
-                                val chatMessage = json.decodeFromString<ChatMessage>(message.data)
-                                WebSocketDebug.logMessage("UPDATE_CHAT_MESSAGE", "key=${chatMessage.key}, userId=${chatMessage.userId}, message=${chatMessage.message}", this)
-                                
-                                // Update message in database
-                                WebSocketDebug.logMessage("UPDATING", "Updating chat message in database", this)
-                                try {
-                                    val updatedMessage = chatRepository.updateMessage(chatMessage.key, chatMessage)
-                                    
-                                    if (updatedMessage != null) {
-                                        WebSocketDebug.logMessage("UPDATED", "Message updated with ID: ${updatedMessage.key}", this)
-                                        
-                                        // Broadcast updated message to all clients in the same world
-                                        val broadcastMessage = WebSocketMessage(
-                                            action = WebSocketAction.UPDATE_CHAT_MESSAGE,
-                                            data = json.encodeToString(updatedMessage)
-                                        )
-                                        
-                                        val broadcastMessageString = json.encodeToString(broadcastMessage)
-                                        WebSocketDebug.logMessage("BROADCASTING", "To world: $worldId", this)
-                                        WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, this)
-                                        
-                                        broadcastToWorld(worldId, broadcastMessageString, activeConnections)
-                                    } else {
-                                        WebSocketDebug.logError("Failed to update message: ${chatMessage.key}", null, this)
-                                    }
-                                } catch (e: Exception) {
-                                    WebSocketDebug.logError("Error updating chat message in database", e, this)
-                                }
-                            }
-                            WebSocketAction.DELETE_CHAT_MESSAGE -> {
-                                WebSocketDebug.logMessage("PROCESSING", "DELETE_CHAT_MESSAGE action", this)
-                                
-                                // Parse chat message
-                                val chatMessage = json.decodeFromString<ChatMessage>(message.data)
-                                WebSocketDebug.logMessage("DELETE_CHAT_MESSAGE", "key=${chatMessage.key}, userId=${chatMessage.userId}", this)
-                                
-                                // Delete message in database
-                                WebSocketDebug.logMessage("DELETING", "Deleting chat message in database", this)
-                                try {
-                                    val deletedMessage = chatRepository.deleteMessage(chatMessage.key, chatMessage.userId)
-                                    
-                                    if (deletedMessage != null) {
-                                        WebSocketDebug.logMessage("DELETED", "Message deleted with ID: ${deletedMessage.key}", this)
-                                        
-                                        // Broadcast deleted message to all clients in the same world
-                                        val broadcastMessage = WebSocketMessage(
-                                            action = WebSocketAction.DELETE_CHAT_MESSAGE,
-                                            data = json.encodeToString(deletedMessage)
-                                        )
-                                        
-                                        val broadcastMessageString = json.encodeToString(broadcastMessage)
-                                        WebSocketDebug.logMessage("BROADCASTING", "To world: $worldId", this)
-                                        WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, this)
-                                        
-                                        broadcastToWorld(worldId, broadcastMessageString, activeConnections)
-                                    } else {
-                                        WebSocketDebug.logError("Failed to delete message: ${chatMessage.key}", null, this)
-                                    }
-                                } catch (e: Exception) {
-                                    WebSocketDebug.logError("Error deleting chat message in database", e, this)
-                                }
-                            }
-                            null -> {
-                                WebSocketDebug.logError("Received message with null action", null, this)
-                            }
-                            else -> {
-                                // These actions will be implemented as needed
-                                WebSocketDebug.logMessage("UNIMPLEMENTED_ACTION", "${message.action.name} not yet implemented on server", this)
-                            }
-                            // Add other message types here as needed
-                        }
+                        // Get the appropriate handler for this action
+                        val handler = handlerFactory.getHandler(message.action)
+                        
+                        // Handle the message
+                        handler.handle(message, connection, worldId, activeConnections, json, this)
                     } catch (e: Exception) {
                         // Log error but don't close connection
                         WebSocketDebug.logError("Error processing WebSocket message", e, this)
@@ -415,33 +245,22 @@ fun Routing.configureWebSocketRoutes() {
 
 /**
  * Broadcast a message to all clients in a world
+ * 
+ * This function is kept for backward compatibility with existing code.
+ * It delegates to WebSocketUtils.broadcastToWorld.
  */
 private suspend fun broadcastToWorld(
     worldId: String,
     message: String,
     activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>
 ) {
-    val connections = activeConnections[worldId]
-    if (connections.isNullOrEmpty()) {
+    // Get the first connection's session for logging purposes
+    val session = activeConnections[worldId]?.firstOrNull()?.session
+    
+    if (session != null) {
+        routes.handlers.WebSocketUtils.broadcastToWorld(worldId, message, activeConnections, session)
+    } else {
+        // No active connections, log and return
         WebSocketDebug.logBroadcast("NO_CONNECTIONS", "No active connections", worldId)
-        return
     }
-    
-    WebSocketDebug.logBroadcast("BROADCASTING", "To ${connections.size} clients", worldId)
-    WebSocketDebug.logBroadcast("MESSAGE_CONTENT", message, worldId)
-    var successCount = 0
-    
-    connections.forEach { connection ->
-        try {
-            WebSocketDebug.logBroadcast("SENDING_TO", "User: ${connection.userId}", worldId)
-            connection.session.send(message)
-            successCount++
-            WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
-        } catch (e: Exception) {
-            // Log error but continue with other connections
-            WebSocketDebug.logError("Error sending message to client ${connection.userId}", e, connection.session)
-        }
-    }
-    
-    WebSocketDebug.logBroadcast("BROADCAST_COMPLETE", "Success: $successCount/${connections.size} clients", worldId)
 }

@@ -54,12 +54,7 @@ fun VisitorDialog(
             if (errorMessage.isNotEmpty()) {
                 Div(
                     attrs = {
-                        style {
-                            color(Color.red)
-                            marginBottom(16.px)
-                            fontSize(14.px)
-                            property("text-align", "center")
-                        }
+                        classes(Styles.formErrorMessage)
                     }
                 ) {
                     Text(errorMessage)
@@ -69,19 +64,12 @@ fun VisitorDialog(
             // Username input
             Div(
                 attrs = {
-                    style {
-                        marginBottom(16.px)
-                    }
+                    classes(Styles.formFieldContainer)
                 }
             ) {
                 Label(
                     attrs = {
-                        style {
-                            display(DisplayStyle.Block)
-                            marginBottom(4.px)
-                            fontSize(14.px)
-                            color(Theme.colors.onBackground)
-                        }
+                        classes(Styles.formLabel)
                     }
                 ) {
                     Text("Username")
@@ -89,13 +77,7 @@ fun VisitorDialog(
                 Input(
                     type = InputType.Text,
                     attrs = {
-                        style {
-                            width(100.percent)
-                            padding(8.px)
-                            property("border-radius", "4px")
-                            property("border", "1px solid ${Theme.colors.outline}")
-                            property("box-sizing", "border-box")
-                        }
+                        classes(Styles.formInput)
                         placeholder("Enter username")
                         value(username)
                         onInput { username = it.value }
@@ -106,19 +88,12 @@ fun VisitorDialog(
             // Password input
             Div(
                 attrs = {
-                    style {
-                        marginBottom(16.px)
-                    }
+                    classes(Styles.formFieldContainer)
                 }
             ) {
                 Label(
                     attrs = {
-                        style {
-                            display(DisplayStyle.Block)
-                            marginBottom(4.px)
-                            fontSize(14.px)
-                            color(Theme.colors.onBackground)
-                        }
+                        classes(Styles.formLabel)
                     }
                 ) {
                     Text("Password")
@@ -126,13 +101,7 @@ fun VisitorDialog(
                 Input(
                     type = InputType.Password,
                     attrs = {
-                        style {
-                            width(100.percent)
-                            padding(8.px)
-                            property("border-radius", "4px")
-                            property("border", "1px solid ${Theme.colors.outline}")
-                            property("box-sizing", "border-box")
-                        }
+                        classes(Styles.formInput)
                         placeholder("Enter password")
                         value(password)
                         onInput { password = it.value }
@@ -141,11 +110,7 @@ fun VisitorDialog(
                 if (!isLoginMode) {
                     Div(
                         attrs = {
-                            style {
-                                fontSize(12.px)
-                                color(Theme.colors.onSurfaceVariant)
-                                marginTop(4.px)
-                            }
+                            classes(Styles.formHelpText)
                         }
                     ) {
                         Text("Password must be at least 8 characters")
@@ -157,19 +122,12 @@ fun VisitorDialog(
             if (!isLoginMode) {
                 Div(
                     attrs = {
-                        style {
-                            marginBottom(16.px)
-                        }
+                        classes(Styles.formFieldContainer)
                     }
                 ) {
                     Label(
                         attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                marginBottom(4.px)
-                                fontSize(14.px)
-                                color(Theme.colors.onBackground)
-                            }
+                            classes(Styles.formLabel)
                         }
                     ) {
                         Text("Year of Birth")
@@ -178,13 +136,7 @@ fun VisitorDialog(
                     // Create a select element for year of birth
                     org.jetbrains.compose.web.dom.Select(
                         attrs = {
-                            style {
-                                width(100.percent)
-                                padding(8.px)
-                                property("border-radius", "4px")
-                                property("border", "1px solid ${Theme.colors.outline}")
-                                property("box-sizing", "border-box")
-                            }
+                            classes(Styles.formInput)
                             onChange { event ->
                                 val selectedValue = event.target.value
                                 yearOfBirth = if (selectedValue.isNotEmpty()) {
@@ -227,19 +179,12 @@ fun VisitorDialog(
                 // Sex selection (only in registration mode)
                 Div(
                     attrs = {
-                        style {
-                            marginBottom(16.px)
-                        }
+                        classes(Styles.formFieldContainer)
                     }
                 ) {
                     Label(
                         attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                marginBottom(4.px)
-                                fontSize(14.px)
-                                color(Theme.colors.onBackground)
-                            }
+                            classes(Styles.formLabel)
                         }
                     ) {
                         Text("Sex")
@@ -248,19 +193,13 @@ fun VisitorDialog(
                     // Radio buttons for Boy/Girl
                     Div(
                         attrs = {
-                            style {
-                                display(DisplayStyle.Flex)
-                                property("gap", "16px")
-                            }
+                            classes(Styles.radioGroupContainer)
                         }
                     ) {
                         // Boy option
                         Div(
                             attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    alignItems(AlignItems.Center)
-                                }
+                                classes(Styles.radioOptionContainer)
                             }
                         ) {
                             Input(
@@ -280,11 +219,7 @@ fun VisitorDialog(
                             )
                             Label(
                                 attrs = {
-                                    style {
-                                        marginLeft(4.px)
-                                        fontSize(14.px)
-                                        color(Theme.colors.onBackground)
-                                    }
+                                    classes(Styles.radioOptionLabel)
                                 }
                             ) {
                                 Text("Boy")
@@ -294,10 +229,7 @@ fun VisitorDialog(
                         // Girl option
                         Div(
                             attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    alignItems(AlignItems.Center)
-                                }
+                                classes(Styles.radioOptionContainer)
                             }
                         ) {
                             Input(
@@ -317,11 +249,7 @@ fun VisitorDialog(
                             )
                             Label(
                                 attrs = {
-                                    style {
-                                        marginLeft(4.px)
-                                        fontSize(14.px)
-                                        color(Theme.colors.onBackground)
-                                    }
+                                    classes(Styles.radioOptionLabel)
                                 }
                             ) {
                                 Text("Girl")
@@ -334,24 +262,13 @@ fun VisitorDialog(
             // Action buttons
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        marginTop(24.px)
-                    }
+                    classes(Styles.formButtonsContainer)
                 }
             ) {
                 // Primary action button
                 Button(
                     attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(Theme.colors.primary)
-                            color(Theme.colors.onPrimary)
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            property("cursor", "pointer")
-                        }
+                        classes(Styles.primaryButton)
                         onClick {
                             errorMessage = ""
                             
@@ -384,13 +301,7 @@ fun VisitorDialog(
                 // Toggle mode button
                 Button(
                     attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(Color.transparent)
-                            color(Theme.colors.primary)
-                            property("border", "0")
-                            property("cursor", "pointer")
-                        }
+                        classes(Styles.secondaryButton)
                         onClick {
                             isLoginMode = !isLoginMode
                             errorMessage = ""
@@ -428,21 +339,13 @@ fun PlayerDialog(
             // User info
             Div(
                 attrs = {
-                    style {
-                        marginBottom(24.px)
-                        property("text-align", "center")
-                    }
+                    classes(Styles.userInfoContainer)
                 }
             ) {
                 // Username
                 Div(
                     attrs = {
-                        style {
-                            fontSize(18.px)
-                            property("font-weight", "bold")
-                            color(Theme.colors.onBackground)
-                            marginBottom(8.px)
-                        }
+                        classes(Styles.usernameText)
                     }
                 ) {
                     Text(user.username)
@@ -451,10 +354,7 @@ fun PlayerDialog(
                 // Player status
                 Div(
                     attrs = {
-                        style {
-                            fontSize(14.px)
-                            color(Theme.colors.onSurfaceVariant)
-                        }
+                        classes(Styles.userStatusText)
                     }
                 ) {
                     Text("Player Account")
@@ -464,24 +364,13 @@ fun PlayerDialog(
             // Language switcher
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        padding(8.px)
-                        marginBottom(16.px)
-                        backgroundColor(Theme.colors.surfaceVariant)
-                        property("border-radius", "4px")
-                    }
+                    classes(Styles.settingsSectionContainer)
                 }
             ) {
                 // Label
                 Span(
                     attrs = {
-                        style {
-                            padding(8.px)
-                            color(Theme.colors.onSurfaceVariant)
-                        }
+                        classes(Styles.settingsSectionLabel)
                     }
                 ) {
                     Text("Language")
@@ -490,11 +379,7 @@ fun PlayerDialog(
                 // Language switcher component
                 Div(
                     attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            alignItems(AlignItems.Center)
-                            padding(8.px)
-                        }
+                        classes(Styles.settingsControlContainer)
                     }
                 ) {
                     LanguageSwitcher(
@@ -530,16 +415,7 @@ fun PlayerDialog(
             // Logout button
             Button(
                 attrs = {
-                    style {
-                        width(100.percent)
-                        padding(8.px, 16.px)
-                        backgroundColor(Theme.colors.secondary)
-                        color(Theme.colors.onPrimary)
-                        property("border", "0")
-                        property("border-radius", "4px")
-                        property("cursor", "pointer")
-                        marginTop(16.px)
-                    }
+                    classes(Styles.logoutButton)
                     onClick { onLogout() }
                 }
             ) {

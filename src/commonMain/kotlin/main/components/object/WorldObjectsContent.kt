@@ -1,6 +1,7 @@
 package main.components.`object`
 
 import androidx.compose.runtime.Composable
+import main.theme.Theme
 import models.Object
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
@@ -16,6 +17,8 @@ import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.margin
+import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
@@ -37,10 +40,11 @@ import org.jetbrains.compose.web.dom.Text
  * @param onEdit Callback when an object should be edited
  */
 @Composable
-fun WorldTabContent(
+fun WorldObjectsContent(
     objects: List<Object>,
     isLoading: Boolean,
     errorMessage: String,
+    onCreateObject: () -> Unit = {},
     onRemove: (String) -> Unit,
     onLocate: (String) -> Unit = {},
     onEdit: (String) -> Unit = {}
@@ -56,6 +60,25 @@ fun WorldTabContent(
             }
         }
     ) {
+        // Create object button
+        Button(
+            attrs = {
+                style {
+                    backgroundColor(Theme.colors.primary)
+                    color(Theme.colors.onPrimary)
+                    property("border", "0")
+                    property("border-radius", "4px")
+                    padding(8.px, 16.px)
+                    marginRight(8.px)
+                    cursor("pointer")
+                    fontSize(14.px)
+                    margin(0.px, 0.px, 16.px, 0.px)
+                }
+                onClick { onCreateObject() }
+            }
+        ) {
+            Text("Create Object")
+        }
         // Loading or error message
         if (isLoading) {
             P(

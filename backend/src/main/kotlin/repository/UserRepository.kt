@@ -10,15 +10,15 @@ import com.arangodb.model.DocumentReadOptions
 import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
-import kotlinx.serialization.json.Json
 import models.User
+import utils.json
 import java.security.MessageDigest
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 
 class UserRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.USERS_COLLECTION)
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = utils.json
     
     /**
      * Creates a new user in the database

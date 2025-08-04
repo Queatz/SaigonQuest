@@ -6,5 +6,9 @@ import org.khronos.webgl.Uint8Array
 @JsNonModule
 external object Qr {
     @JsName("default")
-    fun createQR(text: String, output: String = definedExternally, opts: dynamic = definedExternally): Uint8Array
+    fun createQR(
+        text: String,
+        output: String = definedExternally,
+        opts: dynamic = definedExternally
+    ): Uint8Array
 }

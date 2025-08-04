@@ -1,0 +1,45 @@
+package routes.handlers
+
+import debug.WebSocketDebug
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import kotlinx.serialization.json.Json
+import models.PlayerPositionData
+import models.WebSocketAction
+import routes.WebSocketConnection
+import routes.WebSocketMessage
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Handler for UPDATE_PLAYER_POSITION WebSocket messages
+ *
+ * This handler processes player position updates and broadcasts them to all clients in the same world.
+ * When a player moves, this handler ensures all other clients see the movement.
+ */
+class UpdatePlayerPositionHandler : WebSocketHandler {
+    override suspend fun handle(
+        message: WebSocketMessage,
+        connection: WebSocketConnection,
+        worldId: String,
+        activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
+        json: Json,
+        session: DefaultWebSocketServerSession
+    ) {
+        try {
+            // Parse player position data
+            val positionData = json.decodeFromString<PlayerPositionData>(message.data)
+            WebSocketDebug.logMessage("POSITION_UPDATE", "from: ${connection.userId}, for: ${positionData.userId}, world: $worldId", session)
+            
+            // Broadcast position update to all other clients in the same world
+            val broadcastMessage = WebSocketMessage(
+                action = WebSocketAction.UPDATE_PLAYER_POSITION,
+                data = message.data
+            )
+            
+            WebSocketDebug.logMessage("BROADCASTING_POSITION", "user: ${positionData.userId}, world: $worldId", session)
+            WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
+        } catch (e: Exception) {
+            WebSocketDebug.logError("Error processing UPDATE_PLAYER_POSITION message", e, session)
+            WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
+        }
+    }
+}

@@ -9,11 +9,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import lib.Color3
-import lib.Color4
 import lib.Scene
 import main.api.UserApi
 import main.api.WorldApi
-import main.components.SceneManager
 import main.theme.Styles
 import models.User
 import models.World
@@ -24,7 +22,6 @@ import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.StyleScope
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
@@ -36,7 +33,6 @@ import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Button
@@ -47,8 +43,6 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
-import web.cssom.AtRules.Companion.property
-import web.cssom.HtmlAttributes.Companion.value
 
 /**
  * Content component for the world edit form.
@@ -161,7 +155,7 @@ fun WorldEditContent(
     // State for current user
     var currentUser by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    
+
     // Determine if we're editing or creating
     val isEditing = currentWorld != null
     
@@ -209,7 +203,7 @@ fun WorldEditContent(
         
         val worldModel = if (isEditing) {
             // Update existing world
-            currentWorld!!.copy(
+            currentWorld.copy(
                 title = title,
                 subtitle = subtitle,
                 description = description,
@@ -289,7 +283,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("You don't own this world. Form fields are disabled.")
+                Text("You don't own this world.")
             }
         }
         

@@ -22,7 +22,7 @@ object InventoryApi {
     suspend fun getUserInventory(): Inventory {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/inventory") {
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {
@@ -49,7 +49,7 @@ object InventoryApi {
     suspend fun getInventoryByUserId(userId: String): Inventory {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/inventory/user/$userId") {
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {
@@ -77,7 +77,7 @@ object InventoryApi {
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/inventory/item") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(item)
             }
             
@@ -105,7 +105,7 @@ object InventoryApi {
     suspend fun removeItemFromInventory(itemId: String): Inventory {
         try {
             val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/inventory/item/$itemId") {
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {
@@ -133,7 +133,7 @@ object InventoryApi {
         try {
             val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/inventory/item/$itemId") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(item)
             }
             

@@ -25,6 +25,7 @@ import models.WebSocketAction
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.min
@@ -75,9 +76,6 @@ class PlayerController(private val scene: Scene) {
     // Movement state
     private var isMoving = false
     
-    // Movement speed (units per frame)
-    private val moveSpeed = 0.025f
-    
     // Base movement speed in units per second for framerate-independent movement
     private val baseMovementSpeed = 3.0f
     
@@ -102,92 +100,70 @@ class PlayerController(private val scene: Scene) {
      * @param startPosition The starting position for the player
      * @param worldObjectManager Optional WorldObjectManager to create a character instead of a box
      */
-    fun createPlayer(startPosition: Vector3, worldObjectManager: WorldObjectManager? = null) {
-        if (worldObjectManager != null) {
-            // Store the WorldObjectManager for later use
-            this.worldObjectManager = worldObjectManager
-            
-            // Create a sprite sheet for the player
-            val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
-        
-            // Create the player character using the WorldObjectManager
-            playerHandle = worldObjectManager.createCharacter(
-                spriteSheet = spriteSheet,
-                direction = playerDirection,
-                position = startPosition
-            )
-        
-            // Create a simple box for collision detection
-            // This is needed because we can't directly access the character's mesh
-            collider = MeshBuilder.CreateBox("player_collision",
-                object : CreateBoxOptions {
-                    override val width = 0.05f
-                    override val height = 1.0f
-                    override val depth = 0.25f
-                }, scene)
-        
-            // Make the collision box invisible
-            collider?.isVisible = false
-        
-            // Position the collision box
-            collider?.position = startPosition
-            
-            // Add username text above the player
-            // Start with a default username
-            val defaultUsername = "Player"
-            
-            // Calculate position above the player (adjust Y value as needed)
-            val textPosition = Vector3(startPosition.x, startPosition.y + .5f, startPosition.z)
-            
-            // Create the text billboard with default text
-            usernameTextHandle = worldObjectManager.createTextBillboard(
-                text = defaultUsername,
-                position = textPosition,
-                fontSize = 18,
-                textColor = "white"
-            )
-            
-            // Update the username asynchronously
-            coroutineScope.launch {
-                try {
-                    // Get the current user's username
-                    val user = UserApi.getCurrentUser()
-                    
-                    // Create a new text billboard with the actual username
-                    // First remove the old one
-                    usernameTextHandle?.remove()
-                    
-                    // Create a new one with the correct username
-                    usernameTextHandle = worldObjectManager.createTextBillboard(
-                        text = user.username,
-                        position = textPosition,
-                        fontSize = 18,
-                        textColor = "white"
-                    )
-                } catch (e: Exception) {
-                    console.error("Error getting username", e)
-                }
+    fun createPlayer(startPosition: Vector3, worldObjectManager: WorldObjectManager) {
+        // Store the WorldObjectManager for later use
+        this.worldObjectManager = worldObjectManager
+
+        // Create a sprite sheet for the player
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+
+        // Create the player character using the WorldObjectManager
+        playerHandle = worldObjectManager.createCharacter(
+            spriteSheet = spriteSheet,
+            direction = playerDirection,
+            position = startPosition
+        )
+
+        // Create a simple box for collision detection
+        // This is needed because we can't directly access the character's mesh
+        collider = MeshBuilder.CreateBox("player_collision",
+            object : CreateBoxOptions {
+                override val width = 0.05f
+                override val height = 1.0f
+                override val depth = 0.25f
+            }, scene)
+
+        // Make the collision box invisible
+        collider?.isVisible = false
+
+        // Position the collision box
+        collider?.position = startPosition
+
+        // Add username text above the player
+        // Start with a default username
+        val defaultUsername = "Player"
+
+        // Calculate position above the player (adjust Y value as needed)
+        val textPosition = Vector3(startPosition.x, startPosition.y + .5f, startPosition.z)
+
+        // Create the text billboard with default text
+        usernameTextHandle = worldObjectManager.createTextBillboard(
+            text = defaultUsername,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "white"
+        )
+
+        // Update the username asynchronously
+        coroutineScope.launch {
+            try {
+                // Get the current user's username
+                val user = UserApi.getCurrentUser()
+
+                // Create a new text billboard with the actual username
+                // First remove the old one
+                usernameTextHandle?.remove()
+
+                // Create a new one with the correct username
+                usernameTextHandle = worldObjectManager.createTextBillboard(
+                    text = user.username,
+                    position = textPosition,
+                    fontSize = 18,
+                    textColor = "white"
+                )
+            } catch (e: Exception) {
+                console.error("Error getting username", e)
             }
-        } else {
-            // Fallback to creating a visible box (for backward compatibility)
-            collider = MeshBuilder.CreateBox("player",
-                object : CreateBoxOptions {
-                    override val width = 0.25f
-                    override val height = 1.0f
-                    override val depth = 0.25f
-                }, scene)
-        
-            // Create player material
-            val playerMaterial = PBRMaterial("playerMaterial", scene).apply {
-                albedoColor = Color3(0.2f, 0.4f, 0.8f)
-                metallic = 0.1f
-                roughness = 0.2f
-                emissiveColor = Color3(0.1f, 0.1f, 0.3f)
-            }
-            collider?.material = playerMaterial
-        
-            // Position player
-            collider?.position = startPosition
         }
     }
     
@@ -237,7 +213,7 @@ class PlayerController(private val scene: Scene) {
      * @return The player's position, or null if player doesn't exist
      */
     fun getPlayerPosition(): Vector3? {
-        return collider?.position
+        return playerHandle?.position
     }
     
     /**
@@ -299,7 +275,8 @@ class PlayerController(private val scene: Scene) {
         
         // Animation speed in units per second (framerate-independent)
         val circleAnimSpeed = 1.2f // Complete animation in ~0.83 seconds
-        
+
+        // todo refactor
         scene.registerBeforeRender {
             if (moveCircle != null && scaleValue > 0) {
                 // Calculate delta time for framerate-independent animation
@@ -345,7 +322,7 @@ class PlayerController(private val scene: Scene) {
         // Check if the ray intersects with any world mesh
         for (mesh in worldMeshes) {
             // Skip player and move circle meshes
-            if (mesh === collider || mesh === moveCircle) continue
+            if (mesh == collider || mesh == moveCircle) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
@@ -374,7 +351,7 @@ class PlayerController(private val scene: Scene) {
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
                 // Return position with updated Y coordinate
-                return Vector3(position.x, hit.pickedPoint!!.y + 0.5f, position.z)
+                return Vector3(position.x, hit.pickedPoint.y + 0.5f, position.z)
             }
         }
         
@@ -390,8 +367,6 @@ class PlayerController(private val scene: Scene) {
      * @return The new position if movement occurred, null otherwise
      */
     fun updatePlayerPosition(moveDirection: Vector3): Vector3? {
-        if (collider == null) return null
-        
         // Calculate delta time for framerate-independent movement
         val currentTime = window.performance.now()
         val deltaTime = if (lastFrameTime > 0) {
@@ -420,7 +395,7 @@ class PlayerController(private val scene: Scene) {
         }
         // Handle click-to-move
         else if (isMoving && playerTargetPosition != null) {
-            val currentPos = collider!!.position
+            val currentPos = playerHandle!!.position
             val targetPos = playerTargetPosition!!
             
             // Calculate direction and distance
@@ -440,11 +415,13 @@ class PlayerController(private val scene: Scene) {
                 updatePlayerDirection(direction)
             }
         }
+
+        console.log("[PLAYER_MOVE] finalMoveDirection=$finalMoveDirection")
         
         // Apply movement if there is any
         if (finalMoveDirection.length() > 0f) {
             // Calculate new position
-            val currentPos = collider!!.position
+            val currentPos = playerHandle!!.position
             val newPos = currentPos.add(finalMoveDirection)
             
             // Check if the new position is valid
@@ -452,9 +429,12 @@ class PlayerController(private val scene: Scene) {
                 // Find the exact y position by raycasting
                 val validPos = findValidYPosition(newPos)
                 
-                if (validPos != null) {
+                if (validPos == null) {
+                    console.log("[PLAYER_MOVE] validPos is null")
+                } else {
                     // Check for minimal movement if we're using click-to-move
                     if (isMoving && playerTargetPosition != null) {
+                        console.log("[PLAYER_MOVE] isMoving = true && playerTargetPosition != null")
                         // Initialize lastSignificantPosition if it's null
                         if (lastSignificantPosition == null) {
                             lastSignificantPosition = currentPos
@@ -463,10 +443,11 @@ class PlayerController(private val scene: Scene) {
                         // Calculate movement distance since last significant position
                         val movementX = abs(validPos.x - lastSignificantPosition!!.x)
                         val movementZ = abs(validPos.z - lastSignificantPosition!!.z)
-                        val significantMovement = movementX > minimalMovementThreshold || 
-                                                 movementZ > minimalMovementThreshold
+                        val significantMovement =
+                            movementX > minimalMovementThreshold || movementZ > minimalMovementThreshold
                         
                         if (significantMovement) {
+                            console.log("[PLAYER_MOVE] significant")
                             // Reset tracking if there was significant movement
                             lastSignificantPosition = validPos
                             timeWithMinimalMovement = 0.0
@@ -476,18 +457,20 @@ class PlayerController(private val scene: Scene) {
                             
                             // Give up if we've been moving minimally for too long
                             if (timeWithMinimalMovement >= giveUpTimeThreshold) {
-                                console.log("Giving up movement due to minimal progress")
+                                console.log("[PLAYER_MOVE] Giving up movement due to minimal progress")
                                 stopMovement()
                             }
                         }
                     }
+
+                    console.log("[PLAYER_MOVE] validPos = $validPos")
                     
                     // Update player position
                     collider!!.position = validPos
-                    
-                    // Update character position to match player position
-                    playerHandle?.position = validPos
-                    
+
+                    // Set the position directly on the node
+                    playerHandle!!.position = validPos
+
                     // Update username text position to be above the player
                     usernameTextHandle?.position = Vector3(
                         validPos.x,
@@ -526,6 +509,7 @@ class PlayerController(private val scene: Scene) {
                     return validPos
                 }
             } else if (isMoving) {
+                console.log("[PLAYER_MOVE] stopMovement()")
                 // If the position is invalid and we're using click-to-move, stop moving
                 stopMovement()
             }

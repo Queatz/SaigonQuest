@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Object(
     var title: String = "",
-    var categories: List<String> = emptyList(),
     var data: String = "", // JSON string containing node editor data
     var worldId: String = "", // Reference to the world this object belongs to
     var file: String = "", // world file name without .glb

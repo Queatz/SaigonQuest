@@ -125,6 +125,15 @@ fun NodeEditorPanel(
                 
                 // Add a data attribute to identify the canvas element
                 attr("data-canvas", "node-editor-canvas")
+                
+                // Add click handler to deselect nodes and connections when clicking on empty areas
+                onClick { event ->
+                    // Only deselect if we're not in the middle of a connection drag
+                    if (!controller.isDraggingConnection) {
+                        controller.selectNode(null)
+                        event.stopPropagation()
+                    }
+                }
             }
         ) {
             // Render connections

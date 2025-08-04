@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import main.components.isLayoutAdjustmentNeeded
 import models.World
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
@@ -48,11 +49,7 @@ fun WorldTitle(
                 position(Position.Absolute)
                 top(20.px)
                 // Adjust left position when any side panel is open on desktop
-                if ((currentPanel == SidePanelState.Chat || 
-                     currentPanel == SidePanelState.WorldEdit || 
-                     currentPanel == SidePanelState.Notifications || 
-                     currentPanel == SidePanelState.ObjectsPanel ||
-                     currentPanel == SidePanelState.Friends) && !isMobile.value) {
+                if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
                     // Center in the remaining space (excluding the 320px side panel)
                     property("left", "calc(50% - 160px)")
                 } else {

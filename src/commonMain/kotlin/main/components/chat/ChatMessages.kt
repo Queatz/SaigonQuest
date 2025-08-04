@@ -107,8 +107,30 @@ fun ChatMessages(worldId: String) {
             messages = chatMessages.toList().sortedBy { it.timestamp }
             isLoading = false
             
+            // Mark messages as read when chat is opened
+            scope.launch {
+                try {
+                    ChatApi.markMessagesAsRead(worldId)
+                } catch (e: Exception) {
+                    console.error("Error marking messages as read", e)
+                }
+            }
+            
             // Scroll to bottom after initial messages are loaded
-            scrollToBottom()
+            // Add a small delay to ensure DOM is updated before scrolling
+            scope.launch {
+                try {
+                    // Wait for the next frame to ensure DOM is updated
+                    kotlinx.coroutines.delay(50)
+                    scrollToBottom()
+                    
+                    // Add a second attempt with a longer delay as a fallback
+                    kotlinx.coroutines.delay(100)
+                    scrollToBottom()
+                } catch (e: Exception) {
+                    console.error("Error in delayed scroll to bottom", e)
+                }
+            }
         } catch (e: Exception) {
             console.error("Error loading chat messages", e)
             error = "Failed to load messages"

@@ -7,19 +7,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import main.api.ObjectApi
+import utils.json
 import main.theme.Styles
 import models.Object
 import models.Rotation
 import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.*
+import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.H4
+import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Text
 
 /**
  * A dialog for creating and editing objects.
@@ -40,11 +43,6 @@ fun ObjectEditorDialog(
 ) {
     // State for form fields
     var title by remember { mutableStateOf(objectModel?.title ?: "") }
-    var categories by remember { 
-        mutableStateOf(
-            objectModel?.categories?.joinToString(", ") ?: ""
-        ) 
-    }
     var file by remember { mutableStateOf(objectModel?.file ?: "") }
     var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
     
@@ -64,16 +62,10 @@ fun ObjectEditorDialog(
         isSubmitting = true
         errorMessage = ""
         
-        // Convert categories string to list
-        val categoryList = categories.split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-        
         val newObject = if (isEditing) {
             // Update existing object
-            objectModel!!.copy(
+            objectModel.copy(
                 title = title,
-                categories = categoryList,
                 file = file,
                 collection = collection
             )
@@ -81,7 +73,6 @@ fun ObjectEditorDialog(
             // Create new object
             Object(
                 title = title,
-                categories = categoryList,
                 file = file,
                 collection = collection,
                 data = "{}",
@@ -110,52 +101,33 @@ fun ObjectEditorDialog(
         }
     }
     
-    // Main dialog container
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            // Add click outside to close
-            onClick { onClose() }
-        }
-    ) {
-        // Dialog content
-        Div(
-            attrs = {
-                classes(Styles.objectEditorDialogContent)
-                // Stop propagation to prevent closing when clicking inside the dialog
-                onClick { it.stopPropagation() }
-            }
+    // Define the footer actions
+    val footerActions = @Composable {
+        // Cancel button
+        DialogButton(
+            onClick = { onClose() },
+            isPrimary = false
         ) {
-            // Dialog header
-            Div(
-                attrs = {
-                    classes(Styles.objectEditorDialogHeader)
-                }
-            ) {
-                H3(
-                    attrs = {
-                        classes(Styles.objectEditorDialogTitle)
-                    }
-                ) {
-                    Text(dialogTitle)
-                }
-                
-                Button(
-                    attrs = {
-                        classes(Styles.objectEditorDialogCloseButton)
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("×")
-                }
-            }
-            
+            Text("Cancel")
+        }
+        
+        // Save button
+        DialogButton(
+            onClick = { if (!isSubmitting) handleSubmit() },
+            isPrimary = true
+        ) {
+            Text(if (isSubmitting) "Saving..." else "Save")
+        }
+    }
+    
+    // Use BaseDialog for consistent styling and behavior
+    BaseDialog(
+        onClose = onClose,
+        title = dialogTitle,
+        maxWidth = "500px",
+        content = {
             // Form content
-            Div(
-                attrs = {
-                    classes(Styles.objectEditorDialogFormContent)
-                }
-            ) {
+            Div {
                 // Error message
                 if (errorMessage.isNotEmpty()) {
                     P(
@@ -179,22 +151,6 @@ fun ObjectEditorDialog(
                             placeholder("Object title")
                             value(title)
                             onInput { event -> title = event.value }
-                        }
-                    )
-                }
-                
-                // Categories field
-                Div {
-                    P {
-                        Text("Categories (comma-separated)")
-                    }
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("e.g. furniture, interactive, decoration")
-                            value(categories)
-                            onInput { event -> categories = event.value }
                         }
                     )
                 }
@@ -241,18 +197,12 @@ fun ObjectEditorDialog(
                             val currentObject = if (isEditing) {
                                 objectModel!!.copy(
                                     title = title,
-                                    categories = categories.split(",")
-                                        .map { it.trim() }
-                                        .filter { it.isNotEmpty() },
                                     file = file,
                                     collection = collection
                                 )
                             } else {
                                 Object(
                                     title = title,
-                                    categories = categories.split(",")
-                                        .map { it.trim() }
-                                        .filter { it.isNotEmpty() },
                                     file = file,
                                     collection = collection,
                                     worldId = worldId,
@@ -263,8 +213,7 @@ fun ObjectEditorDialog(
                                 )
                             }
                             
-                            // Close this dialog and open the logic editor
-                            onClose()
+                            // Open the logic editor without closing this dialog
                             onOpenLogicEditor(currentObject)
                         }
                     }
@@ -289,7 +238,7 @@ fun ObjectEditorDialog(
                             Text("Click to edit object logic (${
                                 try {
                                     // Parse the JSON data using kotlinx.serialization
-                                    val json = Json { ignoreUnknownKeys = true }
+                                    val json = utils.json
                                     val jsonObject = json.parseToJsonElement(objectModel.data).jsonObject
                                     val nodes = jsonObject["nodes"]?.jsonObject ?: JsonObject(emptyMap())
                                     val nodeCount = nodes.size
@@ -305,35 +254,7 @@ fun ObjectEditorDialog(
                     }
                 }
             }
-            
-            // Footer with action buttons
-            Div(
-                attrs = {
-                    classes(Styles.objectEditorDialogFooter)
-                }
-            ) {
-                // Cancel button
-                Button(
-                    attrs = {
-                        classes(Styles.objectEditorDialogCancelButton)
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("Cancel")
-                }
-                
-                // Save button
-                Button(
-                    attrs = {
-                        classes(Styles.objectEditorDialogSaveButton)
-                        classes(if (isSubmitting) Styles.objectEditorDialogSaveButtonInactive else Styles.objectEditorDialogSaveButtonActive)
-                        // Only allow clicking if not submitting
-                        onClick { if (!isSubmitting) handleSubmit() }
-                    }
-                ) {
-                    Text(if (isSubmitting) "Saving..." else "Save")
-                }
-            }
-        }
-    }
+        },
+        actions = footerActions
+    )
 }

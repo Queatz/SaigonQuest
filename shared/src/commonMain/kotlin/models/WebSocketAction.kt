@@ -13,8 +13,9 @@ import kotlinx.serialization.Serializable
 enum class WebSocketAction {
     ADD_OBJECT,
     REMOVE_OBJECT,
+    OBJECT_UPDATE,
     UPDATE_PLAYER_POSITION,
-    PLAYER_INTERACT,
+    USER_INTERACT,
     TRIGGER_OBJECT_EVENT,
     SEND_CHAT_MESSAGE,
     RECEIVE_CHAT_MESSAGE,

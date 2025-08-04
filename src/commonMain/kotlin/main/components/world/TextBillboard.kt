@@ -1,6 +1,5 @@
 package main.components.world
 
-import lib.AbstractMesh
 import lib.Color3
 import lib.CreatePlaneOptions
 import lib.DynamicTexture
@@ -9,10 +8,11 @@ import lib.Engine
 import lib.Material
 import lib.Mesh
 import lib.MeshBuilder
+import lib.Node
 import lib.StandardMaterial
 import lib.Texture
 import lib.Scene
-import lib.Vector3
+import lib.TransformNode
 
 /**
  * A class for rendering 2D text in a 3D scene that always faces the camera.
@@ -62,6 +62,9 @@ class TextBillboard(
     // The mesh that will display the text
     private var planeMesh: Mesh? = null
     
+    // Container mesh that will act as the node
+    private var node: TransformNode? = null
+    
     // The dynamic texture for rendering text
     private var texture: DynamicTexture? = null
     
@@ -81,12 +84,7 @@ class TextBillboard(
                 createTextPlane()
             }
         }
-    
-    init {
-        // Initialize with the provided text
-        createTextPlane()
-    }
-    
+
     /**
      * Calculates the dimensions and aspect ratio for the text
      * @return Triple of (estimatedWidth, estimatedHeight, aspectRatio)
@@ -139,6 +137,8 @@ class TextBillboard(
             },
             scene
         )
+
+        planeMesh!!.parent = node
         
         // Create a material for the plane
         val material = StandardMaterial("text-material-${id}", scene).apply {
@@ -228,22 +228,30 @@ class TextBillboard(
     /**
      * Renders the text billboard in the scene
      */
-    override fun render(scene: Scene): AbstractMesh? {
-        // The mesh is already created in init, just return it
-        return planeMesh
+    override fun render(scene: Scene): Node? {
+        // Create a container mesh that will act as our node
+        val container = TransformNode(
+            "text_container_${id}",
+            scene
+        )
+        
+        // Set the container's position, rotation, and scale
+        container.position = position
+        container.rotation = rotation
+        container.scaling = scale
+
+        // Store the container mesh
+        node = container
+
+        createTextPlane()
+        
+        return container
     }
     
     /**
      * Updates the billboard (called every frame)
      */
     override fun update(deltaTime: Float) {
-        // Position updates are handled by the WorldObjectHandle
-        // Billboard rotation is handled automatically by BabylonJS
-        planeMesh?.let { mesh ->
-            mesh.position = position
-            mesh.rotation = rotation
-            mesh.scaling = scale
-        }
     }
     
     /**
@@ -252,5 +260,6 @@ class TextBillboard(
     override fun dispose() {
         texture?.dispose()
         planeMesh?.dispose()
+        node?.dispose()
     }
 }

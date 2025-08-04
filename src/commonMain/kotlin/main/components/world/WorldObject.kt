@@ -1,17 +1,17 @@
 package main.components.world
 
 import lib.AbstractMesh
-import lib.Camera
 import lib.Color3
 import lib.CreatePlaneOptions
 import lib.Material
 import lib.Mesh
 import lib.MeshBuilder
+import lib.Node
 import lib.PBRMaterial
 import lib.Scene
-import lib.StandardMaterial
 import lib.Texture
 import lib.TextureOptions
+import lib.TransformNode
 import lib.Vector3
 
 /**
@@ -42,9 +42,9 @@ sealed class WorldObject {
      * Renders this object in the given scene
      * 
      * @param scene The scene to render in
-     * @return The created mesh or null if rendering failed
+     * @return The created node or null if rendering failed
      */
-    abstract fun render(scene: Scene): AbstractMesh?
+    abstract fun render(scene: Scene): Node?
     
     /**
      * Updates the object's state
@@ -68,12 +68,21 @@ class Character(
     var isMoving: Boolean = false
 ) : WorldObject() {
     
-    private var mesh: AbstractMesh? = null
+    private var characterMesh: AbstractMesh? = null
+    private var node: TransformNode? = null
     private var animationTime: Float = 0f
     // The direction to display based on camera angle
     private var displayDirection: CharacterDirection = direction
     
-    override fun render(scene: Scene): AbstractMesh? {
+    override fun render(scene: Scene): Node? {
+        // Create a transform node that will act as our container
+        val container = TransformNode("character_container_${id}", scene)
+        
+        // Set the container's position, rotation, and scale
+        container.position = position
+        container.rotation = rotation
+        container.scaling = scale
+        
         // Create a plane mesh with the sprite sheet texture
         val material = PBRMaterial("characterMaterial_${id}", scene)
         // Create texture with NEAREST_SAMPLINGMODE for crisp pixel art rendering
@@ -93,7 +102,7 @@ class Character(
 
         // Create a plane with the correct aspect ratio
         val aspectRatio = spriteSheet.cellHeightPx.toFloat() / spriteSheet.cellWidthPx.toFloat()
-        val mesh = MeshBuilder.CreatePlane(
+        val characterMesh = MeshBuilder.CreatePlane(
             "character_${id}",
             object : CreatePlaneOptions {
                 override val width = 1f / aspectRatio
@@ -102,21 +111,22 @@ class Character(
             scene
         )
         
-        mesh.material = material
-        mesh.position = position
-        mesh.rotation = rotation
-        mesh.scaling = scale
+        characterMesh.material = material
         
         // Set billboard mode to Y-axis only (rotate around Y-axis)
-        mesh.billboardMode = Mesh.BILLBOARDMODE_Y
+        characterMesh.billboardMode = Mesh.BILLBOARDMODE_Y
         
+        // Make the character mesh a child of the container
+        characterMesh.parent = container
+
         spriteSheet.setImageDimensions(
             spriteSheet.cellWidthPx * spriteSheet.columns,
             spriteSheet.cellWidthPx * spriteSheet.columns // assume square
         )
         
-        this.mesh = mesh
-        return mesh
+        this.characterMesh = characterMesh
+        this.node = container
+        return container
     }
     
     override fun update(deltaTime: Float) {
@@ -130,13 +140,6 @@ class Character(
         
         // Always update the sprite animation to reflect the current display direction
         updateSpriteAnimation()
-        
-        // Update mesh if it exists
-        mesh?.let { mesh ->
-            mesh.position = position
-            mesh.rotation = rotation
-            mesh.scaling = scale
-        }
     }
     
     /**
@@ -235,7 +238,7 @@ class Character(
         val frameIndex = 0 // (animationTime * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount(displayDirection)
             
         // Update UV coordinates on the mesh to show the correct sprite
-        mesh?.let { mesh ->
+        characterMesh?.let { mesh ->
             val material = mesh.material as? PBRMaterial
             material?.albedoTexture?.let { texture ->
                 // Get the UV coordinates for the current display direction and frame
@@ -252,7 +255,8 @@ class Character(
     }
     
     override fun dispose() {
-        mesh?.dispose()
+        characterMesh?.dispose()
+        node?.dispose()
     }
 }
 
@@ -263,29 +267,29 @@ class Model(
     var mesh: AbstractMesh
 ) : WorldObject() {
     
-    private var instanceMesh: AbstractMesh? = null
+    private var modelMesh: AbstractMesh? = null
+    private var node: TransformNode? = null
     
-    override fun render(scene: Scene): AbstractMesh? {
-        // Clone the mesh and position it
+    override fun render(scene: Scene): Node? {
+        // Create a transform node that will act as our container
+        val container = TransformNode("model_container_${id}", scene)
+
+        // Clone the mesh and make it a child of the container
         val clonedMesh = mesh.clone("model_${id}")
-        clonedMesh.position = position
-        clonedMesh.rotation = rotation
-        clonedMesh.scaling = scale
+        clonedMesh.parent = container
         
-        instanceMesh = clonedMesh
-        return clonedMesh
+        // Store references to the meshes
+        modelMesh = clonedMesh
+        node = container
+        
+        return container
     }
     
     override fun update(deltaTime: Float) {
-        // Update mesh position if needed
-        instanceMesh?.let { mesh ->
-            mesh.position = position
-            mesh.rotation = rotation
-            mesh.scaling = scale
-        }
     }
     
     override fun dispose() {
-        instanceMesh?.dispose()
+        modelMesh?.dispose()
+        node?.dispose()
     }
 }

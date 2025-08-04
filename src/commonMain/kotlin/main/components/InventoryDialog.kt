@@ -8,8 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.serialization.json.Json
 import main.api.ObjectApi
+import utils.json
 import models.Object
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
@@ -75,11 +75,7 @@ fun InventoryDialog(onClose: () -> Unit) {
     }
     
     // JSON serializer
-    val json = Json { 
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-    }
+    val json = utils.json
     
     // Function to handle drag start
     fun handleDragStart(event: dynamic, obj: Object) {

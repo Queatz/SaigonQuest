@@ -70,7 +70,7 @@ fun ResponsivePanel(
         }
     } else {
         // Desktop: Side panel
-        SidePanel(
+        SimpleSidePanel(
             title = title,
             onClose = onClose,
             content = content

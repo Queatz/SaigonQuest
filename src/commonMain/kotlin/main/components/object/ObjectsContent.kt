@@ -7,13 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.api.WebSocketApi
+import utils.json
 import models.Object
 import org.w3c.dom.HTMLElement
 
@@ -30,12 +30,9 @@ import org.w3c.dom.HTMLElement
 fun ObjectsContent(
     onOpenObjectEditor: () -> Unit,
     onEditObject: (String) -> Unit = {},
-    objectManager: ObjectManager? = null,
+    objectManager: SceneObjectManager? = null,
     content: @Composable (@Composable () -> Unit) -> Unit
 ) {
-    // State for the current tab
-    var currentTab by remember { mutableStateOf(ObjectsTab.WORLD) }
-    
     // State for objects
     var worldObjects by remember { mutableStateOf<List<Object>>(emptyList()) }
     var ownedObjects by remember { mutableStateOf<List<Object>>(emptyList()) }
@@ -87,11 +84,7 @@ fun ObjectsContent(
     }
     
     // JSON serializer
-    val json = Json { 
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-    }
+    val json = utils.json
     
     // Function to handle drag start
     fun handleDragStart(event: dynamic, obj: Object) {
@@ -151,7 +144,7 @@ fun ObjectsContent(
                 // Check if the object manager is a SceneObjectManager
                 if (objectManager is SceneObjectManager) {
                     // Call the locateObject method on the SceneObjectManager
-                    val success = (objectManager as SceneObjectManager).locateObject(objectId)
+                    val success = objectManager.locateObject(objectId)
                     if (success) {
                         showFeedback("Locating object: ${obj.title}")
                     } else {
@@ -191,57 +184,14 @@ fun ObjectsContent(
     
     // Call the content lambda with the tab content as a lambda
     content {
-        // Tab navigation
-        TabNavigation {
-            // World tab
-            TabItem(
-                label = "World",
-                isSelected = currentTab == ObjectsTab.WORLD,
-                onClick = { currentTab = ObjectsTab.WORLD }
-            )
-            
-            // Marketplace tab
-            TabItem(
-                label = "Marketplace",
-                isSelected = currentTab == ObjectsTab.MARKETPLACE,
-                onClick = { currentTab = ObjectsTab.MARKETPLACE }
-            )
-
-            // Create tab
-            TabItem(
-                label = "Create",
-                isSelected = currentTab == ObjectsTab.CREATE,
-                onClick = { currentTab = ObjectsTab.CREATE }
-            )
-        }
-        
-        // Tab content
-        when (currentTab) {
-            ObjectsTab.WORLD -> {
-                // World tab content - list all objects in the world
-                WorldTabContent(
-                    objects = worldObjects,
-                    isLoading = isLoading,
-                    errorMessage = errorMessage,
-                    onRemove = { objectId -> removeObject(objectId) },
-                    onLocate = { objectId -> locateObject(objectId) },
-                    onEdit = { objectId -> editObject(objectId) }
-                )
-            }
-            ObjectsTab.CREATE -> {
-                // Owned tab content - list objects created by the user with create button
-                OwnedTabContent(
-                    objects = ownedObjects,
-                    isLoading = isLoading,
-                    errorMessage = errorMessage,
-                    onCreateObject = onOpenObjectEditor,
-                    onDragStart = { event, obj -> handleDragStart(event, obj) }
-                )
-            }
-            ObjectsTab.MARKETPLACE -> {
-                // Marketplace tab content - blank for now
-                MarketplaceTabContent()
-            }
-        }
+        WorldObjectsContent(
+            objects = worldObjects,
+            isLoading = isLoading,
+            errorMessage = errorMessage,
+            onCreateObject = onOpenObjectEditor,
+            onRemove = { objectId -> removeObject(objectId) },
+            onLocate = { objectId -> locateObject(objectId) },
+            onEdit = { objectId -> editObject(objectId) }
+        )
     }
 }

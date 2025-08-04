@@ -168,7 +168,7 @@ object Styles : StyleSheet() {
         property("gap", "10px")
         // Make the container scrollable if there's not enough space
         // Calculate max height to leave space for bottom buttons and prevent overlap
-        property("max-height", "calc(100vh - 180px)") // Increased space for bottom buttons
+        property("max-height", "calc(100vh - 280px)") // Increased space for bottom buttons
         property("overflow-y", "auto")
         // Add padding at the bottom to create more space between top and bottom buttons
         property("padding-bottom", "20px")
@@ -749,6 +749,127 @@ object Styles : StyleSheet() {
     val chatMessageContentDeleted by style {
         opacity(0.5)
         fontStyle("italic")
+    }
+    
+    // Dialog Form Styles
+    val formFieldContainer by style {
+        marginBottom(16.px)
+    }
+    
+    val formLabel by style {
+        display(DisplayStyle.Block)
+        marginBottom(4.px)
+        fontSize(14.px)
+        color(Theme.colors.onBackground)
+    }
+    
+    val formInput by style {
+        width(100.percent)
+        padding(8.px)
+        property("border-radius", "4px")
+        property("border", "1px solid ${Theme.colors.outline}")
+        property("box-sizing", "border-box")
+    }
+    
+    val formHelpText by style {
+        fontSize(12.px)
+        color(Theme.colors.onSurfaceVariant)
+        property("margin-top", "4px")
+    }
+    
+    val formErrorMessage by style {
+        color(Color.red)
+        marginBottom(16.px)
+        fontSize(14.px)
+        property("text-align", "center")
+    }
+    
+    val formButtonsContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        property("margin-top", "24px")
+    }
+    
+    val primaryButton by style {
+        padding(8.px, 16.px)
+        backgroundColor(Theme.colors.primary)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        property("border-radius", "4px")
+        property("cursor", "pointer")
+    }
+    
+    val secondaryButton by style {
+        padding(8.px, 16.px)
+        backgroundColor(Color.transparent)
+        color(Theme.colors.primary)
+        property("border", "0")
+        property("cursor", "pointer")
+    }
+    
+    val logoutButton by style {
+        width(100.percent)
+        padding(8.px, 16.px)
+        backgroundColor(Theme.colors.secondary)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        property("border-radius", "4px")
+        property("cursor", "pointer")
+        property("margin-top", "16px")
+    }
+    
+    val radioGroupContainer by style {
+        display(DisplayStyle.Flex)
+        property("gap", "16px")
+    }
+    
+    val radioOptionContainer by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+    }
+    
+    val radioOptionLabel by style {
+        property("margin-left", "4px")
+        fontSize(14.px)
+        color(Theme.colors.onBackground)
+    }
+    
+    val userInfoContainer by style {
+        marginBottom(24.px)
+        property("text-align", "center")
+    }
+    
+    val usernameText by style {
+        fontSize(18.px)
+        property("font-weight", "bold")
+        color(Theme.colors.onBackground)
+        marginBottom(8.px)
+    }
+    
+    val userStatusText by style {
+        fontSize(14.px)
+        color(Theme.colors.onSurfaceVariant)
+    }
+    
+    val settingsSectionContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        padding(8.px)
+        marginBottom(16.px)
+        backgroundColor(Theme.colors.surfaceVariant)
+        property("border-radius", "4px")
+    }
+    
+    val settingsSectionLabel by style {
+        padding(8.px)
+        color(Theme.colors.onSurfaceVariant)
+    }
+    
+    val settingsControlContainer by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        padding(8.px)
     }
 
     init {

@@ -7,7 +7,6 @@ import com.arangodb.model.DocumentReadOptions
 import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
-import kotlinx.serialization.json.Json
 import models.Notification
 
 /**
@@ -18,8 +17,7 @@ import models.Notification
  */
 class NotificationRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.NOTIFICATIONS_COLLECTION)
-    private val json = Json { ignoreUnknownKeys = true }
-    
+
     /**
      * Create a new notification
      *

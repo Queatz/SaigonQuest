@@ -3,22 +3,20 @@ package main.components.world
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import lib.AbstractMesh
+import lib.Node
 import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
 import main.api.WebSocketApi
-import main.components.`object`.ObjectManager
 import models.WebSocketAction
 
 /**
  * Manages world objects in a scene
  */
-class WorldObjectManager(private val scene: Scene) : ObjectManager {
+class WorldObjectManager(private val scene: Scene) {
     private val objects = mutableMapOf<String, WorldObject>()
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-    
+
     /**
      * Adds an object to the scene
      * 
@@ -32,13 +30,13 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
         }
         
         // Render the object in the scene
-        val mesh = obj.render(scene) ?: return null
+        val node = obj.render(scene) ?: return null
         
         // Store the object
         objects[obj.id] = obj
         
         // Return a handle to the object
-        return createObjectHandle(obj, mesh)
+        return createObjectHandle(obj, node)
     }
     
     /**
@@ -46,7 +44,7 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
      * 
      * @param objectId The ID of the object to remove
      */
-    override fun removeObject(objectId: String) {
+    fun removeObject(objectId: String) {
         val obj = objects[objectId] ?: return
         
         // Dispose the object's resources
@@ -203,23 +201,11 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
     // Counter for generating unique IDs
     private var idCounter = 0
     
-    private fun createObjectHandle(obj: WorldObject, mesh: AbstractMesh): WorldObjectHandle {
+    private fun createObjectHandle(obj: WorldObject, node: Node): WorldObjectHandle {
         return object : WorldObjectHandle {
             override val id: String = obj.id
 
-            override var mesh: AbstractMesh = mesh
-            
-            override var position: Vector3
-                get() = obj.position
-                set(value) { obj.position = value }
-            
-            override var rotation: Vector3
-                get() = obj.rotation
-                set(value) { obj.rotation = value }
-            
-            override var scale: Vector3
-                get() = obj.scale
-                set(value) { obj.scale = value }
+            override var node: Node = node
             
             override fun remove() {
                 removeObject(id)
@@ -230,6 +216,10 @@ class WorldObjectManager(private val scene: Scene) : ObjectManager {
                 if (obj is Character) {
                     obj.direction = direction
                 }
+            }
+            
+            override fun getMeshes(): Array<AbstractMesh> {
+                return node.getChildMeshes(false)
             }
         }
     }

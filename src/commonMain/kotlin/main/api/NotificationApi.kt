@@ -22,11 +22,9 @@ object NotificationApi {
      * @return An array of Notification objects
      */
     suspend fun getNotifications(): Array<Notification> {
-        val token = UserApi.getToken() ?: ""
-        
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/notification") {
-                bearerAuth(token)
+                ApiClient.addAuthHeader(this)
             }
             
             return response.body<Array<Notification>>()
@@ -43,11 +41,9 @@ object NotificationApi {
      * @return True if the operation was successful, false otherwise
      */
     suspend fun markAsRead(notificationId: String): Boolean {
-        val token = UserApi.getToken() ?: ""
-        
         try {
             val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/notification/$notificationId/read") {
-                bearerAuth(token)
+                ApiClient.addAuthHeader(this)
             }
             
             return response.status.isSuccess()
@@ -63,11 +59,9 @@ object NotificationApi {
      * @return True if the operation was successful, false otherwise
      */
     suspend fun markAllAsRead(): Boolean {
-        val token = UserApi.getToken() ?: ""
-        
         try {
             val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/notification/read-all") {
-                bearerAuth(token)
+                ApiClient.addAuthHeader(this)
             }
             
             return response.status.isSuccess()
@@ -83,11 +77,9 @@ object NotificationApi {
      * @return The number of unread notifications
      */
     suspend fun getUnreadCount(): Int {
-        val token = UserApi.getToken() ?: ""
-        
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/notification/unread-count") {
-                bearerAuth(token)
+                ApiClient.addAuthHeader(this)
             }
             
             return response.body<Int>()

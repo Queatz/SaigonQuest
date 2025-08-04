@@ -1,5 +1,6 @@
 package routes
 
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -22,10 +23,7 @@ fun Routing.configureWorldRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Set the user ID in the world object
                 world.userId = userId
@@ -40,10 +38,7 @@ fun Routing.configureWorldRoutes() {
             get {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@get call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
                 
                 val worlds = worldRepository.getByUserId(userId)
                 call.respond(worlds)
@@ -90,10 +85,7 @@ fun Routing.configureWorldRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Check if the world belongs to the user
                 val existingWorld = worldRepository.getById(id) ?: return@post call.respond(

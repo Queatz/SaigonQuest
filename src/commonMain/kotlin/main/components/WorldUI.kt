@@ -10,32 +10,38 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import app.softwork.routingcompose.Router
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import main.api.ChatApi
 import main.api.NotificationApi
+import main.api.ObjectApi
 import main.api.UserApi
+import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.inventory.InventoryDialog
+import main.components.isLayoutAdjustmentNeeded
 import main.components.nodeeditor.LogicEditorDialog
 import main.components.`object`.ObjectsDialog
 import main.components.`object`.ObjectsPanel
+import main.theme.NodeEditorStyles.errorMessage
 import main.theme.Styles
-import main.components.WorldEdit
+import main.utils.PathUtils
+import main.utils.getBoundingClientRectSafe
+import main.utils.getDocument
+import main.utils.toggleFullscreen
 import models.Object
 import models.User
 import models.World
 import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
@@ -45,14 +51,9 @@ import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.DOMRect
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
-import main.components.WorldTitle
-import main.components.TutorialBubble
-import main.components.SceneManager
-import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
-import org.w3c.dom.DOMRect
 
 
 /**
@@ -75,8 +76,12 @@ fun WorldUI() {
     // State for unread notification count
     var unreadNotificationCount by remember { mutableStateOf(0) }
     
+    // State for unread chat count
+    var unreadChatCount by remember { mutableStateOf(0) }
+    
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
+    val router = Router.current
     
     // Function to fetch unread notification count
     fun fetchUnreadNotificationCount() {
@@ -90,23 +95,46 @@ fun WorldUI() {
         }
     }
     
-    // Fetch unread notification count when the component is first rendered
-    LaunchedEffect(Unit) {
-        fetchUnreadNotificationCount()
+    // Function to fetch unread chat count
+    fun fetchUnreadChatCount() {
+        // Get current world ID from the URL path
+        val worldId = PathUtils.getCurrentPath(router)
         
-        // Periodically refresh the unread count (every 30 seconds)
-        while (true) {
-            delay(30000) // 30 seconds
-            fetchUnreadNotificationCount()
+        scope.launch {
+            try {
+                val count = ChatApi.getUnreadMessageCount(worldId)
+                unreadChatCount = count
+            } catch (e: Exception) {
+                console.error("Error fetching unread chat count", e)
+            }
         }
     }
     
-    // Refresh unread count when notifications panel is closed
+    // Fetch unread counts when the component is first rendered
+    LaunchedEffect(Unit) {
+        fetchUnreadNotificationCount()
+        fetchUnreadChatCount()
+        
+        // Periodically refresh the unread counts (every 30 seconds)
+        while (true) {
+            delay(30000) // 30 seconds
+            fetchUnreadNotificationCount()
+            fetchUnreadChatCount()
+        }
+    }
+    
+    // Refresh unread counts when panels are closed
     LaunchedEffect(currentPanel) {
         if (currentPanel != SidePanelState.Notifications) {
             // Small delay to allow any "mark as read" operations to complete
             delay(500)
             fetchUnreadNotificationCount()
+        }
+        
+        if (currentPanel != SidePanelState.Chat) {
+            // Small delay to allow any "mark as read" operations to complete
+            delay(500)
+            fetchUnreadChatCount()
         }
     }
     
@@ -127,7 +155,6 @@ fun WorldUI() {
         }
     }
     
-    
     // State for the current object being edited
     var currentEditingObject by remember { mutableStateOf<Object?>(null) }
     
@@ -136,9 +163,7 @@ fun WorldUI() {
     
     // State for current user
     var currentUser by remember { mutableStateOf<User?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
-    
+
     // State for tutorial bubble
     var isTutorialBubbleVisible by remember { mutableStateOf(true) }
     
@@ -152,28 +177,21 @@ fun WorldUI() {
     
     // Fetch current user on component initialization
     LaunchedEffect(Unit) {
-        // Use the UserApi to fetch the current user
-        isLoading = true
-        errorMessage = ""
-        
         try {
             val user = UserApi.getCurrentUser()
             currentUser = user
-            isLoading = false
         } catch (error: Exception) {
             console.error("Error fetching user", error)
-            errorMessage = error.message ?: "Failed to load user"
-            isLoading = false
         }
     }
     
     // Track the current URL path for world loading
-    var currentPath by remember { mutableStateOf(window.location.pathname) }
+    var currentPath by remember { mutableStateOf(PathUtils.getCurrentPath(router)) }
     
     // Update currentPath when URL changes
     DisposableEffect(Unit) {
         val popStateListener: (dynamic) -> Unit = {
-            currentPath = window.location.pathname
+            currentPath = PathUtils.getCurrentPath(router)
         }
         
         window.addEventListener("popstate", popStateListener)
@@ -213,7 +231,31 @@ fun WorldUI() {
             }
         }
         
+        // Handle object double-click events
+        val objectDoubleClickListener: (dynamic) -> Unit = { event ->
+            // Get the object ID from the event detail
+            val objectId = event.detail.objectId as String
+            console.log("[OBJECT_DOUBLE_CLICK] Received event for object: $objectId")
+            
+            // Open the object editor dialog
+            scope.launch {
+                try {
+                    // Fetch the object by ID
+                    val obj = ObjectApi.getObject(objectId)
+                    
+                    // Set the current editing object and update panel state
+                    currentEditingObject = obj
+                    updatePanelState(SidePanelState.ObjectEditor)
+                    
+                    console.log("[OBJECT_DOUBLE_CLICK] Opened editor for object: ${obj.title}")
+                } catch (error: Exception) {
+                    console.error("[OBJECT_DOUBLE_CLICK] Error fetching object", error)
+                }
+            }
+        }
+        
         window.addEventListener("resize", resizeListener)
+        window.addEventListener("objectDoubleClick", objectDoubleClickListener)
         
         // Initial position calculation
         val profileButtonElement = getDocument().getElementById("profileButton")
@@ -223,25 +265,7 @@ fun WorldUI() {
         
         onDispose {
             window.removeEventListener("resize", resizeListener)
-        }
-    }
-    
-    // Function to toggle fullscreen mode
-    fun toggleFullscreen() {
-        try {
-            val doc = document
-            
-            if (doc.fullscreenElement == null) {
-                // Enter fullscreen mode
-                document.documentElement?.requestFullscreen()
-                // State will be updated by the fullscreenchange event listener
-            } else {
-                // Exit fullscreen mode
-                doc.exitFullscreen()
-                // State will be updated by the fullscreenchange event listener
-            }
-        } catch (e: dynamic) {
-            console.error("Fullscreen API error: ", e)
+            window.removeEventListener("objectDoubleClick", objectDoubleClickListener)
         }
     }
     
@@ -259,19 +283,7 @@ fun WorldUI() {
     }
     
     // Main UI overlay container
-    Div(
-        attrs = {
-            style {
-                position(Position.Fixed)
-                top(0.px)
-                left(0.px)
-                width(100.percent)
-                height(100.vh)
-                // Make the div non-interactive for mouse events to allow interaction with the 3D scene
-                property("pointer-events", "none")
-            }
-        }
-    ) {
+    WorldUIContainer {
         // World name and subtitle (center top)
         WorldTitle(
             currentWorld = currentWorld,
@@ -305,21 +317,23 @@ fun WorldUI() {
                 icon = if (isFullscreen) "⤓" else "⤢",
                 badgeCount = 0
             )
-            
-            // Notifications button
-            CircleButton(
-                onClick = { togglePanel(SidePanelState.Notifications) },
-                icon = "🔔",
-                badgeCount = unreadNotificationCount
-            )
-            
-            // Friends button
-            CircleButton(
-                onClick = { togglePanel(SidePanelState.Friends) },
-                icon = "👥",
-                badgeCount = 0
-            )
-            
+
+            if (currentUser?.isPlayer == true) {
+                // Notifications button
+                CircleButton(
+                    onClick = { togglePanel(SidePanelState.Notifications) },
+                    icon = "🔔",
+                    badgeCount = unreadNotificationCount
+                )
+
+                // Friends button
+                CircleButton(
+                    onClick = { togglePanel(SidePanelState.Friends) },
+                    icon = "👥",
+                    badgeCount = 0
+                )
+            }
+
             // Edit world button - only visible if the current user is the owner of the world
             if (currentUser?.key == currentWorld?.userId) {
                 CircleButton(
@@ -343,11 +357,7 @@ fun WorldUI() {
                 classes(Styles.bottomRightContainer)
                 style {
                     // Adjust right position when any side panel is open on desktop
-                    if ((currentPanel == SidePanelState.Chat || 
-                         currentPanel == SidePanelState.WorldEdit || 
-                         currentPanel == SidePanelState.Notifications || 
-                         currentPanel == SidePanelState.ObjectsPanel ||
-                         currentPanel == SidePanelState.Friends) && !isMobile.value) {
+                    if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
                         right(340.px) // 20px original padding + 320px panel width
                     } else {
                         right(20.px)
@@ -364,9 +374,15 @@ fun WorldUI() {
 
             // World Chat button
             CircleButton(
-                onClick = { togglePanel(SidePanelState.Chat) },
+                onClick = { 
+                    togglePanel(SidePanelState.Chat)
+                    // Reset unread count when opening chat
+                    if (currentPanel != SidePanelState.Chat) {
+                        unreadChatCount = 0
+                    }
+                },
                 icon = "💬",
-                badgeCount = 3,
+                badgeCount = unreadChatCount,
                 isChat = true
             )
             
@@ -392,141 +408,45 @@ fun WorldUI() {
             isMobile = isMobile
         )
         
-        // Panel rendering based on currentPanel state
-        when (currentPanel) {
-            SidePanelState.Chat -> {
-                // Get current world ID from the URL path or use the current world's ID
-                val chatWorldId = currentWorld?.key ?: window.location.pathname.substring(1)
-                
-                // Responsive chat component that adapts between mobile and desktop
-                Chat(
-                    worldId = chatWorldId,
-                    isMobile = isMobile.value,
-                    onClose = { updatePanelState(SidePanelState.None) }
-                )
-            }
-            
-            SidePanelState.WorldEdit -> {
-                // Responsive world edit component that adapts between mobile and desktop
-                WorldEdit(
-                    currentWorld = currentWorld,
-                    isMobile = isMobile.value,
-                    onClose = { updatePanelState(SidePanelState.None) },
-                    onSave = { world ->
-                        // Handle saved world
-                        console.log("World saved: ${world.title}")
+        // Side Panel
+        SidePanel(
+            currentPanel = currentPanel,
+            isMobile = isMobile,
+            currentWorld = currentWorld,
+            currentEditingObject = currentEditingObject,
+            onClose = { updatePanelState(SidePanelState.None) },
+            onOpenObjectEditor = { updatePanelState(SidePanelState.ObjectEditor) },
+            onEditObject = { objectId ->
+                // Get the object by ID and open the editor with it
+                scope.launch {
+                    try {
+                        val obj = ObjectApi.getObject(objectId)
+                        currentEditingObject = obj
+                        updatePanelState(SidePanelState.ObjectEditor)
+                    } catch (error: Exception) {
+                        console.error("Error fetching object", error)
                     }
-                )
-            }
-            
-            SidePanelState.Notifications -> {
-                // Responsive notifications component that adapts between mobile and desktop
-                Notifications(
-                    isMobile = isMobile.value,
-                    onClose = { updatePanelState(SidePanelState.None) },
-                    onNotificationClick = { notification ->
-                        // Handle notification click
-                        console.log("Notification clicked: ${notification.title}")
-                        // Mark notification as read or perform other actions
-                    }
-                )
-            }
-            
-            SidePanelState.Friends -> {
-                // Responsive friends component that adapts between mobile and desktop
-                Friends(
-                    isMobile = isMobile.value,
-                    onClose = { updatePanelState(SidePanelState.None) }
-                )
-            }
-            
-            SidePanelState.ObjectsPanel -> {
-                // Get the ObjectManager from SceneManager
-                val objectManager = SceneManager.getObjectManager()
-                
-                if (isMobile.value) {
-                    // Mobile: Dialog
-                    ObjectsDialog(
-                        onClose = { updatePanelState(SidePanelState.None) },
-                        onOpenObjectEditor = { 
-                            updatePanelState(SidePanelState.ObjectEditor)
-                        },
-                        onEditObject = { objectId ->
-                            // Get the object by ID and open the editor with it
-                            // In a real implementation, we would fetch the object from the API
-                            // For now, we'll just open the editor
-                            updatePanelState(SidePanelState.ObjectEditor)
-                        },
-                        objectManager = objectManager
-                    )
-                } else {
-                    // Desktop: Side panel
-                    ObjectsPanel(
-                        onClose = { updatePanelState(SidePanelState.None) },
-                        onOpenObjectEditor = { 
-                            updatePanelState(SidePanelState.ObjectEditor)
-                        },
-                        onEditObject = { objectId ->
-                            // Get the object by ID and open the editor with it
-                            // In a real implementation, we would fetch the object from the API
-                            // For now, we'll just open the editor
-                            updatePanelState(SidePanelState.ObjectEditor)
-                        },
-                        objectManager = objectManager
-                    )
                 }
-            }
-            
-            else -> {} // No panel to render
-        }
-        
-        // Object Editor dialog
-        if (currentPanel == SidePanelState.ObjectEditor) {
-            // Get current world ID from the URL path
-            val currentWorldId = window.location.pathname.substring(1)
-            
-            ObjectEditorDialog(
-                objectModel = null, // For now, always create new object
-                worldId = currentWorldId,
-                onClose = { updatePanelState(SidePanelState.None) },
-                onSave = { obj ->
-                    // Handle saved object
-                    console.log("Object saved: ${obj.title}")
+            },
+            onSaveObject = { obj ->
+                // Handle saved object
+                if (currentPanel == SidePanelState.ObjectEditor) {
                     updatePanelState(SidePanelState.None)
-                },
-                onOpenLogicEditor = { obj ->
-                    // Open the Logic Editor dialog with the object
+                    currentEditingObject = null // Reset current editing object when saving
+                } else if (currentPanel == SidePanelState.LogicEditor) {
+                    // Update the current editing object with the updated logic
                     currentEditingObject = obj
-                    updatePanelState(SidePanelState.LogicEditor)
+                    // Return to the object editor panel
+                    updatePanelState(SidePanelState.ObjectEditor)
                 }
-            )
-        }
-        
-        // Logic Editor dialog
-        if (currentPanel == SidePanelState.LogicEditor && currentEditingObject != null) {
-            // Get current world ID from the URL path
-            val currentWorldId = window.location.pathname.substring(1)
-            
-            LogicEditorDialog(
-                objectModel = currentEditingObject,
-                worldId = currentWorldId,
-                onClose = { 
-                    updatePanelState(SidePanelState.None)
-                    currentEditingObject = null
-                },
-                onSave = { updatedObj ->
-                    // Handle saved object with updated logic
-                    console.log("Object logic updated: ${updatedObj.title}")
-                    updatePanelState(SidePanelState.None)
-                    currentEditingObject = null
-                }
-            )
-        }
-        
-        // Inventory dialog
-        if (currentPanel == SidePanelState.Inventory) {
-            InventoryDialog(onClose = { updatePanelState(SidePanelState.None) })
-        }
+            },
+            onOpenLogicEditor = { obj ->
+                // Open the Logic Editor dialog with the object
+                currentEditingObject = obj
+                updatePanelState(SidePanelState.LogicEditor)
+            },
+            scope = scope
+        )
         
         // QR code dialog - not part of the main panel system, kept separate
         if (isQrDialogOpen) {
@@ -541,7 +461,7 @@ fun WorldUI() {
                 },
                 playerPosition = playerPosition,
                 worldTitle = currentWorld?.title ?: "Saigon.Quest",
-                worldSubtitle = currentWorld?.subtitle ?: "3D World",
+                worldSubtitle = currentWorld?.subtitle ?: "Local worlds",
                 worldDescription = currentWorld?.description ?: ""
             )
         }
@@ -612,30 +532,14 @@ fun WorldUI() {
             }
         }
         
-        
-        // Bottom text with 8px font size
-        Div(
-            attrs = {
-                style {
-                    position(Position.Absolute)
-                    bottom(4.px)
-                    left(4.px)
-                    fontSize(8.px)
-                    color(Color.white)
-                    property("text-shadow", "0px 0px 2px rgba(0, 0, 0, 0.7)")
-                    // Make text elements interactive
-                    property("pointer-events", "auto")
-                }
-            }
-        ) {
-            Text("Saigon.Quest v0.1 - © 2025 Saigon.Quest")
-        }
+        // Bottom text with copyright information
+        BottomText()
         
         // Tutorial bubble for non-player users - positioned at root level to avoid affecting parent layout
         if (currentUser != null && !currentUser!!.isPlayer && isTutorialBubbleVisible && profileButtonRect != null) {
             // Calculate position based on the profile button's bounding box
             val buttonRect = profileButtonRect!!
-            val bubbleLeft = buttonRect.left - 180 // Position to the left of the profile button
+            val bubbleLeft = buttonRect.left - 120 // Position to the left of the profile button
             val bubbleTop = buttonRect.top + (buttonRect.height / 2) - 15 // Align vertically with the middle of the button
             
             TutorialBubble(
@@ -647,12 +551,3 @@ fun WorldUI() {
         }
     }
 }
-
-
-
-// SidePanel component has been moved to its own file: SidePanel.kt
-
-
-
-
-

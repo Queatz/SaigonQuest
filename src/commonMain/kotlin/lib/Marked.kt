@@ -8,7 +8,10 @@ external object marked {
         var html: (data: RendererHtmlToken) -> String = definedExternally
     }
 
-    fun parse(text: String, options: dynamic = definedExternally): String
+    fun parse(
+        text: String,
+        options: dynamic = definedExternally
+    ): String
 
     interface RendererLinkToken {
         var href: String

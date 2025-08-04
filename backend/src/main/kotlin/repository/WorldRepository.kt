@@ -13,8 +13,7 @@ import models.World
 
 class WorldRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.WORLDS_COLLECTION)
-    private val json = Json { ignoreUnknownKeys = true }
-    
+
     fun create(world: World): World {
         // Use the model directly instead of document.addAttribute
         val result: DocumentCreateEntity<World> = collection.insertDocument(

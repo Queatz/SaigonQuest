@@ -1,5 +1,6 @@
 package routes
 
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -24,10 +25,7 @@ fun Routing.configureNotificationRoutes() {
             get {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@get call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
                 
                 // Optional limit parameter
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
@@ -42,10 +40,7 @@ fun Routing.configureNotificationRoutes() {
             get("/unread-count") {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@get call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
                 
                 // Get unread count
                 val unreadCount = notificationRepository.getUnreadCount(userId)
@@ -62,10 +57,7 @@ fun Routing.configureNotificationRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
                 // Get notification
                 val notification = notificationRepository.getById(id)
@@ -99,10 +91,7 @@ fun Routing.configureNotificationRoutes() {
             put("/read-all") {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
                 // Mark all as read
                 val count = notificationRepository.markAllAsRead(userId)
@@ -114,13 +103,10 @@ fun Routing.configureNotificationRoutes() {
             post {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Check if user is admin (this is a simplified check, implement proper role-based auth)
-                val isAdmin = principal.payload.getClaim("role")?.asString() == "admin"
+                val isAdmin = principal?.payload?.getClaim("role")?.asString() == "admin"
                 if (!isAdmin) {
                     return@post call.respond(
                         HttpStatusCode.Forbidden,

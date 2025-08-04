@@ -11,10 +11,12 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
+import main.api.ItemApi
 import main.theme.Styles
 import main.theme.Theme
 import models.Inventory
 import models.InventoryItem
+import models.Item
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -55,25 +57,40 @@ import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 
 /**
  * An inventory dialog that displays the user's inventory items.
  */
 @Composable
 fun InventoryDialog(onClose: () -> Unit) {
-    // State for inventory
+    // State for inventory and items
     var inventory by remember { mutableStateOf<Inventory?>(null) }
+    var items by remember { mutableStateOf<Map<String, Item>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
+    var draggedItemId by remember { mutableStateOf<String?>(null) }
     
-    // Load inventory when the dialog is opened
+    // Coroutine scope for async operations
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Load inventory and items when the dialog is opened
     LaunchedEffect(Unit) {
         isLoading = true
         errorMessage = ""
         
         try {
+            // Get user inventory
             val userInventory = InventoryApi.getUserInventory()
             inventory = userInventory
+            
+            // Get items by their IDs
+            if (userInventory.itemOrder.isNotEmpty()) {
+                val itemsList = ItemApi.getItemsByIds(userInventory.itemOrder)
+                items = itemsList.associateBy { it.key }
+            }
+            
             isLoading = false
         } catch (error: Exception) {
             console.error("Error loading inventory", error)
@@ -83,9 +100,66 @@ fun InventoryDialog(onClose: () -> Unit) {
     }
     
     // Function to handle using an item
-    fun handleUseItem(item: InventoryItem) {
+    fun handleUseItem(itemId: String) {
         // Implement item usage logic here
-        console.log("Using item: ${item.name}")
+        val item = items[itemId]
+        if (item != null) {
+            console.log("Using item: ${item.title}")
+        }
+    }
+    
+    // Function to handle drag start
+    fun handleDragStart(event: dynamic, itemId: String) {
+        draggedItemId = itemId
+        event.dataTransfer.setData("text/plain", itemId)
+        
+        // Set a custom drag image (optional)
+        val dragImage = document.createElement("div") as HTMLElement
+        dragImage.style.width = "48px"
+        dragImage.style.height = "48px"
+        dragImage.style.backgroundColor = "rgba(255, 255, 255, 0.3)"
+        dragImage.style.borderRadius = "4px"
+        document.body?.appendChild(dragImage)
+        event.dataTransfer.setDragImage(dragImage, 24, 24)
+        
+        // Remove the drag image element after it's been used
+        window.setTimeout({ document.body?.removeChild(dragImage) }, 0)
+    }
+    
+    // Function to handle drag over
+    fun handleDragOver(event: dynamic) {
+        event.preventDefault()
+        event.dataTransfer.dropEffect = "move"
+    }
+    
+    // Function to handle drop
+    fun handleDrop(event: dynamic, targetItemId: String) {
+        event.preventDefault()
+        
+        val sourceItemId = draggedItemId ?: return
+        if (sourceItemId == targetItemId) return
+        
+        // Get current inventory
+        val currentInventory = inventory ?: return
+        val currentOrder = currentInventory.itemOrder.toMutableList()
+        
+        // Find indices
+        val sourceIndex = currentOrder.indexOf(sourceItemId)
+        val targetIndex = currentOrder.indexOf(targetItemId)
+        
+        if (sourceIndex != -1 && targetIndex != -1) {
+            // Remove source item
+            currentOrder.removeAt(sourceIndex)
+            
+            // Insert at target position
+            val insertIndex = if (sourceIndex < targetIndex) targetIndex else targetIndex
+            currentOrder.add(insertIndex, sourceItemId)
+            
+            // Update local state
+            inventory = currentInventory.copy(itemOrder = currentOrder)
+        }
+        
+        draggedItemId = null
     }
     
     Div(
@@ -180,7 +254,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     ) {
                         Text("Error: $errorMessage")
                     }
-                } else if (inventory?.items?.isEmpty() == true) {
+                } else if (inventory?.itemOrder?.isEmpty() == true) {
                     P(
                         attrs = {
                             style {
@@ -193,103 +267,102 @@ fun InventoryDialog(onClose: () -> Unit) {
                     }
                 } else {
                     // Display inventory items
-                    inventory?.items?.forEach { item ->
-                        Div(
-                            attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    padding(12.px)
-                                    marginBottom(8.px)
-                                    backgroundColor(rgba(50, 50, 50, 0.5))
-                                    property("border-radius", "4px")
-                                    alignItems(AlignItems.Center)
-                                }
-                            }
-                        ) {
-                            // Item image (placeholder)
+                    inventory?.itemOrder?.forEach { itemId ->
+                        val item = items[itemId]
+                        if (item != null) {
                             Div(
                                 attrs = {
                                     style {
-                                        width(48.px)
-                                        height(48.px)
-                                        backgroundColor(rgba(100, 100, 100, 0.5))
-                                        marginRight(12.px)
+                                        display(DisplayStyle.Flex)
+                                        padding(12.px)
+                                        marginBottom(8.px)
+                                        backgroundColor(rgba(50, 50, 50, 0.5))
                                         property("border-radius", "4px")
-                                        
-                                        // If item has an image URL, use it
-                                        if (item.imageUrl.isNotEmpty()) {
-                                            property("background-image", "url(${item.imageUrl})")
-                                            property("background-size", "cover")
-                                            property("background-position", "center")
-                                        }
+                                        alignItems(AlignItems.Center)
+                                        cursor("grab")
                                     }
-                                }
-                            ) {}
-                            
-                            // Item details
-                            Div(
-                                attrs = {
-                                    style {
-                                        flexGrow(1)
-                                    }
+                                    // Make draggable
+                                    attr("draggable", "true")
+                                    onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
+                                    onDragOver { event -> handleDragOver(event.nativeEvent) }
+                                    onDrop { event -> handleDrop(event.nativeEvent, itemId) }
                                 }
                             ) {
-                                // Item name
+                                // Item image
                                 Div(
                                     attrs = {
                                         style {
-                                            color(Color.white)
-                                            fontSize(16.px)
-                                            fontWeight("bold")
+                                            width(48.px)
+                                            height(48.px)
+                                            backgroundColor(rgba(100, 100, 100, 0.5))
+                                            marginRight(12.px)
+                                            property("border-radius", "4px")
+                                            
+                                            // Use assetIndex to display the correct sprite
+                                            if (item.file.isNotEmpty()) {
+                                                property("background-image", "url(${item.file})")
+                                                property("background-size", "320px 320px")
+                                                
+                                                // Calculate position based on assetIndex
+                                                val col = item.assetIndex % 10
+                                                val row = item.assetIndex / 10
+                                                property("background-position", "-${col * 32}px -${row * 32}px")
+                                            }
+                                        }
+                                    }
+                                ) {}
+                                
+                                // Item details
+                                Div(
+                                    attrs = {
+                                        style {
+                                            flexGrow(1)
                                         }
                                     }
                                 ) {
-                                    Text(item.name)
-                                    
-                                    // Show quantity if more than 1
-                                    if (item.quantity > 1) {
-                                        Span(
-                                            attrs = {
-                                                style {
-                                                    color(rgba(200, 200, 200, 0.8))
-                                                    marginLeft(8.px)
-                                                }
+                                    // Item title
+                                    Div(
+                                        attrs = {
+                                            style {
+                                                color(Color.white)
+                                                fontSize(16.px)
+                                                fontWeight("bold")
                                             }
-                                        ) {
-                                            Text("x${item.quantity}")
                                         }
+                                    ) {
+                                        Text(item.title)
+                                    }
+                                    
+                                    // Item description
+                                    Div(
+                                        attrs = {
+                                            style {
+                                                color(rgba(200, 200, 200, 0.8))
+                                                fontSize(14.px)
+                                                marginTop(4.px)
+                                            }
+                                        }
+                                    ) {
+                                        Text(item.description)
                                     }
                                 }
                                 
-                                // Item description
-                                Div(
+                                // Use button
+                                Button(
                                     attrs = {
                                         style {
-                                            color(rgba(200, 200, 200, 0.8))
-                                            fontSize(14.px)
-                                            marginTop(4.px)
+                                            padding(6.px, 12.px)
+                                            backgroundColor(Theme.colors.primary)
+                                            color(Theme.colors.onPrimary)
+                                            property("border", "0")
+                                            property("border-radius", "4px")
+                                            cursor("pointer")
                                         }
+                                        onClick { handleUseItem(itemId) }
                                     }
                                 ) {
-                                    Text(item.description)
+                                    Text("Use")
                                 }
-                            }
-                            
-                            // Use button
-                            Button(
-                                attrs = {
-                                    style {
-                                        padding(6.px, 12.px)
-                                        backgroundColor(Theme.colors.primary)
-                                        color(Theme.colors.onPrimary)
-                                        property("border", "0")
-                                        property("border-radius", "4px")
-                                        cursor("pointer")
-                                    }
-                                    onClick { handleUseItem(item) }
-                                }
-                            ) {
-                                Text("Use")
                             }
                         }
                     }

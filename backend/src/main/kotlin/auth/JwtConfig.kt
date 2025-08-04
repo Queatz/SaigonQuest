@@ -12,7 +12,7 @@ object JwtConfig {
     private const val SECRET = "saigon-quest-secret-key"
     private const val ISSUER = "saigon-quest"
     private const val AUDIENCE = "saigon-quest-users"
-    private const val VALIDITY_IN_MS = 36_000_00 * 24 // 24 hours
+    private const val VALIDITY_IN_MS = 36_000_00 * 24 * 7 // 24 hours * 7 days
     
     private val algorithm = Algorithm.HMAC256(SECRET)
     

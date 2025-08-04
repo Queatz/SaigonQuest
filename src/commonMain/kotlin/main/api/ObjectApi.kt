@@ -24,7 +24,7 @@ object ObjectApi {
                 url {
                     parameters.append("worldId", worldId)
                 }
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {
@@ -77,7 +77,7 @@ object ObjectApi {
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/object") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(obj)
             }
             
@@ -104,9 +104,9 @@ object ObjectApi {
      */
     suspend fun updateObject(id: String, obj: Object): Object {
         try {
-            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/object/$id") {
+            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/object/$id") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(obj)
             }
             
@@ -134,7 +134,7 @@ object ObjectApi {
     suspend fun deleteObject(id: String) {
         try {
             val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/object/$id") {
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (!response.status.isSuccess()) {

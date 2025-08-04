@@ -1,14 +1,15 @@
 package main.components.player
 
-import lib.Color3
-import lib.CreateBoxOptions
-import lib.Mesh
-import lib.MeshBuilder
-import lib.PBRMaterial
+import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import lib.AbstractMesh
+import lib.Node
 import lib.Scene
 import lib.Vector3
-import main.api.UserApi
 import main.api.ApiClient
+import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.shadow.ShadowManager
@@ -16,16 +17,12 @@ import main.components.world.CharacterDirection
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
-import kotlinx.coroutines.launch
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
-import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 
 /**
  * Controller for managing other players in the 3D scene.
@@ -42,7 +39,7 @@ class OtherPlayersController(private val scene: Scene) {
     private val playerHandles = mutableMapOf<String, WorldObjectHandle>()
     
     // Map of player meshes by userId (for backward compatibility)
-    private val playerMeshes = mutableMapOf<String, Mesh>()
+    private val playerNodes = mutableMapOf<String, Node>()
     
     // Map of player target positions by userId
     private val playerTargetPositions = mutableMapOf<String, Vector3>()
@@ -58,6 +55,12 @@ class OtherPlayersController(private val scene: Scene) {
     
     // Map of chat message removal timeouts by userId
     private val chatMessageTimeouts = mutableMapOf<String, Int>()
+    
+    // Map of usernames by userId
+    private val playerUsernames = mutableMapOf<String, String>()
+    
+    // Map of isPlayer flags by userId
+    private val playerIsPlayerFlags = mutableMapOf<String, Boolean>()
     
     // Reference to the world object manager for creating text billboards
     private var worldObjectManager: WorldObjectManager? = null
@@ -116,12 +119,14 @@ class OtherPlayersController(private val scene: Scene) {
         val manager = shadowManager ?: return
         
         // Configure shadow casting for the player
-        handle.mesh.let { mesh ->
-            // Add the mesh as a shadow caster
-            manager.addShadowCaster(mesh)
-            
-            // Configure the mesh as a shadow receiver
-            manager.configureShadowReceiver(mesh)
+        handle.node.let { node ->
+            node.getChildMeshes().forEach { mesh ->
+                // Add the mesh as a shadow caster
+                manager.addShadowCaster(mesh)
+
+                // Configure the mesh as a shadow receiver
+                manager.configureShadowReceiver(mesh)
+            }
             
             console.log("OtherPlayersController: Configured shadows for player $userId")
         }
@@ -246,13 +251,17 @@ class OtherPlayersController(private val scene: Scene) {
             console.log("OtherPlayersController: Ignoring join event for current user")
             return
         }
-        
+    
         console.log("OtherPlayersController: User joined: ${joinData.username} (${joinData.userId})")
-        
+    
+        // Store username and isPlayer flag
+        playerUsernames[joinData.userId] = joinData.username
+        playerIsPlayerFlags[joinData.userId] = joinData.isPlayer
+    
         // Check if we already have this player
-        if (playerMeshes.containsKey(joinData.userId)) {
+        if (playerNodes.containsKey(joinData.userId)) {
             console.log("OtherPlayersController: Player ${joinData.userId} already exists, updating position")
-            
+        
             // Update target position
             playerTargetPositions[joinData.userId] = Vector3(
                 joinData.position.x,
@@ -261,9 +270,9 @@ class OtherPlayersController(private val scene: Scene) {
             )
             return
         }
-        
+    
         console.log("OtherPlayersController: Creating new player mesh for ${joinData.userId}")
-        
+    
         // Create player mesh with username
         createPlayerMesh(
             userId = joinData.userId,
@@ -275,9 +284,9 @@ class OtherPlayersController(private val scene: Scene) {
             isPlayer = joinData.isPlayer,
             username = joinData.username
         )
-        
+    
         // Log the total number of other players
-        console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+        console.log("OtherPlayersController: Total players now: ${playerNodes.size}")
     }
     
     /**
@@ -285,23 +294,28 @@ class OtherPlayersController(private val scene: Scene) {
      */
     private fun handleUserLeave(leaveData: UserLeaveData) {
         console.log("OtherPlayersController: User left: ${leaveData.userId}")
-        
+    
         // Check if we have this player
-        if (!playerMeshes.containsKey(leaveData.userId)) {
+        if (!playerNodes.containsKey(leaveData.userId)) {
             console.log("OtherPlayersController: Player ${leaveData.userId} not found, ignoring leave event")
             return
         }
-        
+    
         // Start leave animation
-        playerMeshes[leaveData.userId]?.let { mesh ->
+        playerNodes[leaveData.userId]?.let { mesh ->
             console.log("OtherPlayersController: Starting leave animation for ${leaveData.userId}")
             playerAnimationTimes[leaveData.userId] = window.performance.now()
-            
+        
             // After animation completes, remove the mesh
             window.setTimeout({
                 removePlayerMesh(leaveData.userId)
+            
+                // Remove stored username and isPlayer flag
+                playerUsernames.remove(leaveData.userId)
+                playerIsPlayerFlags.remove(leaveData.userId)
+            
                 console.log("OtherPlayersController: Removed player mesh for ${leaveData.userId}")
-                console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+                console.log("OtherPlayersController: Total players now: ${playerNodes.size}")
             }, (joinLeaveDuration * 1000).toInt())
         }
     }
@@ -314,20 +328,20 @@ class OtherPlayersController(private val scene: Scene) {
         if (positionData.userId == myUserId) {
             return
         }
-        
+    
         // Update target position
         val newPosition = Vector3(
             positionData.position.x,
             positionData.position.y,
             positionData.position.z
         )
-        
+    
         // Log position update
-        val existingMesh = playerMeshes[positionData.userId]
+        val existingMesh = playerNodes[positionData.userId]
         if (existingMesh != null) {
             val currentPos = existingMesh.position
             val distance = currentPos.subtract(newPosition).length()
-            
+        
             // Only log significant movements to reduce console spam
             if (distance > 0.1f) {
                 console.log("OtherPlayersController: Updating position for ${positionData.userId}, distance moved: $distance")
@@ -335,19 +349,28 @@ class OtherPlayersController(private val scene: Scene) {
         } else {
             console.log("OtherPlayersController: Received position update for unknown player: ${positionData.userId}")
         }
-        
+    
         playerTargetPositions[positionData.userId] = newPosition
-        
+    
+        // Store isPlayer flag
+        playerIsPlayerFlags[positionData.userId] = positionData.isPlayer
+    
         // Create player mesh if it doesn't exist
-        if (!playerMeshes.containsKey(positionData.userId)) {
+        if (!playerNodes.containsKey(positionData.userId)) {
             console.log("OtherPlayersController: Creating player mesh from position update for ${positionData.userId}")
+        
+            // Generate a default username if none is available
+            if (!playerUsernames.containsKey(positionData.userId)) {
+                playerUsernames[positionData.userId] = "Player-${positionData.userId}"
+            }
+        
             createPlayerMesh(
                 userId = positionData.userId,
                 position = newPosition,
                 isPlayer = positionData.isPlayer,
-                username = null // No username available in position data
+                username = playerUsernames[positionData.userId] // Use stored username
             )
-            console.log("OtherPlayersController: Total players now: ${playerMeshes.size}")
+            console.log("OtherPlayersController: Total players now: ${playerNodes.size}")
         }
     }
     
@@ -395,8 +418,8 @@ class OtherPlayersController(private val scene: Scene) {
         playerHandles[userId] = playerHandle
         
         // Store the mesh for backward compatibility
-        playerHandle.mesh.let { mesh ->
-            playerMeshes[userId] = mesh as Mesh
+        playerHandle.node.let { node ->
+            playerNodes[userId] = node
         }
         
         // Store target position and animation time
@@ -448,21 +471,21 @@ class OtherPlayersController(private val scene: Scene) {
             console.log("OtherPlayersController: Removed player handle for $userId")
         }
         playerHandles.remove(userId)
-        
-        // For backward compatibility, also dispose and remove the player mesh
-        playerMeshes[userId]?.dispose()
-        playerMeshes.remove(userId)
-        
+
         // Remove the player's target position and animation time
         playerTargetPositions.remove(userId)
         playerAnimationTimes.remove(userId)
-        
+    
         // Remove the username text billboard if it exists
         usernameTextHandles[userId]?.let { textHandle ->
             textHandle.remove()
             console.log("OtherPlayersController: Removed username text for $userId")
         }
         usernameTextHandles.remove(userId)
+    
+        // Remove stored username and isPlayer flag
+        playerUsernames.remove(userId)
+        playerIsPlayerFlags.remove(userId)
     }
     
     /**
@@ -553,12 +576,14 @@ class OtherPlayersController(private val scene: Scene) {
     fun configureShadowsForPlayers(shadowManager: ShadowManager) {
         // Configure shadow casting for all player handles
         playerHandles.forEach { (userId, handle) ->
-            handle.mesh.let { mesh ->
-                // Add the mesh as a shadow caster
-                shadowManager.addShadowCaster(mesh)
-                
-                // Configure the mesh as a shadow receiver
-                shadowManager.configureShadowReceiver(mesh)
+            handle.node.let { node ->
+                node.getChildMeshes().forEach { mesh ->
+                    // Add the mesh as a shadow caster
+                    shadowManager.addShadowCaster(mesh)
+
+                    // Configure the mesh as a shadow receiver
+                    shadowManager.configureShadowReceiver(mesh)
+                }
                 
                 console.log("OtherPlayersController: Configured shadows for player $userId")
             }
@@ -639,42 +664,80 @@ class OtherPlayersController(private val scene: Scene) {
     }
 
     /**
+     * Checks if a mesh belongs to another player
+     * 
+     * @param mesh The mesh to check
+     * @return The userId if the mesh belongs to a player, null otherwise
+     */
+    fun getUserIdForMesh(mesh: dynamic): String? {
+        // Check if the mesh is in the playerMeshes map
+        return playerNodes.entries.find { (_, playerMesh) -> playerMesh === mesh }?.key
+    }
+
+    /**
+     * Gets player data by userId
+     * 
+     * @param userId The user ID of the player
+     * @return A Pair containing the username and isPlayer flag, or null if the player is not found
+     */
+    fun getPlayerData(userId: String): Pair<String, Boolean>? {
+        // Get the username from the stored map
+        val username = playerUsernames[userId] ?: "Player"
+    
+        // Get the isPlayer flag from the stored map
+        val isPlayer = playerIsPlayerFlags[userId] ?: false
+    
+        return Pair(username, isPlayer)
+    }
+
+    /**
+     * Gets all player meshes for intersection testing
+     * 
+     * @return Array of player meshes
+     */
+    fun getPlayerMeshes(): Array<AbstractMesh> {
+        return playerNodes.values
+            .toTypedArray()
+            .map { it.getChildMeshes() }
+            .toTypedArray()
+            .flatten()
+            .toTypedArray()
+    }
+
+    /**
      * Dispose of all resources
      */
     fun dispose() {
         // Remove all player handles
         playerHandles.values.forEach { it.remove() }
         playerHandles.clear()
-        
-        // For backward compatibility, also dispose of all player meshes
-        playerMeshes.values.forEach { it.dispose() }
-        playerMeshes.clear()
-        
+        playerNodes.clear()
+    
         // Remove all username text billboards
         usernameTextHandles.values.forEach { it.remove() }
         usernameTextHandles.clear()
-        
+    
         // Remove all chat message text billboards
         chatMessageTextHandles.values.forEach { it.remove() }
         chatMessageTextHandles.clear()
-        
+    
         // Clear all chat message timeouts
         chatMessageTimeouts.forEach { (_, timeoutId) -> window.clearTimeout(timeoutId) }
         chatMessageTimeouts.clear()
-        
+    
         // Remove WebSocket listeners
         WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
-        
+    
         // Clear other tracking maps
         playerTargetPositions.clear()
         playerAnimationTimes.clear()
-        
+    
         // Clear the world object manager reference
         worldObjectManager = null
-        
+    
         // Clear the shadow manager reference
         shadowManager = null
-        
+    
         console.log("OtherPlayersController: Disposed all resources")
     }
 }

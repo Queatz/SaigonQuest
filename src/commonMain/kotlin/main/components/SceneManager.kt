@@ -2,10 +2,9 @@ package main.components
 
 import lib.Scene
 import main.components.camera.CameraController
-import main.components.`object`.ObjectManager
 import main.components.`object`.SceneObjectManager
-import main.components.player.PlayerController
 import main.components.player.OtherPlayersController
+import main.components.player.PlayerController
 
 /**
  * A singleton manager for accessing scene components globally.
@@ -19,7 +18,7 @@ object SceneManager {
     private var cameraController: CameraController? = null
     
     // The object manager instance
-    private var objectManager: ObjectManager? = null
+    private var objectManager: SceneObjectManager? = null
     
     // The player controller instance
     private var playerController: PlayerController? = null
@@ -54,7 +53,7 @@ object SceneManager {
      * 
      * @param manager The object manager instance to store
      */
-    fun setObjectManager(manager: ObjectManager) {
+    fun setObjectManager(manager: SceneObjectManager) {
         objectManager = manager
         println("[DEBUG] Object manager registered with SceneManager")
     }
@@ -64,7 +63,7 @@ object SceneManager {
      * 
      * @return The object manager instance, or null if not set
      */
-    fun getObjectManager(): ObjectManager? {
+    fun getObjectManager(): SceneObjectManager? {
         return objectManager
     }
     

@@ -80,7 +80,13 @@ fun ChatMessageDialog(
     
     BaseDialog(
         onClose = onClose,
-        title = if (isEditing) "Edit Message" else if (showDeleteConfirmation) "Delete Message" else "Message Options",
+        title = if (isEditing) {
+            "Edit Message"
+        } else if (showDeleteConfirmation) {
+            "Delete Message"
+        } else {
+            "Message Options"
+        },
         content = {
             if (isEditing) {
                 // Edit message form

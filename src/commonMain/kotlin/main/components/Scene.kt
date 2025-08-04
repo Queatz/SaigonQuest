@@ -16,17 +16,17 @@ import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
-import main.utils.createObjectDropEvent
 import main.api.UserApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
 import main.components.`object`.SceneObjectManager
-import main.components.player.PlayerController
 import main.components.player.OtherPlayersController
+import main.components.player.PlayerController
 import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
 import main.theme.Styles
+import main.utils.createObjectDropEvent
 import org.jetbrains.compose.web.dom.Canvas
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -315,8 +315,7 @@ fun SceneComponent(url: String) {
         val otherPlayersController = OtherPlayersController(scene)
         // Register other players controller with SceneManager for global access
         SceneManager.setOtherPlayersController(otherPlayersController)
-        
-        val inputHandler = InputHandler(scene, playerController, cameraController)
+
         val worldLoader = WorldLoader(scene)
         val objectManager = SceneObjectManager(scene, cameraController)
         val worldObjectManager = WorldObjectManager(scene)
@@ -324,6 +323,9 @@ fun SceneComponent(url: String) {
         // Register object manager with SceneManager for global access
         SceneManager.setObjectManager(objectManager)
         
+        // Create input handler after object manager is registered
+        val inputHandler = InputHandler(scene, playerController, cameraController)
+
         // Set up object drop handler
         val objectDropHandler: (Event) -> Unit = { event ->
             val detail = event.asDynamic().detail
@@ -361,10 +363,12 @@ fun SceneComponent(url: String) {
                 playerController.initializeChatMessageListener()
                 
                 // Register player mesh as shadow caster and receiver
-                playerController.getPlayerHandle()?.mesh?.let { playerMesh ->
+                playerController.getPlayerHandle()?.node?.let { playerMesh ->
                     worldLoader.getShadowManager()?.let { shadowManager ->
-                        shadowManager.addShadowCaster(playerMesh)
-                        shadowManager.configureShadowReceiver(playerMesh)
+                        playerMesh.getChildMeshes().forEach {
+                            shadowManager.addShadowCaster(it)
+                            shadowManager.configureShadowReceiver(it)
+                        }
                         println("[DEBUG] Player mesh registered as shadow caster and receiver")
                     }
                 }
@@ -444,21 +448,13 @@ fun SceneComponent(url: String) {
         scene.registerBeforeRender {
             // Calculate movement direction from input
             val moveDirection = inputHandler.calculateMovementDirection()
-            
-            // Only update player position if WebSocket is connected
-            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
-                // Update player position
-                val newPosition = playerController.updatePlayerPosition(moveDirection)
-                
-                // Update camera target if player moved
-                if (newPosition != null) {
-                    cameraController.updateCameraTarget(newPosition)
-                }
-            } else {
-                // If not connected, just log a message (but not too frequently)
-                if (window.performance.now() % 1000 < 16) { // Log roughly once per second
-                    console.log("Waiting for WebSocket connection before allowing player movement...")
-                }
+
+            // Update player position
+            val newPosition = playerController.updatePlayerPosition(moveDirection)
+
+            // Update camera target if player moved
+            if (newPosition != null) {
+                cameraController.updateCameraTarget(newPosition)
             }
             
             // Update camera animation

@@ -1,10 +1,7 @@
 package models
 
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 /**
  * Represents an inventory that belongs to a player.
@@ -14,7 +11,20 @@ import kotlin.time.Instant
 @Serializable
 data class Inventory(
     var userId: String = "", // Reference to the user this inventory belongs to
-    var items: MutableList<InventoryItem> = mutableListOf()
+    var itemOrder: List<String> = mutableListOf()
+) : BaseModel()
+
+/**
+ * Represents an item type.
+ * Contains a list of items that the player has collected.
+ */
+@OptIn(ExperimentalTime::class)
+@Serializable
+data class Item(
+    var title: String = "",
+    var description: String = "",
+    var file: String = "",
+    var assetIndex: Int = 0, // All asset files are 320x320 pixels, this index maps to the correct 32x32 cell
 ) : BaseModel()
 
 /**
@@ -23,13 +33,6 @@ data class Inventory(
 @OptIn(ExperimentalTime::class)
 @Serializable
 data class InventoryItem(
-    var name: String = "",
-    var description: String = "",
-    var imageUrl: String = "",
     var quantity: Int = 1,
-    var type: String = "", // Type of item (e.g., "weapon", "consumable", "quest")
-    var properties: Map<String, String> = mapOf(), // Additional properties specific to the item type
-    @Contextual
-    var acquiredAt: Instant = Clock.System.now()
+    var item: String = "",
 ) : BaseModel()
-

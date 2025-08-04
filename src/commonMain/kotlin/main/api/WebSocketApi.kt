@@ -4,7 +4,6 @@ import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import main.api.ApiConstants.API_BASE_URL
 import models.ChatMessage
 import models.Object
@@ -12,7 +11,6 @@ import models.PlayerInteractData
 import models.PlayerPositionData
 import models.Position
 import models.TriggerEventData
-import models.User
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
@@ -610,6 +608,19 @@ object WebSocketApi {
     }
     
     /**
+     * Update an object in the world
+     * 
+     * This sends the updated object to all clients in the world.
+     * Used primarily for position updates when objects are moved.
+     * 
+     * @param obj The updated object
+     * @return true if the object was updated successfully, false otherwise
+     */
+    fun updateObject(obj: Object): Boolean {
+        return sendObjectMessage(WebSocketAction.OBJECT_UPDATE, obj)
+    }
+    
+    /**
      * Update player position
      * 
      * This sends the player's current position to all other clients in the world.
@@ -666,7 +677,7 @@ object WebSocketApi {
                     isPlayer = isPlayer,
                     userId = user.key
                 )
-                success = sendPlayerInteractMessage(WebSocketAction.PLAYER_INTERACT, interactData)
+                success = sendPlayerInteractMessage(WebSocketAction.USER_INTERACT, interactData)
             } catch (e: Exception) {
                 console.error("Error sending player interaction", e)
                 _lastError = "Error sending player interaction: ${e.message}"

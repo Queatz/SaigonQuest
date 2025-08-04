@@ -1,6 +1,7 @@
 package routes
 
 import auth.JwtConfig
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -9,6 +10,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import models.ErrorResponse
 import models.User
 import repository.UserRepository
 
@@ -74,16 +76,13 @@ fun Routing.configureUserRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    "Invalid token"
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Upgrade user
                 val updatedUser = userRepository.upgradeToPlayer(userId, request.username, request.password)
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
-                        "User not found"
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
                     )
                 
                 // Generate new JWT token
@@ -121,15 +120,12 @@ fun Routing.configureUserRoutes() {
             get("/me") {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@get call.respond(
-                    HttpStatusCode.Unauthorized,
-                    "Invalid token"
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
                 
                 // Get user
                 val user = userRepository.getById(userId) ?: return@get call.respond(
                     HttpStatusCode.NotFound,
-                    "User not found"
+                    ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
                 )
                 
                 call.respond(HttpStatusCode.OK, user)

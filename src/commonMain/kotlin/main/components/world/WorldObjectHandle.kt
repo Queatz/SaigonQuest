@@ -1,6 +1,7 @@
 package main.components.world
 
 import lib.AbstractMesh
+import lib.Node
 import lib.Vector3
 
 /**
@@ -12,22 +13,35 @@ interface WorldObjectHandle {
      */
     val id: String
 
-    var mesh: AbstractMesh
+    /**
+     * The node representing this object in the scene
+     * Position, rotation, and scale can be accessed directly from this node
+     */
+    var node: Node
     
     /**
-     * Position of the object in the 3D world
+     * Convenience property for accessing the node's position
+     * This is provided for backward compatibility
      */
     var position: Vector3
+        get() = node.position
+        set(value) { node.position = value }
     
     /**
-     * Rotation of the object in the 3D world
+     * Convenience property for accessing the node's rotation
+     * This is provided for backward compatibility
      */
     var rotation: Vector3
+        get() = node.rotation
+        set(value) { node.rotation = value }
     
     /**
-     * Scale of the object in the 3D world
+     * Convenience property for accessing the node's scale
+     * This is provided for backward compatibility
      */
     var scale: Vector3
+        get() = node.scaling
+        set(value) { node.scaling = value }
     
     /**
      * Removes the object from the scene
@@ -42,5 +56,14 @@ interface WorldObjectHandle {
      */
     fun updateDirection(direction: CharacterDirection) {
         // Default implementation does nothing
+    }
+    
+    /**
+     * Helper method to get all meshes for this object
+     * 
+     * @return Array of all meshes belonging to this object
+     */
+    fun getMeshes(): Array<AbstractMesh> {
+        return node.getChildMeshes(false)
     }
 }

@@ -95,3 +95,37 @@ fun createObjectDropEvent(x: Int, y: Int, data: String): Event {
     
     return createCustomEvent("objectDrop", detail)
 }
+
+/**
+ * Creates a CustomEvent specifically for object double-click events.
+ *
+ * @param objectId The ID of the double-clicked object
+ * @return The created CustomEvent
+ */
+fun createObjectDoubleClickEvent(objectId: String): Event {
+    // Create detail object
+    val detail: dynamic = object {}
+    detail.objectId = objectId
+    
+    return createCustomEvent("objectDoubleClick", detail)
+}
+
+
+// Function to toggle fullscreen mode
+fun toggleFullscreen() {
+    try {
+        val doc = document
+
+        if (doc.fullscreenElement == null) {
+            // Enter fullscreen mode
+            document.documentElement?.requestFullscreen()
+            // State will be updated by the fullscreenchange event listener
+        } else {
+            // Exit fullscreen mode
+            doc.exitFullscreen()
+            // State will be updated by the fullscreenchange event listener
+        }
+    } catch (e: dynamic) {
+        console.error("Fullscreen API error: ", e)
+    }
+}

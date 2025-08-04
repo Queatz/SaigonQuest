@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import main.components.isLayoutAdjustmentNeeded
 import main.theme.Styles
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.bottom
@@ -27,11 +28,7 @@ fun InventoryTray(
         attrs = {
             style {
                 // Adjust left position when any side panel is open on desktop
-                if ((currentPanel == SidePanelState.Chat || 
-                     currentPanel == SidePanelState.WorldEdit || 
-                     currentPanel == SidePanelState.Notifications || 
-                     currentPanel == SidePanelState.ObjectsPanel ||
-                     currentPanel == SidePanelState.Friends) && !isMobile.value) {
+                if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
                     // Center in the remaining space (excluding the 320px side panel)
                     property("left", "calc(50% - 160px)")
                 } else {

@@ -1,6 +1,9 @@
 package main.components.camera
 
 import lib.ArcRotateCamera
+import lib.ArcRotateCameraKeyboardMoveInput
+import lib.ArcRotateCameraMouseWheelInput
+import lib.ArcRotateCameraPointersInput
 import lib.Color4
 import lib.CreateSphereOptions
 import lib.DefaultRenderingPipeline
@@ -26,15 +29,52 @@ import main.components.GraphicsSettings
  */
 class CameraController(private val scene: Scene) {
     
-    // The main camera
-    private val camera: ArcRotateCamera
+    // Create the main camera
+    private val camera: ArcRotateCamera = ArcRotateCamera(
+        name = "camera",
+        alpha = 0f,
+        beta = 0f,
+        radius = 8f, // Starting radius between min and max
+        target = Vector3.Zero(),
+        scene = scene
+    ).apply {
+        // Set camera constraints
+        this.lowerRadiusLimit = 4f // Min constraint
+        this.upperRadiusLimit = 16f // Max constraint
+        this.lowerBetaLimit = (15f * PI / 180f).toFloat() // 85 degrees in radians
+        this.upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
+
+        this.wheelPrecision = 200f
+
+        // Set a narrow FOV (default is ~0.8 radians/45 degrees)
+        this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
+        this.minZ = 0.1f
+        this.maxZ = 100f
+
+        // Set initial position
+        this.alpha = (-PI / 2).toFloat()
+        this.beta = (PI / 3).toFloat()
+
+        // Attach camera controls
+        attachControl(true)
+
+        // Remove keyboard controls to avoid conflicts with player movement
+        inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
+    }
 
     // Camera target - separate from player to prevent player moving with camera during panning
     private var cameraTarget: Mesh? = null
     
     // Rendering pipeline for post-processing effects
-    private val pipeline: DefaultRenderingPipeline
-    
+
+    // Set up PBR rendering pipeline with depth texture enabled for better depth of field quality
+    private val pipeline: DefaultRenderingPipeline = DefaultRenderingPipeline(
+        name = "pbrPipeline",
+        hdr = true,
+        scene = scene,
+        cameras = arrayOf(camera)
+    )
+
     // Vignette post-process effect
     private var vignettePostProcess: ImageProcessingPostProcess
     
@@ -44,47 +84,6 @@ class CameraController(private val scene: Scene) {
     private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
     
     init {
-        // Create a camera with constraints (min 4, max 12)
-        camera = ArcRotateCamera(
-            name = "camera",
-            alpha = 0f,
-            beta = 0f,
-            radius = 8f, // Starting radius between min and max
-            target = Vector3.Zero(),
-            scene = scene
-        ).apply {
-            // Set camera constraints
-            this.lowerRadiusLimit = 4f // Min constraint
-            this.upperRadiusLimit = 12f // Max constraint
-            this.lowerBetaLimit = (15f * PI / 180f).toFloat() // 85 degrees in radians
-            this.upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
-
-            this.wheelPrecision = 100f
-
-            // Set a narrow FOV (default is ~0.8 radians/45 degrees)
-            this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
-            this.minZ = 0.1f
-            this.maxZ = 100f
-
-            // Set initial position
-            this.alpha = (-PI / 2).toFloat()
-            this.beta = (PI / 3).toFloat()
-
-            // Attach camera controls
-            attachControl(true)
-
-            // Remove keyboard controls to avoid conflicts with player movement
-            inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
-        }
-
-        // Set up PBR rendering pipeline with depth texture enabled for better depth of field quality
-        pipeline = DefaultRenderingPipeline(
-            name = "pbrPipeline",
-            hdr = true,
-            scene = scene,
-            cameras = arrayOf(camera)
-        )
-        
         pipeline.apply {
             if (GraphicsSettings.isPrettyGraphicsEnabled()) {
                 // Enable bloom for better lighting effects
@@ -106,8 +105,8 @@ class CameraController(private val scene: Scene) {
 
                 // Enable image processing with enhanced contrast and exposure
                 imageProcessingEnabled = true
-                imageProcessing.contrast = 1.25f
-                imageProcessing.exposure = 1.25f
+                imageProcessing.contrast = 1.15f
+//                imageProcessing.exposure = 1.05f
 
                 // Enable tone mapping
                 toneMappingEnabled = true
@@ -171,10 +170,12 @@ class CameraController(private val scene: Scene) {
      */
     private fun createCameraTarget() {
         // Create a separate camera target (invisible)
-        cameraTarget = MeshBuilder.CreateSphere("cameraTarget",
-            object : CreateSphereOptions {
+        cameraTarget = MeshBuilder.CreateSphere(
+            name = "cameraTarget",
+            options = object : CreateSphereOptions {
                 override val diameter = 0.1f
-            }, scene
+            },
+            scene = scene
         ).apply {
             isVisible = false
         }
@@ -232,18 +233,8 @@ class CameraController(private val scene: Scene) {
         // Update the camera target object's position
         cameraTarget!!.position = newPosition
         
-        // Store current camera settings
-        val currentAlpha = camera.alpha
-        val currentBeta = camera.beta
-        val currentRadius = camera.radius
-        
         // Update camera to target the camera target object
-        camera.setTarget(newPosition)
-        
-        // Restore camera settings to maintain relative position
-        camera.alpha = currentAlpha
-        camera.beta = currentBeta
-        camera.radius = currentRadius
+        updateCameraTargetImmediate(newPosition)
         
         return true
     }
@@ -290,8 +281,8 @@ class CameraController(private val scene: Scene) {
         // Constants for the linear interpolation
         val minRadius = camera.lowerRadiusLimit
         val maxRadius = camera.upperRadiusLimit
-        val maxWeight = 8f  // Weight when radius is at minimum
-        val minWeight = 2f  // Weight when radius is at maximum
+        val maxWeight = 8f // Weight when radius is at minimum
+        val minWeight = 2f // Weight when radius is at maximum
         
         // Calculate the vignette weight using linear interpolation
         val weight = maxWeight - (camera.radius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
@@ -321,12 +312,15 @@ class CameraController(private val scene: Scene) {
     /**
      * Sets the initial camera target position.
      * This is done immediately without animation.
+     * Creates a separate copy of the position to decouple from player position.
      * 
      * @param position The initial position for the camera target
      */
     fun setInitialTargetPosition(position: Vector3) {
-        cameraTarget?.position = position
-        updateCameraTargetImmediate(position)
+        // Create a clone of the position to decouple from player position
+        val cameraTargetPosition = position.clone()
+        cameraTarget?.position = cameraTargetPosition
+        updateCameraTargetImmediate(cameraTargetPosition)
     }
     
     /**
@@ -350,7 +344,7 @@ class CameraController(private val scene: Scene) {
         
         // Set a fixed radius for consistent zoom level when focusing on objects
         // This ensures the camera is always at the same distance when locating objects
-        camera.radius = 10.0f // Fixed distance that works well for viewing objects
+        camera.radius = 12.0f // Fixed distance that works well for viewing objects
         
         console.log("Camera focused on position (${position.x}, ${position.y}, ${position.z})")
     }
@@ -441,6 +435,51 @@ class CameraController(private val scene: Scene) {
         updatePipelineSettings()
     }
     
+    /**
+     * Enables camera inputs to allow camera movement
+     * This re-attaches all controls and adds back specific input types
+     */
+    fun enableCameraInputs() {
+        // Re-attach all controls with preventDefaultBehavior set to true
+        // This prevents the browser's default behavior for these events
+        camera.attachControl(true)
+        
+        try {
+            // Add keyboard input
+            val keyboardInput = ArcRotateCameraKeyboardMoveInput()
+            camera.inputs.add(keyboardInput)
+            
+            // Add mouse wheel input
+            val mouseWheelInput = ArcRotateCameraMouseWheelInput()
+            camera.inputs.add(mouseWheelInput)
+            
+            // Add pointer input (mouse movement)
+            val pointerInput = ArcRotateCameraPointersInput()
+            camera.inputs.add(pointerInput)
+            
+            console.log("Camera inputs explicitly re-added: keyboard, mouse wheel, and pointers")
+        } catch (e: Exception) {
+            console.error("Error re-adding camera inputs: ${e.message}")
+        }
+        
+        console.log("Camera inputs re-enabled")
+    }
+    
+    /**
+     * Disables camera inputs to prevent camera movement during object manipulation
+     */
+    fun disableCameraInputs() {
+        // First detach all controls
+        camera.detachControl()
+        
+        // Also disable specific input types to ensure no camera movement during dragging
+        camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
+        camera.inputs.removeByType("ArcRotateCameraMouseWheelInput")
+        camera.inputs.removeByType("ArcRotateCameraPointersInput")
+        
+        console.log("Camera inputs disabled for object manipulation")
+    }
+
     /**
      * Disposes of the camera controller resources.
      */

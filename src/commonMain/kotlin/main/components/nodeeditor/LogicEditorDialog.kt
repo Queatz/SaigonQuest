@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.theme.NodeEditorStyles
 import main.theme.Styles
+import main.utils.toggleFullscreen
 import models.Object
 import models.Rotation
 import models.Scale
@@ -35,11 +36,6 @@ fun LogicEditorDialog(
 ) {
     // State for form fields
     var title by remember { mutableStateOf(objectModel?.title ?: "") }
-    var categories by remember { 
-        mutableStateOf(
-            objectModel?.categories?.joinToString(", ") ?: ""
-        )
-    }
     var data by remember { mutableStateOf(objectModel?.data ?: "{}") }
     
     // State for fullscreen mode
@@ -51,7 +47,7 @@ fun LogicEditorDialog(
     
     // Determine if we're editing or creating
     val isEditing = objectModel != null
-    val dialogTitle = if (isEditing) "Edit Object Logic" else "Create Object"
+    val dialogTitle = if (isEditing) "Edit ${objectModel.title.ifBlank { "Object" }} Logic" else "Create Object Logic"
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -63,26 +59,7 @@ fun LogicEditorDialog(
             initialConnections = parseConnections(objectModel?.data ?: "{}")
         )
     }
-    
-    // Function to toggle fullscreen mode
-    fun toggleFullscreen() {
-        try {
-            val doc = document
-            
-            if (doc.fullscreenElement == null) {
-                // Enter fullscreen mode
-                document.documentElement?.requestFullscreen()
-                // State will be updated by the fullscreenchange event listener
-            } else {
-                // Exit fullscreen mode
-                doc.exitFullscreen()
-                // State will be updated by the fullscreenchange event listener
-            }
-        } catch (e: dynamic) {
-            console.error("Fullscreen API error: ", e)
-        }
-    }
-    
+
     // Update fullscreen state when fullscreen changes
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
@@ -101,11 +78,6 @@ fun LogicEditorDialog(
         isSubmitting = true
         errorMessage = ""
         
-        // Convert categories string to list
-        val categoryList = categories.split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-        
         // Serialize node editor data to JSON
         val nodeData = controller.serializeToJson()
         
@@ -113,14 +85,12 @@ fun LogicEditorDialog(
             // Update existing object
             objectModel!!.copy(
                 title = title,
-                categories = categoryList,
                 data = nodeData
             )
         } else {
             // Create new object
             Object(
                 title = title,
-                categories = categoryList,
                 data = nodeData,
                 worldId = worldId,
                 position = models.Position(0f, 0f, 0f),

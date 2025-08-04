@@ -1,7 +1,7 @@
 package main.components.nodeeditor
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import utils.json
 
 /**
  * Serializable data classes for node editor JSON structure
@@ -56,11 +56,7 @@ data class NodeEditorDataJson(
  */
 object NodeEditorJsonUtil {
     // Configure JSON parser with lenient mode to handle potential issues
-    private val json = Json { 
-        ignoreUnknownKeys = true 
-        isLenient = true
-        coerceInputValues = true
-    }
+    private val json = utils.json
     
     /**
      * Parse node editor data from JSON string

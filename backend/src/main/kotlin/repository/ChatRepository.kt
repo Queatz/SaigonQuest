@@ -3,11 +3,10 @@ package repository
 import com.arangodb.ArangoCollection
 import com.arangodb.entity.DocumentCreateEntity
 import com.arangodb.model.DocumentCreateOptions
-import com.arangodb.model.DocumentReadOptions
 import database.ArangoConfig
 import database.CollectionsConfig
-import kotlinx.serialization.json.Json
 import models.ChatMessage
+import models.ChatReadMarker
 
 /**
  * Repository for chat message operations
@@ -17,8 +16,8 @@ import models.ChatMessage
  */
 class ChatRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_MESSAGES_COLLECTION)
-    private val json = Json { ignoreUnknownKeys = true }
-    
+    private val readMarkersCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_READ_MARKERS_COLLECTION)
+
     /**
      * Save a chat message to the database
      *
@@ -60,16 +59,14 @@ class ChatRepository {
         
         return ArangoConfig.db.query(query, ChatMessage::class.java, bindVars).toList()
     }
-    
+
     /**
      * Get unread message count for a user in a specific world
      *
-     * @param userId The ID of the user
-     * @param worldId The ID of the world
-     * @param lastReadTimestamp The timestamp of the last read message
+     * @param readMarker The ChatReadMarker object containing the user ID, world ID, and last read timestamp
      * @return The number of unread messages
      */
-    fun getUnreadMessageCount(userId: String, worldId: String, lastReadTimestamp: Long): Int {
+    fun getUnreadMessageCount(readMarker: ChatReadMarker): Int {
         val query = """
             FOR m IN @@collection
             FILTER m.worldId == @worldId 
@@ -81,9 +78,9 @@ class ChatRepository {
         
         val bindVars = mapOf(
             "@collection" to CollectionsConfig.CHAT_MESSAGES_COLLECTION,
-            "worldId" to worldId,
-            "lastReadTimestamp" to lastReadTimestamp,
-            "userId" to userId
+            "worldId" to readMarker.worldId,
+            "lastReadTimestamp" to readMarker.lastReadTimestamp,
+            "userId" to readMarker.userId
         )
         
         val results = ArangoConfig.db.query(query, Int::class.java, bindVars).toList()
@@ -99,51 +96,78 @@ class ChatRepository {
      * @return True if the operation was successful, false otherwise
      */
     fun updateLastReadTimestamp(userId: String, worldId: String, timestamp: Long): Boolean {
-        val query = """
-            UPSERT { userId: @userId, worldId: @worldId }
-            INSERT { userId: @userId, worldId: @worldId, lastReadTimestamp: @timestamp }
-            UPDATE { lastReadTimestamp: @timestamp }
-            IN @@collection
-            RETURN NEW
-        """.trimIndent()
-        
-        val bindVars = mapOf(
-            "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
-            "userId" to userId,
-            "worldId" to worldId,
-            "timestamp" to timestamp
+        val readMarker = ChatReadMarker(
+            userId = userId,
+            worldId = worldId,
+            lastReadTimestamp = timestamp
         )
-        
+        return updateLastReadTimestamp(readMarker)
+    }
+    
+    /**
+     * Update the last read timestamp for a user in a world
+     *
+     * @param readMarker The ChatReadMarker object containing the user ID, world ID, and timestamp
+     * @return True if the operation was successful, false otherwise
+     */
+    fun updateLastReadTimestamp(readMarker: ChatReadMarker): Boolean {
         try {
-            ArangoConfig.db.query(query, Any::class.java, bindVars).toList()
+            // Try to find an existing read marker
+            val query = """
+                FOR m IN @@collection
+                FILTER m.userId == @userId AND m.worldId == @worldId
+                RETURN m
+            """.trimIndent()
+            
+            val bindVars = mapOf(
+                "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+                "userId" to readMarker.userId,
+                "worldId" to readMarker.worldId
+            )
+            
+            val existingMarkers = ArangoConfig.db.query(query, ChatReadMarker::class.java, bindVars).toList()
+            
+            if (existingMarkers.isNotEmpty()) {
+                // Update existing marker
+                val existingMarker = existingMarkers.first()
+                existingMarker.lastReadTimestamp = readMarker.lastReadTimestamp
+                readMarkersCollection.updateDocument(existingMarker.key, existingMarker)
+            } else {
+                // Create new marker
+                readMarkersCollection.insertDocument(readMarker)
+            }
+            
             return true
         } catch (e: Exception) {
             return false
         }
     }
-    
+
     /**
      * Get the last read timestamp for a user in a world
      *
-     * @param userId The ID of the user
-     * @param worldId The ID of the world
+     * @param readMarker The ChatReadMarker object containing the user ID and world ID
      * @return The last read timestamp, or 0 if not found
      */
-    fun getLastReadTimestamp(userId: String, worldId: String): Long {
-        val query = """
-            FOR m IN @@collection
-            FILTER m.userId == @userId AND m.worldId == @worldId
-            RETURN m.lastReadTimestamp
-        """.trimIndent()
-        
-        val bindVars = mapOf(
-            "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
-            "userId" to userId,
-            "worldId" to worldId
-        )
-        
-        val results = ArangoConfig.db.query(query, Long::class.java, bindVars).toList()
-        return results.firstOrNull() ?: 0
+    fun getLastReadTimestamp(readMarker: ChatReadMarker): Long {
+        try {
+            val query = """
+                FOR m IN @@collection
+                FILTER m.userId == @userId AND m.worldId == @worldId
+                RETURN m
+            """.trimIndent()
+            
+            val bindVars = mapOf(
+                "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+                "userId" to readMarker.userId,
+                "worldId" to readMarker.worldId
+            )
+            
+            val markers = ArangoConfig.db.query(query, ChatReadMarker::class.java, bindVars).toList()
+            return markers.firstOrNull()?.lastReadTimestamp ?: 0
+        } catch (e: Exception) {
+            return 0
+        }
     }
     
     /**

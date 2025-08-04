@@ -1,82 +1,154 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.delay
-import main.theme.Styles
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.HTMLElement
+import app.softwork.routingcompose.Router
+import kotlinx.coroutines.launch
+import main.api.ObjectApi
+import main.api.WebSocketApi
+import main.components.`object`.ObjectsDialog
+import main.components.`object`.ObjectsPanel
+import main.components.nodeeditor.LogicEditorDialog
+import main.utils.PathUtils
+import models.Object
+import models.World
 
 /**
- * A reusable side panel component for desktop view.
- * 
- * @param title The title to display in the panel header
- * @param onClose Callback when the panel is closed
- * @param content The content to display in the panel body
+ * A component that displays the side panel based on the current panel state.
+ * The side panel can show different content such as Chat, WorldEdit, Notifications, etc.
  */
 @Composable
 fun SidePanel(
-    title: String,
+    currentPanel: SidePanelState,
+    isMobile: androidx.compose.runtime.State<Boolean>,
+    currentWorld: World?,
+    currentEditingObject: Object?,
     onClose: () -> Unit,
-    content: @Composable () -> Unit
+    onOpenObjectEditor: () -> Unit,
+    onEditObject: (String) -> Unit,
+    onSaveObject: (Object) -> Unit,
+    onOpenLogicEditor: (Object) -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope
 ) {
-    // Reference to store the DOM element
-    var panelElement: org.w3c.dom.HTMLElement? = null
+    val router = Router.current
     
-    // Use LaunchedEffect to handle the animation timing
-    LaunchedEffect(Unit) {
-        // Wait for the element reference to be set and initial styles to be applied
-        delay(10) // 10ms delay, equivalent to the setTimeout
-        
-        // Apply the animation by changing the right position
-        panelElement?.style?.right = "0px"
-    }
-    
-    Div(
-        attrs = {
-            classes(Styles.sidePanel)
+    when (currentPanel) {
+        SidePanelState.Chat -> {
+            // Get current world ID from the URL path or use the current world's ID
+            val chatWorldId = currentWorld?.key ?: PathUtils.getCurrentPath(router)
             
-            // Reference to the DOM element to animate it
-            ref { element ->
-                // Store the element reference for use in LaunchedEffect
-                panelElement = element
+            // Responsive chat component that adapts between mobile and desktop
+            Chat(
+                worldId = chatWorldId,
+                isMobile = isMobile.value,
+                onClose = onClose
+            )
+        }
+        
+        SidePanelState.WorldEdit -> {
+            // Responsive world edit component that adapts between mobile and desktop
+            WorldEdit(
+                currentWorld = currentWorld,
+                isMobile = isMobile.value,
+                onClose = onClose,
+                onSave = { world ->
+                    // Handle saved world
+                    console.log("World saved: ${world.title}")
+                }
+            )
+        }
+        
+        SidePanelState.Notifications -> {
+            // Responsive notifications component that adapts between mobile and desktop
+            Notifications(
+                isMobile = isMobile.value,
+                onClose = onClose,
+                onNotificationClick = { notification ->
+                    // Handle notification click
+                    console.log("Notification clicked: ${notification.title}")
+                    // Mark notification as read or perform other actions
+                }
+            )
+        }
+        
+        SidePanelState.Friends -> {
+            // Responsive friends component that adapts between mobile and desktop
+            Friends(
+                isMobile = isMobile.value,
+                onClose = onClose
+            )
+        }
+        
+        SidePanelState.ObjectsPanel -> {
+            // Get the ObjectManager from SceneManager
+            val objectManager = SceneManager.getObjectManager()
+            
+            if (isMobile.value) {
+                // Mobile: Dialog
+                ObjectsDialog(
+                    onClose = onClose,
+                    onOpenObjectEditor = onOpenObjectEditor,
+                    onEditObject = onEditObject,
+                    objectManager = objectManager
+                )
+            } else {
+                // Desktop: Side panel
+                ObjectsPanel(
+                    onClose = onClose,
+                    onOpenObjectEditor = onOpenObjectEditor,
+                    onEditObject = onEditObject,
+                    objectManager = objectManager
+                )
+            }
+        }
+        
+        SidePanelState.ObjectEditor -> {
+            // Get current world ID from the URL path
+            val currentWorldId = PathUtils.getCurrentPath(router)
+            
+            ObjectEditorDialog(
+                objectModel = currentEditingObject, // Use the current editing object or null for new object
+                worldId = currentWorldId,
+                onClose = onClose,
+                onSave = { obj ->
+                    // Handle saved object
+                    console.log("Object saved: ${obj.title}")
+                    
+                    // Add the object to the scene via WebSocket
+                    val success = WebSocketApi.addObject(obj)
+                    if (success) {
+                        console.log("Object added to scene: ${obj.title}")
+                    } else {
+                        console.error("Failed to add object to scene: ${obj.title}")
+                    }
+                    
+                    onSaveObject(obj)
+                },
+                onOpenLogicEditor = onOpenLogicEditor
+            )
+        }
+        
+        SidePanelState.LogicEditor -> {
+            if (currentEditingObject != null) {
+                // Get current world ID from the URL path
+                val currentWorldId = PathUtils.getCurrentPath(router)
                 
-                // Cleanup function
-                onDispose {
-                    // No cleanup needed
-                }
-            }
-        }
-    ) {
-        // Panel header
-        Div(
-            attrs = {
-                classes(Styles.panelHeader)
-            }
-        ) {
-            H3(
-                attrs = {
-                    classes(Styles.panelTitle)
-                }
-            ) {
-                Text(title)
-            }
-            
-            Button(
-                attrs = {
-                    classes(Styles.closeButton)
-                    onClick { onClose() }
-                }
-            ) {
-                Text("×")
+                LogicEditorDialog(
+                    objectModel = currentEditingObject,
+                    worldId = currentWorldId,
+                    onClose = onClose,
+                    onSave = { updatedObj ->
+                        // Handle saved object with updated logic
+                        console.log("Object logic updated: ${updatedObj.title}")
+                        onSaveObject(updatedObj)
+                    }
+                )
             }
         }
         
-        // Panel content
-        content()
+        SidePanelState.Inventory -> {
+            InventoryDialog(onClose = onClose)
+        }
+        
+        else -> {} // No panel to render
     }
 }

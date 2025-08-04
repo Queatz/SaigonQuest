@@ -218,9 +218,7 @@ class WorldLoader(private val scene: Scene) {
             }
             
             // Register mesh with occlusion manager for fading when it obstructs the player's view
-            occlusionManager?.let { manager ->
-                manager.registerMesh(mesh)
-            }
+            occlusionManager?.registerMesh(mesh)
         }
         
         println("[DEBUG] Applied materials to $materialCount meshes")

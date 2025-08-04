@@ -137,7 +137,7 @@ object UserApi {
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/upgrade") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(request)
             }
             
@@ -191,7 +191,7 @@ object UserApi {
     suspend fun fetchCurrentUser(): User {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/user/me") {
-                bearerAuth(getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {

@@ -5,9 +5,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import org.w3c.dom.HTMLInputElement
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import main.api.ChatApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
@@ -34,6 +37,9 @@ fun ChatContent(worldId: String) {
     var isWebSocketConnected by remember { mutableStateOf(false) }
     var lastError by remember { mutableStateOf<String?>(null) }
     var showEmotePopup by remember { mutableStateOf(false) }
+    
+    // Coroutine scope for launching async operations
+    val scope = rememberCoroutineScope()
     
     // Reference to the chat input element for auto-focus
     val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
@@ -256,6 +262,15 @@ fun ChatContent(worldId: String) {
                                     if (success) {
                                         console.log("Message sent successfully via Enter key")
                                         messageText = ""
+                                        
+                                        // Mark messages as read when sending a message
+                                        scope.launch {
+                                            try {
+                                                ChatApi.markMessagesAsRead(worldId)
+                                            } catch (e: Exception) {
+                                                console.error("Error marking messages as read", e)
+                                            }
+                                        }
                                     } else {
                                         console.error("Failed to send message via Enter key: ${WebSocketApi.getLastError()}")
                                     }
@@ -297,6 +312,15 @@ fun ChatContent(worldId: String) {
                                 if (success) {
                                     console.log("Message sent successfully")
                                     messageText = ""
+                                    
+                                    // Mark messages as read when sending a message
+                                    scope.launch {
+                                        try {
+                                            ChatApi.markMessagesAsRead(worldId)
+                                        } catch (e: Exception) {
+                                            console.error("Error marking messages as read", e)
+                                        }
+                                    }
                                 } else {
                                     console.error("Failed to send message: ${WebSocketApi.getLastError()}")
                                 }

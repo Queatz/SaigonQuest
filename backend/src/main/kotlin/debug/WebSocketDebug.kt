@@ -5,10 +5,10 @@ import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.websocket.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import models.WebSocketAction
 import org.slf4j.LoggerFactory
 import routes.WebSocketMessage
+import utils.json
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -24,12 +24,7 @@ object WebSocketDebug {
     var enabled = System.getenv("WEBSOCKET_DEBUG")?.equals("true", ignoreCase = true) ?: true
     
     // JSON serializer with pretty printing for debugging
-    private val debugJson = Json { 
-        prettyPrint = true
-        isLenient = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val debugJson = json
     
     init {
         logger.info("WebSocketDebug initialized. Debug logging is ${if (enabled) "ENABLED" else "DISABLED"}")

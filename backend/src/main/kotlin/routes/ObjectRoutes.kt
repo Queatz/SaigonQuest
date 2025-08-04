@@ -1,5 +1,6 @@
 package routes
 
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -24,10 +25,7 @@ fun Routing.configureObjectRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Objects are not required to be related to a world
                 // Only validate world ownership if a worldId is provided
@@ -92,10 +90,7 @@ fun Routing.configureObjectRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
                 // Check if the object exists
                 val existingObject = objectRepository.getById(id) ?: return@put call.respond(
@@ -140,10 +135,7 @@ fun Routing.configureObjectRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@delete call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
                 
                 // Check if the object exists
                 val existingObject = objectRepository.getById(id) ?: return@delete call.respond(

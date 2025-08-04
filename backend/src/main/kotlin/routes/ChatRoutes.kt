@@ -1,5 +1,6 @@
 package routes
 
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -8,6 +9,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.ChatMessage
+import models.ChatReadMarker
 import models.ErrorResponse
 import repository.ChatRepository
 import repository.UserRepository
@@ -38,8 +40,9 @@ fun Routing.configureChatRoutes() {
             
             // If authenticated, update last read timestamp
             val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.payload?.getClaim("userId")?.asString()
-            
+            val userId = JWTUtils.getUserId(principal)
+
+            // Update last read
             if (userId != null) {
                 chatRepository.updateLastReadTimestamp(userId, worldId, System.currentTimeMillis())
             }
@@ -58,16 +61,22 @@ fun Routing.configureChatRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@get call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                
+                // Create a ChatReadMarker to represent the query
+                val readMarker = ChatReadMarker(
+                    userId = userId,
+                    worldId = worldId
                 )
                 
-                // Get last read timestamp
-                val lastReadTimestamp = chatRepository.getLastReadTimestamp(userId, worldId)
+                // Get last read timestamp using the ChatReadMarker object
+                val lastReadTimestamp = chatRepository.getLastReadTimestamp(readMarker)
                 
-                // Get unread count
-                val unreadCount = chatRepository.getUnreadMessageCount(userId, worldId, lastReadTimestamp)
+                // Update the lastReadTimestamp in the readMarker
+                readMarker.lastReadTimestamp = lastReadTimestamp
+                
+                // Get unread count using the ChatReadMarker object
+                val unreadCount = chatRepository.getUnreadMessageCount(readMarker)
                 
                 call.respond(unreadCount)
             }
@@ -83,16 +92,20 @@ fun Routing.configureChatRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
                 // Get timestamp from request or use current time
                 val timestamp = call.request.queryParameters["timestamp"]?.toLongOrNull() ?: System.currentTimeMillis()
                 
-                // Update last read timestamp
-                val success = chatRepository.updateLastReadTimestamp(userId, worldId, timestamp)
+                // Create a ChatReadMarker object
+                val readMarker = ChatReadMarker(
+                    userId = userId,
+                    worldId = worldId,
+                    lastReadTimestamp = timestamp
+                )
+                
+                // Update last read timestamp using the ChatReadMarker object
+                val success = chatRepository.updateLastReadTimestamp(readMarker)
                 
                 if (success) {
                     call.respond(HttpStatusCode.OK)
@@ -115,10 +128,7 @@ fun Routing.configureChatRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@post call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Get message text from request
                 val messageText = call.receiveText()
@@ -162,10 +172,7 @@ fun Routing.configureChatRoutes() {
                 
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.payload?.getClaim("userId")?.asString() ?: return@put call.respond(
-                    HttpStatusCode.Unauthorized,
-                    ErrorResponse(message = "Invalid token", code = HttpStatusCode.Unauthorized.value)
-                )
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
                 // Get updated message from request
                 val updatedMessage = call.receive<ChatMessage>()

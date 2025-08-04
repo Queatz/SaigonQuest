@@ -6,6 +6,71 @@ package lib
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.KeyboardEvent
+import kotlin.js.Promise
+
+/**
+ * Interface for a node in the scene graph
+ */
+external interface Node {
+    /**
+     * The name of the node
+     */
+    var name: String
+    
+    /**
+     * The parent node
+     */
+    var parent: Node?
+    
+    /**
+     * Position of the node in local space
+     */
+    var position: Vector3
+    
+    /**
+     * Rotation of the node in local space
+     */
+    var rotation: Vector3
+    
+    /**
+     * Scaling of the node in local space
+     */
+    var scaling: Vector3
+
+    /**
+     * Gets all child meshes of this node
+     * 
+     * @param directDescendantsOnly If true, only direct descendants will be returned
+     * @return Array of child meshes
+     */
+    fun getChildMeshes(directDescendantsOnly: Boolean? = definedExternally): Array<AbstractMesh>
+}
+
+/**
+ * A transform node is a node that can be used to transform other nodes in the scene
+ * without rendering anything itself. It's useful as a container for other nodes.
+ */
+external class TransformNode(name: String, scene: Scene? = definedExternally) : Node {
+    override var name: String
+    override var parent: Node?
+    override var position: Vector3
+    override var rotation: Vector3
+    override var scaling: Vector3
+    var rotationQuaternion: Quaternion?
+    
+    /**
+     * Gets all child meshes of this node
+     * 
+     * @param directDescendantsOnly If true, only direct descendants will be returned
+     * @return Array of child meshes
+     */
+    override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
+    
+    /**
+     * Disposes of the transform node and all its resources
+     */
+    fun dispose()
+}
 
 /**
  * Interface for mesh metadata
@@ -17,22 +82,32 @@ external interface MeshMetadata {
     var originalMaterial: Material?
 }
 
-abstract external class AbstractMesh {
+abstract external class AbstractMesh : Node {
     var isVisible: Boolean
-    var position: Vector3
+    var isPickable: Boolean
+    override var position: Vector3
     var material: Material
     var receiveShadows: Boolean
-    var rotation: Vector3
+    override var rotation: Vector3
     var rotationQuaternion: Quaternion?
     var origin: Vector3
-    var scaling: Vector3
+    override var scaling: Vector3
     var billboardMode: Int
     val onAfterWorldMatrixUpdateObservable: Observable<AbstractMesh>
     var instancedBuffers: dynamic
     var actionManager: ActionManager?
-    var name: String
+    override var name: String
+    override var parent: Node?
     var metadata: MeshMetadata?
 
+    /**
+     * Tests if a ray intersects the mesh
+     * @param ray The ray to test
+     * @param fastCheck Defines if the first intersection will be used (and not the closest)
+     * @return Information about the intersection point
+     */
+    fun intersects(ray: Ray, fastCheck: Boolean = definedExternally): PickingInfo
+    
     fun getVerticesData(kind: String): Array<Float>?
     fun setVerticesData(kind: String, data: Array<Float>, updatable: Boolean)
     fun clone(name: String): AbstractMesh
@@ -118,6 +193,11 @@ external class Scene(engine: Engine? = definedExternally) {
     var deltaTime: Float
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
+    
+    /**
+     * List of all meshes in the scene
+     */
+    val meshes: Array<AbstractMesh>
 
     /**
      * Gets the engine that created this scene
@@ -130,6 +210,13 @@ external class Scene(engine: Engine? = definedExternally) {
      * @return The transform matrix
      */
     fun getTransformMatrix(): Matrix
+    
+    /**
+     * Gets a node by name
+     * @param name The name of the node to find
+     * @return The node with the given name, or null if not found
+     */
+    fun getNodeByName(name: String): Node?
     
     fun enableDepthRenderer(camera: Camera? = definedExternally): DepthRenderer
     fun disableDepthRenderer()
@@ -147,6 +234,8 @@ external class Scene(engine: Engine? = definedExternally) {
 }
 external class Mesh(name: String = definedExternally, scene: Scene = definedExternally) : AbstractMesh {
     fun createInstance(name: String): Mesh
+
+    override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 
     companion object {
         val BILLBOARDMODE_Y: Int
@@ -175,6 +264,9 @@ external class LinesMesh(name: String = definedExternally, scene: Scene = define
      * Update the vertex positions of the line mesh. Expects flat float array [x,y,z,...].
      */
     fun updateVerticesData(kind: String, data: Array<Float>, updateExtends: Boolean = definedExternally)
+
+    override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
+
 }
 
 external class MeshBuilder {
@@ -486,10 +578,32 @@ external class ArcRotateCamera(
 
 external class ArcRotateCameraInputs {
     val removeByType: (String) -> Unit
+    
+    /**
+     * Adds a new input to the camera
+     * 
+     * @param input The input to add
+     */
+    fun add(input: Any)
 }
 
 external class ArcRotateCameraKeyboardMoveInput {
     var angularSpeed: Float
+}
+
+/**
+ * Mouse wheel input for ArcRotateCamera
+ */
+external class ArcRotateCameraMouseWheelInput {
+    var wheelPrecision: Float
+}
+
+/**
+ * Pointers (mouse/touch) input for ArcRotateCamera
+ */
+external class ArcRotateCameraPointersInput {
+    var angularSensibilityX: Float
+    var angularSensibilityY: Float
 }
 
 external class KeyboardEventTypes {
@@ -542,7 +656,15 @@ external class Ray {
     var origin: Vector3
     var direction: Vector3
 
-    fun intersectsMesh(mesh: AbstractMesh): PickingInfo
+    /**
+     * Tests if the ray intersects a mesh
+     * This is a wrapper around the mesh.intersects method
+     * 
+     * @param mesh The mesh to test
+     * @param fastCheck Defines if the first intersection will be used (and not the closest)
+     * @return Information about the intersection point
+     */
+    fun intersectsMesh(mesh: AbstractMesh, fastCheck: Boolean = definedExternally): PickingInfo
 }
 
 external class PickingInfo {
@@ -1091,6 +1213,61 @@ external class GlowLayer(name: String, scene: Scene) {
     fun dispose()
 }
 
+/**
+ * The HighlightLayer is used to highlight meshes with a specific color.
+ * Once instantiated in a scene, simply use the addMesh or removeMesh methods to add or remove
+ * highlighted meshes.
+ */
+external class HighlightLayer(name: String, scene: Scene) {
+    /**
+     * The intensity of the highlight
+     */
+    var intensity: Float
+    
+    /**
+     * Blur horizontal size for the highlight
+     */
+    var blurHorizontalSize: Int
+    
+    /**
+     * Blur vertical size for the highlight
+     */
+    var blurVerticalSize: Int
+
+    /**
+     * Controls the visibility of the outer glow effect
+     */
+    var outerGlow: Boolean
+
+    /**
+     * Controls the visibility of the inner glow effect
+     */
+    var innerGlow: Boolean
+
+    /**
+    * Add a mesh to the highlight layer with a specific color
+     * 
+     * @param mesh The mesh to highlight
+     * @param color The color to use for the highlight
+     * @param glowEmissiveOnly If true, the highlight will only affect the emissive color of the mesh
+     * @return The highlighted mesh
+     */
+    fun addMesh(mesh: AbstractMesh, color: Color3, glowEmissiveOnly: Boolean = definedExternally): AbstractMesh
+    
+    /**
+     * Remove a mesh from the highlight layer
+     * 
+     * @param mesh The mesh to remove from the highlight
+     * @return The removed mesh
+     */
+    fun removeMesh(mesh: AbstractMesh): AbstractMesh
+    
+    /**
+     * Dispose the highlight layer
+     */
+    fun dispose()
+}
+
 external class GridMaterial(name: String, scene: Scene) : Material {
     var opacityTexture: Texture
     var mainColor: Color3
@@ -1277,6 +1454,40 @@ external interface ScreenshotOptions {
     val height: Int
 }
 
+/**
+ * Container for assets loaded from a file.
+ * Provides access to meshes, transform nodes, and other scene elements.
+ */
+external class AssetContainer(scene: Scene) {
+    /**
+     * List of meshes in the asset container
+     */
+    val meshes: Array<AbstractMesh>
+    
+    /**
+     * List of transform nodes in the asset container
+     */
+    val transformNodes: Array<Node>
+    
+    /**
+     * List of root nodes in the asset container
+     */
+    val rootNodes: Array<Node>
+
+    fun getNodes(): Array<Node>
+
+    /**
+     * Creates a model instance from the asset container
+     * @param nameFunction Function to generate names for cloned objects
+     * @param cloneMaterials Whether to clone materials
+     * @return Object containing the root nodes and meshes of the instantiated model
+     */
+    fun instantiateModelsToScene(
+        nameFunction: (String) -> String = definedExternally, 
+        cloneMaterials: Boolean = definedExternally
+    ): dynamic
+}
+
 external class SceneLoader {
     companion object {
         /**
@@ -1342,6 +1553,23 @@ external class SceneLoader {
             onError: ((scene: Scene, message: String, exception: dynamic) -> Unit)? = definedExternally,
             pluginExtension: String? = definedExternally
         ): dynamic
+        
+        /**
+         * Load an asset container
+         * @param rootUrl a string that defines the root url for the scene and resources
+         * @param sceneFilename a string that defines the name of the scene file
+         * @param scene is the instance of Scene to append to
+         * @param onProgress a callback with a progress event for each file being loaded
+         * @param pluginExtension the extension used to determine the plugin
+         * @returns A Promise that resolves with the loaded AssetContainer
+         */
+        fun LoadAssetContainerAsync(
+            rootUrl: String,
+            sceneFilename: String,
+            scene: Scene,
+            onProgress: ((event: dynamic) -> Unit)? = definedExternally,
+            pluginExtension: String? = definedExternally
+        ): Promise<AssetContainer>
     }
 }
 

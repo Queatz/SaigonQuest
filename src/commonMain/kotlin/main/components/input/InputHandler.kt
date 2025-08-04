@@ -1,5 +1,8 @@
 package main.components.input
 
+import androidx.compose.runtime.mutableStateOf
+import kotlinx.browser.document
+import kotlinx.browser.window
 import lib.KeyboardEventTypes
 import lib.KeyboardInfo
 import lib.Matrix
@@ -10,7 +13,11 @@ import lib.Vector3
 import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.`object`.SceneObjectManager
+import main.components.player.OtherPlayerDialog
 import main.components.player.PlayerController
+import main.utils.createObjectDoubleClickEvent
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.renderComposable
 import kotlin.math.abs
 
 /**
@@ -44,6 +51,19 @@ class InputHandler(
     private var pointerStartX = 0
     private var pointerStartY = 0
     private var isDragging = false
+    
+    // Double-click detection
+    private var lastClickTime = 0.0
+    private var lastClickedObjectId: String? = null
+    private val doubleClickThreshold = 300.0 // milliseconds
+    
+    // Dialog state
+    private val showDialog = mutableStateOf(false)
+    private val dialogUsername = mutableStateOf("")
+    private val dialogIsPlayer = mutableStateOf(false)
+    
+    // Dialog container ID
+    private val dialogContainerId = "other-player-dialog-container"
     
     /**
      * Sets up keyboard input handling.
@@ -102,21 +122,103 @@ class InputHandler(
         // Check if an object is selected or being dragged
         val isObjectSelected = objectManager?.getSelectedObject() != null
         val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
+
+        console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
         
-        // If an object is selected or being dragged, handle object manipulation instead of player/camera movement
+        // Always handle object hovering for pointer move events to highlight objects
+        if (info.type == PointerEventTypes.POINTERMOVE) {
+            handleObjectHovering()
+        }
+        
+        // Handle object selection on pointer down
+        if (info.type == PointerEventTypes.POINTERDOWN && objectManager != null) {
+            // Use ray casting to find the object under the pointer
+            val ray = scene.createPickingRay(
+                scene.pointerX,
+                scene.pointerY,
+                Matrix.Identity(),
+                cameraController.getCamera()
+            )
+            
+            // Check for intersection with object meshes
+            var closestDistance = Float.MAX_VALUE
+            var closestObjectId: String? = null
+            
+            // Get the object meshes
+            val objectMeshes = objectManager.getObjectMeshes()
+            
+            // Check each object mesh for intersection
+            for ((objectId, meshes) in objectMeshes) {
+                meshes.forEach { mesh ->
+                    val hit = ray.intersectsMesh(mesh)
+                    if (hit.pickedPoint != null) {
+                        val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                        if (distance < closestDistance) {
+                            closestDistance = distance
+                            closestObjectId = objectId
+                            console.log("[POINTER_DOWN] Found intersection with object: $objectId at distance: $distance")
+                        }
+                    }
+                }
+            }
+            
+            // If we found an object, select it
+            if (closestObjectId != null) {
+                console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
+                objectManager.selectObject(closestObjectId)
+                
+                // Check for double-click
+                val currentTime = window.performance.now()
+                if (closestObjectId == lastClickedObjectId && 
+                    (currentTime - lastClickTime) < doubleClickThreshold) {
+                    // This is a double-click on the same object
+                    console.log("[POINTER_DOWN] Double-click detected on object: $closestObjectId")
+                    
+                    // Create and dispatch a custom event for object double-click
+                    val doubleClickEvent = createObjectDoubleClickEvent(closestObjectId)
+                    window.dispatchEvent(doubleClickEvent)
+                }
+                
+                // Update last click info for future double-click detection
+                lastClickTime = currentTime
+                lastClickedObjectId = closestObjectId
+            } else {
+                // If we didn't click on an object, check if we clicked on a world mesh
+                // and deselect any selected object
+                val worldMeshes = playerController.getWorldMeshes()
+                val player = playerController.getCollider()
+                val moveCircle = playerController.getMoveCircle()
+                
+                var clickedOnWorldMesh = false
+                
+                for (mesh in worldMeshes) {
+                    // Skip player and move circle meshes
+                    if (mesh === player || mesh === moveCircle) continue
+                    
+                    val hit = ray.intersectsMesh(mesh)
+                    if (hit.pickedPoint != null) {
+                        clickedOnWorldMesh = true
+                        break
+                    }
+                }
+                
+                if (clickedOnWorldMesh) {
+                    // If we clicked on a world mesh, deselect any selected object
+                    val wasObjectDeselected = objectManager.deselectObject()
+                    if (wasObjectDeselected) {
+                        console.log("[POINTER_DOWN] Deselected object by clicking on world mesh")
+                    }
+                }
+            }
+        }
+        
+        // If an object is selected or being dragged, handle object manipulation
         if (isObjectSelected || isObjectBeingDragged) {
             // If we just started object manipulation, disable camera inputs
             if (cameraInputsEnabled) {
                 disableCameraInputs()
                 cameraInputsEnabled = false
                 console.log("Camera inputs disabled for object manipulation")
-            }
-            
-            // For POINTERMOVE events during dragging, we need to prevent any camera movement
-            if (info.type == PointerEventTypes.POINTERMOVE && isObjectDragging) {
-                // We're already handling this in the object manipulation method
-                // Just log for debugging
-                console.log("Handling pointer move during object dragging")
             }
             
             handleObjectManipulation(info)
@@ -128,11 +230,6 @@ class InputHandler(
                 cameraInputsEnabled = true
                 console.log("Camera inputs re-enabled after object manipulation")
             }
-        }
-        
-        // Handle object hovering for non-dragging pointer moves
-        if (info.type == PointerEventTypes.POINTERMOVE && !isObjectBeingDragged) {
-            handleObjectHovering()
         }
         
         // Normal player/camera movement handling
@@ -162,8 +259,8 @@ class InputHandler(
             }
             
             PointerEventTypes.POINTERUP -> {
-                // If it was a click (not a drag) and player exists, handle movement
-                if (!isDragging) {
+                // If it was a click (not a drag) and no object is selected, handle movement
+                if (!isDragging && !isObjectSelected) {
                     handleClickToMove()
                 }
                 
@@ -180,30 +277,16 @@ class InputHandler(
      * Disables camera inputs to prevent camera movement during object manipulation
      */
     private fun disableCameraInputs() {
-        val camera = cameraController.getCamera()
-        
-        // First detach all controls
-        camera.detachControl()
-        
-        // Also disable specific input types to ensure no camera movement during dragging
-        camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
-        camera.inputs.removeByType("ArcRotateCameraMouseWheelInput")
-        camera.inputs.removeByType("ArcRotateCameraPointersInput")
-        
-        console.log("Camera inputs disabled for object dragging")
+        // Use the CameraController to disable camera inputs
+        cameraController.disableCameraInputs()
     }
     
     /**
      * Re-enables camera inputs after object manipulation is complete
      */
     private fun enableCameraInputs() {
-        val camera = cameraController.getCamera()
-        
-        // Re-attach all controls with preventDefaultBehavior set to true
-        // This prevents the browser's default behavior for these events
-        camera.attachControl(true)
-        
-        console.log("Camera inputs re-enabled")
+        // Use the CameraController to enable camera inputs
+        cameraController.enableCameraInputs()
     }
     
     /**
@@ -218,6 +301,7 @@ class InputHandler(
         when (info.type) {
             PointerEventTypes.POINTERDOWN -> {
                 // Track pointer down state for potential object dragging
+                console.log("[POINTER] DOWN", objectManager)
                 isPointerDown = true
                 pointerStartX = scene.pointerX
                 pointerStartY = scene.pointerY
@@ -225,7 +309,10 @@ class InputHandler(
             
             PointerEventTypes.POINTERMOVE -> {
                 // If pointer is down, we might be dragging an object
-                if (isPointerDown && objectManager != null) {
+                if (isPointerDown) {
+                    console.log("[POINTER] MOVE", objectManager)
+                    val objectManager = objectManager!!
+
                     val selectedObjectId = objectManager.getSelectedObject()
                     
                     // If we have a selected object and we're not already dragging
@@ -315,9 +402,10 @@ class InputHandler(
             }
             
             PointerEventTypes.POINTERUP -> {
+                console.log("[POINTER] UP", objectManager)
                 // End dragging if we were dragging an object
-                if (isObjectDragging && objectManager != null) {
-                    objectManager.endDragging()
+                if (isObjectDragging) {
+                    objectManager!!.endDragging()
                     isObjectDragging = false
                     draggingObjectId = null
                     
@@ -336,6 +424,9 @@ class InputHandler(
         }
     }
     
+    // Track if we're hovering over a player
+    private var isHoveringOverPlayer = false
+    
     /**
      * Handles object hovering to show outline effect
      */
@@ -353,36 +444,68 @@ class InputHandler(
             cameraController.getCamera()
         )
         
-        // Check for intersection with object meshes
-        var closestDistance = Float.MAX_VALUE
-        var closestObjectId: String? = null
+        // First check for intersection with player meshes
+        val otherPlayersController = SceneManager.getOtherPlayersController()
+        var isHoveringPlayer = false
         
-        // Get the number of object meshes
-        val objectMeshes = objectManager.getObjectMeshes()
-        console.log("[DEBUG_HOVER] Checking ${objectMeshes.size} object meshes for hover")
-        
-        // Check each object mesh for intersection
-        for ((objectId, mesh) in objectMeshes) {
-            val hit = ray.intersectsMesh(mesh)
-            if (hit.pickedPoint != null) {
-                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                if (distance < closestDistance) {
-                    closestDistance = distance
-                    closestObjectId = objectId
-                    console.log("[DEBUG_HOVER] Found intersection with object: $objectId at distance: $distance")
+        if (otherPlayersController != null) {
+            val playerMeshes = otherPlayersController.getPlayerMeshes()
+            
+            for (mesh in playerMeshes) {
+                val hit = ray.intersectsMesh(mesh)
+                if (hit.pickedPoint != null) {
+                    // We're hovering over a player, change cursor to pointer
+                    document.body?.style?.cursor = "pointer"
+                    isHoveringPlayer = true
+                    isHoveringOverPlayer = true
+                    break
                 }
             }
         }
         
-        // If we found an object, highlight it
-        if (closestObjectId != null) {
-            console.log("[DEBUG_HOVER] Highlighting object: $closestObjectId")
-            val success = objectManager.highlightObject(closestObjectId)
-            console.log("[DEBUG_HOVER] Highlight success: $success")
-        } else {
-            // If no object is hovered, remove any existing highlight
-            console.log("[DEBUG_HOVER] No object found, removing highlight")
-            objectManager.unhighlightObject()
+        // If not hovering over a player, check for objects
+        if (!isHoveringPlayer) {
+            // Reset player hover state
+            if (isHoveringOverPlayer) {
+                isHoveringOverPlayer = false
+                // Only reset cursor if we were previously hovering over a player
+                // This allows the object manager to handle cursor for objects
+                document.body?.style?.cursor = "default"
+            }
+            
+            // Check for intersection with object meshes
+            var closestDistance = Float.MAX_VALUE
+            var closestObjectId: String? = null
+            
+            // Get the number of object meshes
+            val objectMeshes = objectManager.getObjectMeshes()
+            console.log("[DEBUG_HOVER] Checking ${objectMeshes.size} object meshes for hover")
+            
+            // Check each object mesh for intersection
+            for ((objectId, meshes) in objectMeshes) {
+                meshes.forEach { mesh ->
+                    val hit = ray.intersectsMesh(mesh)
+                    if (hit.pickedPoint != null) {
+                        val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                        if (distance < closestDistance) {
+                            closestDistance = distance
+                            closestObjectId = objectId
+                            console.log("[DEBUG_HOVER] Found intersection with object: $objectId at distance: $distance")
+                        }
+                    }
+                }
+            }
+            
+            // If we found an object, highlight it
+            if (closestObjectId != null) {
+                console.log("[DEBUG_HOVER] Highlighting object: $closestObjectId")
+                val success = objectManager.highlightObject(closestObjectId)
+                console.log("[DEBUG_HOVER] Highlight success: $success")
+            } else {
+                // If no object is hovered, remove any existing highlight
+                console.log("[DEBUG_HOVER] No object found, removing highlight")
+                objectManager.unhighlightObject()
+            }
         }
     }
     
@@ -397,20 +520,45 @@ class InputHandler(
             Matrix.Identity(),
             cameraController.getCamera()
         )
+    
+        // Get the other players controller
+        val otherPlayersController = main.components.SceneManager.getOtherPlayersController()
+    
+        // First check for intersection with other player meshes
+        if (otherPlayersController != null) {
+            val playerMeshes = otherPlayersController.getPlayerMeshes()
         
-        // Check for intersection with world meshes
+            for (mesh in playerMeshes) {
+                val hit = ray.intersectsMesh(mesh)
+                if (hit.pickedPoint != null) {
+                    // We clicked on another player
+                    val userId = otherPlayersController.getUserIdForMesh(mesh)
+                    if (userId != null) {
+                        // Get player data
+                        val playerData = otherPlayersController.getPlayerData(userId)
+                        if (playerData != null) {
+                            // Show the dialog with player data
+                            showOtherPlayerDialog(playerData.first, playerData.second)
+                            return // Don't move the player
+                        }
+                    }
+                }
+            }
+        }
+    
+        // If we didn't click on another player, proceed with normal click-to-move
         var closestDistance = Float.MAX_VALUE
         var closestPoint: Vector3? = null
-        
+    
         // Get world meshes for collision detection
         val worldMeshes = playerController.getWorldMeshes()
         val player = playerController.getCollider()
         val moveCircle = playerController.getMoveCircle()
-        
+    
         for (mesh in worldMeshes) {
             // Skip player and move circle meshes
             if (mesh === player || mesh === moveCircle) continue
-            
+        
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
                 val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
@@ -420,10 +568,69 @@ class InputHandler(
                 }
             }
         }
-        
+    
         // If we found a valid point, set it as the target
         if (closestPoint != null) {
             playerController.setTargetPosition(closestPoint)
+        }
+    }
+
+    /**
+     * Shows the dialog for interacting with another player
+     * 
+     * @param username The username of the player
+     * @param isPlayer Whether the user is a player (true) or visitor (false)
+     */
+    private fun showOtherPlayerDialog(username: String, isPlayer: Boolean) {
+        console.log("Clicked on player: $username (${if (isPlayer) "Player" else "Visitor"})")
+    
+        // Update dialog state
+        dialogUsername.value = username
+        dialogIsPlayer.value = isPlayer
+        showDialog.value = true
+    
+        // Create or get the dialog container
+        var container = document.getElementById(dialogContainerId)
+        if (container == null) {
+            container = document.createElement("div")
+            container.id = dialogContainerId
+            document.body?.appendChild(container)
+        }
+    
+        // Render the dialog
+        renderComposable(dialogContainerId) {
+            if (showDialog.value) {
+                OtherPlayerDialog(
+                    username = dialogUsername.value,
+                    isPlayer = dialogIsPlayer.value,
+                    onAddFriend = {
+                        // Handle Add Friend button click
+                        console.log("Add Friend clicked for player: ${dialogUsername.value}")
+                        // TODO: Implement friend request functionality
+                    
+                        // Close the dialog
+                        showDialog.value = false
+                    },
+                    onTrade = {
+                        // Handle Trade button click
+                        console.log("Trade clicked for player: ${dialogUsername.value}")
+                        // TODO: Implement trade functionality
+                    
+                        // Close the dialog
+                        showDialog.value = false
+                    },
+                    onClose = {
+                        // Handle Close button click
+                        console.log("Dialog closed for player: ${dialogUsername.value}")
+                    
+                        // Close the dialog
+                        showDialog.value = false
+                    }
+                )
+            } else {
+                // Render an empty div when dialog is not shown
+                Div {}
+            }
         }
     }
     

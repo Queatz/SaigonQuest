@@ -1,10 +1,10 @@
-# Saigon.Quest Development Guidelines
+*# Saigon.Quest Development Guidelines
 
 This document provides guidelines and instructions for developing and maintaining the Saigon.Quest project.
 
 ## Project Status
 
-Good news! The project is not in production yet, so we do not need to account for backwards compatibility!
+The project is not in production yet, so we do not need to account for backwards compatibility!
 
 ## Project Overview
 
@@ -39,12 +39,7 @@ The project uses Gradle for building. The main build tasks are:
 
 # Build the project
 ./gradlew build
-
-# Run the development server
-./gradlew run
 ```
-
-The `run` task is an alias for `jsBrowserDevelopmentRun`, which starts a webpack dev server on port 4080 and opens the application in a browser.
 
 ### Project Structure
 
@@ -65,27 +60,6 @@ The project uses several external JavaScript libraries, which are wrapped in Kot
 
 Located in `src/commonMain/kotlin/lib/Bjs.kt`, this wrapper provides access to the BabylonJS library for 3D graphics. The library is included as an npm dependency:
 
-```kotlin
-implementation(npm("@babylonjs/core", "8.18.0"))
-implementation(npm("@babylonjs/materials", "8.18.0"))
-```
-
-### QR Code Generation
-
-Located in `src/commonMain/kotlin/lib/Qr.kt`, this wrapper provides access to the @paulmillr/qr library for generating QR codes. The library is included as an npm dependency:
-
-```kotlin
-implementation(npm("@paulmillr/qr", "0.2.0"))
-```
-
-Usage example:
-```kotlin
-import lib.Qr
-
-// Generate a QR code
-val qrCode = Qr.createQR("https://example.com", "svg")
-```
-
 ### Marked (Markdown Rendering)
 
 Located in `src/commonMain/kotlin/lib/Marked.kt`, this wrapper provides access to the marked library for rendering Markdown to HTML. The library is included as an npm dependency:
@@ -94,12 +68,16 @@ Located in `src/commonMain/kotlin/lib/Marked.kt`, this wrapper provides access t
 implementation(npm("marked", "15.0.7"))
 ```
 
-## Architecture Guidelines
+## UI & UX Requirements
 
-Always try to take a two-step approach to all implementation of new code.
+Use sentence case for all UI.
 
-Step 1) The architected, reusable, clean part. The "how".
-Step 2) The actual implementation, with raw values, custom expressions, etc. The "what".
+## Architecture Requirements
+
+Always implement a proper system before jumping into code changes.
+
+Step 1) The architected, reusable, clean system.
+Step 2) The actual implementation, using the system.
 
 This ensures we are carefully building for the future, ensuring code flexibility and longevity,
 allowing the project to remain maintainable as it grows.
@@ -129,7 +107,3 @@ allowing the project to remain maintainable as it grows.
 - **Routing**: Use the Route sealed interface for type-safe routing, and the extension functions in RouterExtensions.kt for navigation.
 - **UI Components**: Place reusable UI components in the `main/components` package.
 - **Styling**: Use the theme system defined in `main/theme` for consistent styling.
-
-## Testing your changes
-
-**DO NOT** use `./gradlew run` as it runs a live server and will never complete!, use `./gradlew build` instead

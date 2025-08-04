@@ -9,15 +9,18 @@ import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.IOException
-import kotlin.time.Instant
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 object ArangoConfig {
     private const val HOST = "localhost"
@@ -71,11 +74,6 @@ object ArangoConfig {
         .build()
     
     val db: ArangoDatabase by lazy {
-        // DB must be created by root user
-        // if (!arangoDB.getDatabases().contains(DB_NAME)) {
-        //     arangoDB.createDatabase(DB_NAME)
-        // }
-
         val database = arangoDB.db(DB_NAME)
         
         // Initialize collections

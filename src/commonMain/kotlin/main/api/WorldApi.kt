@@ -21,7 +21,7 @@ object WorldApi {
     suspend fun getWorlds(): List<World> {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world") {
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
             }
             
             if (response.status.isSuccess()) {
@@ -88,7 +88,7 @@ object WorldApi {
             
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/world") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(world)
             }
             
@@ -121,7 +121,7 @@ object WorldApi {
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/world/$id") {
                 contentType(ContentType.Application.Json)
-                bearerAuth(UserApi.getToken() ?: "")
+                ApiClient.addAuthHeader(this)
                 setBody(world)
             }
             

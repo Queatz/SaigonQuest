@@ -1,7 +1,7 @@
 package main.components.nodeeditor
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import utils.json
 
 /**
  * Base interface for all node data types
@@ -60,7 +60,7 @@ data class EmptyNodeData(
  * Utility object for parsing and serializing node data
  */
 object NodeDataParser {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = utils.json
     
     /**
      * Parse node data from a JSON string based on node type and label
