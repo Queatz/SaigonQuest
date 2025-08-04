@@ -30,7 +30,8 @@ import models.WebSocketAction
  */
 class SceneObjectManager(
     private val scene: Scene,
-    private val cameraController: CameraController
+    private val cameraController: CameraController,
+    private var worldObjectManager: main.components.world.WorldObjectManager
 ) {
     
     // Currently selected object
@@ -498,6 +499,31 @@ class SceneObjectManager(
                         }
                         
                         console.log("[DEBUG_OBJECT] Successfully created 3D object: ${obj.key}")
+                        
+                        // Create status text if status is not empty and WorldObjectManager is available
+                        if (obj.status.isNotBlank()) {
+                            // Create a WorldObjectHandle for the node
+                            val handle = object : main.components.world.WorldObjectHandle {
+                                override val id: String = obj.key
+                                override var node: Node = node
+                                override fun remove() {
+                                    // No-op for now
+                                }
+                                override fun updateDirection(direction: main.components.world.CharacterDirection) {
+                                    // No-op for now
+                                }
+                                override fun updateActivity(activity: main.components.world.PlayerActivity?) {
+                                    // No-op for now
+                                }
+                                override fun getMeshes(): Array<AbstractMesh> {
+                                    return node.getChildMeshes(false)
+                                }
+                            }
+                            
+                            // Create status text
+                            worldObjectManager?.createObjectStatusText(handle, obj.status)
+                            console.log("[DEBUG_OBJECT] Created status text for object: ${obj.key}")
+                        }
                     },
                     onError = { errorMessage ->
                         console.error("[DEBUG_OBJECT] Error loading 3D model: $errorMessage")
@@ -763,6 +789,31 @@ class SceneObjectManager(
                     // Update the object position
                     node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
                     console.log("Updated object position: ${obj.key} to (${obj.position.x}, ${obj.position.y}, ${obj.position.z})")
+                    
+                    // Update status text if status is not empty and WorldObjectManager is available
+                    if (obj.status.isNotBlank()) {
+                        // Create a WorldObjectHandle for the node
+                        val handle = object : main.components.world.WorldObjectHandle {
+                            override val id: String = obj.key
+                            override var node: Node = node
+                            override fun remove() {
+                                // No-op for now
+                            }
+                            override fun updateDirection(direction: main.components.world.CharacterDirection) {
+                                // No-op for now
+                            }
+                            override fun updateActivity(activity: main.components.world.PlayerActivity?) {
+                                // No-op for now
+                            }
+                            override fun getMeshes(): Array<AbstractMesh> {
+                                return node.getChildMeshes(false)
+                            }
+                        }
+                        
+                        // Create status text
+                        worldObjectManager?.createObjectStatusText(handle, obj.status)
+                        console.log("[DEBUG_OBJECT] Updated status text for object: ${obj.key}")
+                    }
                 } else {
                     // Object doesn't exist in our scene yet, create it
                     console.log("Object not found in scene, creating it: ${obj.key}")

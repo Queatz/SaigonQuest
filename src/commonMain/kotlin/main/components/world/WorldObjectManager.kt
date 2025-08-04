@@ -80,14 +80,16 @@ class WorldObjectManager(private val scene: Scene) {
      * @param spriteSheet The sprite sheet to use
      * @param direction Initial direction
      * @param position Initial position
+     * @param activity Initial activity, or null for standing
      * @return A handle to the created character
      */
     fun createCharacter(
         spriteSheet: SpriteSheet,
         direction: CharacterDirection,
-        position: Vector3 = Vector3(0f, 0f, 0f)
+        position: Vector3 = Vector3(0f, 0f, 0f),
+        activity: PlayerActivity? = null
     ): WorldObjectHandle? {
-        val character = Character(spriteSheet, direction)
+        val character = Character(spriteSheet, direction, false, activity)
         character.position = position
         
         return addObject(character)
@@ -162,6 +164,41 @@ class WorldObjectManager(private val scene: Scene) {
     }
     
     /**
+     * Creates a status text billboard above an object
+     *
+     * This method creates a text billboard displaying the object's status
+     * 0.5 units above the object's position.
+     *
+     * @param objectHandle The handle to the object
+     * @param status The status text to display
+     * @return A handle to the created text billboard, or null if creation failed
+     */
+    fun createObjectStatusText(
+        objectHandle: WorldObjectHandle,
+        status: String
+    ): WorldObjectHandle? {
+        // Don't create status text if status is blank
+        if (status.isBlank()) {
+            return null
+        }
+        
+        // Get the object's position
+        val position = objectHandle.node.position
+        
+        // Create position for status text (0.5 units above the object)
+        val statusPosition = Vector3(position.x, position.y + 0.5f, position.z)
+        
+        // Create the text billboard
+        return createTextBillboard(
+            text = status,
+            position = statusPosition,
+            fontSize = 18,
+            textColor = "white",
+            backgroundColor = "#00000080" // Semi-transparent black background
+        )
+    }
+    
+    /**
      * Sets up WebSocket listeners for object updates
      */
     fun setupWebSocketListeners() {
@@ -215,6 +252,18 @@ class WorldObjectManager(private val scene: Scene) {
                 // Only update direction if this is a Character object
                 if (obj is Character) {
                     obj.direction = direction
+                }
+            }
+            
+            override fun updateActivity(activity: PlayerActivity?) {
+                console.log("[DEBUG_LOG] WorldObjectHandle: updateActivity called for object ${id} with activity ${activity?.name ?: "null (Standing)"}")
+                
+                // Only update activity if this is a Character object
+                if (obj is Character) {
+                    console.log("[DEBUG_LOG] WorldObjectHandle: Updating Character activity to ${activity?.name ?: "Standing"}")
+                    obj.activity = activity
+                } else {
+                    console.log("[DEBUG_LOG] WorldObjectHandle: Object is not a Character, ignoring activity update")
                 }
             }
             

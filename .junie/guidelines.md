@@ -95,6 +95,8 @@ allowing the project to remain maintainable as it grows.
 - **Avoid using inline styles:** Style definitions are in Styles.kt, Theme.kt, and new stylesheet files can be created as needed by adding an entry for them in Main.kt.
 - **Use `by remember`** when possible to avoid the need to reference and set using `.value`
 - **Use dark, mobile, desktop helpers**: change the colors and other styles based on the situation. 
+- Use trailing commas
+- Always put arguments on separate lines
 
 ## Code Style and Development Guidelines
 

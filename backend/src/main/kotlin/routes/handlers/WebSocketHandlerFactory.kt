@@ -33,6 +33,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.OBJECT_UPDATE -> ObjectUpdateHandler()
             WebSocketAction.USER_INTERACT -> PlayerInteractHandler()
             WebSocketAction.TRIGGER_OBJECT_EVENT -> TriggerObjectEventHandler()
+            WebSocketAction.UPDATE_PLAYER -> UpdatePlayerHandler()
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received
             null -> NullHandler()
         }

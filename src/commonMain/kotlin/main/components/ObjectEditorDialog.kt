@@ -45,6 +45,7 @@ fun ObjectEditorDialog(
     var title by remember { mutableStateOf(objectModel?.title ?: "") }
     var file by remember { mutableStateOf(objectModel?.file ?: "") }
     var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
+    var status by remember { mutableStateOf(objectModel?.status ?: "") }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -67,7 +68,8 @@ fun ObjectEditorDialog(
             objectModel.copy(
                 title = title,
                 file = file,
-                collection = collection
+                collection = collection,
+                status = status
             )
         } else {
             // Create new object
@@ -79,7 +81,8 @@ fun ObjectEditorDialog(
                 worldId = worldId,
                 position = models.Position(0f, 0f, 0f),
                 rotation = Rotation(0f, 0f, 0f),
-                scale = Scale(1f, 1f, 1f)
+                scale = Scale(1f, 1f, 1f),
+                status = status
             )
         }
         
@@ -187,6 +190,22 @@ fun ObjectEditorDialog(
                     )
                 }
                 
+                // Status field
+                Div {
+                    P {
+                        Text("Status")
+                    }
+                    Input(
+                        type = InputType.Text,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder("Status text (displayed above object)")
+                            value(status)
+                            onInput { event -> status = event.value }
+                        }
+                    )
+                }
+                
                 // Logic Editor preview
                 Div(
                     attrs = {
@@ -198,7 +217,8 @@ fun ObjectEditorDialog(
                                 objectModel!!.copy(
                                     title = title,
                                     file = file,
-                                    collection = collection
+                                    collection = collection,
+                                    status = status
                                 )
                             } else {
                                 Object(

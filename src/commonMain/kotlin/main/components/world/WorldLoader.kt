@@ -17,6 +17,7 @@ import main.components.shadow.ShadowManager
 import models.World
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.browser.window
 
 /**
  * Handles loading and initialization of the 3D world.
@@ -27,6 +28,29 @@ import kotlin.coroutines.resumeWithException
  * - Applying materials to world meshes
  */
 class WorldLoader(private val scene: Scene) {
+    
+    companion object {
+        // Callback to be executed when the world is loaded
+        private var onWorldLoadedCallback: (() -> Unit)? = null
+        
+        /**
+         * Register a callback to be executed when the world is loaded
+         * 
+         * @param callback The callback to execute
+         */
+        fun onWorldLoaded(callback: () -> Unit) {
+            onWorldLoadedCallback = callback
+        }
+        
+        /**
+         * Execute the onWorldLoaded callback if it exists
+         */
+        private fun executeWorldLoadedCallback() {
+            onWorldLoadedCallback?.invoke()
+            // Clear the callback after execution
+            onWorldLoadedCallback = null
+        }
+    }
     
     // World meshes for collision detection and interaction
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
@@ -126,6 +150,9 @@ class WorldLoader(private val scene: Scene) {
                         
                         // Resume the coroutine with the loaded meshes
                         continuation.resume(meshes)
+                        
+                        // Execute the world loaded callback
+                        executeWorldLoadedCallback()
                     },
                     onError = { _, message, exception ->
                         // Resume the coroutine with an exception

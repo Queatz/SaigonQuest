@@ -250,8 +250,12 @@ class TextBillboard(
     
     /**
      * Updates the billboard (called every frame)
+     * 
+     * @param deltaTime Time since last update in seconds
+     * @param camera Optional camera to use for display direction calculation
      */
-    override fun update(deltaTime: Float) {
+    override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
+        // TextBillboard doesn't need camera for updates
     }
     
     /**

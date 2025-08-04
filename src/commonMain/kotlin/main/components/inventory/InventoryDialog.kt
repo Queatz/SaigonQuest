@@ -12,53 +12,36 @@ import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
 import main.api.ItemApi
-import main.theme.Styles
-import main.theme.Theme
+import main.components.BaseDialog
+import main.components.DialogButton
 import models.Inventory
-import models.InventoryItem
 import models.Item
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginRight
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.right
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.vh
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.flexGrow
-import org.jetbrains.compose.web.css.fontWeight
-import org.jetbrains.compose.web.css.marginLeft
-import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
 
 /**
  * An inventory dialog that displays the user's inventory items.
@@ -71,6 +54,7 @@ fun InventoryDialog(onClose: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
     var draggedItemId by remember { mutableStateOf<String?>(null) }
+    var showCreateItemDialog by remember { mutableStateOf(false) }
     
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -162,67 +146,56 @@ fun InventoryDialog(onClose: () -> Unit) {
         draggedItemId = null
     }
     
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            // Add click outside to close
-            onClick { onClose() }
-        }
-    ) {
-        Div(
+    // Show Create Item Dialog if needed
+    if (showCreateItemDialog) {
+        CreateItemDialog(
+            onClose = { showCreateItemDialog = false },
+            onItemCreated = { newItem ->
+                // Refresh inventory after item creation
+                coroutineScope.launch {
+                    try {
+                        val userInventory = InventoryApi.getUserInventory()
+                        inventory = userInventory
+                        
+                        if (userInventory.itemOrder.isNotEmpty()) {
+                            val itemsList = ItemApi.getItemsByIds(userInventory.itemOrder)
+                            items = itemsList.associateBy { it.key }
+                        }
+                    } catch (error: Exception) {
+                        console.error("Error refreshing inventory", error)
+                    }
+                }
+            }
+        )
+    }
+    
+    // Header actions for the dialog
+    val headerActions: @Composable () -> Unit = {
+        Button(
             attrs = {
                 style {
-                    width(90.percent)
-                    property("max-width", "600px")
-                    height(80.vh)
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
+                    backgroundColor(rgba(0, 120, 255, 0.7))
+                    color(Color.white)
+                    property("border", "0")
+                    property("border-radius", "4px")
+                    padding(4.px, 8.px)
+                    marginRight(8.px)
+                    cursor("pointer")
+                    fontSize(14.px)
                 }
-                // Stop propagation to prevent closing when clicking inside the dialog
-                onClick { it.stopPropagation() }
+                onClick { showCreateItemDialog = true }
             }
         ) {
-            // Inventory header
-            Div(
-                attrs = {
-                    style {
-                        padding(16.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-                    }
-                }
-            ) {
-                H3(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
-                    }
-                ) {
-                    Text("Inventory")
-                }
-                
-                // Close button
-                Span(
-                    attrs = {
-                        style {
-                            fontSize(24.px)
-                            color(rgba(255, 255, 255, 0.7))
-                            cursor("pointer")
-                        }
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("×")
-                }
-            }
-            
-            // Inventory content
+            Text("+ New")
+        }
+    }
+    
+    BaseDialog(
+        onClose = onClose,
+        title = "Inventory",
+        headerActions = headerActions,
+        maxWidth = "600px",
+        content = {
             Div(
                 attrs = {
                     style {
@@ -263,7 +236,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text("Your inventory is empty.")
+                        Text("Your inventory is empty. Click '+ New' to create an item.")
                     }
                 } else {
                     // Display inventory items
@@ -288,35 +261,18 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     onDrop { event -> handleDrop(event.nativeEvent, itemId) }
                                 }
                             ) {
-                                // Item image
-                                Div(
-                                    attrs = {
-                                        style {
-                                            width(48.px)
-                                            height(48.px)
-                                            backgroundColor(rgba(100, 100, 100, 0.5))
-                                            marginRight(12.px)
-                                            property("border-radius", "4px")
-                                            
-                                            // Use assetIndex to display the correct sprite
-                                            if (item.file.isNotEmpty()) {
-                                                property("background-image", "url(${item.file})")
-                                                property("background-size", "320px 320px")
-                                                
-                                                // Calculate position based on assetIndex
-                                                val col = item.assetIndex % 10
-                                                val row = item.assetIndex / 10
-                                                property("background-position", "-${col * 32}px -${row * 32}px")
-                                            }
-                                        }
-                                    }
-                                ) {}
+                                // Use InventoryBox to render the item
+                                InventoryBox(
+                                    onClick = { /* No action on click */ },
+                                    item = item
+                                )
                                 
                                 // Item details
                                 Div(
                                     attrs = {
                                         style {
                                             flexGrow(1)
+                                            marginLeft(12.px)
                                         }
                                     }
                                 ) {
@@ -348,18 +304,9 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                                 
                                 // Use button
-                                Button(
-                                    attrs = {
-                                        style {
-                                            padding(6.px, 12.px)
-                                            backgroundColor(Theme.colors.primary)
-                                            color(Theme.colors.onPrimary)
-                                            property("border", "0")
-                                            property("border-radius", "4px")
-                                            cursor("pointer")
-                                        }
-                                        onClick { handleUseItem(itemId) }
-                                    }
+                                DialogButton(
+                                    onClick = { handleUseItem(itemId) },
+                                    isPrimary = true
                                 ) {
                                     Text("Use")
                                 }
@@ -369,5 +316,5 @@ fun InventoryDialog(onClose: () -> Unit) {
                 }
             }
         }
-    }
+    )
 }

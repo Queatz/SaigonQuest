@@ -21,37 +21,17 @@ import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
-import main.components.inventory.InventoryDialog
-import main.components.isLayoutAdjustmentNeeded
-import main.components.nodeeditor.LogicEditorDialog
-import main.components.`object`.ObjectsDialog
-import main.components.`object`.ObjectsPanel
-import main.theme.NodeEditorStyles.errorMessage
+import main.components.inventory.InventoryTray
 import main.theme.Styles
 import main.utils.PathUtils
-import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
+import main.utils.rememberButtonPositionTracker
 import main.utils.toggleFullscreen
 import models.Object
 import models.User
 import models.World
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.bottom
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.vh
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.DOMRect
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 
@@ -164,11 +144,10 @@ fun WorldUI() {
     // State for current user
     var currentUser by remember { mutableStateOf<User?>(null) }
 
-    // State for tutorial bubble
-    var isTutorialBubbleVisible by remember { mutableStateOf(true) }
+    // Tutorial manager
+    val tutorialManager = remember { TutorialManager() }
     
-    // State for profile button position
-    var profileButtonRect by remember { mutableStateOf<DOMRect?>(null) }
+    // Button positions are now tracked by ButtonPositionTracker in the TutorialBubbleManager
     
     // State for current world
     var currentWorld by remember { mutableStateOf<World?>(null) }
@@ -223,12 +202,7 @@ fun WorldUI() {
     DisposableEffect(Unit) {
         val resizeListener: (dynamic) -> Unit = {
             isMobile.value = window.innerWidth <= 960
-            
-            // Update profile button position on resize
-            val profileButtonElement = getDocument().getElementById("profileButton")
-            if (profileButtonElement != null) {
-                profileButtonRect = profileButtonElement.getBoundingClientRectSafe()
-            }
+            // Button positions are now tracked by ButtonPositionTracker
         }
         
         // Handle object double-click events
@@ -257,11 +231,7 @@ fun WorldUI() {
         window.addEventListener("resize", resizeListener)
         window.addEventListener("objectDoubleClick", objectDoubleClickListener)
         
-        // Initial position calculation
-        val profileButtonElement = getDocument().getElementById("profileButton")
-        if (profileButtonElement != null) {
-            profileButtonRect = profileButtonElement.getBoundingClientRectSafe()
-        }
+        // Button positions are now tracked by ButtonPositionTracker
         
         onDispose {
             window.removeEventListener("resize", resizeListener)
@@ -367,9 +337,16 @@ fun WorldUI() {
         ) {
             // QR code button (not part of the panel system)
             CircleButton(
-                onClick = { isQrDialogOpen = true },
+                onClick = { 
+                    isQrDialogOpen = true
+                    // If this is the current tutorial step, advance to the next step
+                    if (tutorialManager.currentStep is TutorialStep.ShareWorld) {
+                        tutorialManager.advanceToNextStep()
+                    }
+                },
                 icon = "📱",
-                badgeCount = 0
+                badgeCount = 0,
+                id = "qrButton"
             )
 
             // World Chat button
@@ -380,17 +357,24 @@ fun WorldUI() {
                     if (currentPanel != SidePanelState.Chat) {
                         unreadChatCount = 0
                     }
+                    // If this is the current tutorial step, advance to the next step
+                    if (tutorialManager.currentStep is TutorialStep.OpenChat) {
+                        tutorialManager.advanceToNextStep()
+                    }
                 },
                 icon = "💬",
                 badgeCount = unreadChatCount,
-                isChat = true
+                isChat = true,
+                id = "chatButton"
             )
             
             // My profile button
             CircleButton(
                 onClick = { 
-                    // Hide the tutorial bubble when profile button is clicked
-                    isTutorialBubbleVisible = false
+                    // If this is the current tutorial step, advance to the next step
+                    if (tutorialManager.currentStep is TutorialStep.CreatePlayer) {
+                        tutorialManager.advanceToNextStep()
+                    }
                     togglePanel(SidePanelState.Profile) 
                 },
                 icon = "👤",
@@ -400,13 +384,15 @@ fun WorldUI() {
         }
         
         // Inventory tray (center bottom)
-        InventoryTray(
-            onOpenInventory = { 
-                updatePanelState(SidePanelState.Inventory) 
-            },
-            currentPanel = currentPanel,
-            isMobile = isMobile
-        )
+        if (currentUser?.isPlayer == true) {
+            InventoryTray(
+                onOpenInventory = {
+                    updatePanelState(SidePanelState.Inventory)
+                },
+                currentPanel = currentPanel,
+                isMobile = isMobile
+            )
+        }
         
         // Side Panel
         SidePanel(
@@ -511,6 +497,19 @@ fun WorldUI() {
                             ).apply {
                                 key = "player-" + Random.nextInt(1000)
                             }
+                            
+                            // Notify other clients that this visitor is now a player
+                            scope.launch {
+                                try {
+                                    WebSocketApi.updatePlayer(username, true)
+                                    
+                                    // Update the player's own username text
+                                    SceneManager.getPlayerController()?.updatePlayerName(username)
+                                } catch (e: Exception) {
+                                    console.error("Error updating player status", e)
+                                }
+                            }
+                            
                             updatePanelState(SidePanelState.None)
                         }
                     },
@@ -525,6 +524,19 @@ fun WorldUI() {
                             ).apply {
                                 key = "player-" + Random.nextInt(1000)
                             }
+                            
+                            // Notify other clients that this visitor is now a player
+                            scope.launch {
+                                try {
+                                    WebSocketApi.updatePlayer(username, true)
+                                    
+                                    // Update the player's own username text
+                                    SceneManager.getPlayerController()?.updatePlayerName(username)
+                                } catch (e: Exception) {
+                                    console.error("Error updating player status", e)
+                                }
+                            }
+                            
                             updatePanelState(SidePanelState.None)
                         }
                     }
@@ -535,18 +547,22 @@ fun WorldUI() {
         // Bottom text with copyright information
         BottomText()
         
-        // Tutorial bubble for non-player users - positioned at root level to avoid affecting parent layout
-        if (currentUser != null && !currentUser!!.isPlayer && isTutorialBubbleVisible && profileButtonRect != null) {
-            // Calculate position based on the profile button's bounding box
-            val buttonRect = profileButtonRect!!
-            val bubbleLeft = buttonRect.left - 120 // Position to the left of the profile button
-            val bubbleTop = buttonRect.top + (buttonRect.height / 2) - 15 // Align vertically with the middle of the button
+        // Tutorial bubbles for non-player users - using the TutorialBubbleManager for more reusable code
+        if (currentUser != null && !currentUser!!.isPlayer) {
+            // Create a list of button IDs to track
+            val buttonIds = remember { listOf("profileButton", "chatButton", "qrButton") }
             
-            TutorialBubble(
-                text = "Create your player",
-                positionLeft = bubbleLeft.toInt(),
-                positionTop = bubbleTop.toInt(),
-                onDismiss = { isTutorialBubbleVisible = false }
+            // Create a button position tracker
+            val buttonPositionTracker = rememberButtonPositionTracker(buttonIds)
+            
+            // Render tutorial bubbles using the TutorialBubbleManager
+            TutorialBubbleManager(
+                tutorialManager = tutorialManager,
+                buttonPositionTracker = buttonPositionTracker,
+                isVisible = true,
+                defaultPosition = BubblePosition.LEFT,
+                horizontalOffset = -120,
+                verticalOffset = -15
             )
         }
     }

@@ -11,6 +11,7 @@ import models.PlayerInteractData
 import models.PlayerPositionData
 import models.Position
 import models.TriggerEventData
+import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
@@ -238,6 +239,16 @@ object WebSocketApi {
                         WebSocketAction.USER_JOIN -> logDebug("WebSocketApi: Received USER_JOIN message")
                         WebSocketAction.USER_LEAVE -> logDebug("WebSocketApi: Received USER_LEAVE message")
                         WebSocketAction.UPDATE_PLAYER_POSITION -> logDebug("WebSocketApi: Received UPDATE_PLAYER_POSITION message")
+                        WebSocketAction.UPDATE_PLAYER -> {
+                            console.log("[DEBUG_LOG] WebSocketApi: Received UPDATE_PLAYER message in onmessage handler")
+                            console.log("[DEBUG_LOG] WebSocketApi: UPDATE_PLAYER message data: ${message.data}")
+                            try {
+                                val updateData = ApiClient.json.decodeFromString<UpdatePlayerData>(message.data)
+                                console.log("[DEBUG_LOG] WebSocketApi: UPDATE_PLAYER parsed data: userId=${updateData.userId}, name=${updateData.name}, status=${updateData.status ?: "null"}")
+                            } catch (e: Exception) {
+                                console.error("[DEBUG_LOG] WebSocketApi: Error parsing UPDATE_PLAYER data in onmessage handler", e)
+                            }
+                        }
                         else -> logDebug("WebSocketApi: Received ${message.action} message")
                     }
                     
@@ -588,6 +599,35 @@ object WebSocketApi {
             return false
         }
     }
+    
+    /**
+     * Send a message to the WebSocket server with an UpdatePlayerData
+     * 
+     * @return true if the message was sent, false otherwise
+     */
+    private fun sendUpdatePlayerMessage(action: WebSocketAction, data: UpdatePlayerData): Boolean {
+        if (!checkConnection()) return false
+        
+        try {
+            console.log("Preparing to send player update with action: $action")
+            val serializedData = ApiClient.json.encodeToString(data)
+            console.log("Serialized player update data: $serializedData")
+            
+            val message = WebSocketMessage.fromEnum(action, serializedData)
+            console.log("Created WebSocketMessage: action=${message.action}, data length=${message.data.length}")
+            
+            val messageString = ApiClient.json.encodeToString(message)
+            console.log("Final serialized message to send: $messageString")
+            
+            socket?.send(messageString)
+            console.log("Player update sent successfully: userId=${data.userId}, status=${data.status ?: "None"}")
+            return true
+        } catch (e: Exception) {
+            console.error("Error sending update player message", e)
+            _lastError = "Error sending message: ${e.message}"
+            return false
+        }
+    }
 
     /**
      * Add an object to the world
@@ -802,6 +842,94 @@ object WebSocketApi {
         }
         
         return success
+    }
+    
+    /**
+     * Update player details
+     * 
+     * This sends the player's updated details to all other clients in the world.
+     * Used when a visitor becomes a player or when player details are updated.
+     * 
+     * @param name The player's name
+     * @param isPlayer True if this is a player (authenticated user), false if it's a visitor
+     * @param activity The player's current activity (null means standing)
+     * @param status The player's status message (null means no status)
+     * @return true if the update was sent successfully, false otherwise
+     */
+    suspend fun updatePlayer(
+        name: String, 
+        isPlayer: Boolean, 
+        activity: main.components.world.PlayerActivity? = null,
+        status: String? = null
+    ): Boolean {
+        try {
+            if (!_isConnected) {
+                console.warn("Cannot update player details: WebSocket not connected")
+                return false
+            }
+
+            val user = UserApi.getCurrentUser()
+            val updateData = UpdatePlayerData(
+                userId = user.key,
+                name = name,
+                isPlayer = isPlayer,
+                activity = activity?.name,
+                status = status
+            )
+
+            val success = sendUpdatePlayerMessage(WebSocketAction.UPDATE_PLAYER, updateData)
+
+            if (success) {
+                console.log("Player update sent successfully: name=$name, isPlayer=$isPlayer, activity=${activity?.name ?: "Standing"}, status=${status ?: "None"}")
+            } else {
+                console.error("Failed to send player update: ${_lastError ?: "Unknown error"}")
+            }
+
+            return success
+        } catch (e: Exception) {
+            console.error("Error updating player details", e)
+            _lastError = "Error updating player details: ${e.message}"
+            return false
+        }
+    }
+    
+    /**
+     * Update player status
+     * 
+     * This sends the player's updated status to all other clients in the world.
+     * 
+     * @param status The player's status message
+     * @return true if the update was sent successfully, false otherwise
+     */
+    suspend fun updatePlayerStatus(status: String): Boolean {
+        try {
+            if (!_isConnected) {
+                console.warn("Cannot update player status: WebSocket not connected")
+                return false
+            }
+
+            val user = UserApi.getCurrentUser()
+            val updateData = UpdatePlayerData(
+                userId = user.key,
+                name = user.username,
+                isPlayer = true,
+                status = status
+            )
+
+            val success = sendUpdatePlayerMessage(WebSocketAction.UPDATE_PLAYER, updateData)
+
+            if (success) {
+                console.log("Player status update sent successfully: status=$status")
+            } else {
+                console.error("Failed to send player status update: ${_lastError ?: "Unknown error"}")
+            }
+
+            return success
+        } catch (e: Exception) {
+            console.error("Error updating player status", e)
+            _lastError = "Error updating player status: ${e.message}"
+            return false
+        }
     }
     
     /**
@@ -1112,6 +1240,31 @@ object WebSocketApi {
                 console.error("Error parsing player position data", e)
             }
         }
+    }
+    
+    /**
+     * Add a listener for player update events
+     * 
+     * @param listener A function that takes an UpdatePlayerData and returns Unit
+     */
+    fun addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit) {
+        console.log("[DEBUG_LOG] WebSocketApi: Adding UPDATE_PLAYER listener")
+        addListener(WebSocketAction.UPDATE_PLAYER) { message ->
+            try {
+                console.log("[DEBUG_LOG] WebSocketApi: Received UPDATE_PLAYER message: ${message.data}")
+                val updateData = ApiClient.json.decodeFromString<UpdatePlayerData>(message.data)
+                console.log("[DEBUG_LOG] WebSocketApi: Parsed UpdatePlayerData: userId=${updateData.userId}, name=${updateData.name}, status=${updateData.status ?: "null"}")
+                listener(updateData)
+                console.log("[DEBUG_LOG] WebSocketApi: UPDATE_PLAYER listener called successfully")
+            } catch (e: Exception) {
+                console.error("[DEBUG_LOG] WebSocketApi: Error parsing update player data", e)
+                console.error("[DEBUG_LOG] WebSocketApi: Raw message data: ${message.data}")
+            }
+        }
+        
+        // Log the number of listeners
+        val listenerCount = listeners[WebSocketAction.UPDATE_PLAYER]?.size ?: 0
+        console.log("[DEBUG_LOG] WebSocketApi: Now have $listenerCount UPDATE_PLAYER listeners")
     }
 
     /**

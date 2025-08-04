@@ -7,6 +7,7 @@ import main.api.ObjectApi
 import main.api.WebSocketApi
 import main.components.`object`.ObjectsDialog
 import main.components.`object`.ObjectsPanel
+import main.components.inventory.InventoryDialog
 import main.components.nodeeditor.LogicEditorDialog
 import main.utils.PathUtils
 import models.Object

@@ -97,4 +97,33 @@ object ItemApi {
             throw e
         }
     }
+    
+    /**
+     * Creates a new item
+     */
+    suspend fun createItem(item: Item): Item {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/items") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(item)
+            }
+            
+            if (response.status.isSuccess()) {
+                return response.body<Item>()
+            } else {
+                // Parse error response
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    // Fallback if response is not a valid ErrorResponse
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error creating item", e)
+            throw e
+        }
+    }
 }

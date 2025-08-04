@@ -857,7 +857,6 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(8.px)
         marginBottom(16.px)
-        backgroundColor(Theme.colors.surfaceVariant)
         property("border-radius", "4px")
     }
     

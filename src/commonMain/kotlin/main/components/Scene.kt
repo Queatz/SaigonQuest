@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import app.softwork.routingcompose.Router
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -16,11 +17,15 @@ import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
+import main.api.FriendApi
+import main.api.NotificationApi
 import main.api.UserApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
 import main.components.`object`.SceneObjectManager
+import main.components.player.FriendshipStatus
+import main.components.player.OtherPlayerDialog
 import main.components.player.OtherPlayersController
 import main.components.player.PlayerController
 import main.components.world.WorldLoader
@@ -79,6 +84,19 @@ fun SceneComponent(url: String) {
     // State to track if we're on mobile
     val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
     
+    // State for other player dialog
+    val showOtherPlayerDialog = remember { mutableStateOf(false) }
+    val otherPlayerUsername = remember { mutableStateOf("") }
+    val otherPlayerIsPlayer = remember { mutableStateOf(false) }
+    val isCurrentUserPlayer = remember { mutableStateOf(true) } // Assume the current user is a player for now
+    val otherPlayerFriendshipStatus = remember { mutableStateOf(FriendshipStatus.UNKNOWN) }
+    val otherPlayerIsLoading = remember { mutableStateOf(false) }
+    val otherPlayerErrorMessage = remember { mutableStateOf<String?>(null) }
+    val otherPlayerId = remember { mutableStateOf("") }
+    
+    // Coroutine scope for friendship-related operations
+    val scope = rememberCoroutineScope()
+    
     // State to track low graphics mode
     val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
     
@@ -108,6 +126,18 @@ fun SceneComponent(url: String) {
                 isLowGraphicsMode.value = currentMode
             }
             delay(100) // Check every 100ms
+        }
+    }
+    
+    // Check if the current user is a player
+    LaunchedEffect(Unit) {
+        try {
+            val currentUser = UserApi.getCurrentUser()
+            isCurrentUserPlayer.value = currentUser.isPlayer
+            console.log("Current user is a ${if (currentUser.isPlayer) "Player" else "Visitor"} account")
+        } catch (e: Exception) {
+            console.error("Error checking current user type: ${e.message}")
+            isCurrentUserPlayer.value = false // Default to false if there's an error
         }
     }
 
@@ -263,6 +293,183 @@ fun SceneComponent(url: String) {
         WorldUI()
     }
 
+    // Friendship-related functions
+    
+    /**
+     * Checks the friendship status with another player
+     */
+    fun checkFriendshipStatus(coroutineScope: CoroutineScope) {
+        coroutineScope.launch {
+            try {
+                otherPlayerIsLoading.value = true
+                
+                // Check if they are already friends
+                val isFriend = FriendApi.checkFriendship(otherPlayerId.value)
+                if (isFriend) {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.FRIENDS
+                    otherPlayerIsLoading.value = false
+                    return@launch
+                }
+                
+                // Check if there's a pending friend request from the other player
+                val friendRequests = NotificationApi.getNotificationsByType("friend_request")
+                val requestFromFriend = friendRequests.find { notification -> notification.relatedId == otherPlayerId.value }
+                
+                if (requestFromFriend != null) {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.REQUEST_RECEIVED
+                } else {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+                }
+            } catch (e: Exception) {
+                console.error("Error checking friendship status", e)
+                otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+            } finally {
+                otherPlayerIsLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Sends a friend request to another player
+     */
+    fun sendFriendRequest() {
+        if (otherPlayerId.value.isEmpty()) {
+            otherPlayerErrorMessage.value = "Could not identify player"
+            return
+        }
+        
+        otherPlayerIsLoading.value = true
+        otherPlayerErrorMessage.value = null
+        
+        val coroutineScope = CoroutineScope(Dispatchers.Main)
+        coroutineScope.launch {
+            try {
+                val notification = FriendApi.sendFriendRequest(otherPlayerId.value)
+                
+                if (notification != null) {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.REQUEST_SENT
+                } else {
+                    otherPlayerErrorMessage.value = "Failed to send friend request"
+                }
+            } catch (e: Exception) {
+                console.error("Error sending friend request", e)
+                otherPlayerErrorMessage.value = "Error: ${e.message}"
+            } finally {
+                otherPlayerIsLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Accepts a friend request from another player
+     */
+    fun acceptFriendRequest() {
+        if (otherPlayerId.value.isEmpty()) {
+            otherPlayerErrorMessage.value = "Could not identify player"
+            return
+        }
+        
+        otherPlayerIsLoading.value = true
+        otherPlayerErrorMessage.value = null
+        
+        val coroutineScope = CoroutineScope(Dispatchers.Main)
+        coroutineScope.launch {
+            try {
+                // Find the notification for this friend request
+                val friendRequests = NotificationApi.getNotificationsByType("friend_request")
+                val requestFromFriend = friendRequests.find { notification -> notification.relatedId == otherPlayerId.value }
+                
+                if (requestFromFriend != null) {
+                    // Accept the friend request
+                    val friend = NotificationApi.acceptFriendRequest(requestFromFriend)
+                    
+                    if (friend != null) {
+                        otherPlayerFriendshipStatus.value = FriendshipStatus.FRIENDS
+                    } else {
+                        otherPlayerErrorMessage.value = "Failed to accept friend request"
+                    }
+                } else {
+                    otherPlayerErrorMessage.value = "Friend request not found"
+                }
+            } catch (e: Exception) {
+                console.error("Error accepting friend request", e)
+                otherPlayerErrorMessage.value = "Error: ${e.message}"
+            } finally {
+                otherPlayerIsLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Removes a friend
+     */
+    fun removeFriend() {
+        if (otherPlayerId.value.isEmpty()) {
+            otherPlayerErrorMessage.value = "Could not identify player"
+            return
+        }
+        
+        otherPlayerIsLoading.value = true
+        otherPlayerErrorMessage.value = null
+        
+        val coroutineScope = CoroutineScope(Dispatchers.Main)
+        coroutineScope.launch {
+            try {
+                val success = FriendApi.removeFriend(otherPlayerId.value)
+                
+                if (success) {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+                    // Close the dialog
+                    showOtherPlayerDialog.value = false
+                } else {
+                    otherPlayerErrorMessage.value = "Failed to remove friend"
+                }
+            } catch (e: Exception) {
+                console.error("Error removing friend", e)
+                otherPlayerErrorMessage.value = "Error: ${e.message}"
+            } finally {
+                otherPlayerIsLoading.value = false
+            }
+        }
+    }
+
+    // Show other player dialog if requested
+    if (showOtherPlayerDialog.value) {
+        OtherPlayerDialog(
+            username = otherPlayerUsername.value,
+            isPlayer = otherPlayerIsPlayer.value,
+            isCurrentUserPlayer = isCurrentUserPlayer.value,
+            friendshipStatus = otherPlayerFriendshipStatus.value,
+            isLoading = otherPlayerIsLoading.value,
+            errorMessage = otherPlayerErrorMessage.value,
+            onAddFriend = {
+                scope.launch {
+                    when (otherPlayerFriendshipStatus.value) {
+                        FriendshipStatus.NOT_FRIENDS -> sendFriendRequest()
+                        FriendshipStatus.REQUEST_RECEIVED -> acceptFriendRequest()
+                        else -> { /* Do nothing for other states */
+                        }
+                    }
+                }
+            },
+            onRemoveFriend = {
+                removeFriend()
+            },
+            onTrade = {
+                // Handle Trade button click
+                console.log("Trade clicked for player: ${otherPlayerUsername.value}")
+                // TODO: Implement trade functionality
+
+                // Close the dialog
+                showOtherPlayerDialog.value = false
+            },
+            onClose = {
+                // Close the dialog
+                showOtherPlayerDialog.value = false
+            }
+        )
+    }
+
     // Set up BabylonJS scene
     DisposableEffect(canvasId) {
         // Create a coroutine scope for async operations
@@ -317,14 +524,41 @@ fun SceneComponent(url: String) {
         SceneManager.setOtherPlayersController(otherPlayersController)
 
         val worldLoader = WorldLoader(scene)
-        val objectManager = SceneObjectManager(scene, cameraController)
         val worldObjectManager = WorldObjectManager(scene)
+        val objectManager = SceneObjectManager(scene, cameraController, worldObjectManager)
         
         // Register object manager with SceneManager for global access
         SceneManager.setObjectManager(objectManager)
         
         // Create input handler after object manager is registered
-        val inputHandler = InputHandler(scene, playerController, cameraController)
+        val inputHandler = InputHandler(
+            scene, 
+            playerController, 
+            cameraController,
+            onShowOtherPlayerDialog = { username, isPlayer ->
+                // Update dialog state
+                otherPlayerUsername.value = username
+                otherPlayerIsPlayer.value = isPlayer
+                otherPlayerFriendshipStatus.value = FriendshipStatus.UNKNOWN
+                otherPlayerIsLoading.value = false
+                otherPlayerErrorMessage.value = null
+                
+                // Get the player ID from the OtherPlayersController
+                val otherPlayers = SceneManager.getOtherPlayersController()
+                otherPlayerId.value = otherPlayers?.getUserIdForUsername(username) ?: ""
+                
+                // Check friendship status if we have a player ID
+                if (otherPlayerId.value.isNotEmpty()) {
+                    // Check friendship status
+                    checkFriendshipStatus(coroutineScope)
+                } else {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+                }
+                
+                // Show the dialog
+                showOtherPlayerDialog.value = true
+            }
+        )
 
         // Set up object drop handler
         val objectDropHandler: (Event) -> Unit = { event ->
@@ -360,7 +594,13 @@ fun SceneComponent(url: String) {
                 playerController.createPlayer(startPosition, worldObjectManager)
                 
                 // Initialize chat message listener
+                console.log("[DEBUG_LOG] Scene: Initializing chat message listener")
                 playerController.initializeChatMessageListener()
+                
+                // Initialize player status display
+                console.log("[DEBUG_LOG] Scene: Initializing player status display")
+                playerController.initializePlayerStatus()
+                console.log("[DEBUG_LOG] Scene: Player status initialization completed")
                 
                 // Register player mesh as shadow caster and receiver
                 playerController.getPlayerHandle()?.node?.let { playerMesh ->

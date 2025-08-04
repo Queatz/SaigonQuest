@@ -20,6 +20,7 @@ import main.components.world.WorldObjectManager
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
+import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
@@ -55,6 +56,12 @@ class OtherPlayersController(private val scene: Scene) {
     
     // Map of chat message removal timeouts by userId
     private val chatMessageTimeouts = mutableMapOf<String, Int>()
+    
+    // Map of status text billboard handles by userId
+    private val statusTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    
+    // Map of player update data by userId
+    private val playerUpdateData = mutableMapOf<String, UpdatePlayerData>()
     
     // Map of usernames by userId
     private val playerUsernames = mutableMapOf<String, String>()
@@ -194,6 +201,12 @@ class OtherPlayersController(private val scene: Scene) {
         WebSocketApi.addPlayerPositionListener { positionData ->
             console.log("OtherPlayersController: Received UPDATE_PLAYER_POSITION event: ${positionData.userId}")
             handlePlayerPosition(positionData)
+        }
+        
+        // Add listener for player updates
+        WebSocketApi.addUpdatePlayerListener { updateData ->
+            console.log("OtherPlayersController: Received UPDATE_PLAYER event: ${updateData.userId}, name: ${updateData.name}, isPlayer: ${updateData.isPlayer}")
+            handleUpdatePlayer(updateData)
         }
         
         // Add listener for chat messages
@@ -371,6 +384,87 @@ class OtherPlayersController(private val scene: Scene) {
                 username = playerUsernames[positionData.userId] // Use stored username
             )
             console.log("OtherPlayersController: Total players now: ${playerNodes.size}")
+        }
+    }
+    
+    /**
+     * Handle player update event
+     */
+    private fun handleUpdatePlayer(updateData: UpdatePlayerData) {
+        // Don't update for the current user
+        if (updateData.userId == myUserId) {
+            console.log("OtherPlayersController: Ignoring update event for current user")
+            return
+        }
+        
+        console.log("OtherPlayersController: Updating player: ${updateData.name} (${updateData.userId}), isPlayer: ${updateData.isPlayer}, activity: ${updateData.activity ?: "Standing"}, status: ${updateData.status ?: "None"}")
+        
+        // Store updated username and isPlayer flag
+        playerUsernames[updateData.userId] = updateData.name
+        playerIsPlayerFlags[updateData.userId] = updateData.isPlayer
+        
+        // Store the update data for later use (e.g., when chat message is removed)
+        playerUpdateData[updateData.userId] = updateData
+        
+        // Display status if provided and not blank
+        val status = updateData.status?.orEmpty() ?: ""
+        if (status.isNotBlank()) {
+            console.log("OtherPlayersController: Displaying status for ${updateData.userId}: $status")
+            displayPlayerStatus(updateData.userId, status)
+        } else {
+            // Remove status if it was previously displayed
+            removePlayerStatus(updateData.userId)
+        }
+        
+        // Update player activity if provided
+        if (updateData.activity != null || playerHandles[updateData.userId] != null) {
+            // Convert activity string to PlayerActivity enum
+            val activity = if (updateData.activity == "Sit") {
+                main.components.world.PlayerActivity.Sit
+            } else {
+                null // Standing
+            }
+            
+            // Update the player's activity
+            playerHandles[updateData.userId]?.let { handle ->
+                console.log("[DEBUG_LOG] OtherPlayersController: Updating activity for ${updateData.userId} to ${activity?.name ?: "Standing"}")
+                handle.updateActivity(activity)
+            }
+        }
+        
+        // Update username text billboard if it exists
+        usernameTextHandles[updateData.userId]?.let { textHandle ->
+            // Get the world object manager
+            val manager = worldObjectManager
+            if (manager == null) {
+                console.error("OtherPlayersController: WorldObjectManager not set, cannot update username text")
+                return
+            }
+            
+            // Get the player's position
+            val playerPosition = playerHandles[updateData.userId]?.position
+            if (playerPosition == null) {
+                console.error("OtherPlayersController: Player position not found, cannot update username text")
+                return
+            }
+            
+            // Remove existing text billboard
+            textHandle.remove()
+            
+            // Create a new text billboard with the updated username
+            val textPosition = Vector3(playerPosition.x, playerPosition.y + .5f, playerPosition.z)
+            val newTextHandle = manager.createTextBillboard(
+                text = updateData.name,
+                position = textPosition,
+                fontSize = 18,
+                textColor = "white"
+            )
+            
+            // Store the new text handle
+            if (newTextHandle != null) {
+                usernameTextHandles[updateData.userId] = newTextHandle
+                console.log("OtherPlayersController: Updated username text for ${updateData.userId} to ${updateData.name}")
+            }
         }
     }
     
@@ -660,6 +754,82 @@ class OtherPlayersController(private val scene: Scene) {
             textHandle.remove()
             chatMessageTextHandles.remove(userId)
             console.log("OtherPlayersController: Removed chat message for $userId")
+            
+            // Show status text again if available
+            val updateData = playerUpdateData[userId]
+            if (updateData != null) {
+                val status = updateData.status?.orEmpty() ?: ""
+                if (status.isNotBlank()) {
+                    console.log("OtherPlayersController: Restoring status after chat message removed for $userId: $status")
+                    displayPlayerStatus(userId, status)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Displays a player's status above their head
+     * 
+     * @param userId The ID of the user whose status should be displayed
+     * @param status The status text to display
+     */
+    fun displayPlayerStatus(userId: String, status: String) {
+        // Don't display empty status
+        if (status.isBlank()) {
+            removePlayerStatus(userId)
+            return
+        }
+        
+        // Don't display status for the current user (handled by PlayerController)
+        if (userId == myUserId) {
+            return
+        }
+        
+        // If chat message is showing, don't show status
+        if (chatMessageTextHandles[userId] != null) {
+            return
+        }
+        
+        // Get the world object manager
+        val manager = worldObjectManager ?: return
+        
+        // Get the player's position
+        val playerPosition = playerHandles[userId]?.position ?: return
+        
+        // Remove existing status text if any
+        removePlayerStatus(userId)
+        
+        // Calculate position above the username (adjust Y value as needed)
+        // Username is at y + .5f, so put status message at y + .8f (same as chat)
+        val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
+        
+        // Create the text billboard with the status message
+        val textHandle = manager.createTextBillboard(
+            text = status,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "white",
+            backgroundColor = "#00000080" // Semi-transparent black background
+        )
+        
+        // Store the text handle
+        if (textHandle != null) {
+            statusTextHandles[userId] = textHandle
+            console.log("OtherPlayersController: Displayed status for $userId: $status")
+        }
+    }
+    
+    /**
+     * Removes a player's status text
+     * 
+     * @param userId The ID of the user whose status should be removed
+     */
+    private fun removePlayerStatus(userId: String) {
+        // Remove the text billboard if it exists
+        statusTextHandles[userId]?.let { textHandle ->
+            textHandle.remove()
+            statusTextHandles.remove(userId)
+            console.log("OtherPlayersController: Removed status for $userId")
         }
     }
 
@@ -671,7 +841,9 @@ class OtherPlayersController(private val scene: Scene) {
      */
     fun getUserIdForMesh(mesh: dynamic): String? {
         // Check if the mesh is in the playerMeshes map
-        return playerNodes.entries.find { (_, playerMesh) -> playerMesh === mesh }?.key
+        return playerNodes.entries.find { (_, node) ->
+            node.getChildMeshes().any { it === mesh }
+        }?.key
     }
 
     /**
@@ -688,6 +860,17 @@ class OtherPlayersController(private val scene: Scene) {
         val isPlayer = playerIsPlayerFlags[userId] ?: false
     
         return Pair(username, isPlayer)
+    }
+    
+    /**
+     * Gets the user ID for a player by their username
+     * 
+     * @param username The username of the player
+     * @return The user ID, or null if the player is not found
+     */
+    fun getUserIdForUsername(username: String): String? {
+        // Find the entry in the playerUsernames map where the value matches the username
+        return playerUsernames.entries.find { (_, value) -> value == username }?.key
     }
 
     /**

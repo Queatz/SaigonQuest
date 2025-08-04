@@ -13,7 +13,10 @@ import io.ktor.websocket.*
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 import routes.configureChatRoutes
+import routes.configureFriendRoutes
 import routes.configureHealthRoutes
+import routes.configureInventoryRoutes
+import routes.configureItemRoutes
 import routes.configureNotificationRoutes
 import routes.configureObjectRoutes
 import routes.configureUserRoutes
@@ -68,6 +71,9 @@ fun Application.module() {
         configureObjectRoutes()
         configureChatRoutes()
         configureNotificationRoutes()
+        configureFriendRoutes()
+        configureInventoryRoutes()
+        configureItemRoutes()
         configureWebSocketRoutes()
     }
 }

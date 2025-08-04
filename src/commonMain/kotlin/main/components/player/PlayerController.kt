@@ -16,6 +16,7 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.world.CharacterDirection
+import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
@@ -61,8 +62,20 @@ class PlayerController(private val scene: Scene) {
     // Chat message timeout ID
     private var chatMessageTimeoutId: Int? = null
     
+    // Status text billboard handle
+    private var statusTextHandle: WorldObjectHandle? = null
+    
     // Current player direction
     private var playerDirection: CharacterDirection = CharacterDirection.S
+    
+    // Current player activity (null means standing)
+    private var playerActivity: PlayerActivity? = null
+    
+    // Time since last movement in seconds
+    private var timeSinceLastMovement = 0.0
+    
+    // Auto-sit timeout in seconds (5 minutes)
+    private val autoSitTimeout = 300.0 // 5 minutes = 300 seconds
     
     // Target position for click-to-move
     private var playerTargetPosition: Vector3? = null
@@ -196,6 +209,85 @@ class PlayerController(private val scene: Scene) {
 
     fun getPlayerHandle(): WorldObjectHandle? {
         return playerHandle
+    }
+    
+    /**
+     * Gets the current player activity.
+     * 
+     * @return The current activity, or null if standing
+     */
+    fun getPlayerActivity(): PlayerActivity? {
+        return playerActivity
+    }
+    
+    /**
+     * Sets the player activity.
+     * 
+     * @param activity The new activity, or null to stand
+     */
+    fun setPlayerActivity(activity: PlayerActivity?) {
+        console.log("[DEBUG_LOG] PlayerController: setPlayerActivity called with ${activity?.name ?: "null (Standing)"}")
+        
+        // Only update if the activity has changed
+        if (activity != playerActivity) {
+            console.log("[DEBUG_LOG] PlayerController: Activity changing from ${playerActivity?.name ?: "Standing"} to ${activity?.name ?: "Standing"}")
+            playerActivity = activity
+            
+            // Update the character's appearance
+            playerHandle?.let { handle ->
+                console.log("[DEBUG_LOG] PlayerController: Updating character activity to ${activity?.name ?: "Standing"}")
+                // Update the activity on the character
+                handle.updateActivity(activity)
+            } ?: console.log("[DEBUG_LOG] PlayerController: Warning - playerHandle is null, cannot update character activity")
+            
+            // Send activity update to other players via WebSocket
+            coroutineScope.launch {
+                try {
+                    // Check connection state using WebSocketConnectionManager
+                    if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                        val user = UserApi.getCurrentUser()
+                        val success = WebSocketApi.updatePlayer(
+                            name = user.username,
+                            isPlayer = user.isPlayer,
+                            activity = activity
+                        )
+                        if (!success) {
+                            console.warn("Failed to send player activity update: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                        } else {
+                            console.log("[DEBUG_LOG] PlayerController: Activity update sent to other players: ${activity?.name ?: "Standing"}")
+                        }
+                    } else {
+                        // Don't spam the console with warnings - only log occasionally
+                        if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
+                            console.warn("Cannot update player activity: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                        }
+                    }
+                } catch (e: Exception) {
+                    console.error("Error sending player activity update", e)
+                }
+            }
+            
+            console.log("PlayerController: Activity changed to ${activity?.name ?: "Standing"}")
+        } else {
+            console.log("[DEBUG_LOG] PlayerController: Activity unchanged (already ${activity?.name ?: "Standing"})")
+        }
+    }
+    
+    /**
+     * Toggles between sitting and standing.
+     */
+    fun toggleSitting() {
+        console.log("[DEBUG_LOG] PlayerController: toggleSitting called, current activity: ${playerActivity?.name ?: "Standing"}")
+        
+        if (playerActivity == PlayerActivity.Sit) {
+            // Currently sitting, so stand up
+            console.log("[DEBUG_LOG] PlayerController: Standing up")
+            setPlayerActivity(null)
+        } else {
+            // Currently standing, so sit down
+            console.log("[DEBUG_LOG] PlayerController: Sitting down")
+            setPlayerActivity(PlayerActivity.Sit)
+        }
     }
     
     /**
@@ -382,6 +474,7 @@ class PlayerController(private val scene: Scene) {
         val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
         
         var finalMoveDirection = Vector3.Zero()
+        var isPlayerMoving = false
         
         // Handle keyboard movement
         if (moveDirection.length() > 0f) {
@@ -392,6 +485,17 @@ class PlayerController(private val scene: Scene) {
             
             // Cancel click-to-move if keyboard movement is active
             stopMovement()
+            
+            // Player is moving
+            isPlayerMoving = true
+            
+            // If player is sitting, make them stand up when they move
+            if (playerActivity == PlayerActivity.Sit) {
+                setPlayerActivity(null)
+            }
+            
+            // Reset time since last movement
+            timeSinceLastMovement = 0.0
         }
         // Handle click-to-move
         else if (isMoving && playerTargetPosition != null) {
@@ -413,6 +517,28 @@ class PlayerController(private val scene: Scene) {
                 
                 // Update player direction based on movement
                 updatePlayerDirection(direction)
+                
+                // Player is moving
+                isPlayerMoving = true
+                
+                // If player is sitting, make them stand up when they move
+                if (playerActivity == PlayerActivity.Sit) {
+                    setPlayerActivity(null)
+                }
+                
+                // Reset time since last movement
+                timeSinceLastMovement = 0.0
+            }
+        }
+        
+        // If player is not moving, increment time since last movement
+        if (!isPlayerMoving) {
+            timeSinceLastMovement += deltaTime
+            
+            // If player has been inactive for 5 minutes and is not sitting, make them sit
+            if (timeSinceLastMovement >= autoSitTimeout && playerActivity != PlayerActivity.Sit) {
+                console.log("PlayerController: Auto-sitting after ${autoSitTimeout} seconds of inactivity")
+                setPlayerActivity(PlayerActivity.Sit)
             }
         }
 
@@ -608,6 +734,9 @@ class PlayerController(private val scene: Scene) {
         // Remove existing chat message if any
         removeChatMessage()
         
+        // Remove status text if any (will be restored when chat message is removed)
+        removePlayerStatus()
+        
         // Truncate message to first 16 characters
         val displayText = if (message.length > 16) message.substring(0, 16) else message
         
@@ -650,6 +779,18 @@ class PlayerController(private val scene: Scene) {
             textHandle.remove()
             chatMessageTextHandle = null
             console.log("PlayerController: Removed chat message")
+            
+            // Show status text again if available
+            coroutineScope.launch {
+                try {
+                    val user = UserApi.getCurrentUser()
+                    if (user.status.isNotBlank()) {
+                        displayPlayerStatus(user.status)
+                    }
+                } catch (e: Exception) {
+                    console.error("PlayerController: Error getting current user status", e)
+                }
+            }
         }
     }
 
@@ -686,6 +827,152 @@ class PlayerController(private val scene: Scene) {
         }
         
         console.log("PlayerController: Chat message listener initialized")
+    }
+    
+    /**
+     * Initializes the player status display
+     * 
+     * This method fetches the current user's status and displays it if not blank.
+     */
+    fun initializePlayerStatus() {
+        console.log("[DEBUG_LOG] PlayerController: initializePlayerStatus called")
+        console.log("[DEBUG_LOG] PlayerController: Initializing player status display")
+        
+        // Check if WorldObjectManager is set
+        if (worldObjectManager == null) {
+            console.error("[DEBUG_LOG] PlayerController: WorldObjectManager is null, cannot initialize status")
+            return
+        }
+        
+        // Check if player position is available
+        if (collider?.position == null) {
+            console.error("[DEBUG_LOG] PlayerController: Player position is null, cannot initialize status")
+            return
+        }
+        
+        coroutineScope.launch {
+            try {
+                console.log("[DEBUG_LOG] PlayerController: Fetching current user data")
+                val user = UserApi.getCurrentUser()
+                console.log("[DEBUG_LOG] PlayerController: Current user: ${user.username}, status: '${user.status}'")
+                
+                if (user.status.isNotBlank()) {
+                    console.log("[DEBUG_LOG] PlayerController: Displaying initial status: '${user.status}'")
+                    displayPlayerStatus(user.status)
+                } else {
+                    console.log("[DEBUG_LOG] PlayerController: No initial status to display (status is blank)")
+                }
+            } catch (e: Exception) {
+                console.error("[DEBUG_LOG] PlayerController: Error getting current user status", e)
+            }
+        }
+    }
+
+    /**
+     * Updates the player's username text
+     * 
+     * @param username The new username to display
+     */
+    fun updatePlayerName(username: String) {
+        // Get the player's position
+        val playerPosition = collider?.position ?: return
+        
+        // Use the stored WorldObjectManager
+        val manager = worldObjectManager ?: return
+        
+        // Remove existing username text if any
+        usernameTextHandle?.remove()
+        
+        // Calculate position above the player (adjust Y value as needed)
+        val textPosition = Vector3(playerPosition.x, playerPosition.y + .5f, playerPosition.z)
+        
+        // Create a new text billboard with the updated username
+        usernameTextHandle = manager.createTextBillboard(
+            text = username,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "white"
+        )
+        
+        console.log("PlayerController: Updated username text to $username")
+    }
+    
+    /**
+     * Displays the player's status above their head
+     * 
+     * @param status The status text to display
+     */
+    fun displayPlayerStatus(status: String) {
+        console.log("PlayerController: displayPlayerStatus called with status: '$status'")
+        
+        // Don't display empty status
+        if (status.isBlank()) {
+            console.log("PlayerController: Status is blank, removing any existing status")
+            removePlayerStatus()
+            return
+        }
+        
+        // If chat message is showing, don't show status
+        if (chatMessageTextHandle != null) {
+            console.log("PlayerController: Chat message is showing, not displaying status")
+            return
+        }
+        
+        // Get the player's position
+        val playerPosition = collider?.position
+        if (playerPosition == null) {
+            console.error("PlayerController: Player position is null, cannot display status")
+            return
+        }
+        
+        // Use the stored WorldObjectManager
+        val manager = worldObjectManager
+        if (manager == null) {
+            console.error("PlayerController: WorldObjectManager is null, cannot display status")
+            return
+        }
+        
+        // Remove existing status text if any
+        removePlayerStatus()
+        
+        // Calculate position above the username (adjust Y value as needed)
+        // Username is at y + .5f, so put status message at y + .8f (same as chat)
+        val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
+        console.log("PlayerController: Creating status text at position (${textPosition.x}, ${textPosition.y}, ${textPosition.z})")
+        
+        // Create the text billboard with the status message
+        statusTextHandle = manager.createTextBillboard(
+            text = status,
+            position = textPosition,
+            fontSize = 18,
+            textColor = "white",
+            backgroundColor = "#00000080" // Semi-transparent black background
+        )
+        
+        if (statusTextHandle == null) {
+            console.error("PlayerController: Failed to create status text billboard")
+        } else {
+            console.log("PlayerController: Successfully displayed player status: '$status'")
+        }
+    }
+    
+    /**
+     * Removes the player's status text
+     */
+    private fun removePlayerStatus() {
+        console.log("PlayerController: removePlayerStatus called")
+        
+        // Remove the text billboard if it exists
+        if (statusTextHandle == null) {
+            console.log("PlayerController: No status text to remove")
+            return
+        }
+        
+        statusTextHandle?.let { textHandle ->
+            textHandle.remove()
+            statusTextHandle = null
+            console.log("PlayerController: Successfully removed player status")
+        }
     }
 
     /**

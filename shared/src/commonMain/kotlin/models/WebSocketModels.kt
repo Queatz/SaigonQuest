@@ -56,3 +56,17 @@ data class UserLeaveData(
     val userId: String,
     val worldId: String
 )
+
+/**
+ * Update player data model
+ * 
+ * This model is sent when a visitor becomes a player or player details are updated.
+ */
+@Serializable
+data class UpdatePlayerData(
+    val userId: String,
+    val name: String,
+    val isPlayer: Boolean,
+    val activity: String? = null,
+    val status: String? = null
+)

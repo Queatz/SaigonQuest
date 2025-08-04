@@ -50,8 +50,9 @@ sealed class WorldObject {
      * Updates the object's state
      * 
      * @param deltaTime Time since last update in seconds
+     * @param camera Optional camera to use for display direction calculation
      */
-    open fun update(deltaTime: Float) {}
+    open fun update(deltaTime: Float, camera: lib.ArcRotateCamera? = null) {}
     
     /**
      * Disposes resources used by this object
@@ -65,7 +66,8 @@ sealed class WorldObject {
 class Character(
     var spriteSheet: SpriteSheet,
     var direction: CharacterDirection,
-    var isMoving: Boolean = false
+    var isMoving: Boolean = false,
+    var activity: PlayerActivity? = null
 ) : WorldObject() {
     
     private var characterMesh: AbstractMesh? = null
@@ -129,9 +131,15 @@ class Character(
         return container
     }
     
-    override fun update(deltaTime: Float) {
+    override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
         // Calculate the display direction based on camera angle
-        calculateDisplayDirection()
+        if (camera != null) {
+            // Use the provided camera
+            calculateDisplayDirectionWithCamera(camera)
+        } else {
+            // Use the default camera from SceneManager
+            calculateDisplayDirection()
+        }
         
         // Update animation frame based on direction and movement state
         if (isMoving) {
@@ -140,6 +148,11 @@ class Character(
         
         // Always update the sprite animation to reflect the current display direction
         updateSpriteAnimation()
+        
+        // Log activity state changes for debugging
+        if (activity == PlayerActivity.Sit) {
+            console.log("[DEBUG_LOG] Character ${id} is sitting")
+        }
     }
     
     /**
@@ -160,6 +173,19 @@ class Character(
         val cameraController = main.components.SceneManager.getCameraController() ?: return
         val camera = cameraController.getCamera()
         
+        // Use the common implementation with the obtained camera
+        calculateDisplayDirectionWithCamera(camera)
+    }
+    
+    /**
+     * Calculates which direction sprite to display based on the relative angle
+     * between the player's facing direction and the provided camera's facing direction.
+     * 
+     * This version allows passing in a specific camera instead of using the SceneManager.
+     * 
+     * @param camera The camera to use for calculation
+     */
+    private fun calculateDisplayDirectionWithCamera(camera: lib.ArcRotateCamera) {
         // Convert player direction to a vector
         val playerDirectionVector = directionToVector(direction)
         
@@ -234,15 +260,15 @@ class Character(
      */
     private fun updateSpriteAnimation() {
         // Calculate current frame based on animationTime
-        // todo restore this
-        val frameIndex = 0 // (animationTime * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount(displayDirection)
+        val frameIndex = (animationTime * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount(displayDirection)
             
         // Update UV coordinates on the mesh to show the correct sprite
         characterMesh?.let { mesh ->
             val material = mesh.material as? PBRMaterial
             material?.albedoTexture?.let { texture ->
                 // Get the UV coordinates for the current display direction and frame
-                val uvCoords = spriteSheet.getFrameUV(displayDirection, frameIndex)
+                // Pass the activity parameter to use the correct sprite row for sitting
+                val uvCoords = spriteSheet.getFrameUV(displayDirection, frameIndex, activity)
                 
                 // BabylonJS handles the UV mapping internally when we set these properties
                 // Set the UV coordinates using the properly exposed properties
@@ -285,7 +311,8 @@ class Model(
         return container
     }
     
-    override fun update(deltaTime: Float) {
+    override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
+        // Model doesn't need camera for updates
     }
     
     override fun dispose() {

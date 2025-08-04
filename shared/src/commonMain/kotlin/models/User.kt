@@ -17,7 +17,8 @@ data class User(
     @Contextual
     var lastActive: Instant = Clock.System.now(),
     var yearOfBirth: Int? = null,
-    var sex: String? = null
+    var sex: String? = null,
+    var status: String = ""
 ) : BaseModel() {
     // Transient fields that won't be serialized
     @Transient

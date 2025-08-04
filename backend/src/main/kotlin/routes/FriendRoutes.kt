@@ -1,0 +1,164 @@
+package routes
+
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import models.ErrorResponse
+import models.Friend
+import models.Notification
+import models.Position
+import repository.FriendRepository
+import repository.NotificationRepository
+import repository.UserRepository
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+
+/**
+ * Routes for friend operations
+ */
+@OptIn(ExperimentalTime::class)
+fun Routing.configureFriendRoutes() {
+    val friendRepository = FriendRepository()
+    val userRepository = UserRepository()
+    val notificationRepository = NotificationRepository()
+    
+    // Data classes for request/response
+    @Serializable
+    data class FriendRequestBody(val friendId: String)
+    
+    // Get all friends for the current user
+    authenticate {
+        get("/friend") {
+            val userId = call.principal<UserIdPrincipal>()?.name
+                ?: return@get call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            
+            val friends = friendRepository.getByUserId(userId)
+            call.respond(friends)
+        }
+        
+        // Send a friend request
+        post("/friend/request") {
+            val userId = call.principal<UserIdPrincipal>()?.name
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            
+            val requestBody = call.receive<FriendRequestBody>()
+            val friendId = requestBody.friendId
+            
+            // Check if users exist
+            val user = userRepository.getById(userId)
+            val friend = userRepository.getById(friendId)
+            
+            if (user == null || friend == null) {
+                return@post call.respond(HttpStatusCode.NotFound, ErrorResponse("User not found"))
+            }
+            
+            // Check if they are already friends
+            if (friendRepository.existsFriendship(userId, friendId)) {
+                return@post call.respond(HttpStatusCode.Conflict, ErrorResponse("Already friends"))
+            }
+            
+            // Create a notification for the friend
+            val notification = Notification(
+                userId = friendId,
+                title = "Friend Request",
+                description = "${user.username} requested to be your friend",
+                type = "friend_request",
+                relatedId = userId
+            )
+            
+            val createdNotification = notificationRepository.create(notification)
+            call.respond(HttpStatusCode.Created, createdNotification)
+        }
+        
+        // Accept a friend request
+        post("/friend/accept") {
+            val userId = call.principal<UserIdPrincipal>()?.name
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            
+            val requestBody = call.receive<FriendRequestBody>()
+            val friendId = requestBody.friendId
+            
+            // Check if users exist
+            val user = userRepository.getById(userId)
+            val friend = userRepository.getById(friendId)
+            
+            if (user == null || friend == null) {
+                return@post call.respond(HttpStatusCode.NotFound, ErrorResponse("User not found"))
+            }
+            
+            // Check if they are already friends
+            if (friendRepository.existsFriendship(userId, friendId)) {
+                return@post call.respond(HttpStatusCode.Conflict, ErrorResponse("Already friends"))
+            }
+            
+            // Create friendship records for both users
+            val friendship1 = Friend(
+                userId = userId,
+                friendId = friendId,
+                friendUsername = friend.username,
+                lastActive = Clock.System.now(),
+                lastWorldId = "",
+                lastWorldName = ""
+            )
+            
+            val friendship2 = Friend(
+                userId = friendId,
+                friendId = userId,
+                friendUsername = user.username,
+                lastActive = Clock.System.now(),
+                lastWorldId = "",
+                lastWorldName = ""
+            )
+            
+            friendRepository.create(friendship1)
+            friendRepository.create(friendship2)
+            
+            call.respond(HttpStatusCode.Created, friendship1)
+        }
+        
+        // Remove a friend
+        delete("/friend/{friendId}") {
+            val userId = call.principal<UserIdPrincipal>()?.name
+                ?: return@delete call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            
+            val friendId = call.parameters["friendId"]
+                ?: return@delete call.respond(HttpStatusCode.BadRequest, ErrorResponse("Friend ID is required"))
+            
+            val success = friendRepository.deleteFriendship(userId, friendId)
+            
+            if (success) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                call.respond(HttpStatusCode.NotFound, ErrorResponse("Friendship not found"))
+            }
+        }
+        
+        // Update friend status (called when user changes world or position)
+        put("/friend/status") {
+            val userId = call.principal<UserIdPrincipal>()?.name
+                ?: return@put call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            
+            @Serializable
+            data class StatusUpdateBody(
+                val worldId: String,
+                val worldName: String,
+                val position: Position?
+            )
+            
+            val statusUpdate = call.receive<StatusUpdateBody>()
+            
+            friendRepository.updateFriendStatus(
+                userId = userId,
+                lastWorldId = statusUpdate.worldId,
+                lastWorldName = statusUpdate.worldName,
+                lastPosition = statusUpdate.position
+            )
+            
+            call.respond(HttpStatusCode.OK)
+        }
+    }
+}

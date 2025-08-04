@@ -59,6 +59,16 @@ interface WorldObjectHandle {
     }
     
     /**
+     * Updates the activity of a character object
+     * No-op for non-character objects
+     * 
+     * @param activity The new activity, or null for standing
+     */
+    fun updateActivity(activity: PlayerActivity?) {
+        // Default implementation does nothing
+    }
+    
+    /**
      * Helper method to get all meshes for this object
      * 
      * @return Array of all meshes belonging to this object

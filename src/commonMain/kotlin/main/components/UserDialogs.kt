@@ -1,15 +1,34 @@
 package main.components
 
-import androidx.compose.runtime.*
-import models.User
-import main.theme.Theme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.MainScope
+import main.api.WebSocketApi
+import main.components.player.CharacterRenderer
 import main.theme.Styles
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.*
+import models.User
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import main.components.GraphicsSettings
-import main.components.LanguageSettings
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.H3
+import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.Text
 
 /**
  * Dialog for visitor users to register or login
@@ -287,6 +306,16 @@ fun VisitorDialog(
                                 return@onClick
                             }
                             
+                            if (!isLoginMode && yearOfBirth == null) {
+                                errorMessage = "Year of birth is required"
+                                return@onClick
+                            }
+                            
+                            if (!isLoginMode && sex == null) {
+                                errorMessage = "Sex is required"
+                                return@onClick
+                            }
+                            
                             if (isLoginMode) {
                                 onLogin(username, password)
                             } else {
@@ -331,11 +360,82 @@ fun PlayerDialog(
     // State to track current language
     val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
     
+    // State for user status
+    val status = remember { mutableStateOf(user.status) }
+    
+    // Coroutine scope for async operations that persists beyond dialog closure
+    val coroutineScope = remember { MainScope() }
+    
+    // Function to update user status
+    val updateUserStatus = {
+        console.log("[DEBUG_LOG] PlayerDialog: updateUserStatus called")
+        console.log("[DEBUG_LOG] PlayerDialog: Current status: '${user.status}', New status: '${status.value}'")
+        
+        // Check WebSocket connection state
+        val isConnected = WebSocketApi.isConnected()
+        console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state: ${if (isConnected) "CONNECTED" else "DISCONNECTED"}")
+        
+        // Only update if status has changed
+        if (user.status != status.value) {
+            console.log("[DEBUG_LOG] PlayerDialog: Status changed, updating from '${user.status}' to '${status.value}'")
+            user.status = status.value
+            
+            // Store the status value to use in the coroutine
+            val newStatus = status.value
+            
+            // Launch the coroutine before closing the dialog
+            // Using MainScope ensures it won't be cancelled when the dialog closes
+            coroutineScope.launch {
+                try {
+                    // Check connection state again inside coroutine
+                    val isStillConnected = WebSocketApi.isConnected()
+                    console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state before update: ${if (isStillConnected) "CONNECTED" else "DISCONNECTED"}")
+                    
+                    // Get current world ID
+                    val worldId = WebSocketApi.getCurrentWorldId()
+                    console.log("[DEBUG_LOG] PlayerDialog: Current world ID: ${worldId ?: "null"}")
+                    
+                    console.log("[DEBUG_LOG] PlayerDialog: Calling WebSocketApi.updatePlayerStatus with status: '$newStatus'")
+                    val success = WebSocketApi.updatePlayerStatus(newStatus)
+                    if (success) {
+                        console.log("[DEBUG_LOG] PlayerDialog: Player status updated successfully: '$newStatus'")
+                    } else {
+                        console.error("[DEBUG_LOG] PlayerDialog: Failed to update player status")
+                        console.error("[DEBUG_LOG] PlayerDialog: Last WebSocket error: ${WebSocketApi.getLastError() ?: "None"}")
+                    }
+                } catch (e: Exception) {
+                    console.error("[DEBUG_LOG] PlayerDialog: Error updating player status", e)
+                }
+            }
+        } else {
+            console.log("[DEBUG_LOG] PlayerDialog: Status unchanged, not updating")
+        }
+        
+        // Close the dialog immediately, the coroutine will continue in the background
+        console.log("[DEBUG_LOG] PlayerDialog: Calling onClose()")
+        onClose()
+    }
+    
     // Use the BaseDialog component
     BaseDialog(
-        onClose = onClose,
+        onClose = updateUserStatus,
         title = "My Profile",
         content = {
+            // Character renderer - add this above the user info
+            Div(
+                attrs = {
+                    style {
+                        marginBottom(16.px)
+                        display(DisplayStyle.Flex)
+                        alignItems(AlignItems.Center)
+                        justifyContent(JustifyContent.Center)
+                    }
+                }
+            ) {
+                // Add the character renderer component
+                CharacterRenderer()
+            }
+            
             // User info
             Div(
                 attrs = {
@@ -349,6 +449,33 @@ fun PlayerDialog(
                     }
                 ) {
                     Text(user.username)
+                }
+                
+                // Status input
+                Div(
+                    attrs = {
+                        classes(Styles.settingsSectionContainer)
+                    }
+                ) {
+                    // Label
+                    Span(
+                        attrs = {
+                            classes(Styles.settingsSectionLabel)
+                        }
+                    ) {
+                        Text("Status")
+                    }
+                    
+                    // Status input field
+                    Input(
+                        type = InputType.Text,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder("Set your status (displayed above your character)")
+                            value(status.value)
+                            onInput { event -> status.value = event.value }
+                        }
+                    )
                 }
                 
                 // Player status
@@ -425,7 +552,7 @@ fun PlayerDialog(
         actions = {
             // Close button
             DialogButton(
-                onClick = onClose,
+                onClick = updateUserStatus,
                 isPrimary = false
             ) {
                 Text("Close")

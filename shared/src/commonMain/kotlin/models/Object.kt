@@ -15,7 +15,8 @@ data class Object(
     var collection: String = "", // collection in file to render as the object
     var position: Position = Position(), // Position in the 3D world
     var rotation: Rotation = Rotation(), // Rotation in the 3D world
-    var scale: Scale = Scale() // Scale in the 3D world
+    var scale: Scale = Scale(), // Scale in the 3D world
+    var status: String = "" // Status text to display above the object
 ) : BaseModel()
 
 /**

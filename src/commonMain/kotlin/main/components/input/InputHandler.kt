@@ -3,6 +3,9 @@ package main.components.input
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import lib.KeyboardEventTypes
 import lib.KeyboardInfo
 import lib.Matrix
@@ -13,11 +16,9 @@ import lib.Vector3
 import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.`object`.SceneObjectManager
-import main.components.player.OtherPlayerDialog
+import main.components.player.FriendshipStatus
 import main.components.player.PlayerController
 import main.utils.createObjectDoubleClickEvent
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.renderComposable
 import kotlin.math.abs
 
 /**
@@ -31,7 +32,8 @@ import kotlin.math.abs
 class InputHandler(
     private val scene: Scene,
     private val playerController: PlayerController,
-    private val cameraController: CameraController
+    private val cameraController: CameraController,
+    private val onShowOtherPlayerDialog: ((username: String, isPlayer: Boolean) -> Unit)? = null
 ) {
     // Get the object manager from SceneManager
     private val objectManager: SceneObjectManager? = SceneManager.getObjectManager() as? SceneObjectManager
@@ -57,13 +59,6 @@ class InputHandler(
     private var lastClickedObjectId: String? = null
     private val doubleClickThreshold = 300.0 // milliseconds
     
-    // Dialog state
-    private val showDialog = mutableStateOf(false)
-    private val dialogUsername = mutableStateOf("")
-    private val dialogIsPlayer = mutableStateOf(false)
-    
-    // Dialog container ID
-    private val dialogContainerId = "other-player-dialog-container"
     
     /**
      * Sets up keyboard input handling.
@@ -92,7 +87,7 @@ class InputHandler(
         val event = info.event
         val key = event.key.lowercase()
         
-        // Only handle WASD and arrow keys
+        // Handle movement keys (WASD and arrow keys)
         if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright")) {
             when (info.type) {
                 KeyboardEventTypes.KEYDOWN -> {
@@ -107,6 +102,17 @@ class InputHandler(
                 KeyboardEventTypes.KEYUP -> {
                     // Remove key from pressed keys set
                     pressedKeys.remove(key)
+                }
+                else -> { /* Ignore other keyboard events */ }
+            }
+        }
+        // Handle Z key for toggling sitting/standing
+        else if (key == "z") {
+            when (info.type) {
+                KeyboardEventTypes.KEYUP -> {
+                    // Toggle sitting/standing on key up (to avoid repeated toggling while key is held)
+                    playerController.toggleSitting()
+                    console.log("InputHandler: Toggled sitting/standing")
                 }
                 else -> { /* Ignore other keyboard events */ }
             }
@@ -522,7 +528,7 @@ class InputHandler(
         )
     
         // Get the other players controller
-        val otherPlayersController = main.components.SceneManager.getOtherPlayersController()
+        val otherPlayersController = SceneManager.getOtherPlayersController()
     
         // First check for intersection with other player meshes
         if (otherPlayersController != null) {
@@ -575,6 +581,11 @@ class InputHandler(
         }
     }
 
+    // Coroutine scope for async operations
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+    
+    
+    
     /**
      * Shows the dialog for interacting with another player
      * 
@@ -584,54 +595,8 @@ class InputHandler(
     private fun showOtherPlayerDialog(username: String, isPlayer: Boolean) {
         console.log("Clicked on player: $username (${if (isPlayer) "Player" else "Visitor"})")
     
-        // Update dialog state
-        dialogUsername.value = username
-        dialogIsPlayer.value = isPlayer
-        showDialog.value = true
-    
-        // Create or get the dialog container
-        var container = document.getElementById(dialogContainerId)
-        if (container == null) {
-            container = document.createElement("div")
-            container.id = dialogContainerId
-            document.body?.appendChild(container)
-        }
-    
-        // Render the dialog
-        renderComposable(dialogContainerId) {
-            if (showDialog.value) {
-                OtherPlayerDialog(
-                    username = dialogUsername.value,
-                    isPlayer = dialogIsPlayer.value,
-                    onAddFriend = {
-                        // Handle Add Friend button click
-                        console.log("Add Friend clicked for player: ${dialogUsername.value}")
-                        // TODO: Implement friend request functionality
-                    
-                        // Close the dialog
-                        showDialog.value = false
-                    },
-                    onTrade = {
-                        // Handle Trade button click
-                        console.log("Trade clicked for player: ${dialogUsername.value}")
-                        // TODO: Implement trade functionality
-                    
-                        // Close the dialog
-                        showDialog.value = false
-                    },
-                    onClose = {
-                        // Handle Close button click
-                        console.log("Dialog closed for player: ${dialogUsername.value}")
-                    
-                        // Close the dialog
-                        showDialog.value = false
-                    }
-                )
-            } else {
-                // Render an empty div when dialog is not shown
-                Div {}
-            }
-        }
+        // Use the callback to show the dialog if provided
+        onShowOtherPlayerDialog?.invoke(username, isPlayer)
     }
     
     /**

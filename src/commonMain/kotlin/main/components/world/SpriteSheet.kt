@@ -24,13 +24,20 @@ class SpriteSheet(
      * 
      * @param direction The character direction
      * @param frameIndex The frame index for animation
+     * @param activity The player activity, or null if standing
      * @return A quad of UV coordinates (uMin, vMin, uMax, vMax)
      */
-    fun getFrameUV(direction: CharacterDirection, frameIndex: Int): UVCoordinates {
+    fun getFrameUV(
+        direction: CharacterDirection,
+        frameIndex: Int,
+        activity: PlayerActivity? = null
+    ): UVCoordinates {
         // Get the row based on the direction's position in the directionOrder list
         val directionIndex = directionOrder.indexOf(direction).takeIf { it >= 0 } ?: direction.ordinal
         val col = directionIndex
-        val row = frameIndex % columns
+        
+        // Set row = 1 when the player activity is Sit, otherwise use frameIndex
+        val row = if (activity == PlayerActivity.Sit) 1 else frameIndex % columns
 
         // Calculate UV coordinates as fractions of the total image size
         val uMin = col * (cellWidthPx / imageWidth.toFloat())

@@ -95,6 +95,10 @@ object CollectionsConfig {
     const val CHAT_MESSAGES_COLLECTION = "chat_messages"
     const val CHAT_READ_MARKERS_COLLECTION = "chat_read_markers"
     const val NOTIFICATIONS_COLLECTION = "notifications"
+    const val FRIENDS_COLLECTION = "friends"
+    const val INVENTORIES_COLLECTION = "inventories"
+    const val INVENTORY_ITEMS_COLLECTION = "inventory_items"
+    const val ITEMS_COLLECTION = "items"
     
     // Collection definitions
     private val collections = mapOf(
@@ -103,7 +107,11 @@ object CollectionsConfig {
         OBJECTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         CHAT_MESSAGES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         CHAT_READ_MARKERS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        NOTIFICATIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+        NOTIFICATIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        FRIENDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        INVENTORIES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        INVENTORY_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
     )
     
     fun initializeCollections(database: ArangoDatabase) {

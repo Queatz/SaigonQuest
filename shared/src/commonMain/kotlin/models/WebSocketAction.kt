@@ -22,5 +22,6 @@ enum class WebSocketAction {
     UPDATE_CHAT_MESSAGE,
     DELETE_CHAT_MESSAGE,
     USER_JOIN,
-    USER_LEAVE
+    USER_LEAVE,
+    UPDATE_PLAYER
 }
