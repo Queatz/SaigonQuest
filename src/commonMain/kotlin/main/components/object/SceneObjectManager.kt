@@ -6,14 +6,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lib.AbstractMesh
-import utils.json
 import lib.Color3
-import lib.CreatePlaneOptions
+import lib.CreateSphereOptions
 import lib.HighlightLayer
+import lib.Material
 import lib.MeshBuilder
+import lib.MeshMetadata
 import lib.Node
+import lib.PBRMaterial
 import lib.Scene
 import lib.StandardMaterial
+import lib.TransformNode
 import lib.Vector3
 import main.api.ObjectApi
 import main.api.WebSocketApi
@@ -38,7 +41,7 @@ class SceneObjectManager(
     private var selectedObject: String? = null
     
     // Map of object IDs to their meshes
-    private val objectMeshes = mutableMapOf<String, dynamic>()
+    private val objectMeshes = mutableMapOf<String, Node>()
     
     // Currently dragging object
     private var draggingObjectId: String? = null
@@ -187,17 +190,20 @@ class SceneObjectManager(
                     try {
                         // Store the original color to restore it later
                         val material = childMesh.material
-                        if (material != null && material.diffuseColor != null) {
-                            // Store the original color in the mesh's metadata
-                            if (childMesh.metadata == null) {
-                                childMesh.metadata = js("{}")
+                        // Store the original color in the mesh's metadata
+                        if (childMesh.metadata == null) {
+                            childMesh.metadata = object : MeshMetadata {
+                                override var originalMaterial: Material? = null
                             }
-                            childMesh.metadata.originalMaterial = material
-                            
-                            // Change the color to highlight the object
-                            material.diffuseColor = Color3(1f, 0.6f, 1f)
-                            console.log("[DEBUG_SELECT] Changed color for mesh: ${childMesh.name}")
                         }
+                        childMesh.metadata?.originalMaterial = material.clone("clone")
+
+                        // Change the color to highlight the object
+                        when (material) {
+                            is PBRMaterial -> material.albedoColor = Color3(1f, 0.6f, 1f)
+                            is StandardMaterial -> material.diffuseColor = Color3(1f, 0.6f, 1f)
+                        }
+                        console.log("[DEBUG_SELECT] Changed color for mesh: ${childMesh.name}")
                     } catch (e: Exception) {
                         console.error("[DEBUG_SELECT] Error processing child mesh: ${childMesh.name}", e)
                     }
@@ -237,9 +243,9 @@ class SceneObjectManager(
                     childMeshes.forEach { childMesh ->
                         try {
                             // Restore the original material if it exists
-                            if (childMesh.metadata != null && childMesh.metadata.originalMaterial != null) {
-                                val originalMaterial = childMesh.metadata.originalMaterial
-                                childMesh.material = originalMaterial
+                            if (childMesh.metadata != null && childMesh.metadata?.originalMaterial != null) {
+                                val originalMaterial = childMesh.metadata?.originalMaterial
+                                childMesh.material = originalMaterial!!
                                 console.log("[DEBUG_DESELECT] Restored original material for mesh: ${childMesh.name}")
                             }
                         } catch (e: Exception) {
@@ -449,9 +455,21 @@ class SceneObjectManager(
         console.log("[DEBUG_OBJECT] Creating 3D representation for object: ${obj.key}")
         
         try {
+            // Create a position, rotation, and scale vectors from the object properties
+            val position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+            val rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+            val scale = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+            
             // Check if the object has a file and collection specified
             if (obj.file.isNotEmpty() && obj.collection.isNotEmpty()) {
                 console.log("[DEBUG_OBJECT] Loading 3D model from file: ${obj.file}, collection: ${obj.collection}")
+                
+                // Create a fallback sphere first so the object appears instantly
+                val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
+                
+                // Store the fallback sphere in our map for future reference
+                console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
+                objectMeshes[obj.key] = fallbackSphere
                 
                 // Use the asset manager to load the 3D model
                 assetManager.getNode(
@@ -472,19 +490,19 @@ class SceneObjectManager(
                         console.log("[DEBUG_OBJECT] Set node parent to null to ensure global positioning")
                         
                         // Set the position, rotation, and scale
-                        val position = Vector3(obj.position.x.toFloat(), obj.position.y.toFloat(), obj.position.z.toFloat())
                         console.log("[DEBUG_OBJECT] Setting position to: (${position.x}, ${position.y}, ${position.z})")
                         node.position = position
                         
-                        // Set rotation (convert from radians if needed)
-                        val rotation = Vector3(obj.rotation.x.toFloat(), obj.rotation.y.toFloat(), obj.rotation.z.toFloat())
+                        // Set rotation
                         console.log("[DEBUG_OBJECT] Setting rotation to: (${rotation.x}, ${rotation.y}, ${rotation.z})")
                         node.rotation = rotation
                         
                         // Set scale
-                        val scale = Vector3(obj.scale.x.toFloat(), obj.scale.y.toFloat(), obj.scale.z.toFloat())
                         console.log("[DEBUG_OBJECT] Setting scale to: (${scale.x}, ${scale.y}, ${scale.z})")
                         node.scaling = scale
+                        
+                        // Remove the fallback sphere (now it's a TransformNode)
+                        (fallbackSphere as lib.TransformNode).dispose()
                         
                         // Store the mesh in our map for future reference
                         console.log("[DEBUG_OBJECT] Storing mesh in objectMeshes map with key: ${obj.key}")
@@ -521,7 +539,7 @@ class SceneObjectManager(
                             }
                             
                             // Create status text
-                            worldObjectManager?.createObjectStatusText(handle, obj.status)
+                            worldObjectManager.createObjectStatusText(handle, obj.status)
                             console.log("[DEBUG_OBJECT] Created status text for object: ${obj.key}")
                         }
                     },
@@ -531,11 +549,96 @@ class SceneObjectManager(
                 )
             } else {
                 console.log("[DEBUG_OBJECT] No file or collection specified, creating fallback sphere")
+                
+                // Create a permanent fallback sphere for objects without file and collection
+                val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
+                
+                // Store the fallback sphere in our map for future reference
+                console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
+                objectMeshes[obj.key] = fallbackSphere
+                
+                // Create status text if status is not empty and WorldObjectManager is available
+                if (obj.status.isNotBlank()) {
+                    // Create a WorldObjectHandle for the node
+                    val handle = object : main.components.world.WorldObjectHandle {
+                        override val id: String = obj.key
+                        override var node: Node = fallbackSphere
+                        override fun remove() {
+                            // No-op for now
+                        }
+                        override fun updateDirection(direction: main.components.world.CharacterDirection) {
+                            // No-op for now
+                        }
+                        override fun updateActivity(activity: main.components.world.PlayerActivity?) {
+                            // No-op for now
+                        }
+                        override fun getMeshes(): Array<AbstractMesh> {
+                            return fallbackSphere.getChildMeshes(false)
+                        }
+                    }
+                    
+                    // Create status text
+                    worldObjectManager?.createObjectStatusText(handle, obj.status)
+                    console.log("[DEBUG_OBJECT] Created status text for object: ${obj.key}")
+                }
             }
         } catch (error: Exception) {
             console.error("[DEBUG_OBJECT] Error creating 3D object", error)
             onError?.invoke("Failed to create 3D object: ${error.message ?: "Unknown error"}")
         }
+    }
+    
+    /**
+     * Creates a fallback sphere for objects
+     * 
+     * @param name The name of the sphere
+     * @param position The position of the sphere
+     * @param rotation The rotation of the sphere
+     * @param scale The scale of the sphere
+     * @return The created node containing the sphere
+     */
+    private fun createFallbackSphere(name: String, position: Vector3, rotation: Vector3, scale: Vector3): Node {
+        // Create a transform node that will act as our container
+        val container = lib.TransformNode("container_$name", scene)
+        
+        // Set the container's position, rotation, and scale
+        container.position = position
+        container.rotation = rotation
+        container.scaling = scale
+        
+        // Create a sphere mesh
+        val sphere = MeshBuilder.CreateSphere(
+            name,
+            object : CreateSphereOptions {
+                override val diameter = 1.0f
+                override val segments = 16
+            },
+            scene
+        )
+        
+        // Create a white material
+        val material = PBRMaterial("material_$name", scene)
+        material.albedoColor = Color3(1f, 1f, 1f)  // White color
+        material.metallic = 0.0f
+        material.roughness = 0.4f
+        
+        // Apply the material to the sphere
+        sphere.material = material
+        
+        // Reset the sphere's position to origin since it will inherit from parent
+        sphere.position = Vector3(0f, 0f, 0f)
+        sphere.rotation = Vector3(0f, 0f, 0f)
+        sphere.scaling = Vector3(1f, 1f, 1f)
+
+        // Make the sphere pickable
+        sphere.isPickable = true
+        
+        // Make the sphere a child of the container
+        sphere.parent = container
+        
+        console.log("[DEBUG_OBJECT] Created fallback sphere for object: $name in container")
+        
+        return container
     }
 
     /**
@@ -764,7 +867,7 @@ class SceneObjectManager(
                 val node = objectMeshes[objectId]
                 if (node != null) {
                     // Remove from scene
-                    node.dispose()
+                    (node as? TransformNode)?.dispose()
                     // Remove from our map
                     objectMeshes.remove(objectId)
                     console.log("Removed object from scene: $objectId")
@@ -811,7 +914,7 @@ class SceneObjectManager(
                         }
                         
                         // Create status text
-                        worldObjectManager?.createObjectStatusText(handle, obj.status)
+                        worldObjectManager.createObjectStatusText(handle, obj.status)
                         console.log("[DEBUG_OBJECT] Updated status text for object: ${obj.key}")
                     }
                 } else {

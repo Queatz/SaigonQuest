@@ -1,6 +1,8 @@
 package main.components.nodeeditor
 
 import kotlinx.serialization.Serializable
+import models.LogicNode
+import models.toTypeString
 import utils.json
 
 /**
@@ -108,6 +110,15 @@ object NodeDataParser {
                 else -> EmptyNodeData()
             }
         }
+    }
+    
+    /**
+     * Parse node data from a JSON string based on LogicNode
+     */
+    fun parseNodeData(node: LogicNode, dataString: String): NodeDataType {
+        val nodeType = node.toTypeString()
+        val nodeLabel = node.label
+        return parseNodeData(nodeType, nodeLabel, dataString)
     }
     
     /**

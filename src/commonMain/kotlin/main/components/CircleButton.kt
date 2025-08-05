@@ -9,15 +9,18 @@ import org.jetbrains.compose.web.dom.Text
  * A circular button with an optional badge indicator.
  * 
  * @param onClick Callback for when the button is clicked
- * @param icon The icon to display in the button
+ * @param icon The icon to display in the button (used when iconIndex is null)
+ * @param iconIndex Optional index for image-based icon from the UI sprite sheet
  * @param badgeCount Optional count to display in the badge. If greater than 0, a badge with the count is shown.
  *                   If 0 or null, no badge is shown. If -1, a simple red dot is shown without a count.
  * @param isChat Flag to indicate if this is a chat button, which will have a larger badge
+ * @param id Optional ID for the button element
  */
 @Composable
 fun CircleButton(
     onClick: () -> Unit,
-    icon: String,
+    icon: String = "",
+    iconIndex: Int? = null,
     badgeCount: Int? = -1,
     isChat: Boolean = false,
     id: String? = null
@@ -30,7 +33,16 @@ fun CircleButton(
         }
     ) {
         // Button content (icon)
-        Text(icon)
+        if (iconIndex != null) {
+            // Use IconRenderer with the UI sprite sheet
+            IconRenderer(
+                url = "raw/data/ui/ui.png",
+                index = iconIndex
+            )
+        } else {
+            // Use text icon
+            Text(icon)
+        }
         
         // Badge indicator
         if (badgeCount != null && badgeCount != 0) {

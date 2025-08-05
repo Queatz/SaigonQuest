@@ -59,7 +59,6 @@ class InputHandler(
     private var lastClickedObjectId: String? = null
     private val doubleClickThreshold = 300.0 // milliseconds
     
-    
     /**
      * Sets up keyboard input handling.
      */
@@ -339,10 +338,10 @@ class InputHandler(
                         // Calculate new position based on pointer movement
                         // This is simplified - in a real implementation, we would use raycasting
                         val ray = scene.createPickingRay(
-                            scene.pointerX,
-                            scene.pointerY,
-                            Matrix.Identity(),
-                            cameraController.getCamera()
+                            x = scene.pointerX,
+                            y = scene.pointerY,
+                            world = Matrix.Identity(),
+                            camera = cameraController.getCamera()
                         )
                         
                         // Find intersection with world meshes
@@ -540,13 +539,19 @@ class InputHandler(
                     // We clicked on another player
                     val userId = otherPlayersController.getUserIdForMesh(mesh)
                     if (userId != null) {
+                        console.log("[DEBUG_LOG] Found userId for clicked mesh: $userId")
                         // Get player data
                         val playerData = otherPlayersController.getPlayerData(userId)
                         if (playerData != null) {
+                            console.log("[DEBUG_LOG] Got playerData: username=${playerData.first}, isPlayer=${playerData.second}")
                             // Show the dialog with player data
                             showOtherPlayerDialog(playerData.first, playerData.second)
                             return // Don't move the player
+                        } else {
+                            console.log("[DEBUG_LOG] No playerData found for userId: $userId")
                         }
+                    } else {
+                        console.log("[DEBUG_LOG] No userId found for clicked mesh")
                     }
                 }
             }
@@ -593,7 +598,7 @@ class InputHandler(
      * @param isPlayer Whether the user is a player (true) or visitor (false)
      */
     private fun showOtherPlayerDialog(username: String, isPlayer: Boolean) {
-        console.log("Clicked on player: $username (${if (isPlayer) "Player" else "Visitor"})")
+        console.log("[DEBUG_LOG] Clicked on player: $username (${if (isPlayer) "Player" else "Visitor"})")
     
         // Use the callback to show the dialog if provided
         onShowOtherPlayerDialog?.invoke(username, isPlayer)

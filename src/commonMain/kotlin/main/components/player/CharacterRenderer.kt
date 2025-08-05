@@ -23,10 +23,18 @@ import kotlin.math.PI
  * A component that renders a 3D character model in a separate canvas.
  * 
  * @param characterSpriteSheet The sprite sheet to use for the character
+ * @param bodyType The body type of the character (Skinny, Normal, Fat)
+ * @param skinTone The skin tone of the character (0-1)
+ * @param eyeColor The eye color of the character (Black, Blue, Brown, Green, Gray)
+ * @param hairStyle The hair style of the character (Short, Medium, Long)
  */
 @Composable
 fun CharacterRenderer(
-    characterSpriteSheet: SpriteSheet = SpriteSheet.createPlayerSpriteSheet()
+    characterSpriteSheet: SpriteSheet = SpriteSheet.createPlayerSpriteSheet(),
+    bodyType: String = "Normal",
+    skinTone: Float = 0.5f,
+    eyeColor: String = "Brown",
+    hairStyle: String = "Short"
 ) {
     // Set up the canvas with CSS and ref instead of ID
     var canvasRef: HTMLCanvasElement? = null
@@ -39,11 +47,12 @@ fun CharacterRenderer(
                 display(DisplayStyle.Block)
                 margin(8.px, 0.px)
                 backgroundColor(Color.transparent)
+                outline("none")
             }
             
             // Use ref instead of id
             ref { canvas ->
-                canvasRef = canvas as HTMLCanvasElement
+                canvasRef = canvas
                 
                 onDispose {
                     // Clean up any references if needed

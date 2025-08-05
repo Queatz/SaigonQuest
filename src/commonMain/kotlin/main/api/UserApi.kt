@@ -39,6 +39,19 @@ data class LoginRequest(val username: String, val password: String)
 @Serializable
 data class AuthResponse(val user: User, val token: String)
 
+@Serializable
+data class UserCustomizationRequest(
+    val bodyType: String,
+    val skinTone: Float,
+    val eyeColor: String,
+    val hairStyle: String
+)
+
+@Serializable
+data class UserWornItemsRequest(
+    val wornItems: List<String>
+)
+
 /**
  * API client for user operations
  */
@@ -249,5 +262,60 @@ object UserApi {
      */
     private fun saveVisitorId(visitorId: String) {
         localStorage.setItem(VISITOR_ID_STORAGE_KEY, visitorId)
+    }
+    
+    /**
+     * Updates user character customization
+     */
+    suspend fun updateUserCustomization(user: User): User {
+        val request = UserCustomizationRequest(
+            bodyType = user.bodyType,
+            skinTone = user.skinTone,
+            eyeColor = user.eyeColor,
+            hairStyle = user.hairStyle
+        )
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/customization") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+            
+            if (response.status.isSuccess()) {
+                return response.body<User>()
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            console.error("Error updating user customization: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Updates user worn items
+     */
+    suspend fun updateUserWornItems(user: User): User {
+        val request = UserWornItemsRequest(
+            wornItems = user.wornItems
+        )
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/worn-items") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+            
+            if (response.status.isSuccess()) {
+                return response.body<User>()
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            console.error("Error updating user worn items: ${e.message}")
+            throw e
+        }
     }
 }

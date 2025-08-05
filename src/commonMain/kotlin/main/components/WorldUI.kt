@@ -62,6 +62,25 @@ fun WorldUI() {
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
     val router = Router.current
+
+    // State for the current object being edited
+    var currentEditingObject by remember { mutableStateOf<Object?>(null) }
+
+    // State to track if we're on mobile
+    val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
+
+    // State for current user
+    var currentUser by remember { mutableStateOf<User?>(null) }
+
+    // Tutorial manager
+    val tutorialManager = remember { TutorialManager() }
+
+    // Button positions are now tracked by ButtonPositionTracker in the TutorialBubbleManager
+
+    // State for current world
+    var currentWorld by remember { mutableStateOf<World?>(null) }
+    var isWorldLoading by remember { mutableStateOf(true) }
+    var worldErrorMessage by remember { mutableStateOf("") }
     
     // Function to fetch unread notification count
     fun fetchUnreadNotificationCount() {
@@ -77,15 +96,14 @@ fun WorldUI() {
     
     // Function to fetch unread chat count
     fun fetchUnreadChatCount() {
-        // Get current world ID from the URL path
-        val worldId = PathUtils.getCurrentPath(router)
-        
-        scope.launch {
-            try {
-                val count = ChatApi.getUnreadMessageCount(worldId)
-                unreadChatCount = count
-            } catch (e: Exception) {
-                console.error("Error fetching unread chat count", e)
+        currentWorld?.let { world ->
+            scope.launch {
+                try {
+                    val count = ChatApi.getUnreadMessageCount(world.key)
+                    unreadChatCount = count
+                } catch (e: Exception) {
+                    console.error("Error fetching unread chat count for world ${world.key}", e)
+                }
             }
         }
     }
@@ -135,25 +153,6 @@ fun WorldUI() {
         }
     }
     
-    // State for the current object being edited
-    var currentEditingObject by remember { mutableStateOf<Object?>(null) }
-    
-    // State to track if we're on mobile
-    val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
-    
-    // State for current user
-    var currentUser by remember { mutableStateOf<User?>(null) }
-
-    // Tutorial manager
-    val tutorialManager = remember { TutorialManager() }
-    
-    // Button positions are now tracked by ButtonPositionTracker in the TutorialBubbleManager
-    
-    // State for current world
-    var currentWorld by remember { mutableStateOf<World?>(null) }
-    var isWorldLoading by remember { mutableStateOf(true) }
-    var worldErrorMessage by remember { mutableStateOf("") }
-    
     // Fetch current user on component initialization
     LaunchedEffect(Unit) {
         try {
@@ -196,6 +195,11 @@ fun WorldUI() {
             worldErrorMessage = error.message ?: "Failed to load world"
             isWorldLoading = false
         }
+    }
+    
+    // Fetch unread chat count when currentWorld changes
+    LaunchedEffect(currentWorld) {
+        fetchUnreadChatCount()
     }
     
     // Update isMobile state on window resize
@@ -284,7 +288,7 @@ fun WorldUI() {
             // Fullscreen button
             CircleButton(
                 onClick = { toggleFullscreen() },
-                icon = if (isFullscreen) "⤓" else "⤢",
+                iconIndex = if (isFullscreen) 1 else 0, // 0: enter fullscreen, 1: exit fullscreen
                 badgeCount = 0
             )
 
@@ -292,14 +296,14 @@ fun WorldUI() {
                 // Notifications button
                 CircleButton(
                     onClick = { togglePanel(SidePanelState.Notifications) },
-                    icon = "🔔",
+                    iconIndex = 2, // 2: notifications
                     badgeCount = unreadNotificationCount
                 )
 
                 // Friends button
                 CircleButton(
                     onClick = { togglePanel(SidePanelState.Friends) },
-                    icon = "👥",
+                    iconIndex = 3, // 3: friends
                     badgeCount = 0
                 )
             }
@@ -308,14 +312,14 @@ fun WorldUI() {
             if (currentUser?.key == currentWorld?.userId) {
                 CircleButton(
                     onClick = { togglePanel(SidePanelState.WorldEdit) },
-                    icon = "✏️",
+                    iconIndex = 4, // 4: edit world
                     badgeCount = 0
                 )
                 
                 // Objects button - only visible if the current user is the owner of the world
                 CircleButton(
                     onClick = { togglePanel(SidePanelState.ObjectsPanel) },
-                    icon = "🧩",
+                    iconIndex = 5, // 5: edit objects
                     badgeCount = 0
                 )
             }
@@ -344,7 +348,7 @@ fun WorldUI() {
                         tutorialManager.advanceToNextStep()
                     }
                 },
-                icon = "📱",
+                iconIndex = 6, // 6: share / qr code
                 badgeCount = 0,
                 id = "qrButton"
             )
@@ -362,7 +366,7 @@ fun WorldUI() {
                         tutorialManager.advanceToNextStep()
                     }
                 },
-                icon = "💬",
+                iconIndex = 7, // 7: chat
                 badgeCount = unreadChatCount,
                 isChat = true,
                 id = "chatButton"
@@ -377,7 +381,7 @@ fun WorldUI() {
                     }
                     togglePanel(SidePanelState.Profile) 
                 },
-                icon = "👤",
+                iconIndex = 8, // 8: my profile
                 badgeCount = 0,
                 id = "profileButton"
             )

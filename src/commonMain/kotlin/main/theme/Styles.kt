@@ -32,6 +32,7 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
@@ -41,6 +42,7 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
+import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
     // Loading screen styles
@@ -116,6 +118,7 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
+        overflowY("auto")
         property("z-index", "1000")
         property("pointer-events", "auto")
         // Add background blur effect
@@ -123,6 +126,7 @@ object Styles : StyleSheet() {
         property("-webkit-backdrop-filter", "blur(2px)")
         property("isolation", "isolate") // Creates a new stacking context
         property("contain", "layout paint size") // Improves performance and isolation
+        padding(16.px)
     }
     
     // WorldUI styles
@@ -303,6 +307,15 @@ object Styles : StyleSheet() {
         height(8.px)
         property("border-radius", "50%")
         backgroundColor(Color.red)
+    }
+    
+    // Icon renderer styles
+    val iconRenderer by style {
+        width(32.px)
+        height(32.px)
+        display(DisplayStyle.Block)
+        backgroundColor(rgba(0, 0, 0, 0.1))
+        property("border-radius", "4px")
     }
     
     // Panel styles
@@ -805,6 +818,8 @@ object Styles : StyleSheet() {
         color(Theme.colors.primary)
         property("border", "0")
         property("cursor", "pointer")
+        borderRadius(8.px)
+        property("border", "1px solid ${Theme.colors.primary}")
     }
     
     val logoutButton by style {
@@ -853,6 +868,7 @@ object Styles : StyleSheet() {
     
     val settingsSectionContainer by style {
         display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         padding(8.px)

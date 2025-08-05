@@ -16,9 +16,6 @@ object PathUtils {
      * @return The current path without the leading slash
      */
     fun getCurrentPath(router: Router): String {
-        // Get the current path from the window.location.pathname
-        val path = window.location.pathname
-        // Remove the leading slash if present
-        return if (path.startsWith("/")) path.substring(1) else path
+        return router.currentPath.path.trimStart('/')
     }
 }

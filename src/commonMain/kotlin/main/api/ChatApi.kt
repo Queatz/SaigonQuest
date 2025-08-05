@@ -46,6 +46,12 @@ object ChatApi {
      */
     suspend fun getUnreadMessageCount(worldId: String): Int {
         try {
+            // Validate worldId to prevent empty value causing URL issues
+            if (worldId.isBlank()) {
+                console.error("Error: worldId cannot be empty when fetching unread message count")
+                return 0
+            }
+            
             // Create a ChatReadMarker object to represent the query
             // We don't need to set userId as it will be determined from the token on the server
             val readMarker = ChatReadMarker(

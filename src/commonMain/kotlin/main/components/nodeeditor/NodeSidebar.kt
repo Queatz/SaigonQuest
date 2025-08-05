@@ -1,7 +1,17 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import main.api.ObjectApi
 import main.theme.NodeEditorStyles
+import models.LogicNode
+import models.NodeCategory
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Text
@@ -9,70 +19,69 @@ import org.jetbrains.compose.web.dom.Text
 /**
  * Sidebar component for the node editor that contains draggable node items.
  * This component displays categorized lists of node types that can be dragged onto the canvas.
+ * Node types are loaded from the backend.
  */
 @Composable
 fun NodeSidebar() {
+    // State to store node types grouped by category
+    var nodeTypesByCategory by remember { mutableStateOf<Map<NodeCategory, List<LogicNode>>>(emptyMap()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    
+    // Create a coroutine scope for async operations
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Load node types when the component is mounted
+    DisposableEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                // Fetch node types from the backend
+                nodeTypesByCategory = ObjectApi.getNodeTypesByCategory()
+                isLoading = false
+            } catch (e: Exception) {
+                error = e.message
+                isLoading = false
+            }
+        }
+        
+        onDispose { }
+    }
+    
     Div(
         attrs = {
             classes(NodeEditorStyles.sidebarContainer)
         }
     ) {
-        // Events section
-        H4(
-            attrs = {
-                classes(NodeEditorStyles.sectionHeader)
+        if (isLoading) {
+            // Show loading state
+            Div {
+                Text("Loading node types...")
             }
-        ) {
-            Text("Events")
-        }
-        
-        // List of draggable events
-        DraggableItem("Visitor nearby", "event", "visitor_nearby", "Triggers when a visitor comes within range")
-        DraggableItem("Visitor interact", "event", "visitor_interact", "Triggers when a visitor interacts with this object")
-        DraggableItem("Player nearby", "event", "player_nearby", "Triggers when the player comes within range")
-        DraggableItem("Player interact", "event", "player_interact", "Triggers when the player interacts with this object")
-        DraggableItem("Local time", "event", "local_time", "Triggers at specific times of day")
-        
-        // Dialogue section
-        H4(
-            attrs = {
-                classes(NodeEditorStyles.sectionHeader)
+        } else if (error != null) {
+            // Show error state
+            Div {
+                Text("Error loading node types: $error")
             }
-        ) {
-            Text("Dialogue")
-        }
-        
-        // List of draggable dialogue options
-        DraggableItem("Present text", "dialogue", "present_text", "Display text message to the player")
-        DraggableItem("Show buttons", "dialogue", "show_buttons", "Present multiple choice options to the player")
-        
-        // Actions section
-        H4(
-            attrs = {
-                classes(NodeEditorStyles.sectionHeader)
+        } else {
+            // Render node types grouped by category
+            nodeTypesByCategory.forEach { (category, nodes) ->
+                // Skip empty categories
+                if (nodes.isEmpty()) return@forEach
+                
+                // Category header
+                H4(
+                    attrs = {
+                        classes(NodeEditorStyles.sectionHeader)
+                    }
+                ) {
+                    Text(category.name.lowercase().replaceFirstChar { it.uppercase() } + "s")
+                }
+                
+                // List of draggable items for this category
+                nodes.forEach { node ->
+                    DraggableItem(node)
+                }
             }
-        ) {
-            Text("Actions")
         }
-        
-        // List of draggable actions
-        DraggableItem("Teleport player", "action", "teleport", "Move player to a different location")
-        DraggableItem("Play sound", "action", "play_sound", "Play a sound effect or music")
-        DraggableItem("Show effect", "action", "show_effect", "Display a visual effect in the world")
-        
-        // Inputs section
-        H4(
-            attrs = {
-                classes(NodeEditorStyles.sectionHeader)
-            }
-        ) {
-            Text("Inputs")
-        }
-        
-        // List of draggable inputs
-        DraggableItem("Player info", "input", "player_info", "Access player data like name, level, etc.")
-        DraggableItem("Visitor info", "input", "visitor_info", "Access visitor data like type, preferences, etc.")
-        DraggableItem("World info", "input", "world_info", "Access world data like time, weather, etc.")
-        DraggableItem("Object info", "input", "object_info", "Access object properties and state")
     }
 }

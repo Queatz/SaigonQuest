@@ -142,6 +142,33 @@ class UserRepository {
     }
     
     /**
+     * Updates a user's character customization
+     */
+    fun updateCustomization(id: String, bodyType: String, skinTone: Float, eyeColor: String, hairStyle: String): User? {
+        val user = getById(id) ?: return null
+        
+        // Update customization properties
+        user.bodyType = bodyType
+        user.skinTone = skinTone
+        user.eyeColor = eyeColor
+        user.hairStyle = hairStyle
+        
+        return update(id, user)
+    }
+    
+    /**
+     * Updates a user's worn items
+     */
+    fun updateWornItems(id: String, wornItems: List<String>): User? {
+        val user = getById(id) ?: return null
+        
+        // Update worn items
+        user.wornItems = wornItems
+        
+        return update(id, user)
+    }
+    
+    /**
      * Hashes a password using SHA-256
      */
     private fun hashPassword(password: String): String {

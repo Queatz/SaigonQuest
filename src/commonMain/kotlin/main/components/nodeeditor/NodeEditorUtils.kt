@@ -1,6 +1,8 @@
 package main.components.nodeeditor
 
 import kotlin.js.Date
+import models.LogicNode
+import models.toTypeString
 
 /**
  * Parse node data from JSON string.
@@ -207,7 +209,7 @@ fun createPortsForNodeType(type: String, nodeId: String): Pair<List<PortData>, L
 /**
  * Creates a new node with the given parameters.
  * 
- * @param type The type of node (event, dialogue, action)
+ * @param type The type of node (as a string like "event", "dialogue", "action")
  * @param nodeId The ID of the node (or empty to generate one)
  * @param label The label for the node
  * @param x The x position of the node
@@ -222,9 +224,12 @@ fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float):
     // Create ports based on node type
     val (inputs, outputs) = createPortsForNodeType(type, id)
     
+    // Convert string type to LogicNode
+    val logicNodeType = models.getLogicNodeFromTypeAndId(type, nodeId)
+    
     // Create a new node
     val newNode = NodeData(
-        type = type,
+        type = logicNodeType,
         x = x,
         y = y,
         label = label,

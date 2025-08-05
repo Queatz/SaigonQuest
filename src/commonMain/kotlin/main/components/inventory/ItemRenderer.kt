@@ -1,14 +1,9 @@
 package main.components.inventory
 
 import androidx.compose.runtime.Composable
+import main.components.IconRenderer
+import main.theme.Styles
 import models.Item
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 
 /**
@@ -24,34 +19,31 @@ fun ItemRenderer(
     size: Int = 32,
     onClick: (() -> Unit)? = null
 ) {
-    Div(
-        attrs = {
-            style {
-                width(size.px)
-                height(size.px)
-                display(DisplayStyle.Block)
-                backgroundColor(rgba(0, 0, 0, 0.1))
-                
-                // If we have an item with a file, set up the sprite sheet
-                if (item != null && item.file.isNotEmpty()) {
-                    property("background-image", "url(${item.file})")
-                    property("background-size", "320px 320px") // All files are 320x320 pixel pngs
-                    
-                    // Calculate position based on assetIndex
-                    // assetIndex moves horizontally and wraps vertically
-                    val col = item.assetIndex % 10 // 10 columns (320px / 32px = 10)
-                    val row = item.assetIndex / 10
-                    property("background-position", "-${col * 32}px -${row * 32}px")
+    if (item != null && item.file.isNotEmpty()) {
+        // If we have an item with a file, use IconRenderer
+        IconRenderer(
+            url = item.file,
+            index = item.assetIndex,
+            size = size,
+            onClick = onClick
+        )
+    } else {
+        // If no item or empty file, just show an empty box
+        Div(
+            attrs = {
+                classes(Styles.iconRenderer)
+                style {
+                    if (size != 32) {
+                        property("width", "${size}px")
+                        property("height", "${size}px")
+                    }
                 }
                 
-                // Add border radius for a nicer look
-                property("border-radius", "4px")
+                // Add click handler if provided
+                onClick?.let { handler ->
+                    onClick { handler() }
+                }
             }
-            
-            // Add click handler if provided
-            onClick?.let { handler ->
-                onClick { handler() }
-            }
-        }
-    ) {}
+        ) {}
+    }
 }

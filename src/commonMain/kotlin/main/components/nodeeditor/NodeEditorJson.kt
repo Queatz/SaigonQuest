@@ -1,6 +1,9 @@
 package main.components.nodeeditor
 
 import kotlinx.serialization.Serializable
+import models.LogicNode
+import models.getLogicNodeFromTypeAndId
+import models.toTypeString
 import utils.json
 
 /**
@@ -22,7 +25,8 @@ data class PortDataJson(
  */
 @Serializable
 data class NodeDataJson(
-    val type: String,
+    val type: String, // String representation of LogicNode (e.g., "action", "event")
+    val nodeTypeId: String, // ID of the LogicNode (e.g., "teleport", "player_interact")
     val x: Float,
     val y: Float,
     val label: String,
@@ -87,7 +91,7 @@ object NodeEditorJsonUtil {
      */
     fun convertToNodeData(nodeDataJson: NodeDataJson): NodeData {
         return NodeData(
-            type = nodeDataJson.type,
+            type = getLogicNodeFromTypeAndId(nodeDataJson.type, nodeDataJson.nodeTypeId),
             x = nodeDataJson.x,
             y = nodeDataJson.y,
             label = nodeDataJson.label,
@@ -113,7 +117,8 @@ object NodeEditorJsonUtil {
     
     fun convertToNodeDataJson(nodeData: NodeData): NodeDataJson {
         return NodeDataJson(
-            type = nodeData.type,
+            type = nodeData.type.toTypeString(),
+            nodeTypeId = nodeData.type.id,
             x = nodeData.x,
             y = nodeData.y,
             label = nodeData.label,

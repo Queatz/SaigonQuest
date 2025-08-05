@@ -52,11 +52,16 @@ fun CreateItemDialog(
     var description by remember { mutableStateOf("") }
     var file by remember { mutableStateOf("") }
     var assetIndex by remember { mutableStateOf("0") }
+    var wearable by remember { mutableStateOf(false) }
+    var wearableFile by remember { mutableStateOf("") }
+    var wearableAssetIndex by remember { mutableStateOf("0") }
     
     // Validation state
     var titleError by remember { mutableStateOf("") }
     var fileError by remember { mutableStateOf("") }
     var assetIndexError by remember { mutableStateOf("") }
+    var wearableFileError by remember { mutableStateOf("") }
+    var wearableAssetIndexError by remember { mutableStateOf("") }
     
     // Loading state
     var isSubmitting by remember { mutableStateOf(false) }
@@ -99,6 +104,35 @@ fun CreateItemDialog(
             isValid = false
         }
         
+        // Validate wearable fields if wearable is checked
+        if (wearable) {
+            // Validate wearable file
+            if (wearableFile.trim().isEmpty()) {
+                wearableFileError = "Wearable file path is required"
+                isValid = false
+            } else {
+                wearableFileError = ""
+            }
+            
+            // Validate wearable asset index
+            try {
+                val index = wearableAssetIndex.toInt()
+                if (index < 0) {
+                    wearableAssetIndexError = "Wearable asset index must be a positive number"
+                    isValid = false
+                } else {
+                    wearableAssetIndexError = ""
+                }
+            } catch (e: NumberFormatException) {
+                wearableAssetIndexError = "Wearable asset index must be a number"
+                isValid = false
+            }
+        } else {
+            // Clear errors if wearable is not checked
+            wearableFileError = ""
+            wearableAssetIndexError = ""
+        }
+        
         return isValid
     }
     
@@ -118,7 +152,10 @@ fun CreateItemDialog(
                     title = title.trim(),
                     description = description.trim(),
                     file = file.trim(),
-                    assetIndex = assetIndex.toInt()
+                    assetIndex = assetIndex.toInt(),
+                    wearable = wearable,
+                    wearableFile = if (wearable) wearableFile.trim() else null,
+                    wearableAssetIndex = if (wearable) wearableAssetIndex.toInt() else null
                 )
                 
                 val createdItem = ItemApi.createItem(newItem)
@@ -340,6 +377,148 @@ fun CreateItemDialog(
                             }
                         ) {
                             Text(assetIndexError)
+                        }
+                    }
+                }
+                
+                // Wearable checkbox
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Div(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                marginBottom(4.px)
+                            }
+                        }
+                    ) {
+                        Input(
+                            type = InputType.Checkbox,
+                            attrs = {
+                                checked(wearable)
+                                onChange { event -> 
+                                    wearable = event.target.checked
+                                }
+                                style {
+                                    marginTop(4.px)
+                                }
+                            }
+                        )
+                        
+                        Label(
+                            attrs = {
+                                style {
+                                    color(Color.white)
+                                    marginBottom(4.px)
+                                    marginTop(2.px)
+                                    padding(0.px, 0.px, 0.px, 8.px)
+                                }
+                            }
+                        ) {
+                            Text("Is this item wearable?")
+                        }
+                    }
+                }
+                
+                // Conditional wearable fields
+                if (wearable) {
+                    // Wearable File field
+                    Div(
+                        attrs = {
+                            style {
+                                marginBottom(16.px)
+                            }
+                        }
+                    ) {
+                        Label(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Block)
+                                    color(Color.white)
+                                    marginBottom(4.px)
+                                }
+                            }
+                        ) {
+                            Text("Wearable file path (URL to sprite sheet)")
+                        }
+                        
+                        Input(
+                            type = InputType.Text,
+                            attrs = {
+                                classes(Styles.inputField)
+                                placeholder("Enter wearable file path")
+                                value(wearableFile)
+                                onInput { wearableFile = it.value }
+                            }
+                        )
+                        
+                        if (wearableFileError.isNotEmpty()) {
+                            P(
+                                attrs = {
+                                    style {
+                                        color(rgba(255, 100, 100, 0.9))
+                                        fontSize(12.px)
+                                        marginTop(4.px)
+                                    }
+                                }
+                            ) {
+                                Text(wearableFileError)
+                            }
+                        }
+                    }
+                    
+                    // Wearable Asset Index field
+                    Div(
+                        attrs = {
+                            style {
+                                marginBottom(16.px)
+                            }
+                        }
+                    ) {
+                        Label(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Block)
+                                    color(Color.white)
+                                    marginBottom(4.px)
+                                }
+                            }
+                        ) {
+                            Text("Wearable asset index (0-99)")
+                        }
+                        
+                        Input(
+                            type = InputType.Number,
+                            attrs = {
+                                classes(Styles.inputField)
+                                placeholder("Enter wearable asset index")
+                                value(wearableAssetIndex)
+                                onInput { 
+                                    // Convert Number? to String
+                                    wearableAssetIndex = it.value?.toString() ?: "0"
+                                }
+                                attr("min", "0")
+                                attr("max", "99")
+                            }
+                        )
+                        
+                        if (wearableAssetIndexError.isNotEmpty()) {
+                            P(
+                                attrs = {
+                                    style {
+                                        color(rgba(255, 100, 100, 0.9))
+                                        fontSize(12.px)
+                                        marginTop(4.px)
+                                    }
+                                }
+                            ) {
+                                Text(wearableAssetIndexError)
+                            }
                         }
                     }
                 }

@@ -899,9 +899,10 @@ object WebSocketApi {
      * This sends the player's updated status to all other clients in the world.
      * 
      * @param status The player's status message
+     * @param isPlayer Whether the user is a player (true) or visitor (false). Defaults to true.
      * @return true if the update was sent successfully, false otherwise
      */
-    suspend fun updatePlayerStatus(status: String): Boolean {
+    suspend fun updatePlayerStatus(status: String, isPlayer: Boolean = true): Boolean {
         try {
             if (!_isConnected) {
                 console.warn("Cannot update player status: WebSocket not connected")
@@ -912,14 +913,14 @@ object WebSocketApi {
             val updateData = UpdatePlayerData(
                 userId = user.key,
                 name = user.username,
-                isPlayer = true,
+                isPlayer = isPlayer,
                 status = status
             )
 
             val success = sendUpdatePlayerMessage(WebSocketAction.UPDATE_PLAYER, updateData)
 
             if (success) {
-                console.log("Player status update sent successfully: status=$status")
+                console.log("Player status update sent successfully: status=$status, isPlayer=$isPlayer")
             } else {
                 console.error("Failed to send player status update: ${_lastError ?: "Unknown error"}")
             }

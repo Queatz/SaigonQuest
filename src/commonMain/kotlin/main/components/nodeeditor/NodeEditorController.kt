@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import main.utils.getBoundingClientRectSafe
+import models.LogicNode
+import models.getLogicNodeFromTypeAndId
 import org.w3c.dom.HTMLElement
 
 /**
@@ -169,15 +171,15 @@ class NodeEditorController(
     /**
      * Adds a new node to the canvas.
      *
-     * @param type The type of node (event, dialogue, action, input)
-     * @param nodeId The ID of the node
+     * @param type The type of node as a string (event, dialogue, action, input)
+     * @param nodeId The ID of the node type (e.g., teleport, player_interact)
      * @param label The label for the node
      * @param x The x position of the node
      * @param y The y position of the node
      * @return The ID of the newly created node
      */
     fun addNode(type: String, nodeId: String, label: String, x: Float, y: Float): String {
-        // Create a new node
+        // Create a new node (createNode handles conversion from String to LogicNode)
         val (id, newNode) = createNode(type, nodeId, label, x, y)
         
         // Create and execute the add node command

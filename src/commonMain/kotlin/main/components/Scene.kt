@@ -20,6 +20,7 @@ import lib.initializeBabylonJSLoaders
 import main.api.FriendApi
 import main.api.NotificationApi
 import main.api.UserApi
+import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
@@ -32,6 +33,7 @@ import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
 import main.theme.Styles
 import main.utils.createObjectDropEvent
+import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -151,6 +153,10 @@ fun SceneComponent(url: String) {
             
             // Apply base canvas styles
             classes(Styles.canvasBase)
+
+            style {
+                outline("none")
+            }
             
             // Apply low graphics mode styles if enabled
             if (currentGraphicsMode) {
@@ -242,6 +248,22 @@ fun SceneComponent(url: String) {
                                     // Now upgrade the visitor to a player
                                     val user = UserApi.upgradeToPlayer(username, password, yearOfBirth, sex)
                                     console.log("User registered: ${user.username}")
+                                    
+                                    // Update player state in WebSocket to notify other clients
+                                    try {
+                                        val updateSuccess = WebSocketApi.updatePlayer(
+                                            name = user.username,
+                                            isPlayer = true
+                                        )
+                                        if (updateSuccess) {
+                                            console.log("Successfully updated player state after registration")
+                                        } else {
+                                            console.warn("Failed to update player state after registration")
+                                        }
+                                    } catch (e: Exception) {
+                                        console.error("Error updating player state after registration", e)
+                                    }
+                                    
                                     showLoginDialog.value = false
                                     // After successful registration, show the world edit panel
                                     showWorldEditPanel.value = true
@@ -256,6 +278,22 @@ fun SceneComponent(url: String) {
                             try {
                                 val user = UserApi.upgradeToPlayer(username, password, yearOfBirth, sex)
                                 console.log("User registered: ${user.username}")
+                                
+                                // Update player state in WebSocket to notify other clients
+                                try {
+                                    val updateSuccess = WebSocketApi.updatePlayer(
+                                        name = user.username,
+                                        isPlayer = true
+                                    )
+                                    if (updateSuccess) {
+                                        console.log("Successfully updated player state after registration")
+                                    } else {
+                                        console.warn("Failed to update player state after registration")
+                                    }
+                                } catch (e: Exception) {
+                                    console.error("Error updating player state after registration", e)
+                                }
+                                
                                 showLoginDialog.value = false
                                 // After successful registration, show the world edit panel
                                 showWorldEditPanel.value = true
@@ -277,6 +315,22 @@ fun SceneComponent(url: String) {
                     try {
                         val user = UserApi.login(username, password)
                         console.log("User logged in: ${user.username}")
+                        
+                        // Update player state in WebSocket to notify other clients
+                        try {
+                            val updateSuccess = WebSocketApi.updatePlayer(
+                                name = user.username,
+                                isPlayer = true
+                            )
+                            if (updateSuccess) {
+                                console.log("Successfully updated player state after login")
+                            } else {
+                                console.warn("Failed to update player state after login")
+                            }
+                        } catch (e: Exception) {
+                            console.error("Error updating player state after login", e)
+                        }
+                        
                         showLoginDialog.value = false
                         // After successful login, show the world edit panel
                         showWorldEditPanel.value = true
@@ -582,6 +636,13 @@ fun SceneComponent(url: String) {
                 
                 // Store the current world
                 currentWorld.value = worldLoader.getCurrentWorld()
+
+                // Check if this is a fallback world due to an API error
+                if (worldLoader.isApiErrorFallback()) {
+                    // Set loading failed to true to show error message
+                    loadingFailed.value = true
+                    errorMessage.value = "Error loading world: World not found or server error"
+                }
                 
                 // Set world meshes in controllers
                 playerController.setWorldMeshes(worldMeshes)

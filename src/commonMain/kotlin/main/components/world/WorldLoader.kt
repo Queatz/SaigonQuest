@@ -4,8 +4,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
 import lib.Color4
+import lib.CreatePlaneOptions
 import lib.DirectionalLight
 import lib.HemisphericLight
+import lib.MeshBuilder
 import lib.PBRMaterial
 import lib.Scene
 import lib.SceneLoader
@@ -15,6 +17,7 @@ import main.api.WorldApi
 import main.components.SceneManager
 import main.components.shadow.ShadowManager
 import models.World
+import kotlin.math.PI
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.browser.window
@@ -57,6 +60,9 @@ class WorldLoader(private val scene: Scene) {
     
     // Current world data
     private var currentWorld: World? = null
+    
+    // Flag to indicate if a fallback world was created due to an API error
+    private var isApiErrorFallback: Boolean = false
     
     // Lights for the scene
     private var hemisphericLight: HemisphericLight? = null
@@ -131,8 +137,15 @@ class WorldLoader(private val scene: Scene) {
             // Set the scene fog density from the world model
             setSceneFogDensity(world.fogDensity)
 
+            // Check if world file is specified
+            if (world.file.isEmpty()) {
+                // Create a fallback 10x10 plane
+                println("[INFO] No world file specified, creating fallback 10x10 plane")
+                return createFallbackWorld()
+            }
+
             // Determine the file to load
-            val worldFile = if (world.file.isNotEmpty()) "${world.file}.glb" else "world.glb"
+            val worldFile = "${world.file}.glb"
             
             // Load the 3D model using suspendCancellableCoroutine to convert callback to coroutine
             return suspendCancellableCoroutine { continuation ->
@@ -167,10 +180,62 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (error: Exception) {
-            // Propagate the error
+            // Log the error but don't re-throw it
             println("[ERROR] Failed to load world: ${error.message}")
-            throw error
+            
+            // Create a fallback world due to API error
+            return createFallbackWorld(isApiError = true)
         }
+    }
+    
+    /**
+     * Creates a fallback world with a single 10x10 plane.
+     * 
+     * @param isApiError Whether this fallback world is being created due to an API error
+     * @return An array containing the fallback world meshes
+     */
+    private fun createFallbackWorld(isApiError: Boolean = false): Array<AbstractMesh> {
+        println("[INFO] Creating fallback world with a 10x10 plane")
+        
+        // Set the API error fallback flag
+        isApiErrorFallback = isApiError
+        
+        // Create a 10x10 plane
+        val plane = MeshBuilder.CreatePlane(
+            name = "fallbackPlane",
+            options = object : CreatePlaneOptions {
+                override val width = 10.0f
+                override val height = 10.0f
+            },
+            scene = scene
+        )
+        
+        // Position the plane at the origin, flat on the ground
+        plane.position = Vector3(0f, 0f, 0f)
+        plane.rotation = Vector3(PI.toFloat() / 2, 0f, 0f)
+        
+        // Create a material for the plane
+        val material = PBRMaterial("fallbackPlaneMaterial", scene).apply {
+            metallic = 0.0f
+            roughness = 1.0f
+            albedoColor = Color3(0.5f, 0.5f, 0.5f)
+        }
+        
+        // Apply the material to the plane
+        plane.material = material
+        
+        // Store the plane as the world mesh
+        worldMeshes = arrayOf(plane)
+        
+        // Configure shadows for the plane
+        shadowManager?.let { manager ->
+            manager.configureShadowReceiver(plane)
+        }
+        
+        // Execute the world loaded callback
+        executeWorldLoadedCallback()
+        
+        return worldMeshes
     }
     
     /**
@@ -317,6 +382,15 @@ class WorldLoader(private val scene: Scene) {
      */
     fun getOcclusionManager(): OcclusionManager? {
         return occlusionManager
+    }
+    
+    /**
+     * Checks if a fallback world was created due to an API error.
+     * 
+     * @return True if a fallback world was created due to an API error, false otherwise
+     */
+    fun isApiErrorFallback(): Boolean {
+        return isApiErrorFallback
     }
     
     /**

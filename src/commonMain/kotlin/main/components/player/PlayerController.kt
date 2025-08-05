@@ -604,6 +604,13 @@ class PlayerController(private val scene: Scene) {
                         validPos.z
                     )
                     
+                    // Update status text position to be above the player
+                    statusTextHandle?.position = Vector3(
+                        validPos.x,
+                        validPos.y + .8f,
+                        validPos.z
+                    )
+                    
                     // Send player position update via WebSocket only if connected
                     coroutineScope.launch {
                         try {

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.theme.NodeEditorStyles
+import models.toTypeString
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.Color
@@ -62,7 +63,7 @@ fun PropertyPanel(
     var effectType by remember { mutableStateOf("") }
     
     // Initialize additional properties based on node type and existing data
-    val typedNodeData = NodeDataParser.parseNodeData(node.type, node.label, node.data)
+    val typedNodeData = NodeDataParser.parseNodeData(node.type, node.data)
     
     when (typedNodeData) {
         is TextNodeData -> textContent = typedNodeData.text
@@ -76,7 +77,7 @@ fun PropertyPanel(
     // Function to update the node
     val updateNode = {
         // Create updated node data
-        val updatedNodeData: NodeDataType = when (node.type) {
+        val updatedNodeData: NodeDataType = when (node.type.toTypeString()) {
             "dialogue" -> {
                 if (node.label == "Present text") {
                     TextNodeData(text = textContent)
@@ -144,7 +145,7 @@ fun PropertyPanel(
                     classes(NodeEditorStyles.propertyValue)
                 }
             ) {
-                Text(node.type.capitalize())
+                Text(node.type.toTypeString().replaceFirstChar { it.uppercase() })
             }
         }
         
@@ -175,7 +176,7 @@ fun PropertyPanel(
         }
         
         // Type-specific properties
-        when (node.type) {
+        when (node.type.toTypeString()) {
             "dialogue" -> {
                 if (node.label == "Present text") {
                     // Text content for Present text node

@@ -1,5 +1,7 @@
 package main.components.nodeeditor
 
+import models.LogicNode
+
 /**
  * Enum representing the type of port (input or output)
  */
@@ -22,7 +24,7 @@ data class PortData(
  * A data class to represent a node in the editor.
  */
 data class NodeData(
-    val type: String,
+    val type: LogicNode,
     val x: Float,
     val y: Float,
     val label: String,

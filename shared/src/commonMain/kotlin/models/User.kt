@@ -18,7 +18,14 @@ data class User(
     var lastActive: Instant = Clock.System.now(),
     var yearOfBirth: Int? = null,
     var sex: String? = null,
-    var status: String = ""
+    var status: String = "",
+    // Character customization properties
+    var bodyType: String = "Normal", // Skinny, Normal, Fat
+    var skinTone: Float = 0.5f,      // 0-1 tone slider
+    var eyeColor: String = "Brown",  // Black, Blue, Brown, Green, Gray
+    var hairStyle: String = "Short", // Short, Medium, Long
+    // Worn items - list of item IDs that the user is currently wearing
+    var wornItems: List<String> = mutableListOf()
 ) : BaseModel() {
     // Transient fields that won't be serialized
     @Transient

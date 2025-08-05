@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.theme.NodeEditorStyles
+import models.toTypeString
 import org.w3c.dom.HTMLElement
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
@@ -101,7 +102,7 @@ fun NodeElement(
     }
     
     // Determine node color class based on type
-    val nodeColorClass = when(type) {
+    val nodeColorClass = when(type.toTypeString()) {
         "event" -> NodeEditorStyles.eventNodeColor
         "dialogue" -> NodeEditorStyles.dialogueNodeColor
         "action" -> NodeEditorStyles.actionNodeColor
@@ -166,7 +167,7 @@ fun NodeElement(
             
             // Add node data attributes
             attr("data-node-id", id)
-            attr("data-node-type", type)
+            attr("data-node-type", type.toTypeString())
         }
     ) {
         // Node header

@@ -5,7 +5,11 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import models.ErrorResponse
+import models.LogicNode
+import models.NodeCategory
 import models.Object
+import models.getAllNodeTypes
+import models.getNodeTypesByCategory
 
 /**
  * API client for object operations
@@ -151,5 +155,25 @@ object ObjectApi {
             console.error("Error deleting object", e)
             throw e
         }
+    }
+    
+    /**
+     * Gets all available node types
+     * 
+     * In a real implementation, this would fetch from the backend.
+     * For now, we're returning the predefined node types.
+     */
+    suspend fun getNodeTypes(): List<LogicNode> {
+        return getAllNodeTypes()
+    }
+    
+    /**
+     * Gets all available node types grouped by category
+     * 
+     * In a real implementation, this would fetch from the backend.
+     * For now, we're returning the predefined node types grouped by category.
+     */
+    suspend fun getNodeTypesByCategory(): Map<NodeCategory, List<LogicNode>> {
+        return models.getNodeTypesByCategory()
     }
 }

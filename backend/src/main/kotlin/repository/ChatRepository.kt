@@ -41,7 +41,11 @@ class ChatRepository {
      * @param olderThan The timestamp to get messages older than (default: current time)
      * @return A list of chat messages for the world
      */
-    fun getMessagesByWorldId(worldId: String, limit: Int = 100, olderThan: Long = System.currentTimeMillis()): List<ChatMessage> {
+    fun getMessagesByWorldId(
+        worldId: String,
+        limit: Int = 100,
+        olderThan: Long = System.currentTimeMillis()
+    ): List<ChatMessage> {
         val query = """
             FOR m IN @@collection
             FILTER m.worldId == @worldId AND m.timestamp <= @olderThan

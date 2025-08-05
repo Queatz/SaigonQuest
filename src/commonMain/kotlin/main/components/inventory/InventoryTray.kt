@@ -104,7 +104,7 @@ fun InventoryTray(
         // Last box always opens inventory dialog
         InventoryBox(
             onClick = { onOpenInventory() },
-            content = "+"
+            content = "➕"
         )
     }
 }

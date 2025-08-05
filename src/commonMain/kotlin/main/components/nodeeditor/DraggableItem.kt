@@ -2,6 +2,8 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import main.theme.NodeEditorStyles
+import models.LogicNode
+import models.toTypeString
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.marginTop
@@ -9,6 +11,68 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+
+/**
+ * A draggable item in the left panel.
+ * 
+ * @param node The LogicNode that this item represents
+ */
+@Composable
+fun DraggableItem(node: LogicNode) {
+    val label = node.label
+    val type = node.toTypeString()
+    val id = node.id
+    val description = node.description
+    
+    Div(
+        attrs = {
+            classes(NodeEditorStyles.draggableItem)
+            // Add draggable attributes
+            attr("draggable", "true")
+            attr("data-type", type)
+            attr("data-id", id)
+            attr("data-label", label)
+            attr("data-description", description)
+            
+            // Add drag event handlers
+            onDragStart { event ->
+                // Set the drag data
+                event.dataTransfer?.setData("text/plain", "$type:$id:$label")
+                // Set the drag effect
+                event.dataTransfer?.effectAllowed = "copy"
+            }
+            
+            onDrag { event ->
+                // Prevent default to allow drop
+                event.preventDefault()
+            }
+            
+            onDragEnd { event ->
+                // Clean up after drag operation
+                event.preventDefault()
+            }
+        }
+    ) {
+        Div {
+            Text(label)
+        }
+        
+        if (description.isNotEmpty()) {
+            Div(
+                attrs = {
+                    style {
+                        fontSize(11.px)
+                        color(rgba(200, 200, 200, 0.7))
+                        marginTop(3.px)
+                        property("line-height", "1.3")
+                    }
+                }
+            ) {
+                Text(description)
+            }
+        }
+    }
+}
 
 /**
  * A draggable item in the left panel.
