@@ -38,10 +38,12 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
+import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
+import org.jetbrains.compose.web.css.maxHeight
 import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
@@ -119,6 +121,7 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         overflowY("auto")
+        boxSizing("border-box")
         property("z-index", "1000")
         property("pointer-events", "auto")
         // Add background blur effect
@@ -126,7 +129,6 @@ object Styles : StyleSheet() {
         property("-webkit-backdrop-filter", "blur(2px)")
         property("isolation", "isolate") // Creates a new stacking context
         property("contain", "layout paint size") // Improves performance and isolation
-        padding(16.px)
     }
     
     // WorldUI styles
@@ -314,8 +316,6 @@ object Styles : StyleSheet() {
         width(32.px)
         height(32.px)
         display(DisplayStyle.Block)
-        backgroundColor(rgba(0, 0, 0, 0.1))
-        property("border-radius", "4px")
     }
     
     // Panel styles
@@ -401,6 +401,7 @@ object Styles : StyleSheet() {
         property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
+        overflowY("auto")
     }
     
     val baseDialogHeader by style {
@@ -885,6 +886,39 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         padding(8.px)
+    }
+    
+    // PlayerDialog two-column layout styles
+    val playerDialogTwoColumnContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        width(100.percent)
+        
+        // Use row layout on desktop
+        desktop(self) {
+            flexDirection(FlexDirection.Row)
+            property("gap", "24px")
+        }
+    }
+    
+    val playerDialogLeftColumn by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        width(100.percent)
+        
+        desktop(self) {
+            width(40.percent)
+        }
+    }
+    
+    val playerDialogRightColumn by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        width(100.percent)
+        
+        desktop(self) {
+            width(60.percent)
+        }
     }
 
     init {

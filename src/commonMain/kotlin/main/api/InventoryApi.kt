@@ -136,7 +136,7 @@ object InventoryApi {
                 ApiClient.addAuthHeader(this)
                 setBody(item)
             }
-            
+        
             if (response.status.isSuccess()) {
                 return response.body<Inventory>()
             } else {
@@ -151,6 +151,75 @@ object InventoryApi {
             }
         } catch (e: Exception) {
             console.error("Error updating inventory item", e)
+            throw e
+        }
+    }
+
+    /**
+     * Gets inventory items by their IDs
+     */
+    suspend fun getInventoryItemsByIds(itemIds: List<String>): List<InventoryItem> {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/inventory/items/batch") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(itemIds)
+            }
+        
+            if (response.status.isSuccess()) {
+                return response.body<List<InventoryItem>>()
+            } else {
+                // Parse error response
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    // Fallback if response is not a valid ErrorResponse
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error fetching inventory items by IDs", e)
+            throw e
+        }
+    }
+    
+    /**
+     * Updates the item order in the user's inventory
+     */
+    suspend fun updateInventoryItemOrder(itemOrder: List<String>): Inventory {
+        try {
+            // Filter out any empty strings from the itemOrder list
+            val validItemOrder = itemOrder.filter { it.isNotEmpty() }
+            
+            // Log if any items were filtered out
+            if (validItemOrder.size != itemOrder.size) {
+                console.warn("[DEBUG_LOG] Filtered out ${itemOrder.size - validItemOrder.size} empty strings from inventory item order")
+            }
+            
+            console.log("[DEBUG_LOG] Updating inventory item order: $validItemOrder")
+            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/inventory/itemOrder") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(mapOf("itemOrder" to validItemOrder))
+            }
+            
+            if (response.status.isSuccess()) {
+                console.log("[DEBUG_LOG] Successfully updated inventory item order")
+                return response.body<Inventory>()
+            } else {
+                // Parse error response
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    // Fallback if response is not a valid ErrorResponse
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                console.error("[DEBUG_LOG] Error updating inventory item order", errorResponse.message)
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("[DEBUG_LOG] Exception updating inventory item order", e)
             throw e
         }
     }

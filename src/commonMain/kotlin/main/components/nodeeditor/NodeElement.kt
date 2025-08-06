@@ -85,6 +85,8 @@ fun NodeElement(
             }
         }
     }
+
+    var nodeElementRef by remember { mutableStateOf<HTMLElement?>(null) }
     
     // Add/remove global event listeners when dragging state changes
     DisposableEffect(isDragging) {
@@ -111,22 +113,16 @@ fun NodeElement(
     }
     
     // Effect to register the node element with the controller
-    DisposableEffect(id) {
+    DisposableEffect(id, nodeElementRef) {
         // Use a small delay to ensure the DOM element is rendered
-        val timeoutId = window.setTimeout({
-            // Find the node element by its data attribute
-            val nodeElement = document.querySelector("[data-node-id='$id']") as? HTMLElement
-            if (nodeElement != null) {
-                // Register the node element with the controller
-                controller.registerNodeElement(id, nodeElement)
-            }
-        }, 100) // 100ms delay
-        
+        if (nodeElementRef != null) {
+            // Register the node element with the controller
+            controller.registerNodeElement(id, nodeElementRef!!)
+        }
+
         onDispose {
             // Unregister the node element when the component is disposed
             controller.unregisterNodeElement(id)
-            // Clear the timeout
-            window.clearTimeout(timeoutId)
         }
     }
     
@@ -142,10 +138,9 @@ fun NodeElement(
                 top(y.px)
             }
             
-            onClick { 
-                if (!isDragging) {
-                    onSelect() 
-                }
+            onClick { event ->
+                onSelect()
+                event.stopPropagation()
             }
             
             // Add mouse event handler for starting the drag operation
@@ -157,7 +152,6 @@ fun NodeElement(
                     nodeStartX = x
                     nodeStartY = y
                     event.stopPropagation()
-                    event.preventDefault()
                 }
             }
             
@@ -168,6 +162,14 @@ fun NodeElement(
             // Add node data attributes
             attr("data-node-id", id)
             attr("data-node-type", type.toTypeString())
+
+            ref { ref ->
+                nodeElementRef = ref
+
+                onDispose {
+                    nodeElementRef = null
+                }
+            }
         }
     ) {
         // Node header

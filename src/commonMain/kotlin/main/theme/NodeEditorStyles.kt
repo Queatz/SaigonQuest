@@ -10,6 +10,7 @@ import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
@@ -185,6 +186,7 @@ object NodeEditorStyles : StyleSheet() {
         property("min-width", "calc(100% - 36px)") // 100% - (16px*2 + 2px*2)
         property("min-height", "calc(100% - 36px)") // 100% - (16px*2 + 2px*2)
         borderRadius(8.px)
+        boxSizing("border-box")
     }
 
     val emptyCanvasMessage by style {

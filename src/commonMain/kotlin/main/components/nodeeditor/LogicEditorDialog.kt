@@ -10,14 +10,22 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
+import main.components.BaseDialog
+import main.components.DialogButton
 import main.theme.NodeEditorStyles
-import main.theme.Styles
 import main.utils.toggleFullscreen
 import models.Object
 import models.Rotation
 import models.Scale
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.px
 
 /**
  * A dialog for editing object logic.
@@ -56,7 +64,7 @@ fun LogicEditorDialog(
     val controller = remember { 
         NodeEditorController(
             initialNodes = parseNodes(objectModel?.data ?: "{}"),
-            initialConnections = parseConnections(objectModel?.data ?: "{}")
+            initialConnections = parseConnections(objectModel?.data ?: "{}"),
         )
     }
 
@@ -145,32 +153,26 @@ fun LogicEditorDialog(
         }
     }
     
-    // Main dialog container
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            // Add click outside to close
-            onClick { onClose() }
-        }
-    ) {
-        // Dialog content
-        Div(
-            attrs = {
-                // Apply fullscreen or regular dialog content style based on fullscreen state
-                classes(if (isFullscreen) NodeEditorStyles.dialogContentFullscreen else NodeEditorStyles.dialogContent)
-                // Stop propagation to prevent closing when clicking inside the dialog
-                onClick { it.stopPropagation() }
+    // Use BaseDialog with isFullscreen parameter
+    BaseDialog(
+        onClose = onClose,
+        title = dialogTitle,
+        maxWidth = "90%",
+        isFullscreen = isFullscreen,
+        // Custom header actions for fullscreen toggle
+        headerActions = {
+            Button(
+                attrs = {
+                    classes(NodeEditorStyles.closeButton)
+                    onClick { toggleFullscreen() }
+                }
+            ) {
+                Text(if (isFullscreen) "⤓" else "⤢")
             }
-        ) {
-            // Dialog header
-            DialogHeader(
-                title = dialogTitle,
-                isFullscreen = isFullscreen,
-                onToggleFullscreen = { toggleFullscreen() },
-                onClose = onClose
-            )
-            
-            // Main content area (flex row with left panel, node editor, and property panel)
+        },
+        // Main content
+        content = {
+            // Node editor content area
             Div(
                 attrs = {
                     classes(NodeEditorStyles.mainContentArea)
@@ -203,13 +205,42 @@ fun LogicEditorDialog(
                 }
             }
             
-            // Footer with action buttons
-            DialogFooter(
-                errorMessage = errorMessage,
-                isSubmitting = isSubmitting,
-                onCancel = onClose,
-                onSave = { if (!isSubmitting) handleSubmit() }
-            )
+            // Show error message if present
+            if (errorMessage.isNotEmpty()) {
+                Span(
+                    attrs = {
+                        classes(NodeEditorStyles.errorMessage)
+                    }
+                ) {
+                    Text(errorMessage)
+                }
+            }
+        },
+        // Footer actions
+        actions = {
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        gap(8.px)
+                    }
+                }
+            ) {
+                // Cancel button
+                DialogButton(
+                    onClick = onClose
+                ) {
+                    Text("Cancel")
+                }
+                
+                // Save button
+                DialogButton(
+                    onClick = { if (!isSubmitting) handleSubmit() },
+                    isPrimary = true
+                ) {
+                    Text(if (isSubmitting) "Saving..." else "Save")
+                }
+            }
         }
-    }
+    )
 }

@@ -24,20 +24,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import models.AuthResponse
+import models.LoginRequest
+import models.UpgradeRequest
 import models.User
-
-// Data classes for request/response (matching backend)
-@Serializable
-data class VisitorRequest(val visitorId: String = "")
-
-@Serializable
-data class UpgradeRequest(val username: String, val password: String, val yearOfBirth: Int? = null, val sex: String? = null)
-
-@Serializable
-data class LoginRequest(val username: String, val password: String)
-
-@Serializable
-data class AuthResponse(val user: User, val token: String)
+import models.VisitorRequest
+import models.WornItemsRequest
 
 @Serializable
 data class UserCustomizationRequest(
@@ -47,24 +39,23 @@ data class UserCustomizationRequest(
     val hairStyle: String
 )
 
-@Serializable
-data class UserWornItemsRequest(
-    val wornItems: List<String>
-)
-
 /**
  * API client for user operations
  */
 object UserApi {
     private const val TOKEN_STORAGE_KEY = "auth_token"
     private const val VISITOR_ID_STORAGE_KEY = "visitor_id"
-    
-    private val scope = CoroutineScope(Dispatchers.Default)
-    
+
+    private var user: User? = null
+
     /**
      * Gets the current user from local storage or creates a new visitor
      */
-    suspend fun getCurrentUser(): User {
+    suspend fun getCurrentUser(forceReload: Boolean = false): User {
+        if (!forceReload && user != null) {
+            return user!!
+        }
+
         // Check if we have a token
         val token = getToken()
         
@@ -297,10 +288,13 @@ object UserApi {
      * Updates user worn items
      */
     suspend fun updateUserWornItems(user: User): User {
-        val request = UserWornItemsRequest(
+        console.log("[WEAR] 2.1")
+        val request = WornItemsRequest(
             wornItems = user.wornItems
         )
-        
+
+        console.log("[WEAR] 2.2")
+
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/worn-items") {
                 contentType(ContentType.Application.Json)

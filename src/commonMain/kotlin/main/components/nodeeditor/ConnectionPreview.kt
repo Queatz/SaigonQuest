@@ -30,11 +30,14 @@ fun ConnectionPreview(
     currentX: Float,
     currentY: Float,
     isValidTarget: Boolean = false,
-    thickness: Float = 2f,
-    isInConnectionLayer: Boolean = false
+    thickness: Float = 2f
 ) {
     // Determine color based on whether there's a valid target
-    val color = if (isValidTarget) rgba(0, 255, 100, 0.8) else rgba(100, 200, 255, 0.8)
+    val color = if (isValidTarget) {
+        rgba(0, 255, 100, 0.8)
+    } else {
+        rgba(100, 200, 255, 0.8)
+    }
     
     // Use the same bezier curve as the regular connection
     BezierConnection(
@@ -44,7 +47,6 @@ fun ConnectionPreview(
         targetY = currentY,
         color = color,
         thickness = thickness,
-        isInConnectionLayer = isInConnectionLayer
     )
     
     // Add a visual indicator at the source port
@@ -57,12 +59,6 @@ fun ConnectionPreview(
                 left((sourceX - 6).px)
                 top((sourceY - 6).px)
                 backgroundColor(color)
-                
-                // If in connection layer, make sure it's visible above the canvas
-                if (isInConnectionLayer) {
-                    property("z-index", "3")
-                    property("pointer-events", "none") // Don't interfere with mouse events
-                }
             }
         }
     )
@@ -86,13 +82,7 @@ fun ConnectionPreview(
                 // Dynamic styles that depend on the color variable
                 backgroundColor(rgba(255, 255, 255, 0.2))
                 property("border-color", color.toString())
-                property("box-shadow", "0 0 12px ${color.toString()}")
-                
-                // If in connection layer, make sure it's visible above the canvas
-                if (isInConnectionLayer) {
-                    property("z-index", "3")
-                    property("pointer-events", "none") // Don't interfere with mouse events
-                }
+                property("box-shadow", "0 0 12px $color")
             }
         }
     )

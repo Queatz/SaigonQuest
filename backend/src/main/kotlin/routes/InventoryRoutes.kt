@@ -111,5 +111,25 @@ fun Routing.configureInventoryRoutes() {
                 call.respond(updatedInventory)
             }
         }
+        
+        // Get inventory items by IDs - requires authentication
+        authenticate {
+            post("/items/batch") {
+                val itemIds = call.receive<List<String>>()
+                
+                if (itemIds.isEmpty()) {
+                    return@post call.respond(emptyList<InventoryItem>())
+                }
+                
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get the inventory items
+                val inventoryItems = itemIds.mapNotNull { inventoryRepository.getInventoryItemById(it) }
+                
+                call.respond(inventoryItems)
+            }
+        }
     }
 }

@@ -140,40 +140,174 @@ fun PlayerDialog(
         onClose = updateUserStatus,
         title = "My Profile",
         content = {
-            // Character renderer - add this above the user info
+            // Two-column container for responsive layout
             Div(
                 attrs = {
-                    style {
-                        marginBottom(16.px)
-                        display(DisplayStyle.Companion.Flex)
-                        alignItems(AlignItems.Companion.Center)
-                        justifyContent(JustifyContent.Companion.Center)
-                        // Use flex-direction column to stack renderer and button
-                        property("flex-direction", "column")
-                    }
+                    classes(Styles.playerDialogTwoColumnContainer)
                 }
             ) {
-                // Add the character renderer component
-                CharacterRenderer(
-                    bodyType = user.bodyType,
-                    skinTone = user.skinTone,
-                    eyeColor = user.eyeColor,
-                    hairStyle = user.hairStyle
-                )
-                
-                // Add customize character button
-                Button(
+                // Left column: Character renderer, Customize button, Status
+                Div(
                     attrs = {
-                        classes(Styles.secondaryButton)
-                        style {
-                            marginTop(8.px)
-                        }
-                        onClick { 
-                            showCustomizationDialog.value = true
-                        }
+                        classes(Styles.playerDialogLeftColumn)
                     }
                 ) {
-                    Text("Customize Character")
+                    // Character renderer
+                    Div(
+                        attrs = {
+                            style {
+                                marginBottom(16.px)
+                                display(DisplayStyle.Companion.Flex)
+                                alignItems(AlignItems.Companion.Center)
+                                justifyContent(JustifyContent.Companion.Center)
+                                // Use flex-direction column to stack renderer and button
+                                property("flex-direction", "column")
+                            }
+                        }
+                    ) {
+                        // Add the character renderer component
+                        CharacterRenderer(
+                            bodyType = user.bodyType,
+                            skinTone = user.skinTone,
+                            eyeColor = user.eyeColor,
+                            hairStyle = user.hairStyle
+                        )
+                        
+                        // Add customize character button
+                        Button(
+                            attrs = {
+                                classes(Styles.secondaryButton)
+                                style {
+                                    marginTop(8.px)
+                                }
+                                onClick { 
+                                    showCustomizationDialog.value = true
+                                }
+                            }
+                        ) {
+                            Text("Customize Character")
+                        }
+                    }
+                    
+                    // Status input
+                    Div(
+                        attrs = {
+                            classes(Styles.settingsSectionContainer)
+                        }
+                    ) {
+                        // Label
+                        Span(
+                            attrs = {
+                                classes(Styles.settingsSectionLabel)
+                            }
+                        ) {
+                            Text("Status")
+                        }
+
+                        // Status input field
+                        Input(
+                            type = InputType.Text,
+                            attrs = {
+                                classes(Styles.inputField)
+                                placeholder("Set your status (displayed above your character)")
+                                value(status.value)
+                                onInput { event -> status.value = event.value }
+                            }
+                        )
+                    }
+                }
+                
+                // Right column: All remaining UI
+                Div(
+                    attrs = {
+                        classes(Styles.playerDialogRightColumn)
+                    }
+                ) {
+                    // User info
+                    Div(
+                        attrs = {
+                            classes(Styles.userInfoContainer)
+                        }
+                    ) {
+                        // Username
+                        Div(
+                            attrs = {
+                                classes(Styles.usernameText)
+                            }
+                        ) {
+                            Text(user.username)
+                        }
+
+                        // Player status
+                        Div(
+                            attrs = {
+                                classes(Styles.userStatusText)
+                            }
+                        ) {
+                            Text("Player Account")
+                        }
+                    }
+
+                    // Language switcher
+                    Div(
+                        attrs = {
+                            classes(Styles.settingsSectionContainer)
+                        }
+                    ) {
+                        // Label
+                        Span(
+                            attrs = {
+                                classes(Styles.settingsSectionLabel)
+                            }
+                        ) {
+                            Text("Language")
+                        }
+
+                        // Language switcher component
+                        Div(
+                            attrs = {
+                                classes(Styles.settingsControlContainer)
+                            }
+                        ) {
+                            LanguageSwitcher(
+                                onLanguageChange = { language ->
+                                    currentLanguage.value = language
+                                }
+                            )
+                        }
+                    }
+
+                    // Low graphics mode toggle
+                    GraphicsToggle(
+                        label = "Low Graphics Mode",
+                        checked = isLowGraphicsMode.value,
+                        onCheckedChange = { newValue ->
+                            // Toggle low graphics mode
+                            isLowGraphicsMode.value = GraphicsSettings.toggleLowGraphicsMode()
+                        },
+                        id = "lowGraphicsToggle"
+                    )
+
+                    // Pretty graphics toggle
+                    GraphicsToggle(
+                        label = "Pretty Graphics",
+                        checked = isPrettyGraphics.value,
+                        onCheckedChange = { newValue ->
+                            // Toggle pretty graphics mode
+                            isPrettyGraphics.value = GraphicsSettings.togglePrettyGraphics()
+                        },
+                        id = "prettyGraphicsToggle"
+                    )
+
+                    // Logout button
+                    Button(
+                        attrs = {
+                            classes(Styles.logoutButton)
+                            onClick { onLogout() }
+                        }
+                    ) {
+                        Text("Log Out")
+                    }
                 }
             }
             
@@ -197,119 +331,6 @@ fun PlayerDialog(
                         showCustomizationDialog.value = false
                     }
                 )
-            }
-
-            // User info
-            Div(
-                attrs = {
-                    classes(Styles.userInfoContainer)
-                }
-            ) {
-                // Username
-                Div(
-                    attrs = {
-                        classes(Styles.usernameText)
-                    }
-                ) {
-                    Text(user.username)
-                }
-
-                // Status input
-                Div(
-                    attrs = {
-                        classes(Styles.settingsSectionContainer)
-                    }
-                ) {
-                    // Label
-                    Span(
-                        attrs = {
-                            classes(Styles.settingsSectionLabel)
-                        }
-                    ) {
-                        Text("Status")
-                    }
-
-                    // Status input field
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("Set your status (displayed above your character)")
-                            value(status.value)
-                            onInput { event -> status.value = event.value }
-                        }
-                    )
-                }
-
-                // Player status
-                Div(
-                    attrs = {
-                        classes(Styles.userStatusText)
-                    }
-                ) {
-                    Text("Player Account")
-                }
-            }
-
-            // Language switcher
-            Div(
-                attrs = {
-                    classes(Styles.settingsSectionContainer)
-                }
-            ) {
-                // Label
-                Span(
-                    attrs = {
-                        classes(Styles.settingsSectionLabel)
-                    }
-                ) {
-                    Text("Language")
-                }
-
-                // Language switcher component
-                Div(
-                    attrs = {
-                        classes(Styles.settingsControlContainer)
-                    }
-                ) {
-                    LanguageSwitcher(
-                        onLanguageChange = { language ->
-                            currentLanguage.value = language
-                        }
-                    )
-                }
-            }
-
-            // Low graphics mode toggle
-            GraphicsToggle(
-                label = "Low Graphics Mode",
-                checked = isLowGraphicsMode.value,
-                onCheckedChange = { newValue ->
-                    // Toggle low graphics mode
-                    isLowGraphicsMode.value = GraphicsSettings.toggleLowGraphicsMode()
-                },
-                id = "lowGraphicsToggle"
-            )
-
-            // Pretty graphics toggle
-            GraphicsToggle(
-                label = "Pretty Graphics",
-                checked = isPrettyGraphics.value,
-                onCheckedChange = { newValue ->
-                    // Toggle pretty graphics mode
-                    isPrettyGraphics.value = GraphicsSettings.togglePrettyGraphics()
-                },
-                id = "prettyGraphicsToggle"
-            )
-
-            // Logout button
-            Button(
-                attrs = {
-                    classes(Styles.logoutButton)
-                    onClick { onLogout() }
-                }
-            ) {
-                Text("Log Out")
             }
         },
         actions = {

@@ -21,6 +21,7 @@ import org.jetbrains.compose.web.dom.*
  * @param content The content of the dialog
  * @param actions The actions/buttons to display in the dialog footer (optional)
  * @param maxWidth The maximum width of the dialog content (default: 400px)
+ * @param isFullscreen Whether the dialog should be displayed in fullscreen mode (default: false)
  */
 @Composable
 fun BaseDialog(
@@ -29,6 +30,7 @@ fun BaseDialog(
     showCloseButton: Boolean = true,
     headerActions: (@Composable () -> Unit)? = null,
     maxWidth: String = "400px",
+    isFullscreen: Boolean = false,
 
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
@@ -36,9 +38,9 @@ fun BaseDialog(
     // Use Portal to render the dialog at the root of the DOM
     // This ensures it's not affected by parent containers
     // Create a unique key based on multiple properties to prevent duplicate dialogs during recomposition
-    // Using a combination of title, maxWidth, and showCloseButton to create a more unique key
+    // Using a combination of title, maxWidth, isFullscreen, and showCloseButton to create a more unique key
     Portal(
-        key = "dialog-${title}-${maxWidth}-${showCloseButton}",
+        key = "dialog-${title}-${maxWidth}-${isFullscreen}-${showCloseButton}",
         target = document.body!!
     ) {
         // Dialog overlay
@@ -53,7 +55,17 @@ fun BaseDialog(
                 attrs = {
                     classes(Styles.baseDialogContainer)
                     style {
-                        property("max-width", maxWidth)
+                        if (isFullscreen) {
+                            // Apply fullscreen styling
+                            property("width", "100%")
+                            property("height", "100vh")
+                            property("max-width", "100vw")
+                            property("border-radius", "0")
+                        } else {
+                            // Apply regular styling
+                            property("max-width", maxWidth)
+                            maxHeight("calc(100vh - 64px)")
+                        }
                     }
                     // Stop propagation to prevent closing when clicking inside the dialog
                     onClick { it.stopPropagation() }

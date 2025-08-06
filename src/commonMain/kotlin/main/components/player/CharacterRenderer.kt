@@ -2,19 +2,31 @@ package main.components.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import kotlinx.browser.document
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import lib.ArcRotateCamera
 import lib.Color4
 import lib.Engine
 import lib.HemisphericLight
 import lib.Scene
 import lib.Vector3
+import main.components.inventory.InventoryState
 import main.components.world.Character
 import main.components.world.CharacterDirection
-import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
-import main.theme.Styles
-import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.height
+import org.jetbrains.compose.web.css.margin
+import org.jetbrains.compose.web.css.outline
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Canvas
 import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.PI
@@ -23,6 +35,7 @@ import kotlin.math.PI
  * A component that renders a 3D character model in a separate canvas.
  * 
  * @param characterSpriteSheet The sprite sheet to use for the character
+ * @param additionalSpriteSheets List of additional sprite sheets for worn items
  * @param bodyType The body type of the character (Skinny, Normal, Fat)
  * @param skinTone The skin tone of the character (0-1)
  * @param eyeColor The eye color of the character (Black, Blue, Brown, Green, Gray)
@@ -31,14 +44,50 @@ import kotlin.math.PI
 @Composable
 fun CharacterRenderer(
     characterSpriteSheet: SpriteSheet = SpriteSheet.createPlayerSpriteSheet(),
+    additionalSpriteSheets: List<SpriteSheet> = emptyList(),
     bodyType: String = "Normal",
     skinTone: Float = 0.5f,
     eyeColor: String = "Brown",
     hairStyle: String = "Short"
 ) {
     // Set up the canvas with CSS and ref instead of ID
-    var canvasRef: HTMLCanvasElement? = null
+    var canvasRef by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     
+    // Get the coroutine scope for async operations
+    val coroutineScope = rememberCoroutineScope()
+    
+    // State for worn item sprite sheets
+    var wornItemSpriteSheets by remember { mutableStateOf<List<SpriteSheet>>(emptyList()) }
+    
+    // Load inventory data if not already loaded
+    DisposableEffect(Unit) {
+        if (InventoryState.inventory == null || InventoryState.items.isEmpty()) {
+            coroutineScope.launch {
+                InventoryState.loadInventory(
+                    coroutineScope = coroutineScope,
+                    onSuccess = {
+                        // Get the sprite sheets for worn items
+                        wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+                    }
+                )
+            }
+        } else {
+            // Get the sprite sheets for worn items
+            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+        }
+        
+        // Register a callback to update worn items when inventory changes
+        val refreshCallback = {
+            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+        }
+        
+        InventoryState.addOnRefreshCallback(refreshCallback)
+        
+        onDispose {
+            InventoryState.removeOnRefreshCallback(refreshCallback)
+        }
+    }
+
     Canvas(
         attrs = {
             style {
@@ -99,8 +148,6 @@ fun CharacterRenderer(
             // Lock the camera position
             lowerRadiusLimit = radius
             upperRadiusLimit = radius
-            lowerRadiusLimit = 4f // Min constraint
-            upperRadiusLimit = 16f // Max constraint
             lowerBetaLimit = (15f * PI / 180f).toFloat() // 85 degrees in radians
             upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
         }
@@ -110,7 +157,8 @@ fun CharacterRenderer(
             spriteSheet = characterSpriteSheet,
             direction = CharacterDirection.S, // Default facing south
             isMoving = false,
-            activity = null
+            activity = null,
+            additionalSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
         )
         
         // Render the character

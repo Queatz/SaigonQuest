@@ -75,132 +75,38 @@ fun serializeNodeData(nodes: Map<String, NodeData>, connections: List<Connection
 }
 
 /**
- * Creates ports for a node based on its type.
+ * Creates ports for a node based on its LogicNode type.
  * 
- * @param type The type of node (event, dialogue, action)
+ * @param logicNode The LogicNode type
  * @param nodeId The ID of the node
  * @return A pair of input and output port lists
  */
-fun createPortsForNodeType(type: String, nodeId: String): Pair<List<PortData>, List<PortData>> {
+fun createPortsForNodeType(logicNode: LogicNode, nodeId: String): Pair<List<PortData>, List<PortData>> {
     val inputs = mutableListOf<PortData>()
     val outputs = mutableListOf<PortData>()
     
-    when (type) {
-        // Events have no inputs, only outputs
-        "event" -> {
-            outputs.add(PortData(
-                id = "${nodeId}_out_trigger",
-                name = "Trigger",
-                type = PortType.OUTPUT,
-                dataType = "trigger"
-            ))
-        }
-        
-        // Dialogue nodes have inputs and outputs
-        "dialogue" -> {
-            inputs.add(PortData(
-                id = "${nodeId}_in_trigger",
-                name = "Trigger",
-                type = PortType.INPUT,
-                dataType = "trigger"
-            ))
-            
-            outputs.add(PortData(
-                id = "${nodeId}_out_next",
-                name = "Next",
-                type = PortType.OUTPUT,
-                dataType = "trigger"
-            ))
-        }
-        
-        // Actions have inputs and may have outputs
-        "action" -> {
-            inputs.add(PortData(
-                id = "${nodeId}_in_trigger",
-                name = "Trigger",
-                type = PortType.INPUT,
-                dataType = "trigger"
-            ))
-            
-            // Some actions might have additional outputs
-            if (nodeId == "teleport" || nodeId == "play_sound" || nodeId == "show_effect") {
-                outputs.add(PortData(
-                    id = "${nodeId}_out_complete",
-                    name = "Complete",
-                    type = PortType.OUTPUT,
-                    dataType = "trigger"
-                ))
-            }
-        }
-        
-        // Inputs have no inputs, only outputs
-        "input" -> {
-            // Different output ports based on the input type
-            when (nodeId) {
-                "player_info" -> {
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_name",
-                        name = "Name",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_id",
-                        name = "ID",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                }
-                "visitor_info" -> {
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_name",
-                        name = "Name",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_id",
-                        name = "ID",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                }
-                "world_info" -> {
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_name",
-                        name = "Name",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_id",
-                        name = "ID",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                }
-                "object_info" -> {
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_name",
-                        name = "Name",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_id",
-                        name = "ID",
-                        type = PortType.OUTPUT,
-                        dataType = "string"
-                    ))
-                    outputs.add(PortData(
-                        id = "${nodeId}_out_position",
-                        name = "Position",
-                        type = PortType.OUTPUT,
-                        dataType = "vector3"
-                    ))
-                }
-            }
-        }
+    // Get property definitions from the LogicNode
+    val inputProperties = logicNode.getInputPropertyDefinitions()
+    val outputProperties = logicNode.getOutputPropertyDefinitions()
+    
+    // Create input ports
+    for (property in inputProperties) {
+        inputs.add(PortData(
+            id = "${nodeId}_in_${property.key.name.lowercase()}",
+            name = property.name,
+            type = PortType.INPUT,
+            dataType = property.type.toPortDataType()
+        ))
+    }
+    
+    // Create output ports
+    for (property in outputProperties) {
+        outputs.add(PortData(
+            id = "${nodeId}_out_${property.key.name.lowercase()}",
+            name = property.name,
+            type = PortType.OUTPUT,
+            dataType = property.type.toPortDataType()
+        ))
     }
     
     return Pair(inputs, outputs)
@@ -221,11 +127,11 @@ fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float):
     // This ensures we can add multiple nodes of the same type
     val id = if (nodeId.isNotEmpty()) "${nodeId}_${Date.now().toLong()}" else "node_${Date.now().toLong()}"
     
-    // Create ports based on node type
-    val (inputs, outputs) = createPortsForNodeType(type, id)
-    
     // Convert string type to LogicNode
     val logicNodeType = models.getLogicNodeFromTypeAndId(type, nodeId)
+    
+    // Create ports based on node type
+    val (inputs, outputs) = createPortsForNodeType(logicNodeType, id)
     
     // Create a new node
     val newNode = NodeData(

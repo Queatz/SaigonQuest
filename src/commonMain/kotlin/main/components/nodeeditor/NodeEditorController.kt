@@ -2,12 +2,14 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import main.utils.getBoundingClientRectSafe
-import models.LogicNode
-import models.getLogicNodeFromTypeAndId
 import org.w3c.dom.HTMLElement
+import web.timers.Timeout
+import web.timers.clearTimeout
+import web.timers.setTimeout
 
 /**
  * Controller for the Node Editor that centralizes state management and operations.
@@ -22,7 +24,7 @@ class NodeEditorController(
     initialNodes: Map<String, NodeData> = emptyMap(),
     initialConnections: List<Connection> = emptyList(),
     canvasElement: HTMLElement? = null,
-    wrapperElement: HTMLElement? = null
+    wrapperElement: HTMLElement? = null,
 ) {
     // Node state
     var nodes by mutableStateOf(initialNodes)
@@ -39,8 +41,10 @@ class NodeEditorController(
         private set
     var wrapperElement: HTMLElement? = wrapperElement
         private set
-    private val nodeElements = mutableMapOf<String, HTMLElement>()
-    
+    private val nodeElements = mutableStateMapOf<String, HTMLElement>()
+
+    private var updateCanvasSizeTimeout: Timeout? = null
+
     // Connection state properties delegated to ConnectionManager
     val connectionStartNode get() = connectionManager.connectionStartNode
     val connectionStartPort get() = connectionManager.connectionStartPort
@@ -65,6 +69,7 @@ class NodeEditorController(
      */
     fun setCanvasElement(element: HTMLElement) {
         canvasElement = element
+        updateCanvasSize()
     }
     
     /**
@@ -74,6 +79,7 @@ class NodeEditorController(
      */
     fun setWrapperElement(element: HTMLElement) {
         wrapperElement = element
+        updateCanvasSize()
     }
     
     /**
@@ -84,6 +90,7 @@ class NodeEditorController(
      */
     fun registerNodeElement(nodeId: String, element: HTMLElement) {
         nodeElements[nodeId] = element
+        updateCanvasSize()
     }
     
     /**
@@ -123,52 +130,6 @@ class NodeEditorController(
     }
     
     /**
-     * Converts canvas coordinates to screen coordinates.
-     * This is used when rendering elements to convert canvas positions to screen positions.
-     * It's the inverse operation of screenToCanvasCoordinates.
-     *
-     * @param canvasX X coordinate in canvas space
-     * @param canvasY Y coordinate in canvas space
-     * @param forElementPositioning Whether the result will be used for positioning DOM elements
-     * @return Pair of X and Y coordinates in screen space
-     */
-    fun canvasToScreenCoordinates(canvasX: Float, canvasY: Float, forElementPositioning: Boolean = false): Pair<Float, Float> {
-        // Use the stored canvas element reference
-        val rect = canvasElement?.getBoundingClientRectSafe()
-    
-        if (rect != null) {
-            // Simple conversion without zoom or pan
-            val screenX = canvasX + rect.left.toFloat()
-            val screenY = canvasY + rect.top.toFloat()
-        
-            // For element positioning, we might need to adjust the coordinates
-            // to account for the fact that the element will be placed inside
-            // an already-transformed container
-            if (forElementPositioning) {
-                // If the coordinates will be used for positioning elements inside the connection layer,
-                // we need to adjust them relative to the canvas wrapper
-                val wrapperRect = wrapperElement?.getBoundingClientRectSafe()
-            
-                if (wrapperRect != null) {
-                    // Adjust coordinates relative to the canvas wrapper
-                    val wrapperX = screenX - wrapperRect.left.toFloat()
-                    val wrapperY = screenY - wrapperRect.top.toFloat()
-                    return Pair(wrapperX, wrapperY)
-                }
-            
-                // Fallback to screen coordinates if wrapper rect is not available
-                return Pair(screenX, screenY)
-            } else {
-                // For normal screen coordinates, return as is
-                return Pair(screenX, screenY)
-            }
-        } else {
-            // Fallback if we can't get the canvas rect
-            return Pair(canvasX, canvasY)
-        }
-    }
-    
-    /**
      * Adds a new node to the canvas.
      *
      * @param type The type of node as a string (event, dialogue, action, input)
@@ -191,13 +152,9 @@ class NodeEditorController(
         
         // Select the new node
         selectedNode = id
-        
-        // Add a small delay before updating canvas size to allow the DOM to render the node
-        kotlinx.browser.window.setTimeout({
-            // Update canvas size to accommodate the new node
-            updateCanvasSize()
-        }, 10) // 10ms delay as requested
-        
+
+        updateCanvasSize()
+
         return id
     }
     
@@ -430,8 +387,8 @@ class NodeEditorController(
      */
     private fun calculateRequiredCanvasSize(): Pair<Float, Float> {
         // Use wrapper element dimensions as initial values if available
-        var maxX = wrapperElement?.getBoundingClientRectSafe()?.width?.toFloat() ?: 800f
-        var maxY = wrapperElement?.getBoundingClientRectSafe()?.height?.toFloat() ?: 600f
+        var maxX = canvasElement?.getBoundingClientRectSafe()?.width?.toFloat() ?: 800f
+        var maxY = canvasElement?.getBoundingClientRectSafe()?.height?.toFloat() ?: 600f
         
         // If there are no nodes, return the parent size
         if (nodes.isEmpty()) {
@@ -469,8 +426,20 @@ class NodeEditorController(
      * This ensures the canvas is large enough to accommodate all nodes.
      */
     private fun updateCanvasSize() {
+        updateCanvasSizeTimeout?.let {
+            clearTimeout(it)
+        }
+        calc()
+        // Add a small delay before updating canvas size to allow the DOM to render the node
+        updateCanvasSizeTimeout = setTimeout({
+            calc()
+            updateCanvasSizeTimeout = null
+        }, 10) // 10ms delay as requested
+    }
+
+    private fun calc() {
         val (width, height) = calculateRequiredCanvasSize()
-        
+
         // Update the canvas size using the stored reference
         canvasElement?.style?.width = "${width}px"
         canvasElement?.style?.height = "${height}px"

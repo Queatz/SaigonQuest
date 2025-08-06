@@ -22,7 +22,7 @@ fun ItemRenderer(
     if (item != null && item.file.isNotEmpty()) {
         // If we have an item with a file, use IconRenderer
         IconRenderer(
-            url = item.file,
+            url = "/raw/data/spritesheets/${item.file}.png",
             index = item.assetIndex,
             size = size,
             onClick = onClick

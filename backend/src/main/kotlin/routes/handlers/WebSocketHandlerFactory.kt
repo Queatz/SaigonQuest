@@ -2,6 +2,7 @@ package routes.handlers
 
 import models.WebSocketAction
 import repository.ChatRepository
+import repository.ObjectRepository
 import repository.UserRepository
 
 /**
@@ -12,7 +13,8 @@ import repository.UserRepository
  */
 class WebSocketHandlerFactory(
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val objectRepository: ObjectRepository
 ) {
     /**
      * Get the appropriate handler for a WebSocketAction
@@ -31,9 +33,11 @@ class WebSocketHandlerFactory(
             WebSocketAction.ADD_OBJECT -> AddObjectHandler()
             WebSocketAction.REMOVE_OBJECT -> RemoveObjectHandler()
             WebSocketAction.OBJECT_UPDATE -> ObjectUpdateHandler()
-            WebSocketAction.USER_INTERACT -> PlayerInteractHandler()
+            WebSocketAction.USER_INTERACT -> PlayerInteractHandler(objectRepository)
             WebSocketAction.TRIGGER_OBJECT_EVENT -> TriggerObjectEventHandler()
             WebSocketAction.UPDATE_PLAYER -> UpdatePlayerHandler()
+            WebSocketAction.TELEPORT_PLAYER -> NullHandler() // This is only sent by the server, not received
+            WebSocketAction.SHOW_DIALOGUE -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received
             null -> NullHandler()
         }

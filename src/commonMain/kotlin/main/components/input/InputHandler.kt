@@ -59,6 +59,9 @@ class InputHandler(
     private var lastClickedObjectId: String? = null
     private val doubleClickThreshold = 300.0 // milliseconds
     
+    // Store the click point for object dragging
+    private var objectClickPoint: Vector3? = null
+    
     /**
      * Sets up keyboard input handling.
      */
@@ -182,6 +185,14 @@ class InputHandler(
                     // Create and dispatch a custom event for object double-click
                     val doubleClickEvent = createObjectDoubleClickEvent(closestObjectId)
                     window.dispatchEvent(doubleClickEvent)
+                } else {
+                    // This is a single-click on an object
+                    console.log("[POINTER_DOWN] Single-click detected on object: $closestObjectId")
+                    
+                    // Send USER_INTERACT event to the backend
+                    // Determine if the user is a player (authenticated) or visitor
+                    val isPlayer = main.api.UserApi.getToken() != null
+                    main.api.WebSocketApi.playerInteract(closestObjectId, isPlayer)
                 }
                 
                 // Update last click info for future double-click detection
@@ -209,10 +220,7 @@ class InputHandler(
                 
                 if (clickedOnWorldMesh) {
                     // If we clicked on a world mesh, deselect any selected object
-                    val wasObjectDeselected = objectManager.deselectObject()
-                    if (wasObjectDeselected) {
-                        console.log("[POINTER_DOWN] Deselected object by clicking on world mesh")
-                    }
+                    objectManager.deselectCurrentObject()
                 }
             }
         }
@@ -306,16 +314,72 @@ class InputHandler(
         when (info.type) {
             PointerEventTypes.POINTERDOWN -> {
                 // Track pointer down state for potential object dragging
-                console.log("[POINTER] DOWN", objectManager)
                 isPointerDown = true
                 pointerStartX = scene.pointerX
                 pointerStartY = scene.pointerY
+                
+                // Calculate the click point for object dragging
+                val selectedObjectId = objectManager?.getSelectedObject()
+                if (selectedObjectId != null) {
+                    // Create a ray from the camera through the pointer position
+                    val ray = scene.createPickingRay(
+                        x = scene.pointerX,
+                        y = scene.pointerY,
+                        world = Matrix.Identity(),
+                        camera = cameraController.getCamera()
+                    )
+                    
+                    // Find intersection with world meshes
+                    val playerWorldMeshes = playerController.getWorldMeshes()
+                    val objectWorldMeshes = objectManager.getWorldMeshes()
+                    val player = playerController.getCollider()
+                    val moveCircle = playerController.getMoveCircle()
+                    
+                    // Find the closest intersection point
+                    var closestDistance = Float.MAX_VALUE
+                    var clickPoint: Vector3? = null
+                    
+                    // Check player world meshes first
+                    for (mesh in playerWorldMeshes) {
+                        // Skip player and move circle meshes
+                        if (mesh === player || mesh === moveCircle) continue
+                        
+                        val hit = ray.intersectsMesh(mesh)
+                        if (hit.pickedPoint != null) {
+                            val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                            if (distance < closestDistance) {
+                                closestDistance = distance
+                                clickPoint = hit.pickedPoint
+                            }
+                        }
+                    }
+                    
+                    // Then check object world meshes
+                    for (mesh in objectWorldMeshes) {
+                        // Skip player and move circle meshes
+                        if (mesh === player || mesh === moveCircle) continue
+                        
+                        val hit = ray.intersectsMesh(mesh)
+                        if (hit.pickedPoint != null) {
+                            val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                            if (distance < closestDistance) {
+                                closestDistance = distance
+                                clickPoint = hit.pickedPoint
+                            }
+                        }
+                    }
+                    
+                    // Store the click point for use when starting dragging
+                    if (clickPoint != null) {
+                        console.log("Stored click point for dragging: (${clickPoint.x}, ${clickPoint.y}, ${clickPoint.z})")
+                        objectClickPoint = clickPoint
+                    }
+                }
             }
             
             PointerEventTypes.POINTERMOVE -> {
                 // If pointer is down, we might be dragging an object
                 if (isPointerDown) {
-                    console.log("[POINTER] MOVE", objectManager)
                     val objectManager = objectManager!!
 
                     val selectedObjectId = objectManager.getSelectedObject()
@@ -328,9 +392,16 @@ class InputHandler(
                             cameraInputsEnabled = false
                         }
                         
-                        // Start dragging the object
-                        isObjectDragging = objectManager.startDragging(selectedObjectId)
+                        // Start dragging the object, passing the click point
+                        isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
                         draggingObjectId = selectedObjectId
+                        
+                        // Log and reset the click point after starting dragging
+                        if (isObjectDragging) {
+                            console.log("Started dragging with click point: $objectClickPoint")
+                            // Reset click point to ensure consistent behavior between first and subsequent drags
+                            objectClickPoint = null
+                        }
                     }
                     
                     // If we're dragging an object, update its position
@@ -407,7 +478,6 @@ class InputHandler(
             }
             
             PointerEventTypes.POINTERUP -> {
-                console.log("[POINTER] UP", objectManager)
                 // End dragging if we were dragging an object
                 if (isObjectDragging) {
                     objectManager!!.endDragging()
@@ -423,6 +493,9 @@ class InputHandler(
                 
                 // Reset pointer state
                 isPointerDown = false
+                
+                // Reset the click point
+                objectClickPoint = null
             }
             
             else -> { /* Ignore other pointer events */ }

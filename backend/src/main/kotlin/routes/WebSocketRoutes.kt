@@ -21,6 +21,7 @@ import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
 import repository.ChatRepository
+import repository.ObjectRepository
 import repository.UserRepository
 import routes.handlers.WebSocketHandler
 import utils.json
@@ -54,12 +55,13 @@ data class WebSocketMessage(
 fun Routing.configureWebSocketRoutes() {
     val chatRepository = ChatRepository()
     val userRepository = UserRepository()
+    val objectRepository = ObjectRepository()
     
     // Store active connections by worldId -> list of connections
     val activeConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
     
     // Create handler factory
-    val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository)
+    val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository, objectRepository)
     
     // JSON serializer
     val json = utils.json

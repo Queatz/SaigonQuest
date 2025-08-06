@@ -6,7 +6,6 @@ import lib.CreateBoxOptions
 import lib.CreateDiscOptions
 import lib.Mesh
 import lib.MeshBuilder
-import lib.PBRMaterial
 import lib.Ray
 import lib.Scene
 import lib.StandardMaterial
@@ -15,6 +14,7 @@ import main.api.ApiClient
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
+import main.components.inventory.InventoryState
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
@@ -26,11 +26,15 @@ import models.WebSocketAction
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.min
 import kotlin.math.abs
+import app.softwork.routingcompose.Router
 
 /**
  * Controller for managing the player in the 3D scene.
@@ -95,11 +99,51 @@ class PlayerController(private val scene: Scene) {
     // Time tracking for framerate-independent movement
     private var lastFrameTime = 0.0
     
+    // Player position flow for sending position updates
+    private val playerPositionFlow = MutableStateFlow<Vector3?>(null)
+    
     // Coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     
+    init {
+        // Collect position updates with 500ms debounce
+        playerPositionFlow
+            .debounce(500)
+            .onEach { position ->
+                position?.let { validPos ->
+                    try {
+                        // Check connection state using WebSocketConnectionManager
+                        if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                            val success = WebSocketApi.updatePlayerPosition(
+                                position = Position(
+                                    x = validPos.x,
+                                    y = validPos.y,
+                                    z = validPos.z
+                                ),
+                                isPlayer = UserApi.getCurrentUser().isPlayer
+                            )
+                            if (!success) {
+                                console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                            }
+                        } else {
+                            // Don't spam the console with warnings - only log occasionally
+                            if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
+                                console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        console.error("Error updating player position", e)
+                    }
+                }
+            }
+            .launchIn(coroutineScope)
+    }
+    
     // Reference to the world object manager for creating text billboards
     private var worldObjectManager: WorldObjectManager? = null
+    
+    // Callback for inventory refresh
+    private var inventoryRefreshCallback: (() -> Unit)? = null
     
     // Properties for detecting minimal movement
     private var lastSignificantPosition: Vector3? = null
@@ -119,13 +163,43 @@ class PlayerController(private val scene: Scene) {
 
         // Create a sprite sheet for the player
         val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+        
+        // Get worn item sprite sheets if inventory is already loaded
+        var wornItemSpriteSheets = emptyList<SpriteSheet>()
+        if (InventoryState.currentUser != null && InventoryState.items.isNotEmpty()) {
+            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+            console.log("[DEBUG_LOG] PlayerController: Found ${wornItemSpriteSheets.size} worn items during initialization")
+        } else {
+            console.log("[DEBUG_LOG] PlayerController: Inventory not loaded yet, will update worn items later")
+            
+            // Load inventory data if not already loaded
+            coroutineScope.launch {
+                InventoryState.loadInventory(
+                    coroutineScope = coroutineScope,
+                    onSuccess = {
+                        console.log("[DEBUG_LOG] PlayerController: Inventory loaded, refreshing worn items")
+                        refreshWornItems()
+                    }
+                )
+            }
+        }
 
         // Create the player character using the WorldObjectManager
+        // Pass empty list as additionalSpriteSheets and let WorldObjectManager handle worn items
         playerHandle = worldObjectManager.createCharacter(
             spriteSheet = spriteSheet,
             direction = playerDirection,
-            position = startPosition
+            position = startPosition,
+            additionalSpriteSheets = emptyList(),
+            user = InventoryState.currentUser
         )
+        
+        // Register a callback to update worn items when inventory changes
+        inventoryRefreshCallback = {
+            console.log("[DEBUG_LOG] PlayerController: Inventory changed, refreshing worn items")
+            refreshWornItems()
+        }
+        InventoryState.addOnRefreshCallback(inventoryRefreshCallback!!)
 
         // Create a simple box for collision detection
         // This is needed because we can't directly access the character's mesh
@@ -611,33 +685,8 @@ class PlayerController(private val scene: Scene) {
                         validPos.z
                     )
                     
-                    // Send player position update via WebSocket only if connected
-                    coroutineScope.launch {
-                        try {
-                            // Check connection state using WebSocketConnectionManager
-                            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
-                                val user = UserApi.getCurrentUser()
-                                val success = WebSocketApi.updatePlayerPosition(
-                                    position = Position(
-                                        x = validPos.x,
-                                        y = validPos.y,
-                                        z = validPos.z
-                                    ),
-                                    isPlayer = user.isPlayer
-                                )
-                                if (!success) {
-                                    console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
-                                }
-                            } else {
-                                // Don't spam the console with warnings - only log occasionally
-                                if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
-                                    console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
-                                }
-                            }
-                        } catch (e: Exception) {
-                            console.error("Error updating player position", e)
-                        }
-                    }
+                    // Update player position flow to trigger position updates
+                    playerPositionFlow.value = validPos
                     
                     return validPos
                 }
@@ -650,7 +699,7 @@ class PlayerController(private val scene: Scene) {
         
         return null
     }
-    
+
     /**
      * Finds a valid starting position for the player.
      * 
@@ -876,6 +925,23 @@ class PlayerController(private val scene: Scene) {
     }
 
     /**
+     * Initializes the teleport listener
+     * 
+     * This method sets up a listener for teleport events that will navigate to the specified world URL.
+     */
+    fun initializeTeleportListener(router: Router) {
+        console.log("PlayerController: Initializing teleport listener")
+        
+        // Add listener for teleport events
+        // The WebSocketApi.addTeleportPlayerListener already handles navigation to the world URL
+        WebSocketApi.addTeleportPlayerListener(router) { teleportData ->
+            console.log("PlayerController: Received teleport event with data: $teleportData")
+        }
+        
+        console.log("PlayerController: Teleport listener initialized")
+    }
+
+    /**
      * Updates the player's username text
      * 
      * @param username The new username to display
@@ -983,6 +1049,68 @@ class PlayerController(private val scene: Scene) {
     }
 
     /**
+     * Refreshes the player's worn items based on the current inventory state.
+     * This method is called when the inventory changes.
+     */
+    fun refreshWornItems() {
+        console.log("[DEBUG_LOG] PlayerController: refreshWornItems called")
+        
+        // Get the world object manager
+        val manager = worldObjectManager ?: return
+        
+        // Get the player handle
+        val handle = playerHandle ?: return
+        
+        // Get worn item sprite sheets from WornItemsRenderer
+        val wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+        
+        // Check if we have any worn items
+        if (wornItemSpriteSheets.isEmpty()) {
+            console.log("[DEBUG_LOG] PlayerController: No worn items to display")
+            
+            // Check if user has worn items configured
+            val wornItems = InventoryState.currentUser?.wornItems ?: emptyList()
+            if (wornItems.isNotEmpty()) {
+                console.log("[DEBUG_LOG] PlayerController: User has ${wornItems.size} worn items configured, but no sprite sheets were created")
+                wornItems.forEach { itemId ->
+                    val item = InventoryState.items[itemId]
+                    console.log("[DEBUG_LOG] PlayerController: Worn item: $itemId, item: ${item?.title}, wearable: ${item?.wearable}, wearableFile: ${item?.wearableFile}")
+                }
+            } else {
+                console.log("[DEBUG_LOG] PlayerController: User has no worn items configured")
+            }
+        } else {
+            console.log("[DEBUG_LOG] PlayerController: Found ${wornItemSpriteSheets.size} worn items to display")
+            wornItemSpriteSheets.forEach { spriteSheet ->
+                console.log("[DEBUG_LOG] PlayerController: Sprite sheet: ${spriteSheet.imageUrl}")
+            }
+        }
+        
+        // Get the Character object from the handle
+        // Since we can't directly access the Character, we need to recreate it
+        // Get the current position, direction, and activity
+        val currentPosition = handle.position
+        val currentDirection = playerDirection
+        val currentActivity = playerActivity
+        
+        // Remove the existing character
+        handle.remove()
+        
+        // Create a new character with the worn items
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+        playerHandle = manager.createCharacter(
+            spriteSheet = spriteSheet,
+            direction = currentDirection,
+            position = currentPosition,
+            activity = currentActivity,
+            additionalSpriteSheets = emptyList(),
+            user = InventoryState.currentUser
+        )
+        
+        console.log("[DEBUG_LOG] PlayerController: Player character updated with worn items")
+    }
+    
+    /**
      * Disposes of the player controller resources.
      */
     fun dispose() {
@@ -993,6 +1121,12 @@ class PlayerController(private val scene: Scene) {
         
         // Remove chat message and clear timeout
         removeChatMessage()
+        
+        // Remove the inventory refresh callback
+        inventoryRefreshCallback?.let { callback ->
+            InventoryState.removeOnRefreshCallback(callback)
+            inventoryRefreshCallback = null
+        }
         
         // Remove WebSocket listeners
         WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)

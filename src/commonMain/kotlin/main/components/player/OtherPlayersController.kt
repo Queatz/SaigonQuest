@@ -152,7 +152,7 @@ class OtherPlayersController(private val scene: Scene) {
             Position(0f, 0f, 0f)
         }
     }
-    
+
     /**
      * Initialize the controller and set up WebSocket listeners
      */
@@ -522,11 +522,17 @@ class OtherPlayersController(private val scene: Scene) {
         // Default direction (south)
         val direction = CharacterDirection.S
         
+        // TODO: Implement a proper solution for fetching User objects for other players
+        // For now, we can't display worn items for other players because we don't have their User objects
+        // A future improvement would be to fetch User objects for other players or extend WornItemsRenderer
+        // to support fetching worn items by userId
+        
         // Create the player character using the WorldObjectManager
         val playerHandle = manager.createCharacter(
             spriteSheet = spriteSheet,
             direction = direction,
-            position = position
+            position = position,
+            additionalSpriteSheets = emptyList() // No worn items for now
         )
         
         if (playerHandle == null) {

@@ -67,16 +67,26 @@ class Character(
     var spriteSheet: SpriteSheet,
     var direction: CharacterDirection,
     var isMoving: Boolean = false,
-    var activity: PlayerActivity? = null
+    var activity: PlayerActivity? = null,
+    var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf()
 ) : WorldObject() {
     
     private var characterMesh: AbstractMesh? = null
+    // List to store meshes for additional sprite sheets
+    private var additionalMeshes: MutableList<AbstractMesh> = mutableListOf()
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
     // The direction to display based on camera angle
     private var displayDirection: CharacterDirection = direction
+    // Flag to indicate if the character needs to be re-rendered
+    private var needsRerender: Boolean = false
+    // Reference to the scene for re-rendering
+    private var currentScene: Scene? = null
     
     override fun render(scene: Scene): Node? {
+        // Store the scene reference for re-rendering
+        currentScene = scene
+        
         // Create a transform node that will act as our container
         val container = TransformNode("character_container_${id}", scene)
         
@@ -85,53 +95,98 @@ class Character(
         container.rotation = rotation
         container.scaling = scale
         
-        // Create a plane mesh with the sprite sheet texture
-        val material = PBRMaterial("characterMaterial_${id}", scene)
-        // Create texture with NEAREST_SAMPLINGMODE for crisp pixel art rendering
-        val texture = Texture(spriteSheet.imageUrl, scene, object : TextureOptions {
-            override val samplingMode = Texture.NEAREST_SAMPLINGMODE
-            override val hasAlpha = true
-        })
-        material.albedoColor = Color3(1f, 1f, 1f)
-        material.albedoTexture = texture
-
-        // Enable transparency for the material
-        material.backFaceCulling = false
-        material.transparencyMode = Material.MATERIAL_ALPHATEST
-        material.metallic = 0.0f       // Low metallic value for non-metallic appearance
-        material.roughness = 0.4f      // Medium roughness for slight diffusion of light
-        material.usePhysicalLightFalloff = true  // Enable physical light falloff
-
-        // Create a plane with the correct aspect ratio
-        val aspectRatio = spriteSheet.cellHeightPx.toFloat() / spriteSheet.cellWidthPx.toFloat()
-        val characterMesh = MeshBuilder.CreatePlane(
+        // Clear any existing additional meshes
+        additionalMeshes.forEach { it.dispose() }
+        additionalMeshes.clear()
+        
+        // Create the main character mesh
+        val characterMesh = createMeshForSpriteSheet(
+            spriteSheet,
             "character_${id}",
-            object : CreatePlaneOptions {
-                override val width = 1f / aspectRatio
-                override val height = 1f
-            },
-            scene
+            scene,
+            container,
+            0f
         )
-        
-        characterMesh.material = material
-        
-        // Set billboard mode to Y-axis only (rotate around Y-axis)
-        characterMesh.billboardMode = Mesh.BILLBOARDMODE_Y
-        
-        // Make the character mesh a child of the container
-        characterMesh.parent = container
-
-        spriteSheet.setImageDimensions(
-            spriteSheet.cellWidthPx * spriteSheet.columns,
-            spriteSheet.cellWidthPx * spriteSheet.columns // assume square
-        )
-        
         this.characterMesh = characterMesh
+        
+        // Create meshes for additional sprite sheets with increasing z-offset
+        additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
+            // Use a small z-offset to ensure proper layering (0.01 units per layer)
+            val zOffset = 0.01f * (index + 1)
+            val additionalMesh = createMeshForSpriteSheet(
+                additionalSpriteSheet,
+                "character_additional_${index}_${id}",
+                scene,
+                container,
+                zOffset
+            )
+            additionalMeshes.add(additionalMesh)
+        }
+        
+        // Reset the re-render flag
+        needsRerender = false
+        
         this.node = container
         return container
     }
     
+    /**
+     * Updates the list of additional sprite sheets
+     * 
+     * @param spriteSheets The new list of sprite sheets
+     */
+    fun updateSpriteSheets(spriteSheets: List<SpriteSheet>) {
+        // Clear the existing list
+        additionalSpriteSheets.clear()
+        
+        // Add all the new sprite sheets
+        additionalSpriteSheets.addAll(spriteSheets)
+        
+        // Set the flag to re-render on the next update
+        needsRerender = true
+    }
+    
     override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
+        // Check if we need to re-render the character
+        if (needsRerender) {
+            // Dispose of existing meshes
+            characterMesh?.dispose()
+            additionalMeshes.forEach { it.dispose() }
+            additionalMeshes.clear()
+            
+            // Re-render if we have a scene reference
+            currentScene?.let { scene ->
+                node?.let { container ->
+                    // Create the main character mesh
+                    val characterMesh = createMeshForSpriteSheet(
+                        spriteSheet,
+                        "character_${id}",
+                        scene,
+                        container,
+                        0f
+                    )
+                    this.characterMesh = characterMesh
+                    
+                    // Create meshes for additional sprite sheets with increasing z-offset
+                    additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
+                        // Use a small z-offset to ensure proper layering (0.01 units per layer)
+                        val zOffset = 0.01f * (index + 1)
+                        val additionalMesh = createMeshForSpriteSheet(
+                            additionalSpriteSheet,
+                            "character_additional_${index}_${id}",
+                            scene,
+                            container,
+                            zOffset
+                        )
+                        additionalMeshes.add(additionalMesh)
+                    }
+                    
+                    // Reset the re-render flag
+                    needsRerender = false
+                }
+            }
+        }
+        
         // Calculate the display direction based on camera angle
         if (camera != null) {
             // Use the provided camera
@@ -262,26 +317,115 @@ class Character(
         // Calculate current frame based on animationTime
         val frameIndex = (animationTime * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount(displayDirection)
             
-        // Update UV coordinates on the mesh to show the correct sprite
+        // Update UV coordinates on the main character mesh
         characterMesh?.let { mesh ->
-            val material = mesh.material as? PBRMaterial
-            material?.albedoTexture?.let { texture ->
-                // Get the UV coordinates for the current display direction and frame
-                // Pass the activity parameter to use the correct sprite row for sitting
-                val uvCoords = spriteSheet.getFrameUV(displayDirection, frameIndex, activity)
-                
-                // BabylonJS handles the UV mapping internally when we set these properties
-                // Set the UV coordinates using the properly exposed properties
-                texture.uOffset = uvCoords.uMin
-                texture.vOffset = uvCoords.vMin
-                texture.uScale = spriteSheet.cellWidthPx.toFloat() / spriteSheet.imageWidth.toFloat()
-                texture.vScale = spriteSheet.cellHeightPx.toFloat() / spriteSheet.imageHeight.toFloat()
+            updateMeshUVCoordinates(mesh, spriteSheet, frameIndex)
+        }
+        
+        // Update UV coordinates on all additional meshes
+        additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
+            val additionalMesh = if (index < additionalMeshes.size) additionalMeshes[index] else null
+            additionalMesh?.let { mesh ->
+                updateMeshUVCoordinates(mesh, additionalSpriteSheet, frameIndex)
             }
         }
     }
     
+    /**
+     * Updates the UV coordinates for a mesh to show the correct frame from a sprite sheet
+     * 
+     * @param mesh The mesh to update
+     * @param spriteSheet The sprite sheet to use
+     * @param frameIndex The frame index to show
+     */
+    private fun updateMeshUVCoordinates(mesh: AbstractMesh, spriteSheet: SpriteSheet, frameIndex: Int) {
+        val material = mesh.material as? PBRMaterial
+        material?.albedoTexture?.let { texture ->
+            // Get the UV coordinates for the current display direction and frame
+            // Pass the activity parameter to use the correct sprite row for sitting
+            val uvCoords = spriteSheet.getFrameUV(displayDirection, frameIndex, activity)
+            
+            // BabylonJS handles the UV mapping internally when we set these properties
+            // Set the UV coordinates using the properly exposed properties
+            texture.uOffset = uvCoords.uMin
+            texture.vOffset = uvCoords.vMin
+            texture.uScale = spriteSheet.cellWidthPx.toFloat() / spriteSheet.imageWidth.toFloat()
+            texture.vScale = spriteSheet.cellHeightPx.toFloat() / spriteSheet.imageHeight.toFloat()
+        }
+    }
+    
+    /**
+     * Creates a mesh for a sprite sheet with the specified z-offset
+     * 
+     * @param spriteSheet The sprite sheet to use for the mesh
+     * @param name The name of the mesh
+     * @param scene The scene to create the mesh in
+     * @param parent The parent node for the mesh
+     * @param zOffset The z-offset to apply to the mesh for layering
+     * @return The created mesh
+     */
+    private fun createMeshForSpriteSheet(
+        spriteSheet: SpriteSheet,
+        name: String,
+        scene: Scene,
+        parent: Node,
+        zOffset: Float = 0f
+    ): AbstractMesh {
+        // Create a material with the sprite sheet texture
+        val material = PBRMaterial("${name}_material", scene)
+        // Create texture with NEAREST_SAMPLINGMODE for crisp pixel art rendering
+        val texture = Texture(spriteSheet.imageUrl, scene, object : TextureOptions {
+            override val samplingMode = Texture.NEAREST_SAMPLINGMODE
+            override val hasAlpha = true
+        })
+        material.albedoColor = Color3(1f, 1f, 1f)
+        material.albedoTexture = texture
+
+        // Enable transparency for the material
+        material.backFaceCulling = false
+        material.transparencyMode = Material.MATERIAL_ALPHATEST
+        material.metallic = 0.0f       // Low metallic value for non-metallic appearance
+        material.roughness = 0.4f      // Medium roughness for slight diffusion of light
+        material.usePhysicalLightFalloff = true  // Enable physical light falloff
+
+        // Create a plane with the correct aspect ratio
+        val aspectRatio = spriteSheet.cellHeightPx.toFloat() / spriteSheet.cellWidthPx.toFloat()
+        val mesh = MeshBuilder.CreatePlane(
+            name,
+            object : CreatePlaneOptions {
+                override val width = 1f / aspectRatio
+                override val height = 1f
+            },
+            scene
+        )
+        
+        mesh.material = material
+        
+        // Set billboard mode to Y-axis only (rotate around Y-axis)
+        mesh.billboardMode = Mesh.BILLBOARDMODE_Y
+        
+        // Apply z-offset for layering if specified
+        if (zOffset != 0f) {
+            // Use z-offset for layering
+            mesh.position.z = zOffset
+        }
+        
+        // Make the mesh a child of the parent
+        mesh.parent = parent
+
+        // Set image dimensions for the sprite sheet
+        spriteSheet.setImageDimensions(
+            spriteSheet.cellWidthPx * spriteSheet.columns,
+            spriteSheet.cellWidthPx * spriteSheet.columns // assume square
+        )
+        
+        return mesh
+    }
+    
     override fun dispose() {
         characterMesh?.dispose()
+        additionalMeshes.forEach { it.dispose() }
+        additionalMeshes.clear()
         node?.dispose()
     }
 }

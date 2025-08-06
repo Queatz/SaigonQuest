@@ -9,6 +9,8 @@ import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
 import main.api.WebSocketApi
+import main.components.inventory.InventoryState
+import models.User
 import models.WebSocketAction
 
 /**
@@ -81,15 +83,32 @@ class WorldObjectManager(private val scene: Scene) {
      * @param direction Initial direction
      * @param position Initial position
      * @param activity Initial activity, or null for standing
+     * @param additionalSpriteSheets Additional sprite sheets to render on top of the main sprite sheet
+     * @param user The user whose worn items to include, or null to use the current user
      * @return A handle to the created character
      */
     fun createCharacter(
         spriteSheet: SpriteSheet,
         direction: CharacterDirection,
         position: Vector3 = Vector3(0f, 0f, 0f),
-        activity: PlayerActivity? = null
+        activity: PlayerActivity? = null,
+        additionalSpriteSheets: List<SpriteSheet> = emptyList(),
+        user: User? = null
     ): WorldObjectHandle? {
-        val character = Character(spriteSheet, direction, false, activity)
+        // Get worn item sprite sheets from the WornItemsRenderer for the specified user or current user
+        val userToUse = user ?: InventoryState.currentUser
+        val wornItemSpriteSheets = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(userToUse)
+        
+        // Combine additional sprite sheets and worn item sprite sheets
+        val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
+        
+        val character = Character(
+            spriteSheet = spriteSheet,
+            direction = direction,
+            isMoving = false,
+            activity = activity,
+            additionalSpriteSheets = combinedSpriteSheets
+        )
         character.position = position
         
         return addObject(character)

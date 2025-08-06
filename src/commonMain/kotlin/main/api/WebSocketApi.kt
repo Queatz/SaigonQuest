@@ -1,10 +1,12 @@
 package main.api
 
+import app.softwork.routingcompose.Router
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import main.api.ApiConstants.API_BASE_URL
+import main.components.world.PlayerActivity
 import models.ChatMessage
 import models.Object
 import models.PlayerInteractData
@@ -857,9 +859,9 @@ object WebSocketApi {
      * @return true if the update was sent successfully, false otherwise
      */
     suspend fun updatePlayer(
-        name: String, 
-        isPlayer: Boolean, 
-        activity: main.components.world.PlayerActivity? = null,
+        name: String,
+        isPlayer: Boolean,
+        activity: PlayerActivity? = null,
         status: String? = null
     ): Boolean {
         try {
@@ -1266,6 +1268,51 @@ object WebSocketApi {
         // Log the number of listeners
         val listenerCount = listeners[WebSocketAction.UPDATE_PLAYER]?.size ?: 0
         console.log("[DEBUG_LOG] WebSocketApi: Now have $listenerCount UPDATE_PLAYER listeners")
+    }
+    
+    /**
+     * Add a listener for teleport player events
+     * 
+     * @param listener A function that takes a Map<String, String> containing teleport data and returns Unit
+     */
+    fun addTeleportPlayerListener(router: Router, listener: (Map<String, String>) -> Unit) {
+        console.log("WebSocketApi: Adding TELEPORT_PLAYER listener")
+        addListener(WebSocketAction.TELEPORT_PLAYER) { message ->
+            try {
+                console.log("WebSocketApi: Received TELEPORT_PLAYER message: ${message.data}")
+                val teleportData = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
+                console.log("WebSocketApi: Parsed teleport data: ${teleportData["targetWorldUrl"]}")
+                
+                // Use a coroutine scope to handle the suspend function call
+                scope.launch {
+                    try {
+                        // Check if the teleport is for the current user
+                        val currentUser = UserApi.getCurrentUser()
+                        if (teleportData["userId"] == currentUser.key) {
+                            // If targetWorldUrl is provided, navigate to it
+                            val targetWorldUrl = teleportData["targetWorldUrl"]
+                            if (targetWorldUrl != null) {
+                                console.log("WebSocketApi: Teleporting to world URL: $targetWorldUrl")
+                                router.navigate("/$targetWorldUrl")
+                            } else {
+                                console.error("WebSocketApi: Missing targetWorldUrl in teleport data")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        console.error("WebSocketApi: Error checking current user for teleport", e)
+                    }
+                }
+                
+                listener(teleportData)
+            } catch (e: Exception) {
+                console.error("WebSocketApi: Error parsing teleport player data", e)
+                console.error("WebSocketApi: Raw message data: ${message.data}")
+            }
+        }
+        
+        // Log the number of listeners
+        val listenerCount = listeners[WebSocketAction.TELEPORT_PLAYER]?.size ?: 0
+        console.log("WebSocketApi: Now have $listenerCount TELEPORT_PLAYER listeners")
     }
 
     /**

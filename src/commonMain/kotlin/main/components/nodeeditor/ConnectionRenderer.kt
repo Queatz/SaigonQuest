@@ -2,22 +2,18 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.browser.document
+import kotlinx.dom.clear
 import main.theme.NodeEditorStyles
 import org.jetbrains.compose.web.css.CSSColorValue
-import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.position
-import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
-import web.cssom.AtRules.Companion.property
+import org.w3c.dom.HTMLDivElement
 import kotlin.math.max
-import kotlin.random.Random
 
 /**
  * Renders a connection between two ports using a bezier curve.
@@ -44,41 +40,28 @@ fun BezierConnection(
     isSelected: Boolean = false,
     onClick: (() -> Unit)? = null,
     connectionId: String? = null,
-    isInConnectionLayer: Boolean = false
 ) {
     // Create the SVG path for the bezier curve using the utility function
-    val path = BezierCurveUtils.createPathString(sourceX, sourceY, targetX, targetY)
+    val path = remember(
+        sourceX, sourceY, targetX, targetY
+    ) { BezierCurveUtils.createPathString(sourceX, sourceY, targetX, targetY) }
     
     // Determine the color and thickness based on selection state
     val actualColor = if (isSelected) rgba(100, 200, 255, 0.9) else color
     val actualThickness = if (isSelected) max(thickness, 4f) else thickness
     
     // Generate a unique ID for the SVG container
-    val svgContainerId = remember { "svg-container-${Random.nextInt(1000000)}" }
+    var containerRef by remember { mutableStateOf<HTMLDivElement?>(null) }
     
     // Render the connection using an SVG path
     Div(
         attrs = {
-            // Apply different styles based on whether we're in the connection layer
-            if (isInConnectionLayer) {
-                // For the connection layer, use absolute positioning relative to the wrapper
-                style {
-                    position(Position.Absolute)
-                    left(0.px)
-                    top(0.px)
-                    width(0.px)
-                    height(0.px)
-                    property("pointer-events", if (onClick != null) "auto" else "none")
-                    property("z-index", if (isSelected) "3" else "2")
-                }
-            } else {
-                // For the canvas, use the standard connection styles
-                classes(NodeEditorStyles.connectionLine)
-                if (isSelected) {
-                    classes(NodeEditorStyles.connectionSelected)
-                }
+            // For the canvas, use the standard connection styles
+            classes(NodeEditorStyles.connectionLine)
+            if (isSelected) {
+                classes(NodeEditorStyles.connectionSelected)
             }
-            
+
             // Add click handler if provided
             if (onClick != null) {
                 onClick { 
@@ -97,26 +80,20 @@ fun BezierConnection(
         Div(
             attrs = {
                 classes(NodeEditorStyles.connectionSvgContainer)
-                id(svgContainerId)
-                
-                // If in connection layer, make the container cover the entire wrapper
-                if (isInConnectionLayer) {
-                    style {
-                        position(Position.Fixed)
-                        left(0.px)
-                        top(0.px)
-                        property("width", "100%")
-                        property("height", "100%")
-                        property("pointer-events", "none")
-                    }
+
+
+                ref {
+                    containerRef = it
+
+                    onDispose {  }
                 }
             }
         )
         
         // Use DisposableEffect to create and manage the SVG element
-        DisposableEffect(path, actualColor, actualThickness, svgContainerId, isInConnectionLayer) {
+        DisposableEffect(path, actualColor, actualThickness, containerRef) {
             // Get the container element
-            val container = document.getElementById(svgContainerId)
+            val container = containerRef
             
             if (container != null) {
                 // Create SVG element
@@ -132,24 +109,7 @@ fun BezierConnection(
                 pathElement.setAttribute("stroke", actualColor.toString())
                 pathElement.setAttribute("stroke-width", actualThickness.toString())
                 pathElement.setAttribute("fill", "none")
-                
-                // Add additional attributes for the connection layer
-                if (isInConnectionLayer) {
-                    // Make the path clickable if onClick is provided
-                    if (onClick != null) {
-                        pathElement.setAttribute("style", "cursor: pointer; pointer-events: stroke;")
-                    } else {
-                        pathElement.setAttribute("style", "pointer-events: none;")
-                    }
-                    
-                    // Add a class for styling
-                    if (isSelected) {
-                        pathElement.setAttribute("class", "connection-path-selected")
-                    } else {
-                        pathElement.setAttribute("class", "connection-path-normal")
-                    }
-                }
-                
+
                 // Append path to SVG
                 svg.appendChild(pathElement)
                 
@@ -159,9 +119,7 @@ fun BezierConnection(
             
             // Cleanup function
             onDispose {
-                // Remove SVG element when component is disposed
-                val container = document.getElementById(svgContainerId)
-                container?.innerHTML = ""
+                containerRef?.clear()
             }
         }
     }

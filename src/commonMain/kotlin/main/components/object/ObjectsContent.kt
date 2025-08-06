@@ -142,18 +142,12 @@ fun ObjectsContent(
             // Use the object manager to locate the object if available
             if (objectManager != null) {
                 // Check if the object manager is a SceneObjectManager
-                if (objectManager is SceneObjectManager) {
-                    // Call the locateObject method on the SceneObjectManager
-                    val success = objectManager.locateObject(objectId)
-                    if (success) {
-                        showFeedback("Locating object: ${obj.title}")
-                    } else {
-                        showFeedback("Failed to locate object in scene", true)
-                    }
-                } else {
-                    // Basic implementation for other object managers
-                    console.log("Locating object: ${obj.title} (${obj.key})")
+                // Call the locateObject method on the SceneObjectManager
+                val success = objectManager.locateObject(objectId)
+                if (success) {
                     showFeedback("Locating object: ${obj.title}")
+                } else {
+                    showFeedback("Failed to locate object in scene", true)
                 }
             } else {
                 console.warn("Object manager not available for locating object")

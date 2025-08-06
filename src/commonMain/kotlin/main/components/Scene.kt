@@ -663,6 +663,11 @@ fun SceneComponent(url: String) {
                 playerController.initializePlayerStatus()
                 console.log("[DEBUG_LOG] Scene: Player status initialization completed")
                 
+                // Initialize teleport listener
+                console.log("[DEBUG_LOG] Scene: Initializing teleport listener")
+                playerController.initializeTeleportListener(router)
+                console.log("[DEBUG_LOG] Scene: Teleport listener initialization completed")
+                
                 // Register player mesh as shadow caster and receiver
                 playerController.getPlayerHandle()?.node?.let { playerMesh ->
                     worldLoader.getShadowManager()?.let { shadowManager ->

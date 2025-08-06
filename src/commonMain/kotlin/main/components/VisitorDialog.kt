@@ -8,9 +8,12 @@ import androidx.compose.runtime.setValue
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.style
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Text
@@ -31,29 +34,50 @@ fun VisitorDialog(
     var sex by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     
-    // Dialog overlay
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            onClick { onClose() }
-        }
-    ) {
-        // Dialog content
-        Div(
-            attrs = {
-                classes(Styles.dialogContent)
-                onClick { it.stopPropagation() }
-            }
-        ) {
-            // Dialog header
-            H3(
-                attrs = {
-                    classes(Styles.dialogHeader)
-                }
-            ) {
-                Text(if (isLoginMode) "Log In" else "Create Account")
+    // Validation function
+    fun validateAndSubmit() {
+        errorMessage = ""
+        
+        when {
+            username.isBlank() -> {
+                errorMessage = "Username cannot be empty"
+                return
             }
             
+            password.isBlank() -> {
+                errorMessage = "Password cannot be empty"
+                return
+            }
+            
+            !isLoginMode && password.length < 8 -> {
+                errorMessage = "Password must be at least 8 characters"
+                return
+            }
+            
+            !isLoginMode && yearOfBirth == null -> {
+                errorMessage = "Year of birth is required"
+                return
+            }
+            
+            !isLoginMode && sex == null -> {
+                errorMessage = "Sex is required"
+                return
+            }
+            
+            else -> {
+                if (isLoginMode) {
+                    onLogin(username, password)
+                } else {
+                    onRegister(username, password, yearOfBirth, sex)
+                }
+            }
+        }
+    }
+    
+    BaseDialog(
+        onClose = onClose,
+        title = if (isLoginMode) "Log In" else "Create Account",
+        content = {
             // Error message (if any)
             if (errorMessage.isNotEmpty()) {
                 Div(
@@ -262,70 +286,35 @@ fun VisitorDialog(
                     }
                 }
             }
-            
-            // Action buttons
+        },
+        actions = {
             Div(
                 attrs = {
-                    classes(Styles.formButtonsContainer)
+                    style {
+                        display(DisplayStyle.Flex)
+                        gap(8.px)
+                    }
                 }
             ) {
                 // Primary action button
-                Button(
-                    attrs = {
-                        classes(Styles.primaryButton)
-                        onClick {
-                            errorMessage = ""
-                            
-                            if (username.isBlank()) {
-                                errorMessage = "Username cannot be empty"
-                                return@onClick
-                            }
-                            
-                            if (password.isBlank()) {
-                                errorMessage = "Password cannot be empty"
-                                return@onClick
-                            }
-                            
-                            if (!isLoginMode && password.length < 8) {
-                                errorMessage = "Password must be at least 8 characters"
-                                return@onClick
-                            }
-                            
-                            if (!isLoginMode && yearOfBirth == null) {
-                                errorMessage = "Year of birth is required"
-                                return@onClick
-                            }
-                            
-                            if (!isLoginMode && sex == null) {
-                                errorMessage = "Sex is required"
-                                return@onClick
-                            }
-                            
-                            if (isLoginMode) {
-                                onLogin(username, password)
-                            } else {
-                                onRegister(username, password, yearOfBirth, sex)
-                            }
-                        }
-                    }
+                DialogButton(
+                    onClick = { validateAndSubmit() },
+                    isPrimary = true
                 ) {
                     Text(if (isLoginMode) "Log In" else "Create Account")
                 }
                 
                 // Toggle mode button
-                Button(
-                    attrs = {
-                        classes(Styles.secondaryButton)
-                        onClick {
-                            isLoginMode = !isLoginMode
-                            errorMessage = ""
-                        }
+                DialogButton(
+                    onClick = {
+                        isLoginMode = !isLoginMode
+                        errorMessage = ""
                     }
                 ) {
                     Text(if (isLoginMode) "Create Account" else "Log In")
                 }
             }
         }
-    }
+    )
 }
 

@@ -9,23 +9,14 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
+import models.AuthResponse
 import models.ErrorResponse
+import models.LoginRequest
+import models.UpgradeRequest
 import models.User
+import models.VisitorRequest
+import models.WornItemsRequest
 import repository.UserRepository
-
-// Data classes for request/response
-@Serializable
-data class VisitorRequest(val visitorId: String = "")
-
-@Serializable
-data class UpgradeRequest(val username: String, val password: String)
-
-@Serializable
-data class LoginRequest(val username: String, val password: String)
-
-@Serializable
-data class AuthResponse(val user: User, val token: String)
 
 fun Routing.configureUserRoutes() {
     val userRepository = UserRepository()
@@ -129,6 +120,25 @@ fun Routing.configureUserRoutes() {
                 )
                 
                 call.respond(HttpStatusCode.OK, user)
+            }
+            
+            // Update worn items - requires authentication
+            post("/worn-items") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get request body
+                val request = call.receive<WornItemsRequest>()
+                
+                // Update worn items
+                val updatedUser = userRepository.updateWornItems(userId, request.wornItems)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+                
+                call.respond(HttpStatusCode.OK, updatedUser)
             }
         }
     }

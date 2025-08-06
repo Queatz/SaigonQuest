@@ -43,12 +43,16 @@ class SceneObjectManager(
     // Map of object IDs to their meshes
     private val objectMeshes = mutableMapOf<String, Node>()
     
+    // Map of object IDs to their status text handles
+    private val objectStatusTextHandles = mutableMapOf<String, main.components.world.WorldObjectHandle>()
+    
     // Currently dragging object
     private var draggingObjectId: String? = null
     
     // Drag state
     private var isDragging = false
     private var dragStartPosition: Vector3? = null
+    private var dragClickOffset: Vector3? = null
     
     // Track hovered object
     private var hoveredObjectId: String? = null
@@ -181,34 +185,6 @@ class SceneObjectManager(
         val node = objectMeshes[objectId]
         if (node != null) {
             try {
-                // Get all child meshes from the node
-                val childMeshes = node.getChildMeshes(false)
-                console.log("[DEBUG_SELECT] Found ${childMeshes.size} child meshes to select")
-                
-                // Process each child mesh
-                childMeshes.forEach { childMesh ->
-                    try {
-                        // Store the original color to restore it later
-                        val material = childMesh.material
-                        // Store the original color in the mesh's metadata
-                        if (childMesh.metadata == null) {
-                            childMesh.metadata = object : MeshMetadata {
-                                override var originalMaterial: Material? = null
-                            }
-                        }
-                        childMesh.metadata?.originalMaterial = material.clone("clone")
-
-                        // Change the color to highlight the object
-                        when (material) {
-                            is PBRMaterial -> material.albedoColor = Color3(1f, 0.6f, 1f)
-                            is StandardMaterial -> material.diffuseColor = Color3(1f, 0.6f, 1f)
-                        }
-                        console.log("[DEBUG_SELECT] Changed color for mesh: ${childMesh.name}")
-                    } catch (e: Exception) {
-                        console.error("[DEBUG_SELECT] Error processing child mesh: ${childMesh.name}", e)
-                    }
-                }
-                
                 // Store the selected object ID
                 selectedObject = objectId
                 
@@ -230,53 +206,12 @@ class SceneObjectManager(
     /**
      * Deselects the currently selected object
      */
-    private fun deselectCurrentObject() {
+    fun deselectCurrentObject() {
         selectedObject?.let { objectId ->
-            val node = objectMeshes[objectId]
-            if (node != null) {
-                try {
-                    // Get all child meshes from the node
-                    val childMeshes = node.getChildMeshes(false)
-                    console.log("[DEBUG_DESELECT] Found ${childMeshes.size} child meshes to deselect")
-                    
-                    // Process each child mesh
-                    childMeshes.forEach { childMesh ->
-                        try {
-                            // Restore the original material if it exists
-                            if (childMesh.metadata != null && childMesh.metadata?.originalMaterial != null) {
-                                val originalMaterial = childMesh.metadata?.originalMaterial
-                                childMesh.material = originalMaterial!!
-                                console.log("[DEBUG_DESELECT] Restored original material for mesh: ${childMesh.name}")
-                            }
-                        } catch (e: Exception) {
-                            console.error("[DEBUG_DESELECT] Error processing child mesh: ${childMesh.name}", e)
-                        }
-                    }
-                } catch (error: Exception) {
-                    console.error("[DEBUG_DESELECT] Error deselecting object", error)
-                }
-            }
             selectedObject = null
         }
     }
-    
-    /**
-     * Deselects the currently selected object if any
-     * 
-     * @return true if an object was deselected, false if no object was selected
-     */
-    fun deselectObject(): Boolean {
-        val wasObjectSelected = selectedObject != null
-        deselectCurrentObject()
-        
-        if (wasObjectSelected) {
-            console.log("Object deselected")
-            onSuccess?.invoke("Object deselected")
-        }
-        
-        return wasObjectSelected
-    }
-    
+
     /**
      * Locates an object in the scene by moving the camera to focus on it
      * 
@@ -315,9 +250,31 @@ class SceneObjectManager(
      * @param objectId The ID of the object to remove
      */
     fun removeObject(objectId: String) {
-        // Find and remove the object from the scene
-        // In a real implementation, we would find the mesh by ID and remove it
-        console.log("Removing object with ID: $objectId from scene")
+        console.log("[DEBUG_REMOVE] Removing object with ID: $objectId from scene")
+        
+        try {
+            // Remove any status text for this object
+            val statusTextHandle = objectStatusTextHandles[objectId]
+            if (statusTextHandle != null) {
+                console.log("[DEBUG_REMOVE] Removing status text for object: $objectId")
+                statusTextHandle.remove()
+                objectStatusTextHandles.remove(objectId)
+                console.log("[DEBUG_REMOVE] Successfully removed status text for object: $objectId")
+            }
+            
+            // Find and remove the object from the scene
+            val node = objectMeshes[objectId]
+            if (node != null) {
+                console.log("[DEBUG_REMOVE] Removing node for object: $objectId")
+                (node as? TransformNode)?.dispose()
+                objectMeshes.remove(objectId)
+                console.log("[DEBUG_REMOVE] Successfully removed node for object: $objectId")
+            } else {
+                console.log("[DEBUG_REMOVE] No node found for object: $objectId")
+            }
+        } catch (e: Exception) {
+            console.error("[DEBUG_REMOVE] Error removing object: $objectId", e)
+        }
         
         // Note: The actual HTTP deletion and WebSocket notification is handled in ObjectsContent.kt
     }
@@ -518,30 +475,8 @@ class SceneObjectManager(
                         
                         console.log("[DEBUG_OBJECT] Successfully created 3D object: ${obj.key}")
                         
-                        // Create status text if status is not empty and WorldObjectManager is available
-                        if (obj.status.isNotBlank()) {
-                            // Create a WorldObjectHandle for the node
-                            val handle = object : main.components.world.WorldObjectHandle {
-                                override val id: String = obj.key
-                                override var node: Node = node
-                                override fun remove() {
-                                    // No-op for now
-                                }
-                                override fun updateDirection(direction: main.components.world.CharacterDirection) {
-                                    // No-op for now
-                                }
-                                override fun updateActivity(activity: main.components.world.PlayerActivity?) {
-                                    // No-op for now
-                                }
-                                override fun getMeshes(): Array<AbstractMesh> {
-                                    return node.getChildMeshes(false)
-                                }
-                            }
-                            
-                            // Create status text
-                            worldObjectManager.createObjectStatusText(handle, obj.status)
-                            console.log("[DEBUG_OBJECT] Created status text for object: ${obj.key}")
-                        }
+                        // Handle status text
+                        handleObjectStatusText(obj.key, obj.status, node)
                     },
                     onError = { errorMessage ->
                         console.error("[DEBUG_OBJECT] Error loading 3D model: $errorMessage")
@@ -557,30 +492,8 @@ class SceneObjectManager(
                 console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
                 objectMeshes[obj.key] = fallbackSphere
                 
-                // Create status text if status is not empty and WorldObjectManager is available
-                if (obj.status.isNotBlank()) {
-                    // Create a WorldObjectHandle for the node
-                    val handle = object : main.components.world.WorldObjectHandle {
-                        override val id: String = obj.key
-                        override var node: Node = fallbackSphere
-                        override fun remove() {
-                            // No-op for now
-                        }
-                        override fun updateDirection(direction: main.components.world.CharacterDirection) {
-                            // No-op for now
-                        }
-                        override fun updateActivity(activity: main.components.world.PlayerActivity?) {
-                            // No-op for now
-                        }
-                        override fun getMeshes(): Array<AbstractMesh> {
-                            return fallbackSphere.getChildMeshes(false)
-                        }
-                    }
-                    
-                    // Create status text
-                    worldObjectManager?.createObjectStatusText(handle, obj.status)
-                    console.log("[DEBUG_OBJECT] Created status text for object: ${obj.key}")
-                }
+                // Handle status text
+                handleObjectStatusText(obj.key, obj.status, fallbackSphere)
             }
         } catch (error: Exception) {
             console.error("[DEBUG_OBJECT] Error creating 3D object", error)
@@ -645,9 +558,10 @@ class SceneObjectManager(
      * Starts dragging an object
      * 
      * @param objectId The ID of the object to drag
+     * @param clickPoint The point where the user clicked (ray intersection point)
      * @return true if dragging started successfully, false otherwise
      */
-    fun startDragging(objectId: String): Boolean {
+    fun startDragging(objectId: String, clickPoint: Vector3? = null): Boolean {
         // Find the object node
         val node = objectMeshes[objectId]
         if (node != null) {
@@ -659,6 +573,20 @@ class SceneObjectManager(
                 draggingObjectId = objectId
                 isDragging = true
                 dragStartPosition = Vector3(node.position.x, node.position.y, node.position.z)
+                
+                // Calculate and store the offset between the click point and the object's pivot
+                if (clickPoint != null) {
+                    // The offset is the difference between the object's position and the click point
+                    dragClickOffset = Vector3(
+                        node.position.x - clickPoint.x,
+                        node.position.y - clickPoint.y,
+                        node.position.z - clickPoint.z
+                    )
+                    console.log("Calculated drag offset: (${dragClickOffset!!.x}, ${dragClickOffset!!.y}, ${dragClickOffset!!.z})")
+                } else {
+                    // If no click point is provided, set the offset to zero
+                    dragClickOffset = Vector3.Zero()
+                }
                 
                 // Change cursor to grabbing
                 document.body?.style?.cursor = "grabbing"
@@ -681,7 +609,7 @@ class SceneObjectManager(
     /**
      * Updates the position of the currently dragged object
      * 
-     * @param position The new position for the object
+     * @param position The new position for the object (ray intersection point)
      * @return true if the position was updated successfully, false otherwise
      */
     fun updateDragging(position: Vector3): Boolean {
@@ -697,9 +625,18 @@ class SceneObjectManager(
                 // Ensure the node has no parent (position is global to scene)
                 node.parent = null
                 
-                // Update the node position
-                console.log("Updating object ${draggingObjectId} position to (${position.x}, ${position.y}, ${position.z})")
-                node.position = position
+                // Apply the stored offset to the position
+                val offset = dragClickOffset ?: Vector3.Zero()
+                val adjustedPosition = Vector3(
+                    position.x + offset.x,
+                    position.y + offset.y,
+                    position.z + offset.z
+                )
+                
+                // Update the node position with the adjusted position
+                console.log("Updating object ${draggingObjectId} position to (${adjustedPosition.x}, ${adjustedPosition.y}, ${adjustedPosition.z})")
+                console.log("Applied offset: (${offset.x}, ${offset.y}, ${offset.z})")
+                node.position = adjustedPosition
                 
                 return true
             } else {
@@ -750,6 +687,7 @@ class SceneObjectManager(
                 val objectId = draggingObjectId
                 draggingObjectId = null
                 dragStartPosition = null
+                dragClickOffset = null
                 
                 // Reset cursor to grab if we're still hovering over the object
                 if (hoveredObjectId == objectId) {
@@ -863,15 +801,8 @@ class SceneObjectManager(
                 
                 console.log("Received object removal via WebSocket: $objectId")
                 
-                // Find and remove the object node
-                val node = objectMeshes[objectId]
-                if (node != null) {
-                    // Remove from scene
-                    (node as? TransformNode)?.dispose()
-                    // Remove from our map
-                    objectMeshes.remove(objectId)
-                    console.log("Removed object from scene: $objectId")
-                }
+                // Use the removeObject method to clean up the object and its status text
+                removeObject(objectId)
             } catch (error: Exception) {
                 console.error("Error processing object removal", error)
             }
@@ -893,30 +824,8 @@ class SceneObjectManager(
                     node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
                     console.log("Updated object position: ${obj.key} to (${obj.position.x}, ${obj.position.y}, ${obj.position.z})")
                     
-                    // Update status text if status is not empty and WorldObjectManager is available
-                    if (obj.status.isNotBlank()) {
-                        // Create a WorldObjectHandle for the node
-                        val handle = object : main.components.world.WorldObjectHandle {
-                            override val id: String = obj.key
-                            override var node: Node = node
-                            override fun remove() {
-                                // No-op for now
-                            }
-                            override fun updateDirection(direction: main.components.world.CharacterDirection) {
-                                // No-op for now
-                            }
-                            override fun updateActivity(activity: main.components.world.PlayerActivity?) {
-                                // No-op for now
-                            }
-                            override fun getMeshes(): Array<AbstractMesh> {
-                                return node.getChildMeshes(false)
-                            }
-                        }
-                        
-                        // Create status text
-                        worldObjectManager.createObjectStatusText(handle, obj.status)
-                        console.log("[DEBUG_OBJECT] Updated status text for object: ${obj.key}")
-                    }
+                    // Handle status text
+                    handleObjectStatusText(obj.key, obj.status, node)
                 } else {
                     // Object doesn't exist in our scene yet, create it
                     console.log("Object not found in scene, creating it: ${obj.key}")
@@ -1025,5 +934,88 @@ class SceneObjectManager(
         document.body?.style?.cursor = "default"
         
         console.log("Disposing SceneObjectManager resources")
+    }
+    
+    /**
+     * Helper method to handle object status text
+     * 
+     * This method handles the creation, updating, and removal of status text for an object.
+     * It ensures that:
+     * - Status text is created when an object has a non-blank status
+     * - Status text is removed when an object's status becomes blank
+     * - Status text is moved when an object moves, rather than being recreated
+     * 
+     * @param objectId The ID of the object
+     * @param status The status text
+     * @param node The node representing the object in the scene
+     */
+    private fun handleObjectStatusText(objectId: String, status: String, node: Node) {
+        try {
+            console.log("[DEBUG_STATUS] Handling status text for object: $objectId, status: '$status'")
+            
+            // Check if the object already has a status text handle
+            val existingHandle = objectStatusTextHandles[objectId]
+            console.log("[DEBUG_STATUS] Existing handle: ${existingHandle != null}")
+            
+            if (status.isBlank()) {
+                // If status is blank, remove any existing status text
+                if (existingHandle != null) {
+                    console.log("[DEBUG_STATUS] Removing status text for object: $objectId")
+                    existingHandle.remove()
+                    objectStatusTextHandles.remove(objectId)
+                    console.log("[DEBUG_STATUS] Successfully removed status text for object: $objectId")
+                } else {
+                    console.log("[DEBUG_STATUS] No status text to remove for object: $objectId")
+                }
+            } else {
+                // Create a WorldObjectHandle for the node
+                val objectHandle = object : main.components.world.WorldObjectHandle {
+                    override val id: String = objectId
+                    override var node: Node = node
+                    override fun remove() {
+                        // No-op for now
+                    }
+                    override fun updateDirection(direction: main.components.world.CharacterDirection) {
+                        // No-op for now
+                    }
+                    override fun updateActivity(activity: main.components.world.PlayerActivity?) {
+                        // No-op for now
+                    }
+                    override fun getMeshes(): Array<AbstractMesh> {
+                        return node.getChildMeshes(false)
+                    }
+                }
+                
+                if (existingHandle != null) {
+                    // If there's an existing handle, update its position
+                    val newPosition = Vector3(
+                        node.position.x,
+                        node.position.y + 0.5f,
+                        node.position.z
+                    )
+                    console.log("[DEBUG_STATUS] Updating status text position for object: $objectId")
+                    console.log("[DEBUG_STATUS] Old position: (${existingHandle.position.x}, ${existingHandle.position.y}, ${existingHandle.position.z})")
+                    console.log("[DEBUG_STATUS] New position: (${newPosition.x}, ${newPosition.y}, ${newPosition.z})")
+                    
+                    existingHandle.position = newPosition
+                    console.log("[DEBUG_STATUS] Successfully updated status text position for object: $objectId")
+                } else {
+                    // Create new status text
+                    console.log("[DEBUG_STATUS] Creating new status text for object: $objectId with status: '$status'")
+                    val statusTextHandle = worldObjectManager.createObjectStatusText(objectHandle, status)
+                    
+                    if (statusTextHandle != null) {
+                        // Store the handle for future updates
+                        objectStatusTextHandles[objectId] = statusTextHandle
+                        console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")
+                        console.log("[DEBUG_STATUS] Total status text handles: ${objectStatusTextHandles.size}")
+                    } else {
+                        console.log("[DEBUG_STATUS] Failed to create status text for object: $objectId")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            console.error("[DEBUG_STATUS] Error handling status text for object: $objectId", e)
+        }
     }
 }

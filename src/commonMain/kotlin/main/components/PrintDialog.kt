@@ -11,9 +11,7 @@ import main.theme.Styles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
@@ -25,72 +23,16 @@ import kotlin.math.max
  */
 @Composable
 fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
-    Div(
-        attrs = {
-            classes(Styles.overlayBase)
-            onClick { onClose() }
-        }
-    ) {
-        Div(
-            attrs = {
-                style {
-                    width(90.percent)
-                    property("max-width", "820px")
-                    backgroundColor(rgba(30, 30, 30, 0.95))
-                    property("border-radius", "8px")
-                    property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                }
-                onClick { it.stopPropagation() }
-            }
-        ) {
-            // Dialog header
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.SpaceBetween)
-                        alignItems(AlignItems.Center)
-                        padding(16.px)
-                        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
-                    }
-                }
-            ) {
-                // Dialog title
-                H3(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            color(Color.white)
-                        }
-                    }
-                ) {
-                    Text("Print Your In-Game Location")
-                }
-                
-                // Close button
-                Button(
-                    attrs = {
-                        style {
-                            backgroundColor(Color.transparent)
-                            property("border", "0")
-                            color(Color.white)
-                            cursor("pointer")
-                            fontSize(20.px)
-                        }
-                        onClick { onClose() }
-                    }
-                ) {
-                    Text("×")
-                }
-            }
-            
+    BaseDialog(
+        onClose = onClose,
+        title = "Print Your In-Game Location",
+        maxWidth = "820px",
+        content = {
             // Image container
             Div(
                 attrs = {
                     style {
-                        padding(24.px)
+                        padding(16.px)
                         display(DisplayStyle.Flex)
                         flexDirection(FlexDirection.Column)
                         alignItems(AlignItems.Center)
@@ -112,34 +54,23 @@ fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
                 )
                 
                 // Download button
-                Button(
-                    attrs = {
-                        style {
-                            padding(12.px, 24.px)
-                            backgroundColor(rgba(0, 120, 255, 0.7))
-                            color(Color.white)
-                            property("border", "0")
-                            property("border-radius", "4px")
-                            cursor("pointer")
-                            fontSize(16.px)
-                            margin(8.px, 0.px)
-                        }
-                        onClick {
-                            // Create a temporary anchor element to trigger download
-                            val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-                            link.href = imageUrl
-                            link.download = "saigon-quest-location.png"
-                            document.body?.appendChild(link)
-                            link.click()
-                            document.body?.removeChild(link)
-                        }
-                    }
+                DialogButton(
+                    onClick = {
+                        // Create a temporary anchor element to trigger download
+                        val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+                        link.href = imageUrl
+                        link.download = "saigon-quest-location.png"
+                        document.body?.appendChild(link)
+                        link.click()
+                        document.body?.removeChild(link)
+                    },
+                    isPrimary = true
                 ) {
                     Text("📥 Download Image")
                 }
             }
         }
-    }
+    )
 }
 
 /**
