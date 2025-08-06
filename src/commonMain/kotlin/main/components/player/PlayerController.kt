@@ -35,6 +35,8 @@ import kotlin.math.PI
 import kotlin.math.min
 import kotlin.math.abs
 import app.softwork.routingcompose.Router
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.filterNotNull
 
 /**
  * Controller for managing the player in the 3D scene.
@@ -49,6 +51,7 @@ import app.softwork.routingcompose.Router
  * speed regardless of the framerate. This is achieved by scaling the movement speed
  * by the time elapsed between frames (delta time).
  */
+@OptIn(FlowPreview::class)
 class PlayerController(private val scene: Scene) {
     
     // The player mesh (for compatibility with existing code)
@@ -108,32 +111,31 @@ class PlayerController(private val scene: Scene) {
     init {
         // Collect position updates with 500ms debounce
         playerPositionFlow
+            .filterNotNull()
             .debounce(500)
-            .onEach { position ->
-                position?.let { validPos ->
-                    try {
-                        // Check connection state using WebSocketConnectionManager
-                        if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
-                            val success = WebSocketApi.updatePlayerPosition(
-                                position = Position(
-                                    x = validPos.x,
-                                    y = validPos.y,
-                                    z = validPos.z
-                                ),
-                                isPlayer = UserApi.getCurrentUser().isPlayer
-                            )
-                            if (!success) {
-                                console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
-                            }
-                        } else {
-                            // Don't spam the console with warnings - only log occasionally
-                            if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
-                                console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
-                            }
+            .onEach { validPos ->
+                try {
+                    // Check connection state using WebSocketConnectionManager
+                    if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                        val success = WebSocketApi.updatePlayerPosition(
+                            position = Position(
+                                x = validPos.x,
+                                y = validPos.y,
+                                z = validPos.z
+                            ),
+                            isPlayer = UserApi.getCurrentUser().isPlayer
+                        )
+                        if (!success) {
+                            console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
                         }
-                    } catch (e: Exception) {
-                        console.error("Error updating player position", e)
+                    } else {
+                        // Don't spam the console with warnings - only log occasionally
+                        if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
+                            console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                        }
                     }
+                } catch (e: Exception) {
+                    console.error("Error updating player position", e)
                 }
             }
             .launchIn(coroutineScope)

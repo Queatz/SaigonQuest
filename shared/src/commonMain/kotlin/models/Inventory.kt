@@ -27,7 +27,6 @@ data class Item(
     var assetIndex: Int = 0, // All asset files are 320x320 pixels, this index maps to the correct 32x32 cell
     var wearable: Boolean = false,
     var wearableFile: String? = null,
-    var wearableAssetIndex: Int? = null,
 ) : BaseModel()
 
 /**

@@ -70,3 +70,27 @@ data class UpdatePlayerData(
     val activity: String? = null,
     val status: String? = null
 )
+
+/**
+ * Dialogue data model
+ * 
+ * This model is sent when a dialogue node is executed to show a dialogue to the player.
+ */
+@Serializable
+data class DialogueData(
+    val dialogueId: String,
+    val userId: String,
+    val text: String,
+    val nodeId: String
+)
+
+/**
+ * Dialogue confirmation model
+ * 
+ * This model is sent when a player clicks the OK button on a dialogue.
+ */
+@Serializable
+data class DialogueConfirmation(
+    val dialogueId: String,
+    val userId: String
+)

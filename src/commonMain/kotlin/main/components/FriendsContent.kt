@@ -10,22 +10,18 @@ import app.softwork.routingcompose.Router
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import lib.Vector3
 import main.api.FriendApi
 import main.api.WorldApi
-import main.components.player.PlayerController
 import main.components.world.WorldLoader
 import models.Friend
 import models.Position
-import models.World
-import lib.Vector3
 import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
@@ -35,19 +31,15 @@ import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -421,24 +413,20 @@ private fun jumpToFriend(
         try {
             // Get the world details
             val world = WorldApi.getWorld(worldId)
-            
-            if (world != null) {
-                // Navigate to the world
-                router.navigate("/world/${world.key}")
-                
-                // Set the player position if available
-                if (position != null) {
-                    // Wait for the world to load
-                    WorldLoader.onWorldLoaded { 
-                        // Get the player controller and set the target position
-                        val playerController = SceneManager.getPlayerController()
-                        // Convert Position to Vector3
-                        val vector3Position = Vector3(position.x, position.y, position.z)
-                        playerController?.setTargetPosition(vector3Position)
-                    }
+
+            // Navigate to the world
+            router.navigate("/world/${world.key}")
+
+            // Set the player position if available
+            if (position != null) {
+                // Wait for the world to load
+                WorldLoader.onWorldLoaded {
+                    // Get the player controller and set the target position
+                    val playerController = SceneManager.getPlayerController()
+                    // Convert Position to Vector3
+                    val vector3Position = Vector3(position.x, position.y, position.z)
+                    playerController?.setTargetPosition(vector3Position)
                 }
-            } else {
-                onError("World not found")
             }
         } catch (e: Exception) {
             console.error("Error jumping to friend", e)

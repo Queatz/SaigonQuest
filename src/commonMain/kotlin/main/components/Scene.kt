@@ -29,6 +29,7 @@ import main.components.player.FriendshipStatus
 import main.components.player.OtherPlayerDialog
 import main.components.player.OtherPlayersController
 import main.components.player.PlayerController
+import main.components.DialogueBox
 import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
 import main.theme.Styles
@@ -523,6 +524,9 @@ fun SceneComponent(url: String) {
             }
         )
     }
+
+    // Add DialogueBox component for displaying dialogue messages
+    DialogueBox()
 
     // Set up BabylonJS scene
     DisposableEffect(canvasId) {

@@ -8,6 +8,7 @@ import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
 import main.theme.NodeEditorStyles
+import main.theme.NodeStyles
 
 fun main() {
     // Initialize WebSocketConnectionManager
@@ -17,6 +18,7 @@ fun main() {
     renderComposableInBody {
         Style(Styles)
         Style(NodeEditorStyles)
+        Style(NodeStyles)
 
         BrowserRouter(
             initPath = "/"

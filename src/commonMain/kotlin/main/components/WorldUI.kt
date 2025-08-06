@@ -182,7 +182,7 @@ fun WorldUI() {
     // Fetch current world when path changes
     LaunchedEffect(currentPath) {
         // Get current world URL from the pathname
-        val worldUrl = currentPath.substring(1)
+        val worldUrl = currentPath.trimStart('/')
         isWorldLoading = true
         worldErrorMessage = ""
         
@@ -565,7 +565,7 @@ fun WorldUI() {
                 buttonPositionTracker = buttonPositionTracker,
                 isVisible = true,
                 defaultPosition = BubblePosition.LEFT,
-                horizontalOffset = -120,
+                horizontalOffset = -150,
                 verticalOffset = -15
             )
         }

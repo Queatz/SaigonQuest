@@ -12,6 +12,7 @@ import kotlin.time.Instant
 data class User(
     var username: String = "",
     var isPlayer: Boolean = false,
+    var isAdmin: Boolean = false,
     var visitorId: String = "",
     var passwordHash: String = "",
     @Contextual

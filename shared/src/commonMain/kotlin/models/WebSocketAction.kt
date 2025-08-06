@@ -25,5 +25,6 @@ enum class WebSocketAction {
     USER_LEAVE,
     UPDATE_PLAYER,
     TELEPORT_PLAYER,
-    SHOW_DIALOGUE
+    SHOW_DIALOGUE,
+    DIALOGUE_CONFIRM
 }

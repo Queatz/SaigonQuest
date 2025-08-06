@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 import main.api.ApiConstants.API_BASE_URL
 import main.components.world.PlayerActivity
 import models.ChatMessage
+import models.DialogueConfirmation
+import models.DialogueData
 import models.Object
 import models.PlayerInteractData
 import models.PlayerPositionData
@@ -1327,6 +1329,69 @@ object WebSocketApi {
      */
     fun removeAllListeners(action: WebSocketAction) {
         listeners.remove(action)
+    }
+    
+    /**
+     * Add a listener for dialogue events
+     * 
+     * @param listener A function that takes a DialogueData and returns Unit
+     */
+    fun addDialogueListener(listener: (DialogueData) -> Unit) {
+        console.log("WebSocketApi: Adding SHOW_DIALOGUE listener")
+        addListener(WebSocketAction.SHOW_DIALOGUE) { message ->
+            try {
+                console.log("WebSocketApi: Received SHOW_DIALOGUE message: ${message.data}")
+                val dialogueData = ApiClient.json.decodeFromString<DialogueData>(message.data)
+                console.log("WebSocketApi: Parsed DialogueData: dialogueId=${dialogueData.dialogueId}, text=${dialogueData.text}")
+                listener(dialogueData)
+            } catch (e: Exception) {
+                console.error("WebSocketApi: Error parsing dialogue data", e)
+                console.error("WebSocketApi: Raw message data: ${message.data}")
+            }
+        }
+        
+        // Log the number of listeners
+        val listenerCount = listeners[WebSocketAction.SHOW_DIALOGUE]?.size ?: 0
+        console.log("WebSocketApi: Now have $listenerCount SHOW_DIALOGUE listeners")
+    }
+    
+    /**
+     * Send a dialogue confirmation message
+     * 
+     * This is called when the user clicks the OK button on a dialogue.
+     * 
+     * @param dialogueId The ID of the dialogue to confirm
+     * @param userId The ID of the user confirming the dialogue
+     * @return true if the message was sent, false otherwise
+     */
+    fun sendDialogueConfirmation(dialogueId: String, userId: String): Boolean {
+        console.log("WebSocketApi: Sending dialogue confirmation for dialogueId=$dialogueId")
+        
+        if (!checkConnection()) {
+            console.error("WebSocketApi: Cannot send dialogue confirmation - WebSocket not connected")
+            return false
+        }
+        
+        try {
+            val confirmation = DialogueConfirmation(
+                dialogueId = dialogueId,
+                userId = userId
+            )
+            
+            val message = WebSocketMessage.fromEnum(
+                action = WebSocketAction.DIALOGUE_CONFIRM,
+                data = ApiClient.json.encodeToString(confirmation)
+            )
+            
+            val messageString = ApiClient.json.encodeToString(message)
+            socket?.send(messageString)
+            console.log("WebSocketApi: Dialogue confirmation sent successfully")
+            return true
+        } catch (e: Exception) {
+            console.error("WebSocketApi: Error sending dialogue confirmation", e)
+            _lastError = "Error sending dialogue confirmation: ${e.message}"
+            return false
+        }
     }
 }
 

@@ -54,15 +54,13 @@ fun CreateItemDialog(
     var assetIndex by remember { mutableStateOf("0") }
     var wearable by remember { mutableStateOf(false) }
     var wearableFile by remember { mutableStateOf("") }
-    var wearableAssetIndex by remember { mutableStateOf("0") }
-    
+
     // Validation state
     var titleError by remember { mutableStateOf("") }
     var fileError by remember { mutableStateOf("") }
     var assetIndexError by remember { mutableStateOf("") }
     var wearableFileError by remember { mutableStateOf("") }
-    var wearableAssetIndexError by remember { mutableStateOf("") }
-    
+
     // Loading state
     var isSubmitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -113,24 +111,6 @@ fun CreateItemDialog(
             } else {
                 wearableFileError = ""
             }
-            
-            // Validate wearable asset index
-            try {
-                val index = wearableAssetIndex.toInt()
-                if (index < 0) {
-                    wearableAssetIndexError = "Wearable asset index must be a positive number"
-                    isValid = false
-                } else {
-                    wearableAssetIndexError = ""
-                }
-            } catch (e: NumberFormatException) {
-                wearableAssetIndexError = "Wearable asset index must be a number"
-                isValid = false
-            }
-        } else {
-            // Clear errors if wearable is not checked
-            wearableFileError = ""
-            wearableAssetIndexError = ""
         }
         
         return isValid
@@ -155,7 +135,6 @@ fun CreateItemDialog(
                     assetIndex = assetIndex.toInt(),
                     wearable = wearable,
                     wearableFile = if (wearable) wearableFile.trim() else null,
-                    wearableAssetIndex = if (wearable) wearableAssetIndex.toInt() else null
                 )
                 
                 val createdItem = ItemApi.createItem(newItem)
@@ -468,56 +447,6 @@ fun CreateItemDialog(
                                 }
                             ) {
                                 Text(wearableFileError)
-                            }
-                        }
-                    }
-                    
-                    // Wearable Asset Index field
-                    Div(
-                        attrs = {
-                            style {
-                                marginBottom(16.px)
-                            }
-                        }
-                    ) {
-                        Label(
-                            attrs = {
-                                style {
-                                    display(DisplayStyle.Block)
-                                    color(Color.white)
-                                    marginBottom(4.px)
-                                }
-                            }
-                        ) {
-                            Text("Wearable asset index (0-99)")
-                        }
-                        
-                        Input(
-                            type = InputType.Number,
-                            attrs = {
-                                classes(Styles.inputField)
-                                placeholder("Enter wearable asset index")
-                                value(wearableAssetIndex)
-                                onInput { 
-                                    // Convert Number? to String
-                                    wearableAssetIndex = it.value?.toString() ?: "0"
-                                }
-                                attr("min", "0")
-                                attr("max", "99")
-                            }
-                        )
-                        
-                        if (wearableAssetIndexError.isNotEmpty()) {
-                            P(
-                                attrs = {
-                                    style {
-                                        color(rgba(255, 100, 100, 0.9))
-                                        fontSize(12.px)
-                                        marginTop(4.px)
-                                    }
-                                }
-                            ) {
-                                Text(wearableAssetIndexError)
                             }
                         }
                     }
