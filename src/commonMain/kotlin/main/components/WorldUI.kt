@@ -25,7 +25,6 @@ import main.api.WorldApi
 import main.components.inventory.InventoryTray
 import main.theme.Styles
 import main.utils.PathUtils
-import main.utils.rememberButtonPositionTracker
 import main.utils.toggleFullscreen
 import models.Object
 import models.User
@@ -33,6 +32,7 @@ import models.World
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.HTMLElement
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 
@@ -77,7 +77,8 @@ fun WorldUI() {
     // Tutorial manager
     val tutorialManager = remember { TutorialManager() }
 
-    // Button positions are now tracked by ButtonPositionTracker in the TutorialBubbleManager
+    // Map to store button refs for tutorial bubbles
+    val buttonRefs = remember { mutableMapOf<String, HTMLElement>() }
 
     // State for current world
     var currentWorld by remember { mutableStateOf<World?>(null) }
@@ -208,7 +209,6 @@ fun WorldUI() {
     DisposableEffect(Unit) {
         val resizeListener: (dynamic) -> Unit = {
             isMobile.value = window.innerWidth <= 960
-            // Button positions are now tracked by ButtonPositionTracker
         }
         
         // Handle object double-click events
@@ -236,9 +236,7 @@ fun WorldUI() {
         
         window.addEventListener("resize", resizeListener)
         window.addEventListener("objectDoubleClick", objectDoubleClickListener)
-        
-        // Button positions are now tracked by ButtonPositionTracker
-        
+
         onDispose {
             window.removeEventListener("resize", resizeListener)
             window.removeEventListener("objectDoubleClick", objectDoubleClickListener)
@@ -364,7 +362,8 @@ fun WorldUI() {
                 },
                 iconIndex = 6, // 6: share / qr code
                 badgeCount = 0,
-                id = "qrButton"
+                id = "qrButton",
+                elementRef = { element -> buttonRefs["qrButton"] = element }
             )
 
             // World Chat button
@@ -383,7 +382,8 @@ fun WorldUI() {
                 iconIndex = 7, // 7: chat
                 badgeCount = unreadChatCount,
                 isChat = true,
-                id = "chatButton"
+                id = "chatButton",
+                elementRef = { element -> buttonRefs["chatButton"] = element }
             )
             
             // My profile button
@@ -397,7 +397,8 @@ fun WorldUI() {
                 },
                 iconIndex = 8, // 8: my profile
                 badgeCount = 0,
-                id = "profileButton"
+                id = "profileButton",
+                elementRef = { element -> buttonRefs["profileButton"] = element }
             )
         }
         
@@ -448,8 +449,7 @@ fun WorldUI() {
                 // Open the Logic Editor dialog with the object
                 currentEditingObject = obj
                 updatePanelState(SidePanelState.LogicEditor)
-            },
-            scope = scope
+            }
         )
         
         // Admin dialog - not part of the main panel system, kept separate
@@ -539,20 +539,10 @@ fun WorldUI() {
         
         // Tutorial bubbles for non-player users - using the TutorialBubbleManager for more reusable code
         if (currentUser != null && !currentUser!!.isPlayer) {
-            // Create a list of button IDs to track
-            val buttonIds = remember { listOf("profileButton", "chatButton", "qrButton") }
-            
-            // Create a button position tracker
-            val buttonPositionTracker = rememberButtonPositionTracker(buttonIds)
-            
-            // Render tutorial bubbles using the TutorialBubbleManager
+            // Render tutorial bubbles using the TutorialBubbleManager with element refs
             TutorialBubbleManager(
                 tutorialManager = tutorialManager,
-                buttonPositionTracker = buttonPositionTracker,
-                isVisible = true,
-                defaultPosition = BubblePosition.LEFT,
-                horizontalOffset = -150,
-                verticalOffset = -15
+                buttonRefs = buttonRefs
             )
         }
     }

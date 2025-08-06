@@ -50,6 +50,7 @@ import org.jetbrains.compose.web.dom.Text
 import kotlin.js.Date
 import main.theme.Styles
 import org.w3c.dom.HTMLDivElement
+import web.animations.awaitAnimationFrame
 
 /**
  * A component that displays chat messages and handles sending new messages.
@@ -85,15 +86,18 @@ fun ChatMessages(worldId: String) {
     
     // Function to smooth scroll to the bottom of the messages container
     fun smoothScrollToBottom() {
-        try {
-            messagesContainerRef.value?.let {
-                // Use scrollTo with behavior: smooth
-                js("it.scrollTo({top: it.scrollHeight, left: 0, behavior: 'smooth'})")
+        scope.launch {
+            awaitAnimationFrame()
+            try {
+                messagesContainerRef.value?.let {
+                    // Use scrollTo with behavior: smooth
+                    js("it.scrollTo({top: it.scrollHeight, left: 0, behavior: 'smooth'})")
+                }
+            } catch (e: Exception) {
+                console.error("Error smooth scrolling to bottom", e)
+                // Fallback to regular scrolling if smooth scrolling fails
+                scrollToBottom()
             }
-        } catch (e: Exception) {
-            console.error("Error smooth scrolling to bottom", e)
-            // Fallback to regular scrolling if smooth scrolling fails
-            scrollToBottom()
         }
     }
     
@@ -117,20 +121,8 @@ fun ChatMessages(worldId: String) {
             }
             
             // Scroll to bottom after initial messages are loaded
-            // Add a small delay to ensure DOM is updated before scrolling
-            scope.launch {
-                try {
-                    // Wait for the next frame to ensure DOM is updated
-                    kotlinx.coroutines.delay(50)
-                    scrollToBottom()
-                    
-                    // Add a second attempt with a longer delay as a fallback
-                    kotlinx.coroutines.delay(100)
-                    scrollToBottom()
-                } catch (e: Exception) {
-                    console.error("Error in delayed scroll to bottom", e)
-                }
-            }
+            awaitAnimationFrame()
+            scrollToBottom()
         } catch (e: Exception) {
             console.error("Error loading chat messages", e)
             error = "Failed to load messages"
@@ -201,13 +193,6 @@ fun ChatMessages(worldId: String) {
             WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
             WebSocketApi.removeAllListeners(WebSocketAction.UPDATE_CHAT_MESSAGE)
             WebSocketApi.removeAllListeners(WebSocketAction.DELETE_CHAT_MESSAGE)
-        }
-    }
-    
-    // Smooth scroll to bottom whenever messages change
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty() && !isLoading) {
-            smoothScrollToBottom()
         }
     }
     

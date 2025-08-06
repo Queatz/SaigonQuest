@@ -43,7 +43,10 @@ fun BezierConnection(
 ) {
     // Create the SVG path for the bezier curve using the utility function
     val path = remember(
-        sourceX, sourceY, targetX, targetY
+        sourceX,
+        sourceY,
+        targetX,
+        targetY
     ) { BezierCurveUtils.createPathString(sourceX, sourceY, targetX, targetY) }
     
     // Determine the color and thickness based on selection state
@@ -124,4 +127,3 @@ fun BezierConnection(
         }
     }
 }
-

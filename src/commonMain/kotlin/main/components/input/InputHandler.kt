@@ -1,10 +1,10 @@
 package main.components.input
 
-import androidx.compose.runtime.mutableStateOf
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import lib.KeyboardEventTypes
 import lib.KeyboardInfo
@@ -13,12 +13,13 @@ import lib.PointerEventTypes
 import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
+import main.api.UserApi
 import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.`object`.SceneObjectManager
-import main.components.player.FriendshipStatus
 import main.components.player.PlayerController
 import main.utils.createObjectDoubleClickEvent
+import models.World
 import kotlin.math.abs
 
 /**
@@ -36,7 +37,7 @@ class InputHandler(
     private val onShowOtherPlayerDialog: ((username: String, isPlayer: Boolean) -> Unit)? = null
 ) {
     // Get the object manager from SceneManager
-    private val objectManager: SceneObjectManager? = SceneManager.getObjectManager() as? SceneObjectManager
+    private val objectManager: SceneObjectManager? = SceneManager.getObjectManager()
     
     // Object dragging state
     private var draggingObjectId: String? = null
@@ -44,6 +45,27 @@ class InputHandler(
     
     // Track camera input state
     private var cameraInputsEnabled = true
+    
+    // Current world
+    var currentWorld: World? = null
+    
+    // Check if the current user is the owner of the world
+    private suspend fun isWorldOwner(): Boolean {
+        try {
+            if (currentWorld == null) {
+                return false
+            }
+            
+            // Get the current user
+            val currentUser = UserApi.getCurrentUser()
+            
+            // Check if the user is the owner of the world
+            return currentUser.key == currentWorld?.userId
+        } catch (e: Exception) {
+            console.error("Error checking world ownership", e)
+            return false
+        }
+    }
     
     // Track pressed keys for continuous movement
     private val pressedKeys = mutableSetOf<String>()
@@ -59,8 +81,13 @@ class InputHandler(
     private var lastClickedObjectId: String? = null
     private val doubleClickThreshold = 300.0 // milliseconds
     
+    // Pending single-click action
+    private var pendingSingleClickJob: kotlinx.coroutines.Job? = null
+    
     // Store the click point for object dragging
     private var objectClickPoint: Vector3? = null
+
+    private val scope = CoroutineScope(Dispatchers.Default)
     
     /**
      * Sets up keyboard input handling.
@@ -175,24 +202,48 @@ class InputHandler(
                 console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
                 objectManager.selectObject(closestObjectId)
                 
-                // Check for double-click
+                // Cancel any pending single-click job
+                pendingSingleClickJob?.cancel()
+                pendingSingleClickJob = null
+                
                 val currentTime = window.performance.now()
+                
+                // Check for double-click
                 if (closestObjectId == lastClickedObjectId && 
                     (currentTime - lastClickTime) < doubleClickThreshold) {
                     // This is a double-click on the same object
                     console.log("[POINTER_DOWN] Double-click detected on object: $closestObjectId")
                     
-                    // Create and dispatch a custom event for object double-click
-                    val doubleClickEvent = createObjectDoubleClickEvent(closestObjectId)
-                    window.dispatchEvent(doubleClickEvent)
+                    // Check if the current user is the owner of the world before allowing object editing
+                    scope.launch {
+                        if (isWorldOwner()) {
+                            // Create and dispatch a custom event for object double-click
+                            val doubleClickEvent = createObjectDoubleClickEvent(closestObjectId)
+                            window.dispatchEvent(doubleClickEvent)
+                        } else {
+                            console.log("[POINTER_DOWN] Double-click ignored - user is not the world owner")
+                        }
+                    }
                 } else {
-                    // This is a single-click on an object
-                    console.log("[POINTER_DOWN] Single-click detected on object: $closestObjectId")
-                    
-                    // Send USER_INTERACT event to the backend
-                    // Determine if the user is a player (authenticated) or visitor
-                    val isPlayer = main.api.UserApi.getToken() != null
-                    main.api.WebSocketApi.playerInteract(closestObjectId, isPlayer)
+                    // This might be a single-click, but we need to wait to confirm it's not a double-click
+                    // Schedule a delayed action to handle the single-click after the double-click threshold
+                    val clickedObjectId = closestObjectId // Capture the current object ID
+                    pendingSingleClickJob = scope.launch {
+                        // Wait for the double-click threshold
+                        delay(doubleClickThreshold.toLong())
+                        
+                        // If this job wasn't cancelled, it means no double-click was detected
+                        // So we can proceed with the single-click action
+                        console.log("[POINTER_DOWN] Confirmed single-click on object: $clickedObjectId")
+                        
+                        // Send USER_INTERACT event to the backend
+                        // Determine if the user is a player (authenticated) or visitor
+                        val isPlayer = UserApi.getToken() != null
+                        main.api.WebSocketApi.playerInteract(clickedObjectId, isPlayer)
+                        
+                        // Clear the pending job reference
+                        pendingSingleClickJob = null
+                    }
                 }
                 
                 // Update last click info for future double-click detection
@@ -204,6 +255,10 @@ class InputHandler(
                 val worldMeshes = playerController.getWorldMeshes()
                 val player = playerController.getCollider()
                 val moveCircle = playerController.getMoveCircle()
+                
+                // Cancel any pending single-click job since the user is now interacting elsewhere
+                pendingSingleClickJob?.cancel()
+                pendingSingleClickJob = null
                 
                 var clickedOnWorldMesh = false
                 
@@ -264,6 +319,8 @@ class InputHandler(
                     // Consider it a drag if moved more than 5 pixels in any direction
                     if (deltaX > 5 || deltaY > 5) {
                         isDragging = true
+                        pendingSingleClickJob?.cancel()
+                        pendingSingleClickJob = null
                         
                         // If dragging, cancel any movement
                         playerController.stopMovement()
@@ -285,7 +342,7 @@ class InputHandler(
             else -> { /* Ignore other pointer events */ }
         }
     }
-    
+
     /**
      * Disables camera inputs to prevent camera movement during object manipulation
      */
@@ -386,26 +443,38 @@ class InputHandler(
                     
                     // If we have a selected object and we're not already dragging
                     if (selectedObjectId != null && !isObjectDragging) {
-                        // Disable camera inputs before starting drag
-                        if (cameraInputsEnabled) {
-                            disableCameraInputs()
-                            cameraInputsEnabled = false
-                        }
-                        
-                        // Start dragging the object, passing the click point
-                        isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
-                        draggingObjectId = selectedObjectId
-                        
-                        // Log and reset the click point after starting dragging
-                        if (isObjectDragging) {
-                            console.log("Started dragging with click point: $objectClickPoint")
-                            // Reset click point to ensure consistent behavior between first and subsequent drags
-                            objectClickPoint = null
+                        // Check if the current user is the owner of the world before allowing object dragging
+                        scope.launch {
+                            if (isWorldOwner()) {
+                                // Disable camera inputs before starting drag
+                                if (cameraInputsEnabled) {
+                                    disableCameraInputs()
+                                    cameraInputsEnabled = false
+                                }
+                                
+                                // Start dragging the object, passing the click point
+                                isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
+                                draggingObjectId = selectedObjectId
+                                
+                                // Log and reset the click point after starting dragging
+                                if (isObjectDragging) {
+                                    console.log("Started dragging with click point: $objectClickPoint")
+                                    // Reset click point to ensure consistent behavior between first and subsequent drags
+                                    objectClickPoint = null
+                                }
+                            } else {
+                                console.log("Object dragging ignored - user is not the world owner")
+                                // Deselect the object if the user is not the owner
+                                objectManager.deselectCurrentObject()
+                            }
                         }
                     }
                     
                     // If we're dragging an object, update its position
                     if (isObjectDragging && draggingObjectId != null) {
+                        pendingSingleClickJob?.cancel()
+                        pendingSingleClickJob = null
+
                         // Calculate new position based on pointer movement
                         // This is simplified - in a real implementation, we would use raycasting
                         val ray = scene.createPickingRay(
@@ -658,11 +727,6 @@ class InputHandler(
             playerController.setTargetPosition(closestPoint)
         }
     }
-
-    // Coroutine scope for async operations
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-    
-    
     
     /**
      * Shows the dialog for interacting with another player
@@ -758,5 +822,18 @@ class InputHandler(
      */
     fun areKeysPressed(): Boolean {
         return pressedKeys.isNotEmpty()
+    }
+    
+    /**
+     * Cleans up resources used by the InputHandler.
+     * This should be called when the InputHandler is no longer needed.
+     */
+    fun dispose() {
+        // Cancel any pending single-click job
+        pendingSingleClickJob?.cancel()
+        pendingSingleClickJob = null
+        
+        // Clear other state
+        pressedKeys.clear()
     }
 }

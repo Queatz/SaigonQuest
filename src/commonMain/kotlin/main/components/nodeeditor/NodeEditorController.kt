@@ -53,7 +53,6 @@ class NodeEditorController(
     val connectionCurrentX get() = connectionManager.connectionCurrentX
     val connectionCurrentY get() = connectionManager.connectionCurrentY
     val isDraggingConnection get() = connectionManager.isDraggingConnection
-    val isDraggingConnectionC @Composable get() = connectionManager.isDraggingConnection
     val potentialTargetPort get() = connectionManager.potentialTargetPort
     
     // Command history for undo/redo

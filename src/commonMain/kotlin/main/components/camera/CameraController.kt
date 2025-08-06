@@ -84,37 +84,6 @@ class CameraController(private val scene: Scene) {
     private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
     
     init {
-        pipeline.apply {
-            if (GraphicsSettings.isPrettyGraphicsEnabled()) {
-                // Enable bloom for better lighting effects
-                bloomEnabled = true
-                bloomThreshold = 0.5f
-                bloomWeight = 0.5f
-                bloomKernel = 64f
-
-                // Enable depth of field
-                depthOfFieldEnabled = true
-                depthOfField.focalLength = 120f
-                depthOfField.fStop = 1.4f
-                depthOfField.focusDistance = 10_000f // millimeters
-                depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium // Set blur level to Low for better quality
-
-                // Enable grain effect for subtle film grain appearance
-                grainEnabled = true
-                grain.intensity = 0.1f  // Set grain intensity to 0.05
-
-                // Enable image processing with enhanced contrast and exposure
-                imageProcessingEnabled = true
-                imageProcessing.contrast = 1.15f
-//                imageProcessing.exposure = 1.05f
-
-                // Enable tone mapping
-                toneMappingEnabled = true
-            }
-
-            println("[DEBUG] Rendering pipeline configured with depth texture, bloom, DOF, image processing, and tone mapping")
-        }
-        
         // Create a separate ImageProcessingPostProcess for vignette effect
         // This approach allows adding vignette without modifying the DefaultRenderingPipeline
         vignettePostProcess = ImageProcessingPostProcess("vignette", 1.0f, camera)
@@ -128,31 +97,6 @@ class CameraController(private val scene: Scene) {
         updateVignetteWeight()
         
         println("[DEBUG] Vignette effect added using ImageProcessingPostProcess")
-
-        if (GraphicsSettings.isPrettyGraphicsEnabled()) {
-            // Set up SSAO (Screen Space Ambient Occlusion) for subtle ambient occlusion
-            // Create SSAO pipeline with subtle settings
-            val ssao = SSAO2RenderingPipeline(
-                name = "ssao",
-                scene = scene,
-                ratio = 1.0, // Full resolution
-                cameras = arrayOf(camera)
-            )
-
-            // Configure SSAO for subtle effect
-            ssao.apply {
-                // Fine-tune SSAO settings
-                radius = 2f  // Small radius for subtle effect (default is 2.0)
-                totalStrength = 0.25f  // Subtle strength (default is 1.0)
-                samples = 8  // Moderate sample count for quality/performance balance (default is 8)
-                maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
-                minZAspect = 0.2f  // Default value
-                base = 0f  // Default value
-                epsilon = 0.02f  // Default value
-
-                println("[DEBUG] SSAO pipeline configured with subtle settings")
-            }
-        }
         
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
@@ -160,7 +104,8 @@ class CameraController(private val scene: Scene) {
         // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
         GraphicsSettings.addObserver { updatePipelineSettings() }
         
-        // Initial update of pipeline settings based on current settings
+        // Initial setup of pipeline settings based on current settings
+        // This will configure bloom, DOF, grain, image processing, tone mapping, and SSAO
         updatePipelineSettings()
     }
     
@@ -358,6 +303,9 @@ class CameraController(private val scene: Scene) {
         return pipeline
     }
     
+    // Store reference to the SSAO pipeline
+    private var ssaoPipeline: SSAO2RenderingPipeline? = null
+    
     /**
      * Updates the pipeline settings based on the pretty graphics setting.
      * This method can be called when the pretty graphics setting changes.
@@ -365,67 +313,162 @@ class CameraController(private val scene: Scene) {
     fun updatePipelineSettings() {
         val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
         
-        pipeline.apply {
-            // Update bloom settings
-            bloomEnabled = isPrettyEnabled
-            if (isPrettyEnabled) {
-                bloomThreshold = 0.5f
-                bloomWeight = 0.5f
-                bloomKernel = 64f
+        try {
+            // First enable/disable features, then configure them
+            // This ensures the components are created before we try to access their properties
+            
+            // Step 1: Enable/disable features
+            pipeline.apply {
+                // Enable/disable features one by one with proper error handling
+                try {
+                    // Enable/disable bloom
+                    bloomEnabled = isPrettyEnabled
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to set bloomEnabled: ${e.message}")
+                }
+                
+                try {
+                    // Enable/disable depth of field
+                    depthOfFieldEnabled = isPrettyEnabled
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to set depthOfFieldEnabled: ${e.message}")
+                }
+                
+                try {
+                    // Enable/disable grain effect
+                    grainEnabled = isPrettyEnabled
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to set grainEnabled: ${e.message}")
+                }
+                
+                try {
+                    // Enable/disable image processing
+                    imageProcessingEnabled = isPrettyEnabled
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
+                }
+                
+                try {
+                    // Enable/disable tone mapping
+                    toneMappingEnabled = isPrettyEnabled
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to set toneMappingEnabled: ${e.message}")
+                }
             }
             
-            // Update depth of field settings
-            depthOfFieldEnabled = isPrettyEnabled
+            // Step 2: Configure features if they're enabled
+            // This ensures the components are created before we try to access their properties
             if (isPrettyEnabled) {
-                depthOfField.focalLength = 120f
-                depthOfField.fStop = 1.4f
-                depthOfField.focusDistance = 10_000f
-                depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
+                // Add a small delay to ensure the pipeline components are fully initialized
+                // This is a workaround for the "this.bloom is null" error
+                try {
+                    // Force a render cycle to ensure components are initialized
+                    scene.render()
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to render scene: ${e.message}")
+                }
+                
+                pipeline.apply {
+                    try {
+                        // Check if bloom is available before configuring
+                        if (bloomEnabled) {
+                            // Configure bloom settings
+                            bloomThreshold = 0.5f
+                            bloomWeight = 0.5f
+                            bloomKernel = 64f
+                            println("[DEBUG] Bloom settings configured successfully")
+                        }
+                    } catch (e: Exception) {
+                        println("[ERROR] Failed to configure bloom: ${e.message}")
+                    }
+                    
+                    try {
+                        // Check if depth of field is available before configuring
+                        if (depthOfFieldEnabled) {
+                            // Configure depth of field settings
+                            depthOfField.focalLength = 120f
+                            depthOfField.fStop = 1.4f
+                            depthOfField.focusDistance = 10_000f
+                            depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
+                            println("[DEBUG] Depth of field settings configured successfully")
+                        }
+                    } catch (e: Exception) {
+                        println("[ERROR] Failed to configure depth of field: ${e.message}")
+                    }
+                    
+                    try {
+                        // Check if grain is available before configuring
+                        if (grainEnabled) {
+                            // Configure grain effect settings
+                            grain.intensity = 0.1f
+                            println("[DEBUG] Grain settings configured successfully")
+                        }
+                    } catch (e: Exception) {
+                        println("[ERROR] Failed to configure grain: ${e.message}")
+                    }
+                    
+                    try {
+                        // Check if image processing is available before configuring
+                        if (imageProcessingEnabled) {
+                            // Configure image processing settings
+                            imageProcessing.contrast = 1.25f
+                            imageProcessing.exposure = 1.25f
+                            println("[DEBUG] Image processing settings configured successfully")
+                        }
+                    } catch (e: Exception) {
+                        println("[ERROR] Failed to configure image processing: ${e.message}")
+                    }
+                }
             }
             
-            // Update grain effect settings
-            grainEnabled = isPrettyEnabled
-            if (isPrettyEnabled) {
-                grain.intensity = 0.1f
+            // Handle SSAO pipeline
+            // We'll recreate the SSAO pipeline each time to avoid potential issues
+            // First, clean up any existing SSAO pipeline
+            if (ssaoPipeline != null) {
+                try {
+                    // Just set to null to let garbage collection handle it
+                    // The BabylonJS engine will clean up the pipeline resources
+                    ssaoPipeline = null
+                    println("[DEBUG] Cleaned up existing SSAO pipeline")
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to clean up SSAO pipeline: ${e.message}")
+                }
             }
             
-            // Update image processing settings
-            imageProcessingEnabled = isPrettyEnabled
+            // Create new SSAO pipeline if pretty graphics are enabled
             if (isPrettyEnabled) {
-                imageProcessing.contrast = 1.25f
-                imageProcessing.exposure = 1.25f
+                try {
+                    // Create SSAO pipeline with subtle settings
+                    ssaoPipeline = SSAO2RenderingPipeline(
+                        name = "ssao",
+                        scene = scene,
+                        ratio = 1.0, // Full resolution
+                        cameras = arrayOf(camera)
+                    )
+                    
+                    // Configure SSAO for subtle effect
+                    ssaoPipeline?.apply {
+                        // Fine-tune SSAO settings
+                        radius = 2f  // Small radius for subtle effect (default is 2.0)
+                        totalStrength = 0.25f  // Subtle strength (default is 1.0)
+                        samples = 8  // Moderate sample count for quality/performance balance (default is 8)
+                        maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
+                        minZAspect = 0.2f  // Default value
+                        base = 0f  // Default value
+                        epsilon = 0.02f  // Default value
+                    }
+                    println("[DEBUG] Created and configured new SSAO pipeline")
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to create SSAO pipeline: ${e.message}")
+                    // Ensure ssaoPipeline is null if creation failed
+                    ssaoPipeline = null
+                }
             }
             
-            // Update tone mapping settings
-            toneMappingEnabled = isPrettyEnabled
+            println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
+        } catch (e: Exception) {
+            println("[ERROR] Failed to update pipeline settings: ${e.message}")
         }
-        
-        // Handle SSAO pipeline
-        // Note: This is a simplified approach. In a real implementation, you might want to
-        // store a reference to the SSAO pipeline and update it, or create/dispose it as needed.
-        if (isPrettyEnabled) {
-            // Create SSAO pipeline with subtle settings
-            val ssao = SSAO2RenderingPipeline(
-                name = "ssao",
-                scene = scene,
-                ratio = 1.0, // Full resolution
-                cameras = arrayOf(camera)
-            )
-            
-            // Configure SSAO for subtle effect
-            ssao.apply {
-                // Fine-tune SSAO settings
-                radius = 2f  // Small radius for subtle effect (default is 2.0)
-                totalStrength = 0.25f  // Subtle strength (default is 1.0)
-                samples = 8  // Moderate sample count for quality/performance balance (default is 8)
-                maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
-                minZAspect = 0.2f  // Default value
-                base = 0f  // Default value
-                epsilon = 0.02f  // Default value
-            }
-        }
-        
-        println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
     }
     
     /**
@@ -486,6 +529,13 @@ class CameraController(private val scene: Scene) {
     fun dispose() {
         // Remove the observer when disposing
         GraphicsSettings.removeObserver(graphicsSettingsObserver)
+        
+        // Clean up the SSAO pipeline
+        ssaoPipeline = null
+        
+        // Clean up the camera target
         cameraTarget?.dispose()
+        
+        println("[DEBUG] Camera controller resources disposed")
     }
 }

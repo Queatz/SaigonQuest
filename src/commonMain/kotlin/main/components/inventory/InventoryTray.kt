@@ -90,7 +90,7 @@ fun InventoryTray(
                     position(Position.Absolute)
                     bottom(70.px)
                     left(50.percent)
-                    property("transform", "translateX(-50%)")
+                    property("transform", "translateX(-50%) translateY(-10px)")
                     padding(8.px, 12.px)
                     backgroundColor(if (isError) rgba(255, 0, 0, 0.7) else rgba(0, 150, 0, 0.7))
                     color(Color.white)

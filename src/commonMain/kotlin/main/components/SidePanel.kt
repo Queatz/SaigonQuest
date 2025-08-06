@@ -27,8 +27,7 @@ fun SidePanel(
     onOpenObjectEditor: () -> Unit,
     onEditObject: (String) -> Unit,
     onSaveObject: (Object) -> Unit,
-    onOpenLogicEditor: (Object) -> Unit,
-    scope: kotlinx.coroutines.CoroutineScope
+    onOpenLogicEditor: (Object) -> Unit
 ) {
     val router = Router.current
     

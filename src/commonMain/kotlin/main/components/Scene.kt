@@ -484,9 +484,9 @@ fun SceneComponent(url: String) {
         
         // Create input handler after object manager is registered
         val inputHandler = InputHandler(
-            scene, 
-            playerController, 
-            cameraController,
+            scene = scene,
+            playerController = playerController,
+            cameraController = cameraController,
             onShowOtherPlayerDialog = { username, isPlayer ->
                 // Update dialog state
                 otherPlayerUsername.value = username
@@ -494,11 +494,11 @@ fun SceneComponent(url: String) {
                 otherPlayerFriendshipStatus.value = FriendshipStatus.UNKNOWN
                 otherPlayerIsLoading.value = false
                 otherPlayerErrorMessage.value = null
-                
+
                 // Get the player ID from the OtherPlayersController
                 val otherPlayers = SceneManager.getOtherPlayersController()
                 otherPlayerId.value = otherPlayers?.getUserIdForUsername(username) ?: ""
-                
+
                 // Check friendship status if we have a player ID
                 if (otherPlayerId.value.isNotEmpty()) {
                     // Check friendship status
@@ -506,7 +506,7 @@ fun SceneComponent(url: String) {
                 } else {
                     otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
                 }
-                
+
                 // Show the dialog
                 showOtherPlayerDialog.value = true
             }
@@ -534,6 +534,8 @@ fun SceneComponent(url: String) {
                 
                 // Store the current world
                 currentWorld.value = worldLoader.getCurrentWorld()
+
+                inputHandler.currentWorld = currentWorld.value
 
                 // Check if this is a fallback world due to an API error
                 if (worldLoader.isApiErrorFallback()) {

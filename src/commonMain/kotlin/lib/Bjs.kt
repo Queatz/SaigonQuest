@@ -410,20 +410,65 @@ external class BoundingInfo {
      * The minimum vector of the bounding box
      */
     val minimum: Vector3
-    
+
     /**
      * The maximum vector of the bounding box
      */
     val maximum: Vector3
-    
+
+    /**
+     * The bounding box derived from minimum and maximum vectors
+     */
+    val boundingBox: BoundingBox
+
     /**
      * Checks if a point is inside the bounding box
-     * 
+     *
      * @param point The point to check
      * @return True if the point is inside the bounding box, false otherwise
      */
     fun isInside(point: Vector3): Boolean
 }
+
+/**
+ * Class representing an axis-aligned bounding box in 3D space
+ */
+external class BoundingBox {
+    /**
+     * The minimum vector of the bounding box
+     */
+    val minimum: Vector3
+
+    /**
+     * The maximum vector of the bounding box
+     */
+    val maximum: Vector3
+
+    /**
+     * Creates a new bounding box
+     *
+     * @param min The minimum vector
+     * @param max The maximum vector
+     */
+    constructor(min: Vector3, max: Vector3)
+
+    /**
+     * Tests if a point is inside the bounding box
+     *
+     * @param point The point to test
+     * @return True if the point is inside the box, false otherwise
+     */
+    fun intersectsPoint(point: Vector3): Boolean
+
+    /**
+     * Tests if the bounding box intersects with another bounding box
+     *
+     * @param boundingBox The other bounding box to test
+     * @return True if the boxes intersect, false otherwise
+     */
+    fun intersectsBoundingBox(boundingBox: BoundingBox): Boolean
+}
+
 
 /**
  * Class representing a vector with 2 coordinates (x, y)

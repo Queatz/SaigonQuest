@@ -44,8 +44,7 @@ fun LogicEditorDialog(
 ) {
     // State for form fields
     var title by remember { mutableStateOf(objectModel?.title ?: "") }
-    var data by remember { mutableStateOf(objectModel?.data ?: "{}") }
-    
+
     // State for fullscreen mode
     var isFullscreen by remember { mutableStateOf(false) }
     
@@ -157,7 +156,8 @@ fun LogicEditorDialog(
     BaseDialog(
         onClose = onClose,
         title = dialogTitle,
-        maxWidth = "90%",
+        maxWidth = "100%",
+        clickOutside = false,
         isFullscreen = isFullscreen,
         // Custom header actions for fullscreen toggle
         headerActions = {

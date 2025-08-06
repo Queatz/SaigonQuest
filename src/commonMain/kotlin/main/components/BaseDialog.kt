@@ -31,7 +31,7 @@ fun BaseDialog(
     headerActions: (@Composable () -> Unit)? = null,
     maxWidth: String = "400px",
     isFullscreen: Boolean = false,
-
+    clickOutside: Boolean = true,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -47,7 +47,10 @@ fun BaseDialog(
         Div(
             attrs = {
                 classes(Styles.overlayBase)
-                onClick { onClose() }
+
+                if (clickOutside) {
+                    onClick { onClose() }
+                }
             }
         ) {
             // Dialog content

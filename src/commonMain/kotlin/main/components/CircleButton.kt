@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import main.theme.Styles
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLElement
 
 /**
  * A circular button with an optional badge indicator.
@@ -15,6 +16,7 @@ import org.jetbrains.compose.web.dom.Text
  *                   If 0 or null, no badge is shown. If -1, a simple red dot is shown without a count.
  * @param isChat Flag to indicate if this is a chat button, which will have a larger badge
  * @param id Optional ID for the button element
+ * @param elementRef Optional callback to get a reference to the button element
  */
 @Composable
 fun CircleButton(
@@ -23,13 +25,20 @@ fun CircleButton(
     iconIndex: Int? = null,
     badgeCount: Int? = -1,
     isChat: Boolean = false,
-    id: String? = null
+    id: String? = null,
+    elementRef: ((HTMLElement) -> Unit)? = null
 ) {
     Div(
         attrs = {
             classes(Styles.circleButton)
             onClick { onClick() }
             id?.let { id(it) }
+            if (elementRef != null) {
+                ref { element -> 
+                    elementRef(element)
+                    onDispose { }
+                }
+            }
         }
     ) {
         // Button content (icon)

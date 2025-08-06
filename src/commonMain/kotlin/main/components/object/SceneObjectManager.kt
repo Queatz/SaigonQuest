@@ -985,14 +985,51 @@ class SceneObjectManager(
                         return node.getChildMeshes(false)
                     }
                 }
+
+                // Get all child meshes of the node
+                val childMeshes = node.getChildMeshes(false)
+                
+                // Find the highest Y point of all bounding boxes
+                var highestY = node.position.y
+                
+                if (childMeshes.isNotEmpty()) {
+                    try {
+                        // Initialize with the first mesh's maximum Y
+                        var maxY = childMeshes[0].getBoundingInfo().maximum.y + childMeshes[0].position.y + node.position.y
+                        
+                        // Check all other meshes
+                        for (i in 1 until childMeshes.size) {
+                            val mesh = childMeshes[i]
+                            val boundingInfo = mesh.getBoundingInfo()
+                            val meshMaxY = boundingInfo.maximum.y + mesh.position.y + node.position.y
+                            
+                            if (meshMaxY > maxY) {
+                                maxY = meshMaxY
+                            }
+                        }
+                        
+                        // Use the highest point found
+                        highestY = maxY
+                        console.log("[DEBUG_STATUS] Highest Y point of bounding boxes: $highestY")
+                    } catch (e: Exception) {
+                        console.error("[DEBUG_STATUS] Error finding highest Y point: ${e.message}")
+                        // Fall back to node position if there's an error
+                        highestY = node.position.y
+                    }
+                } else {
+                    console.log("[DEBUG_STATUS] No child meshes found, using node position")
+                }
+                
+                // Position the status text 0.5 units above the highest point
+                val newPosition = Vector3(
+                    node.position.x,
+                    highestY + 0.5f,
+                    node.position.z
+                )
                 
                 if (existingHandle != null) {
                     // If there's an existing handle, update its position
-                    val newPosition = Vector3(
-                        node.position.x,
-                        node.position.y + 0.5f,
-                        node.position.z
-                    )
+
                     console.log("[DEBUG_STATUS] Updating status text position for object: $objectId")
                     console.log("[DEBUG_STATUS] Old position: (${existingHandle.position.x}, ${existingHandle.position.y}, ${existingHandle.position.z})")
                     console.log("[DEBUG_STATUS] New position: (${newPosition.x}, ${newPosition.y}, ${newPosition.z})")
@@ -1007,6 +1044,7 @@ class SceneObjectManager(
                     if (statusTextHandle != null) {
                         // Store the handle for future updates
                         objectStatusTextHandles[objectId] = statusTextHandle
+                        statusTextHandle.position = newPosition
                         console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")
                         console.log("[DEBUG_STATUS] Total status text handles: ${objectStatusTextHandles.size}")
                     } else {

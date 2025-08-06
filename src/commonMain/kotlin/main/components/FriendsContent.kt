@@ -14,6 +14,7 @@ import lib.Vector3
 import main.api.FriendApi
 import main.api.WorldApi
 import main.components.world.WorldLoader
+import main.components.BasicConfirmDialog
 import models.Friend
 import models.Position
 import org.jetbrains.compose.web.css.AlignItems
@@ -208,6 +209,9 @@ fun FriendListItem(
     onJumpToFriend: (String, String, Position?) -> Unit,
     onRemoveFriend: (String) -> Unit
 ) {
+    // State to control the visibility of the confirmation dialog
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    
     Div(
         attrs = {
             style {
@@ -316,11 +320,28 @@ fun FriendListItem(
                         property("cursor", "pointer")
                     }
                     onClick {
-                        onRemoveFriend(friend.friendId)
+                        // Show confirmation dialog instead of immediately removing
+                        showConfirmDialog = true
                     }
                 }
             ) {
                 Text("Remove")
+            }
+            
+            // Confirmation dialog
+            if (showConfirmDialog) {
+                BasicConfirmDialog(
+                    message = "Are you sure you want to remove ${friend.friendUsername} from your friends list?",
+                    onConfirm = {
+                        // Only remove friend if user confirms
+                        onRemoveFriend(friend.friendId)
+                        showConfirmDialog = false
+                    },
+                    onCancel = {
+                        // Close dialog without removing friend
+                        showConfirmDialog = false
+                    }
+                )
             }
         }
     }
