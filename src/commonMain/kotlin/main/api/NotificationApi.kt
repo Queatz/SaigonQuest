@@ -6,6 +6,7 @@ import io.ktor.http.*
 import kotlinx.browser.window
 import models.Friend
 import models.Notification
+import models.NotificationType
 
 /**
  * API client for notification operations
@@ -94,10 +95,10 @@ object NotificationApi {
     /**
      * Get notifications of a specific type
      *
-     * @param type The type of notifications to retrieve (e.g., "friend_request")
+     * @param type The type of notifications to retrieve as an enum
      * @return An array of Notification objects of the specified type
      */
-    suspend fun getNotificationsByType(type: String): Array<Notification> {
+    suspend fun getNotificationsByType(type: NotificationType): Array<Notification> {
         try {
             val allNotifications = getNotifications()
             return allNotifications.filter { it.type == type }.toTypedArray()
@@ -114,7 +115,7 @@ object NotificationApi {
      * @return The created friendship, or null if the request failed
      */
     suspend fun acceptFriendRequest(notification: Notification): Friend? {
-        if (notification.type != "friend_request") {
+        if (notification.type != NotificationType.FRIEND_REQUEST) {
             console.error("Not a friend request notification")
             return null
         }
@@ -124,7 +125,7 @@ object NotificationApi {
             markAsRead(notification.key)
             
             // Accept the friend request
-            return FriendApi.acceptFriendRequest(notification.relatedId)
+            return FriendApi.acceptFriendRequest(notification.otherUserId)
         } catch (e: Exception) {
             console.error("Error accepting friend request", e)
             return null
@@ -138,7 +139,7 @@ object NotificationApi {
      * @return True if the notification was marked as read, false otherwise
      */
     suspend fun rejectFriendRequest(notification: Notification): Boolean {
-        if (notification.type != "friend_request") {
+        if (notification.type != NotificationType.FRIEND_REQUEST) {
             console.error("Not a friend request notification")
             return false
         }

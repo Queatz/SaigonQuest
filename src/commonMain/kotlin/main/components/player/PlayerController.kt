@@ -891,6 +891,7 @@ class PlayerController(private val scene: Scene) {
      * Initializes the player status display
      * 
      * This method fetches the current user's status and displays it if not blank.
+     * It also sets up a listener for status updates from the WebSocket.
      */
     fun initializePlayerStatus() {
         console.log("[DEBUG_LOG] PlayerController: initializePlayerStatus called")
@@ -908,6 +909,37 @@ class PlayerController(private val scene: Scene) {
             return
         }
         
+        // Set up a listener for player status updates from WebSocket
+        // This is crucial for the player to see their own status updates
+        console.log("[DEBUG_LOG] PlayerController: Setting up WebSocket listener for player status updates")
+        WebSocketApi.addUpdatePlayerListener { updateData ->
+            coroutineScope.launch {
+                try {
+                    // Get current user to check if this update is for the current player
+                    val currentUser = UserApi.getCurrentUser()
+                    
+                    // Only process updates for the current user (opposite of OtherPlayersController)
+                    if (updateData.userId == currentUser.key) {
+                        console.log("[DEBUG_LOG] PlayerController: Received status update for current user: '${updateData.status ?: ""}'")
+                        
+                        // Display status if provided and not blank
+                        val status = updateData.status?.orEmpty() ?: ""
+                        if (status.isNotBlank()) {
+                            console.log("[DEBUG_LOG] PlayerController: Updating status display to: '$status'")
+                            displayPlayerStatus(status)
+                        } else {
+                            // Remove status if it was previously displayed
+                            console.log("[DEBUG_LOG] PlayerController: Removing status display (blank status)")
+                            removePlayerStatus()
+                        }
+                    }
+                } catch (e: Exception) {
+                    console.error("[DEBUG_LOG] PlayerController: Error processing status update", e)
+                }
+            }
+        }
+        
+        // Display initial status if available
         coroutineScope.launch {
             try {
                 console.log("[DEBUG_LOG] PlayerController: Fetching current user data")

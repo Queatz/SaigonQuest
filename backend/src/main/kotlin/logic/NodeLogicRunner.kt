@@ -4,6 +4,7 @@ import debug.WebSocketDebug
 import kotlinx.serialization.json.Json
 import models.LogicNode
 import models.Object
+import models.nodeeditor.ConnectionJson
 import models.nodeeditor.NodeEditorJsonUtil
 
 /**
@@ -19,6 +20,9 @@ class NodeLogicRunner(
     init {
         WebSocketDebug.logMessage("NODE_LOGIC_RUNNER_INIT", "Initializing for object title: ${objectData.title}, worldId: ${objectData.worldId}", context.session)
     }
+    
+    // We no longer need to store original connections since we're using a simpler approach
+    // for button index mapping
     
     // Parse the node configuration from the object data
     private val nodeConfig: NodeConfig? = try {
@@ -67,6 +71,8 @@ class NodeLogicRunner(
      * @param eventData Additional data related to the event
      */
     suspend fun processNodes(startNodeType: LogicNode, eventData: Map<String, Any>) {
+        // Create a mutable copy of the event data
+        val mutableEventData = eventData.toMutableMap()
         WebSocketDebug.logMessage("PROCESS_NODES_START", "Starting node processing for ${startNodeType::class.simpleName} on object: ${objectData.title}", context.session)
         
         if (nodeConfig == null) {
@@ -97,7 +103,7 @@ class NodeLogicRunner(
         // Process each starting node
         for (startNode in startNodes) {
             WebSocketDebug.logMessage("PROCESSING_START_NODE", "Processing start node: ${startNode.type}/${startNode.id}", context.session)
-            processNode(startNode, eventData)
+            processNode(startNode, mutableEventData)
         }
         
         WebSocketDebug.logMessage("PROCESS_NODES_COMPLETE", "Completed node processing for ${startNodeType::class.simpleName}", context.session)
@@ -107,9 +113,9 @@ class NodeLogicRunner(
      * Process a single node and follow its connections
      *
      * @param node The node to process
-     * @param eventData Additional data related to the event
+     * @param eventData Additional data related to the event (mutable)
      */
-    private suspend fun processNode(node: NodeData, eventData: Map<String, Any>) {
+    private suspend fun processNode(node: NodeData, eventData: MutableMap<String, Any>) {
         WebSocketDebug.logMessage("PROCESSING_NODE", "Processing node: ${node.type}/${node.id} with data: ${node.data}", context.session)
         
         // Get the node runner for this node type
@@ -127,15 +133,58 @@ class NodeLogicRunner(
             val connections = nodeConfig?.connections?.filter { it.from == node.id } ?: emptyList()
             WebSocketDebug.logMessage("NODE_CONNECTIONS", "Found ${connections.size} connections from node: ${node.id}", context.session)
             
-            // Process each connected node
-            for (connection in connections) {
-                WebSocketDebug.logMessage("FOLLOWING_CONNECTION", "Following connection from ${connection.from} to ${connection.to}", context.session)
-                val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                if (targetNode != null) {
-                    WebSocketDebug.logMessage("TARGET_NODE_FOUND", "Found target node: ${targetNode.type}/${targetNode.id}", context.session)
-                    processNode(targetNode, eventData)
+            // For dialogue nodes, only follow the connection that matches the button index
+            val typeParts = node.type.split("_", limit = 2)
+            val nodeType = typeParts.firstOrNull() ?: ""
+            val nodeId = typeParts.getOrNull(1) ?: ""
+            
+            if (nodeType == "dialogue" && nodeId == "dialogue") {
+                // Get the button index from the event data (default to 0 if not present)
+                val buttonIndex = (eventData["buttonIndex"] as? Int) ?: 0
+                WebSocketDebug.logMessage("DIALOGUE_BUTTON_INDEX", "Using button index: $buttonIndex for node: ${node.id}", context.session)
+                
+                // Simply use the button index to select a connection
+                // This ensures that the order of connections matches the order of buttons
+                val connection = if (buttonIndex >= 0 && buttonIndex < connections.size) {
+                    WebSocketDebug.logMessage("SELECTING_CONNECTION", 
+                        "Selecting connection at index $buttonIndex from ${connections.size} connections", 
+                        context.session)
+                    connections[buttonIndex]
                 } else {
-                    WebSocketDebug.logError("Target node not found for connection: ${connection.from} -> ${connection.to}", null, context.session)
+                    WebSocketDebug.logMessage("INVALID_BUTTON_INDEX", 
+                        "Button index $buttonIndex is out of range (0-${connections.size - 1})", 
+                        context.session)
+                    null
+                }
+                
+                if (connection != null) {
+                    WebSocketDebug.logMessage("FOLLOWING_DIALOGUE_CONNECTION", 
+                        "Following connection from ${connection.from} to ${connection.to} for button index: $buttonIndex", 
+                        context.session)
+                    
+                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
+                    if (targetNode != null) {
+                        WebSocketDebug.logMessage("TARGET_NODE_FOUND", "Found target node: ${targetNode.type}/${targetNode.id}", context.session)
+                        processNode(targetNode, eventData)
+                    } else {
+                        WebSocketDebug.logError("Target node not found for connection: ${connection.from} -> ${connection.to}", null, context.session)
+                    }
+                } else {
+                    WebSocketDebug.logMessage("NO_CONNECTION_FOR_BUTTON", 
+                        "No connection found for button index: $buttonIndex on node: ${node.id}", 
+                        context.session)
+                }
+            } else {
+                // For other node types, follow all connections
+                for (connection in connections) {
+                    WebSocketDebug.logMessage("FOLLOWING_CONNECTION", "Following connection from ${connection.from} to ${connection.to}", context.session)
+                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
+                    if (targetNode != null) {
+                        WebSocketDebug.logMessage("TARGET_NODE_FOUND", "Found target node: ${targetNode.type}/${targetNode.id}", context.session)
+                        processNode(targetNode, eventData)
+                    } else {
+                        WebSocketDebug.logError("Target node not found for connection: ${connection.from} -> ${connection.to}", null, context.session)
+                    }
                 }
             }
         } else {

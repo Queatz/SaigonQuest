@@ -7,7 +7,7 @@ package logic
  * It always returns true to allow the node execution to continue.
  */
 class NoOpNodeRunner : NodeRunner {
-    override suspend fun execute(node: NodeData, eventData: Map<String, Any>): Boolean {
+    override suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean {
         // Do nothing
         return true
     }

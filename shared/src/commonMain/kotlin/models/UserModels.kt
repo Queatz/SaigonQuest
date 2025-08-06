@@ -10,7 +10,13 @@ import kotlinx.serialization.Serializable
 data class VisitorRequest(val visitorId: String = "")
 
 @Serializable
-data class UpgradeRequest(val username: String, val password: String, val yearOfBirth: Int? = null, val sex: String? = null)
+data class UpgradeRequest(
+    val username: String,
+    val password: String,
+    val yearOfBirth: Int? = null,
+    val sex: String? = null,
+    val language: String? = null
+)
 
 @Serializable
 data class LoginRequest(val username: String, val password: String)

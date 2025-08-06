@@ -4,8 +4,10 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.browser.window
+import main.components.player.FriendshipStatus
 import models.Friend
 import models.Notification
+import models.NotificationType
 import models.Position
 
 /**
@@ -104,33 +106,6 @@ object FriendApi {
     }
     
     /**
-     * Update the current user's status (world and position)
-     *
-     * @param worldId The ID of the world
-     * @param worldName The name of the world
-     * @param position The position in the world
-     * @return True if the status was updated, false otherwise
-     */
-    suspend fun updateStatus(worldId: String, worldName: String, position: Position?): Boolean {
-        try {
-            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/friend/status") {
-                ApiClient.addAuthHeader(this)
-                contentType(ContentType.Application.Json)
-                setBody(mapOf(
-                    "worldId" to worldId,
-                    "worldName" to worldName,
-                    "position" to position
-                ))
-            }
-            
-            return response.status.isSuccess()
-        } catch (e: Exception) {
-            console.error("Error updating friend status", e)
-            return false
-        }
-    }
-    
-    /**
      * Check if a friendship exists with another user
      *
      * @param friendId The ID of the other user
@@ -143,6 +118,76 @@ object FriendApi {
         } catch (e: Exception) {
             console.error("Error checking friendship", e)
             return false
+        }
+    }
+    
+    /**
+     * Check if a friend request has been sent to another user
+     *
+     * @param friendId The ID of the other user
+     * @return True if a friend request has been sent, false otherwise
+     */
+    private suspend fun checkRequestSent(friendId: String): Boolean {
+        try {
+            // Get notifications of type FRIEND_REQUEST
+            val notifications = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
+            
+            // Check if any of them have the specified friendId as otherUserId
+            return notifications.any { it.otherUserId == friendId }
+        } catch (e: Exception) {
+            console.error("Error checking sent friend requests", e)
+            return false
+        }
+    }
+    
+    /**
+     * Check if a friend request has been received from another user
+     *
+     * @param friendId The ID of the other user
+     * @return True if a friend request has been received, false otherwise
+     */
+    private suspend fun checkRequestReceived(friendId: String): Boolean {
+        try {
+            // Get notifications of type FRIEND_REQUEST
+            val notifications = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
+            
+            // Check if any of them have the specified friendId as otherUserId
+            // and are not marked as read (a read notification means the request was handled)
+            return notifications.any { it.otherUserId == friendId && !it.isRead }
+        } catch (e: Exception) {
+            console.error("Error checking received friend requests", e)
+            return false
+        }
+    }
+    
+    /**
+     * Get the friendship status with another user
+     *
+     * @param friendId The ID of the other user
+     * @return The current friendship status
+     */
+    suspend fun getFriendshipStatus(friendId: String): FriendshipStatus {
+        try {
+            // Check if they are already friends
+            if (checkFriendship(friendId)) {
+                return FriendshipStatus.FRIENDS
+            }
+            
+            // Check if a friend request has been sent
+            if (checkRequestSent(friendId)) {
+                return FriendshipStatus.REQUEST_SENT
+            }
+            
+            // Check if a friend request has been received
+            if (checkRequestReceived(friendId)) {
+                return FriendshipStatus.REQUEST_RECEIVED
+            }
+            
+            // If none of the above, they are not friends
+            return FriendshipStatus.NOT_FRIENDS
+        } catch (e: Exception) {
+            console.error("Error getting friendship status", e)
+            return FriendshipStatus.UNKNOWN
         }
     }
 }

@@ -53,34 +53,41 @@ fun DialogueBox() {
                     Text(dialogue.text)
                 }
                 
-                // OK button
-                Button({
-                    classes(NodeStyles.dialogueButton)
-                    onClick {
-                        // Create a coroutine scope
-                        val scope = MainScope()
-                        
-                        // Launch a coroutine to get the user ID and send confirmation
-                        scope.launch {
-                            try {
-                                // Get the current user ID
-                                val user = UserApi.getCurrentUser()
-                                val userId = user.key
+                // Button container
+                Div({
+                    classes(NodeStyles.dialogueButtonContainer)
+                }) {
+                    // Render each button
+                    dialogue.buttons.forEachIndexed { index, buttonText ->
+                        Button({
+                            classes(NodeStyles.dialogueButton)
+                            onClick {
+                                // Create a coroutine scope
+                                val scope = MainScope()
                                 
-                                // Send confirmation
-                                WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId)
-                                
-                                // Clear the dialogue
-                                currentDialogue = null
-                            } catch (e: Exception) {
-                                console.error("Error sending dialogue confirmation", e)
-                                // Still clear the dialogue to avoid blocking the UI
-                                currentDialogue = null
+                                // Launch a coroutine to get the user ID and send confirmation
+                                scope.launch {
+                                    try {
+                                        // Get the current user ID
+                                        val user = UserApi.getCurrentUser()
+                                        val userId = user.key
+                                        
+                                        // Send confirmation with button index
+                                        WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index)
+                                        
+                                        // Clear the dialogue
+                                        currentDialogue = null
+                                    } catch (e: Exception) {
+                                        console.error("Error sending dialogue confirmation", e)
+                                        // Still clear the dialogue to avoid blocking the UI
+                                        currentDialogue = null
+                                    }
+                                }
                             }
+                        }) {
+                            Text(buttonText)
                         }
                     }
-                }) {
-                    Text("OK")
                 }
             }
         }

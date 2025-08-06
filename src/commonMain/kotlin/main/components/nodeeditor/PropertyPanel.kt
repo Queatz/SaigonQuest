@@ -68,9 +68,10 @@ fun PropertyPanel(
         // Serialize the node data to a JSON string
         val updatedData = NodeDataParser.serializeNodeData(updatedNodeData)
         
-        // Create updated node
-        val updatedNode = node.copy(
-            label = label,
+        // Update the node with new data and outputs
+        val updatedNode = updateNodeOutputs(
+            node = node.copy(label = label),
+            nodeId = nodeId,
             data = updatedData
         )
         
@@ -261,6 +262,99 @@ fun PropertyPanel(
                     }
                 }
             }
+            
+        // For dialogue nodes, add button management UI
+        if (node.type.id == "dialogue") {
+            // Get current buttons or default to "OK"
+            val buttonsValue = propertyValues[PropertyKey.BUTTONS] ?: "OK"
+            val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            // State for new button text
+            var newButtonText by remember { mutableStateOf("") }
+            
+            Div(
+                attrs = {
+                    classes(NodeEditorStyles.propertyGroup)
+                }
+            ) {
+                Label(
+                    attrs = {
+                        classes(NodeEditorStyles.propertyLabel)
+                    }
+                ) {
+                    Text("Buttons")
+                }
+                
+                // List of current buttons
+                Div(
+                    attrs = {
+                        classes(NodeEditorStyles.buttonList)
+                    }
+                ) {
+                    buttons.forEachIndexed { index, buttonText ->
+                        Div(
+                            attrs = {
+                                classes(NodeEditorStyles.buttonItem)
+                            }
+                        ) {
+                            Text(buttonText)
+                            
+                            // Only show remove button if there's more than one button
+                            if (buttons.size > 1) {
+                                Button(
+                                    attrs = {
+                                        classes(NodeEditorStyles.removeButton)
+                                        onClick {
+                                            // Remove this button
+                                            val updatedButtons = buttons.toMutableList()
+                                            updatedButtons.removeAt(index)
+                                            propertyValues[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                        }
+                                    }
+                                ) {
+                                    Text("×")
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Add new button UI
+                Div(
+                    attrs = {
+                        classes(NodeEditorStyles.addButtonContainer)
+                    }
+                ) {
+                    TextInput(
+                        value = newButtonText,
+                        attrs = {
+                            classes(NodeEditorStyles.propertyInput)
+                            placeholder("New button text")
+                            onInput { event ->
+                                newButtonText = event.value
+                            }
+                        }
+                    )
+                    
+                    Button(
+                        attrs = {
+                            classes(NodeEditorStyles.addButton)
+                            onClick {
+                                if (newButtonText.isNotEmpty()) {
+                                    // Add new button
+                                    val updatedButtons = buttons.toMutableList()
+                                    updatedButtons.add(newButtonText)
+                                    propertyValues[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                    newButtonText = ""
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Add")
+                    }
+                }
+            }
+        }
         
         // Apply button
         Button(

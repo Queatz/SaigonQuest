@@ -1,17 +1,19 @@
 import auth.JwtConfig
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
-import kotlin.time.Duration.Companion.seconds
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.netty.EngineMain
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
 import kotlinx.serialization.json.Json
+import routes.configureAssetRoutes
 import routes.configureChatRoutes
 import routes.configureFriendRoutes
 import routes.configureHealthRoutes
@@ -22,6 +24,7 @@ import routes.configureObjectRoutes
 import routes.configureUserRoutes
 import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
+import kotlin.time.Duration.Companion.seconds
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
@@ -74,6 +77,7 @@ fun Application.module() {
         configureFriendRoutes()
         configureInventoryRoutes()
         configureItemRoutes()
+        configureAssetRoutes()
         configureWebSocketRoutes()
     }
 }

@@ -81,16 +81,18 @@ data class DialogueData(
     val dialogueId: String,
     val userId: String,
     val text: String,
-    val nodeId: String
+    val nodeId: String,
+    val buttons: List<String> = listOf("OK") // Default to a single "OK" button
 )
 
 /**
  * Dialogue confirmation model
  * 
- * This model is sent when a player clicks the OK button on a dialogue.
+ * This model is sent when a player clicks a button on a dialogue.
  */
 @Serializable
 data class DialogueConfirmation(
     val dialogueId: String,
-    val userId: String
+    val userId: String,
+    val buttonIndex: Int = 0 // Index of the button that was clicked (0 is the default/first button)
 )

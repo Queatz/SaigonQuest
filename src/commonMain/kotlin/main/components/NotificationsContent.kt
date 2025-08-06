@@ -8,34 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import main.api.NotificationApi
+import main.theme.NotificationStyles
+import main.utils.TimeUtils
 import models.Notification
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.overflowY
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.vh
+import models.NotificationType
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
@@ -103,40 +80,13 @@ fun NotificationsContent(
     }
 
     // Panel content
-    Div(
-        attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                padding(16.px)
-                property("flex-grow", "1")
-                overflowY("auto")
-            }
-        }
-    ) {
+    Div(attrs = { classes(NotificationStyles.notificationsContainer) }) {
         // Mark all as read button (only show if there are unread notifications)
         if (notifications.any { !it.isRead }) {
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.FlexEnd)
-                        marginBottom(12.px)
-                    }
-                }
-            ) {
+            Div(attrs = { classes(NotificationStyles.markAllAsReadContainer) }) {
                 Button(
                     attrs = {
-                        style {
-                            backgroundColor(rgba(60, 60, 60, 0.8))
-                            color(Color.white)
-                            padding(8.px, 12.px)
-                            borderRadius(4.px)
-                            cursor("pointer")
-                            property("border", "none")
-                            property("transition", "background-color 0.2s")
-                            property("&:hover", "{ background-color: rgba(80, 80, 80, 0.8); }")
-                        }
+                        classes(NotificationStyles.markAllAsReadButton)
                         onClick { markAllAsRead() }
                     }
                 ) {
@@ -147,49 +97,19 @@ fun NotificationsContent(
         
         // Loading state
         if (isLoading) {
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        padding(32.px)
-                        color(rgba(255, 255, 255, 0.7))
-                    }
-                }
-            ) {
+            Div(attrs = { classes(NotificationStyles.loadingContainer) }) {
                 Text("Loading notifications...")
             }
         }
         // Error state
         else if (error != null) {
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        padding(32.px)
-                        color(rgba(255, 0, 0, 0.7))
-                    }
-                }
-            ) {
+            Div(attrs = { classes(NotificationStyles.errorContainer) }) {
                 Text(error ?: "An error occurred")
             }
         }
         // Empty state
         else if (notifications.isEmpty()) {
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        padding(32.px)
-                        color(rgba(255, 255, 255, 0.7))
-                    }
-                }
-            ) {
+            Div(attrs = { classes(NotificationStyles.emptyContainer) }) {
                 Text("No notifications")
             }
         }
@@ -216,150 +136,50 @@ private fun NotificationItem(
     notification: Notification,
     onClick: () -> Unit
 ) {
+    // Track if the notification status has changed
+    var refreshKey by remember { mutableStateOf(0) }
+    
     Div(
         attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                padding(12.px)
-                marginBottom(8.px)
-                backgroundColor(
-                    if (notification.isRead) 
-                        rgba(40, 40, 40, 0.6) 
-                    else 
-                        rgba(60, 60, 60, 0.8)
-                )
-                borderRadius(4.px)
-                cursor("pointer")
-                // Add hover effect
-                property("transition", "background-color 0.2s")
-                property("&:hover", "{ background-color: rgba(80, 80, 80, 0.8); }")
-            }
+            classes(
+                NotificationStyles.notificationItem,
+                if (notification.isRead) 
+                    NotificationStyles.notificationItemRead 
+                else 
+                    NotificationStyles.notificationItemUnread
+            )
             onClick { onClick() }
         }
     ) {
         // Notification header with title and timestamp
-        Div(
-            attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    justifyContent(JustifyContent.SpaceBetween)
-                    alignItems(AlignItems.Center)
-                    marginBottom(4.px)
-                }
-            }
-        ) {
+        Div(attrs = { classes(NotificationStyles.notificationHeader) }) {
             // Notification title
-            H4(
-                attrs = {
-                    style {
-                        margin(0.px)
-                        color(Color.white)
-                        fontSize(16.px)
-                    }
-                }
-            ) {
+            H4(attrs = { classes(NotificationStyles.notificationTitle) }) {
                 Text(notification.title)
             }
             
             // Timestamp
-            P(
-                attrs = {
-                    style {
-                        margin(0.px)
-                        color(rgba(255, 255, 255, 0.5))
-                        fontSize(12.px)
-                    }
-                }
-            ) {
-                Text(formatTimestamp(notification.timestamp))
+            P(attrs = { classes(NotificationStyles.notificationTimestamp) }) {
+                Text(TimeUtils.formatTimestamp(notification.timestamp))
             }
         }
         
         // Notification description
-        P(
-            attrs = {
-                style {
-                    margin(0.px)
-                    color(rgba(255, 255, 255, 0.8))
-                    fontSize(14.px)
-                }
-            }
-        ) {
+        P(attrs = { classes(NotificationStyles.notificationDescription) }) {
             Text(notification.description)
         }
         
-        // Notification type badge (if not "system")
-        if (notification.type != "system") {
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.InlineBlock)
-                        marginTop(8.px)
-                        padding(2.px, 6.px)
-                        backgroundColor(rgba(80, 80, 80, 0.6))
-                        borderRadius(4.px)
-                        fontSize(12.px)
-                        color(rgba(255, 255, 255, 0.7))
-                    }
-                }
-            ) {
-                Text(notification.type.replaceFirstChar { it.uppercase() })
+        // Notification type-specific content
+        when (notification.type) {
+            NotificationType.FRIEND_REQUEST -> {
+                FriendRequestNotificationContent(
+                    notification = notification,
+                    onStatusChange = { refreshKey++ }
+                )
+            }
+            else -> {
+                // No special content for other notification types
             }
         }
     }
-}
-
-/**
- * Format a timestamp into a human-readable string
- * 
- * @param timestamp The timestamp in milliseconds
- * @return A human-readable string (e.g., "2 hours ago", "Yesterday", "Jul 29")
- */
-@OptIn(kotlin.time.ExperimentalTime::class)
-private fun formatTimestamp(timestamp: Long): String {
-    val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
-    val diff = now - timestamp
-    
-    // Less than a minute
-    if (diff < 60 * 1000) {
-        return "Just now"
-    }
-    
-    // Less than an hour
-    if (diff < 60 * 60 * 1000) {
-        val minutes = diff / (60 * 1000)
-        return "$minutes ${if (minutes == 1L) "minute" else "minutes"} ago"
-    }
-    
-    // Less than a day
-    if (diff < 24 * 60 * 60 * 1000) {
-        val hours = diff / (60 * 60 * 1000)
-        return "$hours ${if (hours == 1L) "hour" else "hours"} ago"
-    }
-    
-    // Less than 2 days
-    if (diff < 2 * 24 * 60 * 60 * 1000) {
-        return "Yesterday"
-    }
-    
-    // Less than a week
-    if (diff < 7 * 24 * 60 * 60 * 1000) {
-        val days = diff / (24 * 60 * 60 * 1000)
-        return "$days ${if (days == 1L) "day" else "days"} ago"
-    }
-    
-    // For older dates, just return a simple date string
-    // Create a Kotlin datetime object from the timestamp
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    
-    // Get month name (abbreviated)
-    val months = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    val month = months[localDateTime.month.ordinal]
-    
-    // Get day of month
-    val day = localDateTime.dayOfMonth
-    
-    return "$month $day"
 }

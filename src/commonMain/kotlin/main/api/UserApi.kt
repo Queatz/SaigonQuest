@@ -83,6 +83,8 @@ object UserApi {
                 // No visitor ID, create a new visitor
                 createOrGetVisitor("")
             }
+        }.also {
+            user = it
         }
     }
     
@@ -136,7 +138,10 @@ object UserApi {
      * Upgrades a visitor to a player
      */
     suspend fun upgradeToPlayer(username: String, password: String, yearOfBirth: Int? = null, sex: String? = null): User {
-        val request = UpgradeRequest(username, password, yearOfBirth, sex)
+        // Get the browser language
+        val browserLanguage = window.navigator.language.split("-").firstOrNull()
+        
+        val request = UpgradeRequest(username, password, yearOfBirth, sex, browserLanguage)
         
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/upgrade") {
@@ -310,6 +315,41 @@ object UserApi {
         } catch (e: Exception) {
             console.error("Error updating user worn items: ${e.message}")
             throw e
+        }
+    }
+    
+    /**
+     * Fetches a user by their ID
+     * 
+     * @param userId The ID of the user to fetch
+     * @return The user object, or null if not found
+     */
+    suspend fun getUserById(userId: String): User? {
+        return try {
+            // Check if we have a token
+            val token = getToken()
+            if (token == null) {
+                console.error("Cannot fetch user: No authentication token")
+                return null
+            }
+            
+            // Make the API request
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/user/$userId") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
+            
+            // Parse the response
+            if (response.status.isSuccess()) {
+                response.body<User>()
+            } else {
+                console.error("Error fetching user: ${response.status}")
+                null
+            }
+        } catch (e: Exception) {
+            console.error("Error fetching user", e)
+            null
         }
     }
 }

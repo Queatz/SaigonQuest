@@ -21,6 +21,7 @@ import main.api.FriendApi
 import main.api.NotificationApi
 import main.api.UserApi
 import main.api.WebSocketApi
+import models.NotificationType
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
@@ -218,128 +219,21 @@ fun SceneComponent(url: String) {
     
     // Show login dialog if requested
     if (showLoginDialog.value) {
-        VisitorDialog(
-            onClose = { 
-                showLoginDialog.value = false 
+        VisitorDialogPresenter(
+            isVisible = true,
+            onClose = {
+                showLoginDialog.value = false
             },
-            onRegister = { username, password, yearOfBirth, sex ->
-                // Create a coroutine scope
-                val coroutineScope = CoroutineScope(Dispatchers.Main)
-                
-                // Handle registration using coroutines
-                coroutineScope.launch {
-                    try {
-                        // First ensure we have a visitor token by getting the current user
-                        val currentUser = UserApi.getCurrentUser()
-                        
-                        // Check if we have a token before proceeding
-                        val token = UserApi.getToken()
-                        if (token == null || token.isEmpty()) {
-                            console.error("Registration error: No valid token available")
-                            
-                            try {
-                                // Try to create a visitor again to get a token
-                                val visitor = UserApi.createOrGetVisitor("")
-                                console.log("Created new visitor: ${visitor.visitorId}")
-                                
-                                // Add a small delay to ensure token is saved
-                                delay(500) // 500ms delay
-                                
-                                try {
-                                    // Now upgrade the visitor to a player
-                                    val user = UserApi.upgradeToPlayer(username, password, yearOfBirth, sex)
-                                    console.log("User registered: ${user.username}")
-                                    
-                                    // Update player state in WebSocket to notify other clients
-                                    try {
-                                        val updateSuccess = WebSocketApi.updatePlayer(
-                                            name = user.username,
-                                            isPlayer = true
-                                        )
-                                        if (updateSuccess) {
-                                            console.log("Successfully updated player state after registration")
-                                        } else {
-                                            console.warn("Failed to update player state after registration")
-                                        }
-                                    } catch (e: Exception) {
-                                        console.error("Error updating player state after registration", e)
-                                    }
-                                    
-                                    showLoginDialog.value = false
-                                    // After successful registration, show the world edit panel
-                                    showWorldEditPanel.value = true
-                                } catch (error: Exception) {
-                                    console.error("Registration error after retry: ${error.message}")
-                                }
-                            } catch (error: Exception) {
-                                console.error("Error creating visitor: ${error.message}")
-                            }
-                        } else {
-                            // We have a token, proceed with upgrade
-                            try {
-                                val user = UserApi.upgradeToPlayer(username, password, yearOfBirth, sex)
-                                console.log("User registered: ${user.username}")
-                                
-                                // Update player state in WebSocket to notify other clients
-                                try {
-                                    val updateSuccess = WebSocketApi.updatePlayer(
-                                        name = user.username,
-                                        isPlayer = true
-                                    )
-                                    if (updateSuccess) {
-                                        console.log("Successfully updated player state after registration")
-                                    } else {
-                                        console.warn("Failed to update player state after registration")
-                                    }
-                                } catch (e: Exception) {
-                                    console.error("Error updating player state after registration", e)
-                                }
-                                
-                                showLoginDialog.value = false
-                                // After successful registration, show the world edit panel
-                                showWorldEditPanel.value = true
-                            } catch (error: Exception) {
-                                console.error("Registration error: ${error.message}")
-                            }
-                        }
-                    } catch (error: Exception) {
-                        console.error("Error getting current user: ${error.message}")
-                    }
-                }
+            onSuccess = { user ->
+                showLoginDialog.value = false
+                // After successful login/registration, show the world edit panel
+                showWorldEditPanel.value = true
             },
-            onLogin = { username, password ->
-                // Create a coroutine scope
-                val coroutineScope = CoroutineScope(Dispatchers.Main)
-                
-                // Handle login
-                coroutineScope.launch {
-                    try {
-                        val user = UserApi.login(username, password)
-                        console.log("User logged in: ${user.username}")
-                        
-                        // Update player state in WebSocket to notify other clients
-                        try {
-                            val updateSuccess = WebSocketApi.updatePlayer(
-                                name = user.username,
-                                isPlayer = true
-                            )
-                            if (updateSuccess) {
-                                console.log("Successfully updated player state after login")
-                            } else {
-                                console.warn("Failed to update player state after login")
-                            }
-                        } catch (e: Exception) {
-                            console.error("Error updating player state after login", e)
-                        }
-                        
-                        showLoginDialog.value = false
-                        // After successful login, show the world edit panel
-                        showWorldEditPanel.value = true
-                    } catch (error: Exception) {
-                        console.error("Login error: ${error.message}")
-                    }
-                }
-            }
+            updatePlayerName = { username ->
+                // Update the player's own username text
+                SceneManager.getPlayerController()?.updatePlayerName(username)
+            },
+            showWorldEditPanel = true
         )
     }
     
@@ -367,8 +261,8 @@ fun SceneComponent(url: String) {
                 }
                 
                 // Check if there's a pending friend request from the other player
-                val friendRequests = NotificationApi.getNotificationsByType("friend_request")
-                val requestFromFriend = friendRequests.find { notification -> notification.relatedId == otherPlayerId.value }
+                val friendRequests = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
+                val requestFromFriend = friendRequests.find { notification -> notification.otherUserId == otherPlayerId.value }
                 
                 if (requestFromFriend != null) {
                     otherPlayerFriendshipStatus.value = FriendshipStatus.REQUEST_RECEIVED
@@ -431,8 +325,8 @@ fun SceneComponent(url: String) {
         coroutineScope.launch {
             try {
                 // Find the notification for this friend request
-                val friendRequests = NotificationApi.getNotificationsByType("friend_request")
-                val requestFromFriend = friendRequests.find { notification -> notification.relatedId == otherPlayerId.value }
+                val friendRequests = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
+                val requestFromFriend = friendRequests.find { notification -> notification.otherUserId == otherPlayerId.value }
                 
                 if (requestFromFriend != null) {
                     // Accept the friend request

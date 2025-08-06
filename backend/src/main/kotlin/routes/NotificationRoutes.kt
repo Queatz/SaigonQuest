@@ -11,12 +11,14 @@ import io.ktor.server.routing.*
 import models.ErrorResponse
 import models.Notification
 import repository.NotificationRepository
+import repository.UserRepository
 
 /**
  * Configure routes for notification operations
  */
 fun Routing.configureNotificationRoutes() {
     val notificationRepository = NotificationRepository()
+    val userRepository = UserRepository()
     
     route("/notification") {
         // All notification endpoints require authentication
@@ -105,9 +107,9 @@ fun Routing.configureNotificationRoutes() {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
-                // Check if user is admin (this is a simplified check, implement proper role-based auth)
-                val isAdmin = principal?.payload?.getClaim("role")?.asString() == "admin"
-                if (!isAdmin) {
+                // Get user from database and check if admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
                     return@post call.respond(
                         HttpStatusCode.Forbidden,
                         ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)

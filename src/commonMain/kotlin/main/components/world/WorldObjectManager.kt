@@ -95,9 +95,14 @@ class WorldObjectManager(private val scene: Scene) {
         additionalSpriteSheets: List<SpriteSheet> = emptyList(),
         user: User? = null
     ): WorldObjectHandle? {
-        // Get worn item sprite sheets from the WornItemsRenderer for the specified user or current user
-        val userToUse = user ?: InventoryState.currentUser
-        val wornItemSpriteSheets = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(userToUse)
+        // Get worn item sprite sheets only if a user is explicitly provided
+        // This prevents other players from using the current player's worn items
+        val wornItemSpriteSheets = if (user != null) {
+            main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+        } else {
+            // If no user is provided, assume no worn items (for other players)
+            emptyList()
+        }
         
         // Combine additional sprite sheets and worn item sprite sheets
         val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()

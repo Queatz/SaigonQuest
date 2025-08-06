@@ -398,17 +398,16 @@ class Character(
             },
             scene
         )
+
+        // Apply z-offset for layering if specified
+        if (zOffset != 0f) {
+            material.zOffsetUnits = zOffset
+        }
         
         mesh.material = material
         
         // Set billboard mode to Y-axis only (rotate around Y-axis)
         mesh.billboardMode = Mesh.BILLBOARDMODE_Y
-        
-        // Apply z-offset for layering if specified
-        if (zOffset != 0f) {
-            // Use z-offset for layering
-            mesh.position.z = zOffset
-        }
         
         // Make the mesh a child of the parent
         mesh.parent = parent

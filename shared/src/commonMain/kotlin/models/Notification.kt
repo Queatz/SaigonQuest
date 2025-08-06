@@ -11,8 +11,10 @@ import kotlin.time.ExperimentalTime
  * @property title The title of the notification
  * @property description The description/content of the notification
  * @property isRead Whether the notification has been read by the user
- * @property type The type of notification (e.g., "system", "friend_request", "achievement")
- * @property relatedId Optional ID related to this notification (e.g., world ID, user ID)
+ * @property type The type of notification
+ * @property worldId Optional world ID related to this notification
+ * @property objectId Optional object ID related to this notification
+ * @property otherUserId Optional user ID related to this notification (e.g., friend request sender)
  * @property timestamp The time when the notification was created (milliseconds since epoch)
  */
 @OptIn(ExperimentalTime::class)
@@ -22,7 +24,9 @@ data class Notification(
     var title: String = "",
     var description: String = "",
     var isRead: Boolean = false,
-    var type: String = "system",
-    var relatedId: String = "",
+    var type: NotificationType = NotificationType.SYSTEM,
+    var worldId: String = "",
+    var objectId: String = "",
+    var otherUserId: String = "",
     var timestamp: Long = Clock.System.now().toEpochMilliseconds()
 ) : BaseModel()

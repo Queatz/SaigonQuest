@@ -15,6 +15,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import main.api.AssetApi
 import main.api.ChatApi
 import main.api.NotificationApi
 import main.api.ObjectApi
@@ -48,6 +49,7 @@ fun WorldUI() {
     // State for UI elements that are not part of the panel system
     var isFullscreen by remember { mutableStateOf(false) }
     var isQrDialogOpen by remember { mutableStateOf(false) }
+    var isAdminDialogOpen by remember { mutableStateOf(false) }
     
     // State for print dialog
     var showPrintDialog by remember { mutableStateOf(false) }
@@ -339,6 +341,18 @@ fun WorldUI() {
                 }
             }
         ) {
+            // Admin button (only visible for admins)
+            if (currentUser?.isAdmin == true) {
+                CircleButton(
+                    onClick = { 
+                        isAdminDialogOpen = true
+                    },
+                    iconIndex = 9, // Using a different icon index for admin
+                    badgeCount = 0,
+                    id = "adminButton"
+                )
+            }
+            
             // QR code button (not part of the panel system)
             CircleButton(
                 onClick = { 
@@ -438,6 +452,24 @@ fun WorldUI() {
             scope = scope
         )
         
+        // Admin dialog - not part of the main panel system, kept separate
+        if (isAdminDialogOpen) {
+            AdminDialog(
+                onClose = { isAdminDialogOpen = false },
+                onRegisterAsset = { asset ->
+                    // Register the asset using AssetApi
+                    scope.launch {
+                        try {
+                            val createdAsset = AssetApi.createAsset(asset)
+                            console.log("Asset created successfully: ${createdAsset.file}")
+                        } catch (e: Exception) {
+                            console.error("Error creating asset: ${e.message}")
+                        }
+                    }
+                }
+            )
+        }
+        
         // QR code dialog - not part of the main panel system, kept separate
         if (isQrDialogOpen) {
             // Get player position from SceneManager if available
@@ -486,63 +518,17 @@ fun WorldUI() {
                 )
             } else {
                 // Visitor dialog for login/registration
-                VisitorDialog(
+                VisitorDialogPresenter(
+                    isVisible = true,
                     onClose = { updatePanelState(SidePanelState.None) },
-                    onRegister = { username, password, yearOfBirth, sex ->
-                        // Implement registration functionality
-                        // For now, just create a new player user
-                        if (username.isNotEmpty() && password.length >= 8) {
-                            currentUser = User(
-                                username = username,
-                                isPlayer = true,
-                                visitorId = currentUser!!.visitorId,
-                                yearOfBirth = yearOfBirth,
-                                sex = sex
-                            ).apply {
-                                key = "player-" + Random.nextInt(1000)
-                            }
-                            
-                            // Notify other clients that this visitor is now a player
-                            scope.launch {
-                                try {
-                                    WebSocketApi.updatePlayer(username, true)
-                                    
-                                    // Update the player's own username text
-                                    SceneManager.getPlayerController()?.updatePlayerName(username)
-                                } catch (e: Exception) {
-                                    console.error("Error updating player status", e)
-                                }
-                            }
-                            
-                            updatePanelState(SidePanelState.None)
-                        }
+                    onSuccess = { user ->
+                        // Update the current user
+                        currentUser = user
+                        updatePanelState(SidePanelState.None)
                     },
-                    onLogin = { username, password ->
-                        // Implement login functionality
-                        // For now, just create a new player user
-                        if (username.isNotEmpty() && password.isNotEmpty()) {
-                            currentUser = User(
-                                username = username,
-                                isPlayer = true,
-                                visitorId = currentUser!!.visitorId
-                            ).apply {
-                                key = "player-" + Random.nextInt(1000)
-                            }
-                            
-                            // Notify other clients that this visitor is now a player
-                            scope.launch {
-                                try {
-                                    WebSocketApi.updatePlayer(username, true)
-                                    
-                                    // Update the player's own username text
-                                    SceneManager.getPlayerController()?.updatePlayerName(username)
-                                } catch (e: Exception) {
-                                    console.error("Error updating player status", e)
-                                }
-                            }
-                            
-                            updatePanelState(SidePanelState.None)
-                        }
+                    updatePlayerName = { username ->
+                        // Update the player's own username text
+                        SceneManager.getPlayerController()?.updatePlayerName(username)
                     }
                 )
             }

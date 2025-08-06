@@ -97,6 +97,7 @@ allowing the project to remain maintainable as it grows.
 - **Use dark, mobile, desktop helpers**: change the colors and other styles based on the situation. 
 - Use trailing commas
 - Always put arguments on separate lines
+- Always use named arguments when possible
 
 ## Code Style and Development Guidelines
 

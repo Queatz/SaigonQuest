@@ -455,6 +455,48 @@ object NodeEditorStyles : StyleSheet() {
         property("box-sizing", "border-box")
     }
     
+    // Button management styles
+    val buttonList by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        property("gap", "8px")
+        marginBottom(8.px)
+    }
+
+    val buttonItem by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.SpaceBetween)
+        padding(4.px, 8.px)
+        backgroundColor(rgba(0, 0, 0, 0.1))
+        borderRadius(4.px)
+    }
+
+    val removeButton by style {
+        padding(2.px, 6.px)
+        backgroundColor(rgba(255, 0, 0, 0.2))
+        borderRadius(4.px)
+        cursor("pointer")
+        marginLeft(8.px)
+        
+        property(":hover", "{background-color: rgba(255, 0, 0, 0.4);}")
+    }
+
+    val addButtonContainer by style {
+        display(DisplayStyle.Flex)
+        property("gap", "8px")
+        marginTop(8.px)
+    }
+
+    val addButton by style {
+        padding(4.px, 8.px)
+        backgroundColor(rgba(0, 128, 0, 0.2))
+        borderRadius(4.px)
+        cursor("pointer")
+        
+        property(":hover", "{background-color: rgba(0, 128, 0, 0.4);}")
+    }
+    
     val propertyButton by style {
         padding(8.px, 16.px)
         backgroundColor(rgba(0, 120, 255, 0.7))

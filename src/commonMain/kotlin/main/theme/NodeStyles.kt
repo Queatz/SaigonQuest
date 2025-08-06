@@ -66,8 +66,14 @@ object NodeStyles : StyleSheet() {
         }
     }
     
+    val dialogueButtonContainer by style {
+        display(DisplayStyle.Flex)
+        property("gap", "8px")
+        justifyContent(JustifyContent.Center)
+        marginTop(16.px)
+    }
+    
     val dialogueButton by style {
-        marginTop(20.px)
         padding(10.px, 20.px)
         property("background-color", "#4CAF50")
         property("color", "white")

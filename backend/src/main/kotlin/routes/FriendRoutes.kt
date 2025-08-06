@@ -1,8 +1,10 @@
 package routes
 
+import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -10,6 +12,7 @@ import kotlinx.serialization.Serializable
 import models.ErrorResponse
 import models.Friend
 import models.Notification
+import models.NotificationType
 import models.Position
 import repository.FriendRepository
 import repository.NotificationRepository
@@ -33,8 +36,8 @@ fun Routing.configureFriendRoutes() {
     // Get all friends for the current user
     authenticate {
         get("/friend") {
-            val userId = call.principal<UserIdPrincipal>()?.name
-                ?: return@get call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
             
             val friends = friendRepository.getByUserId(userId)
             call.respond(friends)
@@ -42,8 +45,8 @@ fun Routing.configureFriendRoutes() {
         
         // Send a friend request
         post("/friend/request") {
-            val userId = call.principal<UserIdPrincipal>()?.name
-                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
             
             val requestBody = call.receive<FriendRequestBody>()
             val friendId = requestBody.friendId
@@ -66,8 +69,8 @@ fun Routing.configureFriendRoutes() {
                 userId = friendId,
                 title = "Friend Request",
                 description = "${user.username} requested to be your friend",
-                type = "friend_request",
-                relatedId = userId
+                type = NotificationType.FRIEND_REQUEST,
+                otherUserId = userId
             )
             
             val createdNotification = notificationRepository.create(notification)
@@ -76,8 +79,8 @@ fun Routing.configureFriendRoutes() {
         
         // Accept a friend request
         post("/friend/accept") {
-            val userId = call.principal<UserIdPrincipal>()?.name
-                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
             
             val requestBody = call.receive<FriendRequestBody>()
             val friendId = requestBody.friendId
@@ -122,8 +125,8 @@ fun Routing.configureFriendRoutes() {
         
         // Remove a friend
         delete("/friend/{friendId}") {
-            val userId = call.principal<UserIdPrincipal>()?.name
-                ?: return@delete call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
             
             val friendId = call.parameters["friendId"]
                 ?: return@delete call.respond(HttpStatusCode.BadRequest, ErrorResponse("Friend ID is required"))
@@ -139,8 +142,8 @@ fun Routing.configureFriendRoutes() {
         
         // Update friend status (called when user changes world or position)
         put("/friend/status") {
-            val userId = call.principal<UserIdPrincipal>()?.name
-                ?: return@put call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Not authenticated"))
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
             
             @Serializable
             data class StatusUpdateBody(

@@ -70,7 +70,14 @@ fun Routing.configureUserRoutes() {
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
                 // Upgrade user
-                val updatedUser = userRepository.upgradeToPlayer(userId, request.username, request.password)
+                val updatedUser = userRepository.upgradeToPlayer(
+                    id = userId,
+                    username = request.username,
+                    password = request.password,
+                    yearOfBirth = request.yearOfBirth,
+                    sex = request.sex,
+                    language = request.language
+                )
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
@@ -118,6 +125,26 @@ fun Routing.configureUserRoutes() {
                     HttpStatusCode.NotFound,
                     ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
                 )
+                
+                call.respond(HttpStatusCode.OK, user)
+            }
+            
+            // Get user by ID - requires authentication
+            get("/{userId}") {
+                // Get the requested user ID from the path parameter
+                val userId = call.parameters["userId"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "User ID is required", code = HttpStatusCode.BadRequest.value)
+                )
+                
+                // Get user
+                val user = userRepository.getById(userId) ?: return@get call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                )
+                
+                // Remove sensitive information
+                user.passwordHash = ""
                 
                 call.respond(HttpStatusCode.OK, user)
             }

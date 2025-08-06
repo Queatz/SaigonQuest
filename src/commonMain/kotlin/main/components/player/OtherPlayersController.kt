@@ -522,17 +522,81 @@ class OtherPlayersController(private val scene: Scene) {
         // Default direction (south)
         val direction = CharacterDirection.S
         
-        // TODO: Implement a proper solution for fetching User objects for other players
-        // For now, we can't display worn items for other players because we don't have their User objects
-        // A future improvement would be to fetch User objects for other players or extend WornItemsRenderer
-        // to support fetching worn items by userId
+        // Fetch the User object for this player
+        scope.launch {
+            try {
+                console.log("[DEBUG_LOG] OtherPlayersController: Fetching User object for $userId")
+                val user = UserApi.getUserById(userId)
+                
+                if (user != null) {
+                    console.log("[DEBUG_LOG] OtherPlayersController: Successfully fetched User object for $userId")
+                    
+                    // Create the player character using the WorldObjectManager with the User object
+                    val playerHandle = manager.createCharacter(
+                        spriteSheet = spriteSheet,
+                        direction = direction,
+                        position = position,
+                        additionalSpriteSheets = emptyList(),
+                        user = user // Pass the User object to display worn items
+                    )
+                    
+                    if (playerHandle == null) {
+                        console.error("OtherPlayersController: Failed to create character for $userId")
+                        return@launch
+                    }
+                    
+                    // Start with scale 0 for join animation
+                    playerHandle.scale = Vector3(0f, 0f, 0f)
+                    
+                    // Store the player handle
+                    playerHandles[userId] = playerHandle
+                    
+                    // Store the mesh for backward compatibility
+                    playerHandle.node.let { node ->
+                        playerNodes[userId] = node
+                    }
+                    
+                    // Store target position and animation time
+                    playerTargetPositions[userId] = position
+                    playerAnimationTimes[userId] = window.performance.now()
+                    
+                    // Configure shadow casting for the player if shadow manager is available
+                    configureShadowForPlayer(userId)
+                    
+                    // Create username text billboard
+                    createUsernameTextBillboard(userId, position, user.username)
+                    
+                    console.log("[DEBUG_LOG] OtherPlayersController: Character created for $userId with User object")
+                } else {
+                    console.log("[DEBUG_LOG] OtherPlayersController: Failed to fetch User object for $userId, creating character without worn items")
+                    createCharacterWithoutUser(userId, position, direction, spriteSheet, username)
+                }
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error fetching User object for $userId", e)
+                console.log("[DEBUG_LOG] OtherPlayersController: Creating character without User object due to error")
+                createCharacterWithoutUser(userId, position, direction, spriteSheet, username)
+            }
+        }
+    }
+    
+    /**
+     * Creates a character without a User object (fallback method)
+     */
+    private fun createCharacterWithoutUser(
+        userId: String,
+        position: Vector3,
+        direction: CharacterDirection,
+        spriteSheet: SpriteSheet,
+        username: String?
+    ) {
+        val manager = worldObjectManager ?: return
         
-        // Create the player character using the WorldObjectManager
+        // Create the player character using the WorldObjectManager without a User object
         val playerHandle = manager.createCharacter(
             spriteSheet = spriteSheet,
             direction = direction,
             position = position,
-            additionalSpriteSheets = emptyList() // No worn items for now
+            additionalSpriteSheets = emptyList() // No worn items
         )
         
         if (playerHandle == null) {
@@ -558,9 +622,15 @@ class OtherPlayersController(private val scene: Scene) {
         // Configure shadow casting for the player if shadow manager is available
         configureShadowForPlayer(userId)
         
-        // Create username text billboard if WorldObjectManager is available
+        // Create username text billboard
+        createUsernameTextBillboard(userId, position, username)
+    }
+    
+    /**
+     * Creates a username text billboard for a player
+     */
+    private fun createUsernameTextBillboard(userId: String, position: Vector3, username: String?) {
         worldObjectManager?.let { manager ->
-            // Get username for this user
             try {
                 // Calculate position above the player (adjust Y value as needed)
                 val textPosition = Vector3(position.x, position.y + .5f, position.z)
@@ -580,10 +650,6 @@ class OtherPlayersController(private val scene: Scene) {
                 if (textHandle != null) {
                     usernameTextHandles[userId] = textHandle
                 }
-
-                // Try to get the actual username from the server if possible
-                // This would be a more advanced feature requiring additional API calls
-                // For now, we'll use the default username
             } catch (e: Exception) {
                 console.error("OtherPlayersController: Error creating username text for $userId", e)
             }

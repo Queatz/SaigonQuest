@@ -11,8 +11,8 @@ interface NodeRunner {
      * Execute the node's logic
      *
      * @param node The node to execute
-     * @param eventData Additional data related to the event
+     * @param eventData Additional data related to the event (mutable)
      * @return True if the node execution was successful, false otherwise
      */
-    suspend fun execute(node: NodeData, eventData: Map<String, Any>): Boolean
+    suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean
 }

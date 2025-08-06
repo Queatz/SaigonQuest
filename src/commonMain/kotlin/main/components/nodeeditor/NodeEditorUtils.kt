@@ -79,9 +79,10 @@ fun serializeNodeData(nodes: Map<String, NodeData>, connections: List<Connection
  * 
  * @param logicNode The LogicNode type
  * @param nodeId The ID of the node
+ * @param nodeData Optional node data string for extracting property values
  * @return A pair of input and output port lists
  */
-fun createPortsForNodeType(logicNode: LogicNode, nodeId: String): Pair<List<PortData>, List<PortData>> {
+fun createPortsForNodeType(logicNode: LogicNode, nodeId: String, nodeData: String = "{}"): Pair<List<PortData>, List<PortData>> {
     val inputs = mutableListOf<PortData>()
     val outputs = mutableListOf<PortData>()
     
@@ -99,14 +100,44 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String): Pair<List<Port
         ))
     }
     
-    // Create output ports
-    for (property in outputProperties) {
-        outputs.add(PortData(
-            id = "${nodeId}_out_${property.key.name.lowercase()}",
-            name = property.name,
-            type = PortType.OUTPUT,
-            dataType = property.type.toPortDataType()
-        ))
+    // For dialogue nodes, create dynamic outputs based on buttons
+    if (logicNode is LogicNode.Dialogue) {
+        // Parse the node data to extract buttons
+        val parsedNodeData = NodeDataParser.parseNodeData(logicNode, nodeData)
+        val buttonsValue = NodeDataParser.getPropertyValue(parsedNodeData, PropertyKey.BUTTONS)
+        
+        // If buttons are defined, create an output port for each button
+        if (buttonsValue.isNotEmpty()) {
+            val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            
+            // Create a port for each button
+            buttons.forEachIndexed { index, buttonText ->
+                outputs.add(PortData(
+                    id = "${nodeId}_out_button_$index",
+                    name = buttonText,
+                    type = PortType.OUTPUT,
+                    dataType = "trigger"
+                ))
+            }
+        } else {
+            // If no buttons are defined, create a default "OK" button output
+            outputs.add(PortData(
+                id = "${nodeId}_out_button_0",
+                name = "OK",
+                type = PortType.OUTPUT,
+                dataType = "trigger"
+            ))
+        }
+    } else {
+        // For other node types, create output ports as usual
+        for (property in outputProperties) {
+            outputs.add(PortData(
+                id = "${nodeId}_out_${property.key.name.lowercase()}",
+                name = property.name,
+                type = PortType.OUTPUT,
+                dataType = property.type.toPortDataType()
+            ))
+        }
     }
     
     return Pair(inputs, outputs)
@@ -120,9 +151,10 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String): Pair<List<Port
  * @param label The label for the node
  * @param x The x position of the node
  * @param y The y position of the node
+ * @param data Optional node data string for extracting property values
  * @return The new NodeData object
  */
-fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float): Pair<String, NodeData> {
+fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float, data: String = "{}"): Pair<String, NodeData> {
     // Always generate a unique ID by appending a timestamp
     // This ensures we can add multiple nodes of the same type
     val id = if (nodeId.isNotEmpty()) "${nodeId}_${Date.now().toLong()}" else "node_${Date.now().toLong()}"
@@ -130,8 +162,8 @@ fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float):
     // Convert string type to LogicNode
     val logicNodeType = models.getLogicNodeFromTypeAndId(type, nodeId)
     
-    // Create ports based on node type
-    val (inputs, outputs) = createPortsForNodeType(logicNodeType, id)
+    // Create ports based on node type and data
+    val (inputs, outputs) = createPortsForNodeType(logicNodeType, id, data)
     
     // Create a new node
     val newNode = NodeData(
@@ -140,8 +172,35 @@ fun createNode(type: String, nodeId: String, label: String, x: Float, y: Float):
         y = y,
         label = label,
         inputs = inputs,
-        outputs = outputs
+        outputs = outputs,
+        data = data
     )
     
     return Pair(id, newNode)
+}
+
+/**
+ * Updates the outputs of a node based on its data.
+ * This is particularly useful for dialogue nodes, where the outputs depend on the buttons.
+ * 
+ * @param node The node to update
+ * @param nodeId The ID of the node
+ * @param data The node data string
+ * @return The updated node
+ */
+fun updateNodeOutputs(node: NodeData, nodeId: String, data: String): NodeData {
+    // For dialogue nodes, recreate outputs based on buttons
+    if (node.type.id == "dialogue") {
+        // Use createPortsForNodeType to generate new inputs and outputs
+        val (_, outputs) = createPortsForNodeType(node.type, nodeId, data)
+        
+        // Return updated node with new outputs
+        return node.copy(
+            outputs = outputs,
+            data = data
+        )
+    }
+    
+    // For other node types, just update the data
+    return node.copy(data = data)
 }

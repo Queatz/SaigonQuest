@@ -40,6 +40,9 @@ enum class PropertyKey {
     // Text properties
     TEXT_CONTENT,
     
+    // Dialogue properties
+    BUTTONS,
+    
     // Teleport properties
     TARGET_WORLD_ID,
     TARGET_POSITION,
@@ -87,7 +90,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TARGET_WORLD_ID,
-                name = "Target World ID",
+                name = "Target World URL",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
@@ -141,6 +144,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.BUTTONS,
+                name = "Buttons",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "OK" // Default button text
             ),
             NodePropertyDefinition(
                 key = PropertyKey.NEXT,

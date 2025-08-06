@@ -1358,14 +1358,15 @@ object WebSocketApi {
     /**
      * Send a dialogue confirmation message
      * 
-     * This is called when the user clicks the OK button on a dialogue.
+     * This is called when the user clicks a button on a dialogue.
      * 
      * @param dialogueId The ID of the dialogue to confirm
      * @param userId The ID of the user confirming the dialogue
+     * @param buttonIndex The index of the button that was clicked (0 is the default/first button)
      * @return true if the message was sent, false otherwise
      */
-    fun sendDialogueConfirmation(dialogueId: String, userId: String): Boolean {
-        console.log("WebSocketApi: Sending dialogue confirmation for dialogueId=$dialogueId")
+    fun sendDialogueConfirmation(dialogueId: String, userId: String, buttonIndex: Int = 0): Boolean {
+        console.log("WebSocketApi: Sending dialogue confirmation for dialogueId=$dialogueId, buttonIndex=$buttonIndex")
         
         if (!checkConnection()) {
             console.error("WebSocketApi: Cannot send dialogue confirmation - WebSocket not connected")
@@ -1375,7 +1376,8 @@ object WebSocketApi {
         try {
             val confirmation = DialogueConfirmation(
                 dialogueId = dialogueId,
-                userId = userId
+                userId = userId,
+                buttonIndex = buttonIndex
             )
             
             val message = WebSocketMessage.fromEnum(

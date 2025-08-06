@@ -163,7 +163,7 @@ class ConnectionManager(
                 var foundInChildren = false
                 for (i in 0 until children.length) {
                     val child = children.item(i)
-                    if (child != null && child is org.w3c.dom.Element) {
+                    if (child != null) {
                         val childPortType = child.getAttributeSafe("data-port-type")
                         if (childPortType != null) {
                             portElement = child
@@ -267,7 +267,7 @@ class ConnectionManager(
                 var foundInChildren = false
                 for (i in 0 until children.length) {
                     val child = children.item(i)
-                    if (child != null && child is org.w3c.dom.Element) {
+                    if (child != null) {
                         val childPortType = child.getAttributeSafe("data-port-type")
                         if (childPortType != null) {
                             portElement = child

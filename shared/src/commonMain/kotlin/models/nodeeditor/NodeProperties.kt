@@ -15,6 +15,9 @@ enum class PropertyKey {
     // Text properties
     TEXT_CONTENT,
     
+    // Dialogue properties
+    BUTTONS,
+    
     // Teleport properties
     TARGET_WORLD_ID,
     TARGET_POSITION,
