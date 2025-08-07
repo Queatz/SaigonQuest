@@ -7,6 +7,7 @@ import models.UpdatePlayerData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,7 +23,6 @@ class UpdatePlayerHandler : WebSocketHandler {
         connection: WebSocketConnection,
         worldId: String,
         activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
-        json: Json,
         session: DefaultWebSocketServerSession
     ) {
         try {

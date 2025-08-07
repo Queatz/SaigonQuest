@@ -5,5 +5,6 @@ package main.components.world
  * null activity means the player is standing
  */
 enum class PlayerActivity {
-    Sit
+    Sit,
+    Moving
 }

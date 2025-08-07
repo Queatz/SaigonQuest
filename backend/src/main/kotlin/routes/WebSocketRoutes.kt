@@ -104,6 +104,10 @@ fun Routing.configureWebSocketRoutes() {
         
         // Create connection
         val finalUserId = userId ?: "anonymous-${System.currentTimeMillis()}"
+        
+        // Extract language from query parameters, default to "en" if not provided
+        WebSocketDebug.logConnection("LANGUAGE", this, worldId, finalUserId)
+        
         val connection = WebSocketConnection(
             session = this,
             userId = finalUserId,
@@ -197,7 +201,7 @@ fun Routing.configureWebSocketRoutes() {
                         val handler = handlerFactory.getHandler(message.action)
                         
                         // Handle the message
-                        handler.handle(message, connection, worldId, activeConnections, json, this)
+                        handler.handle(message, connection, worldId, activeConnections, this)
                     } catch (e: Exception) {
                         // Log error but don't close connection
                         WebSocketDebug.logError("Error processing WebSocket message", e, this)

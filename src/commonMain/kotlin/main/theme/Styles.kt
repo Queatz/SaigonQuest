@@ -714,6 +714,7 @@ object Styles : StyleSheet() {
         marginBottom(12.px)
         padding(8.px)
         property("border-radius", "4px")
+        property("word-break", "break-word")
     }
     
     val chatMessageItemCurrentUser by style {

@@ -1,28 +1,8 @@
 package main.components.`object`
 
 import androidx.compose.runtime.Composable
-import main.theme.Theme
+import main.theme.EditorStyles
 import models.Object
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginRight
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -52,28 +32,13 @@ fun WorldObjectsContent(
     // Container for the content
     Div(
         attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                height(100.percent)
-                padding(16.px)
-            }
+            classes(EditorStyles.worldObjectsContainer)
         }
     ) {
         // Create object button
         Button(
             attrs = {
-                style {
-                    backgroundColor(Theme.colors.primary)
-                    color(Theme.colors.onPrimary)
-                    property("border", "0")
-                    property("border-radius", "4px")
-                    padding(8.px, 16.px)
-                    marginRight(8.px)
-                    cursor("pointer")
-                    fontSize(14.px)
-                    margin(0.px, 0.px, 16.px, 0.px)
-                }
+                classes(EditorStyles.createObjectButton)
                 onClick { onCreateObject() }
             }
         ) {
@@ -83,10 +48,7 @@ fun WorldObjectsContent(
         if (isLoading) {
             P(
                 attrs = {
-                    style {
-                        color(Color.white)
-                        property("text-align", "center")
-                    }
+                    classes(EditorStyles.loadingMessage)
                 }
             ) {
                 Text("Loading objects...")
@@ -94,10 +56,7 @@ fun WorldObjectsContent(
         } else if (errorMessage.isNotEmpty()) {
             P(
                 attrs = {
-                    style {
-                        color(Color.red)
-                        property("text-align", "center")
-                    }
+                    classes(EditorStyles.errorMessage)
                 }
             ) {
                 Text(errorMessage)
@@ -105,10 +64,7 @@ fun WorldObjectsContent(
         } else if (objects.isEmpty()) {
             P(
                 attrs = {
-                    style {
-                        color(rgba(255, 255, 255, 0.7))
-                        property("text-align", "center")
-                    }
+                    classes(EditorStyles.emptyMessage)
                 }
             ) {
                 Text("No objects in this world yet.")
@@ -117,35 +73,20 @@ fun WorldObjectsContent(
             // List of objects
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        property("gap", "8px")
-                        property("overflow-y", "auto")
-                        property("flex-grow", "1")
-                    }
+                    classes(EditorStyles.objectsListContainer)
                 }
             ) {
                 // Display objects
                 objects.forEach { obj ->
                     Div(
                         attrs = {
-                            style {
-                                display(DisplayStyle.Flex)
-                                justifyContent(JustifyContent.SpaceBetween)
-                                alignItems(AlignItems.Center)
-                                padding(8.px)
-                                backgroundColor(rgba(255, 255, 255, 0.1))
-                                property("border-radius", "4px")
-                            }
+                            classes(EditorStyles.objectItem)
                         }
                     ) {
                         // Object title
                         Span(
                             attrs = {
-                                style {
-                                    color(Color.white)
-                                }
+                                classes(EditorStyles.objectTitle)
                             }
                         ) {
                             Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
@@ -154,24 +95,13 @@ fun WorldObjectsContent(
                         // Action buttons container
                         Div(
                             attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    property("gap", "4px")
-                                }
+                                classes(EditorStyles.actionButtonsContainer)
                             }
                         ) {
                             // Locate button
                             Button(
                                 attrs = {
-                                    style {
-                                        backgroundColor(rgba(0, 120, 255, 0.7))
-                                        color(Color.white)
-                                        property("border", "0")
-                                        property("border-radius", "4px")
-                                        padding(4.px, 8.px)
-                                        cursor("pointer")
-                                        fontSize(12.px)
-                                    }
+                                    classes(EditorStyles.locateButton)
                                     onClick { onLocate(obj.key) }
                                 }
                             ) {
@@ -181,15 +111,7 @@ fun WorldObjectsContent(
                             // Edit button
                             Button(
                                 attrs = {
-                                    style {
-                                        backgroundColor(rgba(0, 180, 0, 0.7))
-                                        color(Color.white)
-                                        property("border", "0")
-                                        property("border-radius", "4px")
-                                        padding(4.px, 8.px)
-                                        cursor("pointer")
-                                        fontSize(12.px)
-                                    }
+                                    classes(EditorStyles.editButton)
                                     onClick { onEdit(obj.key) }
                                 }
                             ) {
@@ -199,15 +121,7 @@ fun WorldObjectsContent(
                             // Remove button
                             Button(
                                 attrs = {
-                                    style {
-                                        backgroundColor(rgba(255, 0, 0, 0.7))
-                                        color(Color.white)
-                                        property("border", "0")
-                                        property("border-radius", "4px")
-                                        padding(4.px, 8.px)
-                                        cursor("pointer")
-                                        fontSize(12.px)
-                                    }
+                                    classes(EditorStyles.removeButton)
                                     onClick { onRemove(obj.key) }
                                 }
                             ) {

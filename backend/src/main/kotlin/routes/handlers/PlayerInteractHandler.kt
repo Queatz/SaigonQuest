@@ -11,6 +11,7 @@ import models.WebSocketAction
 import repository.ObjectRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -27,7 +28,6 @@ class PlayerInteractHandler(
         connection: WebSocketConnection,
         worldId: String,
         activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
-        json: Json,
         session: DefaultWebSocketServerSession
     ) {
         WebSocketDebug.logMessage("PLAYER_INTERACT_HANDLER", "Starting to process USER_INTERACT action", session)
@@ -52,7 +52,6 @@ class PlayerInteractHandler(
                     connection = connection,
                     worldId = worldId,
                     activeConnections = activeConnections,
-                    json = json,
                     session = session
                 )
                 

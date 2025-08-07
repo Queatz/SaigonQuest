@@ -9,15 +9,12 @@ class SpriteSheet(
     val cellHeightPx: Int,
     val columns: Int,
     val framesPerSecond: Float = 8f,
-    private val directionFrameCounts: Map<CharacterDirection, Int> = mapOf(),
     private val directionOrder: List<CharacterDirection> = CharacterDirection.entries
 ) {
     /**
      * Gets the number of animation frames for a specific direction
      */
-    fun getFrameCount(direction: CharacterDirection): Int {
-        return directionFrameCounts[direction] ?: 1
-    }
+    fun getFrameCount() = 2
     
     /**
      * Gets the UV coordinates for a specific frame in a direction
@@ -29,6 +26,7 @@ class SpriteSheet(
      */
     fun getFrameUV(
         direction: CharacterDirection,
+        isMoving: Boolean,
         frameIndex: Int,
         activity: PlayerActivity? = null
     ): UVCoordinates {
@@ -37,7 +35,11 @@ class SpriteSheet(
         val col = directionIndex
         
         // Set row = 1 when the player activity is Sit, otherwise use frameIndex
-        val row = if (activity == PlayerActivity.Sit) 1 else frameIndex % columns
+        val row = if (activity == PlayerActivity.Sit) 1 else if (isMoving) {
+            2 + frameIndex % columns
+        } else {
+            0
+        }
 
         // Calculate UV coordinates as fractions of the total image size
         val uMin = col * (cellWidthPx / imageWidth.toFloat())

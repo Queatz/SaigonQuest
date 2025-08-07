@@ -13,7 +13,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
 import main.api.ItemApi
-import main.api.UserApi
 import main.api.WebSocketApi
 import main.components.BaseDialog
 import main.components.DialogButton
@@ -21,7 +20,6 @@ import main.components.player.CharacterRenderer
 import models.Inventory
 import models.Item
 import models.User
-import models.UpdatePlayerData
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -32,7 +30,6 @@ import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight

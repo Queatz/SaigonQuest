@@ -3,7 +3,6 @@ package main.components.world
 import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
-import lib.Color4
 import lib.CreatePlaneOptions
 import lib.DirectionalLight
 import lib.HemisphericLight
@@ -17,10 +16,9 @@ import main.api.WorldApi
 import main.components.SceneManager
 import main.components.shadow.ShadowManager
 import models.World
-import kotlin.math.PI
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlinx.browser.window
+import kotlin.math.PI
 
 /**
  * Handles loading and initialization of the 3D world.
@@ -228,9 +226,7 @@ class WorldLoader(private val scene: Scene) {
         worldMeshes = arrayOf(plane)
         
         // Configure shadows for the plane
-        shadowManager?.let { manager ->
-            manager.configureShadowReceiver(plane)
-        }
+        shadowManager?.configureShadowReceiver(plane)
         
         // Execute the world loaded callback
         executeWorldLoadedCallback()

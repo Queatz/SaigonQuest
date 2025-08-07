@@ -156,7 +156,6 @@ fun CharacterRenderer(
         val character = Character(
             spriteSheet = characterSpriteSheet,
             direction = CharacterDirection.S, // Default facing south
-            isMoving = false,
             activity = null,
             additionalSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
         )

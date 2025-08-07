@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog for player users to logout
@@ -138,7 +139,7 @@ fun PlayerDialog(
     // Use the BaseDialog component
     BaseDialog(
         onClose = updateUserStatus,
-        title = "My Profile",
+        title = translated("My Profile"),
         content = {
             // Two-column container for responsive layout
             Div(
@@ -185,7 +186,7 @@ fun PlayerDialog(
                                 }
                             }
                         ) {
-                            Text("Customize Character")
+                            Translated("Customize Character")
                         }
                     }
                     
@@ -201,16 +202,17 @@ fun PlayerDialog(
                                 classes(Styles.settingsSectionLabel)
                             }
                         ) {
-                            Text("Status")
+                            Translated("Status")
                         }
 
+                        val placeholder = translated("Set your status")
+
                         // Status input field
-                        Input(
-                            type = InputType.Text,
+                        TextInput(
+                            value = status.value,
                             attrs = {
                                 classes(Styles.inputField)
-                                placeholder("Set your status (displayed above your character)")
-                                value(status.value)
+                                placeholder(placeholder)
                                 onInput { event -> status.value = event.value }
                             }
                         )
@@ -244,7 +246,7 @@ fun PlayerDialog(
                                 classes(Styles.userStatusText)
                             }
                         ) {
-                            Text("Player Account")
+                            Translated("Player Account")
                         }
                     }
 
@@ -260,7 +262,7 @@ fun PlayerDialog(
                                 classes(Styles.settingsSectionLabel)
                             }
                         ) {
-                            Text("Language")
+                            Translated("Language")
                         }
 
                         // Language switcher component
@@ -272,6 +274,16 @@ fun PlayerDialog(
                             LanguageSwitcher(
                                 onLanguageChange = { language ->
                                     currentLanguage.value = language
+                                    
+                                    // Update user language in the database
+                                    coroutineScope.launch {
+                                        try {
+                                            UserApi.updateUserLanguage(language)
+                                            console.log("[DEBUG_LOG] PlayerDialog: User language updated to: $language")
+                                        } catch (e: Exception) {
+                                            console.error("[DEBUG_LOG] PlayerDialog: Error updating user language", e)
+                                        }
+                                    }
                                 }
                             )
                         }
@@ -279,7 +291,7 @@ fun PlayerDialog(
 
                     // Low graphics mode toggle
                     GraphicsToggle(
-                        label = "Low Graphics Mode",
+                        label = translated("Low Graphics Mode"),
                         checked = isLowGraphicsMode.value,
                         onCheckedChange = { newValue ->
                             // Toggle low graphics mode
@@ -290,7 +302,7 @@ fun PlayerDialog(
 
                     // Pretty graphics toggle
                     GraphicsToggle(
-                        label = "Pretty Graphics",
+                        label = translated("Pretty Graphics"),
                         checked = isPrettyGraphics.value,
                         onCheckedChange = { newValue ->
                             // Toggle pretty graphics mode
@@ -306,7 +318,7 @@ fun PlayerDialog(
                             onClick { onLogout() }
                         }
                     ) {
-                        Text("Log Out")
+                        Translated("Log Out")
                     }
                 }
             }
@@ -339,7 +351,7 @@ fun PlayerDialog(
                 onClick = updateUserStatus,
                 isPrimary = false
             ) {
-                Text("Close")
+                Translated("Close")
             }
         }
     )

@@ -11,6 +11,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.AuthResponse
 import models.ErrorResponse
+import models.LanguageUpdateRequest
 import models.LoginRequest
 import models.UpgradeRequest
 import models.User
@@ -160,6 +161,25 @@ fun Routing.configureUserRoutes() {
                 
                 // Update worn items
                 val updatedUser = userRepository.updateWornItems(userId, request.wornItems)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+                
+                call.respond(HttpStatusCode.OK, updatedUser)
+            }
+            
+            // Update language preference - requires authentication
+            post("/language") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get request body
+                val request = call.receive<LanguageUpdateRequest>()
+                
+                // Update language
+                val updatedUser = userRepository.updateLanguage(userId, request.language)
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)

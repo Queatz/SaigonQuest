@@ -8,6 +8,9 @@ import lib.Tools
 import lib.ScreenshotOptions
 import main.components.SceneManager
 import main.theme.Styles
+import main.components.Translated
+import main.components.translated
+import Translations.str
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -25,7 +28,7 @@ import kotlin.math.max
 fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
-        title = "Print Your In-Game Location",
+        title = translated("Print Your In-Game Location"),
         maxWidth = "820px",
         content = {
             // Image container
@@ -66,7 +69,7 @@ fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
                     },
                     isPrimary = true
                 ) {
-                    Text("📥 Download Image")
+                    Translated("📥 Download Image")
                 }
             }
         }
@@ -206,7 +209,7 @@ fun generatePrintImage(
                 // Add footer
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
                 ctx.font = "14px 'Ysabeau Infant', sans-serif"
-                ctx.fillText("Saigon.Quest", 400.0, 1020.0)
+                ctx.fillText(str("Saigon.Quest"), 400.0, 1020.0)
                 
                 // Draw the QR code with pixelated rendering
                 val qrImg = Image()
@@ -310,7 +313,7 @@ fun generatePrintImage(
             // Add footer
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
             ctx.font = "14px 'Ysabeau Infant', sans-serif"
-            ctx.fillText("Saigon.Quest", 400.0, 1020.0)
+            ctx.fillText(str("Saigon.Quest"), 400.0, 1020.0)
             
             // Draw the QR code with pixelated rendering
             val qrImg = Image()

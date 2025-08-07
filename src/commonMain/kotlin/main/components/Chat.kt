@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.components.translated
 
 /**
  * A responsive chat component that adapts between a dialog (mobile) and a side panel (desktop).
@@ -16,7 +17,7 @@ fun Chat(
     onClose: () -> Unit
 ) {
     ResponsivePanel(
-        title = "World Chat",
+        title = translated("World Chat"),
         isMobile = isMobile,
         onClose = onClose
     ) {

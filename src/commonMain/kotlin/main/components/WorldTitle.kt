@@ -24,6 +24,7 @@ import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import web.cssom.opacity
+import main.components.Translated
 
 /**
  * A component that displays the world title and subtitle at the center top of the UI.
@@ -73,11 +74,15 @@ fun WorldTitle(
             }
         ) {
             if (isWorldLoading) {
-                Text("Loading...")
+                Translated("Loading...")
             } else if (worldErrorMessage.isNotEmpty()) {
-                Text("Error loading world")
+                Translated("Error loading world")
             } else {
-                Text(currentWorld?.title ?: "Untitled World")
+                if (currentWorld?.title != null) {
+                    Text(currentWorld.title)
+                } else {
+                    Translated("Untitled World")
+                }
             }
         }
         

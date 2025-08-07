@@ -28,11 +28,10 @@ object LanguageSettings {
      * Default is English if not set in localStorage.
      */
     private val _currentLanguage = mutableStateOf(loadLanguageFromStorage())
-    
-    /**
-     * List of observer callbacks to be notified when language settings change.
-     */
-    private val observers = mutableListOf<() -> Unit>()
+
+    init {
+        Translations.setLanguage(_currentLanguage.value)
+    }
     
     /**
      * Get the current language.
@@ -49,16 +48,13 @@ object LanguageSettings {
      * @param language the language code to set (e.g., "en" or "vi")
      */
     fun setLanguage(language: String) {
-        val oldValue = _currentLanguage.value
         _currentLanguage.value = language
         
         // Save to localStorage
         saveLanguageToStorage(language)
-        
-        // If the value changed, notify observers
-        if (oldValue != language) {
-            notifyObservers()
-        }
+
+        // Update UI
+        Translations.setLanguage(language)
     }
     
     /**
@@ -77,10 +73,7 @@ object LanguageSettings {
         
         // Save to localStorage
         saveLanguageToStorage(newLanguage)
-        
-        // Notify observers of the change
-        notifyObservers()
-        
+
         return newLanguage
     }
     
@@ -100,36 +93,6 @@ object LanguageSettings {
      */
     fun isVietnamese(): Boolean {
         return _currentLanguage.value == LANGUAGE_VIETNAMESE
-    }
-    
-    /**
-     * Register an observer to be notified when language settings change.
-     * 
-     * @param observer The callback function to be called when language settings change
-     */
-    fun addObserver(observer: () -> Unit) {
-        observers.add(observer)
-    }
-    
-    /**
-     * Unregister an observer so it no longer receives notifications.
-     * 
-     * @param observer The callback function to be removed
-     */
-    fun removeObserver(observer: () -> Unit) {
-        observers.remove(observer)
-    }
-    
-    /**
-     * Notify all registered observers of changes to language settings.
-     */
-    private fun notifyObservers() {
-        try {
-            // Call all registered observer functions
-            observers.forEach { it() }
-        } catch (e: Exception) {
-            console.error("Error notifying language settings observers", e)
-        }
     }
     
     /**

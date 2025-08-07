@@ -7,6 +7,7 @@ import org.jetbrains.compose.web.renderComposableInBody
 import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
+import main.theme.EditorStyles
 import main.theme.NodeEditorStyles
 import main.theme.NodeStyles
 import main.theme.NotificationStyles
@@ -21,6 +22,7 @@ fun main() {
         Style(NodeEditorStyles)
         Style(NodeStyles)
         Style(NotificationStyles)
+        Style(EditorStyles)
 
         BrowserRouter(
             initPath = "/"

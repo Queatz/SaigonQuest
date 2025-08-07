@@ -3,6 +3,7 @@ package main.components.nodeeditor
 import kotlin.js.Date
 import models.LogicNode
 import models.toTypeString
+import web.cssom.AtRules.Companion.property
 
 /**
  * Parse node data from JSON string.
@@ -130,9 +131,9 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String, nodeData: Strin
         }
     } else {
         // For other node types, create output ports as usual
-        for (property in outputProperties) {
+        outputProperties.forEachIndexed { index, property ->
             outputs.add(PortData(
-                id = "${nodeId}_out_${property.key.name.lowercase()}",
+                id = "${nodeId}_out_$index",
                 name = property.name,
                 type = PortType.OUTPUT,
                 dataType = property.type.toPortDataType()

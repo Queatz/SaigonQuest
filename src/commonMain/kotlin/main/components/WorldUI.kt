@@ -420,7 +420,12 @@ fun WorldUI() {
             currentWorld = currentWorld,
             currentEditingObject = currentEditingObject,
             onClose = { updatePanelState(SidePanelState.None) },
-            onOpenObjectEditor = { updatePanelState(SidePanelState.ObjectEditor) },
+            onOpenObjectEditor = { isCreate ->
+                if (isCreate) {
+                    currentEditingObject = null
+                }
+                updatePanelState(SidePanelState.ObjectEditor)
+            },
             onEditObject = { objectId ->
                 // Get the object by ID and open the editor with it
                 scope.launch {

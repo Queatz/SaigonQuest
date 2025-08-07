@@ -15,6 +15,5 @@ data class NodeRunnerContext(
     val connection: WebSocketConnection,
     val worldId: String,
     val activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
-    val json: Json,
     val session: DefaultWebSocketServerSession
 )

@@ -7,6 +7,7 @@ import models.Object
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -21,7 +22,6 @@ class AddObjectHandler : WebSocketHandler {
         connection: WebSocketConnection,
         worldId: String,
         activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
-        json: Json,
         session: DefaultWebSocketServerSession
     ) {
         WebSocketDebug.logMessage("PROCESSING", "ADD_OBJECT action", session)

@@ -1,6 +1,9 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
+import main.components.Translated
+import main.components.translated
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,27 +43,27 @@ fun VisitorDialog(
         
         when {
             username.isBlank() -> {
-                errorMessage = "Username cannot be empty"
+                errorMessage = str("Username cannot be empty")
                 return
             }
             
             password.isBlank() -> {
-                errorMessage = "Password cannot be empty"
+                errorMessage = str("Password cannot be empty")
                 return
             }
             
             !isLoginMode && password.length < 8 -> {
-                errorMessage = "Password must be at least 8 characters"
+                errorMessage = str("Password must be at least 8 characters")
                 return
             }
             
             !isLoginMode && yearOfBirth == null -> {
-                errorMessage = "Year of birth is required"
+                errorMessage = str("Year of birth is required")
                 return
             }
             
             !isLoginMode && sex == null -> {
-                errorMessage = "Sex is required"
+                errorMessage = str("Sex is required")
                 return
             }
             
@@ -76,7 +79,7 @@ fun VisitorDialog(
     
     BaseDialog(
         onClose = onClose,
-        title = if (isLoginMode) "Log In" else "Create Account",
+        title = if (isLoginMode) translated("Log In") else translated("Create Account"),
         content = {
             // Error message (if any)
             if (errorMessage.isNotEmpty()) {
@@ -100,13 +103,13 @@ fun VisitorDialog(
                         classes(Styles.formLabel)
                     }
                 ) {
-                    Text("Username")
+                    Translated("Username")
                 }
                 Input(
                     type = InputType.Text,
                     attrs = {
                         classes(Styles.formInput)
-                        placeholder("Enter username")
+                        placeholder(str("Enter username"))
                         value(username)
                         onInput { username = it.value }
                     }
@@ -124,13 +127,13 @@ fun VisitorDialog(
                         classes(Styles.formLabel)
                     }
                 ) {
-                    Text("Password")
+                    Translated("Password")
                 }
                 Input(
                     type = InputType.Password,
                     attrs = {
                         classes(Styles.formInput)
-                        placeholder("Enter password")
+                        placeholder(str("Enter password"))
                         value(password)
                         onInput { password = it.value }
                     }
@@ -141,7 +144,7 @@ fun VisitorDialog(
                             classes(Styles.formHelpText)
                         }
                     ) {
-                        Text("Password must be at least 8 characters")
+                        Translated("Password must be at least 8 characters")
                     }
                 }
             }
@@ -158,7 +161,7 @@ fun VisitorDialog(
                             classes(Styles.formLabel)
                         }
                     ) {
-                        Text("Year of Birth")
+                        Translated("Year of Birth")
                     }
                     
                     // Create a select element for year of birth
@@ -184,7 +187,7 @@ fun VisitorDialog(
                                 }
                             }
                         ) {
-                            Text("Select year")
+                            Translated("Select year")
                         }
                         
                         // Add options for years (from current year - 100 to current year)
@@ -215,7 +218,7 @@ fun VisitorDialog(
                             classes(Styles.formLabel)
                         }
                     ) {
-                        Text("Sex")
+                        Translated("Sex")
                     }
                     
                     // Radio buttons for Boy/Girl
@@ -234,13 +237,13 @@ fun VisitorDialog(
                                 type = InputType.Radio,
                                 attrs = {
                                     attr("name", "sex")
-                                    value("Boy")
-                                    if (sex == "Boy") {
+                                    value(str("Boy"))
+                                    if (sex == str("Boy")) {
                                         checked(true)
                                     }
                                     onChange {
                                         if (it.value) {
-                                            sex = "Boy"
+                                            sex = str("Boy")
                                         }
                                     }
                                 }
@@ -250,7 +253,7 @@ fun VisitorDialog(
                                     classes(Styles.radioOptionLabel)
                                 }
                             ) {
-                                Text("Boy")
+                                Translated("Boy")
                             }
                         }
                         
@@ -264,13 +267,13 @@ fun VisitorDialog(
                                 type = InputType.Radio,
                                 attrs = {
                                     attr("name", "sex")
-                                    value("Girl")
-                                    if (sex == "Girl") {
+                                    value(str("Girl"))
+                                    if (sex == str("Girl")) {
                                         checked(true)
                                     }
                                     onChange {
                                         if (it.value) {
-                                            sex = "Girl"
+                                            sex = str("Girl")
                                         }
                                     }
                                 }
@@ -280,7 +283,7 @@ fun VisitorDialog(
                                     classes(Styles.radioOptionLabel)
                                 }
                             ) {
-                                Text("Girl")
+                                Translated("Girl")
                             }
                         }
                     }
@@ -301,7 +304,7 @@ fun VisitorDialog(
                     onClick = { validateAndSubmit() },
                     isPrimary = true
                 ) {
-                    Text(if (isLoginMode) "Log In" else "Create Account")
+                    Translated(if (isLoginMode) "Log In" else "Create Account")
                 }
                 
                 // Toggle mode button
@@ -311,7 +314,7 @@ fun VisitorDialog(
                         errorMessage = ""
                     }
                 ) {
-                    Text(if (isLoginMode) "Create Account" else "Log In")
+                    Translated(if (isLoginMode) "Create Account" else "Log In")
                 }
             }
         }

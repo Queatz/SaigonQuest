@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import main.theme.Styles
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import main.components.Translated
 
 /**
  * A component that displays the copyright text at the bottom left of the screen.
@@ -16,6 +17,6 @@ fun BottomText() {
             classes(Styles.bottomText)
         }
     ) {
-        Text("© 2025 Saigon.Quest v0.1")
+        Translated("© 2025 Saigon.Quest v0.1")
     }
 }

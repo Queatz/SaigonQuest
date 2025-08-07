@@ -9,6 +9,7 @@ import org.jetbrains.compose.web.dom.Text
 import app.softwork.routingcompose.Router
 import main.api.UserApi
 import main.theme.Styles
+import main.components.Translated
 
 /**
  * A component that displays a loading screen or error message.
@@ -66,7 +67,11 @@ fun LoadingScreen(
                         }
                     ) {
                         // Show different text based on login status
-                        Text(if (UserApi.getToken() != null) "Claim this World" else "Login and Claim this World")
+                        if (UserApi.getToken() != null) {
+                            Translated("Claim this World")
+                        } else {
+                            Translated("Login and Claim this World")
+                        }
                     }
                     
                     // Go back button
@@ -78,13 +83,13 @@ fun LoadingScreen(
                             }
                         }
                     ) {
-                        Text("Go home")
+                        Translated("Go home")
                     }
                 }
             } else {
                 // Normal loading message
                 Span {
-                    Text("Loading Saigon.Quest world...")
+                    Translated("Loading Saigon.Quest world...")
                 }
             }
         }

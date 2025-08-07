@@ -14,7 +14,7 @@ import main.components.SimpleSidePanel
 @Composable
 fun ObjectsPanel(
     onClose: () -> Unit,
-    onOpenObjectEditor: () -> Unit,
+    onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
     objectManager: SceneObjectManager? = null
 ) {

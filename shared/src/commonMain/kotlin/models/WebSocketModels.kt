@@ -1,6 +1,18 @@
 package models
 
 import kotlinx.serialization.Serializable
+import main.components.world.PlayerActivity
+
+/**
+ * Player typing data model
+ * 
+ * This model is sent when a player starts or stops typing.
+ */
+@Serializable
+data class PlayerTypingData(
+    val userId: String,
+    val isTyping: Boolean
+)
 
 /**
  * Player position data model
@@ -67,7 +79,7 @@ data class UpdatePlayerData(
     val userId: String,
     val name: String,
     val isPlayer: Boolean,
-    val activity: String? = null,
+    val activity: PlayerActivity? = null,
     val status: String? = null
 )
 

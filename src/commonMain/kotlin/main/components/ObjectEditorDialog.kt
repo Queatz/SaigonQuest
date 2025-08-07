@@ -17,6 +17,7 @@ import models.Rotation
 import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
@@ -206,35 +207,42 @@ fun ObjectEditorDialog(
                     )
                 }
                 
-                // Logic Editor preview
+                // Logic Editor preview (disabled)
                 Div(
                     attrs = {
                         classes(Styles.objectEditorDialogLogicPreview)
                         // Make the entire div clickable to open the logic editor
-                        onClick {
-                            // Create a current object with the form data
-                            val currentObject = if (isEditing) {
-                                objectModel!!.copy(
-                                    title = title,
-                                    file = file,
-                                    collection = collection,
-                                    status = status
-                                )
-                            } else {
-                                Object(
-                                    title = title,
-                                    file = file,
-                                    collection = collection,
-                                    worldId = worldId,
-                                    data = "{}",
-                                    position = models.Position(0f, 0f, 0f),
-                                    rotation = Rotation(0f, 0f, 0f),
-                                    scale = Scale(1f, 1f, 1f)
-                                )
+
+                        if (isEditing) {
+                            onClick {
+                                // Create a current object with the form data
+                                val currentObject = if (isEditing) {
+                                    objectModel.copy(
+                                        title = title,
+                                        file = file,
+                                        collection = collection,
+                                        status = status
+                                    )
+                                } else {
+                                    Object(
+                                        title = title,
+                                        file = file,
+                                        collection = collection,
+                                        worldId = worldId,
+                                        data = "{}",
+                                        position = models.Position(0f, 0f, 0f),
+                                        rotation = Rotation(0f, 0f, 0f),
+                                        scale = Scale(1f, 1f, 1f)
+                                    )
+                                }
+
+                                // Open the logic editor without closing this dialog
+                                onOpenLogicEditor(currentObject)
                             }
-                            
-                            // Open the logic editor without closing this dialog
-                            onOpenLogicEditor(currentObject)
+                        } else {
+                            style {
+                                opacity(.5)
+                            }
                         }
                     }
                 ) {
@@ -253,23 +261,29 @@ fun ObjectEditorDialog(
                             classes(Styles.objectEditorDialogLogicDescription)
                         }
                     ) {
-                        if (objectModel?.data != null && objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
-                            // Show a preview of the logic data
-                            Text("Click to edit object logic (${
-                                try {
-                                    // Parse the JSON data using kotlinx.serialization
-                                    val json = utils.json
-                                    val jsonObject = json.parseToJsonElement(objectModel.data).jsonObject
-                                    val nodes = jsonObject["nodes"]?.jsonObject ?: JsonObject(emptyMap())
-                                    val nodeCount = nodes.size
-                                    "$nodeCount nodes configured"
-                                } catch (e: Exception) {
-                                    "Logic data available"
-                                }
-                            })")
+                        if (isEditing) {
+                            if (objectModel?.data != null && objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
+                                // Show a preview of the logic data
+                                Text(
+                                    "Object logic (${
+                                        try {
+                                            // Parse the JSON data using kotlinx.serialization
+                                            val json = utils.json
+                                            val jsonObject = json.parseToJsonElement(objectModel.data).jsonObject
+                                            val nodes = jsonObject["nodes"]?.jsonObject ?: JsonObject(emptyMap())
+                                            val nodeCount = nodes.size
+                                            "$nodeCount nodes configured"
+                                        } catch (e: Exception) {
+                                            "Logic data available"
+                                        }
+                                    })"
+                                )
+                            } else {
+                                // Show a message for empty logic data
+                                Text("Object has no logic yet.")
+                            }
                         } else {
-                            // Show a message for empty logic data
-                            Text("Click to configure object logic")
+                            Text("Create the object to add logic.")
                         }
                     }
                 }

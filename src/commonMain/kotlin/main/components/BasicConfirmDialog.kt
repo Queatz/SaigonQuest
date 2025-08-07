@@ -2,6 +2,8 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.dom.Text
+import main.components.Translated
+import main.components.translated
 
 /**
  * A basic confirmation dialog with Yes and No buttons.
@@ -16,7 +18,7 @@ fun BasicConfirmDialog(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    title: String? = "Confirm",
+    title: String? = translated("Confirm"),
 ) {
     BaseDialog(
         onClose = onCancel,
@@ -30,7 +32,7 @@ fun BasicConfirmDialog(
                 onClick = onCancel,
                 isPrimary = false,
             ) {
-                Text("No")
+                Translated("No")
             }
             
             // Yes button (primary)
@@ -38,7 +40,7 @@ fun BasicConfirmDialog(
                 onClick = onConfirm,
                 isPrimary = true,
             ) {
-                Text("Yes")
+                Translated("Yes")
             }
         }
     )

@@ -132,12 +132,11 @@ fun PropertyPanel(
                 Text("Label")
             }
             
-            Input(
-                type = InputType.Text,
+            TextInput(
+                value = label,
                 attrs = {
                     classes(NodeEditorStyles.propertyInput)
                     id("node-label")
-                    value(label)
                     onInput { event -> label = event.value }
                 }
             )

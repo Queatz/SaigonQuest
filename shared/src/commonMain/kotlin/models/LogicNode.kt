@@ -81,6 +81,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.ACTION,
         override val description: String = "Display text message to the player"
     ) : LogicNode
+    
+    /**
+     * UserLanguage node - directs logic based on the user's language
+     */
+    @Serializable
+    data class UserLanguage(
+        override val id: String = "user_language",
+        override val label: String = "User language",
+        override val category: NodeCategory = NodeCategory.INPUT,
+        override val description: String = "Directs logic based on the user's language"
+    ) : LogicNode
 }
 
 /**
@@ -88,10 +99,11 @@ sealed interface LogicNode {
  */
 fun getAllNodeTypes(): List<LogicNode> {
     return listOf(
-        LogicNode.Teleport(),
-        LogicNode.VisitorInteract(),
         LogicNode.PlayerInteract(),
-        LogicNode.Dialogue()
+        LogicNode.VisitorInteract(),
+        LogicNode.Teleport(),
+        LogicNode.Dialogue(),
+        LogicNode.UserLanguage()
     )
 }
 
@@ -111,6 +123,7 @@ fun LogicNode.toTypeString(): String {
         is LogicNode.VisitorInteract -> "event"
         is LogicNode.PlayerInteract -> "event"
         is LogicNode.Dialogue -> "dialogue"
+        is LogicNode.UserLanguage -> "input"
     }
 }
 
@@ -123,6 +136,7 @@ fun getLogicNodeFromTypeAndId(type: String, id: String): LogicNode {
         type == "event" && id == "visitor_interact" -> LogicNode.VisitorInteract()
         type == "event" && id == "player_interact" -> LogicNode.PlayerInteract()
         type == "dialogue" && id == "dialogue" || id == "present_text" -> LogicNode.Dialogue()
+        type == "input" && id == "user_language" -> LogicNode.UserLanguage()
         // Default to Teleport if no match is found
         else -> LogicNode.Teleport()
     }

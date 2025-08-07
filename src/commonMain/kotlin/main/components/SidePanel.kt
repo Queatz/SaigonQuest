@@ -24,7 +24,7 @@ fun SidePanel(
     currentWorld: World?,
     currentEditingObject: Object?,
     onClose: () -> Unit,
-    onOpenObjectEditor: () -> Unit,
+    onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit,
     onSaveObject: (Object) -> Unit,
     onOpenLogicEditor: (Object) -> Unit
@@ -129,12 +129,8 @@ fun SidePanel(
         
         SidePanelState.LogicEditor -> {
             if (currentEditingObject != null) {
-                // Get current world ID from the URL path
-                val currentWorldId = PathUtils.getCurrentPath(router)
-                
                 LogicEditorDialog(
                     objectModel = currentEditingObject,
-                    worldId = currentWorldId,
                     onClose = onClose,
                     onSave = { updatedObj ->
                         // Handle saved object with updated logic

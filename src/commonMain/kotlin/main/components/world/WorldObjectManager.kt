@@ -9,7 +9,6 @@ import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
 import main.api.WebSocketApi
-import main.components.inventory.InventoryState
 import models.User
 import models.WebSocketAction
 
@@ -110,7 +109,6 @@ class WorldObjectManager(private val scene: Scene) {
         val character = Character(
             spriteSheet = spriteSheet,
             direction = direction,
-            isMoving = false,
             activity = activity,
             additionalSpriteSheets = combinedSpriteSheets
         )

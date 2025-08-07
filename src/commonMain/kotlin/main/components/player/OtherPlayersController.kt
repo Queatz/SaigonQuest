@@ -14,11 +14,13 @@ import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.shadow.ShadowManager
 import main.components.world.CharacterDirection
+import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import models.ChatMessage
 import models.PlayerPositionData
+import models.PlayerTypingData
 import models.Position
 import models.UpdatePlayerData
 import models.UserJoinData
@@ -157,18 +159,20 @@ class OtherPlayersController(private val scene: Scene) {
      * Initialize the controller and set up WebSocket listeners
      */
     fun initialize() {
+        console.log("[TYPING] OtherPlayersController initialize method called")
+        
         // Get current user ID
         scope.launch {
             try {
                 val user = UserApi.getCurrentUser()
                 myUserId = user.key
-                console.log("OtherPlayersController: Current user ID: $myUserId")
+                console.log("[TYPING] OtherPlayersController: Current user ID: $myUserId")
             } catch (e: Exception) {
-                console.error("OtherPlayersController: Error getting current user", e)
+                console.error("[TYPING] OtherPlayersController: Error getting current user", e)
             }
         }
         
-        console.log("OtherPlayersController: Setting up WebSocket listeners")
+        console.log("[TYPING] OtherPlayersController: Setting up WebSocket listeners")
         
         // Set up WebSocket listeners
         WebSocketApi.addUserJoinListener { joinData ->
@@ -226,6 +230,9 @@ class OtherPlayersController(private val scene: Scene) {
                 console.error("OtherPlayersController: Error parsing chat message", e)
             }
         }
+        
+        // Set up typing status listener
+        setupTypingStatusListener()
         
         // Force a user join notification for the current user to trigger updates for all clients
         scope.launch {
@@ -446,15 +453,11 @@ class OtherPlayersController(private val scene: Scene) {
             // Update player activity if provided
             if (updateData.activity != null || playerHandles[updateData.userId] != null) {
                 // Convert activity string to PlayerActivity enum
-                val activity = if (updateData.activity == "Sit") {
-                    main.components.world.PlayerActivity.Sit
-                } else {
-                    null // Standing
-                }
+                val activity = updateData.activity
                 
                 // Update the player's activity
                 playerHandles[updateData.userId]?.let { handle ->
-                    console.log("[DEBUG_LOG] OtherPlayersController: Updating activity for ${updateData.userId} to ${activity?.name ?: "Standing"}")
+                    console.log("[DEBUG_LOG] OtherPlayersController: Updating activity for ${updateData.userId} to ${activity ?: "Standing"}")
                     handle.updateActivity(activity)
                 }
             }
@@ -751,6 +754,9 @@ class OtherPlayersController(private val scene: Scene) {
                                 targetPos.z
                             )
                         }
+                        
+                        // Player has stopped moving, update activity to standing
+                        handle.updateActivity(null)
                     } else {
                         // Normalize direction and apply speed
                         direction.normalize()
@@ -767,6 +773,9 @@ class OtherPlayersController(private val scene: Scene) {
                                 newPosition.z
                             )
                         }
+                        
+                        // Player is moving, update activity to Moving
+                        handle.updateActivity(PlayerActivity.Moving)
                     }
                 }
             }
@@ -934,12 +943,133 @@ class OtherPlayersController(private val scene: Scene) {
      * @param userId The ID of the user whose status should be removed
      */
     private fun removePlayerStatus(userId: String) {
+        console.log("[TYPING] removePlayerStatus called for userId=$userId")
+        
         // Remove the text billboard if it exists
         statusTextHandles[userId]?.let { textHandle ->
             textHandle.remove()
             statusTextHandles.remove(userId)
-            console.log("OtherPlayersController: Removed status for $userId")
+            console.log("[TYPING] Successfully removed status/typing indicator for $userId")
+        } ?: run {
+            console.log("[TYPING] No status/typing indicator found to remove for $userId")
         }
+    }
+    
+    /**
+     * Displays or hides the typing indicator above a player's head
+     * 
+     * @param userId The ID of the user who is typing
+     * @param isTyping Whether the user is typing or not
+     */
+    fun displayTypingIndicator(userId: String, isTyping: Boolean) {
+        console.log("[TYPING] displayTypingIndicator called for userId=$userId, isTyping=$isTyping")
+        
+        // Don't display for the current user (handled by PlayerController)
+        if (userId == myUserId) {
+            console.log("[TYPING] Not displaying typing indicator for current user: $userId")
+            return
+        }
+        
+        if (isTyping) {
+            // If chat message is showing, don't show typing indicator
+            if (chatMessageTextHandles[userId] != null) {
+                console.log("[TYPING] Not displaying typing indicator because chat message is showing for $userId")
+                return
+            }
+            
+            // Get the world object manager
+            val manager = worldObjectManager
+            if (manager == null) {
+                console.error("[TYPING] Cannot display typing indicator: worldObjectManager is null")
+                return
+            }
+            
+            // Get the player's position
+            val playerPosition = playerHandles[userId]?.position
+            if (playerPosition == null) {
+                console.error("[TYPING] Cannot display typing indicator: player position not found for $userId")
+                return
+            }
+            
+            console.log("[TYPING] Displaying typing indicator at position: x=${playerPosition.x}, y=${playerPosition.y}, z=${playerPosition.z}")
+            
+            // Remove existing status text if any
+            removePlayerStatus(userId)
+            
+            // Calculate position above the username
+            val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
+            
+            // Create the text billboard with the typing indicator
+            val textHandle = manager.createTextBillboard(
+                text = "💬",
+                position = textPosition,
+                fontSize = 18,
+                textColor = "white",
+                backgroundColor = "#00000080" // Semi-transparent black background
+            )
+            
+            // Store the text handle in the status handles (reusing existing mechanism)
+            if (textHandle != null) {
+                statusTextHandles[userId] = textHandle
+                console.log("[TYPING] Successfully displayed typing indicator for $userId")
+            } else {
+                console.error("[TYPING] Failed to create text billboard for typing indicator for $userId")
+            }
+        } else {
+            console.log("[TYPING] Removing typing indicator for $userId")
+            
+            // Remove the typing indicator
+            removePlayerStatus(userId)
+            
+            // Show status text again if available
+            val updateData = playerUpdateData[userId]
+            if (updateData != null) {
+                val status = updateData.status?.orEmpty() ?: ""
+                if (status.isNotBlank()) {
+                    console.log("[TYPING] Restoring status after typing indicator removed for $userId: $status")
+                    displayPlayerStatus(userId, status)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Sets up the typing status listener
+     */
+    private fun setupTypingStatusListener() {
+        console.log("[TYPING] Setting up typing status listener")
+        
+        // Add listener for typing status updates
+        WebSocketApi.addListener(WebSocketAction.PLAYER_TYPING) { message ->
+            console.log("[TYPING] Received PLAYER_TYPING message: ${message.data}")
+            
+            try {
+                // Check if the message is valid
+                if (message.isValid()) {
+                    console.log("[TYPING] Message is valid, attempting to parse data")
+                    
+                    // Parse the message data as JSON
+                    val data = ApiClient.json.decodeFromString(PlayerTypingData.serializer(), message.data)
+                    console.log("[TYPING] Successfully parsed typing data: userId=${data.userId}, isTyping=${data.isTyping}")
+                    
+                    if (data.userId.isNotEmpty()) {
+                        console.log("[TYPING] Calling displayTypingIndicator for userId=${data.userId}, isTyping=${data.isTyping}")
+                        // Display or hide typing indicator
+                        displayTypingIndicator(data.userId, data.isTyping)
+                    } else {
+                        console.error("[TYPING] Empty userId in typing status data")
+                    }
+                } else {
+                    console.error("[TYPING] Invalid typing status message received: action=${message.action}, data=${message.data}")
+                }
+            } catch (e: Exception) {
+                console.error("[TYPING] Error processing typing status message", e)
+                console.error("[TYPING] Raw message data: ${message.data}")
+                console.error("[TYPING] Exception details: ${e.message}")
+            }
+        }
+        
+        console.log("[TYPING] Typing status listener setup complete")
     }
 
     /**

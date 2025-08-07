@@ -30,20 +30,18 @@ import org.jetbrains.compose.web.css.px
 /**
  * A dialog for editing object logic.
  * 
- * @param objectModel The object being edited, or null if creating a new object
- * @param worldId The ID of the world this object belongs to
+ * @param objectModel The object being edited
  * @param onClose Callback when the dialog is closed
- * @param onSave Callback when an object is saved (created or updated)
+ * @param onSave Callback when an object is saved
  */
 @Composable
 fun LogicEditorDialog(
-    objectModel: Object? = null,
-    worldId: String,
+    objectModel: Object,
     onClose: () -> Unit,
     onSave: (Object) -> Unit
 ) {
     // State for form fields
-    var title by remember { mutableStateOf(objectModel?.title ?: "") }
+    var title by remember { mutableStateOf(objectModel.title) }
 
     // State for fullscreen mode
     var isFullscreen by remember { mutableStateOf(false) }
@@ -52,9 +50,8 @@ fun LogicEditorDialog(
     var isSubmitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
-    // Determine if we're editing or creating
-    val isEditing = objectModel != null
-    val dialogTitle = if (isEditing) "Edit ${objectModel.title.ifBlank { "Object" }} Logic" else "Create Object Logic"
+    // Set dialog title
+    val dialogTitle = "Edit ${objectModel.title.ifBlank { "Object" }} Logic"
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -62,8 +59,8 @@ fun LogicEditorDialog(
     // Initialize the NodeEditorController with initial nodes and connections
     val controller = remember { 
         NodeEditorController(
-            initialNodes = parseNodes(objectModel?.data ?: "{}"),
-            initialConnections = parseConnections(objectModel?.data ?: "{}"),
+            initialNodes = parseNodes(objectModel.data),
+            initialConnections = parseConnections(objectModel.data),
         )
     }
 
@@ -88,31 +85,16 @@ fun LogicEditorDialog(
         // Serialize node editor data to JSON
         val nodeData = controller.serializeToJson()
         
-        val newObject = if (isEditing) {
-            // Update existing object
-            objectModel!!.copy(
-                title = title,
-                data = nodeData
-            )
-        } else {
-            // Create new object
-            Object(
-                title = title,
-                data = nodeData,
-                worldId = worldId,
-                position = models.Position(0f, 0f, 0f),
-                rotation = Rotation(0f, 0f, 0f),
-                scale = Scale(1f, 1f, 1f)
-            )
-        }
+        // Update existing object
+        val newObject = objectModel.copy(
+            title = title,
+            data = nodeData
+        )
         
         coroutineScope.launch {
             try {
-                val savedObject = if (isEditing) {
-                    ObjectApi.updateObject(objectModel!!.key, newObject)
-                } else {
-                    ObjectApi.createObject(newObject)
-                }
+                // Update the object
+                val savedObject = ObjectApi.updateObject(objectModel.key, newObject)
                 
                 isSubmitting = false
                 onSave(savedObject)

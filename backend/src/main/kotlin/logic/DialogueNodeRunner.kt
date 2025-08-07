@@ -12,6 +12,7 @@ import models.WebSocketAction
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
+import utils.json
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
@@ -54,7 +55,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         // Parse the JSON data to extract the text and buttons
         val nodeData = try {
             // Try to parse as PropertyBasedNodeData
-            context.json.decodeFromString<PropertyBasedNodeData>(jsonData)
+            json.decodeFromString<PropertyBasedNodeData>(jsonData)
         } catch (e: Exception) {
             return false
         }
@@ -84,11 +85,11 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         
         val dialogueMessage = WebSocketMessage(
             action = WebSocketAction.SHOW_DIALOGUE,
-            data = context.json.encodeToString(dialogueData)
+            data = json.encodeToString(dialogueData)
         )
         
         // Send the dialogue message to the client
-        context.connection.session.send(context.json.encodeToString(dialogueMessage))
+        context.connection.session.send(json.encodeToString(dialogueMessage))
         
         // Set up a listener for the confirmation
         val confirmationResult = withTimeoutOrNull(CONFIRMATION_TIMEOUT.seconds) {
@@ -99,9 +100,9 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                 if (frame is Frame.Text) {
                     val text = frame.readText()
                     try {
-                        val message = context.json.decodeFromString<WebSocketMessage>(text)
+                        val message = json.decodeFromString<WebSocketMessage>(text)
                         if (message.action == WebSocketAction.DIALOGUE_CONFIRM) {
-                            val confirmation = context.json.decodeFromString<DialogueConfirmation>(message.data)
+                            val confirmation = json.decodeFromString<DialogueConfirmation>(message.data)
                             if (confirmation.dialogueId == dialogueId) {
                                 pendingConfirmations[dialogueId] = Pair(true, confirmation.buttonIndex)
                                 break

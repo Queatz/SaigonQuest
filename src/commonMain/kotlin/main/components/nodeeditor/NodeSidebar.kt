@@ -74,7 +74,14 @@ fun NodeSidebar() {
                         classes(NodeEditorStyles.sectionHeader)
                     }
                 ) {
-                    Text(category.name.lowercase().replaceFirstChar { it.uppercase() } + "s")
+                    Text(
+                        when(category) {
+                            NodeCategory.ACTION -> "Actions"
+                            NodeCategory.DIALOGUE -> "Dialogues"
+                            NodeCategory.EVENT -> "Events"
+                            NodeCategory.INPUT -> "Inputs"
+                        }
+                    )
                 }
                 
                 // List of draggable items for this category

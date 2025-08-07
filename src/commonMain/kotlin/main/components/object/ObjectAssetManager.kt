@@ -8,6 +8,8 @@ import lib.Mesh
 import lib.Node
 import lib.Scene
 import lib.SceneLoader
+import lib.TransformNode
+import lib.Vector3
 
 /**
  * Manages 3D model assets for objects in the scene.
@@ -86,9 +88,9 @@ class ObjectAssetManager(private val scene: Scene) {
                     clonedMesh.parent = parentMesh
                     
                     // Preserve the original position, rotation, and scaling relative to the parent
-                    clonedMesh.position = originalPosition
-                    clonedMesh.rotation = originalRotation
-                    clonedMesh.scaling = originalScaling
+                    clonedMesh.position = Vector3.Zero()
+                    clonedMesh.rotation = Vector3.Zero()
+                    clonedMesh.scaling = Vector3(1f, 1f, 1f)
                     
                     console.log("[ASSET_MANAGER] Set cloned cached mesh position: (${clonedMesh.position.x}, ${clonedMesh.position.y}, ${clonedMesh.position.z})")
                     
@@ -190,11 +192,14 @@ class ObjectAssetManager(private val scene: Scene) {
 
                             if (childMeshes.size > 0) {
                                 console.log("[ASSET_MANAGER] Found ${childMeshes.size} child meshes for node: ${requestedNode.name}")
+
+                                val basePosition = childMeshes[0].position.clone()
+                                val baseRotation = childMeshes[0].rotation.clone()
+                                val baseScaling = childMeshes[0].scaling.clone()
                                 
                                 // Create a parent mesh to hold all child meshes
-                                val parentMesh = childMeshes[0].clone("parent_${requestedCollection}_${js("Date.now()")}")
-                                parentMesh.isVisible = false
-                                
+                                val node = TransformNode("parent_${requestedCollection}_${js("Date.now()")}", scene)
+
                                 // Process all child meshes, not just the first one
                                 childMeshes.forEach { childMesh ->
                                     console.log("[ASSET_MANAGER] Processing child mesh: ${childMesh.name}")
@@ -214,12 +219,12 @@ class ObjectAssetManager(private val scene: Scene) {
                                     console.log("[ASSET_MANAGER] Original mesh position: (${originalPosition.x}, ${originalPosition.y}, ${originalPosition.z})")
                                     
                                     // Make the cloned mesh a child of the parent mesh
-                                    clonedMesh.parent = parentMesh
+                                    clonedMesh.parent = node
                                     
                                     // Preserve the original position, rotation, and scaling relative to the parent
-                                    clonedMesh.position = originalPosition
-                                    clonedMesh.rotation = originalRotation
-                                    clonedMesh.scaling = originalScaling
+                                    clonedMesh.position = Vector3.Zero()
+                                    clonedMesh.rotation = Vector3.Zero()
+                                    clonedMesh.scaling = Vector3(1f, 1f, 1f)
                                     
                                     console.log("[ASSET_MANAGER] Set cloned mesh position: (${clonedMesh.position.x}, ${clonedMesh.position.y}, ${clonedMesh.position.z})")
 
@@ -231,7 +236,7 @@ class ObjectAssetManager(private val scene: Scene) {
                                 console.log("[ASSET_MANAGER] Created parent node with ${childMeshes.size} child meshes")
                                 
                                 // Return the parent mesh as the node
-                                onSuccess(parentMesh)
+                                onSuccess(node)
                                 foundRequestedNode = true
                             } else {
                                 console.log("[ASSET_MANAGER] No child meshes found for node: ${requestedNode.name}")

@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,12 +38,36 @@ fun ChatContent(worldId: String) {
     var isWebSocketConnected by remember { mutableStateOf(false) }
     var lastError by remember { mutableStateOf<String?>(null) }
     var showEmotePopup by remember { mutableStateOf(false) }
+    var isTyping by remember { mutableStateOf(false) }
     
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
     
     // Reference to the chat input element for auto-focus
     val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
+    
+    // Function to handle typing status changes
+    val updateTypingStatus = { newIsTyping: Boolean ->
+        console.log("[TYPING] updateTypingStatus called with newIsTyping=$newIsTyping, current isTyping=$isTyping")
+        
+        if (isTyping != newIsTyping) {
+            console.log("[TYPING] Typing status changing from $isTyping to $newIsTyping")
+            isTyping = newIsTyping
+            
+            // Send typing status update
+            if (isAuthenticated && isWebSocketConnected) {
+                console.log("[TYPING] User is authenticated and WebSocket is connected, sending typing status")
+                scope.launch {
+                    val success = WebSocketApi.sendTypingStatus(worldId, newIsTyping)
+                    console.log("[TYPING] Typing status update sent: $success")
+                }
+            } else {
+                console.log("[TYPING] Cannot send typing status: authenticated=$isAuthenticated, connected=$isWebSocketConnected")
+            }
+        } else {
+            console.log("[TYPING] Typing status unchanged: $isTyping")
+        }
+    }
     
     // Default emotes
     val defaultEmotes = remember {
@@ -78,6 +103,38 @@ fun ChatContent(worldId: String) {
             }
             
             delay(10000) // Check every 10 seconds
+        }
+    }
+    
+    // Typing timeout coroutine
+    LaunchedEffect(isTyping) {
+        if (isTyping) {
+            console.log("[TYPING] Starting typing timeout coroutine (5 seconds)")
+            delay(5000) // 5 seconds timeout
+            console.log("[TYPING] Typing timeout reached, setting typing status to false")
+            updateTypingStatus(false)
+        } else {
+            console.log("[TYPING] Typing timeout coroutine not started (isTyping=false)")
+        }
+    }
+    
+    // Clean up typing status on dispose
+    DisposableEffect(Unit) {
+        console.log("[TYPING] Setting up DisposableEffect for cleanup")
+        
+        onDispose {
+            console.log("[TYPING] DisposableEffect onDispose triggered")
+            
+            // Send typing stop if currently typing
+            if (isTyping) {
+                console.log("[TYPING] User was typing when component disposed, sending typing=false")
+                scope.launch {
+                    val success = WebSocketApi.sendTypingStatus(worldId, false)
+                    console.log("[TYPING] Final typing status update sent: $success")
+                }
+            } else {
+                console.log("[TYPING] User was not typing when component disposed, no cleanup needed")
+            }
         }
     }
     
@@ -233,8 +290,8 @@ fun ChatContent(worldId: String) {
             }
             
             // Text input
-            Input(
-                type = InputType.Text,
+            TextInput(
+                value = messageText,
                 attrs = {
                     classes(Styles.inputField)
                     style {
@@ -244,8 +301,23 @@ fun ChatContent(worldId: String) {
                         opacity(if (isAuthenticated) 1.0 else 0.7)
                     }
                     placeholder(if (isAuthenticated) "Type a message..." else "Sign in to chat")
-                    value(messageText)
-                    onInput { messageText = it.value }
+                    onInput { 
+                        val newValue = it.value
+                        console.log("[TYPING] Input changed: '${messageText}' -> '${newValue}'")
+                        messageText = newValue
+                        
+                        // Update typing status when input changes
+                        if (isAuthenticated && newValue.isNotEmpty()) {
+                            console.log("[TYPING] Input not empty and user authenticated, setting typing status to true")
+                            // If not already typing, set typing to true
+                            updateTypingStatus(true)
+                        } else if (newValue.isEmpty() && isTyping) {
+                            console.log("[TYPING] Input is now empty, setting typing status to false")
+                            updateTypingStatus(false)
+                        } else {
+                            console.log("[TYPING] No typing status change needed: authenticated=$isAuthenticated, empty=${newValue.isEmpty()}, isTyping=$isTyping")
+                        }
+                    }
                     autoFocus()
                     if (!isAuthenticated) {
                         disabled()
@@ -262,6 +334,10 @@ fun ChatContent(worldId: String) {
                                     if (success) {
                                         console.log("Message sent successfully via Enter key")
                                         messageText = ""
+                                        
+                                        // Set typing status to false when message is sent
+                                        console.log("[TYPING] Message sent via Enter key, setting typing status to false")
+                                        updateTypingStatus(false)
                                         
                                         // Mark messages as read when sending a message
                                         scope.launch {
@@ -312,6 +388,10 @@ fun ChatContent(worldId: String) {
                                 if (success) {
                                     console.log("Message sent successfully")
                                     messageText = ""
+                                    
+                                    // Set typing status to false when message is sent
+                                    console.log("[TYPING] Message sent via Send button, setting typing status to false")
+                                    updateTypingStatus(false)
                                     
                                     // Mark messages as read when sending a message
                                     scope.launch {

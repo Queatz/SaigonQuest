@@ -159,6 +159,28 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             )
         )
+        
+        // UserLanguage node properties
+        is LogicNode.UserLanguage -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "English",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Tiếng Việt",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
     }
 }
 

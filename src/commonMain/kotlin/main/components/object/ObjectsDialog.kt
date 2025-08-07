@@ -15,7 +15,7 @@ import org.jetbrains.compose.web.dom.Div
 @Composable
 fun ObjectsDialog(
     onClose: () -> Unit,
-    onOpenObjectEditor: () -> Unit,
+    onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
     objectManager: SceneObjectManager? = null
 ) {

@@ -177,6 +177,18 @@ class UserRepository {
     }
     
     /**
+     * Updates a user's language preference
+     */
+    fun updateLanguage(id: String, language: String): User? {
+        val user = getById(id) ?: return null
+        
+        // Update language
+        user.language = language
+        
+        return update(id, user)
+    }
+    
+    /**
      * Hashes a password using SHA-256
      */
     private fun hashPassword(password: String): String {

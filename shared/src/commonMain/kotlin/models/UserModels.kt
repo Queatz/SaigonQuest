@@ -26,3 +26,6 @@ data class AuthResponse(val user: User, val token: String)
 
 @Serializable
 data class WornItemsRequest(val wornItems: List<String>)
+
+@Serializable
+data class LanguageUpdateRequest(val language: String)

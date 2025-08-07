@@ -7,6 +7,7 @@ import models.WebSocketAction
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
+import utils.json
 
 /**
  * Runner for teleport nodes
@@ -25,7 +26,7 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         // Parse the JSON data to extract the worldId
         val targetWorldUrl = try {
             // Try to parse as PropertyBasedNodeData
-            val nodeData = context.json.decodeFromString<PropertyBasedNodeData>(jsonData)
+            val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
             // Find the property with key TARGET_WORLD_ID
             nodeData.properties.find { it.key == PropertyKey.TARGET_WORLD_ID }?.value
         } catch (e: Exception) {
@@ -51,14 +52,14 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         
         val teleportMessage = WebSocketMessage(
             action = WebSocketAction.TELEPORT_PLAYER,
-            data = context.json.encodeToString(teleportData)
+            data = json.encodeToString(teleportData)
         )
         
         WebSocketDebug.logMessage("TELEPORT_MESSAGE_CREATED", "Created teleport message with action: ${teleportMessage.action}", context.session)
         
         try {
             // Send the teleport message to the client
-            val messageJson = context.json.encodeToString(teleportMessage)
+            val messageJson = json.encodeToString(teleportMessage)
             WebSocketDebug.logMessage("TELEPORT_SENDING", "Sending teleport message: $messageJson", context.session)
             context.connection.session.send(messageJson)
             WebSocketDebug.logMessage("TELEPORT_SENT", "Successfully sent teleport message to client", context.session)

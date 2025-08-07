@@ -394,6 +394,9 @@ class PlayerController(private val scene: Scene) {
         playerTargetPosition = Vector3(position.x, position.y + 0.5f, position.z)
         isMoving = true
         
+        // Update player activity to Moving
+        setPlayerActivity(PlayerActivity.Moving)
+        
         // Create move circle at target position
         createMoveCircle(position)
     }
@@ -406,6 +409,11 @@ class PlayerController(private val scene: Scene) {
         isMoving = false
         lastSignificantPosition = null
         timeWithMinimalMovement = 0.0
+        
+        // Reset player activity to standing (null) if it was Moving
+        if (playerActivity == PlayerActivity.Moving) {
+            setPlayerActivity(null)
+        }
     }
     
     /**
@@ -615,6 +623,16 @@ class PlayerController(private val scene: Scene) {
             if (timeSinceLastMovement >= autoSitTimeout && playerActivity != PlayerActivity.Sit) {
                 console.log("PlayerController: Auto-sitting after ${autoSitTimeout} seconds of inactivity")
                 setPlayerActivity(PlayerActivity.Sit)
+            }
+            
+            // If player was in Moving activity, reset to standing
+            if (playerActivity == PlayerActivity.Moving) {
+                setPlayerActivity(null)
+            }
+        } else {
+            // Player is moving, set activity to Moving if not already
+            if (playerActivity != PlayerActivity.Moving) {
+                setPlayerActivity(PlayerActivity.Moving)
             }
         }
 

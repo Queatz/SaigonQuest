@@ -13,6 +13,7 @@ import models.DialogueData
 import models.Object
 import models.PlayerInteractData
 import models.PlayerPositionData
+import models.PlayerTypingData
 import models.Position
 import models.TriggerEventData
 import models.UpdatePlayerData
@@ -877,7 +878,7 @@ object WebSocketApi {
                 userId = user.key,
                 name = name,
                 isPlayer = isPlayer,
-                activity = activity?.name,
+                activity = activity,
                 status = status
             )
 
@@ -933,6 +934,65 @@ object WebSocketApi {
         } catch (e: Exception) {
             console.error("Error updating player status", e)
             _lastError = "Error updating player status: ${e.message}"
+            return false
+        }
+    }
+    
+    /**
+     * Sends a typing status update
+     *
+     * This sends a typing status update to all users in the same world.
+     * The server will broadcast this to all clients including the sender.
+     *
+     * @param worldId The ID of the world
+     * @param isTyping Whether the player is typing or not
+     * @return True if the message was sent successfully, false otherwise
+     */
+    suspend fun sendTypingStatus(worldId: String, isTyping: Boolean): Boolean {
+        console.log("[TYPING] sendTypingStatus called with worldId=$worldId, isTyping=$isTyping")
+        
+        // Validate input parameters
+        if (worldId.isEmpty()) {
+            _lastError = "Cannot send typing status: worldId is empty"
+            console.error("[TYPING] $_lastError")
+            return false
+        }
+        
+        // Check connection status
+        if (!checkConnection()) {
+            _lastError = "Cannot send typing status: WebSocket not connected"
+            console.warn("[TYPING] $_lastError")
+            return false
+        }
+        
+        try {
+            // Get current user
+            val user = UserApi.getCurrentUser()
+            console.log("[TYPING] Current user: userId=${user.key}, username=${user.username}")
+            
+            // Create typing status data
+            val typingData = PlayerTypingData(
+                userId = user.key,
+                isTyping = isTyping
+            )
+            console.log("[TYPING] Created typing status data: userId=${typingData.userId}, isTyping=${typingData.isTyping}")
+            
+            // Serialize the data
+            val serializedData = ApiClient.json.encodeToString(PlayerTypingData.serializer(), typingData)
+            console.log("[TYPING] Serialized typing data: $serializedData")
+            
+            // Create and send the message
+            val message = WebSocketMessage.fromEnum(WebSocketAction.PLAYER_TYPING, serializedData)
+            val messageString = ApiClient.json.encodeToString(WebSocketMessage.serializer(), message)
+            console.log("[TYPING] Final WebSocket message to send: $messageString")
+            
+            socket?.send(messageString)
+            console.log("[TYPING] Typing status sent successfully: userId=${user.key}, isTyping=$isTyping")
+            return true
+        } catch (e: Exception) {
+            console.error("[TYPING] Error sending typing status", e)
+            console.error("[TYPING] Exception details: ${e.message}")
+            _lastError = "Error sending typing status: ${e.message}"
             return false
         }
     }

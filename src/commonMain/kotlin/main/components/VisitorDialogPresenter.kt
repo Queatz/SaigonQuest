@@ -1,11 +1,6 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -32,9 +27,6 @@ fun VisitorDialogPresenter(
     // Only show the dialog if it's visible
     if (!isVisible) return
     
-    // Coroutine scope for async operations
-    val scope = rememberCoroutineScope()
-    
     // Show the VisitorDialog
     VisitorDialog(
         onClose = onClose,
@@ -44,7 +36,6 @@ fun VisitorDialogPresenter(
                 password = password,
                 yearOfBirth = yearOfBirth,
                 sex = sex,
-                scope = scope,
                 onSuccess = { user ->
                     // Update player name in the scene
                     updatePlayerName(user.username)
@@ -63,7 +54,6 @@ fun VisitorDialogPresenter(
             handleLogin(
                 username = username,
                 password = password,
-                scope = scope,
                 onSuccess = { user ->
                     // Update player name in the scene
                     updatePlayerName(user.username)
@@ -84,14 +74,13 @@ private fun handleRegistration(
     password: String,
     yearOfBirth: Int?,
     sex: String?,
-    scope: CoroutineScope,
     onSuccess: (User) -> Unit
 ) {
-    // Create a coroutine scope if one is not provided
-    val coroutineScope = scope ?: CoroutineScope(Dispatchers.Main)
+    // Create a new coroutine scope that won't be cancelled when the composable is recomposed
+    val registrationScope = CoroutineScope(Dispatchers.Default)
     
-    // Handle registration using coroutines
-    coroutineScope.launch {
+    // Handle registration using the independent scope
+    registrationScope.launch {
         try {
             // Check if we have a token before proceeding
             val token = UserApi.getToken()
@@ -173,14 +162,13 @@ private fun handleRegistration(
 private fun handleLogin(
     username: String,
     password: String,
-    scope: CoroutineScope,
     onSuccess: (User) -> Unit
 ) {
-    // Create a coroutine scope if one is not provided
-    val coroutineScope = scope ?: CoroutineScope(Dispatchers.Main)
+    // Create a new coroutine scope that won't be cancelled when the composable is recomposed
+    val loginScope = CoroutineScope(Dispatchers.Default)
     
-    // Handle login
-    coroutineScope.launch {
+    // Handle login using the independent scope
+    loginScope.launch {
         try {
             val user = UserApi.login(username, password)
             console.log("User logged in: ${user.username}")
@@ -189,7 +177,7 @@ private fun handleLogin(
             try {
                 val updateSuccess = WebSocketApi.updatePlayer(
                     name = user.username,
-                    isPlayer = true
+                    isPlayer = user.isPlayer
                 )
                 if (updateSuccess) {
                     console.log("Successfully updated player state after login")

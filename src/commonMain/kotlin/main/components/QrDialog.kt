@@ -8,6 +8,8 @@ import lib.Qr
 import lib.Vector3
 import main.theme.Styles
 import main.components.generatePrintImage
+import main.components.Translated
+import main.components.translated
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -51,8 +53,8 @@ fun QrDialog(
     onClose: () -> Unit, 
     onPrint: (String) -> Unit,
     playerPosition: Vector3? = null,
-    worldTitle: String = "Saigon.Quest",
-    worldSubtitle: String = "Virtual World",
+    worldTitle: String = translated("Saigon.Quest"),
+    worldSubtitle: String = translated("Virtual World"),
     worldDescription: String = ""
 ) {
     // Get the current URL and append player position if available
@@ -89,7 +91,7 @@ fun QrDialog(
     // Use the BaseDialog component with print button in header
     BaseDialog(
         onClose = onClose,
-        title = "Share this world",
+        title = translated("Share this world"),
         showCloseButton = true, // Show the standard close button
         headerActions = {
             // Print button in header
@@ -115,7 +117,7 @@ fun QrDialog(
                     }
                 }
             ) {
-                Text("🖨️ Print")
+                Translated("🖨️ Print")
             }
         },
         content = {
@@ -185,7 +187,7 @@ fun QrDialog(
                 onClick = onClose,
                 isPrimary = false
             ) {
-                Text("Close")
+                Translated("Close")
             }
         }
     )

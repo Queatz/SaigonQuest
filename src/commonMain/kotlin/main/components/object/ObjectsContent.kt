@@ -28,7 +28,7 @@ import org.w3c.dom.HTMLElement
  */
 @Composable
 fun ObjectsContent(
-    onOpenObjectEditor: () -> Unit,
+    onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
     objectManager: SceneObjectManager? = null,
     content: @Composable (@Composable () -> Unit) -> Unit
@@ -182,7 +182,7 @@ fun ObjectsContent(
             objects = worldObjects,
             isLoading = isLoading,
             errorMessage = errorMessage,
-            onCreateObject = onOpenObjectEditor,
+            onCreateObject = { onOpenObjectEditor(true) },
             onRemove = { objectId -> removeObject(objectId) },
             onLocate = { objectId -> locateObject(objectId) },
             onEdit = { objectId -> editObject(objectId) }

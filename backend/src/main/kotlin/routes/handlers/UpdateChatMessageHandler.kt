@@ -8,6 +8,7 @@ import models.WebSocketAction
 import repository.ChatRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,7 +23,6 @@ class UpdateChatMessageHandler(private val chatRepository: ChatRepository) : Web
         connection: WebSocketConnection,
         worldId: String,
         activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
-        json: Json,
         session: DefaultWebSocketServerSession
     ) {
         WebSocketDebug.logMessage("PROCESSING", "UPDATE_CHAT_MESSAGE action", session)

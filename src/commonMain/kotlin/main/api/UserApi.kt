@@ -13,18 +13,22 @@ package main.api
  * - Provides error handling with detailed error messages
  */
 
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.call.body
+import io.ktor.client.request.accept
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import models.AuthResponse
+import models.LanguageUpdateRequest
 import models.LoginRequest
 import models.UpgradeRequest
 import models.User
@@ -318,6 +322,30 @@ object UserApi {
         }
     }
     
+    /**
+     * Updates user language preference
+     */
+    suspend fun updateUserLanguage(language: String): User {
+        val request = LanguageUpdateRequest(language)
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/language") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+            
+            if (response.status.isSuccess()) {
+                return response.body<User>()
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            console.error("Error updating user language: ${e.message}")
+            throw e
+        }
+    }
+
     /**
      * Fetches a user by their ID
      * 

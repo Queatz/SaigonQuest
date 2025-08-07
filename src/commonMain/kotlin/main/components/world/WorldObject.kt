@@ -66,7 +66,6 @@ sealed class WorldObject {
 class Character(
     var spriteSheet: SpriteSheet,
     var direction: CharacterDirection,
-    var isMoving: Boolean = false,
     var activity: PlayerActivity? = null,
     var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf()
 ) : WorldObject() {
@@ -197,17 +196,14 @@ class Character(
         }
         
         // Update animation frame based on direction and movement state
-        if (isMoving) {
+        if (activity == PlayerActivity.Moving) {
             animationTime += deltaTime
+        } else {
+            animationTime = 0f
         }
         
         // Always update the sprite animation to reflect the current display direction
         updateSpriteAnimation()
-        
-        // Log activity state changes for debugging
-        if (activity == PlayerActivity.Sit) {
-            console.log("[DEBUG_LOG] Character ${id} is sitting")
-        }
     }
     
     /**
@@ -315,7 +311,7 @@ class Character(
      */
     private fun updateSpriteAnimation() {
         // Calculate current frame based on animationTime
-        val frameIndex = (animationTime * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount(displayDirection)
+        val frameIndex = (animationTime / 1000f * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount()
             
         // Update UV coordinates on the main character mesh
         characterMesh?.let { mesh ->
@@ -343,7 +339,12 @@ class Character(
         material?.albedoTexture?.let { texture ->
             // Get the UV coordinates for the current display direction and frame
             // Pass the activity parameter to use the correct sprite row for sitting
-            val uvCoords = spriteSheet.getFrameUV(displayDirection, frameIndex, activity)
+            val uvCoords = spriteSheet.getFrameUV(
+                direction = displayDirection,
+                isMoving = activity == PlayerActivity.Moving,
+                frameIndex = frameIndex,
+                activity = activity
+            )
             
             // BabylonJS handles the UV mapping internally when we set these properties
             // Set the UV coordinates using the properly exposed properties

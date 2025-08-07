@@ -137,8 +137,11 @@ class NodeLogicRunner(
             val typeParts = node.type.split("_", limit = 2)
             val nodeType = typeParts.firstOrNull() ?: ""
             val nodeId = typeParts.getOrNull(1) ?: ""
-            
-            if (nodeType == "dialogue" && nodeId == "dialogue") {
+
+            // todo refactor
+            if (nodeType == "dialogue" && nodeId == "dialogue" ||
+                (nodeType == "input" && nodeId == "user_language")
+                ) {
                 // Get the button index from the event data (default to 0 if not present)
                 val buttonIndex = (eventData["buttonIndex"] as? Int) ?: 0
                 WebSocketDebug.logMessage("DIALOGUE_BUTTON_INDEX", "Using button index: $buttonIndex for node: ${node.id}", context.session)
@@ -216,6 +219,10 @@ class NodeLogicRunner(
             nodeType == "dialogue" && nodeId == "dialogue" -> {
                 WebSocketDebug.logMessage("DIALOGUE_RUNNER_SELECTED", "Selected DialogueNodeRunner for node: ${node.id}", context.session)
                 DialogueNodeRunner(context)
+            }
+            nodeType == "input" && nodeId == "user_language" -> {
+                WebSocketDebug.logMessage("LANGUAGE_RUNNER_SELECTED", "Selected LanguageNodeRunner for node: ${node.id}", context.session)
+                LanguageNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

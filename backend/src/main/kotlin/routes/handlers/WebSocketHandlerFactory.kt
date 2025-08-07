@@ -37,6 +37,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.TRIGGER_OBJECT_EVENT -> TriggerObjectEventHandler()
             WebSocketAction.UPDATE_PLAYER -> UpdatePlayerHandler()
             WebSocketAction.DIALOGUE_CONFIRM -> DialogueConfirmHandler()
+            WebSocketAction.PLAYER_TYPING -> PlayerTypingHandler()
             WebSocketAction.TELEPORT_PLAYER -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.SHOW_DIALOGUE -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received
@@ -57,7 +58,6 @@ class NullHandler : WebSocketHandler {
         connection: routes.WebSocketConnection,
         worldId: String,
         activeConnections: java.util.concurrent.ConcurrentHashMap<String, MutableList<routes.WebSocketConnection>>,
-        json: kotlinx.serialization.json.Json,
         session: io.ktor.server.websocket.DefaultWebSocketServerSession
     ) {
         // Do nothing
