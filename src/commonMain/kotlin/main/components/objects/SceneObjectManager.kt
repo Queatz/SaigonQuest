@@ -1,7 +1,6 @@
 package main.components.objects
 
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,6 +19,8 @@ import main.api.WebSocketApi
 import main.api.addObject
 import main.api.updateObject
 import main.components.camera.CameraController
+import main.components.shadow.ShadowManager
+import main.components.world.WorldObjectManager
 import models.Object
 import models.Position
 import models.WebSocketAction
@@ -33,7 +34,7 @@ import models.WebSocketAction
 class SceneObjectManager(
     private val scene: Scene,
     private val cameraController: CameraController,
-    private var worldObjectManager: main.components.world.WorldObjectManager
+    private var worldObjectManager: WorldObjectManager,
 ) {
     
     // Currently selected object
@@ -58,6 +59,8 @@ class SceneObjectManager(
     
     // Add a highlight layer for the outline effect
     private val highlightLayer = HighlightLayer("objectHighlightLayer", scene)
+
+    private var shadowManager: ShadowManager? = null
     
     // Asset manager for 3D models
     private val assetManager = ObjectAssetManager(scene)
@@ -82,6 +85,10 @@ class SceneObjectManager(
         }
 
         console.log("[DEBUG_HIGHLIGHT] HighlightLayer initialized with intensity: ${highlightLayer.intensity}, blurHorizontalSize: ${highlightLayer.blurHorizontalSize}, blurVerticalSize: ${highlightLayer.blurVerticalSize}")
+    }
+
+    fun setShadowManager(shadowManager: ShadowManager) {
+        this.shadowManager = shadowManager
     }
     
     /**
@@ -437,7 +444,14 @@ class SceneObjectManager(
                         // Set the mesh name to the object key for easier identification
                         node.name = obj.key
 
-                        node.getChildMeshes().forEach {
+                        node.getChildMeshes().also { meshes ->
+
+                            // Add all meshes as shadow casters
+                            shadowManager?.addShadowCasters(meshes)
+
+                            // Configure all meshes to receive shadows
+                            shadowManager?.configureShadowReceivers(meshes)
+                        }.forEach {
                             it.isPickable = true
                         }
                         

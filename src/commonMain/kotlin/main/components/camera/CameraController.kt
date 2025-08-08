@@ -363,15 +363,6 @@ class CameraController(private val scene: Scene) {
             // Step 2: Configure features if they're enabled
             // This ensures the components are created before we try to access their properties
             if (isPrettyEnabled) {
-                // Add a small delay to ensure the pipeline components are fully initialized
-                // This is a workaround for the "this.bloom is null" error
-                try {
-                    // Force a render cycle to ensure components are initialized
-                    scene.render()
-                } catch (e: Exception) {
-                    println("[ERROR] Failed to render scene: ${e.message}")
-                }
-                
                 pipeline.apply {
                     try {
                         // Check if bloom is available before configuring

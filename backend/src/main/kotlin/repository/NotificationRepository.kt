@@ -7,7 +7,19 @@ import com.arangodb.model.DocumentReadOptions
 import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
+import debug.WebSocketDebug
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import models.Notification
+import models.NotificationData
+import models.WebSocketAction
+import routes.WebSocketConnection
+import routes.WebSocketMessage
+import routes.activeConnections
+import routes.handlers.WebSocketUtils
+import utils.json
 
 /**
  * Repository for notification operations
@@ -30,7 +42,56 @@ class NotificationRepository {
             DocumentCreateOptions().returnNew(true)
         )
         
-        return result.new
+        val createdNotification = result.new
+        
+        // Send WebSocket notification to the user using a coroutine
+        GlobalScope.launch {
+            try {
+                // Create NotificationData from the created notification
+                val notificationData = NotificationData(
+                    id = createdNotification.key,
+                    userId = createdNotification.userId,
+                    title = createdNotification.title,
+                    description = createdNotification.description,
+                    isRead = createdNotification.isRead,
+                    type = createdNotification.type,
+                    worldId = createdNotification.worldId,
+                    objectId = createdNotification.objectId,
+                    otherUserId = createdNotification.otherUserId,
+                    timestamp = createdNotification.timestamp
+                )
+                
+                // Create WebSocketMessage with NOTIFICATION action and NotificationData
+                val webSocketMessage = WebSocketMessage(
+                    action = WebSocketAction.NOTIFICATION,
+                    data = json.encodeToString(notificationData)
+                )
+                
+                // Convert WebSocketMessage to JSON string
+                val messageString = json.encodeToString(webSocketMessage)
+                
+                // Send WebSocket message to the user
+                WebSocketUtils.broadcastToUser(
+                    userId = createdNotification.userId,
+                    message = messageString,
+                    activeConnections = activeConnections
+                )
+                
+                WebSocketDebug.logBroadcast(
+                    "NOTIFICATION_SENT", 
+                    "Notification sent to user ${createdNotification.userId}: ${createdNotification.title}",
+                    "notification"
+                )
+            } catch (e: Exception) {
+                WebSocketDebug.logBroadcast(
+                    "NOTIFICATION_ERROR", 
+                    "Error sending notification to user ${createdNotification.userId}: ${e.message}",
+                    "notification"
+                )
+            }
+        }
+        
+        return createdNotification
     }
     
     /**

@@ -1,14 +1,13 @@
 package main.components.world
 
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import lib.AbstractMesh
 import lib.Node
 import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
 import main.api.WebSocketApi
+import main.components.shadow.ShadowManager
 import models.User
 import models.WebSocketAction
 
@@ -17,6 +16,9 @@ import models.WebSocketAction
  */
 class WorldObjectManager(private val scene: Scene) {
     private val objects = mutableMapOf<String, WorldObject>()
+    
+    // Shadow manager reference for adding shadow support to objects
+    private var shadowManager: ShadowManager? = null
 
     /**
      * Adds an object to the scene
@@ -36,8 +38,30 @@ class WorldObjectManager(private val scene: Scene) {
         // Store the object
         objects[obj.id] = obj
         
-        // Return a handle to the object
-        return createObjectHandle(obj, node)
+        // Create a handle to the object
+        val handle = createObjectHandle(obj, node)
+        
+        // Add shadow support if shadow manager is available
+        shadowManager?.let { manager ->
+            // Get all meshes for this object
+            val meshes = handle.getMeshes()
+            
+            // Skip shadow casting for text billboards (they shouldn't cast shadows)
+            if (obj !is TextBillboard && meshes.isNotEmpty()) {
+                // Add all meshes as shadow casters
+                manager.addShadowCasters(meshes)
+                
+                // Configure all meshes to receive shadows
+                manager.configureShadowReceivers(meshes)
+                
+                println("[SHADOW_DEBUG] Added shadow support for object ${obj.id} with ${meshes.size} meshes")
+            }
+        } ?: run {
+            println("[SHADOW_DEBUG] Shadow Manager is nullw")
+        }
+        
+        // Return the handle
+        return handle
     }
     
     /**
@@ -241,6 +265,16 @@ class WorldObjectManager(private val scene: Scene) {
                 console.error("Error parsing REMOVE_OBJECT message", e)
             }
         }
+    }
+    
+    /**
+     * Sets the shadow manager for this world object manager
+     * 
+     * @param manager The shadow manager to use
+     */
+    fun setShadowManager(manager: ShadowManager?) {
+        shadowManager = manager
+        println("[SHADOW_DEBUG] Shadow manager set on WorldObjectManager")
     }
     
     /**

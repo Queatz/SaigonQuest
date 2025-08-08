@@ -53,15 +53,20 @@ data class WebSocketMessage(
 )
 
 /**
+ * Global map of active WebSocket connections by worldId
+ * 
+ * This map is used to track all active WebSocket connections and is accessible
+ * from other parts of the application that need to send messages to clients.
+ */
+val activeConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
+
+/**
  * Configure routes for WebSocket operations
  */
 fun Routing.configureWebSocketRoutes() {
     val chatRepository = ChatRepository()
     val userRepository = UserRepository()
     val objectRepository = ObjectRepository()
-    
-    // Store active connections by worldId -> list of connections
-    val activeConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
     
     // Create handler factory
     val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository, objectRepository)

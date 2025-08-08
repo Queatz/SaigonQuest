@@ -141,15 +141,15 @@ allowing the project to remain maintainable as it grows.
 
 ## Kotlin/JS Code Style Guidelines
 
-- **Kotlin inline objects DO NOT work in JavaScript**: Create an `external interface` to handle POJOs correctly.
+- **Kotlin inline objects like `object { val field: String = "" }` DO NOT work in JavaScript**: Create an `external interface` to handle POJOs correctly.
 - **DO NOT** put globals on the `window` object, just use top-level Kotlin vals
-- **No more than 1 @Composable function per file**
+- **No more than one @Composable function per file**
 - **750 lines max in one file**: Split larger files into smaller ones 
 - **Avoid JS Promises**: Use Kotlin coroutines instead 
 - **Always use Ktor for networking**: This includes SSE, WebSockets, HTTP, etc.
 - **Avoid using `js()`, `dynamic` and `asDynamic()` at all costs:** Implement the interface in the correct library file instead.
 - **Avoid using html element IDs**: Do not use querySelector and getElementById. Instead, reference elements by their ref obtained with `ref { element -> }`
-- **Avoid using inline styles:** Style definitions are in Styles.kt, Theme.kt, and new stylesheet files can be created as needed by adding an entry for them in Main.kt.
+- **Avoid using inline styles like `attrs = { style { ... } }`:** Style definitions are in Styles.kt, Theme.kt, and new stylesheet files can be created as needed by adding an entry for them in Main.kt.
 - **Use `by remember`** when possible to avoid the need to reference and set using `.value`
 - **Use dark, mobile, desktop helpers**: change the colors and other styles based on the situation. 
 - Use trailing commas
@@ -160,6 +160,7 @@ allowing the project to remain maintainable as it grows.
 
 - **Use @Serializable data class**: For all data models
 - **Use enum classes instead of raw strings**: For all enumerated values
+- **Enums use** PascalCase (UpperCamelCase)
 - **Shared data classes**: All shared models go in the shared module
 - **Clean up as you go**: Always go the extra mile and look for chances to clean up or remove dead code and imports
 - **No duplicate code**: Always create reusabe code instead of duplicatating code

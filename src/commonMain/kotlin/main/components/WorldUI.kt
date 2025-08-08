@@ -15,6 +15,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import main.api.ApiClient
 import main.api.AssetApi
 import main.api.ChatApi
 import main.api.NotificationApi
@@ -22,6 +23,8 @@ import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
+import models.NotificationData
+import models.WebSocketAction
 import main.components.inventory.InventoryTray
 import main.theme.Styles
 import main.utils.PathUtils
@@ -60,6 +63,9 @@ fun WorldUI() {
     
     // State for unread chat count
     var unreadChatCount by remember { mutableStateOf(0) }
+    
+    // State for current notification popup
+    var currentNotification by remember { mutableStateOf<NotificationData?>(null) }
     
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
@@ -153,6 +159,11 @@ fun WorldUI() {
         } else {
             // Otherwise, open the requested panel
             updatePanelState(panelState)
+            
+            // Reset unread notification count when opening notifications panel
+            if (panelState == SidePanelState.Notifications) {
+                unreadNotificationCount = 0
+            }
         }
     }
     
@@ -253,6 +264,32 @@ fun WorldUI() {
         
         onDispose {
             document.removeEventListener("fullscreenchange", fullscreenChangeListener)
+        }
+    }
+    
+    // Set up WebSocket listener for notifications
+    DisposableEffect(Unit) {
+        // Add listener for NOTIFICATION events
+        WebSocketApi.addListener(WebSocketAction.NOTIFICATION) { message ->
+            try {
+                // Parse the notification data from the message
+                val notificationData = ApiClient.json.decodeFromString<NotificationData>(message.data)
+                
+                // Update the current notification
+                currentNotification = notificationData
+                
+                // Increment the unread notification count
+                unreadNotificationCount++
+                
+                console.log("Received notification: ${notificationData.title}")
+            } catch (e: Exception) {
+                console.error("Error processing notification", e)
+            }
+        }
+        
+        // Clean up listener on dispose
+        onDispose {
+            WebSocketApi.removeAllListeners(WebSocketAction.NOTIFICATION)
         }
     }
     
@@ -454,6 +491,26 @@ fun WorldUI() {
                 // Open the Logic Editor dialog with the object
                 currentEditingObject = obj
                 updatePanelState(SidePanelState.LogicEditor)
+            }
+        )
+        
+        // Notification popup
+        NotificationLayout(
+            notification = currentNotification,
+            currentPanel = currentPanel,
+            isMobile = isMobile.value,
+            onDismiss = { 
+                currentNotification = null 
+            },
+            onClick = {
+                // Open the notifications panel
+                togglePanel(SidePanelState.Notifications)
+                
+                // Reset unread notification count when opening notifications
+                unreadNotificationCount = 0
+                
+                // Dismiss the notification
+                currentNotification = null
             }
         )
         

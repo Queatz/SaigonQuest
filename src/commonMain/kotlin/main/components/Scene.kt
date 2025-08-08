@@ -502,7 +502,22 @@ fun SceneComponent(url: String) {
 
         val worldLoader = WorldLoader(scene)
         val worldObjectManager = WorldObjectManager(scene)
-        val objectManager = SceneObjectManager(scene, cameraController, worldObjectManager)
+        val objectManager = SceneObjectManager(
+            scene = scene,
+            cameraController = cameraController,
+            worldObjectManager = worldObjectManager
+        )
+        
+        // Set up shadow manager in the world object manager
+        // This needs to be done after world loading since the shadow manager is created during world loading
+        WorldLoader.onWorldLoaded {
+            // Get the shadow manager from the world loader and set it on the world object manager
+            worldLoader.getShadowManager()?.let { shadowManager ->
+                worldObjectManager.setShadowManager(shadowManager)
+                objectManager.setShadowManager(shadowManager)
+                println("[DEBUG] Set shadow manager on world object manager")
+            }
+        }
         
         // Register object manager with SceneManager for global access
         SceneManager.setObjectManager(objectManager)

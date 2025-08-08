@@ -5,6 +5,7 @@ import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
@@ -14,21 +15,33 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.marginLeft
+import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.maxWidth
+import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.top
+import org.jetbrains.compose.web.css.transform
 import org.jetbrains.compose.web.css.vh
+import org.jetbrains.compose.web.css.width
 
 /**
  * Styles for notification components
  */
 object NotificationStyles : StyleSheet() {
+    // Notification panel styles
     val notificationsContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -152,5 +165,81 @@ object NotificationStyles : StyleSheet() {
         borderRadius(4.px)
         cursor("pointer")
         property("border", "none")
+    }
+    
+    // NotificationLayout styles
+    val notificationLayoutContainer by style {
+        position(Position.Fixed)
+        top(20.px)
+        width(100.percent)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        property("z-index", "1000")
+    }
+    
+    val notificationCard by style {
+        backgroundColor(Color("#ffffff"))
+        borderRadius(8.px)
+        property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.1)")
+        padding(16.px)
+        maxWidth(400.px)
+        width(100.percent)
+        margin(0.px, 16.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems("center")
+        cursor("pointer")
+        property("pointer-events", "auto")
+        property("animation", "fadeIn 0.3s ease-in-out")
+        
+        dark(self) {
+            backgroundColor(Color("#333333"))
+            property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.3)")
+        }
+    }
+    
+    val notificationContentContainer by style {
+        display(DisplayStyle.Flex)
+        property("flex-direction", "column")
+        property("flex-grow", "1")
+        marginRight(16.px)
+    }
+    
+    val notificationCardTitle by style {
+        fontWeight("bold")
+        fontSize(16.px)
+        property("margin-bottom", "4px")
+        color(Color("#333333"))
+        
+        dark(self) {
+            color(Color("#ffffff"))
+        }
+    }
+    
+    val notificationCardDescription by style {
+        fontSize(14.px)
+        color(Color("#666666"))
+        
+        dark(self) {
+            color(Color("#cccccc"))
+        }
+    }
+    
+    val notificationCloseButton by style {
+        width(24.px)
+        height(24.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems("center")
+        borderRadius(50.percent)
+        backgroundColor(Color("#f0f0f0"))
+        cursor("pointer")
+        fontSize(14.px)
+        color(Color("#666666"))
+        
+        dark(self) {
+            backgroundColor(Color("#555555"))
+            color(Color("#cccccc"))
+        }
     }
 }

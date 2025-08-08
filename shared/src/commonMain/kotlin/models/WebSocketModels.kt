@@ -119,3 +119,22 @@ data class OpenUrlData(
     val userId: String,
     val url: String
 )
+
+/**
+ * Notification data model
+ * 
+ * This model is sent when a notification is created to inform the user.
+ */
+@Serializable
+data class NotificationData(
+    val id: String,
+    val userId: String,
+    val title: String,
+    val description: String,
+    val isRead: Boolean,
+    val type: NotificationType,
+    val worldId: String,
+    val objectId: String,
+    val otherUserId: String,
+    val timestamp: Long
+)
