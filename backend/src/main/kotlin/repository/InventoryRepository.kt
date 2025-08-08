@@ -177,7 +177,9 @@ class InventoryRepository {
     fun addItemToInventory(userId: String, inventoryItem: InventoryItem): Inventory {
         // Get or create the user's inventory
         val inventory = getByUserId(userId) ?: createInventoryForUser(userId)
-        
+
+        inventoryItem.inventoryId = inventory.key
+
         // Create the inventory item
         val createdItem = createInventoryItem(inventoryItem)
         
@@ -220,5 +222,45 @@ class InventoryRepository {
         updateInventoryItem(itemId, inventoryItem)
         
         return inventory
+    }
+    
+    /**
+     * Gets the total quantity of a specific item in a user's inventory
+     * 
+     * This method sums up quantities across all inventory items of the same type.
+     * 
+     * @param userId The ID of the user
+     * @param itemId The ID of the item to check
+     * @return The total quantity of the item in the user's inventory, or 0 if the user has none
+     */
+    fun getTotalItemQuantity(userId: String, itemId: String): Int {
+        // Get the user's inventory
+        val inventory = getByUserId(userId) ?: return 0
+        
+        // Get all inventory items for this inventory
+        val inventoryItems = getInventoryItemsByInventoryId(inventory.key)
+        
+        // Filter items that match the specified itemId and sum up their quantities
+        return inventoryItems
+            .filter { it.item == itemId }
+            .sumOf { it.quantity }
+    }
+    
+    /**
+     * Updates the item order in a user's inventory
+     * 
+     * @param userId The ID of the user
+     * @param itemOrder The new order of items
+     * @return The updated inventory
+     */
+    fun updateInventoryItemOrder(userId: String, itemOrder: List<String>): Inventory {
+        // Get or create the user's inventory
+        val inventory = getByUserId(userId) ?: createInventoryForUser(userId)
+        
+        // Update the inventory with the new item order
+        val updatedInventory = inventory.copy(itemOrder = itemOrder)
+        
+        // Save and return the updated inventory
+        return update(inventory.key, updatedInventory) ?: inventory
     }
 }

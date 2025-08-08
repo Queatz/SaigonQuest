@@ -7,6 +7,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.updatePlayer
+import models.Sex
 import models.User
 
 /**
@@ -73,7 +75,7 @@ private fun handleRegistration(
     username: String,
     password: String,
     yearOfBirth: Int?,
-    sex: String?,
+    sex: Sex?,
     onSuccess: (User) -> Unit
 ) {
     // Create a new coroutine scope that won't be cancelled when the composable is recomposed

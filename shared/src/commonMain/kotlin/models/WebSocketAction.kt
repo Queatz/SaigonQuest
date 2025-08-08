@@ -1,7 +1,5 @@
 package models
 
-import kotlinx.serialization.Serializable
-
 /**
  * Enum representing all possible WebSocket actions
  *
@@ -9,7 +7,6 @@ import kotlinx.serialization.Serializable
  * between the client and server. Using an enum instead of strings provides
  * type safety and better code completion.
  */
-@Serializable
 enum class WebSocketAction {
     ADD_OBJECT,
     REMOVE_OBJECT,

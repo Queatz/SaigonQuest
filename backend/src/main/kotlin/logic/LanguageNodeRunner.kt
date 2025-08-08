@@ -1,13 +1,8 @@
 package logic
 
 import debug.WebSocketDebug
-import kotlinx.serialization.encodeToString
-import models.WebSocketAction
-import models.nodeeditor.PropertyBasedNodeData
-import models.nodeeditor.PropertyKey
+import models.nodeeditor.NodeDataModel
 import repository.UserRepository
-import routes.WebSocketMessage
-import utils.json
 
 /**
  * Runner for language nodes
@@ -18,7 +13,7 @@ import utils.json
  * - 1 for Vietnamese
  */
 class LanguageNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
-    override suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean {
+    override suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
         val userRepository = UserRepository()
 
         WebSocketDebug.logMessage("LANGUAGE_NODE_EXECUTE", "Executing language node with data: ${node.data}", context.session)

@@ -2,13 +2,12 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import app.softwork.routingcompose.Router
-import kotlinx.coroutines.launch
-import main.api.ObjectApi
 import main.api.WebSocketApi
-import main.components.`object`.ObjectsDialog
-import main.components.`object`.ObjectsPanel
+import main.api.addObject
 import main.components.inventory.InventoryDialog
 import main.components.nodeeditor.LogicEditorDialog
+import main.components.objects.ObjectsDialog
+import main.components.objects.ObjectsPanel
 import main.utils.PathUtils
 import models.Object
 import models.World

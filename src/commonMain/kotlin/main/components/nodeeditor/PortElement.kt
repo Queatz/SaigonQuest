@@ -6,12 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.theme.NodeEditorStyles
+import main.utils.getBoundingClientRectSafe
+import models.nodeeditor.PortData
+import models.nodeeditor.PortType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.Element
-import main.utils.getBoundingClientRectSafe
-import main.utils.getAttributeSafe
+import org.w3c.dom.HTMLElement
 
 /**
  * A port element in a node.
@@ -30,14 +31,14 @@ fun PortElement(
     onPortClick: (String, PortData) -> Unit,
     onPortDragStart: (String, PortData, Float, Float) -> Unit = { _, _, _, _ -> },
     onPortDragMove: (Float, Float) -> Unit = { _, _ -> },
-    onPortDragEnd: (Float, Float) -> Unit = { _, _ -> }
+    onPortDragEnd: (Float, Float) -> Unit = { _, _ -> },
+    onPortElementCreated: ((HTMLElement) -> Unit)? = null,
+    onPortElementDisposed: ((HTMLElement) -> Unit)? = null,
 ) {
     val isInput = port.type == PortType.INPUT
     
     // State for tracking drag operation
     var isDragging by remember { mutableStateOf(false) }
-    var dragStartX by remember { mutableStateOf(0f) }
-    var dragStartY by remember { mutableStateOf(0f) }
     
     Div(
         attrs = {
@@ -57,6 +58,18 @@ fun PortElement(
                 attr("data-port-type", port.type.name.lowercase())
                 attr("data-port-node", nodeId)
                 
+                // Get a reference to the port element
+                ref { element ->
+                    println("[NODE_CONNECTIONS] Port element created: ${nodeId}:${port.id} (${port.type.name})")
+                    // Notify the parent component that the port element has been created
+                    onPortElementCreated?.invoke(element)
+                    
+                    onDispose {
+                        println("[NODE_CONNECTIONS] Port element disposed: ${nodeId}:${port.id} (${port.type.name})")
+                        onPortElementDisposed?.invoke(element)
+                    }
+                }
+                
                 // Add click handler for port
                 onClick { event ->
                     event.stopPropagation() // Prevent node selection
@@ -70,9 +83,7 @@ fun PortElement(
                     onMouseDown { event ->
                         if (event.button.toInt() == 0) { // Left mouse button
                             isDragging = true
-                            dragStartX = event.clientX.toFloat()
-                            dragStartY = event.clientY.toFloat()
-                            
+
                             // Get the port element's position
                             val rect = event.currentTarget?.getBoundingClientRectSafe()
                             val portX = (rect?.left ?: 0.0).toFloat() + (rect?.width ?: 0.0).toFloat() / 2
@@ -100,9 +111,6 @@ fun PortElement(
                             event.preventDefault()
                         }
                     }
-                    
-                    // We don't end dragging on mouse leave anymore
-                    // This allows the user to drag connections outside the port
                 }
             }
         )
@@ -116,20 +124,4 @@ fun PortElement(
             Text(port.name)
         }
     }
-}
-
-/**
- * Get the center position of a port element.
- * 
- * @param element The DOM element of the port
- * @return A pair of (x, y) coordinates representing the center of the port
- */
-fun getPortCenter(element: Element?): Pair<Float, Float> {
-    if (element == null) return Pair(0f, 0f)
-    
-    val rect = element.getBoundingClientRectSafe() ?: return Pair(0f, 0f)
-    val x = (rect.left + rect.width / 2).toFloat()
-    val y = (rect.top + rect.height / 2).toFloat()
-    
-    return Pair(x, y)
 }

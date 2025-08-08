@@ -131,5 +131,26 @@ fun Routing.configureInventoryRoutes() {
                 call.respond(inventoryItems)
             }
         }
+        
+        // Update item order in inventory - requires authentication
+        authenticate {
+            put("/item-order") {
+                // Parse the request body to get the itemOrder list
+                val requestBody = call.receive<Map<String, List<String>>>()
+                val itemOrder = requestBody["itemOrder"] ?: return@put call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing itemOrder in request body", code = HttpStatusCode.BadRequest.value)
+                )
+                
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
+                
+                // Update the item order in the user's inventory
+                val updatedInventory = inventoryRepository.updateInventoryItemOrder(userId, itemOrder)
+                
+                call.respond(updatedInventory)
+            }
+        }
     }
 }

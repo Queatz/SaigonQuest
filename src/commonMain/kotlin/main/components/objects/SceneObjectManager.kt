@@ -1,4 +1,4 @@
-package main.components.`object`
+package main.components.objects
 
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -9,17 +9,16 @@ import lib.AbstractMesh
 import lib.Color3
 import lib.CreateSphereOptions
 import lib.HighlightLayer
-import lib.Material
 import lib.MeshBuilder
-import lib.MeshMetadata
 import lib.Node
 import lib.PBRMaterial
 import lib.Scene
-import lib.StandardMaterial
 import lib.TransformNode
 import lib.Vector3
 import main.api.ObjectApi
 import main.api.WebSocketApi
+import main.api.addObject
+import main.api.updateObject
 import main.components.camera.CameraController
 import models.Object
 import models.Position

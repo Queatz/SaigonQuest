@@ -142,8 +142,8 @@ expect fun logMissingTranslation(key: String, language: String?)
 
 object Translations {
     private const val DEFAULT_LANGUAGE = "en"
-    
-    private val _translations by lazy {
+
+    private val _translations =
         translations.trim().split("\n\n").associate {
             val lines = it.split("\n")
             lines[0] to lines.drop(1).associate { line ->
@@ -151,7 +151,6 @@ object Translations {
                 parts[0].trim() to parts[1].trim()
             }
         }
-    }
 
     val language = MutableStateFlow(DEFAULT_LANGUAGE)
 

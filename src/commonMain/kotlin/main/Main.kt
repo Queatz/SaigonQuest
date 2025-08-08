@@ -8,6 +8,7 @@ import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
 import main.theme.EditorStyles
+import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
 import main.theme.NodeStyles
 import main.theme.NotificationStyles
@@ -23,6 +24,7 @@ fun main() {
         Style(NodeStyles)
         Style(NotificationStyles)
         Style(EditorStyles)
+        Style(InventoryStyles)
 
         BrowserRouter(
             initPath = "/"

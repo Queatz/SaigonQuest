@@ -10,6 +10,7 @@ import com.arangodb.model.DocumentReadOptions
 import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
+import models.Sex
 import models.User
 import utils.json
 import java.security.MessageDigest
@@ -115,7 +116,7 @@ class UserRepository {
         username: String,
         password: String,
         yearOfBirth: Int? = null,
-        sex: String? = null,
+        sex: Sex? = null,
         language: String? = null
     ): User? {
         val user = getById(id) ?: return null

@@ -30,9 +30,14 @@ kotlin {
                 devServer = devServer.copy(port = 4080, open = true)
             }
             commonWebpackConfig {
-                outputFileName = "main.js"
+                outputFileName = "saigon-quest.js"
                 cssSupport {
                     enabled = true
+                }
+            }
+            testTask {
+                useKarma {
+                    useFirefox()
                 }
             }
         }
@@ -66,6 +71,8 @@ kotlin {
                 
                 // Add shared module dependency
                 implementation(project(":shared"))
+
+                implementation(kotlin("test"))
             }
         }
 

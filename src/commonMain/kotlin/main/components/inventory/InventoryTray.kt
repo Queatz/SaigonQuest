@@ -129,6 +129,9 @@ fun InventoryTray(
         repeat(4) { index ->
             val item = if (index < inventoryItems.size) inventoryItems[index] else null
         
+            // Get the inventory item key for this item
+            val inventoryItemKey = InventoryState.inventory?.itemOrder?.getOrNull(index)
+            
             InventoryBox(
                 onClick = { 
                     // Use the item if we have one
@@ -143,7 +146,8 @@ fun InventoryTray(
                     }
                 },
                 item = item,
-                isLoading = InventoryState.isLoading && item == null && index < 4
+                isLoading = InventoryState.isLoading && item == null && index < 4,
+                quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1
             )
         }
         
@@ -151,7 +155,8 @@ fun InventoryTray(
         InventoryBox(
             onClick = { onOpenInventory() },
             content = "➕",
-            isLoading = false // Never show loading for the dialog opener
+            isLoading = false, // Never show loading for the dialog opener
+            quantity = 0 // No quantity for the dialog opener
         )
     }
 }

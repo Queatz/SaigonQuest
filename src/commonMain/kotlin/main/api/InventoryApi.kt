@@ -198,7 +198,7 @@ object InventoryApi {
             }
             
             console.log("[DEBUG_LOG] Updating inventory item order: $validItemOrder")
-            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/inventory/itemOrder") {
+            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/inventory/item-order") {
                 contentType(ContentType.Application.Json)
                 ApiClient.addAuthHeader(this)
                 setBody(mapOf("itemOrder" to validItemOrder))

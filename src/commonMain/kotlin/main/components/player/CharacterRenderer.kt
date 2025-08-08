@@ -43,7 +43,7 @@ import kotlin.math.PI
  */
 @Composable
 fun CharacterRenderer(
-    characterSpriteSheet: SpriteSheet = SpriteSheet.createPlayerSpriteSheet(),
+    characterSpriteSheet: SpriteSheet = SpriteSheet.createPlayerSpriteSheet(InventoryState.currentUser?.sex),
     additionalSpriteSheets: List<SpriteSheet> = emptyList(),
     bodyType: String = "Normal",
     skinTone: Float = 0.5f,

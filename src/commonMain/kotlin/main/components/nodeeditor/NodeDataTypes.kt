@@ -2,8 +2,10 @@ package main.components.nodeeditor
 
 import kotlinx.serialization.Serializable
 import models.LogicNode
-import models.toTypeString
-import utils.json
+import models.nodeeditor.PropertyKey
+import models.nodeeditor.PropertyType
+import models.nodeeditor.PropertyValue
+import models.nodeeditor.getInputPropertyDefinitions
 
 /**
  * Base interface for all node data types

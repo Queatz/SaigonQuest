@@ -1,4 +1,4 @@
-package main.components.`object`
+package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.theme.Theme

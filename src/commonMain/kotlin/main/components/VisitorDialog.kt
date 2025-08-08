@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.theme.Styles
+import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -19,7 +20,9 @@ import org.jetbrains.compose.web.css.style
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.RadioInput
 import org.jetbrains.compose.web.dom.Text
+import web.cssom.HtmlAttributes.Companion.value
 
 /**
  * Dialog for visitor users to register or login
@@ -27,14 +30,14 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun VisitorDialog(
     onClose: () -> Unit,
-    onRegister: (username: String, password: String, yearOfBirth: Int?, sex: String?) -> Unit,
+    onRegister: (username: String, password: String, yearOfBirth: Int?, sex: Sex?) -> Unit,
     onLogin: (username: String, password: String) -> Unit
 ) {
     var isLoginMode by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var yearOfBirth by remember { mutableStateOf<Int?>(null) }
-    var sex by remember { mutableStateOf<String?>(null) }
+    var sex by remember { mutableStateOf<Sex?>(null) }
     var errorMessage by remember { mutableStateOf("") }
     
     // Validation function
@@ -233,17 +236,14 @@ fun VisitorDialog(
                                 classes(Styles.radioOptionContainer)
                             }
                         ) {
-                            Input(
-                                type = InputType.Radio,
+                            RadioInput(
+                                checked = sex == Sex.Boy,
                                 attrs = {
                                     attr("name", "sex")
-                                    value(str("Boy"))
-                                    if (sex == str("Boy")) {
-                                        checked(true)
-                                    }
+                                    value(Sex.Boy.name)
                                     onChange {
                                         if (it.value) {
-                                            sex = str("Boy")
+                                            sex = Sex.Boy
                                         }
                                     }
                                 }
@@ -263,17 +263,14 @@ fun VisitorDialog(
                                 classes(Styles.radioOptionContainer)
                             }
                         ) {
-                            Input(
-                                type = InputType.Radio,
+                            RadioInput(
+                                checked = sex == Sex.Girl,
                                 attrs = {
                                     attr("name", "sex")
-                                    value(str("Girl"))
-                                    if (sex == str("Girl")) {
-                                        checked(true)
-                                    }
+                                    value(Sex.Girl.name)
                                     onChange {
                                         if (it.value) {
-                                            sex = str("Girl")
+                                            sex = Sex.Girl
                                         }
                                     }
                                 }
@@ -320,4 +317,3 @@ fun VisitorDialog(
         }
     )
 }
-

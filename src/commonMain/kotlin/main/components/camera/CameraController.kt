@@ -5,6 +5,7 @@ import lib.ArcRotateCameraKeyboardMoveInput
 import lib.ArcRotateCameraMouseWheelInput
 import lib.ArcRotateCameraPointersInput
 import lib.Color4
+import lib.ColorCorrectionPostProcess
 import lib.CreateSphereOptions
 import lib.DefaultRenderingPipeline
 import lib.DepthOfFieldEffectBlurLevel
@@ -77,6 +78,9 @@ class CameraController(private val scene: Scene) {
 
     // Vignette post-process effect
     private var vignettePostProcess: ImageProcessingPostProcess
+    
+    // Color correction post-process effect
+    private var colorCorrectionPostProcess: ColorCorrectionPostProcess? = null
     
     // Animation properties
     private var targetPosition: Vector3? = null
@@ -400,7 +404,7 @@ class CameraController(private val scene: Scene) {
                         // Check if grain is available before configuring
                         if (grainEnabled) {
                             // Configure grain effect settings
-                            grain.intensity = 0.1f
+                            grain.intensity = .667f
                             println("[DEBUG] Grain settings configured successfully")
                         }
                     } catch (e: Exception) {
@@ -411,8 +415,8 @@ class CameraController(private val scene: Scene) {
                         // Check if image processing is available before configuring
                         if (imageProcessingEnabled) {
                             // Configure image processing settings
-                            imageProcessing.contrast = 1.25f
-                            imageProcessing.exposure = 1.25f
+                            imageProcessing.contrast = 1.1f
+                            imageProcessing.exposure = 1.1f
                             println("[DEBUG] Image processing settings configured successfully")
                         }
                     } catch (e: Exception) {
@@ -465,6 +469,37 @@ class CameraController(private val scene: Scene) {
                 }
             }
             
+            // Handle ColorCorrectionPostProcess
+            // First, clean up any existing ColorCorrectionPostProcess
+            if (colorCorrectionPostProcess != null) {
+                try {
+                    // Dispose the post process
+                    colorCorrectionPostProcess?.dispose()
+                    colorCorrectionPostProcess = null
+                    println("[DEBUG] Cleaned up existing ColorCorrectionPostProcess")
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to clean up ColorCorrectionPostProcess: ${e.message}")
+                }
+            }
+            
+            // Create new ColorCorrectionPostProcess if pretty graphics are enabled
+            if (isPrettyEnabled) {
+                try {
+                    // Create ColorCorrectionPostProcess with the specified color table URL
+                    colorCorrectionPostProcess = ColorCorrectionPostProcess(
+                        name = "colorCorrection",
+                        colorTableUrl = "/raw/data/lut.png",
+                        ratio = 1.0f, // Full resolution
+                        camera = camera
+                    )
+                    println("[DEBUG] Created new ColorCorrectionPostProcess with colorTableUrl: /raw/lit.png")
+                } catch (e: Exception) {
+                    println("[ERROR] Failed to create ColorCorrectionPostProcess: ${e.message}")
+                    // Ensure colorCorrectionPostProcess is null if creation failed
+                    colorCorrectionPostProcess = null
+                }
+            }
+            
             println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
         } catch (e: Exception) {
             println("[ERROR] Failed to update pipeline settings: ${e.message}")
@@ -504,6 +539,8 @@ class CameraController(private val scene: Scene) {
         } catch (e: Exception) {
             console.error("Error re-adding camera inputs: ${e.message}")
         }
+
+        camera.wheelPrecision = 200f
         
         console.log("Camera inputs re-enabled")
     }
@@ -532,6 +569,15 @@ class CameraController(private val scene: Scene) {
         
         // Clean up the SSAO pipeline
         ssaoPipeline = null
+        
+        // Clean up the ColorCorrectionPostProcess
+        try {
+            colorCorrectionPostProcess?.dispose()
+            colorCorrectionPostProcess = null
+            println("[DEBUG] ColorCorrectionPostProcess disposed")
+        } catch (e: Exception) {
+            println("[ERROR] Failed to dispose ColorCorrectionPostProcess: ${e.message}")
+        }
         
         // Clean up the camera target
         cameraTarget?.dispose()

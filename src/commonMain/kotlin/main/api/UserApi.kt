@@ -30,6 +30,7 @@ import kotlinx.serialization.Serializable
 import models.AuthResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
+import models.Sex
 import models.UpgradeRequest
 import models.User
 import models.VisitorRequest
@@ -141,7 +142,12 @@ object UserApi {
     /**
      * Upgrades a visitor to a player
      */
-    suspend fun upgradeToPlayer(username: String, password: String, yearOfBirth: Int? = null, sex: String? = null): User {
+    suspend fun upgradeToPlayer(
+        username: String,
+        password: String,
+        yearOfBirth: Int? = null,
+        sex: Sex? = null
+    ): User {
         // Get the browser language
         val browserLanguage = window.navigator.language.split("-").firstOrNull()
         

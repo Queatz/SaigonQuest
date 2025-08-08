@@ -1,5 +1,8 @@
 package main.components.nodeeditor
 
+import models.nodeeditor.Connection
+import models.nodeeditor.NodeData
+
 /**
  * Interface for all node editor commands.
  * Commands represent operations that can be undone and redone.

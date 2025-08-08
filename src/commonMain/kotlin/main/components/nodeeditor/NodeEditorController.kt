@@ -6,10 +6,29 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import main.utils.getBoundingClientRectSafe
+import models.NodeCategory
+import models.NodeId
+import models.nodeeditor.Connection
+import models.nodeeditor.NodeData
+import models.nodeeditor.PortData
+import models.nodeeditor.PortType
 import org.w3c.dom.HTMLElement
 import web.timers.Timeout
 import web.timers.clearTimeout
 import web.timers.setTimeout
+
+/**
+ * Data class to uniquely identify a port in the node editor.
+ *
+ * @param nodeId The ID of the node containing the port
+ * @param portId The ID of the port
+ * @param portType The type of port (INPUT or OUTPUT)
+ */
+data class PortIdentifier(
+    val nodeId: String,
+    val portId: String,
+    val portType: PortType
+)
 
 /**
  * Controller for the Node Editor that centralizes state management and operations.
@@ -20,6 +39,7 @@ import web.timers.setTimeout
  * @param canvasElement Reference to the canvas element (optional, can be set later)
  * @param wrapperElement Reference to the wrapper element (optional, can be set later)
  */
+
 class NodeEditorController(
     initialNodes: Map<String, NodeData> = emptyMap(),
     initialConnections: List<Connection> = emptyList(),
@@ -42,6 +62,7 @@ class NodeEditorController(
     var wrapperElement: HTMLElement? = wrapperElement
         private set
     private val nodeElements = mutableStateMapOf<String, HTMLElement>()
+    private val portElements = mutableStateMapOf<PortIdentifier, HTMLElement>()
 
     private var updateCanvasSizeTimeout: Timeout? = null
 
@@ -59,7 +80,7 @@ class NodeEditorController(
     private val history = NodeEditorHistory()
     
     // Connection manager for handling connection operations
-    private val connectionManager = ConnectionManager(history)
+    private val connectionManager = ConnectionManager(history, this)
     
     /**
      * Sets the canvas element reference.
@@ -97,8 +118,99 @@ class NodeEditorController(
      *
      * @param nodeId The ID of the node
      */
-    fun unregisterNodeElement(nodeId: String) {
-        nodeElements.remove(nodeId)
+    fun unregisterNodeElement(nodeId: String, element: HTMLElement) {
+        if (nodeElements[nodeId] == element) {
+            nodeElements.remove(nodeId)
+        }
+    }
+    
+    /**
+     * Registers a port element reference.
+     *
+     * @param nodeId The ID of the node containing the port
+     * @param portId The ID of the port
+     * @param portType The type of port (INPUT or OUTPUT)
+     * @param element The port element
+     */
+    fun registerPortElement(nodeId: String, portId: String, portType: PortType, element: HTMLElement) {
+        val portIdentifier = PortIdentifier(nodeId, portId, portType)
+        portElements[portIdentifier] = element
+        println("[NODE_CONNECTIONS] Registered port element: $nodeId:$portId (${portType.name})")
+    }
+    
+    /**
+     * Unregisters a port element reference.
+     *
+     * @param nodeId The ID of the node containing the port
+     * @param portId The ID of the port
+     * @param portType The type of port (INPUT or OUTPUT)
+     */
+    fun unregisterPortElement(nodeId: String, portId: String, portType: PortType, element: HTMLElement) {
+        val portIdentifier = PortIdentifier(nodeId, portId, portType)
+        if (portElements[portIdentifier] == element) {
+            portElements.remove(portIdentifier)
+        }
+        println("[NODE_CONNECTIONS] Unregistered port element: $nodeId:$portId (${portType.name})")
+    }
+    
+    /**
+     * Gets a port element reference.
+     *
+     * @param nodeId The ID of the node containing the port
+     * @param portId The ID of the port
+     * @param portType The type of port (INPUT or OUTPUT)
+     * @return The port element, or null if not found
+     */
+    fun getPortElement(nodeId: String, portId: String, portType: PortType): HTMLElement? {
+        val portIdentifier = PortIdentifier(nodeId, portId, portType)
+        val element = portElements[portIdentifier]
+        println("[NODE_CONNECTIONS] Getting port element: $nodeId:$portId (${portType.name}) - ${if (element != null) "Found" else "NOT FOUND"}")
+        return element
+    }
+    
+    /**
+     * Finds a port element at a specific screen position.
+     * This is used when handling mouse events to find port elements under the cursor.
+     *
+     * @param screenX X coordinate in screen space
+     * @param screenY Y coordinate in screen space
+     * @param portType Optional port type filter (INPUT or OUTPUT)
+     * @param excludeNodeId Optional node ID to exclude from the search
+     * @return Triple of nodeId, portId, and port element, or null if not found
+     */
+    fun findPortElementAtPosition(
+        screenX: Float,
+        screenY: Float,
+        portType: PortType? = null,
+        excludeNodeId: String? = null
+    ): Triple<String, String, HTMLElement>? {
+        // Check each port element to see if it contains the point
+        for ((identifier, element) in portElements) {
+            // Skip if we're filtering by port type and this doesn't match
+            if (portType != null && identifier.portType != portType) {
+                continue
+            }
+            
+            // Skip if we're excluding a specific node
+            if (excludeNodeId != null && identifier.nodeId == excludeNodeId) {
+                continue
+            }
+            
+            // Get the element's bounding rect
+            val rect = element.getBoundingClientRectSafe()
+            
+            // Check if the point is inside the rect (with some padding for easier selection)
+            val padding = 10f
+            if (screenX >= rect.left - padding &&
+                screenX <= rect.right + padding &&
+                screenY >= rect.top - padding &&
+                screenY <= rect.bottom + padding) {
+                
+                return Triple(identifier.nodeId, identifier.portId, element)
+            }
+        }
+        
+        return null
     }
     
     /**
@@ -111,7 +223,7 @@ class NodeEditorController(
      * @param isElementPosition Whether the coordinates are from a DOM element's getBoundingClientRect()
      * @return Pair of X and Y coordinates in canvas space
      */
-    fun screenToCanvasCoordinates(screenX: Float, screenY: Float, isElementPosition: Boolean = false): Pair<Float, Float> {
+    fun screenToCanvasCoordinates(screenX: Float, screenY: Float): Pair<Float, Float> {
         // Use the stored canvas element reference
         val rect = canvasElement?.getBoundingClientRectSafe()
     
@@ -138,7 +250,7 @@ class NodeEditorController(
      * @param y The y position of the node
      * @return The ID of the newly created node
      */
-    fun addNode(type: String, nodeId: String, label: String, x: Float, y: Float): String {
+    fun addNode(type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float): String {
         // Create a new node (createNode handles conversion from String to LogicNode)
         val (id, newNode) = createNode(type, nodeId, label, x, y)
         
@@ -266,7 +378,7 @@ class NodeEditorController(
      */
     fun startConnection(nodeId: String, port: PortData, portX: Float, portY: Float) {
         // Use fixed values for zoom and pan (no zoom, no pan)
-        connectionManager.startConnection(nodeId, port, portX, portY, 1f, 0f, 0f)
+        connectionManager.startConnection(nodeId, port, portX, portY)
     }
     
     /**
@@ -277,7 +389,7 @@ class NodeEditorController(
      */
     fun updateConnectionPreview(screenX: Float, screenY: Float) {
         // Use fixed values for zoom and pan (no zoom, no pan)
-        connectionManager.updateConnectionPreview(screenX, screenY, 1f, 0f, 0f)
+        connectionManager.updateConnectionPreview(screenX, screenY)
     }
     
     /**

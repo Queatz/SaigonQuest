@@ -3,7 +3,7 @@ package main.components.nodeeditor
 import androidx.compose.runtime.Composable
 import main.theme.NodeEditorStyles
 import models.LogicNode
-import models.toTypeString
+import models.NodeCategory
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.marginTop
@@ -20,7 +20,6 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun DraggableItem(node: LogicNode) {
     val label = node.label
-    val type = node.toTypeString()
     val id = node.id
     val description = node.description
     
@@ -29,15 +28,15 @@ fun DraggableItem(node: LogicNode) {
             classes(NodeEditorStyles.draggableItem)
             // Add draggable attributes
             attr("draggable", "true")
-            attr("data-type", type)
-            attr("data-id", id)
+            attr("data-type", node.category.name)
+            attr("data-id", id.name)
             attr("data-label", label)
             attr("data-description", description)
             
             // Add drag event handlers
             onDragStart { event ->
                 // Set the drag data
-                event.dataTransfer?.setData("text/plain", "$type:$id:$label")
+                event.dataTransfer?.setData("text/plain", "${node.category.name}:${id.name}:$label")
                 // Set the drag effect
                 event.dataTransfer?.effectAllowed = "copy"
             }

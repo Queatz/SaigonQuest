@@ -1,4 +1,4 @@
-package main.components.`object`
+package main.components.objects
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

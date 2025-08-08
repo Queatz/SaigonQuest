@@ -5,12 +5,11 @@ import kotlinx.serialization.Serializable
 /**
  * Enum representing the category of a logic node
  */
-@Serializable
 enum class NodeCategory {
-    EVENT,
-    ACTION,
-    DIALOGUE,
-    INPUT
+    Event,
+    Action,
+    Dialogue,
+    Input
 }
 
 /**
@@ -21,7 +20,7 @@ sealed interface LogicNode {
     /**
      * The unique identifier for this node type
      */
-    val id: String
+    val id: NodeId
     
     /**
      * The display label for this node type
@@ -43,9 +42,9 @@ sealed interface LogicNode {
      */
     @Serializable
     data class Teleport(
-        override val id: String = "teleport",
+        override val id: NodeId = NodeId.Teleport,
         override val label: String = "Teleport player",
-        override val category: NodeCategory = NodeCategory.ACTION,
+        override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Move player to a different location"
     ) : LogicNode
     
@@ -54,9 +53,9 @@ sealed interface LogicNode {
      */
     @Serializable
     data class VisitorInteract(
-        override val id: String = "visitor_interact",
+        override val id: NodeId = NodeId.VisitorInteract,
         override val label: String = "Visitor interact",
-        override val category: NodeCategory = NodeCategory.EVENT,
+        override val category: NodeCategory = NodeCategory.Event,
         override val description: String = "Triggers when a visitor interacts with this object"
     ) : LogicNode
     
@@ -65,9 +64,9 @@ sealed interface LogicNode {
      */
     @Serializable
     data class PlayerInteract(
-        override val id: String = "player_interact",
+        override val id: NodeId = NodeId.PlayerInteract,
         override val label: String = "Player interact",
-        override val category: NodeCategory = NodeCategory.EVENT,
+        override val category: NodeCategory = NodeCategory.Event,
         override val description: String = "Triggers when the player interacts with this object"
     ) : LogicNode
     
@@ -76,9 +75,9 @@ sealed interface LogicNode {
      */
     @Serializable
     data class Dialogue(
-        override val id: String = "dialogue",
+        override val id: NodeId = NodeId.Dialogue,
         override val label: String = "Present text",
-        override val category: NodeCategory = NodeCategory.ACTION,
+        override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Display text message to the player"
     ) : LogicNode
     
@@ -87,10 +86,21 @@ sealed interface LogicNode {
      */
     @Serializable
     data class UserLanguage(
-        override val id: String = "user_language",
+        override val id: NodeId = NodeId.UserLanguage,
         override val label: String = "User language",
-        override val category: NodeCategory = NodeCategory.INPUT,
+        override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Directs logic based on the user's language"
+    ) : LogicNode
+    
+    /**
+     * HasItem node - checks if player has a specific item
+     */
+    @Serializable
+    data class HasItem(
+        override val id: NodeId = NodeId.HasItem,
+        override val label: String = "Has item",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Checks if player has a specific item"
     ) : LogicNode
 }
 
@@ -103,7 +113,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.VisitorInteract(),
         LogicNode.Teleport(),
         LogicNode.Dialogue(),
-        LogicNode.UserLanguage()
+        LogicNode.UserLanguage(),
+        LogicNode.HasItem()
     )
 }
 
@@ -112,32 +123,4 @@ fun getAllNodeTypes(): List<LogicNode> {
  */
 fun getNodeTypesByCategory(): Map<NodeCategory, List<LogicNode>> {
     return getAllNodeTypes().groupBy { it.category }
-}
-
-/**
- * Extension function to convert LogicNode to String representation
- */
-fun LogicNode.toTypeString(): String {
-    return when (this) {
-        is LogicNode.Teleport -> "action"
-        is LogicNode.VisitorInteract -> "event"
-        is LogicNode.PlayerInteract -> "event"
-        is LogicNode.Dialogue -> "dialogue"
-        is LogicNode.UserLanguage -> "input"
-    }
-}
-
-/**
- * Function to convert String type and id to LogicNode
- */
-fun getLogicNodeFromTypeAndId(type: String, id: String): LogicNode {
-    return when {
-        type == "action" && id == "teleport" -> LogicNode.Teleport()
-        type == "event" && id == "visitor_interact" -> LogicNode.VisitorInteract()
-        type == "event" && id == "player_interact" -> LogicNode.PlayerInteract()
-        type == "dialogue" && id == "dialogue" || id == "present_text" -> LogicNode.Dialogue()
-        type == "input" && id == "user_language" -> LogicNode.UserLanguage()
-        // Default to Teleport if no match is found
-        else -> LogicNode.Teleport()
-    }
 }

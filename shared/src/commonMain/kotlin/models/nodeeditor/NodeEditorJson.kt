@@ -2,9 +2,8 @@ package models.nodeeditor
 
 import kotlinx.serialization.Serializable
 import models.LogicNode
-import models.getLogicNodeFromTypeAndId
-import models.toTypeString
-import utils.json
+import models.NodeCategory
+import models.NodeId
 
 /**
  * Serializable data classes for node editor JSON structure
@@ -17,7 +16,7 @@ import utils.json
 data class PortDataJson(
     val id: String,
     val name: String,
-    val dataType: String = "any"
+    val dataType: PropertyType? = null
 )
 
 /**
@@ -25,8 +24,8 @@ data class PortDataJson(
  */
 @Serializable
 data class NodeDataJson(
-    val type: String, // String representation of LogicNode (e.g., "action", "event")
-    val nodeTypeId: String, // ID of the LogicNode (e.g., "teleport", "player_interact")
+    val type: NodeCategory,
+    val nodeId: NodeId,
     val x: Float,
     val y: Float,
     val label: String,
@@ -78,24 +77,26 @@ object NodeEditorJsonUtil {
             NodeEditorDataJson()
         }
     }
-    
-    /**
-     * Serialize node editor data to JSON string
-     */
-    fun serializeNodeEditorData(data: NodeEditorDataJson): String {
-        return json.encodeToString(NodeEditorDataJson.serializer(), data)
-    }
-    
     /**
      * Convert between domain model and JSON model
      */
     fun convertToNodeData(nodeDataJson: NodeDataJson): NodeData {
+        // Create the appropriate LogicNode based on nodeId
+        val logicNode = when (nodeDataJson.nodeId) {
+            NodeId.Teleport -> LogicNode.Teleport()
+            NodeId.VisitorInteract -> LogicNode.VisitorInteract()
+            NodeId.PlayerInteract -> LogicNode.PlayerInteract()
+            NodeId.Dialogue -> LogicNode.Dialogue()
+            NodeId.UserLanguage -> LogicNode.UserLanguage()
+            NodeId.HasItem -> LogicNode.HasItem()
+        }
+
         return NodeData(
-            type = getLogicNodeFromTypeAndId(nodeDataJson.type, nodeDataJson.nodeTypeId),
+            type = logicNode,
             x = nodeDataJson.x,
             y = nodeDataJson.y,
             label = nodeDataJson.label,
-            inputs = nodeDataJson.inputs.map { 
+            inputs = nodeDataJson.inputs.map {
                 PortData(
                     id = it.id,
                     name = it.name,
@@ -103,7 +104,7 @@ object NodeEditorJsonUtil {
                     dataType = it.dataType
                 )
             },
-            outputs = nodeDataJson.outputs.map { 
+            outputs = nodeDataJson.outputs.map {
                 PortData(
                     id = it.id,
                     name = it.name,
@@ -114,22 +115,22 @@ object NodeEditorJsonUtil {
             data = nodeDataJson.data
         )
     }
-    
+
     fun convertToNodeDataJson(nodeData: NodeData): NodeDataJson {
         return NodeDataJson(
-            type = nodeData.type.toTypeString(),
-            nodeTypeId = nodeData.type.id,
+            type = nodeData.type.category,
+            nodeId = nodeData.type.id,
             x = nodeData.x,
             y = nodeData.y,
             label = nodeData.label,
-            inputs = nodeData.inputs.map { 
+            inputs = nodeData.inputs.map {
                 PortDataJson(
                     id = it.id,
                     name = it.name,
                     dataType = it.dataType
                 )
             },
-            outputs = nodeData.outputs.map { 
+            outputs = nodeData.outputs.map {
                 PortDataJson(
                     id = it.id,
                     name = it.name,
@@ -139,7 +140,7 @@ object NodeEditorJsonUtil {
             data = nodeData.data
         )
     }
-    
+
     fun convertToConnection(connectionJson: ConnectionJson): Connection {
         return Connection(
             sourceId = connectionJson.sourceId,
@@ -148,7 +149,7 @@ object NodeEditorJsonUtil {
             targetPortId = connectionJson.targetPortId
         )
     }
-    
+
     fun convertToConnectionJson(connection: Connection): ConnectionJson {
         return ConnectionJson(
             sourceId = connection.sourceId,
@@ -156,5 +157,12 @@ object NodeEditorJsonUtil {
             targetId = connection.targetId,
             targetPortId = connection.targetPortId
         )
+    }
+
+    /**
+     * Serialize node editor data to JSON string
+     */
+    fun serializeNodeEditorData(data: NodeEditorDataJson): String {
+        return json.encodeToString(NodeEditorDataJson.serializer(), data)
     }
 }

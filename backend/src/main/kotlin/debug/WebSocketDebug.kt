@@ -73,33 +73,6 @@ object WebSocketDebug {
         logger.debug("Session: $session")
         logger.debug("Raw Message: $rawMessage")
         
-        try {
-            // Try to parse and pretty print the message
-            val message = debugJson.decodeFromString<WebSocketMessage>(rawMessage)
-            logger.debug("Parsed Message:")
-            logger.debug("  Action: ${message.action}")
-            logger.debug("  Data Length: ${message.data.length}")
-            
-            // For specific actions, try to parse and log the data
-            when (message.action) {
-                WebSocketAction.SEND_CHAT_MESSAGE -> {
-                    logger.debug("  Message Type: Chat Message")
-                    try {
-                        val chatMessageJson = debugJson.parseToJsonElement(message.data)
-                        logger.debug("  Chat Message Data: ${debugJson.encodeToString(chatMessageJson)}")
-                    } catch (e: Exception) {
-                        logger.debug("  Failed to parse chat message data: ${e.message}")
-                    }
-                }
-                WebSocketAction.USER_JOIN -> logger.debug("  Message Type: User Join")
-                WebSocketAction.USER_LEAVE -> logger.debug("  Message Type: User Leave")
-                WebSocketAction.UPDATE_PLAYER_POSITION -> logger.debug("  Message Type: Player Position Update")
-                else -> logger.debug("  Message Type: Other")
-            }
-        } catch (e: Exception) {
-            logger.debug("Failed to parse message: ${e.message}")
-        }
-        
         logger.debug("=== END WEBSOCKET DEBUG [Message #$messageId] ===")
     }
     

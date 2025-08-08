@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.updatePlayer
 import models.Item
 import models.User
 

@@ -18,7 +18,7 @@ data class User(
     @Contextual
     var lastActive: Instant = Clock.System.now(),
     var yearOfBirth: Int? = null,
-    var sex: String? = null,
+    var sex: Sex? = null,
     var language: String? = null,
     var status: String = "",
     // Character customization properties

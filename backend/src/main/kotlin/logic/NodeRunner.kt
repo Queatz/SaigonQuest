@@ -1,5 +1,7 @@
 package logic
 
+import models.nodeeditor.NodeDataModel
+
 /**
  * Interface for node runners
  *
@@ -14,5 +16,5 @@ interface NodeRunner {
      * @param eventData Additional data related to the event (mutable)
      * @return True if the node execution was successful, false otherwise
      */
-    suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean
+    suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean
 }

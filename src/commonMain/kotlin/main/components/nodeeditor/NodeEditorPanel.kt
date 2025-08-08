@@ -11,6 +11,8 @@ import kotlinx.browser.window
 import main.theme.NodeEditorStyles
 import main.utils.getBoundingClientRectSafe
 import main.utils.getDocument
+import models.NodeCategory
+import models.NodeId
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
@@ -28,7 +30,7 @@ import org.w3c.dom.HTMLElement
 fun NodeEditorPanel(
     controller: NodeEditorController,
     onKeyDown: ((SyntheticKeyboardEvent) -> Unit)? = null,
-    onNodeAdd: ((type: String, nodeId: String, label: String, x: Float, y: Float) -> Unit)? = null,
+    onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null,
     onNodeDelete: ((nodeId: String) -> Unit)? = null
 ) {
     // Effect to find and register DOM elements with the controller
@@ -83,8 +85,8 @@ fun NodeEditorPanel(
                     // Parse the data (format: "type:id:label")
                     val parts = data.split(":")
                     if (parts.size >= 3) {
-                        val type = parts[0]
-                        val id = parts[1]
+                        val type = NodeCategory.valueOf(parts[0])
+                        val id = NodeId.valueOf(parts[1])
                         val label = parts[2]
                         
                         // Convert screen coordinates to canvas coordinates

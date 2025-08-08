@@ -11,8 +11,16 @@ repositories {
 
 kotlin {
     jvm()
+
     js(IR) {
-        browser()
+        outputModuleName = "saigon-quest-shared"
+        browser {
+            testTask {
+                useKarma {
+                    useFirefox()
+                }
+            }
+        }
     }
     
     sourceSets {

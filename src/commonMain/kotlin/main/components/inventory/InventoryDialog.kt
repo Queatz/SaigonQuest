@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import main.api.InventoryApi
 import main.api.ItemApi
 import main.api.WebSocketApi
+import main.api.addUpdatePlayerListener
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.player.CharacterRenderer
@@ -853,7 +854,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             InventoryBox(
                                                 onClick = { /* Handled by parent */ },
                                                 item = item,
-                                                isLoading = isLoading
+                                                isLoading = isLoading,
+                                                quantity = 1 // Worn items always have quantity 1
                                             )
                                             
                                             // Item name
@@ -940,7 +942,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     InventoryBox(
                                         onClick = { /* No action on click */ },
                                         item = item,
-                                        isLoading = isLoading
+                                        isLoading = isLoading,
+                                        quantity = InventoryState.getQuantityForInventoryItemKey(itemId)
                                     )
                                     
                                     // Item details

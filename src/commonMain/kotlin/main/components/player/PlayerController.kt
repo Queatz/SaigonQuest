@@ -16,7 +16,6 @@ import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.inventory.InventoryState
 import main.components.world.CharacterDirection
-import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
@@ -37,6 +36,11 @@ import kotlin.math.abs
 import app.softwork.routingcompose.Router
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.filterNotNull
+import main.api.addTeleportPlayerListener
+import main.api.addUpdatePlayerListener
+import main.api.updatePlayer
+import main.api.updatePlayerPosition
+import main.components.world.PlayerActivity
 
 /**
  * Controller for managing the player in the 3D scene.
@@ -163,8 +167,8 @@ class PlayerController(private val scene: Scene) {
         // Store the WorldObjectManager for later use
         this.worldObjectManager = worldObjectManager
 
-        // Create a sprite sheet for the player
-        val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+        // Create a sprite sheet for the player based on the user's sex
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheet(InventoryState.currentUser?.sex)
         
         // Get worn item sprite sheets if inventory is already loaded
         var wornItemSpriteSheets = emptyList<SpriteSheet>()
@@ -1148,8 +1152,8 @@ class PlayerController(private val scene: Scene) {
         // Remove the existing character
         handle.remove()
         
-        // Create a new character with the worn items
-        val spriteSheet = SpriteSheet.createPlayerSpriteSheet()
+        // Create a new character with the worn items, using the appropriate sprite sheet based on user's sex
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheet(InventoryState.currentUser?.sex)
         playerHandle = manager.createCharacter(
             spriteSheet = spriteSheet,
             direction = currentDirection,

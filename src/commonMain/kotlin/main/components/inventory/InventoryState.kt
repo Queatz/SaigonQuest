@@ -27,6 +27,9 @@ object InventoryState {
     // Mapping from InventoryItem keys to Item keys
     var inventoryItemToItemMap by mutableStateOf<Map<String, String>>(emptyMap())
     
+    // Mapping from InventoryItem keys to quantities
+    var inventoryItemQuantities by mutableStateOf<Map<String, Int>>(emptyMap())
+    
     // Callback for when inventory is refreshed
     private var onRefreshCallbacks = mutableListOf<() -> Unit>()
     
@@ -85,6 +88,10 @@ object InventoryState {
                     val inventoryItemToItemMapping = inventoryItems.associate { it.key to it.item }
                     inventoryItemToItemMap = inventoryItemToItemMapping
                     
+                    // Create mapping from InventoryItem keys to quantities
+                    val quantityMapping = inventoryItems.associate { it.key to it.quantity }
+                    inventoryItemQuantities = quantityMapping
+                    
                     // Extract the actual Item keys from the InventoryItem objects
                     val itemKeys = inventoryItems.map { it.item }
                     
@@ -98,6 +105,7 @@ object InventoryState {
                 } else {
                     items = emptyMap()
                     inventoryItemToItemMap = emptyMap()
+                    inventoryItemQuantities = emptyMap()
                 }
                 
                 isLoading = false
@@ -149,6 +157,10 @@ object InventoryState {
                     val inventoryItemToItemMapping = inventoryItems.associate { it.key to it.item }
                     inventoryItemToItemMap = inventoryItemToItemMapping
                     
+                    // Create mapping from InventoryItem keys to quantities
+                    val quantityMapping = inventoryItems.associate { it.key to it.quantity }
+                    inventoryItemQuantities = quantityMapping
+                    
                     // Extract the actual Item keys from the InventoryItem objects
                     val itemKeys = inventoryItems.map { it.item }
                     
@@ -162,6 +174,7 @@ object InventoryState {
                 } else {
                     items = emptyMap()
                     inventoryItemToItemMap = emptyMap()
+                    inventoryItemQuantities = emptyMap()
                 }
                 
                 isLoading = false
@@ -222,5 +235,15 @@ object InventoryState {
         }
         
         return result
+    }
+    
+    /**
+     * Gets the quantity for a given inventory item key.
+     * 
+     * @param inventoryItemKey The key of the inventory item
+     * @return The quantity of the item, or 1 if not found
+     */
+    fun getQuantityForInventoryItemKey(inventoryItemKey: String): Int {
+        return inventoryItemQuantities[inventoryItemKey] ?: 1
     }
 }

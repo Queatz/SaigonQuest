@@ -1,4 +1,4 @@
-package main.components.`object`
+package main.components.objects
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.api.WebSocketApi
-import utils.json
+import main.api.removeObject
 import models.Object
 import org.w3c.dom.HTMLElement
 

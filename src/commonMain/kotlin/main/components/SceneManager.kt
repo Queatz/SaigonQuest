@@ -2,7 +2,7 @@ package main.components
 
 import lib.Scene
 import main.components.camera.CameraController
-import main.components.`object`.SceneObjectManager
+import main.components.objects.SceneObjectManager
 import main.components.player.OtherPlayersController
 import main.components.player.PlayerController
 

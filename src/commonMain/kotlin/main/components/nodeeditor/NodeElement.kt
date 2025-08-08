@@ -3,13 +3,15 @@ package main.components.nodeeditor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
-import kotlinx.browser.window
 import main.theme.NodeEditorStyles
-import models.toTypeString
+import models.NodeCategory
+import models.nodeeditor.NodeData
+import models.nodeeditor.PortData
 import org.w3c.dom.HTMLElement
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
@@ -103,26 +105,28 @@ fun NodeElement(
         }
     }
     
-    // Determine node color class based on type
-    val nodeColorClass = when(type.toTypeString()) {
-        "event" -> NodeEditorStyles.eventNodeColor
-        "dialogue" -> NodeEditorStyles.dialogueNodeColor
-        "action" -> NodeEditorStyles.actionNodeColor
-        "input" -> NodeEditorStyles.inputNodeColor
+    // Determine node color class based on type category
+    val nodeColorClass = when(type.category) {
+        NodeCategory.Event -> NodeEditorStyles.eventNodeColor
+        NodeCategory.Dialogue -> NodeEditorStyles.dialogueNodeColor
+        NodeCategory.Action -> NodeEditorStyles.actionNodeColor
+        NodeCategory.Input -> NodeEditorStyles.inputNodeColor
         else -> NodeEditorStyles.defaultNodeColor
     }
     
     // Effect to register the node element with the controller
-    DisposableEffect(id, nodeElementRef) {
+    DisposableEffect(nodeElementRef) {
         // Use a small delay to ensure the DOM element is rendered
-        if (nodeElementRef != null) {
-            // Register the node element with the controller
-            controller.registerNodeElement(id, nodeElementRef!!)
-        }
+        if (nodeElementRef == null) return@DisposableEffect onDispose {  }
+
+        println("[NODE_CONNECTIONS] Registering node element: $id")
+        // Register the node element with the controller
+        controller.registerNodeElement(id, nodeElementRef!!)
 
         onDispose {
+            println("[NODE_CONNECTIONS] Disposing node element: $id with ${inputs.size} inputs and ${outputs.size} outputs")
             // Unregister the node element when the component is disposed
-            controller.unregisterNodeElement(id)
+            controller.unregisterNodeElement(id, nodeElementRef!!)
         }
     }
     
@@ -161,7 +165,7 @@ fun NodeElement(
             
             // Add node data attributes
             attr("data-node-id", id)
-            attr("data-node-type", type.toTypeString())
+            attr("data-node-type", type.category.name)
 
             ref { ref ->
                 nodeElementRef = ref
@@ -189,11 +193,21 @@ fun NodeElement(
         ) {
             // Input ports
             inputs.forEach { port ->
-                PortElement(
-                    port = port,
-                    nodeId = id,
-                    onPortClick = onPortClick
-                )
+                key(port) {
+                    PortElement(
+                        port = port,
+                        nodeId = id,
+                        onPortClick = onPortClick,
+                        onPortElementCreated = { element ->
+                            println("[NODE_CONNECTIONS] NodeElement registering input port: $id:${port.id}")
+                            // Register the port element with the controller
+                            controller.registerPortElement(id, port.id, port.type, element)
+                        },
+                        onPortElementDisposed = {
+                            controller.unregisterPortElement(id, port.id, port.type, it)
+                        }
+                    )
+                }
             }
             
             // Divider if both inputs and outputs exist
@@ -207,14 +221,24 @@ fun NodeElement(
             
             // Output ports
             outputs.forEach { port ->
-                PortElement(
-                    port = port,
-                    nodeId = id,
-                    onPortClick = onPortClick,
-                    onPortDragStart = onPortDragStart,
-                    onPortDragMove = onPortDragMove,
-                    onPortDragEnd = onPortDragEnd
-                )
+                key(port) {
+                    PortElement(
+                        port = port,
+                        nodeId = id,
+                        onPortClick = onPortClick,
+                        onPortDragStart = onPortDragStart,
+                        onPortDragMove = onPortDragMove,
+                        onPortDragEnd = onPortDragEnd,
+                        onPortElementCreated = { element ->
+                            println("[NODE_CONNECTIONS] NodeElement registering output port: $id:${port.id}")
+                            // Register the port element with the controller
+                            controller.registerPortElement(id, port.id, port.type, element)
+                        },
+                        onPortElementDisposed = {
+                            controller.unregisterPortElement(id, port.id, port.type, it)
+                        }
+                    )
+                }
             }
         }
     }

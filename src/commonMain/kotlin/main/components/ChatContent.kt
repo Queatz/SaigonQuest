@@ -15,6 +15,8 @@ import main.api.ChatApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
+import main.api.sendChatMessage
+import main.api.sendTypingStatus
 import main.components.chat.ChatMessages
 import main.theme.Styles
 import main.theme.Theme

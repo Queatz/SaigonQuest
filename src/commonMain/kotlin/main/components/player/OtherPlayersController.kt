@@ -12,6 +12,11 @@ import main.api.ApiClient
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
+import main.api.addPlayerPositionListener
+import main.api.addUpdatePlayerListener
+import main.api.addUserJoinListener
+import main.api.addUserLeaveListener
+import main.api.sendUserJoin
 import main.components.shadow.ShadowManager
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
@@ -534,13 +539,16 @@ class OtherPlayersController(private val scene: Scene) {
                 if (user != null) {
                     console.log("[DEBUG_LOG] OtherPlayersController: Successfully fetched User object for $userId")
                     
+                    // Create a sprite sheet for the player based on their sex
+                    val userSpriteSheet = SpriteSheet.createPlayerSpriteSheet(user.sex)
+                    
                     // Create the player character using the WorldObjectManager with the User object
                     val playerHandle = manager.createCharacter(
-                        spriteSheet = spriteSheet,
+                        spriteSheet = userSpriteSheet,
                         direction = direction,
                         position = position,
                         additionalSpriteSheets = emptyList(),
-                        user = user // Pass the User object to display worn items
+                        user = user
                     )
                     
                     if (playerHandle == null) {

@@ -102,6 +102,7 @@ allowing the project to remain maintainable as it grows.
 ## Code Style and Development Guidelines
 
 - **Use @Serializable data class**: For all data models
+- **Use enum classes instead of raw strings**: For all enumerated values
 - **Shared data classes**: All shared models go in the shared module
 - **Clean up as you go**: Always go the extra mile and look for chances to clean up or remove dead code and imports
 - **No duplicate code**: Always create reusabe code instead of duplicatating code

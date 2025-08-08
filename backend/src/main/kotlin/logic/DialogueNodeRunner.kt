@@ -1,14 +1,14 @@
 package logic
 
+import debug.WebSocketDebug
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import models.DialogueConfirmation
 import models.DialogueData
 import models.WebSocketAction
+import models.nodeeditor.NodeDataModel
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
@@ -48,7 +48,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         }
     }
     
-    override suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean {
+    override suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
         // Get the JSON data string from the node data
         val jsonData = node.data["data"] ?: "{}"
         
@@ -57,6 +57,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             // Try to parse as PropertyBasedNodeData
             json.decodeFromString<PropertyBasedNodeData>(jsonData)
         } catch (e: Exception) {
+            WebSocketDebug.logError("Failed to parse dialogue node data", e, context.session)
             return false
         }
         

@@ -2,15 +2,17 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
+import models.nodeeditor.Connection
+import models.nodeeditor.PortType
 import web.animations.awaitAnimationFrame
-import kotlin.random.Random
 
 /**
  * Handles the rendering and management of connections between nodes.
@@ -18,13 +20,14 @@ import kotlin.random.Random
  * the connection preview when creating a new connection.
  *
  * @param controller The NodeEditorController that manages state and operations
- * @param isInConnectionLayer Whether this handler is rendering in the separate connection layer
  */
 @Composable
 fun ConnectionHandler(controller: NodeEditorController) {
     // Render connections between nodes
     controller.connections.forEach { connection ->
-        RenderConnection(controller, connection)
+        key(connection) {
+            RenderConnection(controller, connection)
+        }
     }
 
     if (controller.isDraggingConnection) {
@@ -43,98 +46,137 @@ fun RenderConnection(
     controller: NodeEditorController,
     connection: Connection,
 ) {
+
+    var invalidate by remember { mutableStateOf(0) }
+    var invalidateTrigger by remember { mutableStateOf(0) }
+
+    LaunchedEffect(invalidate) {
+        delay(50)
+        awaitAnimationFrame()
+        invalidateTrigger = invalidate
+    }
+
     // Find the source and target nodes and ports
     val sourceNode = controller.nodes[connection.sourceId]
     val targetNode = controller.nodes[connection.targetId]
 
-    var r by remember { mutableStateOf(0) }
+    // Use derivedStateOf to create a derived state that depends on the nodes and connections
+    // This will cause recomposition when the nodes or connections change
+    val connectionState by remember(controller.nodes, connection, invalidateTrigger) {
+        derivedStateOf {
+            if (sourceNode != null && targetNode != null) {
+                // Find the source and target ports
+                val sourcePort = sourceNode.outputs.find { it.id == connection.sourcePortId }
+                val targetPort = targetNode.inputs.find { it.id == connection.targetPortId }
 
-    // todo: hack due to recomposition being 1 frame behind but I don't know why
-    LaunchedEffect(controller.nodes) {
-        awaitAnimationFrame()
-        r = Random.nextInt()
-    }
-
-    key(r) {
-        if (sourceNode != null && targetNode != null) {
-            // Find the source and target ports
-            val sourcePort = sourceNode.outputs.find { it.id == connection.sourcePortId }
-            val targetPort = targetNode.inputs.find { it.id == connection.targetPortId }
-
-            if (sourcePort != null && targetPort != null) {
-                // Get the port elements by their data attributes
-                val sourcePortElement =
-                    getDocument().querySelector("[data-port-node='${connection.sourceId}'][data-port-id='${connection.sourcePortId}']")
-                val targetPortElement =
-                    getDocument().querySelector("[data-port-node='${connection.targetId}'][data-port-id='${connection.targetPortId}']")
-
-                // Get the port positions
-                val (sourceX, sourceY) = if (sourcePortElement != null) {
-                    // Get the center position of the port element
-                    val rect = sourcePortElement.getBoundingClientRectSafe()
-                    // Convert screen coordinates to canvas coordinates
-                    val screenX = (rect.left + rect.width / 2).toFloat()
-                    val screenY = (rect.top + rect.height / 2).toFloat()
-
-                    // For the canvas, use the normal coordinate conversion
-                    // Use isElementPosition=true since these coordinates come from getBoundingClientRect()
-                    val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
-                        screenX,
-                        screenY,
-                        isElementPosition = true
+                if (sourcePort != null && targetPort != null) {
+                    // Get the port elements using the controller's getPortElement method
+                    println("[NODE_CONNECTIONS] Retrieving port elements for connection: ${connection.sourceId}:${connection.sourcePortId} -> ${connection.targetId}:${connection.targetPortId}")
+                    val sourcePortElement = controller.getPortElement(
+                        nodeId = connection.sourceId,
+                        portId = connection.sourcePortId,
+                        portType = PortType.OUTPUT
                     )
-                    Pair(canvasX, canvasY)
-                } else {
-                    // Fallback to the old calculation if we can't get the port element
-                    val sourcePortIndex = sourceNode.outputs.indexOf(sourcePort)
-                    val sourcePortOffset = 50 + (sourcePortIndex * 30)
-
-                    Pair(sourceNode.x + 180, sourceNode.y + sourcePortOffset)
-                }
-
-                val (targetX, targetY) = if (targetPortElement != null) {
-                    // Get the center position of the port element
-                    val rect = targetPortElement.getBoundingClientRectSafe()
-                    // Convert screen coordinates to canvas coordinates
-                    val screenX = (rect.left + rect.width / 2).toFloat()
-                    val screenY = (rect.top + rect.height / 2).toFloat()
-
-                    // Use isElementPosition=true since these coordinates come from getBoundingClientRect()
-                    val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
-                        screenX,
-                        screenY,
-                        isElementPosition = true
+                    val targetPortElement = controller.getPortElement(
+                        nodeId = connection.targetId,
+                        portId = connection.targetPortId,
+                        portType = PortType.INPUT
                     )
-                    Pair(canvasX, canvasY)
-                } else {
-                    // Fallback to the old calculation if we can't get the port element
-                    val targetPortIndex = targetNode.inputs.indexOf(targetPort)
-                    val targetPortOffset = 50 + (targetPortIndex * 30)
+                    println("[NODE_CONNECTIONS] Source port element: ${if (sourcePortElement != null) "Found" else "NULL"}, Target port element: ${if (targetPortElement != null) "Found" else "NULL"}")
 
-                    Pair(targetNode.x, targetNode.y + targetPortOffset)
-                }
+                    // Get the port positions
+                    val (sourceX, sourceY) = if (sourcePortElement != null) {
+                        // Get the center position of the port element
+                        val rect = sourcePortElement.getBoundingClientRectSafe()
+                        // Convert screen coordinates to canvas coordinates
+                        val screenX = (rect.left + rect.width / 2).toFloat()
+                        val screenY = (rect.top + rect.height / 2).toFloat()
 
-                // Create a unique identifier for this connection
-                val connectionId =
-                    "${connection.sourceId}:${connection.sourcePortId}-${connection.targetId}:${connection.targetPortId}"
+                        // Convert to canvas coordinates
+                        val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                            screenX = screenX,
+                            screenY = screenY,
+                        )
+                        Pair(canvasX, canvasY)
+                    } else {
+                        // Fallback to the old calculation if we can't get the port element
+                        val sourcePortIndex = sourceNode.outputs.indexOf(sourcePort)
+                        val sourcePortOffset = 50 + (sourcePortIndex * 30)
+                        
+                        println("[NODE_CONNECTIONS] Using fallback position for source port: ${connection.sourceId}:${connection.sourcePortId}, index: $sourcePortIndex, offset: $sourcePortOffset")
+                        invalidate++
+                        Pair(sourceNode.x + 180, sourceNode.y + sourcePortOffset)
+                    }
 
-                // Check if this connection is selected
-                val isSelected = controller.selectedConnection == connection
+                    val (targetX, targetY) = if (targetPortElement != null) {
+                        // Get the center position of the port element
+                        val rect = targetPortElement.getBoundingClientRectSafe()
+                        // Convert screen coordinates to canvas coordinates
+                        val screenX = (rect.left + rect.width / 2).toFloat()
+                        val screenY = (rect.top + rect.height / 2).toFloat()
 
-                // Render the connection using a bezier curve
-                BezierConnection(
-                    sourceX = sourceX,
-                    sourceY = sourceY,
-                    targetX = targetX,
-                    targetY = targetY,
-                    isSelected = isSelected,
-                    onClick = { controller.selectConnection(connection) },
-                    connectionId = connectionId,
-                )
-            }
+                        // Convert to canvas coordinates
+                        val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                            screenX = screenX,
+                            screenY = screenY,
+                        )
+                        Pair(canvasX, canvasY)
+                    } else {
+                        // Fallback to the old calculation if we can't get the port element
+                        val targetPortIndex = targetNode.inputs.indexOf(targetPort)
+                        val targetPortOffset = 50 + (targetPortIndex * 30)
+                        
+                        println("[NODE_CONNECTIONS] Using fallback position for target port: ${connection.targetId}:${connection.targetPortId}, index: $targetPortIndex, offset: $targetPortOffset")
+                        invalidate++
+                        Pair(targetNode.x, targetNode.y + targetPortOffset)
+                    }
+
+                    // Create a unique identifier for this connection
+                    val connectionId =
+                        "${connection.sourceId}:${connection.sourcePortId}-${connection.targetId}:${connection.targetPortId}"
+
+                    // Check if this connection is selected
+                    val isSelected = controller.selectedConnection == connection
+
+                    // Return the connection data
+                    ConnectionData(
+                        sourceX = sourceX,
+                        sourceY = sourceY,
+                        targetX = targetX,
+                        targetY = targetY,
+                        isSelected = isSelected,
+                        connectionId = connectionId
+                    )
+                } else null
+            } else null
         }
     }
+
+    // Render the connection if the state is not null
+    connectionState?.let { data ->
+        BezierConnection(
+            sourceX = data.sourceX,
+            sourceY = data.sourceY,
+            targetX = data.targetX,
+            targetY = data.targetY,
+            isSelected = data.isSelected,
+            onClick = { controller.selectConnection(connection) },
+            connectionId = data.connectionId,
+        )
+    }
 }
+
+/**
+ * Data class to hold connection rendering data
+ */
+private data class ConnectionData(
+    val sourceX: Float,
+    val sourceY: Float,
+    val targetX: Float,
+    val targetY: Float,
+    val isSelected: Boolean,
+    val connectionId: String
+)
 
 /**
  * Renders a preview of a connection being created.

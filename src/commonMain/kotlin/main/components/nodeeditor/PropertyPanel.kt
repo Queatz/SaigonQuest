@@ -2,13 +2,19 @@ package main.components.nodeeditor
 
 // Import the node data types and parser
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.theme.NodeEditorStyles
-import models.toTypeString
+import models.NodeCategory
+import models.nodeeditor.NodeData
+import models.nodeeditor.PropertyDirection
+import models.nodeeditor.PropertyKey
+import models.nodeeditor.PropertyType
+import models.nodeeditor.PropertyValue
+import models.nodeeditor.getPropertyDefinitions
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
@@ -21,6 +27,7 @@ import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.TextInput
+import kotlin.collections.getValue
 
 /**
  * A panel for editing node properties.
@@ -36,45 +43,49 @@ fun PropertyPanel(
     onNodeUpdate: (String, NodeData) -> Unit
 ) {
     // State for node properties
-    var label by remember { mutableStateOf(node.label) }
+    var label by remember(nodeId) { mutableStateOf(node.label) }
     
     // Parse node data
     val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
     
     // Get property definitions for this node type
-    val propertyDefinitions = node.type.getPropertyDefinitions()
+    val propertyDefinitions = remember(nodeId) { node.type.getPropertyDefinitions() }
     
     // Create a map to store property values
-    val propertyValues = remember { mutableStateMapOf<PropertyKey, String>() }
+    var propertyValues by remember(nodeId) { mutableStateOf(mapOf<PropertyKey, String>()) }
     
     // Initialize property values from node data
-    propertyDefinitions.forEach { propDef ->
-        if (propDef.type != PropertyType.TRIGGER) {
-            val value = NodeDataParser.getPropertyValue(nodeData, propDef.key)
-            propertyValues[propDef.key] = value.ifEmpty { propDef.defaultValue }
+    LaunchedEffect(propertyDefinitions) {
+        propertyDefinitions.forEach { propDef ->
+            if (propDef.type != PropertyType.TRIGGER) {
+                val value = NodeDataParser.getPropertyValue(nodeData, propDef.key)
+                propertyValues = propertyValues.edit {
+                    it[propDef.key] = value.ifEmpty { propDef.defaultValue }
+                }
+            }
         }
     }
-    
-    // Function to update the node
-    val updateNode = {
+
+    // Auto-update when propertyValues changes
+    LaunchedEffect(propertyValues, label) {
         // Create updated property values
         val updatedProperties = propertyValues.map { (key, value) ->
             PropertyValue(key, value)
         }
-        
+
         // Create updated node data
         val updatedNodeData = PropertyBasedNodeData(properties = updatedProperties)
-        
+
         // Serialize the node data to a JSON string
         val updatedData = NodeDataParser.serializeNodeData(updatedNodeData)
-        
+
         // Update the node with new data and outputs
         val updatedNode = updateNodeOutputs(
             node = node.copy(label = label),
             nodeId = nodeId,
             data = updatedData
         )
-        
+
         // Call the update callback
         onNodeUpdate(nodeId, updatedNode)
     }
@@ -113,7 +124,16 @@ fun PropertyPanel(
                     classes(NodeEditorStyles.propertyValue)
                 }
             ) {
-                Text(node.type.toTypeString().replaceFirstChar { it.uppercase() })
+                // Convert category to string and capitalize
+                val typeString = when(node.type.category) {
+                    NodeCategory.Action -> "Action"
+                    NodeCategory.Event -> "Event"
+                    NodeCategory.Dialogue -> "Dialogue"
+                    NodeCategory.Input -> "Input"
+                }
+                Text(typeString)
+                Text(" • " )
+                Text(node.type.id.name) // todo translate
             }
         }
         
@@ -172,7 +192,9 @@ fun PropertyPanel(
                                             classes(NodeEditorStyles.propertyTextArea)
                                             id("prop-${propDef.key.name.lowercase()}")
                                             onInput { event ->
-                                                propertyValues[propDef.key] = event.value 
+                                                propertyValues = propertyValues.edit {
+                                                    it[propDef.key] = event.value
+                                                }
                                             }
                                             attr("rows", "4")
                                             placeholder("Enter text")
@@ -186,7 +208,9 @@ fun PropertyPanel(
                                             classes(NodeEditorStyles.propertyInput)
                                             id("prop-${propDef.key.name.lowercase()}")
                                             onInput { event ->
-                                                propertyValues[propDef.key] = event.value 
+                                                propertyValues = propertyValues.edit {
+                                                    it[propDef.key] = event.value
+                                                }
                                             }
                                             placeholder(propDef.defaultValue)
                                         }
@@ -200,7 +224,9 @@ fun PropertyPanel(
                                         classes(NodeEditorStyles.propertyInput)
                                         id("prop-${propDef.key.name.lowercase()}")
                                         onInput { event ->
-                                            propertyValues[propDef.key] = event.value.toString()
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = event.value.toString()
+                                            }
                                         }
                                     }
                                 )
@@ -213,7 +239,9 @@ fun PropertyPanel(
                                         id("prop-${propDef.key.name.lowercase()}")
                                         onInput { event ->
                                             val isChecked = event.target.checked
-                                            propertyValues[propDef.key] = if (isChecked) "true" else "false"
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = if (isChecked) "true" else "false"
+                                            }
                                         }
                                     }
                                 )
@@ -225,7 +253,9 @@ fun PropertyPanel(
                                         classes(NodeEditorStyles.propertyInput)
                                         id("prop-${propDef.key.name.lowercase()}")
                                         onInput { event ->
-                                            propertyValues[propDef.key] = event.value 
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = event.value
+                                            }
                                         }
                                         placeholder("x,y,z")
                                     }
@@ -238,8 +268,10 @@ fun PropertyPanel(
                                         classes(NodeEditorStyles.propertyInput)
                                         id("prop-${propDef.key.name.lowercase()}")
                                         value(propertyValues[propDef.key] ?: "#000000")
-                                        onInput { event -> 
-                                            propertyValues[propDef.key] = event.value 
+                                        onInput { event ->
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = event.value
+                                            }
                                         }
                                     }
                                 )
@@ -252,7 +284,9 @@ fun PropertyPanel(
                                         classes(NodeEditorStyles.propertyInput)
                                         id("prop-${propDef.key.name.lowercase()}")
                                         onInput { event ->
-                                            propertyValues[propDef.key] = event.value 
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = event.value
+                                            }
                                         }
                                     }
                                 )
@@ -263,13 +297,13 @@ fun PropertyPanel(
             }
             
         // For dialogue nodes, add button management UI
-        if (node.type.id == "dialogue") {
+        if (node.type.id == models.NodeId.Dialogue) {
             // Get current buttons or default to "OK"
             val buttonsValue = propertyValues[PropertyKey.BUTTONS] ?: "OK"
             val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
             
             // State for new button text
-            var newButtonText by remember { mutableStateOf("") }
+            var newButtonText by remember(nodeId) { mutableStateOf("") }
             
             Div(
                 attrs = {
@@ -307,7 +341,9 @@ fun PropertyPanel(
                                             // Remove this button
                                             val updatedButtons = buttons.toMutableList()
                                             updatedButtons.removeAt(index)
-                                            propertyValues[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                            }
                                         }
                                     }
                                 ) {
@@ -343,7 +379,9 @@ fun PropertyPanel(
                                     // Add new button
                                     val updatedButtons = buttons.toMutableList()
                                     updatedButtons.add(newButtonText)
-                                    propertyValues[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                    propertyValues = propertyValues.edit {
+                                        it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
+                                    }
                                     newButtonText = ""
                                 }
                             }
@@ -354,15 +392,8 @@ fun PropertyPanel(
                 }
             }
         }
-        
-        // Apply button
-        Button(
-            attrs = {
-                classes(NodeEditorStyles.propertyButton)
-                onClick { updateNode() }
-            }
-        ) {
-            Text("Apply Changes")
-        }
     }
 }
+
+fun <K, V> Map<K, V>.edit(block: (MutableMap<K, V>) -> Unit): Map<K, V> =
+    toMutableMap().apply(block).toMap()

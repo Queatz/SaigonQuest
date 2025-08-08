@@ -4,6 +4,8 @@ import debug.WebSocketDebug
 import io.ktor.websocket.send
 import kotlinx.serialization.encodeToString
 import models.WebSocketAction
+import models.nodeeditor.NodeData
+import models.nodeeditor.NodeDataModel
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
@@ -16,7 +18,7 @@ import utils.json
  * It sends a TELEPORT_PLAYER message to the client to change the world.
  */
 class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
-    override suspend fun execute(node: NodeData, eventData: MutableMap<String, Any>): Boolean {
+    override suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
         WebSocketDebug.logMessage("TELEPORT_NODE_EXECUTE", "Executing teleport node with data: ${node.data}", context.session)
         
         // Get the JSON data string from the node data

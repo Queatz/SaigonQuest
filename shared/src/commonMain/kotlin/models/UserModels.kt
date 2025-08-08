@@ -14,7 +14,7 @@ data class UpgradeRequest(
     val username: String,
     val password: String,
     val yearOfBirth: Int? = null,
-    val sex: String? = null,
+    val sex: Sex? = null,
     val language: String? = null
 )
 

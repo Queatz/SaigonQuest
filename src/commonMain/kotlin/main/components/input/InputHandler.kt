@@ -14,9 +14,11 @@ import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
 import main.api.UserApi
+import main.api.WebSocketApi
+import main.api.playerInteract
 import main.components.SceneManager
 import main.components.camera.CameraController
-import main.components.`object`.SceneObjectManager
+import main.components.objects.SceneObjectManager
 import main.components.player.PlayerController
 import main.utils.createObjectDoubleClickEvent
 import models.World
@@ -239,7 +241,7 @@ class InputHandler(
                         // Send USER_INTERACT event to the backend
                         // Determine if the user is a player (authenticated) or visitor
                         val isPlayer = UserApi.getToken() != null
-                        main.api.WebSocketApi.playerInteract(clickedObjectId, isPlayer)
+                        WebSocketApi.playerInteract(clickedObjectId, isPlayer)
                         
                         // Clear the pending job reference
                         pendingSingleClickJob = null

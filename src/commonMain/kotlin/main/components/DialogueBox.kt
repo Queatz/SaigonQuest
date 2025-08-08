@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -9,6 +10,8 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.addDialogueListener
+import main.api.sendDialogueConfirmation
 import main.theme.NodeStyles
 import models.DialogueData
 import org.jetbrains.compose.web.dom.Button
@@ -28,12 +31,11 @@ fun DialogueBox() {
     var currentDialogue by remember { mutableStateOf<DialogueData?>(null) }
     
     // Add a listener for dialogue events
-    remember {
+    LaunchedEffect(Unit) {
         WebSocketApi.addDialogueListener { dialogueData ->
             console.log("DialogueBox: Received dialogue: ${dialogueData.text}")
             currentDialogue = dialogueData
         }
-        true
     }
     
     // Only show the dialogue box if there's a dialogue to show

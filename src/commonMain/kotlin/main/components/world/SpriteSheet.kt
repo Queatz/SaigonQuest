@@ -58,9 +58,11 @@ class SpriteSheet(
     
     /**
      * Creates a sprite sheet for the player character
+     * 
+     * @param sex The sex of the player, which determines the sprite sheet to use
      */
     companion object {
-        fun createPlayerSpriteSheet(): SpriteSheet {
+        fun createPlayerSpriteSheet(sex: models.Sex? = null): SpriteSheet {
             // The sprite sheet has directions in this order: S, SE, E, NE, N, NW, W, SW
             val directionOrder = listOf(
                 CharacterDirection.S,
@@ -73,8 +75,14 @@ class SpriteSheet(
                 CharacterDirection.SW
             )
             
+            // Choose the appropriate sprite sheet based on the player's sex
+            val imageUrl = when (sex) {
+                models.Sex.Girl -> "/raw/data/spritesheets/Player Girl Base Sprite Sheet.png"
+                else -> "/raw/data/spritesheets/Player Boy Base Sprite Sheet.png"
+            }
+            
             return SpriteSheet(
-                imageUrl = "/raw/data/spritesheets/Player Sprite Sheet.png",
+                imageUrl = imageUrl,
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,

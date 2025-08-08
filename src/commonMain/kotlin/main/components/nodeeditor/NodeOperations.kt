@@ -1,6 +1,8 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import models.nodeeditor.NodeData
 import org.jetbrains.compose.web.dom.Div
 
 /**
@@ -13,7 +15,9 @@ import org.jetbrains.compose.web.dom.Div
 fun NodeOperations(controller: NodeEditorController) {
     // Render existing nodes
     controller.nodes.forEach { (id, node) ->
-        RenderNode(controller, id, node)
+        key(id) {
+            RenderNode(controller, id, node)
+        }
     }
 }
 

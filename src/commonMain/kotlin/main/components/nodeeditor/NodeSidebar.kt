@@ -76,10 +76,10 @@ fun NodeSidebar() {
                 ) {
                     Text(
                         when(category) {
-                            NodeCategory.ACTION -> "Actions"
-                            NodeCategory.DIALOGUE -> "Dialogues"
-                            NodeCategory.EVENT -> "Events"
-                            NodeCategory.INPUT -> "Inputs"
+                            NodeCategory.Action -> "Actions"
+                            NodeCategory.Dialogue -> "Dialogues"
+                            NodeCategory.Event -> "Events"
+                            NodeCategory.Input -> "Inputs"
                         }
                     )
                 }

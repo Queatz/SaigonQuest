@@ -35,6 +35,7 @@ data class Item(
 @OptIn(ExperimentalTime::class)
 @Serializable
 data class InventoryItem(
+    var inventoryId: String = "",
     var quantity: Int = 1,
     var item: String = "",
 ) : BaseModel()
