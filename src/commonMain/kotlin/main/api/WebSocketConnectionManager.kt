@@ -60,8 +60,7 @@ object WebSocketConnectionManager {
         // Set up reconnection logic
         scope.launch {
             while (true) {
-                if (_connectionState.value == ConnectionState.DISCONNECTED && 
-                    _currentWorldId.value != null) {
+                if (_connectionState.value == ConnectionState.DISCONNECTED && _currentWorldId.value != null) {
                     reconnect()
                 }
                 delay(5000) // Check every 5 seconds

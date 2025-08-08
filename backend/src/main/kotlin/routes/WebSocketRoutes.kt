@@ -17,6 +17,7 @@ import kotlinx.serialization.Serializable
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
+import models.User
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
@@ -32,9 +33,11 @@ import java.util.concurrent.ConcurrentHashMap
  */
 data class WebSocketConnection(
     val session: DefaultWebSocketServerSession,
-    val userId: String,
-    val worldId: String
-)
+    val user: User,
+) {
+    val userId: String
+        get() = user.key
+}
 
 /**
  * WebSocket message model
@@ -81,42 +84,45 @@ fun Routing.configureWebSocketRoutes() {
         
         // Extract token from query parameters
         val token = call.parameters["token"] ?: ""
+        val visitorId = call.parameters["visitorId"] ?: ""
         WebSocketDebug.logConnection("TOKEN", this, worldId, "unknown")
         
         // Validate token and get userId
-        val userId = if (token.isNotBlank()) {
+        val user = if (token.isNotBlank()) {
             try {
                 // Use JwtConfig.verifier to verify the token
                 WebSocketDebug.logConnection("TOKEN_VALIDATION", this, worldId, "unknown")
                 val decodedJWT = JwtConfig.verifier.verify(token)
                 val extractedUserId = decodedJWT.getClaim("userId").asString()
                 WebSocketDebug.logConnection("TOKEN_VALID", this, worldId, extractedUserId)
-                extractedUserId
+                userRepository.getById(extractedUserId) ?: error("User not found (Player)")
             } catch (e: JWTVerificationException) {
                 WebSocketDebug.logError("Error validating token", e, this)
                 WebSocketDebug.logConnection("ANONYMOUS", this, worldId, "unknown")
                 null
             }
+        } else if (visitorId.isNotBlank()) {
+            userRepository.getByVisitorId(visitorId) ?: error("User not found (Visitor)")
         } else {
             WebSocketDebug.logConnection("NO_TOKEN", this, worldId, "unknown")
             null
         }
-        
-        // Create connection
-        val finalUserId = userId ?: "anonymous-${System.currentTimeMillis()}"
-        
+
+        if (user == null) {
+            error("User not found")
+        }
+
         // Extract language from query parameters, default to "en" if not provided
-        WebSocketDebug.logConnection("LANGUAGE", this, worldId, finalUserId)
+        WebSocketDebug.logConnection("LANGUAGE", this, worldId, user.key)
         
         val connection = WebSocketConnection(
             session = this,
-            userId = finalUserId,
-            worldId = worldId
+            user = user
         )
-        WebSocketDebug.logConnection("CREATED", this, worldId, finalUserId)
+        WebSocketDebug.logConnection("CREATED", this, worldId, user.key)
         
         // Log connection with WebSocketDebug
-        WebSocketDebug.logConnection("CONNECT", this, worldId, finalUserId)
+        WebSocketDebug.logConnection("CONNECT", this, worldId, user.key)
         
         try {
             // Add connection to active connections
@@ -129,8 +135,8 @@ fun Routing.configureWebSocketRoutes() {
             }
             
             // Send user join notification to all clients in the world
-            val isPlayer = connection.userId.startsWith("anonymous-").not()
-            val username = if (isPlayer) connection.userId else "Visitor"
+            val isPlayer = connection.user.isPlayer
+            val username = if (isPlayer) connection.user.username else "Visitor"
             
             val joinData = UserJoinData(
                 userId = connection.userId,
@@ -163,8 +169,8 @@ fun Routing.configureWebSocketRoutes() {
                     WebSocketDebug.logMessage("PROCESSING_USER", existingConnection.userId, this)
                     val existingUserJoinData = UserJoinData(
                         userId = existingConnection.userId,
-                        username = if (existingConnection.userId.startsWith("anonymous-")) "Visitor" else existingConnection.userId,
-                        isPlayer = existingConnection.userId.startsWith("anonymous-").not(),
+                        username = existingConnection.user.username.ifBlank { "Visitor" },
+                        isPlayer = existingConnection.user.isPlayer,
                         position = Position(0f, 0f, 0f), // Default position, will be updated by client
                         worldId = worldId
                     )

@@ -29,3 +29,6 @@ data class WornItemsRequest(val wornItems: List<String>)
 
 @Serializable
 data class LanguageUpdateRequest(val language: String)
+
+@Serializable
+data class StatusUpdateRequest(val status: String)

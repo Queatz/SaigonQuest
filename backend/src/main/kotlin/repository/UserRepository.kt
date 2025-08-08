@@ -132,6 +132,7 @@ class UserRepository {
         user.yearOfBirth = yearOfBirth
         user.sex = sex
         user.language = language
+        user.visitorId = ""
         
         return update(id, user)
     }

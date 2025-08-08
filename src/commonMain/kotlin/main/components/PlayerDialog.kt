@@ -58,10 +58,6 @@ fun PlayerDialog(
         console.log("[DEBUG_LOG] PlayerDialog: updateUserStatus called")
         console.log("[DEBUG_LOG] PlayerDialog: Current status: '${user.status}', New status: '${status.value}'")
 
-        // Check WebSocket connection state
-        val isConnected = WebSocketApi.isConnected()
-        console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state: ${if (isConnected) "CONNECTED" else "DISCONNECTED"}")
-
         // Only update if status has changed
         if (user.status != status.value) {
             console.log("[DEBUG_LOG] PlayerDialog: Status changed, updating from '${user.status}' to '${status.value}'")
@@ -75,10 +71,10 @@ fun PlayerDialog(
             coroutineScope.launch {
                 try {
                     // Check connection state again inside coroutine
-                    val isStillConnected = WebSocketApi.isConnected()
-                    console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state before update: ${if (isStillConnected) "CONNECTED" else "DISCONNECTED"}")
+                    val isConnected = WebSocketApi.isConnected()
+                    console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state before update: ${if (isConnected) "CONNECTED" else "DISCONNECTED"}")
 
-                    if (!isStillConnected) {
+                    if (!isConnected) {
                         console.warn("[DEBUG_LOG] PlayerDialog: WebSocket not connected, will retry status update")
                         // Wait a bit and retry if not connected
                         delay(1000)
@@ -96,6 +92,10 @@ fun PlayerDialog(
                         console.error("[DEBUG_LOG] PlayerDialog: No world ID available, status update failed")
                         return@launch
                     }
+
+                    // Update user status via UserApi
+                    val statusUpdateResult = UserApi.updateUserStatus(newStatus)
+                    console.log("[DEBUG_LOG] PlayerDialog: User status updated via API: ${statusUpdateResult.status}")
 
                     console.log("[DEBUG_LOG] PlayerDialog: Calling WebSocketApi.updatePlayerStatus with status: '$newStatus'")
                     val success = WebSocketApi.updatePlayerStatus(newStatus)

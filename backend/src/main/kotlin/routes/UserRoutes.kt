@@ -13,6 +13,7 @@ import models.AuthResponse
 import models.ErrorResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
+import models.StatusUpdateRequest
 import models.UpgradeRequest
 import models.User
 import models.VisitorRequest
@@ -183,6 +184,35 @@ fun Routing.configureUserRoutes() {
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+                
+                call.respond(HttpStatusCode.OK, updatedUser)
+            }
+            
+            // Update user status - requires authentication
+            post("/status") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get request body
+                val request = call.receive<StatusUpdateRequest>()
+                
+                // Get the user
+                val user = userRepository.getById(userId)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+                
+                // Update status
+                user.status = request.status
+                
+                // Save the updated user
+                val updatedUser = userRepository.update(userId, user)
+                    ?: return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Failed to update user", code = HttpStatusCode.InternalServerError.value)
                     )
                 
                 call.respond(HttpStatusCode.OK, updatedUser)

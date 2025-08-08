@@ -4,6 +4,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import main.api.ApiConstants.API_BASE_URL
+import main.api.UserApi.getVisitorId
 import models.WebSocketAction
 import org.w3c.dom.WebSocket
 
@@ -188,9 +189,7 @@ object WebSocketApi {
         logDebug("Using token for WebSocket connection: ${if (token.isNotEmpty()) "Yes" else "No"}")
 
         // Create a new WebSocket connection
-        val protocol = if (window.location.protocol == "https:") "wss:" else "ws:"
-        val host = window.location.host
-        val url = "$API_BASE_URL/ws?worldId=$worldId&token=$token"
+        val url = "$API_BASE_URL/ws?worldId=$worldId&token=$token&visitorId=${if (token.isNotBlank()) "" else getVisitorId()}"
         logDebug("WebSocket URL: $url")
         socket = WebSocket(url)
 

@@ -105,8 +105,8 @@ class NotificationRepository {
     fun markAllAsRead(userId: String): Int {
         val query = """
             FOR n IN @@collection
-            FILTER n.userId == @userId AND n.isRead == false
-            UPDATE n WITH { isRead: true } IN @@collection
+            FILTER n.userId == @userId AND n.read != true
+            UPDATE n WITH { read: true } IN @@collection
             RETURN OLD
         """.trimIndent()
         

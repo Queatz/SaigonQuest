@@ -31,6 +31,7 @@ import models.AuthResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
 import models.Sex
+import models.StatusUpdateRequest
 import models.UpgradeRequest
 import models.User
 import models.VisitorRequest
@@ -259,7 +260,7 @@ object UserApi {
     /**
      * Gets the visitor ID from local storage
      */
-    private fun getVisitorId(): String? {
+    fun getVisitorId(): String? {
         return localStorage.getItem(VISITOR_ID_STORAGE_KEY)
     }
     
@@ -348,6 +349,33 @@ object UserApi {
             }
         } catch (e: Exception) {
             console.error("Error updating user language: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Updates user status
+     */
+    suspend fun updateUserStatus(status: String): User {
+        val request = StatusUpdateRequest(status)
+        
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/status") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody<StatusUpdateRequest>(request)
+            }
+            
+            if (response.status.isSuccess()) {
+                val updatedUser = response.body<User>()
+                // Update the local user object
+                user = updatedUser
+                return updatedUser
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            console.error("Error updating user status: ${e.message}")
             throw e
         }
     }
