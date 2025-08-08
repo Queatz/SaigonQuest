@@ -45,6 +45,14 @@ fun Routing.configureObjectRoutes() {
                             )
                         )
                     }
+                } else {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(
+                            message = "World is required",
+                            code = HttpStatusCode.Forbidden.value
+                        )
+                    )
                 }
                 
                 val createdObject = objectRepository.create(obj)

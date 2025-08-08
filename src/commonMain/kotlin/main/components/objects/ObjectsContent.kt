@@ -15,6 +15,7 @@ import main.api.ObjectApi
 import main.api.WebSocketApi
 import main.api.removeObject
 import models.Object
+import models.World
 import org.w3c.dom.HTMLElement
 
 /**
@@ -31,44 +32,45 @@ fun ObjectsContent(
     onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
     objectManager: SceneObjectManager? = null,
-    content: @Composable (@Composable () -> Unit) -> Unit
+    currentWorld: World?,
+    content: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     // State for objects
     var worldObjects by remember { mutableStateOf<List<Object>>(emptyList()) }
     var ownedObjects by remember { mutableStateOf<List<Object>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
-    
+
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf("") }
     var isFeedbackError by remember { mutableStateOf(false) }
-    
+
     // Get current world ID from the URL path
-    val currentWorldId = window.location.pathname.substring(1)
+    val currentWorldId = currentWorld?.key
     
     // Create a coroutine scope for async operations
     val scope = rememberCoroutineScope()
-    
+
     // Function to show feedback message
     fun showFeedback(message: String, isError: Boolean = false) {
         feedbackMessage = message
         isFeedbackError = isError
-        
+
         // Clear feedback after 3 seconds
         scope.launch {
             delay(3000)
             feedbackMessage = ""
         }
     }
-    
+
     // Load objects when the component is mounted
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentWorldId) {
         isLoading = true
         errorMessage = ""
         
         try {
             // Load all objects in the world
-            val objectList = ObjectApi.getObjectsByWorldId(currentWorldId)
+            val objectList = ObjectApi.getObjectsByWorldId(currentWorldId ?: return@LaunchedEffect)
             worldObjects = objectList
             
             // Filter for owned objects (this is a placeholder - in a real app, you'd check ownership)

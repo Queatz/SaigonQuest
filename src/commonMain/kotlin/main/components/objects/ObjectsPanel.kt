@@ -2,6 +2,7 @@ package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.components.SimpleSidePanel
+import models.World
 
 /**
  * A panel that displays objects with three tabs: World, Owned, and Marketplace.
@@ -16,12 +17,14 @@ fun ObjectsPanel(
     onClose: () -> Unit,
     onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
-    objectManager: SceneObjectManager? = null
+    objectManager: SceneObjectManager? = null,
+    currentWorld: World?
 ) {
     ObjectsContent(
         onOpenObjectEditor = onOpenObjectEditor,
         onEditObject = onEditObject,
-        objectManager = objectManager
+        objectManager = objectManager,
+        currentWorld = currentWorld
     ) { tabContent ->
         SimpleSidePanel(
             title = "Objects",

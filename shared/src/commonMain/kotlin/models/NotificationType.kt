@@ -30,5 +30,10 @@ enum class NotificationType {
     /**
      * Object update notification
      */
-    OBJECT_UPDATE
+    OBJECT_UPDATE,
+
+    /**
+     * Object notification from logic node
+     */
+    OBJECT_NOTIFICATION
 }

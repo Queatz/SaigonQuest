@@ -90,7 +90,7 @@ fun ObjectEditorDialog(
         coroutineScope.launch {
             try {
                 val savedObject = if (isEditing) {
-                    ObjectApi.updateObject(objectModel!!.key, newObject)
+                    ObjectApi.updateObject(objectModel.key, newObject)
                 } else {
                     ObjectApi.createObject(newObject)
                 }

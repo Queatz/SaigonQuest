@@ -558,7 +558,10 @@ fun SceneComponent(url: String) {
                 val worldMeshes = worldLoader.loadWorld(url)
                 
                 // Store the current world
-                currentWorld.value = worldLoader.getCurrentWorld()
+                currentWorld.value = worldLoader.getCurrentWorld() ?: return@launch Unit.also {
+                    loadingFailed.value = true
+                    errorMessage.value = "Error loading world: World not found or server error"
+                }
 
                 inputHandler.currentWorld = currentWorld.value
 
@@ -616,7 +619,7 @@ fun SceneComponent(url: String) {
                 inputHandler.setupPointerHandling()
                 
                 // Set up WebSocket listeners for objects
-                objectManager.setupWebSocketListeners()
+                objectManager.setupWebSocketListeners(currentWorld.value!!.key)
                 
                 // Set up WebSocket listeners for world objects
                 worldObjectManager.setupWebSocketListeners()

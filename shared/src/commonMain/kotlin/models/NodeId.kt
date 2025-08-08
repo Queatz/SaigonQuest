@@ -10,5 +10,6 @@ enum class NodeId {
     Dialogue,
     UserLanguage,
     HasItem,
-    OpenUrl
+    OpenUrl,
+    ObjectNotification
 }

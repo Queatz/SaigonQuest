@@ -413,6 +413,15 @@ class NodeLogicRunner(
                 )
                 OpenUrlNodeRunner(context)
             }
+            
+            NodeId.ObjectNotification -> {
+                WebSocketDebug.logMessage(
+                    "OBJECT_NOTIFICATION_RUNNER_SELECTED",
+                    "Selected ObjectNotificationNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                ObjectNotificationNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

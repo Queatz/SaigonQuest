@@ -760,12 +760,7 @@ class SceneObjectManager(
     /**
      * Sets up WebSocket listeners for object updates and loads existing objects
      */
-    fun setupWebSocketListeners() {
-        console.log("Setting up WebSocket listeners for object updates")
-        
-        // Get the current world ID from the URL path
-        val currentWorldId = window.location.pathname.substring(1)
-        
+    fun setupWebSocketListeners(currentWorldId: String) {
         // Load existing objects for this world
         loadExistingObjects(currentWorldId)
         

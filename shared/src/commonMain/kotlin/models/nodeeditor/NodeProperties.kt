@@ -96,6 +96,23 @@ data class NodePropertyDefinition(
  */
 fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
     return when (this) {
+        // ObjectNotification node properties
+        is LogicNode.ObjectNotification -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Message",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            )
+        )
+        
         // Teleport node properties
         is LogicNode.Teleport -> listOf(
             NodePropertyDefinition(

@@ -90,6 +90,7 @@ object NodeEditorJsonUtil {
             NodeId.UserLanguage -> LogicNode.UserLanguage()
             NodeId.HasItem -> LogicNode.HasItem()
             NodeId.OpenUrl -> LogicNode.OpenUrl()
+            NodeId.ObjectNotification -> LogicNode.ObjectNotification()
         }
 
         return NodeData(

@@ -2,6 +2,7 @@ package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.components.BaseDialog
+import models.World
 import org.jetbrains.compose.web.dom.Div
 
 /**
@@ -17,23 +18,26 @@ fun ObjectsDialog(
     onClose: () -> Unit,
     onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit = {},
-    objectManager: SceneObjectManager? = null
+    objectManager: SceneObjectManager? = null,
+    currentWorld: World?
 ) {
     ObjectsContent(
         onOpenObjectEditor = onOpenObjectEditor,
         onEditObject = onEditObject,
-        objectManager = objectManager
-    ) { tabContent ->
-        // Use BaseDialog for consistent styling and behavior
-        BaseDialog(
-            onClose = onClose,
-            title = "Objects",
-            content = {
-                // Tab content
-                Div {
-                    tabContent()
+        objectManager = objectManager,
+        currentWorld = currentWorld,
+        { tabContent ->
+            // Use BaseDialog for consistent styling and behavior
+            BaseDialog(
+                onClose = onClose,
+                title = "Objects",
+                content = {
+                    // Tab content
+                    Div {
+                        tabContent()
+                    }
                 }
-            }
-        )
-    }
+            )
+        },
+    )
 }

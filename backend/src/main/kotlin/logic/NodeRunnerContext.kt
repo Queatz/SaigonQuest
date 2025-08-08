@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class NodeRunnerContext(
     val connection: WebSocketConnection,
     val worldId: String,
+    val objectId: String = "", // Added objectId property with default empty string
     val activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
     val session: DefaultWebSocketServerSession
 )

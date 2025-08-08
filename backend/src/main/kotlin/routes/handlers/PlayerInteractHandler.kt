@@ -2,12 +2,10 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.json.Json
 import logic.NodeLogicRunner
 import logic.NodeRunnerContext
 import models.LogicNode
 import models.PlayerInteractData
-import models.WebSocketAction
 import repository.ObjectRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
@@ -51,6 +49,7 @@ class PlayerInteractHandler(
                 val context = NodeRunnerContext(
                     connection = connection,
                     worldId = worldId,
+                    objectId = interactData.objectId, // Include the objectId
                     activeConnections = activeConnections,
                     session = session
                 )

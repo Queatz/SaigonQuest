@@ -113,6 +113,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Opens a URL in a new browser window"
     ) : LogicNode
+    
+    /**
+     * ObjectNotification node - sends a notification to the current user
+     */
+    @Serializable
+    data class ObjectNotification(
+        override val id: NodeId = NodeId.ObjectNotification,
+        override val label: String = "Send notification",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Sends a notification to the current user"
+    ) : LogicNode
 }
 
 /**
@@ -126,7 +137,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.Dialogue(),
         LogicNode.UserLanguage(),
         LogicNode.HasItem(),
-        LogicNode.OpenUrl()
+        LogicNode.OpenUrl(),
+        LogicNode.ObjectNotification()
     )
 }
 

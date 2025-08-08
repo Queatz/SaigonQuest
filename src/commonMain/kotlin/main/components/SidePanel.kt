@@ -1,8 +1,11 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import app.softwork.routingcompose.Router
+import kotlinx.coroutines.launch
 import main.api.WebSocketApi
+import main.api.WorldApi
 import main.api.addObject
 import main.components.inventory.InventoryDialog
 import main.components.nodeeditor.LogicEditorDialog
@@ -29,6 +32,7 @@ fun SidePanel(
     onOpenLogicEditor: (Object) -> Unit
 ) {
     val router = Router.current
+    val scope = rememberCoroutineScope()
     
     when (currentPanel) {
         SidePanelState.Chat -> {
@@ -64,7 +68,32 @@ fun SidePanel(
                 onNotificationClick = { notification ->
                     // Handle notification click
                     console.log("Notification clicked: ${notification.title}")
-                    // Mark notification as read or perform other actions
+                    
+                    // Handle different notification types
+                    when (notification.type) {
+                        // For object notifications, navigate to the world URL
+                        models.NotificationType.OBJECT_NOTIFICATION -> {
+                            if (notification.worldId.isNotEmpty()) {
+                                // Get the world URL from the repository
+                                console.log("Navigating to world: ${notification.worldId}")
+                                
+                                // Navigate to the world URL
+                                scope.launch {
+                                    val worldUrl = WorldApi.getWorld(notification.worldId).url
+                                    router.navigate("/$worldUrl")
+                                }
+                                
+                                // Close the notifications panel
+                                onClose()
+                            } else {
+                                console.log("Navigating to world failed: missing worldId")
+                            }
+                        }
+                        else -> {
+                            // For other notification types, just log
+                            console.log("Notification of type ${notification.type} clicked")
+                        }
+                    }
                 }
             )
         }
@@ -87,7 +116,8 @@ fun SidePanel(
                     onClose = onClose,
                     onOpenObjectEditor = onOpenObjectEditor,
                     onEditObject = onEditObject,
-                    objectManager = objectManager
+                    objectManager = objectManager,
+                    currentWorld = currentWorld
                 )
             } else {
                 // Desktop: Side panel
@@ -95,18 +125,16 @@ fun SidePanel(
                     onClose = onClose,
                     onOpenObjectEditor = onOpenObjectEditor,
                     onEditObject = onEditObject,
-                    objectManager = objectManager
+                    objectManager = objectManager,
+                    currentWorld = currentWorld
                 )
             }
         }
         
         SidePanelState.ObjectEditor -> {
-            // Get current world ID from the URL path
-            val currentWorldId = PathUtils.getCurrentPath(router)
-            
             ObjectEditorDialog(
                 objectModel = currentEditingObject, // Use the current editing object or null for new object
-                worldId = currentWorldId,
+                worldId = currentWorld?.key ?: return,
                 onClose = onClose,
                 onSave = { obj ->
                     // Handle saved object
