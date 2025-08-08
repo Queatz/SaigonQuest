@@ -320,6 +320,9 @@ class NodeEditorController(
             }
         }
     }
+
+    @Composable
+    fun getNode(nodeId: String): NodeData? = nodes[nodeId]
     
     /**
      * Updates the properties of a node.

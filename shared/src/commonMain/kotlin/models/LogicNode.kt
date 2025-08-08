@@ -76,9 +76,9 @@ sealed interface LogicNode {
     @Serializable
     data class Dialogue(
         override val id: NodeId = NodeId.Dialogue,
-        override val label: String = "Present text",
+        override val label: String = "Dialogue",
         override val category: NodeCategory = NodeCategory.Action,
-        override val description: String = "Display text message to the player"
+        override val description: String = "Display text and buttons to the player"
     ) : LogicNode
     
     /**
@@ -89,7 +89,7 @@ sealed interface LogicNode {
         override val id: NodeId = NodeId.UserLanguage,
         override val label: String = "User language",
         override val category: NodeCategory = NodeCategory.Input,
-        override val description: String = "Directs logic based on the user's language"
+        override val description: String = "Directs logic based on the user's preferred language"
     ) : LogicNode
     
     /**

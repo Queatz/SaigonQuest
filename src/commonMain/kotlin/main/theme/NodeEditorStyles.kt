@@ -100,6 +100,12 @@ object NodeEditorStyles : StyleSheet() {
         marginBottom(8.px)
         textAlign("center")
     }
+    // Node header
+    val nodeDescription by style {
+        fontSize(80.percent)
+        marginBottom(8.px)
+        textAlign("center")
+    }
     
     // Node content
     val nodeContent by style {

@@ -8,10 +8,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
+import kotlinx.serialization.decodeFromString
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.nodeeditor.NodeData
+import models.nodeeditor.NodePropertyDefinition
 import models.nodeeditor.PortData
+import models.nodeeditor.PropertyKey
+import models.nodeeditor.PropertyType
 import org.w3c.dom.HTMLElement
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
@@ -20,6 +24,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
+import utils.json
+import web.cssom.HtmlAttributes.Companion.value
 
 /**
  * A node element in the node editor.
@@ -185,6 +191,37 @@ fun NodeElement(
             }
         ) {
             Text(label)
+        }
+
+         // Node description
+        Div(
+            attrs = {
+                classes(NodeEditorStyles.nodeDescription)
+            }
+        ) {
+            val nodeData = remember(node.type, node.data) {
+                NodeDataParser.parseNodeData(node.type, node.data)
+            }
+
+            when (nodeData) {
+                is PropertyBasedNodeData -> {
+                    Div {
+                        nodeData.properties.forEach { property ->
+                            when (property.key) {
+                                PropertyKey.TEXT_CONTENT -> {
+                                    Text( property.value)
+                                }
+
+                                PropertyKey.TARGET_WORLD_ID -> {
+                                    Text("To \"${property.value}\"")
+                                }
+
+                                else -> Unit
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Node content with inputs and outputs
