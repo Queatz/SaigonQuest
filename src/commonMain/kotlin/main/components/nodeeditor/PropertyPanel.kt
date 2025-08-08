@@ -55,7 +55,7 @@ fun PropertyPanel(
     var propertyValues by remember(nodeId) { mutableStateOf(mapOf<PropertyKey, String>()) }
     
     // Initialize property values from node data
-    LaunchedEffect(propertyDefinitions) {
+    LaunchedEffect(nodeId, propertyDefinitions) {
         propertyDefinitions.forEach { propDef ->
             if (propDef.type != PropertyType.TRIGGER) {
                 val value = NodeDataParser.getPropertyValue(nodeData, propDef.key)

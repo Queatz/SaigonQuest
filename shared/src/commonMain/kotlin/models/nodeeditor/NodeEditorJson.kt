@@ -89,6 +89,7 @@ object NodeEditorJsonUtil {
             NodeId.Dialogue -> LogicNode.Dialogue()
             NodeId.UserLanguage -> LogicNode.UserLanguage()
             NodeId.HasItem -> LogicNode.HasItem()
+            NodeId.OpenUrl -> LogicNode.OpenUrl()
         }
 
         return NodeData(

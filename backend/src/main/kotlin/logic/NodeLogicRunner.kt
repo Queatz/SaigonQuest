@@ -208,21 +208,8 @@ class NodeLogicRunner(
 
                 // Simply use the button index to select a connection
                 // This ensures that the order of connections matches the order of buttons
-                val connection = if (buttonIndex >= 0 && buttonIndex < connections.size) {
-                    WebSocketDebug.logMessage(
-                        "SELECTING_CONNECTION",
-                        "Selecting connection at index $buttonIndex from ${connections.size} connections",
-                        context.session
-                    )
-                    connections[buttonIndex]
-                } else {
-                    WebSocketDebug.logMessage(
-                        "INVALID_BUTTON_INDEX",
-                        "Button index $buttonIndex is out of range (0-${connections.size - 1})",
-                        context.session
-                    )
-                    null
-                }
+                val connection = connections.find { connection -> connection.fromPort.endsWith("_out_button_$buttonIndex") }
+
                 if (connection != null) {
                     WebSocketDebug.logMessage(
                         "FOLLOWING_HAS_ITEM_CONNECTION",
@@ -264,46 +251,41 @@ class NodeLogicRunner(
 
                 // Find the connection that corresponds to the output property
                 val connection = if (connections.isNotEmpty()) {
-                    // If we have only one connection, use it
-                    if (connections.size == 1) {
-                        connections[0]
-                    } else {
-                        // Find the connection that matches the output property based on the sourcePortId in the connection id
+                    // Find the connection that matches the output property based on the sourcePortId in the connection id
+                    WebSocketDebug.logMessage(
+                        "CHECKING_CONNECTIONS",
+                        "Checking ${connections.size} connections for output property: $outputProperty",
+                        context.session
+                    )
+
+                    val matchingConnection = connections.find { connection ->
                         WebSocketDebug.logMessage(
                             "CHECKING_CONNECTIONS",
-                            "Checking ${connections.size} connections for output property: $outputProperty",
+                            "Checking connection for output property: $connection with fromPort=${connection.fromPort}",
                             context.session
                         )
 
-                        val matchingConnection = connections.find { connection ->
-                            WebSocketDebug.logMessage(
-                                "CHECKING_CONNECTIONS",
-                                "Checking connection for output property: $connection with fromPort=${connection.fromPort}",
-                                context.session
-                            )
-
-                            when (outputProperty) {
-                                PropertyKey.YES -> connection.fromPort.endsWith("_out_0")
-                                PropertyKey.NO -> connection.fromPort.endsWith("_out_1")
-                                else -> false
-                            }
+                        when (outputProperty) {
+                            PropertyKey.YES -> connection.fromPort.endsWith("_out_0")
+                            PropertyKey.NO -> connection.fromPort.endsWith("_out_1")
+                            else -> false
                         }
+                    }
 
-                        if (matchingConnection != null) {
-                            WebSocketDebug.logMessage(
-                                "FOUND_MATCHING_CONNECTION",
-                                "Found connection matching output property $outputProperty: ${matchingConnection.id}",
-                                context.session
-                            )
-                            matchingConnection
-                        } else {
-                            WebSocketDebug.logError(
-                                "No connection found matching output property $outputProperty for HasItem node: ${node.id}",
-                                null,
-                                context.session
-                            )
-                            null
-                        }
+                    if (matchingConnection != null) {
+                        WebSocketDebug.logMessage(
+                            "FOUND_MATCHING_CONNECTION",
+                            "Found connection matching output property $outputProperty: ${matchingConnection.id}",
+                            context.session
+                        )
+                        matchingConnection
+                    } else {
+                        WebSocketDebug.logError(
+                            "No connection found matching output property $outputProperty for HasItem node: ${node.id}",
+                            null,
+                            context.session
+                        )
+                        null
                     }
                 } else {
                     WebSocketDebug.logError("No connections found for HasItem node: ${node.id}", null, context.session)
@@ -421,6 +403,15 @@ class NodeLogicRunner(
                     context.session
                 )
                 HasItemNodeRunner(context)
+            }
+            
+            NodeId.OpenUrl -> {
+                WebSocketDebug.logMessage(
+                    "OPEN_URL_RUNNER_SELECTED",
+                    "Selected OpenUrlNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                OpenUrlNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

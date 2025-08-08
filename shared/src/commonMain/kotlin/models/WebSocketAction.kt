@@ -24,5 +24,6 @@ enum class WebSocketAction {
     TELEPORT_PLAYER,
     SHOW_DIALOGUE,
     DIALOGUE_CONFIRM,
-    PLAYER_TYPING
+    PLAYER_TYPING,
+    OPEN_URL
 }

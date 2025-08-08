@@ -174,7 +174,14 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String, nodeData: Strin
  * @param data Optional node data string for extracting property values
  * @return The new NodeData object
  */
-fun createNode(type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float, data: String = "{}"): Pair<String, NodeData> {
+fun createNode(
+    type: NodeCategory,
+    nodeId: NodeId,
+    label: String,
+    x: Float,
+    y: Float,
+    data: String = "{}"
+): Pair<String, NodeData> {
     // Always generate a unique ID by appending a timestamp
     // This ensures we can add multiple nodes of the same type
     val id = "${nodeId}_${Date.now().toLong()}"
@@ -187,6 +194,7 @@ fun createNode(type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: F
         NodeId.Dialogue -> LogicNode.Dialogue()
         NodeId.UserLanguage -> LogicNode.UserLanguage()
         NodeId.HasItem -> LogicNode.HasItem()
+        NodeId.OpenUrl -> LogicNode.OpenUrl()
     }
     
     // Create ports based on node type and data

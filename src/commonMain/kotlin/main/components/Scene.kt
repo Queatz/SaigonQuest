@@ -17,10 +17,13 @@ import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
+import main.api.ApiClient
 import main.api.FriendApi
 import main.api.NotificationApi
+import models.OpenUrlData
 import main.api.UserApi
 import models.NotificationType
+import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
 import main.components.input.InputHandler
@@ -95,6 +98,11 @@ fun SceneComponent(url: String) {
     val otherPlayerIsLoading = remember { mutableStateOf(false) }
     val otherPlayerErrorMessage = remember { mutableStateOf<String?>(null) }
     val otherPlayerId = remember { mutableStateOf("") }
+    
+    // State for open URL dialog
+    val showOpenUrlDialog = remember { mutableStateOf(false) }
+    val openUrlValue = remember { mutableStateOf("") }
+    val openUrlCallback = remember { mutableStateOf<(() -> Unit)?>(null) }
     
     // Coroutine scope for friendship-related operations
     val scope = rememberCoroutineScope()
@@ -419,6 +427,25 @@ fun SceneComponent(url: String) {
 
     // Add DialogueBox component for displaying dialogue messages
     DialogueBox()
+    
+    // Show OpenUrlDialog if requested
+    if (showOpenUrlDialog.value) {
+        OpenUrlDialog(
+            url = openUrlValue.value,
+            onConfirm = {
+                // Call the callback function if it exists
+                openUrlCallback.value?.invoke()
+                // Reset the dialog state
+                showOpenUrlDialog.value = false
+                openUrlCallback.value = null
+            },
+            onCancel = {
+                // Reset the dialog state
+                showOpenUrlDialog.value = false
+                openUrlCallback.value = null
+            }
+        )
+    }
 
     // Set up BabylonJS scene
     DisposableEffect(canvasId) {
@@ -608,6 +635,26 @@ fun SceneComponent(url: String) {
                 
                 if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
                     console.log("WebSocket connection established successfully!")
+                    
+                    // Set up OPEN_URL listener
+                    WebSocketApi.addListener(models.WebSocketAction.OPEN_URL) { message ->
+                        try {
+                            // Parse the message data
+                            val openUrlData = ApiClient.json.decodeFromString<OpenUrlData>(message.data)
+                            
+                            // Update the dialog state
+                            openUrlValue.value = openUrlData.url
+                            openUrlCallback.value = {
+                                // Open the URL in a new window when confirmed
+                                window.open(openUrlData.url, "_blank")
+                            }
+                            
+                            // Show the dialog
+                            showOpenUrlDialog.value = true
+                        } catch (e: Exception) {
+                            console.error("Error handling OPEN_URL message", e)
+                        }
+                    }
                 } else {
                     console.warn("WebSocket connection not established after multiple attempts. Player movement may be limited.")
                 }

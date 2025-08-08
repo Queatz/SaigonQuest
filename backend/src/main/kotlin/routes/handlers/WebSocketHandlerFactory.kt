@@ -41,6 +41,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.TELEPORT_PLAYER -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.SHOW_DIALOGUE -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received
+            WebSocketAction.OPEN_URL -> NullHandler() // This is only sent by the server, not received
             null -> NullHandler()
         }
     }

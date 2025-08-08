@@ -102,6 +102,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Checks if player has a specific item"
     ) : LogicNode
+    
+    /**
+     * OpenUrl node - opens a URL in a new browser window
+     */
+    @Serializable
+    data class OpenUrl(
+        override val id: NodeId = NodeId.OpenUrl,
+        override val label: String = "Open URL",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Opens a URL in a new browser window"
+    ) : LogicNode
 }
 
 /**
@@ -114,7 +125,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.Teleport(),
         LogicNode.Dialogue(),
         LogicNode.UserLanguage(),
-        LogicNode.HasItem()
+        LogicNode.HasItem(),
+        LogicNode.OpenUrl()
     )
 }
 

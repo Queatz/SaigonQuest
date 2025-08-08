@@ -72,6 +72,63 @@ implementation(npm("marked", "15.0.7"))
 
 Use sentence case for all UI.
 
+## Translations
+
+The project supports multiple langauges.
+
+### Supported Languages
+
+`en`, `vi`
+
+### How to Add New Translations
+
+Translations are declared in `shared/src/commonMain/kotlin/Translations.kt`.
+
+### How To Use Translations
+
+Composable helpers are declared in `src/commonMain/kotlin/main/components/Translated.kt`
+
+```kotlin
+Div {
+    Translated("Some text")
+}
+```
+
+or
+
+```kotlin
+BasicConfirmDialog(
+    message = translated("Some text")
+    // ...
+)
+```
+
+When we are not able to use the Composable helpers, we should use `str()` directly:
+
+```kotlin
+Div(
+    attrs = {
+        title(str("Some text"))
+    }
+) {
+    
+}
+```
+
+Alternatively, we can use a val from the Composable context to make the string auto-recompose:
+
+```kotlin
+val someText = translated("Some text")
+
+Div(
+    attrs = {
+        title(someText)
+    }
+) {
+    
+}
+```
+
 ## Architecture Requirements
 
 Always implement a proper system before jumping into code changes.

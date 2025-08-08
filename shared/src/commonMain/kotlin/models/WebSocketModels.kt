@@ -108,3 +108,14 @@ data class DialogueConfirmation(
     val userId: String,
     val buttonIndex: Int = 0 // Index of the button that was clicked (0 is the default/first button)
 )
+
+/**
+ * Open URL data model
+ * 
+ * This model is sent when an OpenUrl node is executed to prompt the user to open a URL.
+ */
+@Serializable
+data class OpenUrlData(
+    val userId: String,
+    val url: String
+)

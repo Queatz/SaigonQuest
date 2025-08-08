@@ -119,6 +119,8 @@ fun NodeElement(
         // Use a small delay to ensure the DOM element is rendered
         if (nodeElementRef == null) return@DisposableEffect onDispose {  }
 
+        val nodeElementRef = nodeElementRef
+
         println("[NODE_CONNECTIONS] Registering node element: $id")
         // Register the node element with the controller
         controller.registerNodeElement(id, nodeElementRef!!)

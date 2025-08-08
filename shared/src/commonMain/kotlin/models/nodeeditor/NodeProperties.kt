@@ -32,7 +32,10 @@ enum class PropertyKey {
     ITEM_ID,
     QUANTITY,
     YES,
-    NO
+    NO,
+    
+    // OpenUrl properties
+    URL
 }
 
 /**
@@ -228,6 +231,23 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 name = "No",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
+            )
+        )
+        
+        // OpenUrl node properties
+        is LogicNode.OpenUrl -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.URL,
+                name = "URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "https://"
             )
         )
     }

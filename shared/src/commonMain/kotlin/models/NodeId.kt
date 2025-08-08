@@ -9,5 +9,6 @@ enum class NodeId {
     PlayerInteract,
     Dialogue,
     UserLanguage,
-    HasItem
+    HasItem,
+    OpenUrl
 }
