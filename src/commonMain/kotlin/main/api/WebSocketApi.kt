@@ -8,6 +8,12 @@ import main.api.UserApi.getVisitorId
 import models.WebSocketAction
 import org.w3c.dom.WebSocket
 
+// Token for managing WebSocket listeners safely
+data class ListenerToken(
+    val action: WebSocketAction,
+    val listener: (WebSocketMessage) -> Unit,
+)
+
 /**
  * API client for WebSocket operations
  * 
@@ -411,6 +417,11 @@ object WebSocketApi {
         listeners[action]?.remove(listener)
     }
 
+    // Remove a listener using a token
+    fun removeListener(token: ListenerToken) {
+        removeListener(token.action, token.listener)
+    }
+
     /**
      * Remove all listeners for a specific action
      */
@@ -446,10 +457,16 @@ object WebSocketApi {
         listeners[action]?.add(listener)
         console.log("WebSocketApi: Listener added for action: $action, total listeners: ${listeners[action]?.size}")
     }
+
+    // Add a listener and return a ListenerToken for safe removal
+    fun addListenerWithToken(action: WebSocketAction, listener: (WebSocketMessage) -> Unit): ListenerToken {
+        addListener(action, listener)
+        return ListenerToken(action, listener)
+    }
     
     /**
      * Send a message to the WebSocket server
-     * 
+     *
      * This is a utility method that can be used by extension functions to send messages
      * without needing access to private members.
      * 

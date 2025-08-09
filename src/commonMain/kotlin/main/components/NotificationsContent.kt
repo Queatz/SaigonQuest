@@ -92,7 +92,7 @@ fun NotificationsContent(
                         onClick { markAllAsRead() }
                     }
                 ) {
-                    Text("Mark all as read")
+                    Translated("Mark all as read")
                 }
             }
         }
@@ -100,19 +100,19 @@ fun NotificationsContent(
         // Loading state
         if (isLoading) {
             Div(attrs = { classes(NotificationStyles.loadingContainer) }) {
-                Text("Loading notifications...")
+                Translated("Loading notifications...")
             }
         }
         // Error state
         else if (error != null) {
             Div(attrs = { classes(NotificationStyles.errorContainer) }) {
-                Text(error ?: "An error occurred")
+                Text(error ?: str("An error occurred"))
             }
         }
         // Empty state
         else if (notifications.isEmpty()) {
             Div(attrs = { classes(NotificationStyles.emptyContainer) }) {
-                Text("No notifications")
+                Translated("No notifications")
             }
         }
         // Display notifications

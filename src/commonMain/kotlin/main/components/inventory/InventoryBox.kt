@@ -52,14 +52,28 @@ fun InventoryBox(
                     
                     // Create a custom drag image (optional)
                     val dragIcon = document.createElement("div") as HTMLElement
-                    dragIcon.innerHTML = "<div class='drag-icon'></div>"
+                    // Style the drag icon to match IconRenderer rendering
                     dragIcon.style.position = "absolute"
                     dragIcon.style.top = "-1000px"
+                    dragIcon.style.width = "32px"
+                    dragIcon.style.height = "32px"
+                    dragIcon.style.setProperty("pointer-events", "none")
+
+                    // If the item has a file, render the correct sprite frame
+                    if (item.file.isNotEmpty()) {
+                        val url = "/raw/data/spritesheets/${item.file}.png"
+                        dragIcon.style.setProperty("background-image", "url(\"$url\")")
+                        dragIcon.style.setProperty("background-size", "320px 320px")
+                        val col = item.assetIndex % 10
+                        val row = item.assetIndex / 10
+                        dragIcon.style.setProperty("background-position", "-${col * 32}px -${row * 32}px")
+                    }
+
                     document.body?.appendChild(dragIcon)
-                    
+
                     // Set the drag image
                     event.dataTransfer?.setDragImage(dragIcon, 15, 15)
-                    
+
                     // Remove the drag icon after it's been used
                     window.setTimeout({
                         document.body?.removeChild(dragIcon)

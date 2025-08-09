@@ -48,6 +48,45 @@ object WebSocketUtils {
         
         WebSocketDebug.logBroadcast("BROADCAST_COMPLETE", "Success: $successCount/${connections.size} clients", worldId)
     }
+
+    /**
+     * Broadcast a message to all clients in a world except one user (typically the sender)
+     */
+    suspend fun broadcastToWorldExcept(
+        worldId: String,
+        message: String,
+        excludeUserId: String,
+        activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
+        session: DefaultWebSocketServerSession
+    ) {
+        val connections = activeConnections[worldId]
+        if (connections.isNullOrEmpty()) {
+            WebSocketDebug.logBroadcast("NO_CONNECTIONS", "No active connections", worldId)
+            return
+        }
+
+        val recipients = connections.filter { it.userId != excludeUserId }
+        if (recipients.isEmpty()) {
+            WebSocketDebug.logBroadcast("NO_RECIPIENTS", "No recipients after excluding $excludeUserId", worldId)
+            return
+        }
+
+        WebSocketDebug.logBroadcast("BROADCASTING_EXCEPT", "To ${recipients.size} clients (excluding $excludeUserId)", worldId)
+        WebSocketDebug.logBroadcast("MESSAGE_CONTENT", message, worldId)
+        var successCount = 0
+
+        recipients.forEach { connection ->
+            try {
+                WebSocketDebug.logBroadcast("SENDING_TO", "User: ${connection.userId}", worldId)
+                connection.session.send(message)
+                successCount++
+                WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
+            } catch (e: Exception) {
+                WebSocketDebug.logError("Error sending message to client ${connection.userId}", e, session)
+            }
+        }
+        WebSocketDebug.logBroadcast("BROADCAST_EXCEPT_COMPLETE", "Success: $successCount/${recipients.size} clients", worldId)
+    }
     
     /**
      * Broadcast a message to a specific user across all their active connections

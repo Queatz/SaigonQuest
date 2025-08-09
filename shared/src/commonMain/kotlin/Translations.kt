@@ -187,6 +187,45 @@ vi: Hủy
 Save
 vi: Lưu
 
+You haven't made any friends yet!
+vi: Bạn vẫn chưa kết bạn nào!
+
+Mark all as read
+vi: Đánh dấu tất cả là đã đọc
+
+Loading notifications...
+vi: Đang tải thông báo...
+
+No notifications
+vi: Không có thông báo
+
+Failed to load notifications
+vi: Không thể tải thông báo
+
+An error occurred
+vi: Đã xảy ra lỗi
+
+Loading friends...
+vi: Đang tải danh sách bạn bè...
+
+Error:
+vi: Lỗi:
+
+Last seen in:
+vi: Lần cuối xuất hiện ở:
+
+Jump to Friend
+vi: Đến bạn bè
+
+Remove
+vi: Xóa
+
+Are you sure you want to remove
+vi: Bạn có chắc chắn muốn xóa
+
+from your friends list?
+vi: khỏi danh sách bạn bè không?
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

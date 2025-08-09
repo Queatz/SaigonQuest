@@ -10,9 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import main.utils.getBoundingClientRectSafe
+import main.utils.ElementPositionTracker
 import models.nodeeditor.Connection
 import models.nodeeditor.PortType
 import web.animations.awaitAnimationFrame
+import kotlin.math.roundToInt
 
 /**
  * Handles the rendering and management of connections between nodes.
@@ -23,10 +25,11 @@ import web.animations.awaitAnimationFrame
  */
 @Composable
 fun ConnectionHandler(controller: NodeEditorController) {
+    val positionTracker = main.utils.rememberElementPositionTracker()
     // Render connections between nodes
     controller.connections.forEach { connection ->
         key(connection) {
-            RenderConnection(controller, connection)
+            RenderConnection(controller, connection, positionTracker)
         }
     }
 
@@ -45,10 +48,25 @@ fun ConnectionHandler(controller: NodeEditorController) {
 fun RenderConnection(
     controller: NodeEditorController,
     connection: Connection,
+    positionTracker: ElementPositionTracker,
 ) {
 
     var invalidate by remember { mutableStateOf(0) }
     var invalidateTrigger by remember { mutableStateOf(0) }
+
+    // Kick an initial re-measure after first composition to ensure correct connection positions
+    LaunchedEffect(Unit) {
+        // Wait for layout to settle and controller to register DOM refs
+        awaitAnimationFrame()
+        // In some cases an extra frame helps when styles load asynchronously
+        awaitAnimationFrame()
+        invalidate++
+
+        // After NodeEditorPanel registers canvas/wrapper (100ms timeout), re-measure again
+        delay(150)
+        awaitAnimationFrame()
+        invalidate++
+    }
 
     LaunchedEffect(invalidate) {
         delay(50)
@@ -59,6 +77,52 @@ fun RenderConnection(
     // Find the source and target nodes and ports
     val sourceNode = controller.nodes[connection.sourceId]
     val targetNode = controller.nodes[connection.targetId]
+
+    // Observe port element size/position changes to invalidate connection layout using ResizeObserver
+
+    val observedSourceElement = if (sourceNode != null) {
+        controller.getPortElement(
+            nodeId = connection.sourceId,
+            portId = connection.sourcePortId,
+            portType = PortType.OUTPUT,
+        )
+    } else null
+
+    val observedTargetElement = if (targetNode != null) {
+        controller.getPortElement(
+            nodeId = connection.targetId,
+            portId = connection.targetPortId,
+            portType = PortType.INPUT,
+        )
+    } else null
+
+    // Track elements with ResizeObserver (state-driven)
+    val sourceRectState = remember(observedSourceElement) {
+        observedSourceElement?.let { positionTracker.trackElement(it) }
+    }
+    val targetRectState = remember(observedTargetElement) {
+        observedTargetElement?.let { positionTracker.trackElement(it) }
+    }
+
+    androidx.compose.runtime.DisposableEffect(observedSourceElement) {
+        onDispose {
+            if (observedSourceElement != null) {
+                positionTracker.untrackElement(observedSourceElement)
+            }
+        }
+    }
+    androidx.compose.runtime.DisposableEffect(observedTargetElement) {
+        onDispose {
+            if (observedTargetElement != null) {
+                positionTracker.untrackElement(observedTargetElement)
+            }
+        }
+    }
+
+    // When rects change, request re-measure of connection positions
+    LaunchedEffect(sourceRectState?.value, targetRectState?.value) {
+        invalidate++
+    }
 
     // Use derivedStateOf to create a derived state that depends on the nodes and connections
     // This will cause recomposition when the nodes or connections change

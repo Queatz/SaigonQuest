@@ -7,9 +7,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.WebSocketConnectionManager
+import main.api.sendUserJoin
+import main.api.sendUserLeave
 import main.api.updatePlayer
+import main.components.SceneManager
+import main.components.inventory.InventoryState
 import models.Sex
 import models.User
+import models.Position
 
 /**
  * Presenter component for VisitorDialog
@@ -117,6 +123,13 @@ private fun handleRegistration(
                             console.error("Error updating player state after registration", e)
                         }
                         
+                        // Refresh inventory and customizations so the local avatar updates
+                        try {
+                            InventoryState.refreshInventory(registrationScope)
+                        } catch (e: Exception) {
+                            console.error("VisitorDialogPresenter: Failed to refresh inventory after registration", e)
+                        }
+                        
                         // Call the onSuccess callback
                         onSuccess(user)
                     } catch (error: Exception) {
@@ -146,6 +159,13 @@ private fun handleRegistration(
                         console.error("Error updating player state after registration", e)
                     }
                     
+                    // Refresh inventory and customizations so the local avatar updates
+                    try {
+                        InventoryState.refreshInventory(registrationScope)
+                    } catch (e: Exception) {
+                        console.error("VisitorDialogPresenter: Failed to refresh inventory after registration", e)
+                    }
+                    
                     // Call the onSuccess callback
                     onSuccess(user)
                 } catch (error: Exception) {
@@ -172,8 +192,48 @@ private fun handleLogin(
     // Handle login using the independent scope
     loginScope.launch {
         try {
+            // Step 2: Send USER_LEAVE as the visitor (before credentials switch)
+            try {
+                val worldId = WebSocketConnectionManager.currentWorldId.value
+                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED && worldId != null) {
+                    console.log("VisitorDialogPresenter: Sending USER_LEAVE for visitor before login")
+                    WebSocketApi.sendUserLeave(worldId)
+                } else {
+                    console.warn("VisitorDialogPresenter: Skipping USER_LEAVE before login - not connected or missing worldId")
+                }
+            } catch (e: Exception) {
+                console.error("VisitorDialogPresenter: Error while sending USER_LEAVE before login", e)
+            }
+
+            // Step 1: Login (credentials switch from visitor -> player)
             val user = UserApi.login(username, password)
             console.log("User logged in: ${user.username}")
+
+            // Update OtherPlayersController knowledge of our current userId so it ignores our join
+            try {
+                SceneManager.getOtherPlayersController()?.let { controller ->
+                    controller.refreshCurrentUserId()
+                }
+            } catch (e: Exception) {
+                console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController", e)
+            }
+
+            // Step 3: Send USER_JOIN for the new player with current position
+            try {
+                val worldId = WebSocketConnectionManager.currentWorldId.value
+                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED && worldId != null) {
+                    // Determine current position
+                    val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
+                    val position = if (playerPos != null) Position(playerPos.x, playerPos.y, playerPos.z) else Position(0f, 0f, 0f)
+
+                    console.log("VisitorDialogPresenter: Sending USER_JOIN for player after login at position: ${'$'}position")
+                    WebSocketApi.sendUserJoin(worldId, position, isPlayer = true)
+                } else {
+                    console.warn("VisitorDialogPresenter: Skipping USER_JOIN after login - not connected or missing worldId")
+                }
+            } catch (e: Exception) {
+                console.error("VisitorDialogPresenter: Error while sending USER_JOIN after login", e)
+            }
             
             // Update player state in WebSocket to notify other clients
             try {
@@ -188,6 +248,13 @@ private fun handleLogin(
                 }
             } catch (e: Exception) {
                 console.error("Error updating player state after login", e)
+            }
+            
+            // Refresh inventory and customizations so the local avatar updates
+            try {
+                InventoryState.refreshInventory(loginScope)
+            } catch (e: Exception) {
+                console.error("VisitorDialogPresenter: Failed to refresh inventory after login", e)
             }
             
             // Call the onSuccess callback

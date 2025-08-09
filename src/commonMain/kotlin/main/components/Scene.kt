@@ -429,14 +429,6 @@ fun SceneComponent(url: String) {
             onRemoveFriend = {
                 removeFriend()
             },
-            onTrade = {
-                // Handle Trade button click
-                console.log("Trade clicked for player: ${otherPlayerUsername.value}")
-                // TODO: Implement trade functionality
-
-                // Close the dialog
-                showOtherPlayerDialog.value = false
-            },
             onClose = {
                 // Close the dialog
                 showOtherPlayerDialog.value = false

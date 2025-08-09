@@ -1012,8 +1012,8 @@ class SceneObjectManager(
         
         WebSocketApi.addListener(WebSocketAction.REMOVE_OBJECT) { message ->
             try {
-                // The data is just the object ID as a string
-                val objectId = message.data
+                // The data is JSON-encoded string containing the object ID
+                val objectId = json.decodeFromString<String>(message.data)
                 
                 console.log("Received object removal via WebSocket: $objectId")
                 

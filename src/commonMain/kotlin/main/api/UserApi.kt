@@ -161,6 +161,9 @@ object UserApi {
                 // Save new token
                 saveToken(authResponse.token)
                 
+                // Update cached current user to the newly registered player
+                user = authResponse.user
+                
                 return authResponse.user
             } else {
                 throw Error(response.bodyAsText())
@@ -188,6 +191,9 @@ object UserApi {
                 
                 // Save token
                 saveToken(authResponse.token)
+                
+                // Update cached current user to the newly authenticated player
+                user = authResponse.user
                 
                 return authResponse.user
             } else {

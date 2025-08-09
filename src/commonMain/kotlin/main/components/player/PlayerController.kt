@@ -40,6 +40,7 @@ import main.api.addTeleportPlayerListener
 import main.api.addUpdatePlayerListener
 import main.api.updatePlayer
 import main.api.updatePlayerPosition
+import main.api.ListenerToken
 import main.components.world.PlayerActivity
 
 /**
@@ -797,7 +798,7 @@ class PlayerController(private val scene: Scene) {
         removePlayerStatus()
         
         // Truncate message to first 16 characters
-        val displayText = if (message.length > 16) message.substring(0, 16) else message
+        val displayText = if (message.length > 16) message.take(16) + "…" else message
         
         // Calculate position above the username (adjust Y value as needed)
         // Username is at y + .5f, so put chat message at y + .8f
@@ -856,9 +857,12 @@ class PlayerController(private val scene: Scene) {
     /**
      * Initializes the chat message listener
      */
+    private var chatListenerToken: ListenerToken? = null
+    private var updatePlayerListenerToken: ListenerToken? = null
+
     fun initializeChatMessageListener() {
         // Add listener for chat messages
-        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+        chatListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
                 // Check if the message is valid
                 if (message.isValid()) {
@@ -913,7 +917,7 @@ class PlayerController(private val scene: Scene) {
         // Set up a listener for player status updates from WebSocket
         // This is crucial for the player to see their own status updates
         console.log("[DEBUG_LOG] PlayerController: Setting up WebSocket listener for player status updates")
-        WebSocketApi.addUpdatePlayerListener { updateData ->
+        updatePlayerListenerToken = WebSocketApi.addUpdatePlayerListener { updateData ->
             coroutineScope.launch {
                 try {
                     // Get current user to check if this update is for the current player
@@ -1166,7 +1170,10 @@ class PlayerController(private val scene: Scene) {
             inventoryRefreshCallback = null
         }
         
-        // Remove WebSocket listeners
-        WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
+        // Remove WebSocket listeners scoped to this controller
+        chatListenerToken?.let { WebSocketApi.removeListener(it) }
+        chatListenerToken = null
+        updatePlayerListenerToken?.let { WebSocketApi.removeListener(it) }
+        updatePlayerListenerToken = null
     }
 }

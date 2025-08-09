@@ -230,8 +230,8 @@ class CameraController(private val scene: Scene) {
         // Constants for the linear interpolation
         val minRadius = camera.lowerRadiusLimit
         val maxRadius = camera.upperRadiusLimit
-        val maxWeight = 8f // Weight when radius is at minimum
-        val minWeight = 2f // Weight when radius is at maximum
+        val maxWeight = 4f // Weight when radius is at minimum
+        val minWeight = 1f // Weight when radius is at maximum
         
         // Calculate the vignette weight using linear interpolation
         val weight = maxWeight - (camera.radius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
@@ -406,8 +406,8 @@ class CameraController(private val scene: Scene) {
                         // Check if image processing is available before configuring
                         if (imageProcessingEnabled) {
                             // Configure image processing settings
-                            imageProcessing.contrast = 1.1f
-                            imageProcessing.exposure = 1.1f
+                            imageProcessing.contrast = 1.25f
+                            imageProcessing.exposure = 1.05f
                             println("[DEBUG] Image processing settings configured successfully")
                         }
                     } catch (e: Exception) {

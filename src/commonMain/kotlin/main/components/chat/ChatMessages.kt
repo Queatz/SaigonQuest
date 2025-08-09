@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.ChatApi
@@ -97,6 +98,7 @@ fun ChatMessages(worldId: String) {
             
             // Scroll to bottom after initial messages are loaded
             awaitAnimationFrame()
+            delay(500)
             scrollToBottom()
         } catch (e: Exception) {
             console.error("Error loading chat messages", e)

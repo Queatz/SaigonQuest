@@ -18,14 +18,14 @@ import models.WebSocketAction
  * 
  * @param listener A function that takes a UserJoinData and returns Unit
  */
-fun WebSocketApi.addUserJoinListener(listener: (UserJoinData) -> Unit) {
+fun WebSocketApi.addUserJoinListener(listener: (UserJoinData) -> Unit): ListenerToken {
     console.log("WebSocketApi: Registering USER_JOIN listener")
     
     // Check if we already have listeners for this action
     val existingListeners = getListenerCount(WebSocketAction.USER_JOIN)
     console.log("WebSocketApi: Currently have $existingListeners USER_JOIN listeners")
     
-    addListener(WebSocketAction.USER_JOIN) { message ->
+    val handler: (WebSocketMessage) -> Unit = { message ->
         console.log("WebSocketApi: USER_JOIN listener triggered with message: ${message.data}")
         try {
             val joinData = ApiClient.json.decodeFromString<UserJoinData>(message.data)
@@ -35,10 +35,12 @@ fun WebSocketApi.addUserJoinListener(listener: (UserJoinData) -> Unit) {
             console.error("WebSocketApi: Error parsing user join data", e)
         }
     }
+    addListener(WebSocketAction.USER_JOIN, handler)
     
     // Verify listener was added
     val newListenerCount = getListenerCount(WebSocketAction.USER_JOIN)
     console.log("WebSocketApi: Now have $newListenerCount USER_JOIN listeners")
+    return ListenerToken(WebSocketAction.USER_JOIN, handler)
 }
 
 /**
@@ -46,8 +48,8 @@ fun WebSocketApi.addUserJoinListener(listener: (UserJoinData) -> Unit) {
  * 
  * @param listener A function that takes a UserLeaveData and returns Unit
  */
-fun WebSocketApi.addUserLeaveListener(listener: (UserLeaveData) -> Unit) {
-    addListener(WebSocketAction.USER_LEAVE) { message ->
+fun WebSocketApi.addUserLeaveListener(listener: (UserLeaveData) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
         try {
             val leaveData = ApiClient.json.decodeFromString<UserLeaveData>(message.data)
             listener(leaveData)
@@ -55,6 +57,8 @@ fun WebSocketApi.addUserLeaveListener(listener: (UserLeaveData) -> Unit) {
             console.error("Error parsing user leave data", e)
         }
     }
+    addListener(WebSocketAction.USER_LEAVE, handler)
+    return ListenerToken(WebSocketAction.USER_LEAVE, handler)
 }
 
 /**
@@ -62,8 +66,8 @@ fun WebSocketApi.addUserLeaveListener(listener: (UserLeaveData) -> Unit) {
  * 
  * @param listener A function that takes a PlayerPositionData and returns Unit
  */
-fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Unit) {
-    addListener(WebSocketAction.UPDATE_PLAYER_POSITION) { message ->
+fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
         try {
             val positionData = ApiClient.json.decodeFromString<PlayerPositionData>(message.data)
             listener(positionData)
@@ -71,6 +75,8 @@ fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Uni
             console.error("Error parsing player position data", e)
         }
     }
+    addListener(WebSocketAction.UPDATE_PLAYER_POSITION, handler)
+    return ListenerToken(WebSocketAction.UPDATE_PLAYER_POSITION, handler)
 }
 
 /**
@@ -78,9 +84,9 @@ fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Uni
  * 
  * @param listener A function that takes an UpdatePlayerData and returns Unit
  */
-fun WebSocketApi.addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit) {
+fun WebSocketApi.addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit): ListenerToken {
     console.log("[DEBUG_LOG] WebSocketApi: Adding UPDATE_PLAYER listener")
-    addListener(WebSocketAction.UPDATE_PLAYER) { message ->
+    val handler: (WebSocketMessage) -> Unit = { message ->
         try {
             console.log("[DEBUG_LOG] WebSocketApi: Received UPDATE_PLAYER message: ${message.data}")
             val updateData = ApiClient.json.decodeFromString<UpdatePlayerData>(message.data)
@@ -92,10 +98,12 @@ fun WebSocketApi.addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit) {
             console.error("[DEBUG_LOG] WebSocketApi: Raw message data: ${message.data}")
         }
     }
+    addListener(WebSocketAction.UPDATE_PLAYER, handler)
     
     // Log the number of listeners
     val listenerCount = getListenerCount(WebSocketAction.UPDATE_PLAYER)
     console.log("[DEBUG_LOG] WebSocketApi: Now have $listenerCount UPDATE_PLAYER listeners")
+    return ListenerToken(WebSocketAction.UPDATE_PLAYER, handler)
 }
 
 /**
@@ -104,9 +112,9 @@ fun WebSocketApi.addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit) {
  * @param router The router to use for navigation
  * @param listener A function that takes a Map<String, String> containing teleport data and returns Unit
  */
-fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String, String>) -> Unit) {
+fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String, String>) -> Unit): ListenerToken {
     console.log("WebSocketApi: Adding TELEPORT_PLAYER listener")
-    addListener(WebSocketAction.TELEPORT_PLAYER) { message ->
+    val handler: (WebSocketMessage) -> Unit = { message ->
         try {
             console.log("WebSocketApi: Received TELEPORT_PLAYER message: ${message.data}")
             val teleportData = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
@@ -138,10 +146,12 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
             console.error("WebSocketApi: Raw message data: ${message.data}")
         }
     }
+    addListener(WebSocketAction.TELEPORT_PLAYER, handler)
     
     // Log the number of listeners
     val listenerCount = getListenerCount(WebSocketAction.TELEPORT_PLAYER)
     console.log("WebSocketApi: Now have $listenerCount TELEPORT_PLAYER listeners")
+    return ListenerToken(WebSocketAction.TELEPORT_PLAYER, handler)
 }
 
 /**
@@ -149,9 +159,9 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
  * 
  * @param listener A function that takes a DialogueData and returns Unit
  */
-fun WebSocketApi.addDialogueListener(listener: (DialogueData) -> Unit) {
+fun WebSocketApi.addDialogueListener(listener: (DialogueData) -> Unit): ListenerToken {
     console.log("WebSocketApi: Adding SHOW_DIALOGUE listener")
-    addListener(WebSocketAction.SHOW_DIALOGUE) { message ->
+    val handler: (WebSocketMessage) -> Unit = { message ->
         try {
             console.log("WebSocketApi: Received SHOW_DIALOGUE message: ${message.data}")
             val dialogueData = ApiClient.json.decodeFromString<DialogueData>(message.data)
@@ -162,8 +172,10 @@ fun WebSocketApi.addDialogueListener(listener: (DialogueData) -> Unit) {
             console.error("WebSocketApi: SHOW_DIALOGUE Raw message data: ${message.data}")
         }
     }
+    addListener(WebSocketAction.SHOW_DIALOGUE, handler)
     
     // Log the number of listeners
     val listenerCount = getListenerCount(WebSocketAction.SHOW_DIALOGUE)
     console.log("WebSocketApi: Now have $listenerCount SHOW_DIALOGUE listeners")
+    return ListenerToken(WebSocketAction.SHOW_DIALOGUE, handler)
 }

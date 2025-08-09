@@ -239,9 +239,7 @@ suspend fun WebSocketApi.sendTypingStatus(worldId: String, isTyping: Boolean): B
  * @param isPlayer True if this is a player (authenticated user), false if it's a visitor
  * @return true if the notification was sent successfully, false otherwise
  */
-fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boolean): Boolean {
-    var success = false
-    
+fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boolean) {
     console.log("WebSocketApi: Attempting to send USER_JOIN notification for world: $worldId")
     
     apiScope.launch {
@@ -264,7 +262,7 @@ fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boo
             
             console.log("WebSocketApi: Created UserJoinData: $joinData")
             val message = WebSocketMessage.fromEnum(WebSocketAction.USER_JOIN, ApiClient.json.encodeToString(joinData))
-            success = sendMessage(message)
+            val success = sendMessage(message)
             
             if (success) {
                 console.log("WebSocketApi: User join notification sent successfully")
@@ -275,8 +273,6 @@ fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boo
             console.error("WebSocketApi: Error sending user join notification", e)
         }
     }
-    
-    return success
 }
 
 /**
@@ -288,9 +284,7 @@ fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boo
  * @param worldId The ID of the world
  * @return true if the notification was sent successfully, false otherwise
  */
-fun WebSocketApi.sendUserLeave(worldId: String): Boolean {
-    var success = false
-    
+fun WebSocketApi.sendUserLeave(worldId: String) {
     apiScope.launch {
         try {
             if (!isConnected()) {
@@ -305,7 +299,7 @@ fun WebSocketApi.sendUserLeave(worldId: String): Boolean {
             )
             
             val message = WebSocketMessage.fromEnum(WebSocketAction.USER_LEAVE, ApiClient.json.encodeToString(leaveData))
-            success = sendMessage(message)
+            val success = sendMessage(message)
             
             if (success) {
                 console.log("User leave notification sent successfully")
@@ -316,6 +310,4 @@ fun WebSocketApi.sendUserLeave(worldId: String): Boolean {
             console.error("Error sending user leave notification", e)
         }
     }
-    
-    return success
 }

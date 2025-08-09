@@ -44,6 +44,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import main.components.Translated
+import Translations.str
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -106,7 +108,7 @@ fun FriendsContent() {
                     }
                 }
             ) {
-                Text("Loading friends...")
+                Translated("Loading friends...")
             }
         }
         // Error state
@@ -122,7 +124,7 @@ fun FriendsContent() {
                     }
                 }
             ) {
-                Text("Error: $error")
+                Text("${str("Error:")} $error")
             }
         }
         // Empty state
@@ -145,7 +147,7 @@ fun FriendsContent() {
                         }
                     }
                 ) {
-                    Text("You haven't made any friends yet!")
+                    Translated("You haven't made any friends yet!")
                 }
             }
         }
@@ -271,7 +273,7 @@ fun FriendListItem(
                     }
                 }
             ) {
-                Text("Last seen in: ${friend.lastWorldName}")
+                Text("${str("Last seen in:")} ${friend.lastWorldName}")
             }
         }
         
@@ -305,7 +307,7 @@ fun FriendListItem(
                     }
                 }
             ) {
-                Text("Jump to Friend")
+                Translated("Jump to Friend")
             }
             
             // Remove friend button
@@ -325,13 +327,13 @@ fun FriendListItem(
                     }
                 }
             ) {
-                Text("Remove")
+                Translated("Remove")
             }
             
             // Confirmation dialog
             if (showConfirmDialog) {
                 BasicConfirmDialog(
-                    message = "Are you sure you want to remove ${friend.friendUsername} from your friends list?",
+                    message = "${str("Are you sure you want to remove")} ${friend.friendUsername} ${str("from your friends list?")}",
                     onConfirm = {
                         // Only remove friend if user confirms
                         onRemoveFriend(friend.friendId)

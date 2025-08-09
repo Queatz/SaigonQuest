@@ -33,7 +33,6 @@ fun OtherPlayerDialog(
     errorMessage: String? = null,
     onAddFriend: () -> Unit,
     onRemoveFriend: () -> Unit,
-    onTrade: () -> Unit,
     onClose: () -> Unit
 ) {
     BaseDialog(
@@ -124,14 +123,6 @@ fun OtherPlayerDialog(
                                 }
                             }
                         }
-                    }
-
-                    // Trade button
-                    DialogButton(
-                        onClick = { onTrade() },
-                        isPrimary = true
-                    ) {
-                        Text("Trade")
                     }
                 }
             }

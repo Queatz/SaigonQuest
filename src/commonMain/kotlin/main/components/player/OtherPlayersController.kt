@@ -11,6 +11,7 @@ import lib.Vector3
 import main.api.ApiClient
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.ListenerToken
 import main.api.WebSocketConnectionManager
 import main.api.addPlayerPositionListener
 import main.api.addUpdatePlayerListener
@@ -79,6 +80,9 @@ class OtherPlayersController(private val scene: Scene) {
     // Map of player directions by userId
     private val playerDirections = mutableMapOf<String, CharacterDirection>()
     
+    // Map of explicitly set activities by userId (used to persist Sit)
+    private val playerExplicitActivity = mutableMapOf<String, PlayerActivity?>()
+    
     // Reference to the world object manager for creating text billboards
     private var worldObjectManager: WorldObjectManager? = null
     
@@ -99,6 +103,9 @@ class OtherPlayersController(private val scene: Scene) {
     
     // Current user ID
     private var myUserId: String? = null
+
+    // Registered WebSocket listener tokens for cleanup
+    private val listenerTokens = mutableListOf<ListenerToken>()
     
     /**
      * Sets the world object manager for creating text billboards
@@ -108,6 +115,23 @@ class OtherPlayersController(private val scene: Scene) {
     fun setWorldObjectManager(manager: WorldObjectManager) {
         worldObjectManager = manager
         console.log("OtherPlayersController: WorldObjectManager set")
+    }
+
+    /**
+     * Refresh the cached current user ID.
+     * Call this after authentication changes (e.g., after login from visitor to player)
+     * so this controller continues to ignore self events (USER_JOIN/LEAVE/UPDATE).
+     */
+    fun refreshCurrentUserId() {
+        scope.launch {
+            try {
+                val user = UserApi.getCurrentUser()
+                myUserId = user.key
+                console.log("OtherPlayersController: Refreshed current user ID: $myUserId")
+            } catch (e: Exception) {
+                console.error("OtherPlayersController: Error refreshing current user ID", e)
+            }
+        }
     }
     
     /**
@@ -183,46 +207,29 @@ class OtherPlayersController(private val scene: Scene) {
         console.log("[TYPING] OtherPlayersController: Setting up WebSocket listeners")
         
         // Set up WebSocket listeners
-        WebSocketApi.addUserJoinListener { joinData ->
+        listenerTokens += WebSocketApi.addUserJoinListener { joinData ->
             console.log("OtherPlayersController: Received USER_JOIN event: ${joinData.userId}, ${joinData.username}")
             handleUserJoin(joinData)
-            
-            // When a new user joins, send our own join notification to ensure they see us
-            if (joinData.userId != myUserId) {
-                scope.launch {
-                    try {
-                        val worldId = WebSocketApi.getCurrentWorldId()
-                        if (worldId != null) {
-                            val user = UserApi.getCurrentUser()
-                            val playerPosition = getPlayerPosition()
-                            console.log("OtherPlayersController: Sending reciprocal USER_JOIN notification to new user: ${joinData.userId}")
-                            WebSocketApi.sendUserJoin(worldId, playerPosition, user.isPlayer)
-                        }
-                    } catch (e: Exception) {
-                        console.error("OtherPlayersController: Error sending reciprocal join notification", e)
-                    }
-                }
-            }
         }
         
-        WebSocketApi.addUserLeaveListener { leaveData ->
+        listenerTokens += WebSocketApi.addUserLeaveListener { leaveData ->
             console.log("OtherPlayersController: Received USER_LEAVE event: ${leaveData.userId}")
             handleUserLeave(leaveData)
         }
         
-        WebSocketApi.addPlayerPositionListener { positionData ->
+        listenerTokens += WebSocketApi.addPlayerPositionListener { positionData ->
             console.log("OtherPlayersController: Received UPDATE_PLAYER_POSITION event: ${positionData.userId}")
             handlePlayerPosition(positionData)
         }
         
         // Add listener for player updates
-        WebSocketApi.addUpdatePlayerListener { updateData ->
+        listenerTokens += WebSocketApi.addUpdatePlayerListener { updateData ->
             console.log("OtherPlayersController: Received UPDATE_PLAYER event: ${updateData.userId}, name: ${updateData.name}, isPlayer: ${updateData.isPlayer}")
             handleUpdatePlayer(updateData)
         }
         
         // Add listener for chat messages
-        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+        listenerTokens += WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
                 // Check if the message is valid
                 if (message.isValid()) {
@@ -462,6 +469,12 @@ class OtherPlayersController(private val scene: Scene) {
             if (updateData.activity != null || playerHandles[updateData.userId] != null) {
                 // Convert activity string to PlayerActivity enum
                 val activity = updateData.activity
+                
+                // Update explicit activity tracking: preserve Sit until changed
+                when (activity) {
+                    PlayerActivity.Sit -> playerExplicitActivity[updateData.userId] = PlayerActivity.Sit
+                    else -> playerExplicitActivity.remove(updateData.userId)
+                }
                 
                 // Update the player's activity
                 playerHandles[updateData.userId]?.let { handle ->
@@ -710,6 +723,7 @@ class OtherPlayersController(private val scene: Scene) {
         if (!preserveState) {
             playerUsernames.remove(userId)
             playerIsPlayerFlags.remove(userId)
+            playerExplicitActivity.remove(userId)
             console.log("[DEBUG_LOG] Removed player state for $userId")
         } else {
             console.log("[DEBUG_LOG] Preserved player state for $userId: username=${playerUsernames[userId]}, isPlayer=${playerIsPlayerFlags[userId]}")
@@ -775,8 +789,10 @@ class OtherPlayersController(private val scene: Scene) {
                             )
                         }
                         
-                        // Player has stopped moving, update activity to standing
-                        handle.updateActivity(null)
+                        // Player has stopped moving, update activity to standing (unless explicitly sitting)
+                        if (playerExplicitActivity[userId] != PlayerActivity.Sit) {
+                            handle.updateActivity(null)
+                        }
                     } else {
                         // Normalize direction and apply speed
                         direction.normalize()
@@ -803,8 +819,10 @@ class OtherPlayersController(private val scene: Scene) {
                             )
                         }
                         
-                        // Player is moving, update activity to Moving
-                        handle.updateActivity(PlayerActivity.Moving)
+                        // Player is moving, update activity to Moving (unless explicitly sitting)
+                        if (playerExplicitActivity[userId] != PlayerActivity.Sit) {
+                            handle.updateActivity(PlayerActivity.Moving)
+                        }
                     }
                 }
             }
@@ -855,7 +873,7 @@ class OtherPlayersController(private val scene: Scene) {
         removeChatMessage(userId)
         
         // Truncate message to first 16 characters
-        val displayText = if (message.length > 16) message.substring(0, 16) else message
+        val displayText = if (message.length > 16) message.take(16) + "…" else message
         
         // Calculate position above the username (adjust Y value as needed)
         // Username is at y + .5f, so put chat message at y + .8f
@@ -1069,7 +1087,7 @@ class OtherPlayersController(private val scene: Scene) {
         console.log("[TYPING] Setting up typing status listener")
         
         // Add listener for typing status updates
-        WebSocketApi.addListener(WebSocketAction.PLAYER_TYPING) { message ->
+        listenerTokens += WebSocketApi.addListenerWithToken(WebSocketAction.PLAYER_TYPING) { message ->
             console.log("[TYPING] Received PLAYER_TYPING message: ${message.data}")
             
             try {
@@ -1178,8 +1196,11 @@ class OtherPlayersController(private val scene: Scene) {
         chatMessageTimeouts.forEach { (_, timeoutId) -> window.clearTimeout(timeoutId) }
         chatMessageTimeouts.clear()
     
-        // Remove WebSocket listeners
-        WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
+        // Remove WebSocket listeners (scoped to this controller)
+        listenerTokens.forEach { token ->
+            WebSocketApi.removeListener(token)
+        }
+        listenerTokens.clear()
     
         // Clear other tracking maps
         playerTargetPositions.clear()
