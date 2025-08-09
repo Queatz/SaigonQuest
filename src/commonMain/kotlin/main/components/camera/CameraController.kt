@@ -406,8 +406,8 @@ class CameraController(private val scene: Scene) {
                         // Check if image processing is available before configuring
                         if (imageProcessingEnabled) {
                             // Configure image processing settings
-                            imageProcessing.contrast = 1.25f
-                            imageProcessing.exposure = 1.05f
+//                            imageProcessing.contrast = 2f
+//                            imageProcessing.exposure = .75f
                             println("[DEBUG] Image processing settings configured successfully")
                         }
                     } catch (e: Exception) {

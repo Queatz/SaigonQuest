@@ -4,10 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import kotlinx.browser.document
-import org.jetbrains.compose.web.dom.ElementScope
+import org.jetbrains.compose.web.renderComposable
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLDivElement
-import org.jetbrains.compose.web.renderComposable
 
 /**
  * A Portal component that renders its content at a different location in the DOM tree.

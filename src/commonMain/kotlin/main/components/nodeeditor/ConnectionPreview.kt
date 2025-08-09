@@ -1,16 +1,13 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import kotlinx.browser.document
 import main.theme.NodeEditorStyles
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.Div
-import org.w3c.dom.HTMLElement
 
 /**
  * Renders a preview connection while dragging from a port.

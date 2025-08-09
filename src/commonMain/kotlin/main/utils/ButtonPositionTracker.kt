@@ -6,8 +6,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import kotlinx.browser.window
-import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
 import org.w3c.dom.DOMRect
 
 /**

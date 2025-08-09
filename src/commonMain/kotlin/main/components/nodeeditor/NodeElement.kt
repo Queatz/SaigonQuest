@@ -8,24 +8,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
-import kotlinx.serialization.decodeFromString
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.nodeeditor.NodeData
-import models.nodeeditor.NodePropertyDefinition
 import models.nodeeditor.PortData
 import models.nodeeditor.PropertyKey
-import models.nodeeditor.PropertyType
-import org.w3c.dom.HTMLElement
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
-import utils.json
-import web.cssom.HtmlAttributes.Companion.value
 
 /**
  * A node element in the node editor.

@@ -3,9 +3,11 @@ package main.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -20,9 +22,7 @@ import lib.initializeBabylonJSLoaders
 import main.api.ApiClient
 import main.api.FriendApi
 import main.api.NotificationApi
-import models.OpenUrlData
 import main.api.UserApi
-import models.NotificationType
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.components.camera.CameraController
@@ -37,6 +37,8 @@ import main.components.world.WorldObjectManager
 import main.theme.Styles
 import main.utils.DataType
 import main.utils.createObjectDropEvent
+import models.NotificationType
+import models.OpenUrlData
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
 import org.w3c.dom.DragEvent
@@ -75,7 +77,8 @@ private fun dispatchObjectDropEvent(
 fun SceneComponent(url: String) {
     // Create a unique ID for the canvas
     val canvasId = remember { "babylon-canvas-${Random.nextInt(10000)}" }
-    
+    var canvasRef by remember { mutableStateOf(null as HTMLCanvasElement?) }
+
     // State to track if the world is loaded
     val isLoaded = remember { mutableStateOf(false) }
     
@@ -116,7 +119,7 @@ fun SceneComponent(url: String) {
     val scope = rememberCoroutineScope()
     
     // State to track low graphics mode
-    val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
+    val isLowGraphicsMode = remember { GraphicsSettings._isLowGraphicsModeEnabled }
     
     // Get the router for navigation
     val router = Router.current
@@ -131,19 +134,6 @@ fun SceneComponent(url: String) {
         
         onDispose {
             window.removeEventListener("resize", resizeListener)
-        }
-    }
-    
-    // Observe changes to graphics settings
-    LaunchedEffect(Unit) {
-        // Create a coroutine that watches for changes to the graphics mode
-        while (true) {
-            // Check if the graphics mode has changed
-            val currentMode = GraphicsSettings.isLowGraphicsModeEnabled()
-            if (isLowGraphicsMode.value != currentMode) {
-                isLowGraphicsMode.value = currentMode
-            }
-            delay(100) // Check every 100ms
         }
     }
     
@@ -183,9 +173,12 @@ fun SceneComponent(url: String) {
             }
 
             ref {
+                canvasRef = it
                 it.focus()
 
-                onDispose {}
+                onDispose {
+                    canvasRef = null
+                }
             }
 
             // Add drag and drop event listeners
@@ -265,6 +258,11 @@ fun SceneComponent(url: String) {
     // Add the UI overlay when the world is loaded
     if (isLoaded.value) {
         WorldUI()
+    }
+
+    LaunchedEffect(isLoaded.value, canvasRef) {
+        delay(100)
+        canvasRef?.focus()
     }
 
     // Friendship-related functions

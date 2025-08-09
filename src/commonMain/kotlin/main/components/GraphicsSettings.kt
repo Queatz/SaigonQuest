@@ -22,13 +22,13 @@ object GraphicsSettings {
      * State to track whether low graphics mode is enabled.
      * In low graphics mode, the world is rendered at 1/3 resolution.
      */
-    private val _isLowGraphicsModeEnabled = mutableStateOf(loadGraphicsModeFromStorage())
+    val _isLowGraphicsModeEnabled = mutableStateOf(loadGraphicsModeFromStorage())
     
     /**
      * State to track whether pretty graphics mode is enabled.
      * In pretty graphics mode, additional visual effects are enabled.
      */
-    private val _isPrettyGraphicsEnabled = mutableStateOf(loadPrettyGraphicsFromStorage())
+    val _isPrettyGraphicsEnabled = mutableStateOf(loadPrettyGraphicsFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.

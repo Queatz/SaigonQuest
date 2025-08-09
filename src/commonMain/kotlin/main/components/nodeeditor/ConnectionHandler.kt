@@ -1,6 +1,7 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -9,12 +10,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
-import main.utils.getBoundingClientRectSafe
 import main.utils.ElementPositionTracker
+import main.utils.getBoundingClientRectSafe
 import models.nodeeditor.Connection
 import models.nodeeditor.PortType
 import web.animations.awaitAnimationFrame
-import kotlin.math.roundToInt
 
 /**
  * Handles the rendering and management of connections between nodes.
@@ -104,14 +104,14 @@ fun RenderConnection(
         observedTargetElement?.let { positionTracker.trackElement(it) }
     }
 
-    androidx.compose.runtime.DisposableEffect(observedSourceElement) {
+    DisposableEffect(observedSourceElement) {
         onDispose {
             if (observedSourceElement != null) {
                 positionTracker.untrackElement(observedSourceElement)
             }
         }
     }
-    androidx.compose.runtime.DisposableEffect(observedTargetElement) {
+    DisposableEffect(observedTargetElement) {
         onDispose {
             if (observedTargetElement != null) {
                 positionTracker.untrackElement(observedTargetElement)

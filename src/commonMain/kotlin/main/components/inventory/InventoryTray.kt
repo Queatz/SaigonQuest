@@ -9,15 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.api.InventoryApi
-import main.api.ItemApi
-import main.api.UserApi
 import main.components.SidePanelState
 import main.components.isLayoutAdjustmentNeeded
-import models.Item
-import models.User
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.backgroundColor
@@ -34,7 +30,6 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
-import kotlinx.browser.window
 import org.w3c.dom.events.Event
 
 /**

@@ -15,17 +15,15 @@ import main.components.DialogButton
 import main.theme.NodeEditorStyles
 import main.utils.toggleFullscreen
 import models.Object
-import models.Rotation
-import models.Scale
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.px
 
 /**
  * A dialog for editing object logic.

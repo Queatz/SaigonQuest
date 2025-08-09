@@ -2,15 +2,9 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.theme.NodeEditorStyles
-import main.utils.getBoundingClientRectSafe
-import main.utils.getDocument
 import models.NodeCategory
 import models.NodeId
 import org.jetbrains.compose.web.dom.Div
