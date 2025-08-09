@@ -77,7 +77,7 @@ class ShadowManager(
     private fun configureShadowGenerator() {
         // Configure shadow generator properties
         shadowGenerator.apply {
-            lambda = 1f
+            lambda = .667f
             bias = 0.005f
             normalBias = 0.005f
             

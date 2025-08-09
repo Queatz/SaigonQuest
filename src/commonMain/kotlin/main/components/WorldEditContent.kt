@@ -150,7 +150,7 @@ fun WorldEditContent(
     var url by remember { mutableStateOf(currentWorld?.url ?: "") }
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#000000") }
-    var directionalLightColor by remember { mutableStateOf("#ffffff") }
+    var directionalLightColor by remember { mutableStateOf(currentWorld?.directionalLightColor ?: "#ffffff") }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
     
     // State for form submission
@@ -181,13 +181,16 @@ fun WorldEditContent(
         }
     }
     
-    // Apply initial background color and fog settings when component is mounted
+    // Apply initial background color, fog, and light settings when component is mounted
     LaunchedEffect(Unit) {
         // Apply the initial background color
         updateSceneBackgroundColor(backgroundColor)
         
         // Apply the initial fog density
         updateSceneFogDensity(fogDensity)
+        
+        // Apply the initial directional light color
+        WorldLoader.updateDirectionalLightColorHex(directionalLightColor)
     }
     
     // Determine if the current user is the owner of the world
@@ -215,6 +218,7 @@ fun WorldEditContent(
                 url = url,
                 file = file,
                 backgroundColor = backgroundColor,
+                directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity
             )
         } else {
@@ -226,6 +230,7 @@ fun WorldEditContent(
                 url = url,
                 file = file,
                 backgroundColor = backgroundColor,
+                directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity
             )
         }

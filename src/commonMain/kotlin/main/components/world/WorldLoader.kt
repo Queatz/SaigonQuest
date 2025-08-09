@@ -14,8 +14,10 @@ import lib.Vector3
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.SceneManager
+import main.components.camera.CameraController
 import main.components.shadow.ShadowManager
 import models.World
+import web.permissions.camera
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.PI
@@ -204,6 +206,11 @@ class WorldLoader(private val scene: Scene) {
             // Set the scene fog density from the world model
             setSceneFogDensity(world.fogDensity)
 
+            // Apply directional light color from the world model
+            WorldLoader.updateDirectionalLightColorHex(
+                hexColor = world.directionalLightColor
+            )
+
             // Check if world file is specified
             if (world.file.isEmpty()) {
                 // Create a fallback 10x10 plane
@@ -318,7 +325,6 @@ class WorldLoader(private val scene: Scene) {
         }
         
         // Count for logging
-        var materialCount = 0
         var shadowCasterCount = 0
         var shadowReceiverCount = 0
         
@@ -328,36 +334,22 @@ class WorldLoader(private val scene: Scene) {
                 println("[DEBUG] Skipping mesh: ${mesh.name} (invisible or helper)")
                 return@forEach
             }
-            
-            // Create a PBR material
-            val material = PBRMaterial("pbr-${mesh.name}", scene).apply {
-                metallic = 0.3f
-                roughness = 0.6f
-                
-                // Initialize with default alpha settings
-                // Note: We don't set transparencyMode or alphaMode here
-                // to allow OcclusionManager to configure them properly
-                alpha = 1.0f
-                disableDepthWrite = false  // Enable depth writing
-                
-                // Use the existing material's colors if available
-                val existingMaterial = mesh.material
-                if (existingMaterial is PBRMaterial) {
-                    albedoColor = existingMaterial.albedoColor
-                    emissiveColor = existingMaterial.emissiveColor
-                    
-                    println("[DEBUG] Using existing material colors for ${mesh.name}")
-                } else {
-                    println("[DEBUG] Creating new material for ${mesh.name}")
+
+            // Check for skybox custom property and set infinite distance
+            if (mesh.isSkybox()) {
+                mesh.infiniteDistance = true
+                mesh.material.fogEnabled = false
+                mesh.material.backFaceCulling = true
+                mesh.material.disableLighting = true
+                (mesh.material as? PBRMaterial)?.let { mat: PBRMaterial ->
+                    mat.emissiveTexture = mat.albedoTexture
+                    mat.emissiveIntensity = 1f
+                    mat.emissiveColor = Color3.White()
                 }
-                
-                println("[DEBUG] Initial material settings for ${mesh.name}: alpha=${alpha}, disableDepthWrite=${disableDepthWrite}")
+                console.log("[MESH] Set infinite distance for skybox mesh: ${mesh.name}")
+                console.log("[MESH]", mesh.parent)
             }
-            
-            // Assign the PBR material to the mesh
-            mesh.material = material
-            materialCount++
-            
+
             // Configure shadows for the mesh
             shadowManager?.let { manager ->
                 // Make ALL objects cast shadows (as per requirement)
@@ -375,10 +367,11 @@ class WorldLoader(private val scene: Scene) {
             }
             
             // Register mesh with occlusion manager for fading when it obstructs the player's view
-            occlusionManager?.registerMesh(mesh)
+            if (!mesh.isSkybox()) {
+                occlusionManager?.registerMesh(mesh)
+            }
         }
         
-        println("[DEBUG] Applied materials to $materialCount meshes")
         println("[DEBUG] Configured $shadowCasterCount shadow casters and $shadowReceiverCount shadow receivers")
         
         // Final shadow configuration check
@@ -475,6 +468,9 @@ class WorldLoader(private val scene: Scene) {
             // Set the scene's clear color
             scene.clearColor = color4
             
+            // Sync hemispheric light color to match background
+            WorldLoader.updateHemisphericLightColor(color3)
+            
             // If fog is enabled (fogDensity > 0), update the fog color to match the background color
             if (scene.fogDensity > 0.0f) {
                 scene.fogColor = color3
@@ -551,3 +547,5 @@ class WorldLoader(private val scene: Scene) {
         WebSocketApi.disconnect()
     }
 }
+
+fun AbstractMesh.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == true

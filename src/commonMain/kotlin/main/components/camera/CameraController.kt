@@ -17,6 +17,8 @@ import lib.Scene
 import lib.Vector3
 import kotlin.math.PI
 import main.components.GraphicsSettings
+import main.components.SceneManager
+import main.components.world.isSkybox
 
 /**
  * Controller for managing the camera in the 3D scene.
@@ -155,6 +157,7 @@ class CameraController(private val scene: Scene) {
         updateVignetteWeight()
 
         if (!isAnimating || targetPosition == null || cameraTarget == null) {
+            updateSkybox()
             return false
         }
         
@@ -172,6 +175,8 @@ class CameraController(private val scene: Scene) {
             // Reset animation state
             isAnimating = false
             targetPosition = null
+
+            updateSkybox()
             
             return false
         }
@@ -184,8 +189,18 @@ class CameraController(private val scene: Scene) {
         
         // Update camera to target the camera target object
         updateCameraTargetImmediate(newPosition)
+
+        updateSkybox()
         
         return true
+    }
+
+    private fun updateSkybox() {
+        // Update skybox
+        SceneManager.getObjectManager()?.getSkybox()?.let { skybox ->
+            camera.position.let { skybox.position.copyFrom(it) }
+            skybox.position.x = -skybox.position.x
+        }
     }
     
     /**
@@ -351,12 +366,13 @@ class CameraController(private val scene: Scene) {
                 } catch (e: Exception) {
                     println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
-                
+
                 try {
-                    // Enable/disable tone mapping
-                    toneMappingEnabled = isPrettyEnabled
+                    // Enable/disable image processing
+                    chromaticAberrationEnabled = isPrettyEnabled
+                    chromaticAberration.radialIntensity = 2f
                 } catch (e: Exception) {
-                    println("[ERROR] Failed to set toneMappingEnabled: ${e.message}")
+                    println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
             }
             
@@ -366,7 +382,7 @@ class CameraController(private val scene: Scene) {
                 pipeline.apply {
                     try {
                         // Check if bloom is available before configuring
-                        if (bloomEnabled) {
+                        if (isPrettyEnabled) {
                             // Configure bloom settings
                             bloomThreshold = 0.5f
                             bloomWeight = 0.5f

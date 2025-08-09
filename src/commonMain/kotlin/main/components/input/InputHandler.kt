@@ -22,6 +22,7 @@ import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.objects.SceneObjectManager
 import main.components.player.PlayerController
+import main.components.world.isSkybox
 import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
 import models.World
@@ -295,7 +296,7 @@ class InputHandler(
                 
                 for (mesh in worldMeshes) {
                     // Skip player and move circle meshes
-                    if (mesh === player || mesh === moveCircle) continue
+                    if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                     
                     val hit = ray.intersectsMesh(mesh)
                     if (hit.pickedPoint != null) {
@@ -430,7 +431,7 @@ class InputHandler(
                     // Check player world meshes first
                     for (mesh in playerWorldMeshes) {
                         // Skip player and move circle meshes
-                        if (mesh === player || mesh === moveCircle) continue
+                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                         
                         val hit = ray.intersectsMesh(mesh)
                         if (hit.pickedPoint != null) {
@@ -445,7 +446,7 @@ class InputHandler(
                     // Then check object world meshes
                     for (mesh in objectWorldMeshes) {
                         // Skip player and move circle meshes
-                        if (mesh === player || mesh === moveCircle) continue
+                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                         
                         val hit = ray.intersectsMesh(mesh)
                         if (hit.pickedPoint != null) {
@@ -532,7 +533,7 @@ class InputHandler(
                         // Check player world meshes first
                         for (mesh in playerWorldMeshes) {
                             // Skip player and move circle meshes
-                            if (mesh === player || mesh === moveCircle) continue
+                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                             
                             val hit = ray.intersectsMesh(mesh)
                             if (hit.pickedPoint != null) {
@@ -548,7 +549,7 @@ class InputHandler(
                         // Then check object world meshes
                         for (mesh in objectWorldMeshes) {
                             // Skip player and move circle meshes (just in case they're included)
-                            if (mesh === player || mesh === moveCircle) continue
+                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                             
                             val hit = ray.intersectsMesh(mesh)
                             if (hit.pickedPoint != null) {
@@ -741,7 +742,7 @@ class InputHandler(
     
         for (mesh in worldMeshes) {
             // Skip player and move circle meshes
-            if (mesh === player || mesh === moveCircle) continue
+            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
         
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {

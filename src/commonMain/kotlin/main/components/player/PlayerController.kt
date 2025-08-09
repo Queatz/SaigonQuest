@@ -42,6 +42,7 @@ import main.api.updatePlayer
 import main.api.updatePlayerPosition
 import main.api.ListenerToken
 import main.components.world.PlayerActivity
+import main.components.world.isSkybox
 
 /**
  * Controller for managing the player in the 3D scene.
@@ -506,7 +507,7 @@ class PlayerController(private val scene: Scene) {
         // Check if the ray intersects with any world mesh
         for (mesh in worldMeshes) {
             // Skip player and move circle meshes
-            if (mesh == collider || mesh == moveCircle) continue
+            if (mesh == collider || mesh == moveCircle || mesh.isSkybox()) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
@@ -530,7 +531,7 @@ class PlayerController(private val scene: Scene) {
         ray.direction = Vector3(0f, -1f, 0f)
         
         for (mesh in worldMeshes) {
-            if (mesh == collider || mesh == moveCircle) continue
+            if (mesh == collider || mesh == moveCircle || mesh.isSkybox()) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {

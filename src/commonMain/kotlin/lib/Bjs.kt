@@ -82,6 +82,12 @@ external interface MeshMetadata {
     var originalMaterial: Material?
 
     var isItem: Boolean?
+
+    var gltf: Gltf?
+}
+
+external interface Gltf {
+    var extras: dynamic
 }
 
 abstract external class AbstractMesh : Node {
@@ -101,6 +107,7 @@ abstract external class AbstractMesh : Node {
     override var name: String
     override var parent: Node?
     var metadata: MeshMetadata?
+    var infiniteDistance: Boolean
 
     /**
      * Tests if a ray intersects the mesh
@@ -314,6 +321,8 @@ abstract external class Material {
     var alpha: Float
     var id: String
     var name: String
+    var fogEnabled: Boolean
+    var disableLighting: Boolean
 
     fun clone(name: String): Material
     fun dispose(forceDisposeEffect: Boolean = definedExternally)
@@ -335,8 +344,12 @@ external class StandardMaterial(name: String, scene: Scene) : Material {
     var specularColor: Color3
     var emissiveColor: Color3
     var roughness: Float
-    var disableLighting: Boolean
     var useAlphaFromDiffuseTexture: Boolean
+}
+
+abstract external class BaseTexture {
+    var gammaSpace: Boolean
+    var textureFormat: Int
 }
 
 /**
@@ -346,7 +359,7 @@ external class StandardMaterial(name: String, scene: Scene) : Material {
  * @param scene The scene the texture belongs to
  * @param options Options to configure the texture
  */
-open external class Texture(url: String, scene: Scene, options: TextureOptions = definedExternally) {
+open external class Texture(url: String, scene: Scene, options: TextureOptions = definedExternally) : BaseTexture {
     var hasAlpha: Boolean
     var wrapU: Int
     var wrapV: Int
@@ -355,8 +368,9 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
     var vOffset: Float
     var uScale: Float
     var vScale: Float
-    val samplingMode: Int
+    var samplingMode: Int
 
+    fun clone(): Texture
     fun dispose()
 
     companion object {
@@ -391,6 +405,7 @@ external class Engine(
 
     companion object {
         val TEXTUREFORMAT_ALPHA: Int
+        
     }
 }
 
@@ -767,12 +782,12 @@ external class DefaultRenderingPipeline(
     var bloomKernel: Float
     var bloomScale: Float
     var grainEnabled: Boolean
+    var sharpenEnabled: Boolean
+    var chromaticAberrationEnabled: Boolean
     /**
      * The grain effect configuration object
      */
     var grain: GrainEffect
-    var sharpenEnabled: Boolean
-    var sharpen: ImageProcessingPostProcess
     /**
      * Enables image processing
      */
@@ -780,15 +795,39 @@ external class DefaultRenderingPipeline(
     /**
      * The image processing configuration
      */
-    var imageProcessing: ImageProcessingConfiguration
+    var imageProcessing: ImageProcessingPostProcess
     /**
-     * Enables tone mapping
+     * The sharpen effect configuration
      */
-    var toneMappingEnabled: Boolean
+    var sharpen: SharpenEffect
+
+
+
     /**
      * Enables fog rendering in the pipeline
      */
     var fogEnabled: Boolean
+
+    /**
+     * The chromatic aberration effect configuration
+     */
+    var chromaticAberration: ChromaticAberrationEffect
+
+}
+
+/**
+ * Interface for controlling chromatic aberration effect parameters
+ */
+external interface ChromaticAberrationEffect {
+    /**
+     * Controls the amount of chromatic aberration (0.0-1.0)
+     */
+    var aberrationAmount: Float
+
+    /**
+     * Controls the radial intensity of the effect (0.0-1.0)
+     */
+    var radialIntensity: Float
 }
 
 external class DepthOfFieldEffect {
@@ -875,6 +914,12 @@ external class ImageProcessingConfiguration {
      * The exposure level (0.0-2.0)
      */
     var exposure: Float
+    /**
+     * Enables tone mapping
+     */
+    var toneMappingEnabled: Boolean
+
+    var gamma: Float
 }
 
 /**
@@ -885,6 +930,21 @@ external class GrainEffect {
      * The intensity of the grain effect (0.0-1.0)
      */
     var intensity: Float
+}
+
+/**
+ * Interface for controlling the sharpen effect parameters
+ */
+external interface SharpenEffect {
+    /**
+     * Controls the amount of edge enhancement (0.0-1.0)
+     */
+    var edgeAmount: Float
+
+    /**
+     * Controls the amount of color enhancement (0.0-1.0)
+     */
+    var colorAmount: Float
 }
 
 /**
@@ -1277,12 +1337,12 @@ external class HighlightLayer(name: String, scene: Scene) {
     /**
      * Blur horizontal size for the highlight
      */
-    var blurHorizontalSize: Int
+    var blurHorizontalSize: Float
     
     /**
      * Blur vertical size for the highlight
      */
-    var blurVerticalSize: Int
+    var blurVerticalSize: Float
 
     /**
      * Controls the visibility of the outer glow effect
@@ -1325,7 +1385,6 @@ external class GridMaterial(name: String, scene: Scene) : Material {
     var opacity: Float
     var gridRatio: Float
     var majorUnitFrequency: Int
-    var fogEnabled: Boolean
     var gridOffset: Vector3
     var antialias: Boolean
 }

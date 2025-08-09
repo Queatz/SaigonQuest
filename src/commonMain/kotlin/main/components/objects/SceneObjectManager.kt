@@ -14,6 +14,7 @@ import lib.PBRMaterial
 import lib.Scene
 import lib.TransformNode
 import lib.Vector3
+import main.components.GraphicsSettings
 import main.api.InventoryApi
 import main.api.ItemApi
 import main.api.ObjectApi
@@ -24,6 +25,7 @@ import main.components.camera.CameraController
 import main.components.shadow.ShadowManager
 import main.components.world.InventoryObject
 import main.components.world.WorldObjectManager
+import main.components.world.isSkybox
 import models.Item
 import models.Object
 import models.Position
@@ -72,8 +74,13 @@ class SceneObjectManager(
     init {
         // Configure the highlight layer for white outline
         highlightLayer.intensity = 1.5f  // Increased intensity for more visible effect
-        highlightLayer.blurHorizontalSize = 1
-        highlightLayer.blurVerticalSize = 1
+        if (GraphicsSettings.isLowGraphicsModeEnabled()) {
+            highlightLayer.blurHorizontalSize = 1f / 3f
+            highlightLayer.blurVerticalSize = 1f / 3f
+        } else {
+            highlightLayer.blurHorizontalSize = 1f
+            highlightLayer.blurVerticalSize = 1f
+        }
 
         // Set additional properties if available
         try {
@@ -86,6 +93,16 @@ class SceneObjectManager(
             console.log("[DEBUG_HIGHLIGHT] Set additional properties: outerGlow=true, innerGlow=false")
         } catch (e: Exception) {
             console.log("[DEBUG_HIGHLIGHT] Could not set additional properties: ${e.message}")
+        }
+
+        GraphicsSettings.addObserver {
+            if (GraphicsSettings.isLowGraphicsModeEnabled()) {
+                highlightLayer.blurHorizontalSize = 1f / 3f
+                highlightLayer.blurVerticalSize = 1f / 3f
+            } else {
+                highlightLayer.blurHorizontalSize = 1f
+                highlightLayer.blurVerticalSize = 1f
+            }
         }
 
         console.log("[DEBUG_HIGHLIGHT] HighlightLayer initialized with intensity: ${highlightLayer.intensity}, blurHorizontalSize: ${highlightLayer.blurHorizontalSize}, blurVerticalSize: ${highlightLayer.blurVerticalSize}")
@@ -556,7 +573,7 @@ class SceneObjectManager(
         for (mesh in worldMeshes) {
             console.log("[DEBUG_POSITION] Checking mesh: ${mesh.name}")
             
-            if (mesh == player || mesh == moveCircle) {
+            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) {
                 console.log("[DEBUG_POSITION] Skipping player or move circle mesh: ${mesh.name}")
                 continue
             }
@@ -857,7 +874,7 @@ class SceneObjectManager(
                 
                 return true
             } else {
-                console.warn("Object node not found for dragging: ${draggingObjectId}")
+                console.warn("Object node not found for dragging: $draggingObjectId")
             }
             return false
         } catch (error: Exception) {
@@ -933,8 +950,9 @@ class SceneObjectManager(
     }
     
     // Store world meshes for collision detection
+    private var skybox: AbstractMesh? = null
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
-    
+
     /**
      * Sets the world meshes for collision detection
      * 
@@ -943,6 +961,7 @@ class SceneObjectManager(
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {
         @Suppress("UNCHECKED_CAST")
         this.worldMeshes = meshes
+        this.skybox = meshes.find { it.isSkybox() }
         console.log("Set ${meshes.size} world meshes for collision detection")
     }
     
@@ -954,7 +973,9 @@ class SceneObjectManager(
     fun getWorldMeshes(): Array<AbstractMesh> {
         return worldMeshes
     }
-    
+
+    fun getSkybox(): AbstractMesh? = skybox
+
     /**
      * Sets the player mesh to exclude from collision detection
      * 

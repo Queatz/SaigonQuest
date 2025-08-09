@@ -1,6 +1,7 @@
 package main.components.world
 
 import lib.AbstractMesh
+import lib.Gltf
 import lib.Material
 import lib.Matrix
 import lib.MeshMetadata
@@ -95,7 +96,7 @@ class OcclusionManager(private val scene: Scene) {
                     discard;
                 } else {
                     float gradientPos = (distance - innerRadius) / (occlusionRadius - innerRadius);
-                    return alpha * smoothstep(0.0, ALPHA_THRESHOLD, gradientPos); // Soft edge
+                    return alpha;// * smoothstep(0.0, ALPHA_THRESHOLD, gradientPos); // Soft edge
                 }
             }
         }
@@ -162,7 +163,8 @@ class OcclusionManager(private val scene: Scene) {
             // Store the original material to restore later
             val metadata = object : MeshMetadata {
                 override var originalMaterial: Material? = originalMaterial
-                override var isItem: Boolean? = false
+                override var isItem: Boolean? = mesh.metadata?.isItem
+                override var gltf: Gltf? = mesh.metadata?.gltf
             }
             mesh.metadata = metadata
             
@@ -177,6 +179,9 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.emissiveIntensity = originalMaterial.emissiveIntensity
             customMaterial.transparencyMode = Material.MATERIAL_ALPHATEST//ANDBLEND
             customMaterial.alphaTestCutoff = 0.5f
+            customMaterial.fogEnabled = originalMaterial.fogEnabled
+            customMaterial.disableLighting = originalMaterial.disableLighting
+            customMaterial.backFaceCulling = originalMaterial.backFaceCulling
 
             // Copy textures if they exist
             if (originalMaterial.albedoTexture != null) {
