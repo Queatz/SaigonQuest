@@ -35,9 +35,11 @@ import main.components.player.PlayerController
 import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
 import main.theme.Styles
+import main.utils.DataType
 import main.utils.createObjectDropEvent
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
+import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
@@ -48,10 +50,16 @@ import kotlin.random.Random
  * @param x The x coordinate of the drop
  * @param y The y coordinate of the drop
  * @param data The JSON data of the dropped object
+ * @param dataType The type of data being dropped (ITEM or OBJECT)
  */
-private fun dispatchObjectDropEvent(x: Int, y: Int, data: String) {
+private fun dispatchObjectDropEvent(
+    x: Int,
+    y: Int,
+    data: String,
+    dataType: DataType = DataType.OBJECT
+) {
     // Create a custom event using the utility function
-    val customEvent = createObjectDropEvent(x, y, data)
+    val customEvent = createObjectDropEvent(x, y, data, dataType)
     
     // Dispatch the event
     window.dispatchEvent(customEvent)
@@ -188,12 +196,23 @@ fun SceneComponent(url: String) {
                 event.preventDefault()
                 
                 // Get the necessary data from the event
-                val clientX = event.nativeEvent.asDynamic().clientX as Int
-                val clientY = event.nativeEvent.asDynamic().clientY as Int
-                val data = event.nativeEvent.asDynamic().dataTransfer.getData("application/json") as String
+                val drag = (event.nativeEvent as DragEvent)
+                drag.dataTransfer ?: return@onDrop
+
+                val clientX = drag.clientX
+                val clientY = drag.clientY
+                val data = drag.dataTransfer!!.getData("application/json")
                 
-                // Use the helper function to dispatch the custom event
-                dispatchObjectDropEvent(clientX, clientY, data)
+                // Get the data type from the event
+                val dataTypeString = drag.dataTransfer!!.getData("application/x-data-type")
+
+                console.log("Data type from event: $dataTypeString")
+
+                // Convert the string to a DataType enum
+                val dataType = dataTypeString.let { DataType.valueOf(it) }
+
+                // Use the helper function to dispatch the custom event with the data type
+                dispatchObjectDropEvent(clientX, clientY, data, dataType)
             }
         }
     )
@@ -558,9 +577,24 @@ fun SceneComponent(url: String) {
             val x = detail.x as Int
             val y = detail.y as Int
             val data = detail.data as String
+            val dataTypeString = detail.dataType as? String
+
+            // Convert the string to a DataType enum
+            val dataType = dataTypeString?.let { DataType.valueOf(it) }
+
+            console.log("[DROP] Dropped a $dataTypeString", event, detail)
+
+            // Get the current world ID
+            val worldId = currentWorld.value?.key ?: url
             
-            // Use the object manager to handle the drop
-            objectManager.handleObjectDrop(x, y, data, currentWorld.value?.key ?: url)
+            // Use the object manager to handle the drop based on data type
+            if (dataType == DataType.ITEM) {
+                console.log("Handling inventory item drop")
+                objectManager.handleInventoryItemDrop(x, y, data, worldId)
+            } else {
+                console.log("Handling object drop")
+                objectManager.handleObjectDrop(x, y, data, worldId)
+            }
         }
         
         // Add event listener for object drop

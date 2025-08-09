@@ -10,6 +10,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.ErrorResponse
 import models.Notification
+import models.UnreadCountResponse
 import repository.NotificationRepository
 import repository.UserRepository
 
@@ -47,7 +48,7 @@ fun Routing.configureNotificationRoutes() {
                 // Get unread count
                 val unreadCount = notificationRepository.getUnreadCount(userId)
                 
-                call.respond(unreadCount)
+                call.respond(UnreadCountResponse(unreadCount))
             }
             
             // Mark a notification as read

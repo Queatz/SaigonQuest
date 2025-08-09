@@ -84,6 +84,8 @@ The project supports multiple langauges.
 
 Translations are declared in `shared/src/commonMain/kotlin/Translations.kt`.
 
+**Add all new translated strings to this file in the `translations` val!**
+
 ### How To Use Translations
 
 Composable helpers are declared in `src/commonMain/kotlin/main/components/Translated.kt`

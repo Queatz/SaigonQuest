@@ -32,3 +32,8 @@ data class LanguageUpdateRequest(val language: String)
 
 @Serializable
 data class StatusUpdateRequest(val status: String)
+
+@Serializable
+data class UnreadCountResponse(
+    val unreadCount: Int = 0
+)

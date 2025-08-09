@@ -8,14 +8,11 @@ import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
 import debug.WebSocketDebug
-import io.ktor.server.websocket.DefaultWebSocketServerSession
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import models.Notification
 import models.NotificationData
 import models.WebSocketAction
-import routes.WebSocketConnection
 import routes.WebSocketMessage
 import routes.activeConnections
 import routes.handlers.WebSocketUtils

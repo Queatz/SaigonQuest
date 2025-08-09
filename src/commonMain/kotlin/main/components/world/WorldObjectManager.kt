@@ -126,9 +126,22 @@ class WorldObjectManager(private val scene: Scene) {
             // If no user is provided, assume no worn items (for other players)
             emptyList()
         }
-        
-        // Combine additional sprite sheets and worn item sprite sheets
-        val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
+
+        // Create hair sprite sheet based on user's hair style (if available)
+        val hairSpriteSheet = if (user != null) {
+            SpriteSheet.createHairSpriteSheet(hairStyle = user.hairStyle)
+        } else null
+        // Create eyes sprite sheet based on user's eye color and sex (if available)
+        val eyesSpriteSheet = if (user != null) {
+            SpriteSheet.createEyesSpriteSheet(
+                eyeColor = user.eyeColor,
+                sex = user.sex
+            )
+        } else null
+
+        // Combine hair, eyes, any explicitly provided additional sprite sheets, and worn item sprite sheets
+        // Ordering: hair closest to base, then eyes, then additional, then worn items (e.g., hats) on top
+        val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets + listOfNotNull(hairSpriteSheet, eyesSpriteSheet)).toMutableList()
         
         val character = Character(
             spriteSheet = spriteSheet,
@@ -137,6 +150,8 @@ class WorldObjectManager(private val scene: Scene) {
             additionalSpriteSheets = combinedSpriteSheets
         )
         character.position = position
+        // Initialize skin tone from user if present
+        character.skinTone = user?.skinTone ?: 0.5f
         
         return addObject(character)
     }

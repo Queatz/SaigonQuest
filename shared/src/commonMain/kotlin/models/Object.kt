@@ -16,7 +16,10 @@ data class Object(
     var position: Position = Position(), // Position in the 3D world
     var rotation: Rotation = Rotation(), // Rotation in the 3D world
     var scale: Scale = Scale(), // Scale in the 3D world
-    var status: String = "" // Status text to display above the object
+    var status: String = "", // Status text to display above the object
+    var isItem: Boolean = false, // Flag indicating if this object is an inventory item
+    var itemQuantity: Int = 1,
+    var itemId: String = ""
 ) : BaseModel()
 
 /**

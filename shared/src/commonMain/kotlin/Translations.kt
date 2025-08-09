@@ -82,8 +82,8 @@ vi: Chia sẻ thế giới này
 🖨️ Print
 vi: 🖨️ In
 
-Print Your In-Game Location
-vi: In vị trí trong trò chơi của bạn
+Print This Location
+vi: In vị trí này
 
 📥 Download Image
 vi: 📥 Tải xuống hình ảnh
@@ -135,6 +135,57 @@ vi: Năm sinh là bắt buộc
 
 Sex is required
 vi: Giới tính là bắt buộc
+
+Body
+vi: Cơ thể
+
+Skin Tone
+vi: Màu da
+
+Eyes
+vi: Mắt
+
+Hair
+vi: Tóc
+
+Skinny
+vi: Gầy
+
+Normal
+vi: Bình thường
+
+Fat
+vi: Mập
+
+Black
+vi: Đen
+
+Blue
+vi: Xanh dương
+
+Brown
+vi: Nâu
+
+Green
+vi: Xanh lá
+
+Gray
+vi: Xám
+
+Short
+vi: Ngắn
+
+Medium
+vi: Trung bình
+
+Long
+vi: Dài
+
+Cancel
+vi: Hủy
+
+Save
+vi: Lưu
 
 """
 

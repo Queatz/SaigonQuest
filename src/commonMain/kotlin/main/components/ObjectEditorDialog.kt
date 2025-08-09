@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
-import utils.json
 import main.theme.Styles
 import models.Object
 import models.Rotation
@@ -18,11 +17,11 @@ import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.opacity
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -47,6 +46,15 @@ fun ObjectEditorDialog(
     var file by remember { mutableStateOf(objectModel?.file ?: "") }
     var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
     var status by remember { mutableStateOf(objectModel?.status ?: "") }
+    var rotationYDeg by remember {
+        mutableStateOf(
+            ((objectModel?.rotation?.z ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
+                // normalize to [0, 359]
+                val n = ((deg % 360f) + 360f) % 360f
+                n
+            }
+        )
+    }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -70,7 +78,10 @@ fun ObjectEditorDialog(
                 title = title,
                 file = file,
                 collection = collection,
-                status = status
+                status = status,
+                rotation = objectModel.rotation.copy(
+                    y = rotationYDeg * kotlin.math.PI.toFloat() / 180f,
+                ),
             )
         } else {
             // Create new object
@@ -81,7 +92,7 @@ fun ObjectEditorDialog(
                 data = "{}",
                 worldId = worldId,
                 position = models.Position(0f, 0f, 0f),
-                rotation = Rotation(0f, 0f, 0f),
+                rotation = Rotation(0f, rotationYDeg * kotlin.math.PI.toFloat() / 180f, 0f),
                 scale = Scale(1f, 1f, 1f),
                 status = status
             )
@@ -205,6 +216,28 @@ fun ObjectEditorDialog(
                             onInput { event -> status = event.value }
                         }
                     )
+                }
+                
+                // Z rotation field
+                Div {
+                    P {
+                        Text("Rotation")
+                    }
+                    RangeInput(
+                        value = rotationYDeg,
+                        min = 0,
+                        max = 359,
+                        step = 1,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { event ->
+                                rotationYDeg = event.value?.toFloat()?.coerceIn(0f, 359f) ?: 0f
+                            }
+                        }
+                    )
+                    P {
+                        Text("${rotationYDeg.toInt()}°")
+                    }
                 }
                 
                 // Logic Editor preview (disabled)

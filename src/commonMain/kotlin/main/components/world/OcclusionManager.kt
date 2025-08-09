@@ -162,6 +162,7 @@ class OcclusionManager(private val scene: Scene) {
             // Store the original material to restore later
             val metadata = object : MeshMetadata {
                 override var originalMaterial: Material? = originalMaterial
+                override var isItem: Boolean? = false
             }
             mesh.metadata = metadata
             

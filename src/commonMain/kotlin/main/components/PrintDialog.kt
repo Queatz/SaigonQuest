@@ -28,7 +28,7 @@ import kotlin.math.max
 fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
-        title = translated("Print Your In-Game Location"),
+        title = translated("Print Your Location"),
         maxWidth = "820px",
         content = {
             // Image container

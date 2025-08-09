@@ -59,6 +59,9 @@ fun CharacterRenderer(
     // State for worn item sprite sheets
     var wornItemSpriteSheets by remember { mutableStateOf<List<SpriteSheet>>(emptyList()) }
     
+    // Keep a reference to the character for live updates
+    var characterRef by remember { mutableStateOf<Character?>(null) }
+    
     // Load inventory data if not already loaded
     DisposableEffect(Unit) {
         if (InventoryState.inventory == null || InventoryState.items.isEmpty()) {
@@ -86,6 +89,38 @@ fun CharacterRenderer(
         onDispose {
             InventoryState.removeOnRefreshCallback(refreshCallback)
         }
+    }
+
+    // React to skinTone changes in realtime by updating the existing Character
+    DisposableEffect(skinTone) {
+        characterRef?.skinTone = skinTone
+        onDispose { }
+    }
+
+    // React to hair and eye changes in realtime by updating additional sprite sheets
+    DisposableEffect(hairStyle, eyeColor, wornItemSpriteSheets, additionalSpriteSheets) {
+        val hairSpriteSheet = SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle)
+        val eyesSpriteSheet = SpriteSheet.createEyesSpriteSheet(
+            eyeColor = eyeColor,
+            sex = InventoryState.currentUser?.sex,
+        )
+        val newAdditional = (listOfNotNull(hairSpriteSheet, eyesSpriteSheet) + additionalSpriteSheets + wornItemSpriteSheets)
+        characterRef?.updateSpriteSheets(newAdditional)
+        onDispose { }
+    }
+
+    // React to body type changes in realtime by updating the base sprite sheet and re-rendering
+    DisposableEffect(bodyType) {
+        val newBase = SpriteSheet.createPlayerSpriteSheetForBodyType(
+            sex = InventoryState.currentUser?.sex,
+            bodyType = bodyType,
+        )
+        characterRef?.let { character ->
+            character.spriteSheet = newBase
+            // Trigger re-render by updating sprite sheets with the current list
+            character.updateSpriteSheets(character.additionalSpriteSheets.toList())
+        }
+        onDispose { }
     }
 
     Canvas(
@@ -152,13 +187,31 @@ fun CharacterRenderer(
             upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
         }
         
+        // Create hair sprite sheet for preview if available
+        val hairSpriteSheet = SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle)
+        // Create eyes sprite sheet for preview based on selected eyeColor and current user's sex
+        val eyesSpriteSheet = SpriteSheet.createEyesSpriteSheet(
+            eyeColor = eyeColor,
+            sex = InventoryState.currentUser?.sex,
+        )
+
+        // Select base sprite sheet based on sex and body type
+        val baseSpriteSheet = SpriteSheet.createPlayerSpriteSheetForBodyType(
+            sex = InventoryState.currentUser?.sex,
+            bodyType = bodyType,
+        )
+
         // Create the character
         val character = Character(
-            spriteSheet = characterSpriteSheet,
+            spriteSheet = baseSpriteSheet,
             direction = CharacterDirection.S, // Default facing south
             activity = null,
-            additionalSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
+            additionalSpriteSheets = (listOfNotNull(eyesSpriteSheet, hairSpriteSheet) + additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
         )
+        // Initialize skin tone
+        character.skinTone = skinTone
+        // Keep reference for live updates
+        characterRef = character
         
         // Render the character
         character.render(scene)

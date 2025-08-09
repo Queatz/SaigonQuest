@@ -80,6 +80,8 @@ external interface MeshMetadata {
      * Original material of the mesh (used for restoring after effects)
      */
     var originalMaterial: Material?
+
+    var isItem: Boolean?
 }
 
 abstract external class AbstractMesh : Node {
@@ -126,17 +128,16 @@ external class CascadedShadowGenerator(
     mapSize: Int,
     light: DirectionalLight,
     useFullFloatEngine: Boolean = definedExternally
-) {
+) : ShadowGenerator {
     var lambda: Float
     var bias: Float
     var normalBias: Float
     var transparencyShadow: Boolean
     var stabilizeCascades: Boolean
     var shadowMaxZ: Float
+    var autoCalcDepthBounds: Boolean
 
     fun splitFrustum()
-    fun addShadowCaster(mesh: AbstractMesh)
-    fun removeShadowCaster(mesh: AbstractMesh)
 }
 
 external class Color3(r: Float = definedExternally, g: Float = definedExternally, b: Float = definedExternally) {
@@ -397,9 +398,13 @@ external class Observable<T> {
     fun add(callback: (T) -> Unit)
 }
 
-external class ShadowGenerator(mapSize: Int, light: DirectionalLight) {
+open external class ShadowGenerator(mapSize: Int, light: DirectionalLight) {
     fun addShadowCaster(mesh: AbstractMesh)
     fun removeShadowCaster(mesh: AbstractMesh)
+    var useBlurCloseExponentialShadowMap: Boolean
+    var useExponentialShadowMap: Boolean
+    var useKernelBlur: Boolean
+    var blurKernel: Int
 }
 
 /**

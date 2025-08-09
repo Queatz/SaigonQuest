@@ -2,11 +2,19 @@ package main.components.inventory
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.browser.document
+import kotlinx.browser.window
+import main.api.ApiClient
 import main.theme.InventoryStyles
 import main.theme.Styles
+import main.utils.DataType
 import models.Item
+import org.jetbrains.compose.web.attributes.Draggable
+import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 
 /**
  * An inventory box that can display an item.
@@ -30,9 +38,44 @@ fun InventoryBox(
             classes(InventoryStyles.inventoryBox)
             onClick { if (!isLoading) onClick() }
             
-            // Add cursor style based on loading state
+            // Add draggable attribute for items
+            if (item != null) {
+                draggable(Draggable.True)
+                
+                // Add drag start event handler
+                onDragStart { event ->
+                    // Set the drag data
+                    event.dataTransfer?.setData("application/json", ApiClient.json.encodeToString(Item.serializer(), item))
+                    
+                    // Set the data type
+                    event.dataTransfer?.setData("application/x-data-type", DataType.ITEM.name)
+                    
+                    // Create a custom drag image (optional)
+                    val dragIcon = document.createElement("div") as HTMLElement
+                    dragIcon.innerHTML = "<div class='drag-icon'></div>"
+                    dragIcon.style.position = "absolute"
+                    dragIcon.style.top = "-1000px"
+                    document.body?.appendChild(dragIcon)
+                    
+                    // Set the drag image
+                    event.dataTransfer?.setDragImage(dragIcon, 15, 15)
+                    
+                    // Remove the drag icon after it's been used
+                    window.setTimeout({
+                        document.body?.removeChild(dragIcon)
+                    }, 0)
+                }
+            }
+            
+            // Add cursor style based on loading state and draggability
             style {
-                property("cursor", if (isLoading) "wait" else "pointer")
+                cursor(
+                    when {
+                        isLoading -> "wait"
+                        item != null -> "grab"
+                        else -> "pointer"
+                    }
+                )
             }
         }
     ) {

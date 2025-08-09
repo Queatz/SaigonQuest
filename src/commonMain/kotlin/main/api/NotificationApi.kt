@@ -7,6 +7,7 @@ import kotlinx.browser.window
 import models.Friend
 import models.Notification
 import models.NotificationType
+import models.UnreadCountResponse
 
 /**
  * API client for notification operations
@@ -85,7 +86,7 @@ object NotificationApi {
                 ApiClient.addAuthHeader(this)
             }
             
-            return response.body<Int>()
+            return response.body<UnreadCountResponse>().unreadCount
         } catch (e: Exception) {
             console.error("Error fetching unread notification count", e)
             return 0

@@ -33,6 +33,10 @@ class WorldLoader(private val scene: Scene) {
     companion object {
         // Callback to be executed when the world is loaded
         private var onWorldLoadedCallback: (() -> Unit)? = null
+
+        // References to the currently active lights for global updates
+        private var currentHemisphericLight: HemisphericLight? = null
+        private var currentDirectionalLight: DirectionalLight? = null
         
         /**
          * Register a callback to be executed when the world is loaded
@@ -50,6 +54,68 @@ class WorldLoader(private val scene: Scene) {
             onWorldLoadedCallback?.invoke()
             // Clear the callback after execution
             onWorldLoadedCallback = null
+        }
+
+        /**
+         * Update the directional light color using a hex string.
+         */
+        fun updateDirectionalLightColorHex(hexColor: String) {
+            try {
+                val color = Color3.FromHexString(hexColor)
+                val light = currentDirectionalLight
+                if (light != null) {
+                    light.diffuse = color
+                    println("[DEBUG] Updated directional light color to $hexColor")
+                } else {
+                    println("[WARN] Directional light not initialized; cannot update color")
+                }
+            } catch (e: Exception) {
+                println("[ERROR] Failed to update directional light color: ${e.message}")
+            }
+        }
+
+        /**
+         * Update the hemispheric light color using a hex string.
+         */
+        fun updateHemisphericLightColorHex(hexColor: String) {
+            try {
+                val color = Color3.FromHexString(hexColor)
+                updateHemisphericLightColor(color)
+            } catch (e: Exception) {
+                println("[ERROR] Failed to update hemispheric light color: ${e.message}")
+            }
+        }
+
+        /**
+         * Update the hemispheric light color using Color3.
+         * Ground color is set to a darker variant for contrast.
+         */
+        fun updateHemisphericLightColor(color: Color3) {
+            val light = currentHemisphericLight
+            if (light != null) {
+                light.diffuse = color
+                val ground = color.scale(0.5f)
+                light.groundColor = ground
+                println("[DEBUG] Updated hemispheric light color to diffuse=$color, ground=$ground")
+            } else {
+                println("[WARN] Hemispheric light not initialized; cannot update color")
+            }
+        }
+
+        /**
+         * Internal: register current lights so they can be updated globally.
+         */
+        fun setCurrentLights(hemispheric: HemisphericLight?, directional: DirectionalLight?) {
+            currentHemisphericLight = hemispheric
+            currentDirectionalLight = directional
+        }
+
+        /**
+         * Clear current light references.
+         */
+        fun clearCurrentLights() {
+            currentHemisphericLight = null
+            currentDirectionalLight = null
         }
     }
     
@@ -86,7 +152,7 @@ class WorldLoader(private val scene: Scene) {
             direction = Vector3(0f, 1f, 0f),
             scene = scene
         ).apply {
-            this.intensity = 0.2f  // Further reduced intensity to make directional light shadows more visible
+            this.intensity = 0.5f  // Further reduced intensity to make directional light shadows more visible
             this.groundColor = Color3(0.1f, 0.1f, 0.15f)  // Slightly blue ground color for better contrast
             println("[DEBUG] Created hemispheric light with intensity ${this.intensity}")
         }
@@ -110,6 +176,9 @@ class WorldLoader(private val scene: Scene) {
         
         // Initialize the occlusion manager for fading objects that obstruct the player's view
         occlusionManager = OcclusionManager(scene)
+
+        // Register current lights for global updates
+        WorldLoader.setCurrentLights(hemisphericLight, directionalLight)
     }
     
     /**
@@ -474,6 +543,9 @@ class WorldLoader(private val scene: Scene) {
         // Set lights to null to allow garbage collection
         hemisphericLight = null
         directionalLight = null
+
+        // Clear global references to lights
+        WorldLoader.clearCurrentLights()
         
         // Disconnect from WebSocket
         WebSocketApi.disconnect()

@@ -36,14 +36,8 @@ import models.UpgradeRequest
 import models.User
 import models.VisitorRequest
 import models.WornItemsRequest
+import models.UserCustomizationRequest
 
-@Serializable
-data class UserCustomizationRequest(
-    val bodyType: String,
-    val skinTone: Float,
-    val eyeColor: String,
-    val hairStyle: String
-)
 
 /**
  * API client for user operations

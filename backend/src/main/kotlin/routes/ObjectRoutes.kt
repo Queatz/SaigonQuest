@@ -2,16 +2,18 @@ package routes
 
 import auth.JWTUtils
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.ErrorResponse
+import models.Item
 import models.Object
+import repository.InventoryRepository
 import repository.ObjectRepository
 import repository.WorldRepository
+import utils.json
 
 fun Routing.configureObjectRoutes() {
     val objectRepository = ObjectRepository()
@@ -177,6 +179,79 @@ fun Routing.configureObjectRoutes() {
                         ErrorResponse(message = "Failed to delete object", code = HttpStatusCode.InternalServerError.value)
                     )
                 }
+            }
+        }
+        
+        // Collect inventory item - requires authentication
+        authenticate {
+            post("/collect/{id}") {
+                val id = call.parameters["id"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing id parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get the object
+                val obj = objectRepository.getById(id) ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "Object not found", code = HttpStatusCode.NotFound.value)
+                )
+                
+                // Check if this is an inventory item
+                if (!obj.isItem) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Object is not a collectible item", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+                
+                // Parse the item data
+                val itemData = obj.data
+                val item = try {
+                    json.decodeFromString(Item.serializer(), itemData)
+                } catch (e: Exception) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Invalid item data", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+                
+                // Add the item to the user's inventory
+                val inventoryRepository = InventoryRepository()
+                
+                // Create an InventoryItem object with the item key
+                val inventoryItem = models.InventoryItem(
+                    item = item.key,
+                    quantity = 1
+                )
+                
+                try {
+                    // Add the item to the inventory
+                    val updatedInventory = inventoryRepository.addItemToInventory(userId, inventoryItem)
+                    
+                    // If we get here, the item was added successfully
+                } catch (e: Exception) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Failed to add item to inventory: ${e.message}", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+                
+                // Delete the object
+                val deleted = objectRepository.delete(id)
+                
+                if (!deleted) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Failed to delete object", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+                
+                // Return success
+                call.respond(HttpStatusCode.OK)
             }
         }
     }

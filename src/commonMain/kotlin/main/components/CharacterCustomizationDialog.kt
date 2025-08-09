@@ -60,7 +60,7 @@ fun CharacterCustomizationDialog(
     // Use the BaseDialog component
     BaseDialog(
         onClose = onClose,
-        title = "Customize Character",
+        title = translated("Customize Character"),
         content = {
             // Character renderer
             Div(
@@ -101,7 +101,7 @@ fun CharacterCustomizationDialog(
                             classes(Styles.settingsSectionLabel)
                         }
                     ) {
-                        Text("Body")
+                        Translated("Body")
                     }
                     
                     Select(
@@ -122,7 +122,7 @@ fun CharacterCustomizationDialog(
                                     }
                                 }
                             ) {
-                                Text(option)
+                                Translated(option)
                             }
                         }
                     }
@@ -141,7 +141,7 @@ fun CharacterCustomizationDialog(
                             classes(Styles.settingsSectionLabel)
                         }
                     ) {
-                        Text("Skin Tone")
+                        Translated("Skin Tone")
                     }
                     
                     Div(
@@ -201,7 +201,7 @@ fun CharacterCustomizationDialog(
                             classes(Styles.settingsSectionLabel)
                         }
                     ) {
-                        Text("Eyes")
+                        Translated("Eyes")
                     }
                     
                     Select(
@@ -222,7 +222,7 @@ fun CharacterCustomizationDialog(
                                     }
                                 }
                             ) {
-                                Text(option)
+                                Translated(option)
                             }
                         }
                     }
@@ -241,7 +241,7 @@ fun CharacterCustomizationDialog(
                             classes(Styles.settingsSectionLabel)
                         }
                     ) {
-                        Text("Hair")
+                        Translated("Hair")
                     }
                     
                     Select(
@@ -262,7 +262,7 @@ fun CharacterCustomizationDialog(
                                     }
                                 }
                             ) {
-                                Text(option)
+                                Translated(option)
                             }
                         }
                     }
@@ -275,7 +275,7 @@ fun CharacterCustomizationDialog(
                 onClick = onClose,
                 isPrimary = false
             ) {
-                Text("Cancel")
+                Translated("Cancel")
             }
             
             // Save button
@@ -286,7 +286,7 @@ fun CharacterCustomizationDialog(
                 },
                 isPrimary = true
             ) {
-                Text("Save")
+                Translated("Save")
             }
         }
     )

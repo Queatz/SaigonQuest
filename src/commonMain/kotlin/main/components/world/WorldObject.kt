@@ -70,6 +70,13 @@ class Character(
     var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf()
 ) : WorldObject() {
     
+    var skinTone: Float = 0.5f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+            // Update base mesh material color in realtime when skin tone changes
+            applySkinToneToBaseMesh()
+        }
+    
     private var characterMesh: AbstractMesh? = null
     // List to store meshes for additional sprite sheets
     private var additionalMeshes: MutableList<AbstractMesh> = mutableListOf()
@@ -81,6 +88,25 @@ class Character(
     private var needsRerender: Boolean = false
     // Reference to the scene for re-rendering
     private var currentScene: Scene? = null
+    
+    // Compute a soft gradient between light and dark skin tones
+    private fun computeSkinColor(tone: Float): Color3 {
+        val t = tone.coerceIn(0f, 1f)
+        // Define light and dark skin anchor colors (RGB, linear-ish)
+        val lightR = 1.00f; val lightG = 0.86f; val lightB = 0.75f
+        val darkR = 0.36f; val darkG = 0.24f; val darkB = 0.17f
+        val r = lightR + (darkR - lightR) * t
+        val g = lightG + (darkG - lightG) * t
+        val b = lightB + (darkB - lightB) * t
+        return Color3(r, g, b)
+    }
+
+    // Apply current skin tone to the base character mesh only
+    private fun applySkinToneToBaseMesh() {
+        val mesh = characterMesh ?: return
+        val material = mesh.material as? PBRMaterial ?: return
+        material.albedoColor = computeSkinColor(skinTone)
+    }
     
     override fun render(scene: Scene): Node? {
         // Store the scene reference for re-rendering
@@ -107,6 +133,8 @@ class Character(
             0f
         )
         this.characterMesh = characterMesh
+        // Apply initial skin tone to the base mesh
+        applySkinToneToBaseMesh()
         
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
@@ -165,6 +193,8 @@ class Character(
                         0f
                     )
                     this.characterMesh = characterMesh
+                    // Apply initial skin tone to the base mesh after re-render
+                    applySkinToneToBaseMesh()
                     
                     // Create meshes for additional sprite sheets with increasing z-offset
                     additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->

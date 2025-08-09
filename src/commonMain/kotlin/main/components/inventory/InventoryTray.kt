@@ -1,6 +1,7 @@
 package main.components.inventory
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -33,6 +34,8 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import kotlinx.browser.window
+import org.w3c.dom.events.Event
 
 /**
  * A component that displays the inventory tray at the bottom center of the screen.
@@ -71,6 +74,26 @@ fun InventoryTray(
                 coroutineScope = coroutineScope,
                 onError = { message -> showFeedback(message, true) }
             )
+        }
+
+        // Note: event listener is attached separately in DisposableEffect
+    }
+
+    // Listen for item collected events dispatched from InputHandler
+    DisposableEffect(Unit) {
+        val listener: (Event) -> Unit = { evt ->
+            try {
+                val detail = (evt.asDynamic().detail)
+                val title = detail?.title as? String ?: "Item"
+                showFeedback("$title collected")
+            } catch (e: dynamic) {
+                console.error("Error handling itemCollected event", e)
+            }
+        }
+        window.addEventListener("itemCollected", listener)
+
+        onDispose {
+            window.removeEventListener("itemCollected", listener)
         }
     }
     

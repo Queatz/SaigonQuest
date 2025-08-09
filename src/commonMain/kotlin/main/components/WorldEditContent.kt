@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import lib.Color3
 import lib.Scene
+import main.components.world.WorldLoader
 import main.api.UserApi
 import main.api.WorldApi
 import main.theme.Styles
@@ -77,6 +78,9 @@ fun WorldEditContent(
                 
                 // Set the scene's clear color
                 scene.clearColor = color4
+
+                // Sync hemispheric light color to match background
+                WorldLoader.updateHemisphericLightColorHex(hexColor)
                 
                 // If fog is enabled (fogDensity > 0), update the fog color to match the background color
                 if (scene.fogDensity > 0.0f) {
@@ -146,6 +150,7 @@ fun WorldEditContent(
     var url by remember { mutableStateOf(currentWorld?.url ?: "") }
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#000000") }
+    var directionalLightColor by remember { mutableStateOf("#ffffff") }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
     
     // State for form submission
@@ -570,6 +575,78 @@ fun WorldEditContent(
                     }
                 ) {
                     Text(backgroundColor)
+                }
+            }
+        }
+        
+        // Directional Light Color field
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                    property("margin-top", "16px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) {
+                Text("Directional light color")
+            }
+
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                    }
+                }
+            ) {
+                Input(
+                    type = InputType.Color,
+                    attrs = {
+                        style {
+                            property("width", "50px")
+                            property("height", "30px")
+                            property("padding", "0")
+                            property("border", "none")
+                            if (!fieldsEnabled) {
+                                property("opacity", "0.7")
+                                property("cursor", "not-allowed")
+                            }
+                        }
+                        value(directionalLightColor)
+                        if (fieldsEnabled) {
+                            onInput { event ->
+                                directionalLightColor = event.value
+                                // Update the directional light color in real-time
+                                WorldLoader.updateDirectionalLightColorHex(event.value)
+                            }
+                        }
+                        if (!fieldsEnabled) {
+                            attr("disabled", "true")
+                        }
+                    }
+                )
+
+                // Display the hex color value next to the color picker
+                Div(
+                    attrs = {
+                        style {
+                            color(Color.white)
+                            fontSize(14.px)
+                        }
+                    }
+                ) {
+                    Text(directionalLightColor)
                 }
             }
         }

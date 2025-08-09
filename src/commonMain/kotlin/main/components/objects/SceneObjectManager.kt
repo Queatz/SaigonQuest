@@ -14,13 +14,17 @@ import lib.PBRMaterial
 import lib.Scene
 import lib.TransformNode
 import lib.Vector3
+import main.api.InventoryApi
+import main.api.ItemApi
 import main.api.ObjectApi
 import main.api.WebSocketApi
 import main.api.addObject
 import main.api.updateObject
 import main.components.camera.CameraController
 import main.components.shadow.ShadowManager
+import main.components.world.InventoryObject
 import main.components.world.WorldObjectManager
+import models.Item
 import models.Object
 import models.Position
 import models.WebSocketAction
@@ -68,8 +72,8 @@ class SceneObjectManager(
     init {
         // Configure the highlight layer for white outline
         highlightLayer.intensity = 1.5f  // Increased intensity for more visible effect
-        highlightLayer.blurHorizontalSize = 2
-        highlightLayer.blurVerticalSize = 2
+        highlightLayer.blurHorizontalSize = 1
+        highlightLayer.blurVerticalSize = 1
 
         // Set additional properties if available
         try {
@@ -338,6 +342,122 @@ class SceneObjectManager(
     var onSuccess: ((String) -> Unit)? = null
     
     /**
+     * Handles dropping an inventory item into the scene
+     * 
+     * @param x The x coordinate of the drop
+     * @param y The y coordinate of the drop
+     * @param data The serialized item data
+     * @param worldId The ID of the current world
+     */
+    fun handleInventoryItemDrop(x: Int, y: Int, data: String, worldId: String) {
+        console.log("[DEBUG_DROP] Inventory item dropped at ($x, $y) in world $worldId")
+        
+        try {
+            // Parse the item data
+            val item = json.decodeFromString(Item.serializer(), data)
+            console.log("[DEBUG_DROP] Parsed item data: title=${item.title}, key=${item.key}")
+            
+            // Calculate the 3D position from the 2D screen coordinates
+            console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
+            val position = calculatePositionFromScreenCoordinates(x, y)
+            console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
+            
+            // Create an Object model for the dropped item
+            // Use empty collection and store the item data in the data field
+            val obj = Object(
+                title = item.title,
+                data = data, // Store the original item data
+                worldId = worldId,
+                position = position,
+                collection = "", // Empty collection as requested
+                file = ""
+            )
+            console.log("[DEBUG_DROP] Created Object model for dropped item: ${obj.title}, position=(${obj.position.x}, ${obj.position.y}, ${obj.position.z})")
+            
+            // Add a flag to indicate this is an inventory item
+            obj.isItem = true
+            obj.itemQuantity = 1
+            obj.itemId = item.key
+
+            // Persist the object placement
+            coroutineScope.launch {
+                try {
+                    // Create the object on the server
+                    val savedObj = ObjectApi.createObject(obj)
+                    
+                    // Remove the item from inventory
+                    val updatedInventory = InventoryApi.removeItemFromInventory(item.key)
+
+                    // Send the add object event over WebSocket for real-time updates
+                    WebSocketApi.addObject(savedObj)
+
+                    // Create a 3D representation of the item in the scene
+                    createInventoryItemInScene(savedObj, item)
+
+                    console.log("Item successfully placed and persisted: ${savedObj.key}")
+
+                    // Provide success feedback
+                    onSuccess?.invoke("Item '${item.title}' placed successfully")
+                } catch (error: Exception) {
+                    console.error("Error persisting item placement", error)
+                    
+                    // Provide error feedback
+                    onError?.invoke("Failed to place item: ${error.message ?: "Unknown error"}")
+                }
+            }
+        } catch (error: Exception) {
+            console.error("Error parsing item data", error)
+            
+            // Provide error feedback
+            onError?.invoke("Failed to parse item data: ${error.message ?: "Unknown error"}")
+        }
+    }
+    
+    /**
+     * Creates a 3D representation of an inventory item in the scene
+     * 
+     * @param obj The object containing the item data
+     * @param item The item to create
+     */
+    private fun createInventoryItemInScene(obj: Object, item: Item) {
+        console.log("[DEBUG_ITEM] Creating 3D representation for item: ${obj.key}")
+        
+        try {
+            // Create position vector from the object properties
+            val position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+            
+            // Create the inventory object
+            val inventoryObject = InventoryObject(
+                item = item,
+                initialPosition = position,
+                objectId = obj.key
+            )
+            
+            // Render the object in the scene
+            val node = inventoryObject.render(scene)
+            if (node != null) {
+                // Store the object in our map for future reference
+                objectMeshes[obj.key] = node
+
+                node.getChildMeshes().also { meshes ->
+                    console.log("[DEBUG_ITEM] Adding shadows: ${meshes}")
+                    // Add all meshes as shadow casters
+                    shadowManager?.addShadowCasters(meshes)
+
+                    // Configure all meshes to receive shadows
+                    shadowManager?.configureShadowReceivers(meshes)
+                }
+
+                console.log("[DEBUG_ITEM] Successfully created inventory item in scene: ${obj.key}")
+            } else {
+                console.error("[DEBUG_ITEM] Failed to render inventory item: ${obj.key}")
+            }
+        } catch (error: Exception) {
+            console.error("[DEBUG_ITEM] Error creating inventory item", error)
+        }
+    }
+    
+    /**
      * Handles dropping an object into the scene
      * 
      * @param x The x coordinate of the drop
@@ -346,20 +466,24 @@ class SceneObjectManager(
      * @param worldId The ID of the current world
      */
     fun handleObjectDrop(x: Int, y: Int, data: String, worldId: String) {
-        console.log("Object dropped at ($x, $y) in world $worldId")
+        console.log("[DEBUG_DROP] Object dropped at ($x, $y) in world $worldId")
         
         try {
             // Parse the object data
             val obj = json.decodeFromString(Object.serializer(), data)
+            console.log("[DEBUG_DROP] Parsed object data: title=${obj.title}, key=${obj.key}")
             
             // Calculate the 3D position from the 2D screen coordinates
+            console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
             val position = calculatePositionFromScreenCoordinates(x, y)
+            console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
             
             // Update the object with the new position and world ID
             val updatedObj = obj.copy(
                 position = position,
                 worldId = worldId
             )
+            console.log("[DEBUG_DROP] Updated object with new position: (${updatedObj.position.x}, ${updatedObj.position.y}, ${updatedObj.position.z})")
             
             // Persist the object placement
             coroutineScope.launch {
@@ -403,10 +527,87 @@ class SceneObjectManager(
      * @param y The y coordinate on the screen
      * @return The calculated 3D position
      */
-    private fun calculatePositionFromScreenCoordinates(x: Int, y: Int): Position {
-        // In a real implementation, we would use raycasting to find the intersection with the ground
-        // For now, we'll just create a simple position
-        return Position(x.toFloat() / 100, 0f, y.toFloat() / 100)
+    private fun calculatePositionFromScreenCoordinates(clientX: Int, clientY: Int): Position {
+        console.log("[DEBUG_POSITION] calculatePositionFromScreenCoordinates called with clientX=$clientX, clientY=$clientY")
+        
+        // Create a ray from the camera through the pointer position
+        val ray = scene.createPickingRay(
+            x = clientX,
+            y = clientY,
+            world = lib.Matrix.Identity(),
+            camera = cameraController.getCamera()
+        )
+        console.log("[DEBUG_POSITION] Created picking ray from camera through pointer position")
+        
+        var closestDistance = Float.MAX_VALUE
+        var closestPoint: Vector3? = null
+        
+        // Get world meshes for collision detection
+        val worldMeshes = getWorldMeshes()
+        console.log("[DEBUG_POSITION] Got ${worldMeshes.size} world meshes for collision detection")
+
+        // Skip player and move circle meshes if we have references to them
+        val playerController = main.components.SceneManager.getPlayerController()
+        val player = playerController?.getCollider()
+        val moveCircle = playerController?.getMoveCircle()
+        console.log("[DEBUG_POSITION] Player mesh: ${player?.name}, Move circle mesh: ${moveCircle?.name}")
+        
+        var intersectionCount = 0
+        for (mesh in worldMeshes) {
+            console.log("[DEBUG_POSITION] Checking mesh: ${mesh.name}")
+            
+            if (mesh == player || mesh == moveCircle) {
+                console.log("[DEBUG_POSITION] Skipping player or move circle mesh: ${mesh.name}")
+                continue
+            }
+            
+            val hit = ray.intersectsMesh(mesh)
+            if (hit.pickedPoint != null) {
+                intersectionCount++
+                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                console.log("[DEBUG_POSITION] Found intersection with mesh ${mesh.name} at distance $distance")
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance
+                    closestPoint = hit.pickedPoint
+                    console.log("[DEBUG_POSITION] New closest point: (${closestPoint.x}, ${closestPoint.y}, ${closestPoint.z}) at distance $closestDistance")
+                }
+            } else {
+                console.log("[DEBUG_POSITION] No intersection with mesh ${mesh.name}")
+            }
+        }
+        
+        console.log("[DEBUG_POSITION] Found $intersectionCount intersections, closest point: $closestPoint")
+        
+        // If no collision with a mesh, fallback to using the player's position
+        if (closestPoint == null) {
+            console.log("[DEBUG_POSITION] No collision found, falling back to player position")
+            val playerController = main.components.SceneManager.getPlayerController()
+            closestPoint = playerController?.getPlayerPosition()
+            console.log("[DEBUG_POSITION] Player position: $closestPoint")
+            
+            if (closestPoint == null) {
+                console.log("[DEBUG_POSITION] Player position is null, using Vector3.Zero()")
+                closestPoint = Vector3.Zero()
+            }
+        }
+        
+        // Add 0.5 on the Y-axis to make the item float above the ground
+        val finalPosition = Vector3(
+            closestPoint.x,
+            closestPoint.y + 0.125f,
+            closestPoint.z
+        )
+        console.log("[DEBUG_POSITION] Final position with Y offset: (${finalPosition.x}, ${finalPosition.y}, ${finalPosition.z})")
+        
+        // Convert to Position model
+        val result = Position(
+            x = finalPosition.x,
+            y = finalPosition.y,
+            z = finalPosition.z
+        )
+        console.log("[DEBUG_POSITION] Returning Position: (${result.x}, ${result.y}, ${result.z})")
+        return result
     }
     
     /**
@@ -416,6 +617,20 @@ class SceneObjectManager(
      */
     private fun createObjectInScene(obj: Object) {
         console.log("[DEBUG_OBJECT] Creating 3D representation for object: ${obj.key}")
+
+        if (obj.isItem) {
+            console.log("[DEBUG_OBJECT] isItem: ${obj.key} obj.itemId=${obj.itemId}")
+            if (obj.itemId.isNotBlank()) {
+                coroutineScope.launch {
+                    val item = ItemApi.getItemById(obj.itemId)
+                    console.log("[DEBUG_OBJECT] loaded item: $item", item)
+                    createInventoryItemInScene(obj, item)
+                }
+            } else {
+                onError?.invoke("Failed to create 3D representation for object: ${obj.key}, missing item ID")
+            }
+            return
+        }
         
         try {
             // Create a position, rotation, and scale vectors from the object properties
@@ -426,14 +641,7 @@ class SceneObjectManager(
             // Check if the object has a file and collection specified
             if (obj.file.isNotEmpty() && obj.collection.isNotEmpty()) {
                 console.log("[DEBUG_OBJECT] Loading 3D model from file: ${obj.file}, collection: ${obj.collection}")
-                
-                // Create a fallback sphere first so the object appears instantly
-                val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
-                
-                // Store the fallback sphere in our map for future reference
-                console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
-                objectMeshes[obj.key] = fallbackSphere
-                
+
                 // Use the asset manager to load the 3D model
                 assetManager.getNode(
                     file = obj.file,
@@ -445,7 +653,6 @@ class SceneObjectManager(
                         node.name = obj.key
 
                         node.getChildMeshes().also { meshes ->
-
                             // Add all meshes as shadow casters
                             shadowManager?.addShadowCasters(meshes)
 
@@ -470,9 +677,6 @@ class SceneObjectManager(
                         // Set scale
                         console.log("[DEBUG_OBJECT] Setting scale to: (${scale.x}, ${scale.y}, ${scale.z})")
                         node.scaling = scale
-                        
-                        // Remove the fallback sphere (now it's a TransformNode)
-                        (fallbackSphere as lib.TransformNode).dispose()
                         
                         // Store the mesh in our map for future reference
                         console.log("[DEBUG_OBJECT] Storing mesh in objectMeshes map with key: ${obj.key}")
@@ -790,8 +994,12 @@ class SceneObjectManager(
                 // Check if we already have this object
                 val existingNode = objectMeshes[obj.key]
                 if (existingNode != null) {
-                    // Update existing object position
-                    existingNode.position = Vector3(obj.position.x.toFloat(), obj.position.y.toFloat(), obj.position.z.toFloat())
+                    // Update existing object transform
+                    existingNode.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+                    existingNode.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+                    existingNode.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+                    // Update status text as well
+                    handleObjectStatusText(obj.key, obj.status, existingNode)
                     console.log("Updated existing object: ${obj.key}")
                 } else {
                     // Create new object
@@ -828,9 +1036,11 @@ class SceneObjectManager(
                 // Find the object node
                 val node = objectMeshes[obj.key]
                 if (node != null) {
-                    // Update the object position
+                    // Update the object transform
                     node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
-                    console.log("Updated object position: ${obj.key} to (${obj.position.x}, ${obj.position.y}, ${obj.position.z})")
+                    node.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+                    node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+                    console.log("Updated object transform: ${obj.key} to pos=(${obj.position.x}, ${obj.position.y}, ${obj.position.z}) rot=(${obj.rotation.x}, ${obj.rotation.y}, ${obj.rotation.z}) scale=(${obj.scale.x}, ${obj.scale.y}, ${obj.scale.z})")
                     
                     // Handle status text
                     handleObjectStatusText(obj.key, obj.status, node)

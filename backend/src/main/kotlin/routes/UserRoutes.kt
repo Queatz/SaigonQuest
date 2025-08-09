@@ -18,6 +18,7 @@ import models.UpgradeRequest
 import models.User
 import models.VisitorRequest
 import models.WornItemsRequest
+import models.UserCustomizationRequest
 import repository.UserRepository
 
 fun Routing.configureUserRoutes() {
@@ -181,6 +182,31 @@ fun Routing.configureUserRoutes() {
                 
                 // Update language
                 val updatedUser = userRepository.updateLanguage(userId, request.language)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+                
+                call.respond(HttpStatusCode.OK, updatedUser)
+            }
+            
+            // Update character customization - requires authentication
+            post("/customization") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                // Get request body
+                val request = call.receive<UserCustomizationRequest>()
+                
+                // Update customization
+                val updatedUser = userRepository.updateCustomization(
+                    userId,
+                    request.bodyType,
+                    request.skinTone,
+                    request.eyeColor,
+                    request.hairStyle,
+                )
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)

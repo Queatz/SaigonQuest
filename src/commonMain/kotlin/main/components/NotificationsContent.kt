@@ -13,6 +13,8 @@ import main.theme.NotificationStyles
 import main.utils.TimeUtils
 import models.Notification
 import models.NotificationType
+import main.components.Translated
+import Translations.str
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
@@ -43,7 +45,7 @@ fun NotificationsContent(
             notifications = result.toList().sortedByDescending { it.timestamp }
             isLoading = false
         } catch (e: Exception) {
-            error = "Failed to load notifications"
+            error = str("Failed to load notifications")
             isLoading = false
         }
     }

@@ -181,4 +181,27 @@ object ObjectApi {
     suspend fun getNodeTypesByCategory(): Map<NodeCategory, List<LogicNode>> {
         return models.getNodeTypesByCategory()
     }
+    
+    /**
+     * Collects an inventory item from the world
+     * 
+     * This method is used to collect dropped inventory items from the world.
+     * It makes a POST request to the collect endpoint and returns a boolean
+     * indicating whether the collection was successful.
+     * 
+     * @param objectId The ID of the object to collect
+     * @return true if the collection was successful, false otherwise
+     */
+    suspend fun collectObject(objectId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/object/collect/$objectId") {
+                ApiClient.addAuthHeader(this)
+            }
+            
+            response.status.isSuccess()
+        } catch (e: Exception) {
+            console.error("Error collecting object", e)
+            false
+        }
+    }
 }

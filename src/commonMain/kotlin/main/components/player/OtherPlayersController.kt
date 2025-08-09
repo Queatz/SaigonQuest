@@ -76,6 +76,9 @@ class OtherPlayersController(private val scene: Scene) {
     // Map of isPlayer flags by userId
     private val playerIsPlayerFlags = mutableMapOf<String, Boolean>()
     
+    // Map of player directions by userId
+    private val playerDirections = mutableMapOf<String, CharacterDirection>()
+    
     // Reference to the world object manager for creating text billboards
     private var worldObjectManager: WorldObjectManager? = null
     
@@ -539,8 +542,8 @@ class OtherPlayersController(private val scene: Scene) {
                 if (user != null) {
                     console.log("[DEBUG_LOG] OtherPlayersController: Successfully fetched User object for $userId")
                     
-                    // Create a sprite sheet for the player based on their sex
-                    val userSpriteSheet = SpriteSheet.createPlayerSpriteSheet(user.sex)
+                    // Create a sprite sheet for the player based on their sex and body type
+                    val userSpriteSheet = SpriteSheet.createPlayerSpriteSheetForBodyType(user.sex, user.bodyType)
                     
                     // Create the player character using the WorldObjectManager with the User object
                     val playerHandle = manager.createCharacter(
@@ -566,6 +569,9 @@ class OtherPlayersController(private val scene: Scene) {
                     playerHandle.node.let { node ->
                         playerNodes[userId] = node
                     }
+                    
+                    // Initialize and store the player's direction
+                    playerDirections[userId] = direction
                     
                     // Store target position and animation time
                     playerTargetPositions[userId] = position
@@ -625,6 +631,9 @@ class OtherPlayersController(private val scene: Scene) {
         playerHandle.node.let { node ->
             playerNodes[userId] = node
         }
+        
+        // Initialize and store the player's direction
+        playerDirections[userId] = direction
         
         // Store target position and animation time
         playerTargetPositions[userId] = position
@@ -693,6 +702,9 @@ class OtherPlayersController(private val scene: Scene) {
             console.log("OtherPlayersController: Removed username text for $userId")
         }
         usernameTextHandles.remove(userId)
+        
+        // Remove stored direction
+        playerDirections.remove(userId)
     
         // Only remove stored username and isPlayer flag if not preserving state
         if (!preserveState) {
@@ -768,6 +780,15 @@ class OtherPlayersController(private val scene: Scene) {
                     } else {
                         // Normalize direction and apply speed
                         direction.normalize()
+                        // Update facing direction based on movement vector (before scaling)
+                        run {
+                            val currentFacing = playerDirections[userId] ?: CharacterDirection.S
+                            val newFacing = main.components.world.calculateFacingFromVector(direction, currentFacing)
+                            if (newFacing != currentFacing) {
+                                playerDirections[userId] = newFacing
+                                handle.updateDirection(newFacing)
+                            }
+                        }
                         direction.scaleInPlace(minOf(frameMovementSpeed, distance))
                         val newPosition = currentPos.add(direction)
                         handle.position = newPosition
@@ -1169,6 +1190,9 @@ class OtherPlayersController(private val scene: Scene) {
     
         // Clear the shadow manager reference
         shadowManager = null
+        
+        // Clear player directions
+        playerDirections.clear()
     
         console.log("OtherPlayersController: Disposed all resources")
     }

@@ -13,14 +13,17 @@ import lib.PointerEventTypes
 import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
+import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.playerInteract
+import main.api.removeObject
 import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.objects.SceneObjectManager
 import main.components.player.PlayerController
 import main.utils.createObjectDoubleClickEvent
+import main.utils.createItemCollectedEvent
 import models.World
 import kotlin.math.abs
 
@@ -184,19 +187,45 @@ class InputHandler(
             // Get the object meshes
             val objectMeshes = objectManager.getObjectMeshes()
             
+            // Variables to track inventory items
+            var closestInventoryItemId: String? = null
+            var isInventoryItem = false
+            
             // Check each object mesh for intersection
             for ((objectId, meshes) in objectMeshes) {
                 meshes.forEach { mesh ->
                     val hit = ray.intersectsMesh(mesh)
                     if (hit.pickedPoint != null) {
                         val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                        if (distance < closestDistance) {
+                        
+                        // Check if this is an inventory item by checking if the parent node is an inventory root
+                        val isInventoryObject = mesh.parent?.name?.startsWith("inventory-root-") == true
+                        
+                        if (isInventoryObject) {
+                            console.log("[POINTER_DOWN] Found intersection with inventory item: $objectId at distance: $distance")
+                            
+                            // If this is closer than any previously found item, update the closest item
+                            if (distance < closestDistance) {
+                                closestDistance = distance
+                                closestInventoryItemId = objectId
+                                isInventoryItem = true
+                            }
+                        } else if (!isInventoryItem && distance < closestDistance) {
+                            // Only update regular objects if we haven't found an inventory item
+                            // or if this regular object is closer than any previously found inventory item
                             closestDistance = distance
                             closestObjectId = objectId
                             console.log("[POINTER_DOWN] Found intersection with object: $objectId at distance: $distance")
                         }
                     }
                 }
+            }
+            
+            // If we found an inventory item, handle it
+            if (isInventoryItem && closestInventoryItemId != null) {
+                console.log("[POINTER_DOWN] Collecting inventory item: $closestInventoryItemId")
+                collectInventoryItem(closestInventoryItemId)
+                return
             }
             
             // If we found an object, select it
@@ -741,6 +770,62 @@ class InputHandler(
     
         // Use the callback to show the dialog if provided
         onShowOtherPlayerDialog?.invoke(username, isPlayer)
+    }
+    
+    /**
+     * Collects an inventory item from the world.
+     * 
+     * This method is called when a user clicks on an inventory item in the world.
+     * It calls the ObjectApi.collectObject method to collect the item and add it
+     * to the user's inventory, then removes the object from the scene.
+     * 
+     * @param objectId The ID of the inventory item to collect
+     */
+    private fun collectInventoryItem(objectId: String) {
+        console.log("[DEBUG_LOG] Collecting inventory item: $objectId")
+        
+        // Use a coroutine to call the API
+        scope.launch {
+            try {
+                // Retrieve object details first to get the title before it may be removed on the server
+                var itemTitle: String = "Item"
+                try {
+                    val obj = ObjectApi.getObject(objectId)
+                    if (obj.title.isNotBlank()) {
+                        itemTitle = obj.title
+                    }
+                } catch (e: Exception) {
+                    console.warn("[DEBUG_LOG] Could not fetch object details for title: $objectId", e)
+                }
+
+                // Call the API to collect the item
+                val success = ObjectApi.collectObject(objectId)
+                
+                if (success) {
+                    console.log("[DEBUG_LOG] Successfully collected inventory item: $objectId")
+                    
+                    // Remove the object from the scene
+                    objectManager?.removeObject(objectId)
+                    
+                    // Send a WebSocket message to remove the object for all clients
+                    WebSocketApi.removeObject(objectId)
+                    
+                    // Notify UI via custom event so InventoryTray can show feedback
+                    val event = createItemCollectedEvent(itemTitle)
+                    window.dispatchEvent(event)
+                } else {
+                    console.error("[DEBUG_LOG] Failed to collect inventory item: $objectId")
+                    
+                    // Show error message
+                    window.alert("Failed to collect item")
+                }
+            } catch (e: Exception) {
+                console.error("[DEBUG_LOG] Error collecting inventory item", e)
+                
+                // Show error message
+                window.alert("Error collecting item: ${e.message}")
+            }
+        }
     }
     
     /**

@@ -21,7 +21,9 @@ object WornItemsRenderer {
         
         // Get the list of worn items from the user
         val wornItemIds = user.wornItems
-        if (wornItemIds.isEmpty()) return emptyList()
+        if (wornItemIds.isEmpty()) {
+            return listOf(createDefaultApparelSpriteSheet())
+        }
         
         // Get the corresponding Item objects for each worn item
         val wornItems = wornItemIds.mapNotNull { itemId ->
@@ -35,8 +37,15 @@ object WornItemsRenderer {
         }
         
         // Create sprite sheets for each wearable item
-        return wearableItems.mapNotNull { item ->
+        val sheets = wearableItems.mapNotNull { item ->
             createSpriteSheetForWearableItem(item)
+        }
+
+        // If no valid wearable sheets resolved, fallback to default apparel
+        return if (sheets.isEmpty()) {
+            listOf(createDefaultApparelSpriteSheet())
+        } else {
+            sheets
         }
     }
     
@@ -53,6 +62,26 @@ object WornItemsRenderer {
         // Create a sprite sheet for the wearable item
         return SpriteSheet(
             imageUrl = "/raw/data/spritesheets/${item.wearableFile}.png",
+            cellWidthPx = 32,
+            cellHeightPx = 48,
+            columns = 8,
+            directionOrder = listOf(
+                main.components.world.CharacterDirection.S,
+                main.components.world.CharacterDirection.SE,
+                main.components.world.CharacterDirection.E,
+                main.components.world.CharacterDirection.NE,
+                main.components.world.CharacterDirection.N,
+                main.components.world.CharacterDirection.NW,
+                main.components.world.CharacterDirection.W,
+                main.components.world.CharacterDirection.SW
+            )
+        )
+    }
+
+    // Default apparel layer used when no worn items are specified or resolved
+    private fun createDefaultApparelSpriteSheet(): SpriteSheet {
+        return SpriteSheet(
+            imageUrl = "/raw/data/spritesheets/Base Apparel Sprite Sheet.png",
             cellWidthPx = 32,
             cellHeightPx = 48,
             columns = 8,

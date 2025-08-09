@@ -25,7 +25,7 @@ class ShadowManager(
     private val shadowGenerator: CascadedShadowGenerator
     
     // Shadow map size (power of 2, higher = better quality but lower performance)
-    private val shadowMapSize = 512
+    private val shadowMapSize = 384
     
     // List of meshes that cast shadows
     private val shadowCasters = mutableListOf<AbstractMesh>()
@@ -77,7 +77,7 @@ class ShadowManager(
     private fun configureShadowGenerator() {
         // Configure shadow generator properties
         shadowGenerator.apply {
-            lambda = 0.5f
+            lambda = 1f
             bias = 0.005f
             normalBias = 0.005f
             

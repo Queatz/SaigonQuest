@@ -167,8 +167,11 @@ class PlayerController(private val scene: Scene) {
         // Store the WorldObjectManager for later use
         this.worldObjectManager = worldObjectManager
 
-        // Create a sprite sheet for the player based on the user's sex
-        val spriteSheet = SpriteSheet.createPlayerSpriteSheet(InventoryState.currentUser?.sex)
+        // Create a sprite sheet for the player based on the user's sex and body type
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheetForBodyType(
+            InventoryState.currentUser?.sex,
+            InventoryState.currentUser?.bodyType,
+        )
         
         // Get worn item sprite sheets if inventory is already loaded
         var wornItemSpriteSheets = emptyList<SpriteSheet>()
@@ -526,7 +529,7 @@ class PlayerController(private val scene: Scene) {
         ray.direction = Vector3(0f, -1f, 0f)
         
         for (mesh in worldMeshes) {
-            if (mesh === collider || mesh === moveCircle) continue
+            if (mesh == collider || mesh == moveCircle) continue
             
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
@@ -763,32 +766,8 @@ class PlayerController(private val scene: Scene) {
             normalizedDirection.normalize()
         }
         
-        // Get the x and z components (horizontal plane)
-        val x = normalizedDirection.x
-        val z = normalizedDirection.z
-        
-        // Determine the direction based on the angle
-        // We use 8 directions (N, NE, E, SE, S, SW, W, NW)
-        val newDirection = when {
-            // North (z < 0)
-            z < -0.7f && x > -0.3f && x < 0.3f -> CharacterDirection.N
-            // Northeast
-            z < -0.3f && x > 0.3f -> CharacterDirection.NE
-            // East (x > 0)
-            x > 0.7f && z > -0.3f && z < 0.3f -> CharacterDirection.E
-            // Southeast
-            z > 0.3f && x > 0.3f -> CharacterDirection.SE
-            // South (z > 0)
-            z > 0.7f && x > -0.3f && x < 0.3f -> CharacterDirection.S
-            // Southwest
-            z > 0.3f && x < -0.3f -> CharacterDirection.SW
-            // West (x < 0)
-            x < -0.7f && z > -0.3f && z < 0.3f -> CharacterDirection.W
-            // Northwest
-            z < -0.3f && x < -0.3f -> CharacterDirection.NW
-            // Default to current direction if movement is ambiguous
-            else -> playerDirection
-        }
+        // Determine direction using shared utility
+        val newDirection = main.components.world.calculateFacingFromVector(normalizedDirection, playerDirection)
         
         // Only update if the direction has changed
         if (newDirection != playerDirection) {
@@ -1152,8 +1131,11 @@ class PlayerController(private val scene: Scene) {
         // Remove the existing character
         handle.remove()
         
-        // Create a new character with the worn items, using the appropriate sprite sheet based on user's sex
-        val spriteSheet = SpriteSheet.createPlayerSpriteSheet(InventoryState.currentUser?.sex)
+        // Create a new character with the worn items, using the appropriate sprite sheet based on user's sex and body type
+        val spriteSheet = SpriteSheet.createPlayerSpriteSheetForBodyType(
+            InventoryState.currentUser?.sex,
+            InventoryState.currentUser?.bodyType,
+        )
         playerHandle = manager.createCharacter(
             spriteSheet = spriteSheet,
             direction = currentDirection,

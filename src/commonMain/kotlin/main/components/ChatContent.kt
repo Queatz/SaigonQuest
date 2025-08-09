@@ -20,6 +20,8 @@ import main.api.sendTypingStatus
 import main.components.chat.ChatMessages
 import main.theme.Styles
 import main.theme.Theme
+import main.components.Translated
+import Translations.str
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
@@ -192,7 +194,7 @@ fun ChatContent(worldId: String) {
                     }
                 }
             ) {
-                Text(lastError ?: "Connecting to chat server...")
+                Text(lastError ?: str("Connecting to chat server..."))
             }
         } else {
             // Emote button with popup
@@ -302,7 +304,7 @@ fun ChatContent(worldId: String) {
                         property("border", "0")
                         opacity(if (isAuthenticated) 1.0 else 0.7)
                     }
-                    placeholder(if (isAuthenticated) "Type a message..." else "Sign in to chat")
+                    placeholder(if (isAuthenticated) str("Type a message...") else str("Sign in to chat"))
                     onInput { 
                         val newValue = it.value
                         console.log("[TYPING] Input changed: '${messageText}' -> '${newValue}'")
@@ -411,7 +413,7 @@ fun ChatContent(worldId: String) {
                     }
                 }
             ) {
-                Text("Send")
+                Translated("Send")
             }
         }
     }

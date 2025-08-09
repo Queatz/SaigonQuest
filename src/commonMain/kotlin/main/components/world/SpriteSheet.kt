@@ -9,7 +9,16 @@ class SpriteSheet(
     val cellHeightPx: Int,
     val columns: Int,
     val framesPerSecond: Float = 8f,
-    private val directionOrder: List<CharacterDirection> = CharacterDirection.entries
+    private val directionOrder: List<CharacterDirection> = listOf(
+        CharacterDirection.S,
+        CharacterDirection.SE,
+        CharacterDirection.E,
+        CharacterDirection.NE,
+        CharacterDirection.N,
+        CharacterDirection.NW,
+        CharacterDirection.W,
+        CharacterDirection.SW,
+    )
 ) {
     /**
      * Gets the number of animation frames for a specific direction
@@ -63,30 +72,96 @@ class SpriteSheet(
      */
     companion object {
         fun createPlayerSpriteSheet(sex: models.Sex? = null): SpriteSheet {
-            // The sprite sheet has directions in this order: S, SE, E, NE, N, NW, W, SW
-            val directionOrder = listOf(
-                CharacterDirection.S,
-                CharacterDirection.SE,
-                CharacterDirection.E,
-                CharacterDirection.NE,
-                CharacterDirection.N,
-                CharacterDirection.NW,
-                CharacterDirection.W,
-                CharacterDirection.SW
-            )
-            
             // Choose the appropriate sprite sheet based on the player's sex
             val imageUrl = when (sex) {
-                models.Sex.Girl -> "/raw/data/spritesheets/Player Girl Base Sprite Sheet.png"
-                else -> "/raw/data/spritesheets/Player Boy Base Sprite Sheet.png"
+                models.Sex.Girl -> "Player Girl Base Sprite Sheet"
+                else -> "Player Boy Base Sprite Sheet"
             }
             
             return SpriteSheet(
-                imageUrl = imageUrl,
+                imageUrl = "/raw/data/spritesheets/$imageUrl.png",
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
-                directionOrder = directionOrder
+            )
+        }
+
+        /**
+         * Creates a sprite sheet for the player's base based on body type and sex.
+         * Body types: Skinny, Normal, Fat. Falls back to Normal when unknown.
+         */
+        fun createPlayerSpriteSheetForBodyType(sex: models.Sex?, bodyType: String?): SpriteSheet {
+            val normalized = bodyType?.lowercase()?.trim()
+            val fileName = when (sex) {
+                models.Sex.Girl -> when (normalized) {
+                    "skinny" -> "Player Skinny Girl Base Sprite Sheet"
+                    "fat" -> "Player Fat Girl Base Sprite Sheet"
+                    else -> "Player Girl Base Sprite Sheet" // Normal
+                }
+                else -> when (normalized) {
+                    "skinny" -> "Player Skinny Boy Base Sprite Sheet"
+                    "fat" -> "Player Fat Boy Base Sprite Sheet"
+                    else -> "Player Boy Base Sprite Sheet" // Normal
+                }
+            }
+
+            return SpriteSheet(
+                imageUrl = "/raw/data/spritesheets/$fileName.png",
+                cellWidthPx = 32,
+                cellHeightPx = 48,
+                columns = 8,
+            )
+        }
+
+        /**
+         * Creates a sprite sheet for the player's hair based on the hair style.
+         * Returns null if the style is unknown.
+         */
+        fun createHairSpriteSheet(hairStyle: String?): SpriteSheet? {
+            if (hairStyle.isNullOrBlank()) return null
+
+            val fileName = when (hairStyle) {
+                "Short" -> "Short Hair Sprite Sheet"
+                "Medium" -> "Medium Hair Sprite Sheet"
+                "Long" -> "Long Hair Sprite Sheet"
+                else -> return null
+            }
+
+            return SpriteSheet(
+                imageUrl = "/raw/data/spritesheets/$fileName.png",
+                cellWidthPx = 32,
+                cellHeightPx = 48,
+                columns = 8,
+            )
+        }
+
+        /**
+         * Creates a sprite sheet for the player's eyes based on eye color and sex.
+         * Returns null if inputs are unknown or blank.
+         * Example filenames: "Blue Eyed Girl Base Sprite Sheet.png", "Brown Eyed Boy Base Sprite Sheet.png"
+         */
+        fun createEyesSpriteSheet(eyeColor: String?, sex: models.Sex?): SpriteSheet? {
+            val color = when (eyeColor?.trim()?.lowercase()) {
+                "black" -> "Black"
+                "blue" -> "Blue"
+                "brown" -> "Brown"
+                "green" -> "Green"
+                "gray" -> "Gray"
+                else -> return null
+            }
+
+            val sexText = when (sex) {
+                models.Sex.Girl -> "Girl"
+                models.Sex.Boy -> "Boy"
+                else -> return null
+            }
+            val fileName = "$color Eyed $sexText Base Sprite Sheet"
+
+            return SpriteSheet(
+                imageUrl = "/raw/data/spritesheets/$fileName.png",
+                cellWidthPx = 32,
+                cellHeightPx = 48,
+                columns = 8,
             )
         }
     }

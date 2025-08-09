@@ -10,6 +10,14 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 
 /**
+ * Enum representing the type of data being dropped in the scene
+ */
+enum class DataType {
+    ITEM,
+    OBJECT;
+}
+
+/**
  * Extension function to get an attribute from an Element.
  * This replaces the use of element.asDynamic().getAttribute().
  */
@@ -84,14 +92,21 @@ fun createCustomEvent(type: String, detail: dynamic): Event {
  * @param x The x coordinate of the drop
  * @param y The y coordinate of the drop
  * @param data The JSON data of the dropped object
+ * @param dataType The type of data being dropped (ITEM or OBJECT)
  * @return The created CustomEvent
  */
-fun createObjectDropEvent(x: Int, y: Int, data: String): Event {
+fun createObjectDropEvent(
+    x: Int,
+    y: Int,
+    data: String,
+    dataType: DataType = DataType.OBJECT
+): Event {
     // Create detail object
     val detail: dynamic = object {}
     detail.x = x
     detail.y = y
     detail.data = data
+    detail.dataType = dataType.name
     
     return createCustomEvent("objectDrop", detail)
 }
@@ -110,6 +125,17 @@ fun createObjectDoubleClickEvent(objectId: String): Event {
     return createCustomEvent("objectDoubleClick", detail)
 }
 
+/**
+ * Creates a CustomEvent specifically for item collected notifications.
+ *
+ * @param title The title of the collected item
+ * @return The created CustomEvent
+ */
+fun createItemCollectedEvent(title: String): Event {
+    val detail: dynamic = object {}
+    detail.title = title
+    return createCustomEvent("itemCollected", detail)
+}
 
 // Function to toggle fullscreen mode
 fun toggleFullscreen() {
