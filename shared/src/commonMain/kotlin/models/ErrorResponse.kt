@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ErrorResponse(
-    val message: String,
-    val code: Int = 400,
+    override val message: String,
+    val code: Int = -1,
     val details: String? = null
-)
+) : Throwable(message)

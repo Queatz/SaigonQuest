@@ -211,43 +211,75 @@ private fun handleLogin(
 
             // Update OtherPlayersController knowledge of our current userId so it ignores our join
             try {
-                SceneManager.getOtherPlayersController()?.let { controller ->
-                    controller.refreshCurrentUserId()
-                }
+                SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
             } catch (e: Exception) {
                 console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController", e)
             }
 
-            // Step 3: Send USER_JOIN for the new player with current position
+            // Step 3: Reconnect WebSocket so server binds session to the logged-in user
             try {
                 val worldId = WebSocketConnectionManager.currentWorldId.value
-                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED && worldId != null) {
-                    // Determine current position
-                    val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
-                    val position = if (playerPos != null) Position(playerPos.x, playerPos.y, playerPos.z) else Position(0f, 0f, 0f)
+                val isConnected = WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED
 
-                    console.log("VisitorDialogPresenter: Sending USER_JOIN for player after login at position: ${'$'}position")
-                    WebSocketApi.sendUserJoin(worldId, position, isPlayer = true)
+                if (isConnected && worldId != null) {
+                    console.log("VisitorDialogPresenter: Reconnecting WebSocket after login to update server-side user context")
+
+                    // Disconnect current connection to drop the visitor-associated session
+                    WebSocketConnectionManager.disconnect()
+
+                    // Small delay to ensure the socket actually closes before reconnect
+                    delay(250)
+
+                    // Connect again to the same world using the new token
+                    WebSocketConnectionManager.connectToWorld(worldId)
+
+                    // Wait for reconnection (up to 10 attempts, 500ms each)
+                    var attempts = 0
+                    while (WebSocketConnectionManager.connectionState.value != WebSocketConnectionManager.ConnectionState.CONNECTED && attempts < 10) {
+                        delay(500)
+                        attempts++
+                    }
+
+                    if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                        // Determine current position
+                        val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
+                        val position = if (playerPos != null) Position(playerPos.x, playerPos.y, playerPos.z) else Position(0f, 0f, 0f)
+
+                        console.log("VisitorDialogPresenter: Sending USER_JOIN for player after reconnect at position: ${'$'}position")
+                        WebSocketApi.sendUserJoin(worldId, position, isPlayer = true)
+
+                        // Update player state in WebSocket to notify other clients
+                        val updateSuccess = WebSocketApi.updatePlayer(
+                            name = user.username,
+                            isPlayer = user.isPlayer
+                        )
+                        if (updateSuccess) {
+                            console.log("Successfully updated player state after login (post-reconnect)")
+                        } else {
+                            console.warn("Failed to update player state after login (post-reconnect)")
+                        }
+                    } else {
+                        console.warn("VisitorDialogPresenter: Reconnect after login did not complete in time; skipping USER_JOIN/updatePlayer")
+                    }
                 } else {
-                    console.warn("VisitorDialogPresenter: Skipping USER_JOIN after login - not connected or missing worldId")
+                    console.warn("VisitorDialogPresenter: Skipping WebSocket reconnect after login - not connected or missing worldId")
+                    // Best effort: try to update player state if possible
+                    try {
+                        val updateSuccess = WebSocketApi.updatePlayer(
+                            name = user.username,
+                            isPlayer = user.isPlayer
+                        )
+                        if (updateSuccess) {
+                            console.log("Successfully updated player state after login (no reconnect path)")
+                        } else {
+                            console.warn("Failed to update player state after login (no reconnect path)")
+                        }
+                    } catch (ignored: Exception) {
+                        console.error("VisitorDialogPresenter: Error updating player state after login (no reconnect path)", ignored)
+                    }
                 }
             } catch (e: Exception) {
-                console.error("VisitorDialogPresenter: Error while sending USER_JOIN after login", e)
-            }
-            
-            // Update player state in WebSocket to notify other clients
-            try {
-                val updateSuccess = WebSocketApi.updatePlayer(
-                    name = user.username,
-                    isPlayer = user.isPlayer
-                )
-                if (updateSuccess) {
-                    console.log("Successfully updated player state after login")
-                } else {
-                    console.warn("Failed to update player state after login")
-                }
-            } catch (e: Exception) {
-                console.error("Error updating player state after login", e)
+                console.error("VisitorDialogPresenter: Error during WebSocket reconnect after login", e)
             }
             
             // Refresh inventory and customizations so the local avatar updates

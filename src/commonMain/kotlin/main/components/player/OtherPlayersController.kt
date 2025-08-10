@@ -83,6 +83,154 @@ class OtherPlayersController(private val scene: Scene) {
     
     // Pending statuses for players whose meshes are not yet created
     private val pendingStatuses = mutableMapOf<String, String>()
+
+    // Centralized HUD state (Typing > Chat > Status)
+    private data class HudState(
+        var desiredStatus: String = "",
+        var chatMessage: String? = null,
+        var chatExpiry: Double? = null, // performance.now() ms
+        var isTyping: Boolean = false,
+    )
+    private enum class HudKind { Typing, Chat, Status, None }
+    private val hudStateByUser = mutableMapOf<String, HudState>()
+    private val lastAppliedHud = mutableMapOf<String, Pair<HudKind, String?>>()
+    
+    private fun getHud(userId: String): HudState {
+        val hud = hudStateByUser[userId] ?: HudState().also { hudStateByUser[userId] = it }
+        return hud
+    }
+
+    private fun applyHud(userId: String) {
+        // Do not render for current user
+        if (userId == myUserId) return
+
+        val manager = worldObjectManager
+        val position = playerHandles[userId]?.position
+
+        // Clean up expired chat
+        val hud = getHud(userId)
+        val now = window.performance.now()
+        hud.chatExpiry?.let { expiry ->
+            if (now >= expiry) {
+                hud.chatMessage = null
+                hud.chatExpiry = null
+            }
+        }
+
+        if (manager == null || position == null) {
+            // retry shortly if not ready
+            window.setTimeout({ applyHud(userId) }, 50)
+            return
+        }
+
+        val kind: HudKind
+        val text: String?
+
+        if (hud.isTyping) {
+            kind = HudKind.Typing
+            text = "\uD83D\uDCAC"
+        } else if (hud.chatMessage != null) {
+            kind = HudKind.Chat
+            text = hud.chatMessage
+        } else if (hud.desiredStatus.isNotBlank()) {
+            kind = HudKind.Status
+            text = hud.desiredStatus
+        } else {
+            kind = HudKind.None
+            text = null
+        }
+
+        val last = lastAppliedHud[userId]
+        if (last != null && last.first == kind && last.second == text) {
+            return
+        }
+
+        // Remove existing billboard if any
+        statusTextHandles[userId]?.let { handle ->
+            handle.remove()
+            statusTextHandles.remove(userId)
+        }
+
+        if (kind == HudKind.None) {
+            lastAppliedHud[userId] = Pair(HudKind.None, null)
+            return
+        }
+
+        val textPosition = Vector3(position.x, position.y + .8f, position.z)
+        val (textColor, background) = when (kind) {
+            HudKind.Typing -> Pair("white", "#00000080")
+            HudKind.Chat -> Pair("black", "white")
+            HudKind.Status -> Pair("white", "#00000080")
+            else -> Pair("white", "#00000080")
+        }
+
+        val newHandle = manager.createTextBillboard(
+            text = text ?: "",
+            position = textPosition,
+            fontSize = 18,
+            textColor = textColor,
+            backgroundColor = background,
+        )
+
+        if (newHandle != null) {
+            statusTextHandles[userId] = newHandle
+        }
+        lastAppliedHud[userId] = Pair(kind, text)
+    }
+
+    private fun setDesiredStatus(userId: String, status: String) {
+        val hud = getHud(userId)
+        hud.desiredStatus = status.trim()
+        // Maintain cache for restoration
+        val name = playerUsernames[userId] ?: ("Player-$userId")
+        val isPlayer = playerIsPlayerFlags[userId] ?: false
+        playerUpdateData[userId] = UpdatePlayerData(
+            userId = userId,
+            name = name,
+            isPlayer = isPlayer,
+            status = hud.desiredStatus.ifBlank { null }
+        )
+        applyHud(userId)
+    }
+
+    private fun setTyping(userId: String, typing: Boolean) {
+        val hud = getHud(userId)
+        hud.isTyping = typing
+        applyHud(userId)
+    }
+
+    private fun showChatMessage(userId: String, message: String) {
+        if (userId == myUserId) return
+        val hud = getHud(userId)
+        val truncated = if (message.length > 16) message.take(16) + "…" else message
+        hud.chatMessage = truncated
+        val existingTimeout = chatMessageTimeouts[userId]
+        if (existingTimeout != null) {
+            window.clearTimeout(existingTimeout)
+        }
+        val newTimeout = window.setTimeout({
+            val h = getHud(userId)
+            h.chatMessage = null
+            h.chatExpiry = null
+            applyHud(userId)
+            chatMessageTimeouts.remove(userId)
+        }, 2000)
+        chatMessageTimeouts[userId] = newTimeout
+        // Set expiry for immediate checks
+        hud.chatExpiry = window.performance.now() + 2000
+        applyHud(userId)
+    }
+
+    private fun onMeshReady(userId: String) {
+        applyHud(userId)
+    }
+
+    private fun removeHud(userId: String) {
+        statusTextHandles[userId]?.let { it.remove() }
+        statusTextHandles.remove(userId)
+        lastAppliedHud.remove(userId)
+        hudStateByUser.remove(userId)
+    }
     
     // Map of player update data by userId
     private val playerUpdateData = mutableMapOf<String, UpdatePlayerData>()
@@ -698,6 +846,9 @@ class OtherPlayersController(private val scene: Scene) {
                     
                     // Create username text billboard
                     createUsernameTextBillboard(userId, position, user.username)
+
+                    // Notify HUD that mesh is ready
+                    onMeshReady(userId)
                     
                     // If we have a pending status from snapshot, display it now that the mesh exists
                     pendingStatuses[userId]?.let { status ->
@@ -769,6 +920,9 @@ class OtherPlayersController(private val scene: Scene) {
         // Create username text billboard
         createUsernameTextBillboard(userId, position, username)
         
+        // Notify HUD that mesh is ready
+        onMeshReady(userId)
+        
         // If we have a pending status from snapshot, display it now that the mesh exists
         pendingStatuses[userId]?.let { status ->
             if (status.isNotBlank()) {
@@ -816,6 +970,13 @@ class OtherPlayersController(private val scene: Scene) {
      */
     private fun removePlayerMesh(userId: String, preserveState: Boolean = false) {
         console.log("[DEBUG_LOG] Removing player mesh for $userId, preserveState=$preserveState")
+        
+        // Clear HUD/billboard
+        removeHud(userId)
+        
+        // Clear any chat timeout
+        chatMessageTimeouts[userId]?.let { window.clearTimeout(it) }
+        chatMessageTimeouts.remove(userId)
         
         // Remove the player handle if it exists
         playerHandles[userId]?.let { handle ->
@@ -1036,29 +1197,9 @@ class OtherPlayersController(private val scene: Scene) {
         // Username is at y + .5f, so put chat message at y + .8f
         val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
         
-        // Create the text billboard with the chat message
-        val textHandle = manager.createTextBillboard(
-            text = displayText,
-            position = textPosition,
-            fontSize = 18,
-            textColor = "black",
-            backgroundColor = "white"
-        )
-        
-        // Store the text handle
-        if (textHandle != null) {
-            chatMessageTextHandles[userId] = textHandle
-            
-            // Set a timeout to remove the message after 2 seconds
-            val timeoutId = window.setTimeout({
-                removeChatMessage(userId)
-            }, 2000)
-            
-            // Store the timeout ID
-            chatMessageTimeouts[userId] = timeoutId
-            
-            console.log("OtherPlayersController: Displayed chat message for $userId: $displayText")
-        }
+        // Delegate to centralized HUD system
+        showChatMessage(userId, displayText)
+        console.log("OtherPlayersController: Displayed chat message for $userId: $displayText (HUD)")
     }
     
     /**
@@ -1073,21 +1214,13 @@ class OtherPlayersController(private val scene: Scene) {
             chatMessageTimeouts.remove(userId)
         }
         
-        // Remove the text billboard if it exists
-        chatMessageTextHandles[userId]?.let { textHandle ->
-            textHandle.remove()
-            chatMessageTextHandles.remove(userId)
-            console.log("OtherPlayersController: Removed chat message for $userId")
-            
-            // Show status text again if available
-            val updateData = playerUpdateData[userId]
-            if (updateData != null) {
-                val status = updateData.status?.orEmpty() ?: ""
-                if (status.isNotBlank()) {
-                    console.log("OtherPlayersController: Restoring status after chat message removed for $userId: $status")
-                    displayPlayerStatus(userId, status)
-                }
-            }
+        // Clear chat in HUD state and re-apply
+        val hud = hudStateByUser[userId]
+        if (hud != null) {
+            hud.chatMessage = null
+            hud.chatExpiry = null
+            applyHud(userId)
+            console.log("OtherPlayersController: Cleared chat HUD for $userId")
         }
     }
     
@@ -1098,47 +1231,8 @@ class OtherPlayersController(private val scene: Scene) {
      * @param status The status text to display
      */
     fun displayPlayerStatus(userId: String, status: String) {
-        // Don't display empty status
-        if (status.isBlank()) {
-            removePlayerStatus(userId)
-            return
-        }
-        
-        // Allow the current user to see their own status
-        // Previously this was preventing the player from seeing their own status
-        
-        // If chat message is showing, don't show status
-        if (chatMessageTextHandles[userId] != null) {
-            return
-        }
-        
-        // Get the world object manager
-        val manager = worldObjectManager ?: return
-        
-        // Get the player's position
-        val playerPosition = playerHandles[userId]?.position ?: return
-        
-        // Remove existing status text if any
-        removePlayerStatus(userId)
-        
-        // Calculate position above the username (adjust Y value as needed)
-        // Username is at y + .5f, so put status message at y + .8f (same as chat)
-        val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
-        
-        // Create the text billboard with the status message
-        val textHandle = manager.createTextBillboard(
-            text = status,
-            position = textPosition,
-            fontSize = 18,
-            textColor = "white",
-            backgroundColor = "#00000080" // Semi-transparent black background
-        )
-        
-        // Store the text handle
-        if (textHandle != null) {
-            statusTextHandles[userId] = textHandle
-            console.log("OtherPlayersController: Displayed status for $userId: $status")
-        }
+        // Delegate to HUD state; blank clears
+        setDesiredStatus(userId, status)
     }
     
     /**
@@ -1148,15 +1242,8 @@ class OtherPlayersController(private val scene: Scene) {
      */
     private fun removePlayerStatus(userId: String) {
         console.log("[TYPING] removePlayerStatus called for userId=$userId")
-        
-        // Remove the text billboard if it exists
-        statusTextHandles[userId]?.let { textHandle ->
-            textHandle.remove()
-            statusTextHandles.remove(userId)
-            console.log("[TYPING] Successfully removed status/typing indicator for $userId")
-        } ?: run {
-            console.log("[TYPING] No status/typing indicator found to remove for $userId")
-        }
+        // Clear only the status in HUD and re-apply (typing/chat unaffected)
+        setDesiredStatus(userId, "")
     }
     
     /**
@@ -1167,74 +1254,12 @@ class OtherPlayersController(private val scene: Scene) {
      */
     fun displayTypingIndicator(userId: String, isTyping: Boolean) {
         console.log("[TYPING] displayTypingIndicator called for userId=$userId, isTyping=$isTyping")
-        
-        // Don't display for the current user (handled by PlayerController)
+        // Delegate to HUD typing state
         if (userId == myUserId) {
             console.log("[TYPING] Not displaying typing indicator for current user: $userId")
             return
         }
-        
-        if (isTyping) {
-            // If chat message is showing, don't show typing indicator
-            if (chatMessageTextHandles[userId] != null) {
-                console.log("[TYPING] Not displaying typing indicator because chat message is showing for $userId")
-                return
-            }
-            
-            // Get the world object manager
-            val manager = worldObjectManager
-            if (manager == null) {
-                console.error("[TYPING] Cannot display typing indicator: worldObjectManager is null")
-                return
-            }
-            
-            // Get the player's position
-            val playerPosition = playerHandles[userId]?.position
-            if (playerPosition == null) {
-                console.error("[TYPING] Cannot display typing indicator: player position not found for $userId")
-                return
-            }
-            
-            console.log("[TYPING] Displaying typing indicator at position: x=${playerPosition.x}, y=${playerPosition.y}, z=${playerPosition.z}")
-            
-            // Remove existing status text if any
-            removePlayerStatus(userId)
-            
-            // Calculate position above the username
-            val textPosition = Vector3(playerPosition.x, playerPosition.y + .8f, playerPosition.z)
-            
-            // Create the text billboard with the typing indicator
-            val textHandle = manager.createTextBillboard(
-                text = "💬",
-                position = textPosition,
-                fontSize = 18,
-                textColor = "white",
-                backgroundColor = "#00000080" // Semi-transparent black background
-            )
-            
-            // Store the text handle in the status handles (reusing existing mechanism)
-            if (textHandle != null) {
-                statusTextHandles[userId] = textHandle
-                console.log("[TYPING] Successfully displayed typing indicator for $userId")
-            } else {
-                console.error("[TYPING] Failed to create text billboard for typing indicator for $userId")
-            }
-        } else {
-            console.log("[TYPING] Removing typing indicator for $userId")
-            
-            // Remove the typing indicator
-            removePlayerStatus(userId)
-            
-            // Show status text again if available
-            val updateData = playerUpdateData[userId]
-            if (updateData != null) {
-                val status = updateData.status?.orEmpty() ?: ""
-                if (status.isNotBlank()) {
-                    console.log("[TYPING] Restoring status after typing indicator removed for $userId: $status")
-                    displayPlayerStatus(userId, status)
-                }
-            }
-        }
+        setTyping(userId, isTyping)
     }
     
     /**

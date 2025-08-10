@@ -39,6 +39,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -62,6 +63,7 @@ fun FriendsContent() {
     var friends by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var onlineMap by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     
     // Coroutine scope for async operations
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
@@ -75,6 +77,15 @@ fun FriendsContent() {
             onSuccess = { fetchedFriends ->
                 friends = fetchedFriends
                 isLoading = false
+                // Fetch online status for these friends
+                coroutineScope.launch {
+                    try {
+                        val ids = fetchedFriends.map { it.friendId }
+                        onlineMap = FriendApi.getFriendsOnline(ids)
+                    } catch (e: Exception) {
+                        console.error("Error fetching friends online", e)
+                    }
+                }
             },
             onError = { errorMessage ->
                 error = errorMessage
@@ -167,6 +178,7 @@ fun FriendsContent() {
                 friends.forEach { friend ->
                     FriendListItem(
                         friend = friend,
+                        isOnline = onlineMap[friend.friendId] == true,
                         onJumpToFriend = { friendId, worldId, position ->
                             jumpToFriend(
                                 router = router,
@@ -208,6 +220,7 @@ fun FriendsContent() {
 @Composable
 fun FriendListItem(
     friend: Friend,
+    isOnline: Boolean,
     onJumpToFriend: (String, String, Position?) -> Unit,
     onRemoveFriend: (String) -> Unit
 ) {
@@ -240,12 +253,28 @@ fun FriendListItem(
             Span(
                 attrs = {
                     style {
+                        display(DisplayStyle.Flex)
+                        alignItems(AlignItems.Center)
                         fontSize(16.px)
                         fontWeight("bold")
                         color(rgba(255, 255, 255, 0.9))
+                        gap(8.px)
                     }
                 }
             ) {
+                // Online indicator dot
+                Span(
+                    attrs = {
+                        style {
+                            width(10.px)
+                            height(10.px)
+                            borderRadius(50.percent)
+                            backgroundColor(
+                                if (isOnline) rgba(0, 200, 0, 0.9) else rgba(120, 120, 120, 0.8)
+                            )
+                        }
+                    }
+                ) {}
                 Text(friend.friendUsername)
             }
             

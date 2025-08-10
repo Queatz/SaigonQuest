@@ -163,5 +163,30 @@ fun Routing.configureFriendRoutes() {
             
             call.respond(HttpStatusCode.OK)
         }
+
+        // Get online status for a set of friend IDs
+        get("/friend/online") {
+            val principal = call.principal<JWTPrincipal>()
+            JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+
+            val idsParam = call.request.queryParameters["ids"]
+            if (idsParam == null) {
+                return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("ids query parameter is required"))
+            }
+
+            val ids = idsParam.split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+            if (ids.isEmpty()) {
+                return@get call.respond(emptyMap<String, Boolean>())
+            }
+
+            // Build a set of online userIds from all worlds
+            val onlineIds = activeConnections.values
+                .flatMap { it }
+                .map { it.userId }
+                .toSet()
+
+            val result = ids.associateWith { onlineIds.contains(it) }
+            call.respond(result)
+        }
     }
 }

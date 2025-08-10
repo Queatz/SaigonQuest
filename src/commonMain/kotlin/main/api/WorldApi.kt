@@ -1,3 +1,4 @@
+
 package main.api
 
 import io.ktor.client.call.*
@@ -6,15 +7,16 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import models.ErrorResponse
 import models.World
+import models.WorldStateSnapshot
 
 /**
  * API client for world operations
- * 
+ *
  * This API provides methods for managing worlds.
  * It uses the shared ApiClient for HTTP requests and coroutines for asynchronous operations.
  */
 object WorldApi {
-    
+
     /**
      * Gets all worlds for the current user
      */
@@ -23,7 +25,7 @@ object WorldApi {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world") {
                 ApiClient.addAuthHeader(this)
             }
-            
+
             if (response.status.isSuccess()) {
                 return response.body<List<World>>()
             } else {
@@ -32,23 +34,23 @@ object WorldApi {
                     response.body<ErrorResponse>()
                 } catch (e: Exception) {
                     // Fallback if response is not a valid ErrorResponse
-                    ErrorResponse(message = response.bodyAsText())
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error fetching worlds", e)
             throw e
         }
     }
-    
+
     /**
      * Gets a world by ID
      */
     suspend fun getWorld(id: String): World {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$id")
-            
+
             if (response.status.isSuccess()) {
                 return response.body<World>()
             } else {
@@ -57,16 +59,16 @@ object WorldApi {
                     response.body<ErrorResponse>()
                 } catch (e: Exception) {
                     // Fallback if response is not a valid ErrorResponse
-                    ErrorResponse(message = response.bodyAsText())
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error fetching world", e)
             throw e
         }
     }
-    
+
     /**
      * Creates a new world
      */
@@ -76,22 +78,22 @@ object WorldApi {
             if (world.title.isEmpty()) {
                 throw Error("Title is required")
             }
-            
+
             if (world.file.isEmpty()) {
                 throw Error("File is required")
             }
-            
+
             // Validate URL format if provided
             if (world.url.isNotEmpty() && !world.url.matches(Regex("^[a-zA-Z0-9_-]*$"))) {
                 throw Error("Invalid URL format. URLs can only contain letters, numbers, hyphens, and underscores.")
             }
-            
+
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/world") {
                 contentType(ContentType.Application.Json)
                 ApiClient.addAuthHeader(this)
                 setBody(world)
             }
-            
+
             if (response.status.isSuccess()) {
                 return response.body<World>()
             } else {
@@ -101,19 +103,19 @@ object WorldApi {
                 } catch (e: Exception) {
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.Unauthorized) {
-                        ErrorResponse(message = "You must be logged in to create a world")
+                        ErrorResponse(message = "You must be logged in to create a world", code = response.status.value)
                     } else {
-                        ErrorResponse(message = response.bodyAsText())
+                        ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                     }
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error creating world", e)
             throw e
         }
     }
-    
+
     /**
      * Updates an existing world
      */
@@ -124,7 +126,7 @@ object WorldApi {
                 ApiClient.addAuthHeader(this)
                 setBody(world)
             }
-            
+
             if (response.status.isSuccess()) {
                 return response.body<World>()
             } else {
@@ -133,16 +135,16 @@ object WorldApi {
                     response.body<ErrorResponse>()
                 } catch (e: Exception) {
                     // Fallback if response is not a valid ErrorResponse
-                    ErrorResponse(message = response.bodyAsText())
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error updating world", e)
             throw e
         }
     }
-    
+
     /**
      * Gets a world by URL
      * @param url The URL of the world to get. Empty string is valid for Home World.
@@ -154,21 +156,21 @@ object WorldApi {
             if (url.isNotEmpty() && !url.matches(Regex("^[a-zA-Z0-9_-]*$"))) {
                 throw Error("Invalid URL format. URLs can only contain letters, numbers, hyphens, and underscores.")
             }
-            
+
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/url") {
                 url {
                     parameters.append("url", url)
                 }
             }
-            
+
             if (response.status.isSuccess()) {
                 val world = response.body<World>()
-                
+
                 // Validate world data
                 if (world.key.isEmpty()) {
                     throw Error("Invalid world data: Missing key")
                 }
-                
+
                 return world
             } else {
                 // Parse error response
@@ -177,12 +179,12 @@ object WorldApi {
                 } catch (e: Exception) {
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.NotFound) {
-                        ErrorResponse(message = "World not found")
+                        ErrorResponse(message = "World not found", code = response.status.value)
                     } else {
-                        ErrorResponse(message = response.bodyAsText())
+                        ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                     }
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error fetching world by URL", e)
@@ -193,18 +195,18 @@ object WorldApi {
     /**
      * Gets the authoritative world state snapshot for a given world ID
      */
-    suspend fun getWorldState(worldId: String): models.WorldStateSnapshot {
+    suspend fun getWorldState(worldId: String): WorldStateSnapshot {
         try {
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$worldId/state")
-            return if (response.status.isSuccess()) {
-                response.body<models.WorldStateSnapshot>()
+            if (response.status.isSuccess()) {
+                return response.body<WorldStateSnapshot>()
             } else {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
                 } catch (e: Exception) {
-                    ErrorResponse(message = response.bodyAsText())
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
-                throw Error(errorResponse.message)
+                throw errorResponse
             }
         } catch (e: Exception) {
             console.error("Error fetching world state", e)

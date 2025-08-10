@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
+import io.ktor.client.plugins.ResponseException
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
@@ -730,6 +731,9 @@ fun SceneComponent(url: String) {
                 }
             } catch (error: Throwable) {
                 console.error("Error loading world: ${error.message}")
+                console.error("Error", error)
+                console.error("Error TYPE ", error is ResponseException)
+                console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
                 loadingFailed.value = true
                 
                 // Set specific error message based on the error

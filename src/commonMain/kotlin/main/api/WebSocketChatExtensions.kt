@@ -102,7 +102,8 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
 
             // Send message
             console.log("Sending chat message: $messageText")
-            val success = sendChatMessageData(WebSocketAction.SEND_CHAT_MESSAGE, chatMessage)
+            val success = sendChatMessageData(WebSocketAction.
+            SEND_CHAT_MESSAGE, chatMessage)
 
             if (!success) {
                 console.error("Failed to send chat message")

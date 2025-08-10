@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
+import io.ktor.client.plugins.ResponseException
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -25,6 +26,7 @@ import main.api.WebSocketApi
 import main.api.WorldApi
 import models.NotificationData
 import models.WebSocketAction
+import models.ChatMessage
 import main.components.inventory.InventoryTray
 import main.theme.Styles
 import main.utils.PathUtils
@@ -206,6 +208,9 @@ fun WorldUI() {
             isWorldLoading = false
         } catch (error: Throwable) {
             console.error("Error fetching world", error)
+            console.error("Error", error)
+            console.error("Error TYPE ", error is ResponseException)
+            console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
             worldErrorMessage = error.message ?: "Failed to load world"
             isWorldLoading = false
         }
@@ -290,6 +295,37 @@ fun WorldUI() {
         // Clean up listener on dispose
         onDispose {
             WebSocketApi.removeAllListeners(WebSocketAction.NOTIFICATION)
+        }
+    }
+    
+    // Set up WebSocket listener for chat messages to update unread count
+    DisposableEffect(Unit) {
+        // Add listener for RECEIVE_CHAT_MESSAGE events
+        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                // Parse the chat message data from the message
+                val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                
+                // Only count as unread if:
+                // - The message is for the current world
+                // - The Chat panel is not open
+                // - The message is not from the current user
+                val worldMatches = chatMessage.worldId == currentWorld?.key
+                val isChatOpen = currentPanel == SidePanelState.Chat
+                val fromSelf = chatMessage.userId == currentUser?.key
+                
+                if (worldMatches && !isChatOpen && !fromSelf) {
+                    unreadChatCount++
+                    console.log("Received chat message for world ${chatMessage.worldId}: incremented unread count to $unreadChatCount")
+                }
+            } catch (e: Exception) {
+                console.error("Error processing chat message for unread count", e)
+            }
+        }
+        
+        // Clean up listener on dispose
+        onDispose {
+            WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
         }
     }
     

@@ -1,5 +1,6 @@
 package main.components.world
 
+import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
@@ -21,6 +22,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.math.PI
 import kotlin.math.*
 import kotlinx.browser.window
+import models.ErrorResponse
 
 /**
  * Handles loading and initialization of the 3D world.
@@ -212,7 +214,7 @@ class WorldLoader(private val scene: Scene) {
     suspend fun loadWorld(url: String): Array<AbstractMesh> {
         // Set up lighting for the scene
         setupLighting()
-        
+
         try {
             // First load the world data from the API
             val world = WorldApi.getWorldByUrl(url)
@@ -282,9 +284,9 @@ class WorldLoader(private val scene: Scene) {
         } catch (error: Throwable) {
             // Log the error but don't re-throw it
             println("[ERROR] Failed to load world: ${error.message}")
-            
+
             // Create a fallback world due to API error
-            return createFallbackWorld(isApiError = true)
+            return createFallbackWorld(isApiError = (error as? ErrorResponse)?.code == 404)
         }
     }
     

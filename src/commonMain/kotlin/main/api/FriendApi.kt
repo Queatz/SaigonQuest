@@ -166,6 +166,29 @@ object FriendApi {
      * @param friendId The ID of the other user
      * @return The current friendship status
      */
+    /**
+     * Get online status for a list of friend IDs
+     *
+     * @param ids The list of friend user IDs to check
+     * @return A map of friendId -> isOnline
+     */
+    suspend fun getFriendsOnline(ids: List<String>): Map<String, Boolean> {
+        return try {
+            if (ids.isEmpty()) return emptyMap()
+            val idsParam = ids.joinToString(",")
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/friend/online") {
+                ApiClient.addAuthHeader(this)
+                url {
+                    parameters.append("ids", idsParam)
+                }
+            }
+            response.body<Map<String, Boolean>>()
+        } catch (e: Exception) {
+            console.error("Error fetching friends online", e)
+            emptyMap()
+        }
+    }
+
     suspend fun getFriendshipStatus(friendId: String): FriendshipStatus {
         try {
             // Check if they are already friends
@@ -191,3 +214,4 @@ object FriendApi {
         }
     }
 }
+
