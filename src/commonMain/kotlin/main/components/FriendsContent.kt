@@ -438,7 +438,7 @@ private fun jumpToFriend(
             val world = WorldApi.getWorld(worldId)
 
             // Navigate to the world
-            router.navigate("/world/${world.key}")
+            router.navigate("/${world.url}")
 
             // Set the player position if available
             if (position != null) {

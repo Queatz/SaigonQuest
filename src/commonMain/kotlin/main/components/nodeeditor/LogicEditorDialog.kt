@@ -97,7 +97,7 @@ fun LogicEditorDialog(
                 isSubmitting = false
                 onSave(savedObject)
                 onClose()
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 isSubmitting = false
                 errorMessage = error.message ?: "An error occurred"
             }

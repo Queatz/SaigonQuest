@@ -52,6 +52,9 @@ class SceneObjectManager(
     // Map of object IDs to their status text handles
     private val objectStatusTextHandles = mutableMapOf<String, main.components.world.WorldObjectHandle>()
     
+    // Tracks last known (file, collection) used to render each object, to detect when re-creation is needed
+    private val objectModelSources = mutableMapOf<String, Pair<String, String>>()
+    
     // Currently dragging object
     private var draggingObjectId: String? = null
     
@@ -148,7 +151,7 @@ class SceneObjectManager(
                 
                 console.log("[DEBUG_HIGHLIGHT] Successfully highlighted object: $objectId")
                 return true
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("[DEBUG_HIGHLIGHT] Error highlighting object", error)
                 return false
             }
@@ -186,7 +189,7 @@ class SceneObjectManager(
                     console.log("[DEBUG_HIGHLIGHT] Reset cursor to default")
                     
                     console.log("[DEBUG_HIGHLIGHT] Successfully unhighlighted object: $objectId")
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("[DEBUG_HIGHLIGHT] Error unhighlighting object", error)
                 }
             } else {
@@ -218,7 +221,7 @@ class SceneObjectManager(
                 console.log("[DEBUG_SELECT] Object selected: $objectId")
                 onSuccess?.invoke("Object selected")
                 return true
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("[DEBUG_SELECT] Error selecting object", error)
                 onError?.invoke("Failed to select object: ${error.message ?: "Unknown error"}")
                 return false
@@ -259,7 +262,7 @@ class SceneObjectManager(
                 console.log("Camera focused on object: $objectId")
                 onSuccess?.invoke("Located object")
                 return true
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error locating object", error)
                 onError?.invoke("Failed to locate object: ${error.message ?: "Unknown error"}")
                 return false
@@ -280,6 +283,18 @@ class SceneObjectManager(
         console.log("[DEBUG_REMOVE] Removing object with ID: $objectId from scene")
         
         try {
+            // If this object is currently hovered, unhighlight it first
+            if (hoveredObjectId == objectId) {
+                console.log("[DEBUG_REMOVE] Object is hovered, unhighlighting before removal: $objectId")
+                unhighlightObject()
+            }
+            
+            // If this object is selected, deselect it
+            if (selectedObject == objectId) {
+                console.log("[DEBUG_REMOVE] Object is selected, deselecting: $objectId")
+                deselectCurrentObject()
+            }
+            
             // Remove any status text for this object
             val statusTextHandle = objectStatusTextHandles[objectId]
             if (statusTextHandle != null) {
@@ -298,6 +313,11 @@ class SceneObjectManager(
                 console.log("[DEBUG_REMOVE] Successfully removed node for object: $objectId")
             } else {
                 console.log("[DEBUG_REMOVE] No node found for object: $objectId")
+            }
+            
+            // Cleanup model source tracking
+            if (objectModelSources.remove(objectId) != null) {
+                console.log("[DEBUG_REMOVE] Removed model source tracking for object: $objectId")
             }
         } catch (e: Exception) {
             console.error("[DEBUG_REMOVE] Error removing object: $objectId", e)
@@ -337,7 +357,7 @@ class SceneObjectManager(
                 
                 // Provide success feedback
                 onSuccess?.invoke("Object '${savedObj.title}' moved successfully")
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error updating object position", error)
                 
                 // Provide error feedback
@@ -415,14 +435,14 @@ class SceneObjectManager(
 
                     // Provide success feedback
                     onSuccess?.invoke("Item '${item.title}' placed successfully")
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("Error persisting item placement", error)
                     
                     // Provide error feedback
                     onError?.invoke("Failed to place item: ${error.message ?: "Unknown error"}")
                 }
             }
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error parsing item data", error)
             
             // Provide error feedback
@@ -469,7 +489,7 @@ class SceneObjectManager(
             } else {
                 console.error("[DEBUG_ITEM] Failed to render inventory item: ${obj.key}")
             }
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("[DEBUG_ITEM] Error creating inventory item", error)
         }
     }
@@ -522,14 +542,14 @@ class SceneObjectManager(
                     
                     // Provide success feedback
                     onSuccess?.invoke("Object '${savedObj.title}' placed successfully")
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("Error persisting object placement", error)
                     
                     // Provide error feedback
                     onError?.invoke("Failed to place object: ${error.message ?: "Unknown error"}")
                 }
             }
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error parsing object data", error)
             
             // Provide error feedback
@@ -699,6 +719,9 @@ class SceneObjectManager(
                         console.log("[DEBUG_OBJECT] Storing mesh in objectMeshes map with key: ${obj.key}")
                         objectMeshes[obj.key] = node
                         
+                        // Track model source used for this object
+                        objectModelSources[obj.key] = Pair(obj.file, obj.collection)
+                        
                         // Verify the mesh was added to the map
                         val storedMesh = objectMeshes[obj.key]
                         if (storedMesh != null) {
@@ -726,10 +749,13 @@ class SceneObjectManager(
                 console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
                 objectMeshes[obj.key] = fallbackSphere
                 
+                // Track model source used for this object (may be blank strings)
+                objectModelSources[obj.key] = Pair(obj.file, obj.collection)
+                
                 // Handle status text
                 handleObjectStatusText(obj.key, obj.status, fallbackSphere)
             }
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("[DEBUG_OBJECT] Error creating 3D object", error)
             onError?.invoke("Failed to create 3D object: ${error.message ?: "Unknown error"}")
         }
@@ -828,7 +854,7 @@ class SceneObjectManager(
                 console.log("Started dragging object: $objectId")
                 onSuccess?.invoke("Started moving object")
                 return true
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error starting drag", error)
                 onError?.invoke("Failed to start moving object: ${error.message ?: "Unknown error"}")
                 return false
@@ -877,7 +903,7 @@ class SceneObjectManager(
                 console.warn("Object node not found for dragging: $draggingObjectId")
             }
             return false
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error updating drag position", error)
             return false
         }
@@ -934,7 +960,7 @@ class SceneObjectManager(
                 return true
             }
             return false
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error ending drag", error)
             
             // Reset dragging state even if there was an error
@@ -1015,18 +1041,27 @@ class SceneObjectManager(
                 // Check if we already have this object
                 val existingNode = objectMeshes[obj.key]
                 if (existingNode != null) {
-                    // Update existing object transform
-                    existingNode.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
-                    existingNode.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
-                    existingNode.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
-                    // Update status text as well
-                    handleObjectStatusText(obj.key, obj.status, existingNode)
-                    console.log("Updated existing object: ${obj.key}")
+                    val prev = objectModelSources[obj.key]
+                    val incoming = Pair(obj.file, obj.collection)
+                    val modelChanged = prev == null || prev.first != incoming.first || prev.second != incoming.second
+                    if (modelChanged) {
+                        console.log("Model source changed for ${obj.key}: prev=$prev new=$incoming, recreating")
+                        removeObject(obj.key)
+                        createObjectInScene(obj)
+                    } else {
+                        // Update existing object transform
+                        existingNode.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+                        existingNode.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+                        existingNode.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+                        // Update status text as well
+                        handleObjectStatusText(obj.key, obj.status, existingNode)
+                        console.log("Updated existing object: ${obj.key}")
+                    }
                 } else {
                     // Create new object
                     createObjectInScene(obj)
                 }
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error processing object update", error)
             }
         }
@@ -1040,7 +1075,7 @@ class SceneObjectManager(
                 
                 // Use the removeObject method to clean up the object and its status text
                 removeObject(objectId)
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error processing object removal", error)
             }
         }
@@ -1057,20 +1092,29 @@ class SceneObjectManager(
                 // Find the object node
                 val node = objectMeshes[obj.key]
                 if (node != null) {
-                    // Update the object transform
-                    node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
-                    node.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
-                    node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
-                    console.log("Updated object transform: ${obj.key} to pos=(${obj.position.x}, ${obj.position.y}, ${obj.position.z}) rot=(${obj.rotation.x}, ${obj.rotation.y}, ${obj.rotation.z}) scale=(${obj.scale.x}, ${obj.scale.y}, ${obj.scale.z})")
-                    
-                    // Handle status text
-                    handleObjectStatusText(obj.key, obj.status, node)
+                    val prev = objectModelSources[obj.key]
+                    val incoming = Pair(obj.file, obj.collection)
+                    val modelChanged = prev == null || prev.first != incoming.first || prev.second != incoming.second
+                    if (modelChanged) {
+                        console.log("Model source changed for ${obj.key} via OBJECT_UPDATE: prev=$prev new=$incoming, recreating")
+                        removeObject(obj.key)
+                        createObjectInScene(obj)
+                    } else {
+                        // Update the object transform
+                        node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+                        node.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+                        node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+                        console.log("Updated object transform: ${obj.key} to pos=(${obj.position.x}, ${obj.position.y}, ${obj.position.z}) rot=(${obj.rotation.x}, ${obj.rotation.y}, ${obj.rotation.z}) scale=(${obj.scale.x}, ${obj.scale.y}, ${obj.scale.z})")
+                        
+                        // Handle status text
+                        handleObjectStatusText(obj.key, obj.status, node)
+                    }
                 } else {
                     // Object doesn't exist in our scene yet, create it
                     console.log("Object not found in scene, creating it: ${obj.key}")
                     createObjectInScene(obj)
                 }
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error processing object position update", error)
             }
         }
@@ -1108,7 +1152,7 @@ class SceneObjectManager(
                 // List all object IDs for debugging
                 val objectIds = objectMeshes.keys.joinToString(", ")
                 console.log("[DEBUG_LOAD] Object IDs in map: $objectIds")
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("[DEBUG_LOAD] Error loading existing objects", error)
                 onError?.invoke("Failed to load objects: ${error.message ?: "Unknown error"}")
             }

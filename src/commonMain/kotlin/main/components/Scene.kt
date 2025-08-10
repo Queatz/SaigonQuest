@@ -705,6 +705,11 @@ fun SceneComponent(url: String) {
                 
                 // Set the WorldObjectManager in the OtherPlayersController for username display
                 otherPlayersController.setWorldObjectManager(worldObjectManager)
+
+                // Provide HTTP worldId override (DB key) for snapshot fetches
+                currentWorld.value?.key?.let { dbKey ->
+                    otherPlayersController.setHttpWorldId(dbKey)
+                }
                 
                 console.log("Initializing other players controller...")
                 
@@ -717,9 +722,13 @@ fun SceneComponent(url: String) {
                     println("[DEBUG] Shadow manager set in OtherPlayersController")
                 }
                 
-                // Mark as loaded to hide loading screen
-                isLoaded.value = true
-            } catch (error: Exception) {
+                // Only mark as loaded if world loaded successfully (no API fallback/error)
+                if (!loadingFailed.value) {
+                    isLoaded.value = true
+                } else {
+                    console.warn("World loaded with API error fallback; keeping loading screen visible to allow claiming world")
+                }
+            } catch (error: Throwable) {
                 console.error("Error loading world: ${error.message}")
                 loadingFailed.value = true
                 

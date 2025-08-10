@@ -7,6 +7,7 @@ import models.UserLeaveData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import state.WorldStateStore
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -36,6 +37,9 @@ class UserLeaveHandler : WebSocketHandler {
                 leaveData
             }
             
+            // Update authoritative world state
+            WorldStateStore.removePlayer(worldId, correctedLeaveData.userId)
+
             // Broadcast leave notification to all clients in the same world
             val broadcastMessage = WebSocketMessage(
                 action = WebSocketAction.USER_LEAVE,

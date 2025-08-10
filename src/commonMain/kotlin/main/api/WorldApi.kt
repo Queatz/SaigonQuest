@@ -189,4 +189,26 @@ object WorldApi {
             throw e
         }
     }
+
+    /**
+     * Gets the authoritative world state snapshot for a given world ID
+     */
+    suspend fun getWorldState(worldId: String): models.WorldStateSnapshot {
+        try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$worldId/state")
+            return if (response.status.isSuccess()) {
+                response.body<models.WorldStateSnapshot>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error fetching world state", e)
+            throw e
+        }
+    }
 }

@@ -7,6 +7,7 @@ import models.UpdatePlayerData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import state.WorldStateStore
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -30,6 +31,16 @@ class UpdatePlayerHandler : WebSocketHandler {
             val updateData = json.decodeFromString<UpdatePlayerData>(message.data)
             WebSocketDebug.logMessage("PLAYER_UPDATE", "from: ${connection.userId}, for: ${updateData.userId}, world: $worldId", session)
             
+            // Update authoritative world state
+            WorldStateStore.updatePlayerDetails(
+                worldId = worldId,
+                userId = updateData.userId,
+                name = updateData.name,
+                isPlayer = updateData.isPlayer,
+                activityName = updateData.activity?.name,
+                status = updateData.status,
+            )
+
             // Broadcast player update to all other clients in the same world
             val broadcastMessage = WebSocketMessage(
                 action = WebSocketAction.UPDATE_PLAYER,

@@ -1,5 +1,6 @@
 package main
 
+import androidx.compose.runtime.key
 import app.softwork.routingcompose.BrowserRouter
 import app.softwork.routingcompose.Router
 import org.jetbrains.compose.web.css.Style
@@ -31,20 +32,15 @@ fun main() {
         ) {
             val router = Router.current
 
-            // Home route (empty URL)
-            route("/") {
-                // Render the 3D scene with empty URL (Home World)
-                SceneComponent(url = "")
-            }
-            
             // Catch-all route for any other path
             noMatch {
                 // Get the current path from the window.location.pathname
-                val path = kotlinx.browser.window.location.pathname
-                val url = if (path.startsWith("/")) path.substring(1) else path
-                
+                val url = router.currentPath.path.trimStart('/')
+
                 // Render the 3D scene with the URL from the path
-                SceneComponent(url = url)
+                key(url) {
+                    SceneComponent(url = url)
+                }
             }
         }
     }

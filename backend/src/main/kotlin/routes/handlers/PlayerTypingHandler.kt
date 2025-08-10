@@ -7,6 +7,7 @@ import models.PlayerTypingData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import state.WorldStateStore
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,6 +30,13 @@ class PlayerTypingHandler : WebSocketHandler {
             val typingData = json.decodeFromString<PlayerTypingData>(message.data)
             WebSocketDebug.logMessage("TYPING_STATUS", "from: ${connection.userId}, for: ${typingData.userId}, isTyping: ${typingData.isTyping}, world: $worldId", session)
             
+            // Update authoritative world state
+            WorldStateStore.updateTyping(
+                worldId = worldId,
+                userId = typingData.userId,
+                isTyping = typingData.isTyping,
+            )
+
             // Broadcast typing status update to all other clients in the same world
             val broadcastMessage = WebSocketMessage(
                 action = WebSocketAction.PLAYER_TYPING,

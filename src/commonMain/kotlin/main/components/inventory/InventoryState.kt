@@ -113,7 +113,7 @@ object InventoryState {
                 
                 // Notify all registered callbacks
                 onRefreshCallbacks.forEach { it() }
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error loading inventory", error)
                 lastError = error.message ?: "Failed to load inventory"
                 isLoading = false
@@ -182,7 +182,7 @@ object InventoryState {
                 
                 // Notify all registered callbacks
                 onRefreshCallbacks.forEach { it() }
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error refreshing inventory", error)
                 lastError = error.message ?: "Failed to refresh inventory"
                 isLoading = false

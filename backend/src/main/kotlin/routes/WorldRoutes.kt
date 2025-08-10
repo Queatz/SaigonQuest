@@ -74,6 +74,23 @@ fun Routing.configureWorldRoutes() {
             call.respond(world)
         }
         
+        // Get authoritative world state snapshot - no authentication required
+        get("/{id}/state") {
+            val id = call.parameters["id"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(message = "Missing id parameter", code = HttpStatusCode.BadRequest.value)
+            )
+            // Fetch world by ID to translate to presence key (URL slug)
+            val world = worldRepository.getById(id) ?: return@get call.respond(
+                HttpStatusCode.NotFound,
+                ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
+            )
+            // Presence store uses world URL (which may be empty for home world) as the key
+            val presenceKey = world.url
+            val snapshot = state.WorldStateStore.snapshot(presenceKey)
+            call.respond(snapshot)
+        }
+        
         // Update world - requires authentication
         authenticate {
             post("/{id}") {

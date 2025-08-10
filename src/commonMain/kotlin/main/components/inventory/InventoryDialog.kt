@@ -115,7 +115,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     try {
                                         InventoryState.refreshInventory(coroutineScope)
                                         currentUser = InventoryState.currentUser
-                                    } catch (error: Exception) {
+                                    } catch (error: Throwable) {
                                         console.error("Error refreshing user data", error)
                                     }
                                 }
@@ -517,7 +517,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     
                     // Show success feedback
                     showFeedback("Item order updated")
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("[DEBUG_LOG] Error saving item order", error)
                     showFeedback("Failed to save item order", true)
                     
@@ -534,21 +534,18 @@ fun InventoryDialog(onClose: () -> Unit) {
     if (showCreateItemDialog) {
         CreateItemDialog(
             onClose = { showCreateItemDialog = false },
-            onItemCreated = { newItem ->
-                // Refresh inventory after item creation
-                coroutineScope.launch {
-                    try {
-                        val userInventory = InventoryApi.getUserInventory()
-                        inventory = userInventory
-                        
-                        if (userInventory.itemOrder.isNotEmpty()) {
-                            val itemsList = ItemApi.getItemsByIds(userInventory.itemOrder)
-                            items = itemsList.associateBy { it.key }
-                        }
-                    } catch (error: Exception) {
-                        console.error("Error refreshing inventory", error)
+            onItemCreated = { _ ->
+                // Refresh inventory after item creation using shared state
+                InventoryState.refreshInventory(
+                    coroutineScope = coroutineScope,
+                    onSuccess = {
+                        showFeedback("Inventory updated")
+                    },
+                    onError = { message ->
+                        console.error("Error refreshing inventory after create", message)
+                        showFeedback("Failed to refresh inventory: $message", true)
                     }
-                }
+                )
             }
         )
     }

@@ -172,7 +172,7 @@ fun WorldUI() {
         try {
             val user = UserApi.getCurrentUser()
             currentUser = user
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error fetching user", error)
         }
     }
@@ -204,7 +204,7 @@ fun WorldUI() {
             val world = WorldApi.getWorldByUrl(worldUrl)
             currentWorld = world
             isWorldLoading = false
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error fetching world", error)
             worldErrorMessage = error.message ?: "Failed to load world"
             isWorldLoading = false
@@ -239,7 +239,7 @@ fun WorldUI() {
                     updatePanelState(SidePanelState.ObjectEditor)
                     
                     console.log("[OBJECT_DOUBLE_CLICK] Opened editor for object: ${obj.title}")
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("[OBJECT_DOUBLE_CLICK] Error fetching object", error)
                 }
             }
@@ -470,7 +470,7 @@ fun WorldUI() {
                         val obj = ObjectApi.getObject(objectId)
                         currentEditingObject = obj
                         updatePanelState(SidePanelState.ObjectEditor)
-                    } catch (error: Exception) {
+                    } catch (error: Throwable) {
                         console.error("Error fetching object", error)
                     }
                 }

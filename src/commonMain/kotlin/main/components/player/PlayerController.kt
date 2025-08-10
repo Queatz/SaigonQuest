@@ -713,6 +713,13 @@ class PlayerController(private val scene: Scene) {
                         validPos.y + .8f,
                         validPos.z
                     )
+
+                    // Update chat message text position to be above the player (if visible)
+                    chatMessageTextHandle?.position = Vector3(
+                        validPos.x,
+                        validPos.y + .8f,
+                        validPos.z
+                    )
                     
                     // Update player position flow to trigger position updates
                     playerPositionFlow.value = validPos
@@ -928,15 +935,19 @@ class PlayerController(private val scene: Scene) {
                     if (updateData.userId == currentUser.key) {
                         console.log("[DEBUG_LOG] PlayerController: Received status update for current user: '${updateData.status ?: ""}'")
                         
-                        // Display status if provided and not blank
-                        val status = updateData.status?.orEmpty() ?: ""
-                        if (status.isNotBlank()) {
-                            console.log("[DEBUG_LOG] PlayerController: Updating status display to: '$status'")
-                            displayPlayerStatus(status)
+                        // Update status only if the update explicitly contains a status field
+                        val incomingStatus = updateData.status
+                        if (incomingStatus != null) {
+                            if (incomingStatus.isNotBlank()) {
+                                console.log("[DEBUG_LOG] PlayerController: Updating status display to: '$incomingStatus'")
+                                displayPlayerStatus(incomingStatus)
+                            } else {
+                                // Remove status if it was explicitly set to blank
+                                console.log("[DEBUG_LOG] PlayerController: Removing status display (explicit blank status)")
+                                removePlayerStatus()
+                            }
                         } else {
-                            // Remove status if it was previously displayed
-                            console.log("[DEBUG_LOG] PlayerController: Removing status display (blank status)")
-                            removePlayerStatus()
+                            console.log("[DEBUG_LOG] PlayerController: Ignoring update without status; preserving current status")
                         }
                     }
                 } catch (e: Exception) {

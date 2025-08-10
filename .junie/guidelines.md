@@ -157,6 +157,7 @@ allowing the project to remain maintainable as it grows.
 - Use trailing commas
 - Always put arguments on separate lines
 - Always use named arguments when possible
+- **Use `Throwable` for exception handling**: `Exception` is not enough!
 
 ## Code Style and Development Guidelines
 

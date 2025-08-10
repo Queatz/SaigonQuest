@@ -7,6 +7,7 @@ import models.PlayerPositionData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import state.WorldStateStore
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,6 +30,14 @@ class UpdatePlayerPositionHandler : WebSocketHandler {
             val positionData = json.decodeFromString<PlayerPositionData>(message.data)
             WebSocketDebug.logMessage("POSITION_UPDATE", "from: ${connection.userId}, for: ${positionData.userId}, world: $worldId", session)
             
+            // Update authoritative world state
+            WorldStateStore.updatePlayerPosition(
+                worldId = worldId,
+                userId = positionData.userId,
+                position = positionData.position,
+                isPlayer = positionData.isPlayer,
+            )
+
             // Broadcast position update to all other clients in the same world
             val broadcastMessage = WebSocketMessage(
                 action = WebSocketAction.UPDATE_PLAYER_POSITION,

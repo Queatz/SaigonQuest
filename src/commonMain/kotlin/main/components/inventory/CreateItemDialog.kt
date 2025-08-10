@@ -152,7 +152,7 @@ fun CreateItemDialog(
                 
                 // Close the dialog
                 onClose()
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error creating item", error)
                 errorMessage = error.message ?: "Failed to create item"
                 isSubmitting = false

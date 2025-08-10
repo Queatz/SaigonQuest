@@ -7,6 +7,7 @@ import models.UserJoinData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import state.WorldStateStore
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -44,6 +45,15 @@ class UserJoinHandler : WebSocketHandler {
                 joinData
             }
             
+            // Update authoritative world state
+            WorldStateStore.upsertPlayer(
+                worldId = worldId,
+                userId = correctedJoinData.userId,
+                username = correctedJoinData.username,
+                isPlayer = correctedJoinData.isPlayer,
+                position = correctedJoinData.position,
+            )
+
             // Broadcast join notification to all clients in the same world
             val broadcastMessage = WebSocketMessage(
                 action = WebSocketAction.USER_JOIN,

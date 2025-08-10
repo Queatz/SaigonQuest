@@ -10,7 +10,9 @@ data class World(
     var url: String = "", // external URL, empty string is valid
     var file: String = "", // world file name without .glb
     var userId: String = "", // to track ownership
-    var backgroundColor: String = "#000000", // background color in hex format
+    var isOutdoors: Boolean = false, // to track ownership
+    var latLng: List<Double>? = null, // to track time of day
+    var backgroundColor: String = "#ffffff", // background color in hex format
     var directionalLightColor: String = "#ffffff", // directional light color in hex format
     var fogDensity: Float = 0.0f // fog density (0.0 to 1.0), 0.0 means no fog
 ) : BaseModel()

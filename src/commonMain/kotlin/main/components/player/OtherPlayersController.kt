@@ -13,6 +13,7 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.ListenerToken
 import main.api.WebSocketConnectionManager
+import main.api.WorldApi
 import main.api.addPlayerPositionListener
 import main.api.addUpdatePlayerListener
 import main.api.addUserJoinListener
@@ -32,6 +33,7 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import kotlin.collections.set
 
 /**
  * Controller for managing other players in the 3D scene.
@@ -43,6 +45,17 @@ import models.WebSocketAction
  * - Adding join/leave effects
  */
 class OtherPlayersController(private val scene: Scene) {
+    
+    // Optional override for HTTP snapshot worldId (use DB key when URL slug is empty)
+    private var httpWorldIdOverride: String? = null
+    
+    /**
+     * Override the worldId used for HTTP snapshot fetches (e.g., use DB key instead of URL slug)
+     */
+    fun setHttpWorldId(worldId: String) {
+        httpWorldIdOverride = worldId
+        console.log("OtherPlayersController: HTTP worldId override set to $worldId")
+    }
     
     // Map of player handles by userId
     private val playerHandles = mutableMapOf<String, WorldObjectHandle>()
@@ -67,6 +80,9 @@ class OtherPlayersController(private val scene: Scene) {
     
     // Map of status text billboard handles by userId
     private val statusTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    
+    // Pending statuses for players whose meshes are not yet created
+    private val pendingStatuses = mutableMapOf<String, String>()
     
     // Map of player update data by userId
     private val playerUpdateData = mutableMapOf<String, UpdatePlayerData>()
@@ -96,7 +112,7 @@ class OtherPlayersController(private val scene: Scene) {
     private var lastFrameTime = 0.0
     
     // Animation duration in seconds
-    private val joinLeaveDuration = 0.5
+    private val joinLeaveDuration = 0.25
     
     // Coroutine scope for async operations
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -249,25 +265,105 @@ class OtherPlayersController(private val scene: Scene) {
         // Set up typing status listener
         setupTypingStatusListener()
         
-        // Force a user join notification for the current user to trigger updates for all clients
+        // Seed initial players from authoritative HTTP snapshot, then send our USER_JOIN
         scope.launch {
             try {
                 // Use WebSocketConnectionManager to check connection state
                 if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
                     val user = UserApi.getCurrentUser()
-                    val worldId = WebSocketConnectionManager.currentWorldId.value
-                    if (worldId != null) {
+                    val wsWorldId = WebSocketConnectionManager.currentWorldId.value
+                    val httpWorldId = httpWorldIdOverride ?: wsWorldId
+                    if (wsWorldId != null) {
+                        try {
+                            // Fetch authoritative world state snapshot via HTTP
+                            console.log("OtherPlayersController: Fetching world state snapshot for seeding: worldId=$httpWorldId")
+                            val effectiveWorldId = httpWorldId ?: run {
+                                console.warn("OtherPlayersController: httpWorldId is null, falling back to wsWorldId=$wsWorldId")
+                                wsWorldId
+                            }
+                            if (effectiveWorldId == null) {
+                                console.error("OtherPlayersController: No worldId available for snapshot fetch; skipping seeding")
+                                throw IllegalStateException("No worldId for snapshot")
+                            }
+                            val snapshot = WorldApi.getWorldState(effectiveWorldId)
+                            console.log("OtherPlayersController: Received snapshot with ${'$'}{snapshot.players.size} players")
+
+                            // Cache myUserId if not set yet
+                            if (myUserId == null) {
+                                myUserId = user.key
+                            }
+
+                            // Create meshes for existing players (excluding self)
+                            snapshot.players.forEach { p ->
+                                if (p.userId != myUserId) {
+                                    // Store username and player flag
+                                    playerUsernames[p.userId] = p.username
+                                    playerIsPlayerFlags[p.userId] = p.isPlayer
+
+                                    val pos = Vector3(p.position.x, p.position.y, p.position.z)
+
+                                    val hasMesh = playerNodes.containsKey(p.userId)
+                                    if (!hasMesh) {
+                                        console.log("OtherPlayersController: Seeding player from snapshot: ${'$'}{p.userId}")
+                                        // If we have a status, cache it until mesh is ready
+                                        p.status?.let { status ->
+                                            if (status.isNotBlank()) {
+                                                pendingStatuses[p.userId] = status
+                                                // Seed playerUpdateData for later restores (e.g., after typing/chat)
+                                                playerUpdateData[p.userId] = UpdatePlayerData(
+                                                    userId = p.userId,
+                                                    name = p.username,
+                                                    isPlayer = p.isPlayer,
+                                                    status = status,
+                                                )
+                                            }
+                                        }
+                                        createPlayerMesh(
+                                            userId = p.userId,
+                                            position = pos,
+                                            isPlayer = p.isPlayer,
+                                            username = p.username,
+                                        )
+                                    } else {
+                                        // Update target position if already present
+                                        playerTargetPositions[p.userId] = pos
+                                        // Apply status immediately when mesh exists
+                                        p.status?.let { status ->
+                                            if (status.isNotBlank()) {
+                                                // Update cache for consistency
+                                                playerUpdateData[p.userId] = UpdatePlayerData(
+                                                    userId = p.userId,
+                                                    name = p.username,
+                                                    isPlayer = p.isPlayer,
+                                                    status = status,
+                                                )
+                                                displayPlayerStatus(p.userId, status)
+                                            }
+                                        }
+                                    }
+
+                                    // Apply typing indicator if true
+                                    if (p.isTyping == true) {
+                                        displayTypingIndicator(p.userId, true)
+                                    }
+                                }
+                            }
+                        } catch (t: Throwable) {
+                            console.error("OtherPlayersController: Presence fetch failed", t)
+                        }
+
+                        // Now send our USER_JOIN notification
                         val playerPosition = getPlayerPosition()
-                        console.log("OtherPlayersController: Sending explicit USER_JOIN notification")
-                        WebSocketApi.sendUserJoin(worldId, playerPosition, user.isPlayer)
+                        console.log("OtherPlayersController: Sending explicit USER_JOIN notification after seeding")
+                        WebSocketApi.sendUserJoin(wsWorldId, playerPosition, user.isPlayer)
                     } else {
                         console.warn("OtherPlayersController: WebSocket is connected but no worldId available")
                     }
                 } else {
-                    console.warn("OtherPlayersController: Cannot send USER_JOIN notification - WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                    console.warn("OtherPlayersController: Cannot send USER_JOIN notification - WebSocket not connected (state: ${'$'}{WebSocketConnectionManager.connectionState.value})")
                 }
             } catch (e: Exception) {
-                console.error("OtherPlayersController: Error sending explicit join notification", e)
+                console.error("OtherPlayersController: Error during initial presence seeding/join", e)
             }
         }
         
@@ -340,6 +436,9 @@ class OtherPlayersController(private val scene: Scene) {
         playerNodes[leaveData.userId]?.let { mesh ->
             console.log("OtherPlayersController: Starting leave animation for ${leaveData.userId}")
             playerAnimationTimes[leaveData.userId] = window.performance.now()
+
+            // Ensure animation scales down on leave by removing the target position
+            playerTargetPositions.remove(leaveData.userId)
         
             // After animation completes, remove the mesh
             window.setTimeout({
@@ -455,14 +554,18 @@ class OtherPlayersController(private val scene: Scene) {
             
             console.log("[DEBUG_LOG] Player mesh recreated for ${updateData.userId} with isPlayer=${updateData.isPlayer}")
         } else {
-            // Display status if provided and not blank
-            val status = updateData.status?.orEmpty() ?: ""
-            if (status.isNotBlank()) {
-                console.log("OtherPlayersController: Displaying status for ${updateData.userId}: $status")
-                displayPlayerStatus(updateData.userId, status)
+            // Only update/remove status if the update explicitly includes a status field
+            val incomingStatus = updateData.status
+            if (incomingStatus != null) {
+                if (incomingStatus.isNotBlank()) {
+                    console.log("OtherPlayersController: Displaying status for ${updateData.userId}: $incomingStatus")
+                    displayPlayerStatus(updateData.userId, incomingStatus)
+                } else {
+                    // Explicitly set to blank: remove existing status
+                    removePlayerStatus(updateData.userId)
+                }
             } else {
-                // Remove status if it was previously displayed
-                removePlayerStatus(updateData.userId)
+                console.log("OtherPlayersController: Ignoring update without status for ${updateData.userId}; preserving current status")
             }
             
             // Update player activity if provided
@@ -596,6 +699,14 @@ class OtherPlayersController(private val scene: Scene) {
                     // Create username text billboard
                     createUsernameTextBillboard(userId, position, user.username)
                     
+                    // If we have a pending status from snapshot, display it now that the mesh exists
+                    pendingStatuses[userId]?.let { status ->
+                        if (status.isNotBlank()) {
+                            displayPlayerStatus(userId, status)
+                        }
+                        pendingStatuses.remove(userId)
+                    }
+                    
                     console.log("[DEBUG_LOG] OtherPlayersController: Character created for $userId with User object")
                 } else {
                     console.log("[DEBUG_LOG] OtherPlayersController: Failed to fetch User object for $userId, creating character without worn items")
@@ -657,6 +768,14 @@ class OtherPlayersController(private val scene: Scene) {
         
         // Create username text billboard
         createUsernameTextBillboard(userId, position, username)
+        
+        // If we have a pending status from snapshot, display it now that the mesh exists
+        pendingStatuses[userId]?.let { status ->
+            if (status.isNotBlank()) {
+                displayPlayerStatus(userId, status)
+            }
+            pendingStatuses.remove(userId)
+        }
     }
     
     /**
@@ -755,14 +874,16 @@ class OtherPlayersController(private val scene: Scene) {
             val animElapsed = (currentTime - animStartTime) / 1000.0 // in seconds
             
             if (animElapsed < joinLeaveDuration) {
-                // Join animation (scale up)
-                val progress = (animElapsed / joinLeaveDuration).toFloat()
-                handle.scale = Vector3(progress, progress, progress)
-            } else if (!playerTargetPositions.containsKey(userId)) {
-                // Leave animation (scale down)
-                val progress = 1.0f - (animElapsed / joinLeaveDuration).toFloat()
-                if (progress > 0) {
+                if (playerTargetPositions.containsKey(userId)) {
+                    // Join animation (scale up)
+                    val progress = (animElapsed / joinLeaveDuration).toFloat()
                     handle.scale = Vector3(progress, progress, progress)
+                } else {
+                    // Leave animation (scale down)
+                    val progress = 1.0f - (animElapsed / joinLeaveDuration).toFloat()
+                    if (progress > 0) {
+                        handle.scale = Vector3(progress, progress, progress)
+                    }
                 }
             } else {
                 // Normal scale
@@ -785,6 +906,24 @@ class OtherPlayersController(private val scene: Scene) {
                             textHandle.position = Vector3(
                                 targetPos.x,
                                 targetPos.y + .5f,
+                                targetPos.z
+                            )
+                        }
+
+                        // Update status text billboard position if it exists
+                        statusTextHandles[userId]?.let { textHandle ->
+                            textHandle.position = Vector3(
+                                targetPos.x,
+                                targetPos.y + .8f,
+                                targetPos.z
+                            )
+                        }
+
+                        // Update chat message text billboard position if it exists
+                        chatMessageTextHandles[userId]?.let { textHandle ->
+                            textHandle.position = Vector3(
+                                targetPos.x,
+                                targetPos.y + .8f,
                                 targetPos.z
                             )
                         }
@@ -815,6 +954,24 @@ class OtherPlayersController(private val scene: Scene) {
                             textHandle.position = Vector3(
                                 newPosition.x,
                                 newPosition.y + .5f,
+                                newPosition.z
+                            )
+                        }
+
+                        // Update status text billboard position if it exists
+                        statusTextHandles[userId]?.let { textHandle ->
+                            textHandle.position = Vector3(
+                                newPosition.x,
+                                newPosition.y + .8f,
+                                newPosition.z
+                            )
+                        }
+
+                        // Update chat message text billboard position if it exists
+                        chatMessageTextHandles[userId]?.let { textHandle ->
+                            textHandle.position = Vector3(
+                                newPosition.x,
+                                newPosition.y + .8f,
                                 newPosition.z
                             )
                         }

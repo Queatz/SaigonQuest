@@ -91,7 +91,7 @@ object ItemUsageHandler {
                             )
                             
                             onSuccess("Removed ${item.title}")
-                        } catch (error: Exception) {
+                        } catch (error: Throwable) {
                             console.error("Error removing worn item", error)
                             onError("Failed to remove ${item.title}: ${error.message}")
                         }
@@ -134,7 +134,7 @@ object ItemUsageHandler {
                             )
                             
                             onSuccess("Wearing ${item.title}")
-                        } catch (error: Exception) {
+                        } catch (error: Throwable) {
                             console.error("Error wearing item", error)
                             onError("Failed to wear ${item.title}: ${error.message}")
                         }

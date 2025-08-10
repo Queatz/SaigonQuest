@@ -78,7 +78,7 @@ fun ObjectsContent(
             ownedObjects = objectList.take(objectList.size / 2)
             
             isLoading = false
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error loading objects", error)
             errorMessage = error.message ?: "Failed to load objects"
             isLoading = false
@@ -126,7 +126,7 @@ fun ObjectsContent(
                 
                 // Show success feedback
                 showFeedback("'$objectTitle' removed successfully", false)
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 console.error("Error deleting object", error)
                 errorMessage = error.message ?: "Failed to delete object"
                 

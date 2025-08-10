@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
+import main.api.WebSocketApi
+import main.api.addObject
+import main.api.updateObject
 import main.theme.Styles
 import models.Object
 import models.Rotation
@@ -84,14 +87,24 @@ fun ObjectEditorDialog(
                 ),
             )
         } else {
-            // Create new object
+            // Create new object at the player's current position (fallback to 0,0,0 if unavailable)
+            val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
+            val initialPosition = if (playerPos != null) {
+                models.Position(
+                    x = playerPos.x,
+                    y = playerPos.y,
+                    z = playerPos.z,
+                )
+            } else {
+                models.Position(0f, 0f, 0f)
+            }
             Object(
                 title = title,
                 file = file,
                 collection = collection,
                 data = "{}",
                 worldId = worldId,
-                position = models.Position(0f, 0f, 0f),
+                position = initialPosition,
                 rotation = Rotation(0f, rotationYDeg * kotlin.math.PI.toFloat() / 180f, 0f),
                 scale = Scale(1f, 1f, 1f),
                 status = status
@@ -107,9 +120,15 @@ fun ObjectEditorDialog(
                 }
                 
                 isSubmitting = false
+                // Broadcast update to all clients (and this one) so the scene updates instantly
+                if (isEditing) {
+                    WebSocketApi.updateObject(savedObject)
+                } else {
+                    WebSocketApi.addObject(savedObject)
+                }
                 onSave(savedObject)
                 onClose()
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 isSubmitting = false
                 errorMessage = error.message ?: "An error occurred"
             }

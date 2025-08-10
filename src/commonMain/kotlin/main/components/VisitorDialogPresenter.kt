@@ -132,10 +132,10 @@ private fun handleRegistration(
                         
                         // Call the onSuccess callback
                         onSuccess(user)
-                    } catch (error: Exception) {
+                    } catch (error: Throwable) {
                         console.error("Registration error after retry: ${error.message}")
                     }
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("Error creating visitor: ${error.message}")
                 }
             } else {
@@ -168,11 +168,11 @@ private fun handleRegistration(
                     
                     // Call the onSuccess callback
                     onSuccess(user)
-                } catch (error: Exception) {
+                } catch (error: Throwable) {
                     console.error("Registration error: ${error.message}")
                 }
             }
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error getting current user: ${error.message}")
         }
     }
@@ -259,7 +259,7 @@ private fun handleLogin(
             
             // Call the onSuccess callback
             onSuccess(user)
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Login error: ${error.message}")
         }
     }

@@ -44,6 +44,9 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
+import app.softwork.routingcompose.Router
+import org.jetbrains.compose.web.dom.CheckboxInput
+import org.jetbrains.compose.web.dom.NumberInput
 
 /**
  * Content component for the world edit form.
@@ -143,15 +146,21 @@ fun WorldEditContent(
             println("[ERROR] Failed to update fog density: ${e.message}")
         }
     }
+    val router = Router.current
+    val defaultUrl = router.currentPath.path.trimStart('/')
     // State for form fields
     var title by remember { mutableStateOf(currentWorld?.title ?: "") }
     var subtitle by remember { mutableStateOf(currentWorld?.subtitle ?: "") }
     var description by remember { mutableStateOf(currentWorld?.description ?: "") }
-    var url by remember { mutableStateOf(currentWorld?.url ?: "") }
+    var url by remember { mutableStateOf(currentWorld?.url ?: defaultUrl) }
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
-    var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#000000") }
+    var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#ffffff") }
     var directionalLightColor by remember { mutableStateOf(currentWorld?.directionalLightColor ?: "#ffffff") }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
+    // Outdoors/time-of-day
+    var isOutdoors by remember { mutableStateOf(currentWorld?.isOutdoors ?: false) }
+    var latitude by remember { mutableStateOf(currentWorld?.latLng?.getOrNull(0)?.toString() ?: "") }
+    var longitude by remember { mutableStateOf(currentWorld?.latLng?.getOrNull(1)?.toString() ?: "") }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -175,7 +184,7 @@ fun WorldEditContent(
             val user = UserApi.getCurrentUser()
             currentUser = user
             isLoading = false
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             console.error("Error fetching current user", error)
             isLoading = false
         }
@@ -183,8 +192,17 @@ fun WorldEditContent(
     
     // Apply initial background color, fog, and light settings when component is mounted
     LaunchedEffect(Unit) {
-        // Apply the initial background color
-        updateSceneBackgroundColor(backgroundColor)
+        // Determine if realtime outdoors mode should control background
+        val lat = latitude.toDoubleOrNull()
+        val lon = longitude.toDoubleOrNull()
+        val outdoorsRealtime = isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
+
+        // Apply the initial background color only if not outdoors realtime
+        if (!outdoorsRealtime) {
+            updateSceneBackgroundColor(backgroundColor)
+        } else {
+            console.log("[INFO] Skipping background color apply because realtime outdoors mode is active")
+        }
         
         // Apply the initial fog density
         updateSceneFogDensity(fogDensity)
@@ -217,6 +235,12 @@ fun WorldEditContent(
                 description = description,
                 url = url,
                 file = file,
+                isOutdoors = isOutdoors,
+                latLng = run {
+                    val lat = latitude.toDoubleOrNull()
+                    val lon = longitude.toDoubleOrNull()
+                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+                },
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity
@@ -229,6 +253,12 @@ fun WorldEditContent(
                 description = description,
                 url = url,
                 file = file,
+                isOutdoors = isOutdoors,
+                latLng = run {
+                    val lat = latitude.toDoubleOrNull()
+                    val lon = longitude.toDoubleOrNull()
+                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+                },
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity
@@ -242,17 +272,40 @@ fun WorldEditContent(
                 } else {
                     WorldApi.createWorld(worldModel)
                 }
+
+                // Immediately update lights in the active scene to reflect edited world
+                WorldLoader.notifyWorldEdited(savedWorld)
                 
                 isSubmitting = false
                 onSave(savedWorld)
                 onClose()
-            } catch (error: Exception) {
+            } catch (error: Throwable) {
                 isSubmitting = false
                 errorMessage = error.message ?: "An error occurred"
             }
         }
     }
-    
+        
+    // Helper to preview lighting immediately when editing
+    fun previewLightingFromForm() {
+        try {
+            val lat = latitude.toDoubleOrNull()
+            val lon = longitude.toDoubleOrNull()
+            val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+            val previewWorld = World(
+                // Only fields relevant to lighting are necessary
+                isOutdoors = isOutdoors,
+                latLng = latLngList,
+                backgroundColor = backgroundColor,
+                directionalLightColor = directionalLightColor,
+                fogDensity = fogDensity,
+            )
+            WorldLoader.notifyWorldEdited(previewWorld)
+        } catch (e: Throwable) {
+            console.warn("[WARN] Failed to preview lighting from form: ${e.message}")
+        }
+    }
+        
     // Form content
     Div(
         attrs = {
@@ -513,6 +566,124 @@ fun WorldEditContent(
             )
         }
         
+        // Outdoors (realtime sun)
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                    property("margin-top", "16px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) { Text("Outdoors (realtime sun)") }
+
+            // Checkbox control
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                    }
+                }
+            ) {
+                CheckboxInput(
+                    checked = isOutdoors,
+                    attrs = {
+                        if (!fieldsEnabled) {
+                            disabled()
+                        }
+                        onChange {
+                            isOutdoors = !isOutdoors
+                            previewLightingFromForm()
+                        }
+                    }
+                )
+
+                // Hint text
+                P(
+                    attrs = {
+                        style {
+                            color(Color.white)
+                            margin(0.px)
+                            fontSize(12.px)
+                        }
+                    }
+                ) { Text("Use real-time sun lighting based on latitude and longitude") }
+            }
+        }
+
+        // Latitude / Longitude fields
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) { Text("Latitude and longitude") }
+
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                    }
+                }
+            ) {
+                NumberInput(
+                    value = latitude.toDoubleOrNull(),
+                    attrs = {
+                        classes(Styles.inputField)
+                        placeholder("Latitude (-90 to 90)")
+                        if (fieldsEnabled) {
+                            onInput { event ->
+                                latitude = (event.value?.toString() ?: "")
+                                previewLightingFromForm()
+                            }
+                        } else {
+                            disabled()
+                        }
+                    }
+                )
+
+                NumberInput(
+                    value = longitude.toDoubleOrNull(),
+                    attrs = {
+                        classes(Styles.inputField)
+                        placeholder("Longitude (-180 to 180)")
+                        if (fieldsEnabled) {
+                            onInput { event ->
+                                longitude = (event.value?.toString() ?: "")
+                                previewLightingFromForm()
+                            }
+                        } else {
+                            disabled()
+                        }
+                    }
+                )
+            }
+        }
+        
         // Background Color field
         Div(
             attrs = {
@@ -558,10 +729,17 @@ fun WorldEditContent(
                         }
                         value(backgroundColor)
                         if (fieldsEnabled) {
-                            onInput { event -> 
+                            onInput { event ->
                                 backgroundColor = event.value
-                                // Update the scene background color in real-time
-                                updateSceneBackgroundColor(event.value)
+                                val lat = latitude.toDoubleOrNull()
+                                val lon = longitude.toDoubleOrNull()
+                                val outdoorsRealtime = isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
+                                if (!outdoorsRealtime) {
+                                    // Update the scene background color in real-time
+                                    updateSceneBackgroundColor(event.value)
+                                } else {
+                                    console.log("[INFO] Skipping background color apply from editor (realtime outdoors active)")
+                                }
                             }
                         }
                         if (!fieldsEnabled) {
@@ -603,7 +781,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Directional light color")
+                Text("Light color")
             }
 
             Div(
