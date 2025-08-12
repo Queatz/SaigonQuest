@@ -31,7 +31,7 @@ fun WebSocketApi.addUserJoinListener(listener: (UserJoinData) -> Unit): Listener
             val joinData = ApiClient.json.decodeFromString<UserJoinData>(message.data)
             console.log("WebSocketApi: Successfully parsed UserJoinData: userId=${joinData.userId}, username=${joinData.username}")
             listener(joinData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("WebSocketApi: Error parsing user join data", e)
         }
     }
@@ -53,7 +53,7 @@ fun WebSocketApi.addUserLeaveListener(listener: (UserLeaveData) -> Unit): Listen
         try {
             val leaveData = ApiClient.json.decodeFromString<UserLeaveData>(message.data)
             listener(leaveData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error parsing user leave data", e)
         }
     }
@@ -71,7 +71,7 @@ fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Uni
         try {
             val positionData = ApiClient.json.decodeFromString<PlayerPositionData>(message.data)
             listener(positionData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error parsing player position data", e)
         }
     }
@@ -93,7 +93,7 @@ fun WebSocketApi.addUpdatePlayerListener(listener: (UpdatePlayerData) -> Unit): 
             console.log("[DEBUG_LOG] WebSocketApi: Parsed UpdatePlayerData: userId=${updateData.userId}, name=${updateData.name}, status=${updateData.status ?: "null"}")
             listener(updateData)
             console.log("[DEBUG_LOG] WebSocketApi: UPDATE_PLAYER listener called successfully")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_LOG] WebSocketApi: Error parsing update player data", e)
             console.error("[DEBUG_LOG] WebSocketApi: Raw message data: ${message.data}")
         }
@@ -135,13 +135,13 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
                             console.error("WebSocketApi: Missing targetWorldUrl in teleport data")
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("WebSocketApi: Error checking current user for teleport", e)
                 }
             }
             
             listener(teleportData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("WebSocketApi: Error parsing teleport player data", e)
             console.error("WebSocketApi: Raw message data: ${message.data}")
         }
@@ -167,7 +167,7 @@ fun WebSocketApi.addDialogueListener(listener: (DialogueData) -> Unit): Listener
             val dialogueData = ApiClient.json.decodeFromString<DialogueData>(message.data)
             console.log("WebSocketApi: Parsed DialogueData: dialogueId=${dialogueData.dialogueId}, text=${dialogueData.text}")
             listener(dialogueData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("WebSocketApi: SHOW_DIALOGUE Error parsing dialogue data", e)
             console.error("WebSocketApi: SHOW_DIALOGUE Raw message data: ${message.data}")
         }

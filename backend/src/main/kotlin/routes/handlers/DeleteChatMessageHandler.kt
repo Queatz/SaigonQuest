@@ -54,10 +54,10 @@ class DeleteChatMessageHandler(private val chatRepository: ChatRepository) : Web
                 } else {
                     WebSocketDebug.logError("Failed to delete message: ${chatMessage.key}", null, session)
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 WebSocketDebug.logError("Error deleting chat message in database", e, session)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing DELETE_CHAT_MESSAGE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

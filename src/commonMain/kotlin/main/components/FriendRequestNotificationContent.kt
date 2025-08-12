@@ -39,7 +39,7 @@ fun FriendRequestNotificationContent(
             try {
                 val status = FriendApi.getFriendshipStatus(notification.otherUserId)
                 friendshipStatus = status
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error loading friendship status", e)
             }
         }
@@ -54,7 +54,7 @@ fun FriendRequestNotificationContent(
                     friendshipStatus = FriendshipStatus.FRIENDS
                     onStatusChange()
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error accepting friend request", e)
             }
         }
@@ -69,7 +69,7 @@ fun FriendRequestNotificationContent(
                     friendshipStatus = FriendshipStatus.NOT_FRIENDS
                     onStatusChange()
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error rejecting friend request", e)
             }
         }

@@ -31,7 +31,7 @@ fun parseNodes(jsonData: String): Map<String, NodeData> {
         return nodeEditorData.nodes.mapValues { (_, nodeDataJson) ->
             convertToNodeData(nodeDataJson)
         }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error parsing nodes", e)
         return emptyMap()
     }
@@ -52,7 +52,7 @@ fun parseConnections(jsonData: String): List<Connection> {
         return nodeEditorData.connections.map { connectionJson ->
             NodeEditorJsonUtil.convertToConnection(connectionJson)
         }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error parsing connections", e)
         return emptyList()
     }

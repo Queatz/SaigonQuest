@@ -292,7 +292,7 @@ class OtherPlayersController(private val scene: Scene) {
                 val user = UserApi.getCurrentUser()
                 myUserId = user.key
                 console.log("OtherPlayersController: Refreshed current user ID: $myUserId")
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("OtherPlayersController: Error refreshing current user ID", e)
             }
         }
@@ -363,7 +363,7 @@ class OtherPlayersController(private val scene: Scene) {
                 val user = UserApi.getCurrentUser()
                 myUserId = user.key
                 console.log("[TYPING] OtherPlayersController: Current user ID: $myUserId")
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[TYPING] OtherPlayersController: Error getting current user", e)
             }
         }
@@ -405,7 +405,7 @@ class OtherPlayersController(private val scene: Scene) {
                 } else {
                     console.error("OtherPlayersController: Invalid chat message received: ${message.action}, ${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("OtherPlayersController: Error parsing chat message", e)
             }
         }
@@ -510,7 +510,7 @@ class OtherPlayersController(private val scene: Scene) {
                 } else {
                     console.warn("OtherPlayersController: Cannot send USER_JOIN notification - WebSocket not connected (state: ${'$'}{WebSocketConnectionManager.connectionState.value})")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("OtherPlayersController: Error during initial presence seeding/join", e)
             }
         }
@@ -863,7 +863,7 @@ class OtherPlayersController(private val scene: Scene) {
                     console.log("[DEBUG_LOG] OtherPlayersController: Failed to fetch User object for $userId, creating character without worn items")
                     createCharacterWithoutUser(userId, position, direction, spriteSheet, username)
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("OtherPlayersController: Error fetching User object for $userId", e)
                 console.log("[DEBUG_LOG] OtherPlayersController: Creating character without User object due to error")
                 createCharacterWithoutUser(userId, position, direction, spriteSheet, username)
@@ -956,7 +956,7 @@ class OtherPlayersController(private val scene: Scene) {
                 if (textHandle != null) {
                     usernameTextHandles[userId] = textHandle
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("OtherPlayersController: Error creating username text for $userId", e)
             }
         }
@@ -1291,7 +1291,7 @@ class OtherPlayersController(private val scene: Scene) {
                 } else {
                     console.error("[TYPING] Invalid typing status message received: action=${message.action}, data=${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[TYPING] Error processing typing status message", e)
                 console.error("[TYPING] Raw message data: ${message.data}")
                 console.error("[TYPING] Exception details: ${e.message}")

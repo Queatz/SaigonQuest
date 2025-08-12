@@ -41,7 +41,7 @@ suspend fun WebSocketApi.updatePlayerPosition(position: Position, isPlayer: Bool
         
         val message = WebSocketMessage.fromEnum(WebSocketAction.UPDATE_PLAYER_POSITION, ApiClient.json.encodeToString(positionData))
         return sendMessage(message)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error updating player position", e)
         return false
     }
@@ -76,7 +76,7 @@ fun WebSocketApi.playerInteract(objectId: String, isPlayer: Boolean): Boolean {
             
             val message = WebSocketMessage.fromEnum(WebSocketAction.USER_INTERACT, ApiClient.json.encodeToString(interactData))
             success = sendMessage(message)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error sending player interaction", e)
         }
     }
@@ -127,7 +127,7 @@ suspend fun WebSocketApi.updatePlayer(
         }
 
         return success
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error updating player details", e)
         return false
     }
@@ -167,7 +167,7 @@ suspend fun WebSocketApi.updatePlayerStatus(status: String, isPlayer: Boolean = 
         }
 
         return success
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error updating player status", e)
         return false
     }
@@ -221,7 +221,7 @@ suspend fun WebSocketApi.sendTypingStatus(worldId: String, isTyping: Boolean): B
         }
         
         return success
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("[TYPING] Error sending typing status", e)
         console.error("[TYPING] Exception details: ${e.message}")
         return false
@@ -269,7 +269,7 @@ fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boo
             } else {
                 console.error("WebSocketApi: Failed to send user join notification")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("WebSocketApi: Error sending user join notification", e)
         }
     }
@@ -306,7 +306,7 @@ fun WebSocketApi.sendUserLeave(worldId: String) {
             } else {
                 console.error("Failed to send user leave notification")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error sending user leave notification", e)
         }
     }

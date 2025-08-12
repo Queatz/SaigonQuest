@@ -54,10 +54,10 @@ class UpdateChatMessageHandler(private val chatRepository: ChatRepository) : Web
                 } else {
                     WebSocketDebug.logError("Failed to update message: ${chatMessage.key}", null, session)
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 WebSocketDebug.logError("Error updating chat message in database", e, session)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing UPDATE_CHAT_MESSAGE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

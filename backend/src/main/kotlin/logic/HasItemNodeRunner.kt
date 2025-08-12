@@ -76,7 +76,7 @@ class HasItemNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             
             WebSocketDebug.logMessage("HAS_ITEM_NODE_SUCCESS", "HasItem node execution completed successfully", context.session)
             return true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error executing HasItem node", e, context.session)
             return false
         }

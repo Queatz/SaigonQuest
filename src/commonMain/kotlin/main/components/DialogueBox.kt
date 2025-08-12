@@ -79,7 +79,7 @@ fun DialogueBox() {
                                         
                                         // Clear the dialogue
                                         currentDialogue = null
-                                    } catch (e: Exception) {
+                                    } catch (e: Throwable) {
                                         console.error("Error sending dialogue confirmation", e)
                                         // Still clear the dialogue to avoid blocking the UI
                                         currentDialogue = null

@@ -56,7 +56,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         val nodeData = try {
             // Try to parse as PropertyBasedNodeData
             json.decodeFromString<PropertyBasedNodeData>(jsonData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse dialogue node data", e, context.session)
             return false
         }
@@ -109,7 +109,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                                 break
                             }
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // Ignore parsing errors
                     }
                 }

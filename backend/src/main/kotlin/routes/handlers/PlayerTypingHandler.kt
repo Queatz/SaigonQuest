@@ -45,7 +45,7 @@ class PlayerTypingHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_TYPING_STATUS", "user: ${typingData.userId}, isTyping: ${typingData.isTyping}, world: $worldId", session)
             WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing PLAYER_TYPING message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

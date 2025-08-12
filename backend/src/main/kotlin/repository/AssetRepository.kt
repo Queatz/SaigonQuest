@@ -91,7 +91,7 @@ class AssetRepository {
             )
             
             return result.new
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Log the error
             println("Error updating asset: ${e.message}")
             return null
@@ -108,7 +108,7 @@ class AssetRepository {
         return try {
             collection.deleteDocument(assetKey)
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Log the error
             println("Error deleting asset: ${e.message}")
             false
@@ -124,7 +124,7 @@ class AssetRepository {
     fun getAssetByKey(assetKey: String): Asset? {
         return try {
             collection.getDocument(assetKey, Asset::class.java)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Log the error
             println("Error getting asset: ${e.message}")
             null

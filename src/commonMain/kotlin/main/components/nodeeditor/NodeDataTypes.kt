@@ -35,7 +35,7 @@ object NodeDataParser {
         return try {
             // Try to parse as PropertyBasedNodeData first
             json.decodeFromString<PropertyBasedNodeData>(defaultData)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // If that fails, create a new PropertyBasedNodeData with default values
             PropertyBasedNodeData(
                 properties = node.getInputPropertyDefinitions()

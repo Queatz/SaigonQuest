@@ -142,7 +142,7 @@ class ChatRepository {
             }
             
             return true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             return false
         }
     }
@@ -169,7 +169,7 @@ class ChatRepository {
             
             val markers = ArangoConfig.db.query(query, ChatReadMarker::class.java, bindVars).toList()
             return markers.firstOrNull()?.lastReadTimestamp ?: 0
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             return 0
         }
     }
@@ -196,7 +196,7 @@ class ChatRepository {
             
             // Return the updated message
             return collection.getDocument(messageKey, ChatMessage::class.java)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             return null
         }
     }
@@ -230,7 +230,7 @@ class ChatRepository {
             
             // Return the updated message
             return collection.getDocument(messageKey, ChatMessage::class.java)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             return null
         }
     }

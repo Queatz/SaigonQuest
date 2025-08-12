@@ -39,7 +39,7 @@ fun NodeSidebar() {
                 // Fetch node types from the backend
                 nodeTypesByCategory = ObjectApi.getNodeTypesByCategory()
                 isLoading = false
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 error = e.message
                 isLoading = false
             }

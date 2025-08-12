@@ -46,7 +46,7 @@ fun WebSocketApi.sendDialogueConfirmation(dialogueId: String, userId: String, bu
         }
         
         return success
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("WebSocketApi: Error sending dialogue confirmation", e)
         return false
     }

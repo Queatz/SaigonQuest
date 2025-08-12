@@ -31,7 +31,7 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
             // Find the property with key TARGET_WORLD_ID
             nodeData.properties.find { it.key == PropertyKey.TARGET_WORLD_ID }?.value
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse teleport node data", e, context.session)
             null
         }
@@ -65,7 +65,7 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             WebSocketDebug.logMessage("TELEPORT_SENDING", "Sending teleport message: $messageJson", context.session)
             context.connection.session.send(messageJson)
             WebSocketDebug.logMessage("TELEPORT_SENT", "Successfully sent teleport message to client", context.session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to send teleport message", e, context.session)
             return false
         }

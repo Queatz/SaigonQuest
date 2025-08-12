@@ -83,7 +83,7 @@ fun FriendsContent() {
                     try {
                         val ids = fetchedFriends.map { it.friendId }
                         onlineMap = FriendApi.getFriendsOnline(ids)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("Error fetching friends online", e)
                     }
                 }
@@ -429,7 +429,7 @@ private suspend fun fetchFriends(
     try {
         val friends = FriendApi.getFriends()
         onSuccess(friends.toList())
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error fetching friends", e)
         onError("Failed to fetch friends: ${e.message}")
     }
@@ -456,7 +456,7 @@ private fun removeFriend(
             } else {
                 onError("Failed to remove friend")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error removing friend", e)
             onError("Error: ${e.message}")
         }
@@ -498,7 +498,7 @@ private fun jumpToFriend(
                     playerController?.setTargetPosition(vector3Position)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error jumping to friend", e)
             onError("Error: ${e.message}")
         }

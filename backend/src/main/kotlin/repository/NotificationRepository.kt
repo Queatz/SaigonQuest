@@ -79,7 +79,7 @@ class NotificationRepository {
                     "Notification sent to user ${createdNotification.userId}: ${createdNotification.title}",
                     "notification"
                 )
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 WebSocketDebug.logBroadcast(
                     "NOTIFICATION_ERROR", 
                     "Error sending notification to user ${createdNotification.userId}: ${e.message}",
@@ -104,7 +104,7 @@ class NotificationRepository {
                 Notification::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }

@@ -88,7 +88,7 @@ class WorldLoader(private val scene: Scene) {
                 } else {
                     println("[WARN] Directional light not initialized; cannot update color")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 println("[ERROR] Failed to update directional light color: ${e.message}")
             }
         }
@@ -100,7 +100,7 @@ class WorldLoader(private val scene: Scene) {
             try {
                 val color = Color3.FromHexString(hexColor)
                 updateHemisphericLightColor(color)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 println("[ERROR] Failed to update hemispheric light color: ${e.message}")
             }
         }
@@ -506,7 +506,7 @@ class WorldLoader(private val scene: Scene) {
             } else {
                 println("[DEBUG] Set scene background color to $hexColor")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to set background color: ${e.message}")
         }
     }
@@ -546,7 +546,7 @@ class WorldLoader(private val scene: Scene) {
                 
                 println("[DEBUG] Disabled scene fog and disabled fog in pipeline")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to set fog density: ${e.message}")
         }
     }

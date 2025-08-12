@@ -254,7 +254,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     console.error("[ASSET_MANAGER] Error loading file", error)
                     onError("Failed to load file '$file.glb': ${error.message ?: "Unknown error"}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[ASSET_MANAGER] Exception loading file", e)
                 onError("Exception loading file '$file.glb': ${e.message ?: "Unknown error"}")
             }

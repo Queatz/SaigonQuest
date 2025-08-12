@@ -316,7 +316,7 @@ fun ObjectEditorDialog(
                                             val nodes = jsonObject["nodes"]?.jsonObject ?: JsonObject(emptyMap())
                                             val nodeCount = nodes.size
                                             "$nodeCount nodes configured"
-                                        } catch (e: Exception) {
+                                        } catch (e: Throwable) {
                                             "Logic data available"
                                         }
                                     })"

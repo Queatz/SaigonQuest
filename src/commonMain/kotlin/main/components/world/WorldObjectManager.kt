@@ -276,7 +276,7 @@ class WorldObjectManager(private val scene: Scene) {
             try {
                 val objectId = ApiClient.json.decodeFromString<String>(message.data)
                 removeObject(objectId)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error parsing REMOVE_OBJECT message", e)
             }
         }

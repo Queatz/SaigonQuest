@@ -31,7 +31,7 @@ class ObjectNotificationNodeRunner(private val context: NodeRunnerContext) : Nod
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
             // Find the property with key TEXT_CONTENT
             nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value ?: ""
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse ObjectNotification node data", e, context.session)
             ""
         }
@@ -75,7 +75,7 @@ class ObjectNotificationNodeRunner(private val context: NodeRunnerContext) : Nod
             val notificationRepository = NotificationRepository()
             val createdNotification = notificationRepository.create(notification)
             WebSocketDebug.logMessage("OBJECT_NOTIFICATION_CREATED", "Created notification with key: ${createdNotification.key}", context.session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to create notification", e, context.session)
             return false
         }

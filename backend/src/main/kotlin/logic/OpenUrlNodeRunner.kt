@@ -30,7 +30,7 @@ class OpenUrlNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
             // Find the property with key URL
             nodeData.properties.find { it.key == PropertyKey.URL }?.value
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse OpenUrl node data", e, context.session)
             null
         }
@@ -64,7 +64,7 @@ class OpenUrlNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             WebSocketDebug.logMessage("OPEN_URL_SENDING", "Sending open URL message: $messageJson", context.session)
             context.connection.session.send(messageJson)
             WebSocketDebug.logMessage("OPEN_URL_SENT", "Successfully sent open URL message to client", context.session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to send open URL message", e, context.session)
             return false
         }

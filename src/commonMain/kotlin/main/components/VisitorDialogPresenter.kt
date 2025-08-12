@@ -119,14 +119,14 @@ private fun handleRegistration(
                             } else {
                                 console.warn("Failed to update player state after registration")
                             }
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             console.error("Error updating player state after registration", e)
                         }
                         
                         // Refresh inventory and customizations so the local avatar updates
                         try {
                             InventoryState.refreshInventory(registrationScope)
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             console.error("VisitorDialogPresenter: Failed to refresh inventory after registration", e)
                         }
                         
@@ -155,14 +155,14 @@ private fun handleRegistration(
                         } else {
                             console.warn("Failed to update player state after registration")
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("Error updating player state after registration", e)
                     }
                     
                     // Refresh inventory and customizations so the local avatar updates
                     try {
                         InventoryState.refreshInventory(registrationScope)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("VisitorDialogPresenter: Failed to refresh inventory after registration", e)
                     }
                     
@@ -201,7 +201,7 @@ private fun handleLogin(
                 } else {
                     console.warn("VisitorDialogPresenter: Skipping USER_LEAVE before login - not connected or missing worldId")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("VisitorDialogPresenter: Error while sending USER_LEAVE before login", e)
             }
 
@@ -212,7 +212,7 @@ private fun handleLogin(
             // Update OtherPlayersController knowledge of our current userId so it ignores our join
             try {
                 SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController", e)
             }
 
@@ -274,18 +274,18 @@ private fun handleLogin(
                         } else {
                             console.warn("Failed to update player state after login (no reconnect path)")
                         }
-                    } catch (ignored: Exception) {
+                    } catch (ignored: Throwable) {
                         console.error("VisitorDialogPresenter: Error updating player state after login (no reconnect path)", ignored)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("VisitorDialogPresenter: Error during WebSocket reconnect after login", e)
             }
             
             // Refresh inventory and customizations so the local avatar updates
             try {
                 InventoryState.refreshInventory(loginScope)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("VisitorDialogPresenter: Failed to refresh inventory after login", e)
             }
             

@@ -63,7 +63,7 @@ object UserApi {
             // We have a token, get the current user
             try {
                 fetchCurrentUser()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 // If fetching current user fails, fall back to visitor
                 val visitorId = getVisitorId()
                 if (visitorId != null) {
@@ -114,7 +114,7 @@ object UserApi {
                     saveVisitorId(authResponse.user.visitorId)
                     
                     return authResponse.user
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("Error parsing response text: ${e.message}")
                     throw e
                 }
@@ -128,7 +128,7 @@ object UserApi {
                 
                 return authResponse.user
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("Error creating visitor: ${e.message}")
             throw e
         }
@@ -168,7 +168,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("Error upgrading to player: ${e.message}")
             throw e
         }
@@ -199,7 +199,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("Error logging in: ${e.message}")
             throw e
         }
@@ -221,7 +221,7 @@ object UserApi {
                 clearToken()
                 throw Error("Invalid token")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("Error fetching current user: ${e.message}")
             // Clear token on error
             clearToken()
@@ -294,7 +294,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating user customization: ${e.message}")
             throw e
         }
@@ -323,7 +323,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating user worn items: ${e.message}")
             throw e
         }
@@ -347,7 +347,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating user language: ${e.message}")
             throw e
         }
@@ -374,7 +374,7 @@ object UserApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating user status: ${e.message}")
             throw e
         }
@@ -409,7 +409,7 @@ object UserApi {
                 console.error("Error fetching user: ${response.status}")
                 null
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching user", e)
             null
         }

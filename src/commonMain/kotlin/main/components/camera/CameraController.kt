@@ -342,36 +342,38 @@ class CameraController(private val scene: Scene) {
                 try {
                     // Enable/disable bloom
                     bloomEnabled = isPrettyEnabled
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to set bloomEnabled: ${e.message}")
                 }
                 
                 try {
                     // Enable/disable depth of field
                     depthOfFieldEnabled = isPrettyEnabled
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to set depthOfFieldEnabled: ${e.message}")
                 }
                 
                 try {
                     // Enable/disable grain effect
                     grainEnabled = isPrettyEnabled
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to set grainEnabled: ${e.message}")
                 }
                 
                 try {
                     // Enable/disable image processing
                     imageProcessingEnabled = isPrettyEnabled
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
 
                 try {
                     // Enable/disable image processing
                     chromaticAberrationEnabled = isPrettyEnabled
-                    chromaticAberration.radialIntensity = 2f
-                } catch (e: Exception) {
+                    if (isPrettyEnabled) {
+                        chromaticAberration.radialIntensity = 2f
+                    }
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
             }
@@ -389,7 +391,7 @@ class CameraController(private val scene: Scene) {
                             bloomKernel = 64f
                             println("[DEBUG] Bloom settings configured successfully")
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         println("[ERROR] Failed to configure bloom: ${e.message}")
                     }
                     
@@ -403,7 +405,7 @@ class CameraController(private val scene: Scene) {
                             depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
                             println("[DEBUG] Depth of field settings configured successfully")
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         println("[ERROR] Failed to configure depth of field: ${e.message}")
                     }
                     
@@ -414,7 +416,7 @@ class CameraController(private val scene: Scene) {
                             grain.intensity = .667f
                             println("[DEBUG] Grain settings configured successfully")
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         println("[ERROR] Failed to configure grain: ${e.message}")
                     }
                     
@@ -426,7 +428,7 @@ class CameraController(private val scene: Scene) {
 //                            imageProcessing.exposure = .75f
                             println("[DEBUG] Image processing settings configured successfully")
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         println("[ERROR] Failed to configure image processing: ${e.message}")
                     }
                 }
@@ -441,7 +443,7 @@ class CameraController(private val scene: Scene) {
                     // The BabylonJS engine will clean up the pipeline resources
                     ssaoPipeline = null
                     println("[DEBUG] Cleaned up existing SSAO pipeline")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to clean up SSAO pipeline: ${e.message}")
                 }
             }
@@ -469,7 +471,7 @@ class CameraController(private val scene: Scene) {
                         epsilon = 0.02f  // Default value
                     }
                     println("[DEBUG] Created and configured new SSAO pipeline")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to create SSAO pipeline: ${e.message}")
                     // Ensure ssaoPipeline is null if creation failed
                     ssaoPipeline = null
@@ -484,7 +486,7 @@ class CameraController(private val scene: Scene) {
                     colorCorrectionPostProcess?.dispose()
                     colorCorrectionPostProcess = null
                     println("[DEBUG] Cleaned up existing ColorCorrectionPostProcess")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to clean up ColorCorrectionPostProcess: ${e.message}")
                 }
             }
@@ -500,7 +502,7 @@ class CameraController(private val scene: Scene) {
                         camera = camera
                     )
                     println("[DEBUG] Created new ColorCorrectionPostProcess with colorTableUrl: /raw/lit.png")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("[ERROR] Failed to create ColorCorrectionPostProcess: ${e.message}")
                     // Ensure colorCorrectionPostProcess is null if creation failed
                     colorCorrectionPostProcess = null
@@ -508,7 +510,7 @@ class CameraController(private val scene: Scene) {
             }
             
             println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to update pipeline settings: ${e.message}")
         }
     }
@@ -543,7 +545,7 @@ class CameraController(private val scene: Scene) {
             camera.inputs.add(pointerInput)
             
             console.log("Camera inputs explicitly re-added: keyboard, mouse wheel, and pointers")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error re-adding camera inputs: ${e.message}")
         }
 
@@ -582,7 +584,7 @@ class CameraController(private val scene: Scene) {
             colorCorrectionPostProcess?.dispose()
             colorCorrectionPostProcess = null
             println("[DEBUG] ColorCorrectionPostProcess disposed")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to dispose ColorCorrectionPostProcess: ${e.message}")
         }
         

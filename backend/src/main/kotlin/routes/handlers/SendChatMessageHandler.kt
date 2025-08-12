@@ -49,10 +49,10 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                 WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, session)
                 
                 WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 WebSocketDebug.logError("Error saving chat message to database", e, session)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing SEND_CHAT_MESSAGE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

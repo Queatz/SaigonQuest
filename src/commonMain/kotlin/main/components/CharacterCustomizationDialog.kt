@@ -166,7 +166,7 @@ fun CharacterCustomizationDialog(
                                     try {
                                         val value = event.target.value
                                         skinTone = value.toFloat()
-                                    } catch (e: Exception) {
+                                    } catch (e: Throwable) {
                                         // Fallback to default if parsing fails
                                         skinTone = 0.5f
                                     }

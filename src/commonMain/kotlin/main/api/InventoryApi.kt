@@ -52,13 +52,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching inventory", e)
             throw e
         }
@@ -79,13 +79,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching inventory", e)
             throw e
         }
@@ -108,13 +108,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error adding item to inventory", e)
             throw e
         }
@@ -135,13 +135,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error removing item from inventory", e)
             throw e
         }
@@ -162,12 +162,12 @@ object InventoryApi {
             } else {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error calling transferDrop", e)
             throw e
         }
@@ -188,12 +188,12 @@ object InventoryApi {
             } else {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error calling transferPickup", e)
             throw e
         }
@@ -212,12 +212,12 @@ object InventoryApi {
             } else {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching object inventory", e)
             throw e
         }
@@ -240,13 +240,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating inventory item", e)
             throw e
         }
@@ -269,13 +269,13 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching inventory items by IDs", e)
             throw e
         }
@@ -308,14 +308,14 @@ object InventoryApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 console.error("[DEBUG_LOG] Error updating inventory item order", errorResponse.message)
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_LOG] Exception updating inventory item order", e)
             throw e
         }

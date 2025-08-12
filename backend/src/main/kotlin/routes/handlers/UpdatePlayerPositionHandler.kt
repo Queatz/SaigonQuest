@@ -46,7 +46,7 @@ class UpdatePlayerPositionHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_POSITION", "user: ${positionData.userId}, world: $worldId (excluding sender ${connection.userId})", session)
             WebSocketUtils.broadcastToWorldExcept(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), connection.userId, activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing UPDATE_PLAYER_POSITION message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

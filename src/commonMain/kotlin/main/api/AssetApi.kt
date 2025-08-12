@@ -32,7 +32,7 @@ object AssetApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error getting all assets: ${e.message}")
             throw e
         }
@@ -53,7 +53,7 @@ object AssetApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error getting assets by type: ${e.message}")
             throw e
         }
@@ -74,7 +74,7 @@ object AssetApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error getting asset by ID: ${e.message}")
             throw e
         }
@@ -99,7 +99,7 @@ object AssetApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error creating asset: ${e.message}")
             throw e
         }
@@ -125,7 +125,7 @@ object AssetApi {
             } else {
                 throw Error(response.bodyAsText())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating asset: ${e.message}")
             throw e
         }
@@ -144,7 +144,7 @@ object AssetApi {
             }
             
             response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error deleting asset: ${e.message}")
             throw e
         }

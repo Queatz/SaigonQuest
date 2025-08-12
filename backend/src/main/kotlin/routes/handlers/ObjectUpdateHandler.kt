@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  * This handler processes object update messages and broadcasts them to all clients in the same world.
  * Object updates include position, rotation, and scale changes.
  */
+@Deprecated("Client-sent OBJECT_UPDATE is disabled; server broadcasts via ObjectRoutes. This handler is unused.")
 class ObjectUpdateHandler : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
@@ -41,7 +42,7 @@ class ObjectUpdateHandler : WebSocketHandler {
             WebSocketDebug.logMessage("BROADCASTING_OBJECT_UPDATE", "objectId: ${obj.key}, world: $worldId", session)
             
             WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing OBJECT_UPDATE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

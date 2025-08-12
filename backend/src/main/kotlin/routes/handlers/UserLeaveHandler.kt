@@ -48,7 +48,7 @@ class UserLeaveHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_LEAVE", "user: ${correctedLeaveData.userId}, world: $worldId", session)
             WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing USER_LEAVE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

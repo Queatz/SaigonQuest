@@ -140,7 +140,7 @@ class PlayerController(private val scene: Scene) {
                             console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("Error updating player position", e)
                 }
             }
@@ -259,7 +259,7 @@ class PlayerController(private val scene: Scene) {
                     fontSize = 18,
                     textColor = "white"
                 )
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error getting username", e)
             }
         }
@@ -347,7 +347,7 @@ class PlayerController(private val scene: Scene) {
                             console.warn("Cannot update player activity: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("Error sending player activity update", e)
                 }
             }
@@ -855,7 +855,7 @@ class PlayerController(private val scene: Scene) {
                     if (user.status.isNotBlank()) {
                         displayPlayerStatus(user.status)
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("PlayerController: Error getting current user status", e)
                 }
             }
@@ -885,14 +885,14 @@ class PlayerController(private val scene: Scene) {
                                 // Display the chat message above the player's head
                                 displayChatMessage(chatMessage.message)
                             }
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             console.error("PlayerController: Error getting current user", e)
                         }
                     }
                 } else {
                     console.error("PlayerController: Invalid chat message received: ${message.action}, ${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("PlayerController: Error parsing chat message", e)
             }
         }
@@ -950,7 +950,7 @@ class PlayerController(private val scene: Scene) {
                             console.log("[DEBUG_LOG] PlayerController: Ignoring update without status; preserving current status")
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("[DEBUG_LOG] PlayerController: Error processing status update", e)
                 }
             }
@@ -969,7 +969,7 @@ class PlayerController(private val scene: Scene) {
                 } else {
                     console.log("[DEBUG_LOG] PlayerController: No initial status to display (status is blank)")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] PlayerController: Error getting current user status", e)
             }
         }

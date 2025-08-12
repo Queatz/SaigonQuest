@@ -47,7 +47,7 @@ class DialogueConfirmHandler : WebSocketHandler {
             } else {
                 WebSocketDebug.logMessage("DIALOGUE_CONFIRM_IGNORED", "No pending dialogue found for this confirmation", session)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing dialogue confirmation", e, session)
         }
     }

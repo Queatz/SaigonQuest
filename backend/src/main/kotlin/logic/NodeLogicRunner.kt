@@ -82,7 +82,7 @@ class NodeLogicRunner(
             )
             null
         }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         WebSocketDebug.logError("Failed to parse node config for object: ${objectData.title}", e, context.session)
         null
     }

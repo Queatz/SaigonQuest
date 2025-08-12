@@ -32,7 +32,7 @@ object ChatApi {
             }
             
             return response.body<Array<ChatMessage>>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching chat messages", e)
             throw e
         }
@@ -63,7 +63,7 @@ object ChatApi {
             }
             
             return response.body<Int>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching unread message count", e)
             return 0 // Return 0 on error to avoid UI issues
         }
@@ -91,7 +91,7 @@ object ChatApi {
             }
             
             return response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error marking messages as read", e)
             return false
         }
@@ -121,7 +121,7 @@ object ChatApi {
             }
             
             return response.body<ChatMessage>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating chat message", e)
             throw e
         }
@@ -151,7 +151,7 @@ object ChatApi {
             }
             
             return response.body<ChatMessage>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error deleting chat message", e)
             throw e
         }

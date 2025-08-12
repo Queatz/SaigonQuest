@@ -41,7 +41,7 @@ class ItemRepository {
                 Item::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }
@@ -100,7 +100,7 @@ class ItemRepository {
         return try {
             collection.deleteDocument(id)
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             false
         }
     }

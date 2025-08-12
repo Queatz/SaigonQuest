@@ -41,7 +41,7 @@ class TriggerObjectEventHandler : WebSocketHandler {
             WebSocketDebug.logMessage("BROADCASTING_TRIGGER_EVENT", "objectId: ${triggerData.objectId}, eventType: ${triggerData.eventType}, world: $worldId", session)
             
             WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing TRIGGER_OBJECT_EVENT message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

@@ -49,7 +49,7 @@ class FriendRepository {
                 Friend::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }

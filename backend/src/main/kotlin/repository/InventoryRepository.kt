@@ -84,7 +84,7 @@ class InventoryRepository {
                 Inventory::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }
@@ -144,7 +144,7 @@ class InventoryRepository {
                 InventoryItem::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }
@@ -187,7 +187,7 @@ class InventoryRepository {
         return try {
             inventoryItemsCollection.deleteDocument(id)
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             false
         }
     }

@@ -30,13 +30,13 @@ object ItemApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching item", e)
             throw e
         }
@@ -57,13 +57,13 @@ object ItemApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching items", e)
             throw e
         }
@@ -86,13 +86,13 @@ object ItemApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching items by IDs", e)
             throw e
         }
@@ -115,13 +115,13 @@ object ItemApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error creating item", e)
             throw e
         }

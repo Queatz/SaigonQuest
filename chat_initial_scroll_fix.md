@@ -29,7 +29,7 @@ scope.launch {
         // Add a second attempt with a longer delay as a fallback
         kotlinx.coroutines.delay(100)
         scrollToBottom()
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error in delayed scroll to bottom", e)
     }
 }

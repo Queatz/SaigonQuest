@@ -55,7 +55,7 @@ fun ChatMessages(worldId: String) {
             messagesContainerRef.value?.let {
                 it.scrollTo(0.0, it.scrollHeight.toDouble())
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error scrolling to bottom", e)
         }
     }
@@ -69,7 +69,7 @@ fun ChatMessages(worldId: String) {
                     // Use scrollTo with behavior: smooth
                     js("it.scrollTo({top: it.scrollHeight, left: 0, behavior: 'smooth'})")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error smooth scrolling to bottom", e)
                 // Fallback to regular scrolling if smooth scrolling fails
                 scrollToBottom()
@@ -91,7 +91,7 @@ fun ChatMessages(worldId: String) {
             scope.launch {
                 try {
                     ChatApi.markMessagesAsRead(worldId)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("Error marking messages as read", e)
                 }
             }
@@ -100,7 +100,7 @@ fun ChatMessages(worldId: String) {
             awaitAnimationFrame()
             delay(500)
             scrollToBottom()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error loading chat messages", e)
             error = "Failed to load messages"
             isLoading = false
@@ -122,7 +122,7 @@ fun ChatMessages(worldId: String) {
                 } else {
                     console.error("Invalid chat message received: ${message.action}, ${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error parsing chat message", e)
             }
         }
@@ -141,7 +141,7 @@ fun ChatMessages(worldId: String) {
                 } else {
                     console.error("Invalid chat message update received: ${message.action}, ${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error parsing chat message update", e)
             }
         }
@@ -160,7 +160,7 @@ fun ChatMessages(worldId: String) {
                 } else {
                     console.error("Invalid chat message delete received: ${message.action}, ${message.data}")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error parsing chat message delete", e)
             }
         }
@@ -198,7 +198,7 @@ fun ChatMessages(worldId: String) {
                         messages = messages.map { msg ->
                             if (msg.key == updatedMessage.key) updatedMessage else msg
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("Error updating message in database", e)
                     }
                 }
@@ -223,7 +223,7 @@ fun ChatMessages(worldId: String) {
                         messages = messages.map { msg ->
                             if (msg.key == deletedMessage.key) deletedMessage else msg
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("Error deleting message in database", e)
                     }
                 }
@@ -294,7 +294,7 @@ fun ChatMessageItem(
         try {
             val user = UserApi.getCurrentUser()
             currentUserId.value = user.key
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error getting current user", e)
         }
     }

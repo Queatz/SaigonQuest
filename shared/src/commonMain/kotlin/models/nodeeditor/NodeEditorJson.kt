@@ -72,7 +72,7 @@ object NodeEditorJsonUtil {
             } else {
                 json.decodeFromString<NodeEditorDataJson>(jsonData)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Return empty data on error
             NodeEditorDataJson()
         }

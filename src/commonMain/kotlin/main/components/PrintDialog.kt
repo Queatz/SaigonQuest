@@ -360,7 +360,7 @@ fun generatePrintImage(
 //                    document.body?.removeChild(link)
                 }
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("BabylonJS Tools.CreateScreenshot error: ${e.message}")
             drawQRCode("")
         }

@@ -272,7 +272,7 @@ class OcclusionManager(private val scene: Scene) {
                     
                     // Set time uniform for animations
                     effect.setFloat("time", currentTime)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
             }

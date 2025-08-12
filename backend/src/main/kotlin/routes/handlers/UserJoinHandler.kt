@@ -62,7 +62,7 @@ class UserJoinHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_JOIN", "user: ${correctedJoinData.userId}, world: $worldId", session)
             WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing USER_JOIN message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

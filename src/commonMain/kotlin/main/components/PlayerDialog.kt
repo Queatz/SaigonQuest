@@ -115,7 +115,7 @@ fun PlayerDialog(
                             console.error("[DEBUG_LOG] PlayerDialog: Status update failed even after retry")
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("[DEBUG_LOG] PlayerDialog: Error updating player status", e)
                     console.error("[DEBUG_LOG] PlayerDialog: Exception details: ${e.message}")
 
@@ -279,7 +279,7 @@ fun PlayerDialog(
                                         try {
                                             UserApi.updateUserLanguage(language)
                                             console.log("[DEBUG_LOG] PlayerDialog: User language updated to: $language")
-                                        } catch (e: Exception) {
+                                        } catch (e: Throwable) {
                                             console.error("[DEBUG_LOG] PlayerDialog: Error updating user language", e)
                                         }
                                     }
@@ -335,7 +335,7 @@ fun PlayerDialog(
                             try {
                                 // Update user on the server
                                 UserApi.updateUserCustomization(updatedUser)
-                            } catch (e: Exception) {
+                            } catch (e: Throwable) {
                                 console.error("Failed to update user customization: ${e.message}")
                             }
                         }

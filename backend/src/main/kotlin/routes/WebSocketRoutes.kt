@@ -14,8 +14,6 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.Serializable
-import models.ChatMessage
-import models.PlayerPositionData
 import models.Position
 import models.User
 import models.UserJoinData
@@ -24,8 +22,6 @@ import models.WebSocketAction
 import repository.ChatRepository
 import repository.ObjectRepository
 import repository.UserRepository
-import routes.handlers.WebSocketHandler
-import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -191,7 +187,7 @@ fun Routing.configureWebSocketRoutes() {
                     try {
                         connection.session.send(existingUserMessageString)
                         WebSocketDebug.logMessage("SENT_USER_INFO", "from: ${existingConnection.userId}, to: ${connection.userId}", this)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         WebSocketDebug.logError("Error sending existing user info", e, this)
                     }
                 }
@@ -213,7 +209,7 @@ fun Routing.configureWebSocketRoutes() {
                         
                         // Handle the message
                         handler.handle(message, connection, worldId, activeConnections, this)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // Log error but don't close connection
                         WebSocketDebug.logError("Error processing WebSocket message", e, this)
                     }
@@ -222,7 +218,7 @@ fun Routing.configureWebSocketRoutes() {
         } catch (e: ClosedReceiveChannelException) {
             // Normal close
             WebSocketDebug.logConnection("CLOSE_NORMAL", this, worldId, connection.userId)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Unexpected error
             WebSocketDebug.logError("Error in WebSocket connection", e, this)
         } finally {

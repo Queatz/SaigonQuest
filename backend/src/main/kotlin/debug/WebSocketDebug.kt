@@ -23,9 +23,6 @@ object WebSocketDebug {
     // Enable or disable debug logging
     var enabled = System.getenv("WEBSOCKET_DEBUG")?.equals("true", ignoreCase = true) ?: true
     
-    // JSON serializer with pretty printing for debugging
-    private val debugJson = json
-    
     init {
         logger.info("WebSocketDebug initialized. Debug logging is ${if (enabled) "ENABLED" else "DISABLED"}")
         logger.info("Set WEBSOCKET_DEBUG=true environment variable to enable debug logging")
@@ -79,7 +76,7 @@ object WebSocketDebug {
     /**
      * Log a WebSocket error
      */
-    fun logError(error: String, exception: Exception?, session: DefaultWebSocketServerSession?) {
+    fun logError(error: String, exception: Throwable?, session: DefaultWebSocketServerSession?) {
         if (!enabled) return
         
         logger.error("=== WEBSOCKET DEBUG [ERROR] ===")

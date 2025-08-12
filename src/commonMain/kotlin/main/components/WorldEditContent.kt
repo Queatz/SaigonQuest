@@ -95,7 +95,7 @@ fun WorldEditContent(
             } else {
                 println("[ERROR] Cannot update background color: Scene is null")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to update background color: ${e.message}")
         }
     }
@@ -142,7 +142,7 @@ fun WorldEditContent(
             } else {
                 println("[ERROR] Cannot update fog density: Scene is null")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("[ERROR] Failed to update fog density: ${e.message}")
         }
     }

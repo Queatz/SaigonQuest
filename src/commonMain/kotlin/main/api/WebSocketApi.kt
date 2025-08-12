@@ -53,8 +53,6 @@ data class ListenerToken(
  *    }
  * 
  * 3. Send messages:
- *    WebSocketApi.addObject(objectModel)
- *    WebSocketApi.removeObject(objectId)
  *    WebSocketApi.updatePlayerPosition(position)
  *    WebSocketApi.playerInteract(objectId)
  *    WebSocketApi.sendChatMessage(worldId, messageText)
@@ -136,7 +134,7 @@ object WebSocketApi {
         }
     }
     
-    private fun logError(message: String, error: Exception? = null) {
+    private fun logError(message: String, error: Throwable? = null) {
         if (logLevel >= LogLevel.ERROR) {
             console.error("[ERROR] $message")
             error?.let { console.error(it) }
@@ -251,7 +249,7 @@ object WebSocketApi {
                     _lastError = errorMsg
                     logWarn(errorMsg)
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 _lastError = "Error parsing WebSocket message: ${e.message}"
                 logError("Error parsing WebSocket message. Raw message: $messageData", e)
             }
@@ -350,7 +348,7 @@ object WebSocketApi {
                     val messageString = ApiClient.json.encodeToString(pingMessage)
                     socket?.send(messageString)
                     logDebug("WebSocket heartbeat sent")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     logError("Error sending heartbeat", e)
                     // If we can't send a heartbeat, the connection might be dead
                     if (_isConnected) {
@@ -484,7 +482,7 @@ object WebSocketApi {
             val messageString = ApiClient.json.encodeToString(message)
             socket?.send(messageString)
             return true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error sending message", e)
             _lastError = "Error sending message: ${e.message}"
             return false

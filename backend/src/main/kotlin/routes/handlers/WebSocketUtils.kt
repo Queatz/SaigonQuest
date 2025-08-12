@@ -40,7 +40,7 @@ object WebSocketUtils {
                 connection.session.send(message)
                 successCount++
                 WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 // Log error but continue with other connections
                 WebSocketDebug.logError("Error sending message to client ${connection.userId}", e, session)
             }
@@ -81,7 +81,7 @@ object WebSocketUtils {
                 connection.session.send(message)
                 successCount++
                 WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 WebSocketDebug.logError("Error sending message to client ${connection.userId}", e, session)
             }
         }
@@ -120,7 +120,7 @@ object WebSocketUtils {
                     connection.session.send(message)
                     successCount++
                     WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId} in world: $worldId", worldId)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Log error but continue with other connections
                     if (session != null) {
                         WebSocketDebug.logError("Error sending message to client ${connection.userId}", e, session)
@@ -149,6 +149,16 @@ suspend fun broadcastToWorldNoSession(
     val connections = activeConnections[worldId]
     if (connections.isNullOrEmpty()) {
         debug.WebSocketDebug.logBroadcast("NO_CONNECTIONS", "No active connections", worldId)
+        // Diagnostic: list active world keys and connection counts to detect worldId mismatches
+        val summary = if (activeConnections.isEmpty()) {
+            "ActiveConnections map is empty"
+        } else {
+            activeConnections.entries.joinToString(
+                prefix = "Active worlds: ",
+                separator = "; ",
+            ) { (k, v) -> "$k=${v.size}" }
+        }
+        debug.WebSocketDebug.logBroadcast("ACTIVE_WORLD_KEYS", summary, worldId)
         return
     }
 
@@ -162,7 +172,7 @@ suspend fun broadcastToWorldNoSession(
             connection.session.send(message)
             successCount++
             debug.WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             debug.WebSocketDebug.logBroadcast("ERROR", "Error sending message to client ${connection.userId}: ${e.message}", worldId)
         }
     }

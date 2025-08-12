@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * This handler processes object removal messages and broadcasts them to all clients in the same world.
  * When a client removes an object from the scene, this handler ensures all other clients also remove it.
  */
+@Deprecated("Client-sent REMOVE_OBJECT is disabled; server broadcasts via ObjectRoutes. This handler is unused.")
 class RemoveObjectHandler : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
@@ -40,7 +41,7 @@ class RemoveObjectHandler : WebSocketHandler {
             WebSocketDebug.logMessage("BROADCASTING_REMOVE_OBJECT", "objectId: $objectId, world: $worldId", session)
             
             WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing REMOVE_OBJECT message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

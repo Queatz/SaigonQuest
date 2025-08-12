@@ -5,8 +5,9 @@ import org.jetbrains.compose.web.css.Color
 object Theme {
     object colors {
         val background = Color("#faf8f6")
-        val backgroundDark = Color("#e8e6e4")
+        val backgroundDark = Color("#000000")
         val onBackground = Color("#000000")
+        val onBackgroundDark = Color("#ffffff")
         val primary = Color("#2F5E5E")
         val primaryDark = Color("#1F3F3F")
         val secondary = Color("#995A90")

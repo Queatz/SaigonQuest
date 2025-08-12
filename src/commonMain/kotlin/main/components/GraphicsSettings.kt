@@ -114,7 +114,7 @@ object GraphicsSettings {
         try {
             // Call all registered observer functions
             observers.forEach { it() }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error notifying graphics mode observers", e)
         }
     }
@@ -128,7 +128,7 @@ object GraphicsSettings {
         return try {
             val storedValue = localStorage.getItem(GRAPHICS_MODE_STORAGE_KEY)
             storedValue == "true"
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error loading graphics mode from localStorage", e)
             false
         }
@@ -142,7 +142,7 @@ object GraphicsSettings {
     private fun saveGraphicsModeToStorage(enabled: Boolean) {
         try {
             localStorage.setItem(GRAPHICS_MODE_STORAGE_KEY, enabled.toString())
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error saving graphics mode to localStorage", e)
         }
     }
@@ -201,7 +201,7 @@ object GraphicsSettings {
         return try {
             val storedValue = localStorage.getItem(PRETTY_GRAPHICS_STORAGE_KEY)
             storedValue == "true"
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error loading pretty graphics mode from localStorage", e)
             false
         }
@@ -215,7 +215,7 @@ object GraphicsSettings {
     private fun savePrettyGraphicsToStorage(enabled: Boolean) {
         try {
             localStorage.setItem(PRETTY_GRAPHICS_STORAGE_KEY, enabled.toString())
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error saving pretty graphics mode to localStorage", e)
         }
     }

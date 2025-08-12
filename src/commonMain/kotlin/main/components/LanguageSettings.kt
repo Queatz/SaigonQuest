@@ -103,7 +103,7 @@ object LanguageSettings {
     private fun loadLanguageFromStorage(): String {
         return try {
             localStorage.getItem(LANGUAGE_STORAGE_KEY) ?: LANGUAGE_ENGLISH
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error loading language from localStorage", e)
             LANGUAGE_ENGLISH
         }
@@ -117,7 +117,7 @@ object LanguageSettings {
     private fun saveLanguageToStorage(language: String) {
         try {
             localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error saving language to localStorage", e)
         }
     }

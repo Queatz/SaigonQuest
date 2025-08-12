@@ -114,7 +114,7 @@ fun ChatContent(worldId: String) {
         try {
             val user = UserApi.getCurrentUser()
             isAuthenticated = user.key.isNotEmpty()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking authentication status", e)
             isAuthenticated = false
         }
@@ -173,7 +173,7 @@ fun ChatContent(worldId: String) {
         try {
             delay(100)
             chatInputRef.value?.focus()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error focusing chat input", e)
         }
     }
@@ -374,7 +374,7 @@ fun ChatContent(worldId: String) {
                                         scope.launch {
                                             try {
                                                 ChatApi.markMessagesAsRead(worldId)
-                                            } catch (e: Exception) {
+                                            } catch (e: Throwable) {
                                                 console.error("Error marking messages as read", e)
                                             }
                                         }
@@ -428,7 +428,7 @@ fun ChatContent(worldId: String) {
                                     scope.launch {
                                         try {
                                             ChatApi.markMessagesAsRead(worldId)
-                                        } catch (e: Exception) {
+                                        } catch (e: Throwable) {
                                             console.error("Error marking messages as read", e)
                                         }
                                     }

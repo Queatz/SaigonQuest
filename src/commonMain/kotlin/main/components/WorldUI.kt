@@ -99,7 +99,7 @@ fun WorldUI() {
             try {
                 val count = NotificationApi.getUnreadCount()
                 unreadNotificationCount = count
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error fetching unread notification count", e)
             }
         }
@@ -112,7 +112,7 @@ fun WorldUI() {
                 try {
                     val count = ChatApi.getUnreadMessageCount(world.key)
                     unreadChatCount = count
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.error("Error fetching unread chat count for world ${world.key}", e)
                 }
             }
@@ -287,7 +287,7 @@ fun WorldUI() {
                 unreadNotificationCount++
                 
                 console.log("Received notification: ${notificationData.title}")
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error processing notification", e)
             }
         }
@@ -318,7 +318,7 @@ fun WorldUI() {
                     unreadChatCount++
                     console.log("Received chat message for world ${chatMessage.worldId}: incremented unread count to $unreadChatCount")
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error processing chat message for unread count", e)
             }
         }
@@ -560,7 +560,7 @@ fun WorldUI() {
                         try {
                             val createdAsset = AssetApi.createAsset(asset)
                             console.log("Asset created successfully: ${createdAsset.file}")
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             console.error("Error creating asset: ${e.message}")
                         }
                     }
@@ -602,6 +602,7 @@ fun WorldUI() {
                     user = currentUser!!,
                     onClose = { updatePanelState(SidePanelState.None) },
                     onLogout = {
+                        UserApi.logout()
                         router.navigate("/bye")
                     }
                 )

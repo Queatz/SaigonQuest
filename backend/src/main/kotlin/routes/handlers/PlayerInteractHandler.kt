@@ -83,7 +83,7 @@ class PlayerInteractHandler(
             } else {
                 WebSocketDebug.logError("Object not found with ID: ${interactData.objectId}", null, session)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing USER_INTERACT message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

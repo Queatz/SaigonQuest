@@ -30,7 +30,7 @@ object FriendApi {
             }
             
             return response.body<Array<Friend>>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching friends", e)
             return emptyArray()
         }
@@ -55,7 +55,7 @@ object FriendApi {
             }
             
             return null
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error sending friend request", e)
             return null
         }
@@ -80,7 +80,7 @@ object FriendApi {
             }
             
             return null
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error accepting friend request", e)
             return null
         }
@@ -99,7 +99,7 @@ object FriendApi {
             }
             
             return response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error removing friend", e)
             return false
         }
@@ -115,7 +115,7 @@ object FriendApi {
         try {
             val friends = getFriends()
             return friends.any { it.friendId == friendId }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking friendship", e)
             return false
         }
@@ -134,7 +134,7 @@ object FriendApi {
             
             // Check if any of them have the specified friendId as otherUserId
             return notifications.any { it.otherUserId == friendId }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking sent friend requests", e)
             return false
         }
@@ -154,7 +154,7 @@ object FriendApi {
             // Check if any of them have the specified friendId as otherUserId
             // and are not marked as read (a read notification means the request was handled)
             return notifications.any { it.otherUserId == friendId && !it.isRead }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking received friend requests", e)
             return false
         }
@@ -183,7 +183,7 @@ object FriendApi {
                 }
             }
             response.body<Map<String, Boolean>>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching friends online", e)
             emptyMap()
         }
@@ -208,7 +208,7 @@ object FriendApi {
             
             // If none of the above, they are not friends
             return FriendshipStatus.NOT_FRIENDS
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error getting friendship status", e)
             return FriendshipStatus.UNKNOWN
         }

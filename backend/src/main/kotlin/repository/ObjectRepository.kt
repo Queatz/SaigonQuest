@@ -32,7 +32,7 @@ class ObjectRepository {
                 Object::class.java,
                 DocumentReadOptions()
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }
@@ -67,7 +67,7 @@ class ObjectRepository {
         return try {
             collection.deleteDocument(id)
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             false
         }
     }

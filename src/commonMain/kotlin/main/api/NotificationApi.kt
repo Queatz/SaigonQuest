@@ -32,7 +32,7 @@ object NotificationApi {
             }
             
             return response.body<Array<Notification>>()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching notifications", e)
             return emptyArray()
         }
@@ -51,7 +51,7 @@ object NotificationApi {
             }
             
             return response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error marking notification as read", e)
             return false
         }
@@ -69,7 +69,7 @@ object NotificationApi {
             }
             
             return response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error marking all notifications as read", e)
             return false
         }
@@ -87,7 +87,7 @@ object NotificationApi {
             }
             
             return response.body<UnreadCountResponse>().unreadCount
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching unread notification count", e)
             return 0
         }
@@ -103,7 +103,7 @@ object NotificationApi {
         try {
             val allNotifications = getNotifications()
             return allNotifications.filter { it.type == type }.toTypedArray()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching notifications by type", e)
             return emptyArray()
         }
@@ -127,7 +127,7 @@ object NotificationApi {
             
             // Accept the friend request
             return FriendApi.acceptFriendRequest(notification.otherUserId)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error accepting friend request", e)
             return null
         }
@@ -148,7 +148,7 @@ object NotificationApi {
         try {
             // Just mark the notification as read to reject it
             return markAsRead(notification.key)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error rejecting friend request", e)
             return false
         }

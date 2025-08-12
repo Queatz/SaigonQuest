@@ -44,7 +44,7 @@ fun NotificationsContent(
             val result = NotificationApi.getNotifications()
             notifications = result.toList().sortedByDescending { it.timestamp }
             isLoading = false
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             error = str("Failed to load notifications")
             isLoading = false
         }

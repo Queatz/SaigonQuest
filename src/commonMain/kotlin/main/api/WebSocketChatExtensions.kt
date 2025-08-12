@@ -35,7 +35,7 @@ private fun WebSocketApi.sendChatMessageData(action: WebSocketAction, data: Chat
         }
         
         return success
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error sending chat message data", e)
         return false
     }
@@ -78,7 +78,7 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
             // Get current user
             val user = try {
                 UserApi.getCurrentUser()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error getting current user", e)
                 callback(false)
                 return@launch
@@ -111,7 +111,7 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
 
             // Call the callback with the result
             callback(success)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error creating chat message", e)
             callback(false)
         }
@@ -166,7 +166,7 @@ fun WebSocketApi.updateChatMessage(message: ChatMessage, newText: String, callba
 
             // Call the callback with the result
             callback(success)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating chat message", e)
             callback(false)
         }
@@ -215,7 +215,7 @@ fun WebSocketApi.deleteChatMessage(message: ChatMessage, callback: (Boolean) -> 
 
             // Call the callback with the result
             callback(success)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error deleting chat message", e)
             callback(false)
         }

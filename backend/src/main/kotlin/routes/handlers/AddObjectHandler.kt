@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * This handler processes object addition messages and broadcasts them to all clients in the same world.
  * When a client adds a new object to the scene, this handler ensures all other clients also add it.
  */
+@Deprecated("Client-sent ADD_OBJECT is disabled; server broadcasts via ObjectRoutes. This handler is unused.")
 class AddObjectHandler : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
@@ -40,7 +41,7 @@ class AddObjectHandler : WebSocketHandler {
             WebSocketDebug.logMessage("BROADCASTING_ADD_OBJECT", "objectId: ${obj.key}, world: $worldId", session)
             
             WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing ADD_OBJECT message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)
         }

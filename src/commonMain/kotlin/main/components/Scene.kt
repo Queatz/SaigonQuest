@@ -154,7 +154,7 @@ fun SceneComponent(url: String) {
             val currentUser = UserApi.getCurrentUser()
             isCurrentUserPlayer.value = currentUser.isPlayer
             console.log("Current user is a ${if (currentUser.isPlayer) "Player" else "Visitor"} account")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking current user type: ${e.message}")
             isCurrentUserPlayer.value = false // Default to false if there's an error
         }
@@ -305,7 +305,7 @@ fun SceneComponent(url: String) {
                 } else {
                     otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error checking friendship status", e)
                 otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
             } finally {
@@ -336,7 +336,7 @@ fun SceneComponent(url: String) {
                 } else {
                     otherPlayerErrorMessage.value = "Failed to send friend request"
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error sending friend request", e)
                 otherPlayerErrorMessage.value = "Error: ${e.message}"
             } finally {
@@ -376,7 +376,7 @@ fun SceneComponent(url: String) {
                 } else {
                     otherPlayerErrorMessage.value = "Friend request not found"
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error accepting friend request", e)
                 otherPlayerErrorMessage.value = "Error: ${e.message}"
             } finally {
@@ -409,7 +409,7 @@ fun SceneComponent(url: String) {
                 } else {
                     otherPlayerErrorMessage.value = "Failed to remove friend"
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("Error removing friend", e)
                 otherPlayerErrorMessage.value = "Error: ${e.message}"
             } finally {
@@ -725,7 +725,8 @@ fun SceneComponent(url: String) {
                 
                 // Connect to WebSocket for real-time updates using the ConnectionManager
                 console.log("Connecting to WebSocket using ConnectionManager...")
-                WebSocketConnectionManager.connectToWorld(url)
+                // Use canonical world ID (DB key) when available to match server broadcasts
+                WebSocketConnectionManager.connectToWorld(currentWorld.value?.key ?: url)
                 
                 // Wait for WebSocket connection to be established
                 var connectionAttempts = 0
@@ -753,7 +754,7 @@ fun SceneComponent(url: String) {
                             
                             // Show the dialog
                             showOpenUrlDialog.value = true
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             console.error("Error handling OPEN_URL message", e)
                         }
                     }

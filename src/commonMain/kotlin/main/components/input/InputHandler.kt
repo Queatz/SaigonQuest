@@ -67,7 +67,7 @@ class InputHandler(
             
             // Check if the user is the owner of the world
             return currentUser.key == currentWorld?.userId
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error checking world ownership", e)
             return false
         }
@@ -795,7 +795,7 @@ class InputHandler(
                     if (obj.title.isNotBlank()) {
                         itemTitle = obj.title
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     console.warn("[DEBUG_LOG] Could not fetch object details for title: $objectId", e)
                 }
 
@@ -822,7 +822,7 @@ class InputHandler(
                 InventoryState.refreshInventory(
                     coroutineScope = scope,
                 )
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] Error collecting inventory item", e)
                 
                 // Show error message

@@ -42,13 +42,13 @@ object ObjectApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching objects", e)
             throw e
         }
@@ -67,13 +67,13 @@ object ObjectApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching object", e)
             throw e
         }
@@ -96,13 +96,13 @@ object ObjectApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error creating object", e)
             throw e
         }
@@ -125,13 +125,13 @@ object ObjectApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating object", e)
             throw e
         }
@@ -150,13 +150,13 @@ object ObjectApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText())
                 }
                 throw Error(errorResponse.message)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error deleting object", e)
             throw e
         }
@@ -199,7 +199,7 @@ object ObjectApi {
             }
             
             response.status.isSuccess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error collecting object", e)
             false
         }

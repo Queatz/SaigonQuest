@@ -93,7 +93,7 @@ class SceneObjectManager(
             highlightLayer.innerGlow = false
             
             console.log("[DEBUG_HIGHLIGHT] Set additional properties: outerGlow=true, innerGlow=false")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.log("[DEBUG_HIGHLIGHT] Could not set additional properties: ${e.message}")
         }
 
@@ -318,7 +318,7 @@ class SceneObjectManager(
             if (objectModelSources.remove(objectId) != null) {
                 console.log("[DEBUG_REMOVE] Removed model source tracking for object: $objectId")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_REMOVE] Error removing object: $objectId", e)
         }
         
@@ -1202,7 +1202,7 @@ class SceneObjectManager(
                         console.log("[DEBUG_MESHES] No meshes found for object: $objectId")
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_MESHES] Error getting meshes for object: $objectId", e)
             }
         }
@@ -1301,7 +1301,7 @@ class SceneObjectManager(
                         // Use the highest point found
                         highestY = maxY
                         console.log("[DEBUG_STATUS] Highest Y point of bounding boxes: $highestY")
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("[DEBUG_STATUS] Error finding highest Y point: ${e.message}")
                         // Fall back to node position if there's an error
                         highestY = node.position.y
@@ -1342,7 +1342,7 @@ class SceneObjectManager(
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_STATUS] Error handling status text for object: $objectId", e)
         }
     }

@@ -307,7 +307,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 
                 // Set the drag effect
                 event.dataTransfer.effectAllowed = "move"
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] handleDragStart: Error setting dataTransfer data", e)
             }
             
@@ -346,14 +346,14 @@ fun InventoryDialog(onClose: () -> Unit) {
                 window.setTimeout({ 
                     try {
                         document.body?.removeChild(dragImage)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         console.error("[DEBUG_LOG] handleDragStart: Error removing drag image", e)
                     }
                 }, 0)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] handleDragStart: Error setting drag image", e)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_LOG] handleDragStart: Unexpected error", e)
             // Reset the dragged item ID if an error occurs
             draggedItemId = null
@@ -385,15 +385,15 @@ fun InventoryDialog(onClose: () -> Unit) {
                         }
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] handleDragOver: Error setting dropEffect", e)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_LOG] handleDragOver: Unexpected error", e)
             // Don't prevent default if we encounter an error, to allow normal browser behavior
             try {
                 event.preventDefault()
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
                 // Ignore
             }
         }
@@ -410,7 +410,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 val data = event.dataTransfer.getData("text/plain")
                 console.log("[DEBUG_LOG] handleDropOnCharacter: got data from dataTransfer: $data")
                 data
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] handleDropOnCharacter: Error getting data from dataTransfer", e)
                 null
             }
@@ -457,7 +457,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     }
                 )
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("[DEBUG_LOG] handleDropOnCharacter: Unexpected error", e)
             showFeedback("An unexpected error occurred", true)
         } finally {

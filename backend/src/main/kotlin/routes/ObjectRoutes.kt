@@ -69,7 +69,7 @@ fun Routing.configureObjectRoutes() {
                     )
                     val messageString = json.encodeToString(broadcastMessage)
                     routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Log but do not fail the request
                     println("[WS_BROADCAST] Failed to broadcast ADD_OBJECT (create): ${e.message}")
                 }
@@ -166,7 +166,7 @@ fun Routing.configureObjectRoutes() {
                     )
                     val messageString = json.encodeToString(broadcastMessage)
                     routes.handlers.broadcastToWorldNoSession(updatedObject.worldId, messageString, activeConnections)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Log but do not fail the request
                     println("[WS_BROADCAST] Failed to broadcast OBJECT_UPDATE: ${e.message}")
                 }
@@ -220,7 +220,7 @@ fun Routing.configureObjectRoutes() {
                         )
                         val messageString = json.encodeToString(broadcastMessage)
                         routes.handlers.broadcastToWorldNoSession(existingObject.worldId, messageString, activeConnections)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // Log but do not fail the request
                         println("[WS_BROADCAST] Failed to broadcast REMOVE_OBJECT: ${e.message}")
                     }

@@ -256,7 +256,7 @@ fun Routing.configureInventoryRoutes() {
                             itemKey = req.itemKey,
                             quantity = req.quantity,
                         )
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // Clean up the created object on failure
                         objectRepository.delete(created.key)
                         return@post call.respond(
@@ -273,7 +273,7 @@ fun Routing.configureInventoryRoutes() {
                         )
                         val messageString = json.encodeToString(broadcastMessage)
                         routes.handlers.broadcastToWorldNoSession(req.worldId, messageString, activeConnections)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // Log but do not fail the request
                         println("[WS_BROADCAST] Failed to broadcast ADD_OBJECT: ${e.message}")
                     }
@@ -309,7 +309,7 @@ fun Routing.configureInventoryRoutes() {
                             )
                             val messageString = json.encodeToString(broadcastMessage)
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast REMOVE_OBJECT (empty inventory): ${e.message}")
                         }
                         return@post call.respond(TransferPickupResponse(objectDeleted = true, obj = null))
@@ -329,7 +329,7 @@ fun Routing.configureInventoryRoutes() {
                             itemKey = itemKey,
                             quantity = qty,
                         )
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         return@post call.respond(
                             HttpStatusCode.BadRequest,
                             ErrorResponse(message = e.message ?: "Failed to transfer from object", code = HttpStatusCode.BadRequest.value)
@@ -347,7 +347,7 @@ fun Routing.configureInventoryRoutes() {
                             )
                             val messageString = json.encodeToString(broadcastMessage)
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast REMOVE_OBJECT: ${e.message}")
                         }
                         return@post call.respond(TransferPickupResponse(objectDeleted = true, obj = null))
@@ -360,7 +360,7 @@ fun Routing.configureInventoryRoutes() {
                             )
                             val messageString = json.encodeToString(broadcastMessage)
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast OBJECT_UPDATE: ${e.message}")
                         }
                         return@post call.respond(TransferPickupResponse(objectDeleted = false, obj = obj))

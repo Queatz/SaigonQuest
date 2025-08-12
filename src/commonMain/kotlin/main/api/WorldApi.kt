@@ -32,13 +32,13 @@ object WorldApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching worlds", e)
             throw e
         }
@@ -57,13 +57,13 @@ object WorldApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching world", e)
             throw e
         }
@@ -100,7 +100,7 @@ object WorldApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.Unauthorized) {
                         ErrorResponse(message = "You must be logged in to create a world", code = response.status.value)
@@ -110,7 +110,7 @@ object WorldApi {
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error creating world", e)
             throw e
         }
@@ -133,13 +133,13 @@ object WorldApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error updating world", e)
             throw e
         }
@@ -176,7 +176,7 @@ object WorldApi {
                 // Parse error response
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.NotFound) {
                         ErrorResponse(message = "World not found", code = response.status.value)
@@ -186,7 +186,7 @@ object WorldApi {
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching world by URL", e)
             throw e
         }
@@ -203,12 +203,12 @@ object WorldApi {
             } else {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                 }
                 throw errorResponse
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             console.error("Error fetching world state", e)
             throw e
         }

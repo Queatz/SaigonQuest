@@ -14,19 +14,10 @@ import models.WebSocketAction
  * @param obj The object to add
  * @return true if the object was added successfully, false otherwise
  */
+@Deprecated("Client WS object mutations are disabled. Use ObjectApi.create(...) (REST). Server will broadcast ADD_OBJECT.")
 fun WebSocketApi.addObject(obj: Object): Boolean {
-    if (!isConnected()) {
-        console.warn("Cannot add object: WebSocket not connected")
-        return false
-    }
-    
-    try {
-        val message = WebSocketMessage.fromEnum(WebSocketAction.ADD_OBJECT, ApiClient.json.encodeToString(obj))
-        return sendMessage(message)
-    } catch (e: Exception) {
-        console.error("Error creating add object message", e)
-        return false
-    }
+    console.warn("WebSocketApi.addObject is deprecated and disabled. Use ObjectApi.create(...) instead.")
+    return false
 }
 
 /**
@@ -35,19 +26,10 @@ fun WebSocketApi.addObject(obj: Object): Boolean {
  * @param objectId The ID of the object to remove
  * @return true if the object was removed successfully, false otherwise
  */
+@Deprecated("Client WS object mutations are disabled. Use ObjectApi.delete(...) (REST). Server will broadcast REMOVE_OBJECT.")
 fun WebSocketApi.removeObject(objectId: String): Boolean {
-    if (!isConnected()) {
-        console.warn("Cannot remove object: WebSocket not connected")
-        return false
-    }
-    
-    try {
-        val message = WebSocketMessage.fromEnum(WebSocketAction.REMOVE_OBJECT, ApiClient.json.encodeToString(objectId))
-        return sendMessage(message)
-    } catch (e: Exception) {
-        console.error("Error creating remove object message", e)
-        return false
-    }
+    console.warn("WebSocketApi.removeObject is deprecated and disabled. Use ObjectApi.delete(...) instead.")
+    return false
 }
 
 /**
@@ -59,19 +41,10 @@ fun WebSocketApi.removeObject(objectId: String): Boolean {
  * @param obj The updated object
  * @return true if the object was updated successfully, false otherwise
  */
+@Deprecated("Client WS object mutations are disabled. Use ObjectApi.updateObject(...) (REST). Server will broadcast OBJECT_UPDATE.")
 fun WebSocketApi.updateObject(obj: Object): Boolean {
-    if (!isConnected()) {
-        console.warn("Cannot update object: WebSocket not connected")
-        return false
-    }
-    
-    try {
-        val message = WebSocketMessage.fromEnum(WebSocketAction.OBJECT_UPDATE, ApiClient.json.encodeToString(obj))
-        return sendMessage(message)
-    } catch (e: Exception) {
-        console.error("Error creating update object message", e)
-        return false
-    }
+    console.warn("WebSocketApi.updateObject is deprecated and disabled. Use ObjectApi.updateObject(...) instead.")
+    return false
 }
 
 /**
@@ -100,7 +73,7 @@ fun WebSocketApi.triggerObjectEvent(objectId: String, eventType: String, userId:
         
         val message = WebSocketMessage.fromEnum(WebSocketAction.TRIGGER_OBJECT_EVENT, ApiClient.json.encodeToString(eventData))
         return sendMessage(message)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         console.error("Error creating trigger event message", e)
         return false
     }

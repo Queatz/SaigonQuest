@@ -941,9 +941,13 @@ object Styles : StyleSheet() {
             property("-moz-osx-font-smoothing", "grayscale")
             minHeight(100.vh)
             backgroundColor(Theme.colors.background)
+            color(Theme.colors.onBackground)
+        }
 
-            dark(selector("body")) {
+        media("(prefers-color-scheme: dark)") {
+            "body" style {
                 backgroundColor(Theme.colors.backgroundDark)
+                color(Theme.colors.onBackgroundDark)
             }
         }
 
