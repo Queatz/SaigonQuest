@@ -14,7 +14,8 @@ import kotlinx.browser.window
  */
 enum class DataType {
     ITEM,
-    OBJECT;
+    OBJECT,
+    INVENTORY_ITEM;
 }
 
 /**

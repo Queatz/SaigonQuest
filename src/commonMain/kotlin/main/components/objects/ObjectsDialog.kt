@@ -2,6 +2,7 @@ package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.components.BaseDialog
+import main.components.translated
 import models.World
 import org.jetbrains.compose.web.dom.Div
 
@@ -30,7 +31,7 @@ fun ObjectsDialog(
             // Use BaseDialog for consistent styling and behavior
             BaseDialog(
                 onClose = onClose,
-                title = "Objects",
+                title = translated("Objects"),
                 content = {
                     // Tab content
                     Div {

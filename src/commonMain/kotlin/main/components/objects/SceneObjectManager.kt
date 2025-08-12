@@ -19,9 +19,8 @@ import main.api.InventoryApi
 import main.api.ItemApi
 import main.api.ObjectApi
 import main.api.WebSocketApi
-import main.api.addObject
-import main.api.updateObject
 import main.components.camera.CameraController
+import main.components.inventory.InventoryState
 import main.components.shadow.ShadowManager
 import main.components.world.InventoryObject
 import main.components.world.WorldObjectManager
@@ -350,9 +349,6 @@ class SceneObjectManager(
                 // Save the updated object
                 val savedObj = ObjectApi.updateObject(objectId, updatedObj)
                 
-                // Send WebSocket notification to update other clients
-                WebSocketApi.updateObject(savedObj)
-                
                 console.log("Object position updated and persisted: $objectId")
                 
                 // Provide success feedback
@@ -386,67 +382,76 @@ class SceneObjectManager(
      * @param data The serialized item data
      * @param worldId The ID of the current world
      */
-    fun handleInventoryItemDrop(x: Int, y: Int, data: String, worldId: String) {
+    fun handleInventoryItemDrop(x: Int, y: Int, data: String, worldId: String, quantityOverride: Int? = null) {
         console.log("[DEBUG_DROP] Inventory item dropped at ($x, $y) in world $worldId")
         
         try {
-            // Parse the item data
-            val item = json.decodeFromString(Item.serializer(), data)
-            console.log("[DEBUG_DROP] Parsed item data: title=${item.title}, key=${item.key}")
+            // Parse the drag payload (InventoryDragPayload)
+            val payload = json.decodeFromString(main.components.inventory.InventoryDragPayload.serializer(), data)
+            console.log("[DEBUG_DROP] Parsed inventory drag payload: itemKey=${payload.itemKey}, inventoryItemKey=${payload.inventoryItemKey}, quantity=${payload.quantity}")
+            
+            // Determine drop quantity without using window.prompt
+            val maxQuantity = if (payload.quantity > 0) payload.quantity else 1
+            val dropQuantity = quantityOverride?.coerceIn(1, maxQuantity) ?: 1
             
             // Calculate the 3D position from the 2D screen coordinates
             console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
             val position = calculatePositionFromScreenCoordinates(x, y)
             console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
             
-            // Create an Object model for the dropped item
-            // Use empty collection and store the item data in the data field
+            // Create an Object model for the dropped item (server will persist)
             val obj = Object(
-                title = item.title,
-                data = data, // Store the original item data
+                title = payload.itemKey, // will be updated with item title after fetch
+                data = "", // no need to store full item in object data
                 worldId = worldId,
                 position = position,
-                collection = "", // Empty collection as requested
+                collection = "",
                 file = ""
             )
-            console.log("[DEBUG_DROP] Created Object model for dropped item: ${obj.title}, position=(${obj.position.x}, ${obj.position.y}, ${obj.position.z})")
             
-            // Add a flag to indicate this is an inventory item
-            obj.isItem = true
-            obj.itemQuantity = 1
-            obj.itemId = item.key
 
-            // Persist the object placement
+            // Persist the object placement via unified transfer endpoint
             coroutineScope.launch {
                 try {
-                    // Create the object on the server
-                    val savedObj = ObjectApi.createObject(obj)
-                    
-                    // Remove the item from inventory
-                    val updatedInventory = InventoryApi.removeItemFromInventory(item.key)
+                    // Fetch the item definition
+                    val item = ItemApi.getItemById(payload.itemKey)
 
-                    // Send the add object event over WebSocket for real-time updates
-                    WebSocketApi.addObject(savedObj)
+                    val savedObj = InventoryApi.transferDrop(
+                        InventoryApi.TransferDropRequest(
+                            itemKey = payload.itemKey,
+                            quantity = dropQuantity,
+                            worldId = worldId,
+                            position = obj.position,
+                            title = item.title.ifBlank { null },
+                        )
+                    )
+
+                    // Server will broadcast ADD_OBJECT; no client self-broadcast
 
                     // Create a 3D representation of the item in the scene
                     createInventoryItemInScene(savedObj, item)
 
+                    // Refresh inventory state to reflect server-authoritative changes
+                    InventoryState.refreshInventory(
+                        coroutineScope = coroutineScope,
+                    )
+
                     console.log("Item successfully placed and persisted: ${savedObj.key}")
 
                     // Provide success feedback
-                    onSuccess?.invoke("Item '${item.title}' placed successfully")
+                    onSuccess?.invoke("Dropped '${item.title}' x$dropQuantity")
                 } catch (error: Throwable) {
                     console.error("Error persisting item placement", error)
                     
                     // Provide error feedback
-                    onError?.invoke("Failed to place item: ${error.message ?: "Unknown error"}")
+                    onError?.invoke("Failed to drop item: ${error.message ?: "Unknown error"}")
                 }
             }
         } catch (error: Throwable) {
-            console.error("Error parsing item data", error)
+            console.error("Error parsing inventory drag payload", error)
             
             // Provide error feedback
-            onError?.invoke("Failed to parse item data: ${error.message ?: "Unknown error"}")
+            onError?.invoke("Failed to parse inventory data: ${error.message ?: "Unknown error"}")
         }
     }
     
@@ -532,8 +537,7 @@ class SceneObjectManager(
                         ObjectApi.createObject(updatedObj)
                     }
                     
-                    // Send the add object event over WebSocket for real-time updates
-                    WebSocketApi.addObject(savedObj)
+                    // Server will broadcast ADD_OBJECT; no client self-broadcast
                     
                     // Create a 3D representation of the object in the scene
                     createObjectInScene(savedObj)
@@ -652,22 +656,30 @@ class SceneObjectManager(
      * 
      * @param obj The object to create
      */
+    private fun createObjectPreferInventory(obj: Object) {
+        // Prefer rendering based on object-owned inventory contents
+        coroutineScope.launch {
+            try {
+                val inv = InventoryApi.getObjectInventory(obj.key)
+                val items = InventoryApi.getInventoryItemsByIds(inv.itemOrder)
+                val first = items.firstOrNull()
+                if (first != null) {
+                    // Load item definition and render as inventory object
+                    val itemDef = ItemApi.getItemById(first.item)
+                    createInventoryItemInScene(obj, itemDef)
+                    return@launch
+                }
+            } catch (e: Throwable) {
+                console.warn("[INVENTORY_RENDER] Failed to fetch/render from object inventory for ${'$'}{obj.key}: ${'$'}{e.message}")
+            }
+            // Fallback to legacy render logic
+            createObjectInScene(obj)
+        }
+    }
+
     private fun createObjectInScene(obj: Object) {
         console.log("[DEBUG_OBJECT] Creating 3D representation for object: ${obj.key}")
 
-        if (obj.isItem) {
-            console.log("[DEBUG_OBJECT] isItem: ${obj.key} obj.itemId=${obj.itemId}")
-            if (obj.itemId.isNotBlank()) {
-                coroutineScope.launch {
-                    val item = ItemApi.getItemById(obj.itemId)
-                    console.log("[DEBUG_OBJECT] loaded item: $item", item)
-                    createInventoryItemInScene(obj, item)
-                }
-            } else {
-                onError?.invoke("Failed to create 3D representation for object: ${obj.key}, missing item ID")
-            }
-            return
-        }
         
         try {
             // Create a position, rotation, and scale vectors from the object properties
@@ -1047,7 +1059,7 @@ class SceneObjectManager(
                     if (modelChanged) {
                         console.log("Model source changed for ${obj.key}: prev=$prev new=$incoming, recreating")
                         removeObject(obj.key)
-                        createObjectInScene(obj)
+                        createObjectPreferInventory(obj)
                     } else {
                         // Update existing object transform
                         existingNode.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
@@ -1058,8 +1070,8 @@ class SceneObjectManager(
                         console.log("Updated existing object: ${obj.key}")
                     }
                 } else {
-                    // Create new object
-                    createObjectInScene(obj)
+                    // Create new object (prefer inventory-based rendering)
+                    createObjectPreferInventory(obj)
                 }
             } catch (error: Throwable) {
                 console.error("Error processing object update", error)
@@ -1100,19 +1112,14 @@ class SceneObjectManager(
                         removeObject(obj.key)
                         createObjectInScene(obj)
                     } else {
-                        // Update the object transform
-                        node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
-                        node.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
-                        node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
-                        console.log("Updated object transform: ${obj.key} to pos=(${obj.position.x}, ${obj.position.y}, ${obj.position.z}) rot=(${obj.rotation.x}, ${obj.rotation.y}, ${obj.rotation.z}) scale=(${obj.scale.x}, ${obj.scale.y}, ${obj.scale.z})")
-                        
-                        // Handle status text
-                        handleObjectStatusText(obj.key, obj.status, node)
+                        // Recreate from inventory to reflect potential inventory changes
+                        removeObject(obj.key)
+                        createObjectPreferInventory(obj)
                     }
                 } else {
-                    // Object doesn't exist in our scene yet, create it
+                    // Object doesn't exist in scene, prefer inventory-based rendering
                     console.log("Object not found in scene, creating it: ${obj.key}")
-                    createObjectInScene(obj)
+                    createObjectPreferInventory(obj)
                 }
             } catch (error: Throwable) {
                 console.error("Error processing object position update", error)
@@ -1142,7 +1149,7 @@ class SceneObjectManager(
                     console.log("[DEBUG_LOAD] Creating 3D representations for ${objects.size} objects")
                     objects.forEachIndexed { index, obj ->
                         console.log("[DEBUG_LOAD] Creating object ${index + 1}/${objects.size}: ${obj.key}")
-                        createObjectInScene(obj)
+                        createObjectPreferInventory(obj)
                     }
                 }
                 

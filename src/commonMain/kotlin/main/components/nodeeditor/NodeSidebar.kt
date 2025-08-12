@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
+import main.components.translated
 import main.theme.NodeEditorStyles
 import models.LogicNode
 import models.NodeCategory
@@ -55,12 +56,12 @@ fun NodeSidebar() {
         if (isLoading) {
             // Show loading state
             Div {
-                Text("Loading node types...")
+                Text(translated("Loading node types..."))
             }
         } else if (error != null) {
             // Show error state
             Div {
-                Text("Error loading node types: $error")
+                Text("${translated("Error loading node types")}: $error")
             }
         } else {
             // Render node types grouped by category
@@ -76,10 +77,10 @@ fun NodeSidebar() {
                 ) {
                     Text(
                         when(category) {
-                            NodeCategory.Action -> "Actions"
-                            NodeCategory.Dialogue -> "Dialogues"
-                            NodeCategory.Event -> "Events"
-                            NodeCategory.Input -> "Inputs"
+                            NodeCategory.Action -> translated("Actions")
+                            NodeCategory.Dialogue -> translated("Dialogues")
+                            NodeCategory.Event -> translated("Events")
+                            NodeCategory.Input -> translated("Inputs")
                         }
                     )
                 }

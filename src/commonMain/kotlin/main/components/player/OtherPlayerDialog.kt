@@ -3,7 +3,7 @@ package main.components.player
 import androidx.compose.runtime.Composable
 import main.components.BaseDialog
 import main.components.DialogButton
-import main.theme.Styles
+import main.components.Translated
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -45,7 +45,7 @@ fun OtherPlayerDialog(
                     property("margin", "0 0 16px 0")
                 }
             }) {
-                Text(if (isPlayer) "Player Account" else "Visitor Account")
+                Translated(if (isPlayer) "Player Account" else "Visitor Account")
             }
 
             if (isPlayer && isCurrentUserPlayer) {
@@ -76,7 +76,7 @@ fun OtherPlayerDialog(
                                 onClick = {},
                                 isPrimary = true
                             ) {
-                                Text("Checking friendship status...")
+                                Translated("Checking friendship status...")
                             }
                         }
                         FriendshipStatus.NOT_FRIENDS -> {
@@ -85,9 +85,9 @@ fun OtherPlayerDialog(
                                 isPrimary = true
                             ) {
                                 if (isLoading) {
-                                    Text("Sending request...")
+                                    Translated("Sending request...")
                                 } else {
-                                    Text("Add Friend")
+                                    Translated("Add friend")
                                 }
                             }
                         }
@@ -96,7 +96,7 @@ fun OtherPlayerDialog(
                                 onClick = {},
                                 isPrimary = true
                             ) {
-                                Text("Friend request sent")
+                                Translated("Friend request sent")
                             }
                         }
                         FriendshipStatus.REQUEST_RECEIVED -> {
@@ -105,9 +105,9 @@ fun OtherPlayerDialog(
                                 isPrimary = true
                             ) {
                                 if (isLoading) {
-                                    Text("Accepting request...")
+                                    Translated("Accepting request...")
                                 } else {
-                                    Text("Accept Friend Request")
+                                    Translated("Accept friend request")
                                 }
                             }
                         }
@@ -117,9 +117,9 @@ fun OtherPlayerDialog(
                                 isPrimary = false
                             ) {
                                 if (isLoading) {
-                                    Text("Removing friend...")
+                                    Translated("Removing friend...")
                                 } else {
-                                    Text("Remove Friend")
+                                    Translated("Remove friend")
                                 }
                             }
                         }
@@ -133,7 +133,7 @@ fun OtherPlayerDialog(
                 onClick = { onClose() },
                 isPrimary = false
             ) {
-                Text("Close")
+                Translated("Close")
             }
         }
     )

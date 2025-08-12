@@ -922,6 +922,16 @@ object Styles : StyleSheet() {
         }
     }
 
+    // Bye page container: centers content both vertically and horizontally
+    val byePageContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        minHeight(100.vh)
+        gap(8.px)
+    }
+    
     init {
         "body" style {
             margin(0.cssRem)

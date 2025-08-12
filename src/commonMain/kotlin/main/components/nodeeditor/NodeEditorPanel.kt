@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import kotlinx.browser.document
 import kotlinx.browser.window
+import main.components.Translated
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.NodeId
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
 import org.w3c.dom.HTMLElement
 
@@ -142,7 +142,7 @@ fun NodeEditorPanel(
                         classes(NodeEditorStyles.emptyCanvasMessage)
                     }
                 ) {
-                    Text("Drag items from the left panel to create nodes")
+                    Translated("Drag items from the left panel to create nodes")
                 }
             }
             

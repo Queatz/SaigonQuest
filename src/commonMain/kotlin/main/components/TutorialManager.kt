@@ -1,12 +1,8 @@
 package main.components
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import main.utils.ButtonPositionTracker
-import org.w3c.dom.DOMRect
 
 /**
  * Data class representing a tutorial step with all its information.

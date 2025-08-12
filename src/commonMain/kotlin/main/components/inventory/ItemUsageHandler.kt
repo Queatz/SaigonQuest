@@ -46,8 +46,8 @@ object ItemUsageHandler {
         item: Item,
         currentUser: User?,
         coroutineScope: CoroutineScope,
-        onSuccess: (String) -> Unit = {},
-        onError: (String) -> Unit = {}
+        onSuccess: (feedbackMessage: String) -> Unit = {},
+        onError: (feedbackMessage: String) -> Unit = {}
     ) {
         when (item.itemType) {
             ItemType.WEARABLE -> {

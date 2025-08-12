@@ -12,8 +12,6 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
-import main.api.WebSocketApi
-import main.api.removeObject
 import models.Object
 import models.World
 import org.w3c.dom.HTMLElement
@@ -116,10 +114,7 @@ fun ObjectsContent(
             try {
                 // Delete the object via HTTP API
                 ObjectApi.deleteObject(objectId)
-                
-                // Send the remove object event over WebSocket for real-time updates
-                WebSocketApi.removeObject(objectId)
-                
+
                 // Update the local state
                 worldObjects = worldObjects.filter { it.key != objectId }
                 ownedObjects = ownedObjects.filter { it.key != objectId }

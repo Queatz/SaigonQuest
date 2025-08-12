@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Translated
+import main.components.translated
 import main.theme.NodeEditorStyles
 import main.utils.toggleFullscreen
 import models.Object
@@ -49,7 +51,7 @@ fun LogicEditorDialog(
     var errorMessage by remember { mutableStateOf("") }
     
     // Set dialog title
-    val dialogTitle = "Edit ${objectModel.title.ifBlank { "Object" }} Logic"
+    val dialogTitle = "${translated("Edit")} ${objectModel.title.ifBlank { translated("Object") }} ${translated("Logic")}"
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -99,7 +101,7 @@ fun LogicEditorDialog(
                 onClose()
             } catch (error: Throwable) {
                 isSubmitting = false
-                errorMessage = error.message ?: "An error occurred"
+                errorMessage = error.message ?: Translations.str("An error occurred")
             }
         }
     }
@@ -210,7 +212,7 @@ fun LogicEditorDialog(
                 DialogButton(
                     onClick = onClose
                 ) {
-                    Text("Cancel")
+                    Translated("Cancel")
                 }
                 
                 // Save button
@@ -218,7 +220,7 @@ fun LogicEditorDialog(
                     onClick = { if (!isSubmitting) handleSubmit() },
                     isPrimary = true
                 ) {
-                    Text(if (isSubmitting) "Saving..." else "Save")
+                    Text(if (isSubmitting) translated("Saving...") else translated("Save"))
                 }
             }
         }

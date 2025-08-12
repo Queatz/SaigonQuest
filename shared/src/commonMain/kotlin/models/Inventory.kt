@@ -4,19 +4,29 @@ import kotlinx.serialization.Serializable
 import kotlin.time.ExperimentalTime
 
 /**
- * Represents an inventory that belongs to a player.
- * Contains a list of items that the player has collected.
+ * Inventory owners can be users or objects (containers, ground piles, etc.).
+ */
+@Serializable
+enum class InventoryOwnerType {
+    USER,
+    OBJECT,
+}
+
+/**
+ * Represents an inventory that belongs to an owner (user or object).
+ * Contains a list of InventoryItem keys in display order.
  */
 @OptIn(ExperimentalTime::class)
 @Serializable
 data class Inventory(
-    var userId: String = "", // Reference to the user this inventory belongs to
-    var itemOrder: List<String> = mutableListOf()
+    var ownerType: InventoryOwnerType = InventoryOwnerType.USER,
+    var ownerId: String = "",
+    var itemOrder: List<String> = mutableListOf(),
 ) : BaseModel()
 
 /**
  * Represents an item type.
- * Contains a list of items that the player has collected.
+ * Contains definition metadata used by InventoryItems.
  */
 @OptIn(ExperimentalTime::class)
 @Serializable
@@ -30,7 +40,7 @@ data class Item(
 ) : BaseModel()
 
 /**
- * Represents an item in a player's inventory.
+ * Represents an item entry within an inventory.
  */
 @OptIn(ExperimentalTime::class)
 @Serializable

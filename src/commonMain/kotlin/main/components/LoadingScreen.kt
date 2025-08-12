@@ -31,7 +31,9 @@ fun LoadingScreen(
     showLoginDialog: Boolean,
     onShowWorldEditPanel: () -> Unit,
     onShowLoginDialog: () -> Unit,
-    onNavigateHome: () -> Unit
+    onNavigateHome: () -> Unit,
+    showClaimOption: Boolean,
+    onRetry: () -> Unit,
 ) {
     if (!isLoaded && !showWorldEditPanel && !showLoginDialog) {
         Div(
@@ -50,27 +52,41 @@ fun LoadingScreen(
                         classes(Styles.loadingScreenButtonContainer)
                     }
                 ) {
-                    // Create this world or Login button
-                    Button(
-                        attrs = {
-                            classes(Styles.loadingScreenPrimaryButton)
-                            onClick { 
-                                // Check if user is logged in
-                                if (UserApi.getToken() != null) {
-                                    // User is logged in, show world edit panel
-                                    onShowWorldEditPanel()
-                                } else {
-                                    // User is not logged in, show login dialog
-                                    onShowLoginDialog()
+                    if (showClaimOption) {
+                        // Create this world or Login button
+                        Button(
+                            attrs = {
+                                classes(Styles.loadingScreenPrimaryButton)
+                                onClick {
+                                    // Check if user is logged in
+                                    if (UserApi.getToken() != null) {
+                                        // User is logged in, show world edit panel
+                                        onShowWorldEditPanel()
+                                    } else {
+                                        // User is not logged in, show login dialog
+                                        onShowLoginDialog()
+                                    }
                                 }
                             }
+                        ) {
+                            // Show different text based on login status
+                            if (UserApi.getToken() != null) {
+                                Translated("Claim this World")
+                            } else {
+                                Translated("Login and Claim this World")
+                            }
                         }
-                    ) {
-                        // Show different text based on login status
-                        if (UserApi.getToken() != null) {
-                            Translated("Claim this World")
-                        } else {
-                            Translated("Login and Claim this World")
+                    } else {
+                        // Show retry button for non-404 errors
+                        Button(
+                            attrs = {
+                                classes(Styles.loadingScreenPrimaryButton)
+                                onClick {
+                                    onRetry()
+                                }
+                            }
+                        ) {
+                            Translated("Retry")
                         }
                     }
                     

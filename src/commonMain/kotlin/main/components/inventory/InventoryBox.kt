@@ -27,7 +27,8 @@ fun InventoryBox(
     item: Item? = null,
     content: String = "",
     isLoading: Boolean = false,
-    quantity: Int = 0
+    quantity: Int = 0,
+    inventoryItemKey: String? = null,
 ) {
     LaunchedEffect(item) {
         console.log("[Inventory] item= $item, quantity= $quantity")
@@ -44,11 +45,19 @@ fun InventoryBox(
                 
                 // Add drag start event handler
                 onDragStart { event ->
-                    // Set the drag data
-                    event.dataTransfer?.setData("application/json", ApiClient.json.encodeToString(Item.serializer(), item))
-                    
-                    // Set the data type
-                    event.dataTransfer?.setData("application/x-data-type", DataType.ITEM.name)
+                    // If we have inventory context, send InventoryDragPayload; otherwise fall back to Item
+                    if (inventoryItemKey != null) {
+                        val payload = InventoryDragPayload(
+                            inventoryItemKey = inventoryItemKey,
+                            itemKey = item.key,
+                            quantity = quantity,
+                            inventoryId = null,
+                        )
+                        event.dataTransfer?.setData("application/json", ApiClient.json.encodeToString(InventoryDragPayload.serializer(), payload))
+                        event.dataTransfer?.setData("application/x-data-type", DataType.INVENTORY_ITEM.name)
+                    } else {
+                        console.error("[Inventory] inventoryItemKey is null")
+                    }
                     
                     // Create a custom drag image (optional)
                     val dragIcon = document.createElement("div") as HTMLElement

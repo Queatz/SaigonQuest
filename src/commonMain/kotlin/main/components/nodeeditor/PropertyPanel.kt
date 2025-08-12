@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.components.Translated
+import main.components.translated
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.nodeeditor.NodeData
@@ -102,7 +104,7 @@ fun PropertyPanel(
                 classes(NodeEditorStyles.propertyPanelHeader)
             }
         ) {
-            Text("Node Properties")
+            Text(translated("Node properties"))
         }
         
         // Node type
@@ -116,7 +118,7 @@ fun PropertyPanel(
                     classes(NodeEditorStyles.propertyLabel)
                 }
             ) {
-                Text("Type")
+                Text(translated("Type"))
             }
             
             Div(
@@ -126,10 +128,10 @@ fun PropertyPanel(
             ) {
                 // Convert category to string and capitalize
                 val typeString = when(node.type.category) {
-                    NodeCategory.Action -> "Action"
-                    NodeCategory.Event -> "Event"
-                    NodeCategory.Dialogue -> "Dialogue"
-                    NodeCategory.Input -> "Input"
+                    NodeCategory.Action -> translated("Action")
+                    NodeCategory.Event -> translated("Event")
+                    NodeCategory.Dialogue -> translated("Dialogue")
+                    NodeCategory.Input -> translated("Input")
                 }
                 Text(typeString)
                 Text(" • " )
@@ -149,7 +151,7 @@ fun PropertyPanel(
                     attr("for", "node-label")
                 }
             ) {
-                Text("Label")
+                Text(Translations.str("Label"))
             }
             
             TextInput(
@@ -197,7 +199,7 @@ fun PropertyPanel(
                                                 }
                                             }
                                             attr("rows", "4")
-                                            placeholder("Enter text")
+                                            placeholder(Translations.str("Enter text"))
                                         }
                                     )
                                 } else {
@@ -257,7 +259,7 @@ fun PropertyPanel(
                                                 it[propDef.key] = event.value
                                             }
                                         }
-                                        placeholder("x,y,z")
+                                        placeholder(Translations.str("x,y,z"))
                                     }
                                 )
                             }
@@ -315,7 +317,7 @@ fun PropertyPanel(
                         classes(NodeEditorStyles.propertyLabel)
                     }
                 ) {
-                    Text("Buttons")
+                    Text(translated("Buttons"))
                 }
                 
                 // List of current buttons
@@ -364,7 +366,7 @@ fun PropertyPanel(
                         value = newButtonText,
                         attrs = {
                             classes(NodeEditorStyles.propertyInput)
-                            placeholder("New button text")
+                            placeholder(Translations.str("New button text"))
                             onInput { event ->
                                 newButtonText = event.value
                             }
@@ -387,7 +389,7 @@ fun PropertyPanel(
                             }
                         }
                     ) {
-                        Text("Add")
+                        Translated("Add")
                     }
                 }
             }

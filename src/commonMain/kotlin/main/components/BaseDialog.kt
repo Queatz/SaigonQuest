@@ -35,10 +35,6 @@ fun BaseDialog(
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
-    // Use Portal to render the dialog at the root of the DOM
-    // This ensures it's not affected by parent containers
-    // Create a unique key based on multiple properties to prevent duplicate dialogs during recomposition
-    // Using a combination of title, maxWidth, isFullscreen, and showCloseButton to create a more unique key
     Portal(
         key = "dialog-${title}-${maxWidth}-${isFullscreen}-${showCloseButton}",
         target = document.body!!

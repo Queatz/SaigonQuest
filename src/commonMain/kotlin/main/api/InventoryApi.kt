@@ -16,6 +16,27 @@ import models.InventoryItem
  */
 object InventoryApi {
     
+    @kotlinx.serialization.Serializable
+    data class TransferDropRequest(
+        val itemKey: String,
+        val quantity: Int,
+        val worldId: String,
+        val position: models.Position,
+        val title: String? = null,
+    )
+
+    @kotlinx.serialization.Serializable
+    data class TransferPickupRequest(
+        val objectId: String,
+        val quantity: Int? = null,
+    )
+
+    @kotlinx.serialization.Serializable
+    data class TransferPickupResponse(
+        val objectDeleted: Boolean,
+        val obj: models.Object? = null,
+    )
+
     /**
      * Gets the inventory for the current user
      */
@@ -122,6 +143,82 @@ object InventoryApi {
             }
         } catch (e: Exception) {
             console.error("Error removing item from inventory", e)
+            throw e
+        }
+    }
+    
+    /**
+     * Drops an inventory item from the current user into the world (server-authoritative)
+     */
+    suspend fun transferDrop(request: TransferDropRequest): models.Object {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/inventory/transfer/drop") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+            if (response.status.isSuccess()) {
+                return response.body<models.Object>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error calling transferDrop", e)
+            throw e
+        }
+    }
+
+    /**
+     * Picks up an inventory item from an object into the current user's inventory
+     */
+    suspend fun transferPickup(objectId: String, quantity: Int? = null): TransferPickupResponse {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/inventory/transfer/pickup") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(TransferPickupRequest(objectId = objectId, quantity = quantity))
+            }
+            if (response.status.isSuccess()) {
+                return response.body<TransferPickupResponse>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error calling transferPickup", e)
+            throw e
+        }
+    }
+    
+    /**
+     * Get or create the inventory for an object
+     */
+    suspend fun getObjectInventory(objectId: String): Inventory {
+        try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/inventory/object/$objectId") {
+                ApiClient.addAuthHeader(this)
+            }
+            if (response.status.isSuccess()) {
+                return response.body<Inventory>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Exception) {
+                    ErrorResponse(message = response.bodyAsText())
+                }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Exception) {
+            console.error("Error fetching object inventory", e)
             throw e
         }
     }

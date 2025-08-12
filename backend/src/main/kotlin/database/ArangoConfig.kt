@@ -10,6 +10,7 @@ import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
@@ -62,6 +63,10 @@ object ArangoConfig {
         registerModule(kotlinxDateTimeModule)
         registerKotlinModule()
         disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        // Be tolerant of older documents having extra fields
+        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES.also { feature ->
+            disable(feature)
+        }
     }
     
     private val jacksonSerde = JacksonSerdeImpl(objectMapper)

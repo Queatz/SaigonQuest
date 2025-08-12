@@ -47,7 +47,7 @@ fun AdminDialog(
     // Use the BaseDialog component
     BaseDialog(
         onClose = onClose,
-        title = "Admin Panel",
+        title = translated("Admin panel"),
         showCloseButton = true,
         content = {
             Div(
@@ -63,7 +63,7 @@ fun AdminDialog(
             ) {
                 // Asset registration form
                 H3 {
-                    Text("Register New Asset")
+                    Translated("Register new asset")
                 }
                 
                 // Asset type selection
@@ -77,7 +77,7 @@ fun AdminDialog(
                         }
                     }
                 ) {
-                    Text("Asset Type")
+                    Translated("Asset type")
                     Select(
                         attrs = {
                             style {
@@ -119,7 +119,7 @@ fun AdminDialog(
                         }
                     }
                 ) {
-                    Text("File Name (without extension)")
+                    Translated("File name (without extension)")
                     TextInput(
                         value = assetFileName,
                         attrs = {
@@ -148,7 +148,7 @@ fun AdminDialog(
                 },
                 isPrimary = true
             ) {
-                Text("Register Asset")
+                Translated("Register asset")
             }
             
             // Close button
@@ -156,7 +156,7 @@ fun AdminDialog(
                 onClick = onClose,
                 isPrimary = false
             ) {
-                Text("Close")
+                Translated("Close")
             }
         }
     )

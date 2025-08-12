@@ -602,16 +602,7 @@ fun WorldUI() {
                     user = currentUser!!,
                     onClose = { updatePanelState(SidePanelState.None) },
                     onLogout = {
-                        // Implement logout functionality
-                        // For now, just create a new visitor user
-                        currentUser = User(
-                            username = "visitor-" + Random.nextInt(1000),
-                            isPlayer = false,
-                            visitorId = "visitor-" + Random.nextInt(1000)
-                        ).apply {
-                            key = "visitor-" + Random.nextInt(1000)
-                        }
-                        updatePanelState(SidePanelState.None)
+                        router.navigate("/bye")
                     }
                 )
             } else {

@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import Translations.str
 import main.components.SidePanelState
 import main.components.isLayoutAdjustmentNeeded
 import org.jetbrains.compose.web.css.Color
@@ -80,7 +81,7 @@ fun InventoryTray(
             try {
                 val detail = (evt.asDynamic().detail)
                 val title = detail?.title as? String ?: "Item"
-                showFeedback("$title collected")
+                showFeedback(title + " " + str("collected"))
             } catch (e: dynamic) {
                 console.error("Error handling itemCollected event", e)
             }
@@ -165,7 +166,8 @@ fun InventoryTray(
                 },
                 item = item,
                 isLoading = InventoryState.isLoading && item == null && index < 4,
-                quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1
+                quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1,
+                inventoryItemKey = inventoryItemKey
             )
         }
         

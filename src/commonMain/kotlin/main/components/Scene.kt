@@ -46,6 +46,7 @@ import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
+import Translations.str
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -87,7 +88,7 @@ fun SceneComponent(url: String) {
     val loadingFailed = remember { mutableStateOf(false) }
     
     // State to store error message when loading fails
-    val errorMessage = remember { mutableStateOf("No world found") }
+    val errorMessage = remember { mutableStateOf(str("No world found")) }
     
     // State to store the current world
     val currentWorld = remember { mutableStateOf<models.World?>(null) }
@@ -97,6 +98,9 @@ fun SceneComponent(url: String) {
     
     // State to track if the login dialog is visible
     val showLoginDialog = remember { mutableStateOf(false) }
+    
+    // State to indicate whether we should show the Claim option (only on 404 world not found)
+    val showClaimOption = remember { mutableStateOf(false) }
     
     // State to track if we're on mobile
     val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
@@ -115,6 +119,12 @@ fun SceneComponent(url: String) {
     val showOpenUrlDialog = remember { mutableStateOf(false) }
     val openUrlValue = remember { mutableStateOf("") }
     val openUrlCallback = remember { mutableStateOf<(() -> Unit)?>(null) }
+    
+    // State for drop quantity dialog for inventory item drops
+    data class PendingDrop(val x: Int, val y: Int, val data: String, val worldId: String, val maxQuantity: Int)
+    val showDropQuantityDialog = remember { mutableStateOf(false) }
+    val pendingDrop = remember { mutableStateOf<PendingDrop?>(null) }
+    val onConfirmDropQuantity = remember { mutableStateOf<((Int) -> Unit)?>(null) }
     
     // Coroutine scope for friendship-related operations
     val scope = rememberCoroutineScope()
@@ -220,7 +230,9 @@ fun SceneComponent(url: String) {
         showLoginDialog = showLoginDialog.value,
         onShowWorldEditPanel = { showWorldEditPanel.value = true },
         onShowLoginDialog = { showLoginDialog.value = true },
-        onNavigateHome = { router.navigate("/") }
+        onNavigateHome = { router.navigate("/") },
+        showClaimOption = showClaimOption.value,
+        onRetry = { window.location.reload() },
     )
     
     // Show world edit panel if requested
@@ -437,6 +449,33 @@ fun SceneComponent(url: String) {
 
     // Add DialogueBox component for displaying dialogue messages
     DialogueBox()
+
+    // Quantity prompt dialog for inventory item drop
+    if (showDropQuantityDialog.value && pendingDrop.value != null) {
+        val pd = pendingDrop.value!!
+        BasicPromptDialog(
+            title = translated("Drop quantity"),
+            message = translated("Drop quantity"),
+            defaultValue = "1",
+            isNumber = true,
+            onSubmit = { value ->
+                val objectManager = SceneManager.getObjectManager()
+                val requested = value.toIntOrNull()
+                if (requested == null || requested <= 0) {
+                    objectManager?.onError?.invoke(str("Invalid quantity"))
+                } else {
+                    val qty = if (requested > pd.maxQuantity) pd.maxQuantity else requested
+                    objectManager?.handleInventoryItemDrop(pd.x, pd.y, pd.data, pd.worldId, quantityOverride = qty)
+                }
+                showDropQuantityDialog.value = false
+                pendingDrop.value = null
+            },
+            onCancel = {
+                showDropQuantityDialog.value = false
+                pendingDrop.value = null
+            },
+        )
+    }
     
     // Show OpenUrlDialog if requested
     if (showOpenUrlDialog.value) {
@@ -579,9 +618,21 @@ fun SceneComponent(url: String) {
             val worldId = currentWorld.value?.key ?: url
             
             // Use the object manager to handle the drop based on data type
-            if (dataType == DataType.ITEM) {
+            if (dataType == DataType.INVENTORY_ITEM) {
                 console.log("Handling inventory item drop")
-                objectManager.handleInventoryItemDrop(x, y, data, worldId)
+                try {
+                    val payload = ApiClient.json.decodeFromString(main.components.inventory.InventoryDragPayload.serializer(), data)
+                    val maxQuantity = if (payload.quantity > 0) payload.quantity else 1
+                    if (maxQuantity > 1) {
+                        pendingDrop.value = PendingDrop(x = x, y = y, data = data, worldId = worldId, maxQuantity = maxQuantity)
+                        showDropQuantityDialog.value = true
+                    } else {
+                        objectManager.handleInventoryItemDrop(x, y, data, worldId, quantityOverride = 1)
+                    }
+                } catch (e: Throwable) {
+                    console.error("Failed to parse inventory drop payload", e)
+                    objectManager.onError?.invoke(str("Invalid quantity"))
+                }
             } else {
                 console.log("Handling object drop")
                 objectManager.handleObjectDrop(x, y, data, worldId)
@@ -598,18 +649,26 @@ fun SceneComponent(url: String) {
                 val worldMeshes = worldLoader.loadWorld(url)
                 
                 // Store the current world
-                currentWorld.value = worldLoader.getCurrentWorld() ?: return@launch Unit.also {
+                currentWorld.value = worldLoader.getCurrentWorld()
+                if (currentWorld.value == null) {
                     loadingFailed.value = true
-                    errorMessage.value = "Error loading world: World not found or server error"
+                    if (worldLoader.isApiErrorFallback()) {
+                        showClaimOption.value = true
+                        errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                    } else {
+                        showClaimOption.value = false
+                        errorMessage.value = str("Error loading world") + ": " + str("World not found or server error")
+                    }
                 }
 
                 inputHandler.currentWorld = currentWorld.value
 
                 // Check if this is a fallback world due to an API error
                 if (worldLoader.isApiErrorFallback()) {
-                    // Set loading failed to true to show error message
+                    // Set loading failed to true to show error message and enable claim option
                     loadingFailed.value = true
-                    errorMessage.value = "Error loading world: World not found or server error"
+                    showClaimOption.value = true
+                    errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
                 }
                 
                 // Set world meshes in controllers
@@ -659,7 +718,7 @@ fun SceneComponent(url: String) {
                 inputHandler.setupPointerHandling()
                 
                 // Set up WebSocket listeners for objects
-                objectManager.setupWebSocketListeners(currentWorld.value!!.key)
+                objectManager.setupWebSocketListeners(currentWorld.value?.key ?: url)
                 
                 // Set up WebSocket listeners for world objects
                 worldObjectManager.setupWebSocketListeners()
@@ -735,17 +794,18 @@ fun SceneComponent(url: String) {
                 console.error("Error TYPE ", error is ResponseException)
                 console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
                 loadingFailed.value = true
+                showClaimOption.value = false
                 
                 // Set specific error message based on the error
                 if (error.message?.contains("World not found") == true) {
-                    errorMessage.value = "No world found at saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                    errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
                 } else if (error.message?.contains("Failed to fetch") == true || 
                            error.message?.contains("NetworkError") == true) {
-                    errorMessage.value = "Network error: Unable to connect to the server. Please check your internet connection."
+                    errorMessage.value = str("Network error: Unable to connect to the server. Please check your internet connection.")
                 } else if (error.message?.contains("500") == true) {
-                    errorMessage.value = "Server error: Something went wrong on our end. Please try again later."
+                    errorMessage.value = str("Server error: Something went wrong on our end. Please try again later.")
                 } else {
-                    errorMessage.value = "Error loading world: ${error.message ?: "Unknown error"}"
+                    errorMessage.value = str("Error loading world") + ": " + (error.message ?: str("Unknown error"))
                 }
             }
         }

@@ -20,7 +20,7 @@ fun OpenUrlDialog(
     onCancel: () -> Unit
 ) {
     BaseDialog(
-        title = "Open URL?",
+        title = translated("Open URL?"),
         onClose = onCancel,
         content = {
             // Display the URL
@@ -32,7 +32,7 @@ fun OpenUrlDialog(
                 onClick = onCancel,
                 isPrimary = false
             ) {
-                Text("Cancel")
+                Translated("Cancel")
             }
             
             // Open URL button
@@ -40,7 +40,7 @@ fun OpenUrlDialog(
                 onClick = onConfirm,
                 isPrimary = true
             ) {
-                Text("Open URL")
+                Translated("Open URL")
             }
         }
     )

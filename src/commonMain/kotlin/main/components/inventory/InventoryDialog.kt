@@ -55,6 +55,8 @@ import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
+import main.components.translated
+import Translations.str
 
 /**
  * An inventory dialog that displays the user's inventory items.
@@ -543,7 +545,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     },
                     onError = { message ->
                         console.error("Error refreshing inventory after create", message)
-                        showFeedback("Failed to refresh inventory: $message", true)
+                        showFeedback(str("Failed to refresh inventory") + ": " + message, true)
                     }
                 )
             }
@@ -556,10 +558,10 @@ fun InventoryDialog(onClose: () -> Unit) {
         InventoryState.refreshInventory(
             coroutineScope = coroutineScope,
             onSuccess = {
-                showFeedback("Inventory refreshed")
+                showFeedback(str("Inventory refreshed"))
             },
             onError = { message ->
-                showFeedback("Failed to refresh inventory: $message", true)
+                showFeedback(str("Failed to refresh inventory") + ": " + message, true)
             }
         )
     }
@@ -582,7 +584,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 onClick { refreshInventory() }
             }
         ) {
-            Text("↻ Refresh")
+            Text("↻ " + translated("Refresh"))
         }
         
         // New item button
@@ -601,13 +603,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                 onClick { showCreateItemDialog = true }
             }
         ) {
-            Text("+ New")
+            Text("+ " + translated("New"))
         }
     }
     
     BaseDialog(
         onClose = onClose,
-        title = "Inventory",
+        title = translated("Inventory"),
         headerActions = headerActions,
         maxWidth = "600px",
         content = {
@@ -652,7 +654,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text("Loading inventory...")
+                        Text(translated("Loading inventory..."))
                     }
                 } else if (errorMessage.isNotEmpty()) {
                     P(
@@ -663,7 +665,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text("Error: $errorMessage")
+                        Text(translated("Error:") + " " + errorMessage)
                     }
                 } else {
                     // Character renderer section
@@ -690,7 +692,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text("Your Character")
+                            Text(translated("Your Character"))
                         }
                         
                         // Character renderer with drop zone
@@ -761,7 +763,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         }
                                     }
                                 ) {
-                                    Text("Drop to wear item")
+                                    Text(translated("Drop to wear item"))
                                 }
                             }
                         }
@@ -777,7 +779,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text("Drag wearable items here to equip them")
+                            Text(translated("Drag wearable items here to equip them"))
                         }
                     }
                     
@@ -799,7 +801,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text("Worn Items")
+                            Text(translated("Worn Items"))
                         }
                         
                         // Display worn items or a message if none
@@ -816,7 +818,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     }
                                 }
                             ) {
-                                Text("No items worn. Drag wearable items to your character to wear them.")
+                                Text(translated("No items worn. Drag wearable items to your character to wear them."))
                             }
                         } else {
                             // Display worn items
@@ -879,7 +881,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                     }
                                                 }
                                             ) {
-                                                Text("(Click to remove)")
+                                                Text(translated("(Click to remove)"))
                                             }
                                         }
                                     }
@@ -898,7 +900,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text("Inventory Items")
+                        Text(translated("Inventory Items"))
                     }
                     
                     if (inventory?.itemOrder?.isEmpty() == true) {
@@ -910,7 +912,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text("Your inventory is empty. Click '+ New' to create an item.")
+                            Text(translated("Your inventory is empty. Click '+ New' to create an item."))
                         }
                     } else {
                         // Display inventory items
@@ -987,7 +989,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                         }
                                                     }
                                                 ) {
-                                                    Text("Wearable")
+                                                    Text(translated("Wearable"))
                                                 }
                                             }
                                         }
@@ -1020,7 +1022,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             onClick = { handleUseItem(itemId) },
                                             isPrimary = true
                                         ) {
-                                            Text("Use")
+                                            Text(translated("Use"))
                                         }
                                         
                                         // Wear button for wearable items

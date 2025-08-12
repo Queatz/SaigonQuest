@@ -7,20 +7,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Translated
+import main.components.translated
 import main.theme.Styles
-import main.theme.Theme
 import models.ChatMessage
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
@@ -45,7 +42,7 @@ fun ChatMessageDialog(
     if (message.deleted) {
         BaseDialog(
             onClose = onClose,
-            title = "Message",
+            title = translated("Message"),
             content = {
                 P(
                     attrs = {
@@ -56,7 +53,7 @@ fun ChatMessageDialog(
                         }
                     }
                 ) {
-                    Text("Message was deleted")
+                    Translated("Message was deleted")
                 }
             },
             actions = {
@@ -64,7 +61,7 @@ fun ChatMessageDialog(
                     onClick = onClose,
                     isPrimary = true
                 ) {
-                    Text("Close")
+                    Translated("Close")
                 }
             }
         )
@@ -81,11 +78,11 @@ fun ChatMessageDialog(
     BaseDialog(
         onClose = onClose,
         title = if (isEditing) {
-            "Edit Message"
+            translated("Edit message")
         } else if (showDeleteConfirmation) {
-            "Delete Message"
+            translated("Delete message")
         } else {
-            "Message Options"
+            translated("Message options")
         },
         content = {
             if (isEditing) {
@@ -97,11 +94,12 @@ fun ChatMessageDialog(
                         }
                     }
                 ) {
+                    val editPlaceholder = translated("Edit your message")
                     Input(
                         type = InputType.Text,
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Edit your message")
+                            placeholder(editPlaceholder)
                             value(editedText)
                             onInput { editedText = it.value }
                         }
@@ -117,7 +115,7 @@ fun ChatMessageDialog(
                         }
                     }
                 ) {
-                    Text("Are you sure you want to delete this message?")
+                    Translated("Are you sure you want to delete this message?")
                 }
             } else {
                 // Message display
@@ -139,7 +137,7 @@ fun ChatMessageDialog(
                 DialogButton(
                     onClick = { isEditing = false }
                 ) {
-                    Text("Cancel")
+                    Translated("Cancel")
                 }
                 DialogButton(
                     onClick = {
@@ -150,14 +148,14 @@ fun ChatMessageDialog(
                     },
                     isPrimary = true
                 ) {
-                    Text("Update")
+                    Translated("Update")
                 }
             } else if (showDeleteConfirmation) {
                 // Delete confirmation actions
                 DialogButton(
                     onClick = { showDeleteConfirmation = false }
                 ) {
-                    Text("Cancel")
+                    Translated("Cancel")
                 }
                 DialogButton(
                     onClick = {
@@ -166,25 +164,25 @@ fun ChatMessageDialog(
                     },
                     isPrimary = true
                 ) {
-                    Text("Delete")
+                    Translated("Delete")
                 }
             } else {
                 // Normal mode actions
                 DialogButton(
                     onClick = { showDeleteConfirmation = true }
                 ) {
-                    Text("Delete")
+                    Translated("Delete")
                 }
                 DialogButton(
                     onClick = { isEditing = true }
                 ) {
-                    Text("Edit")
+                    Translated("Edit")
                 }
                 DialogButton(
                     onClick = onClose,
                     isPrimary = true
                 ) {
-                    Text("Close")
+                    Translated("Close")
                 }
             }
         }

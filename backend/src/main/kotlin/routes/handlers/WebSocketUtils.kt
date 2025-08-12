@@ -138,3 +138,34 @@ object WebSocketUtils {
         }
     }
 }
+
+
+// Overload without session for broadcasting from HTTP routes or other contexts
+suspend fun broadcastToWorldNoSession(
+    worldId: String,
+    message: String,
+    activeConnections: ConcurrentHashMap<String, MutableList<routes.WebSocketConnection>>
+) {
+    val connections = activeConnections[worldId]
+    if (connections.isNullOrEmpty()) {
+        debug.WebSocketDebug.logBroadcast("NO_CONNECTIONS", "No active connections", worldId)
+        return
+    }
+
+    debug.WebSocketDebug.logBroadcast("BROADCASTING", "To ${connections.size} clients", worldId)
+    debug.WebSocketDebug.logBroadcast("MESSAGE_CONTENT", message, worldId)
+    var successCount = 0
+
+    connections.forEach { connection ->
+        try {
+            debug.WebSocketDebug.logBroadcast("SENDING_TO", "User: ${connection.userId}", worldId)
+            connection.session.send(message)
+            successCount++
+            debug.WebSocketDebug.logBroadcast("SENT_SUCCESS", "To user: ${connection.userId}", worldId)
+        } catch (e: Exception) {
+            debug.WebSocketDebug.logBroadcast("ERROR", "Error sending message to client ${connection.userId}: ${e.message}", worldId)
+        }
+    }
+
+    debug.WebSocketDebug.logBroadcast("BROADCAST_COMPLETE", "Success: $successCount/${connections.size} clients", worldId)
+}

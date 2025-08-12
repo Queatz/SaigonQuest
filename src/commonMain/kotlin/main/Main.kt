@@ -8,6 +8,7 @@ import org.jetbrains.compose.web.renderComposableInBody
 import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
+import main.components.ByePage
 import main.theme.EditorStyles
 import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
@@ -37,9 +38,13 @@ fun main() {
                 // Get the current path from the window.location.pathname
                 val url = router.currentPath.path.trimStart('/')
 
-                // Render the 3D scene with the URL from the path
+                // Render the 3D scene with the URL from the path or Bye page
                 key(url) {
-                    SceneComponent(url = url)
+                    if (url == "bye") {
+                        ByePage()
+                    } else {
+                        SceneComponent(url = url)
+                    }
                 }
             }
         }

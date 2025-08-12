@@ -10,9 +10,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
-import main.api.WebSocketApi
-import main.api.addObject
-import main.api.updateObject
 import main.theme.Styles
 import models.Object
 import models.Rotation
@@ -120,12 +117,6 @@ fun ObjectEditorDialog(
                 }
                 
                 isSubmitting = false
-                // Broadcast update to all clients (and this one) so the scene updates instantly
-                if (isEditing) {
-                    WebSocketApi.updateObject(savedObject)
-                } else {
-                    WebSocketApi.addObject(savedObject)
-                }
                 onSave(savedObject)
                 onClose()
             } catch (error: Throwable) {

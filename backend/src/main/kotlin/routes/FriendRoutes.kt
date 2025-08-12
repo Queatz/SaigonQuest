@@ -40,7 +40,32 @@ fun Routing.configureFriendRoutes() {
             val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
             
             val friends = friendRepository.getByUserId(userId)
-            call.respond(friends)
+
+            // Enrich friends with live data (on-the-fly)
+            val worldIdByUserId: Map<String, String> = activeConnections.flatMap { (worldId, conns) ->
+                conns.map { it.userId to worldId }
+            }.toMap()
+
+            val worldRepository = repository.WorldRepository()
+
+            val enriched = friends.map { f ->
+                val currentWorldId = worldIdByUserId[f.friendId]
+                if (currentWorldId != null) {
+                    val snapshot = state.WorldStateStore.snapshot(currentWorldId)
+                    val position = snapshot.players.firstOrNull { it.userId == f.friendId }?.position
+                    val worldName = worldRepository.getById(currentWorldId)?.title ?: ""
+                    f.copy(
+                        lastActive = Clock.System.now(),
+                        lastWorldId = currentWorldId,
+                        lastWorldName = worldName,
+                        lastPosition = position,
+                    )
+                } else {
+                    f
+                }
+            }
+
+            call.respond(enriched)
         }
         
         // Send a friend request

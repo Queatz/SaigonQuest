@@ -2,8 +2,6 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.dom.Text
-import main.components.Translated
-import main.components.translated
 
 /**
  * A basic confirmation dialog with Yes and No buttons.

@@ -11,6 +11,9 @@ import main.api.InventoryApi
 import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Translated
+import main.components.translated
+import Translations.str
 import main.theme.Styles
 import models.InventoryItem
 import models.Item
@@ -162,7 +165,7 @@ fun CreateItemDialog(
     
     BaseDialog(
         onClose = onClose,
-        title = "Create new item",
+        title = translated("Create new item"),
         content = {
             Div(
                 attrs = {
@@ -183,7 +186,7 @@ fun CreateItemDialog(
                             }
                         }
                     ) {
-                        Text(errorMessage)
+                        Translated(errorMessage)
                     }
                 }
                 
@@ -204,14 +207,15 @@ fun CreateItemDialog(
                             }
                         }
                     ) {
-                        Text("Title")
+                        Translated("Title")
                     }
                     
+                    val titlePlaceholder = translated("Enter item title")
                     Input(
                         type = InputType.Text,
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Enter item title")
+                            placeholder(titlePlaceholder)
                             value(title)
                             onInput { title = it.value }
                         }
@@ -227,7 +231,7 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Text(titleError)
+                            Translated(titleError)
                         }
                     }
                 }
@@ -249,13 +253,14 @@ fun CreateItemDialog(
                             }
                         }
                     ) {
-                        Text("Description")
+                        Translated("Description")
                     }
                     
+                    val descriptionPlaceholder = translated("Enter item description")
                     TextArea(
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Enter item description")
+                            placeholder(descriptionPlaceholder)
                             value(description)
                             onInput { description = it.value }
                             style {
@@ -282,14 +287,15 @@ fun CreateItemDialog(
                             }
                         }
                     ) {
-                        Text("File path (URL to sprite sheet)")
+                        Translated("File path (URL to sprite sheet)")
                     }
                     
+                    val filePlaceholder = translated("Enter file path")
                     Input(
                         type = InputType.Text,
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Enter file path")
+                            placeholder(filePlaceholder)
                             value(file)
                             onInput { file = it.value }
                         }
@@ -305,7 +311,7 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Text(fileError)
+                            Translated(fileError)
                         }
                     }
                 }
@@ -327,14 +333,15 @@ fun CreateItemDialog(
                             }
                         }
                     ) {
-                        Text("Asset Index (0-99)")
+                        Translated("Asset index (0-99)")
                     }
                     
+                    val assetIndexPlaceholder = translated("Enter asset index")
                     Input(
                         type = InputType.Number,
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Enter asset index")
+                            placeholder(assetIndexPlaceholder)
                             value(assetIndex)
                             onInput { 
                                 // Convert Number? to String
@@ -355,7 +362,7 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Text(assetIndexError)
+                            Translated(assetIndexError)
                         }
                     }
                 }
@@ -399,7 +406,7 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Text("Is this item wearable?")
+                            Translated("Is this item wearable?")
                         }
                     }
                 }
@@ -423,14 +430,15 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Text("Wearable file path (URL to sprite sheet)")
+                            Translated("Wearable file path (URL to sprite sheet)")
                         }
                         
+                        val wearablePlaceholder = translated("Enter wearable file path")
                         Input(
                             type = InputType.Text,
                             attrs = {
                                 classes(Styles.inputField)
-                                placeholder("Enter wearable file path")
+                                placeholder(wearablePlaceholder)
                                 value(wearableFile)
                                 onInput { wearableFile = it.value }
                             }
@@ -446,7 +454,7 @@ fun CreateItemDialog(
                                     }
                                 }
                             ) {
-                                Text(wearableFileError)
+                                Translated(wearableFileError)
                             }
                         }
                     }
@@ -462,7 +470,7 @@ fun CreateItemDialog(
                         }
                     }
                 ) {
-                    Text("Note: Creating an item will add 10 copies of it to your inventory.")
+                    Translated("Note: creating an item will add 10 copies of it to your inventory.")
                 }
             }
         },
@@ -471,7 +479,7 @@ fun CreateItemDialog(
             DialogButton(
                 onClick = onClose
             ) {
-                Text("Cancel")
+                Translated("Cancel")
             }
             
             // Create button
@@ -479,7 +487,11 @@ fun CreateItemDialog(
                 onClick = { handleSubmit() },
                 isPrimary = true
             ) {
-                Text(if (isSubmitting) "Creating..." else "Create")
+                if (isSubmitting) {
+                    Translated("Creating...")
+                } else {
+                    Translated("Create")
+                }
             }
         }
     )

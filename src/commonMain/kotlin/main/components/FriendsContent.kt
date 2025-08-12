@@ -47,6 +47,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import main.components.Translated
 import Translations.str
+import org.jetbrains.compose.web.attributes.disabled
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -291,8 +292,23 @@ fun FriendListItem(
             }
         }
         
-        // Last world
-        if (friend.lastWorldName.isNotEmpty()) {
+        // Current world if online
+        if (isOnline && friend.lastWorldName.isNotEmpty()) {
+            Div(
+                attrs = {
+                    style {
+                        fontSize(14.px)
+                        color(rgba(200, 255, 200, 0.85))
+                        marginBottom(8.px)
+                    }
+                }
+            ) {
+                Text("${translated("Currently at")} ${friend.lastWorldName}")
+            }
+        }
+
+        // Last world when offline
+        if (!isOnline && friend.lastWorldName.isNotEmpty()) {
             Div(
                 attrs = {
                     style {
@@ -327,11 +343,13 @@ fun FriendListItem(
                         property("cursor", "pointer")
                     }
                     if (friend.lastWorldId.isEmpty()) {
-                        attr("disabled", "")
+                        disabled()
                     }
                     onClick {
                         if (friend.lastWorldId.isNotEmpty()) {
                             onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
+                        } else {
+                            console.log("[FRIEND] lastWorldId is null")
                         }
                     }
                 }

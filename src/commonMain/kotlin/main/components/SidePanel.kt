@@ -4,9 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import app.softwork.routingcompose.Router
 import kotlinx.coroutines.launch
-import main.api.WebSocketApi
 import main.api.WorldApi
-import main.api.addObject
 import main.components.inventory.InventoryDialog
 import main.components.nodeeditor.LogicEditorDialog
 import main.components.objects.ObjectsDialog
@@ -139,15 +137,7 @@ fun SidePanel(
                 onSave = { obj ->
                     // Handle saved object
                     console.log("Object saved: ${obj.title}")
-                    
-                    // Add the object to the scene via WebSocket
-                    val success = WebSocketApi.addObject(obj)
-                    if (success) {
-                        console.log("Object added to scene: ${obj.title}")
-                    } else {
-                        console.error("Failed to add object to scene: ${obj.title}")
-                    }
-                    
+
                     onSaveObject(obj)
                 },
                 onOpenLogicEditor = onOpenLogicEditor

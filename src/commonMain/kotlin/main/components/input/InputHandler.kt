@@ -17,9 +17,9 @@ import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.playerInteract
-import main.api.removeObject
 import main.components.SceneManager
 import main.components.camera.CameraController
+import main.components.inventory.InventoryState
 import main.components.objects.SceneObjectManager
 import main.components.player.PlayerController
 import main.components.world.isSkybox
@@ -799,27 +799,29 @@ class InputHandler(
                     console.warn("[DEBUG_LOG] Could not fetch object details for title: $objectId", e)
                 }
 
-                // Call the API to collect the item
-                val success = ObjectApi.collectObject(objectId)
+                // Call the unified transfer API to pick up the item (default: all)
+                val result = main.api.InventoryApi.transferPickup(objectId)
                 
-                if (success) {
-                    console.log("[DEBUG_LOG] Successfully collected inventory item: $objectId")
+                if (result.objectDeleted) {
+                    console.log("[DEBUG_LOG] Successfully collected inventory item: $objectId (object deleted)")
                     
                     // Remove the object from the scene
                     objectManager?.removeObject(objectId)
                     
-                    // Send a WebSocket message to remove the object for all clients
-                    WebSocketApi.removeObject(objectId)
-                    
-                    // Notify UI via custom event so InventoryTray can show feedback
-                    val event = createItemCollectedEvent(itemTitle)
-                    window.dispatchEvent(event)
+                    // Server broadcasts REMOVE_OBJECT; no client self-broadcast
                 } else {
-                    console.error("[DEBUG_LOG] Failed to collect inventory item: $objectId")
-                    
-                    // Show error message
-                    window.alert("Failed to collect item")
+                    console.log("[DEBUG_LOG] Collected from object but object remains with reduced quantity: $objectId")
+                    // Optionally, update the object visuals if needed (not required for MVP)
                 }
+                
+                // Notify UI via custom event so InventoryTray can show feedback
+                val event = createItemCollectedEvent(itemTitle)
+                window.dispatchEvent(event)
+
+                // Refresh inventory state so UI reflects newly collected items
+                InventoryState.refreshInventory(
+                    coroutineScope = scope,
+                )
             } catch (e: Exception) {
                 console.error("[DEBUG_LOG] Error collecting inventory item", e)
                 
