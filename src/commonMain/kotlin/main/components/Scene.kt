@@ -47,6 +47,7 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
 import Translations.str
+import io.ktor.http.HttpStatusCode
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -654,7 +655,7 @@ fun SceneComponent(url: String) {
                     loadingFailed.value = true
                     if (worldLoader.isApiErrorFallback()) {
                         showClaimOption.value = true
-                        errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                        errorMessage.value = str("No world found at") + " saigon.quest/${url.ifEmpty { "" }}"
                     } else {
                         showClaimOption.value = false
                         errorMessage.value = str("Error loading world") + ": " + str("World not found or server error")
@@ -668,7 +669,7 @@ fun SceneComponent(url: String) {
                     // Set loading failed to true to show error message and enable claim option
                     loadingFailed.value = true
                     showClaimOption.value = true
-                    errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                    errorMessage.value = str("No world found at") + " saigon.quest/${url.ifEmpty { "" }}"
                 }
                 
                 // Set world meshes in controllers
@@ -794,12 +795,13 @@ fun SceneComponent(url: String) {
                 console.error("Error", error)
                 console.error("Error TYPE ", error is ResponseException)
                 console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
+
                 loadingFailed.value = true
-                showClaimOption.value = false
+                showClaimOption.value = (error as? ResponseException)?.response?.status == HttpStatusCode.NotFound
                 
                 // Set specific error message based on the error
                 if (error.message?.contains("World not found") == true) {
-                    errorMessage.value = str("No world found at") + " saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                    errorMessage.value = str("No world found at") + " saigon.quest/${url.ifEmpty { "" }}"
                 } else if (error.message?.contains("Failed to fetch") == true || 
                            error.message?.contains("NetworkError") == true) {
                     errorMessage.value = str("Network error: Unable to connect to the server. Please check your internet connection.")

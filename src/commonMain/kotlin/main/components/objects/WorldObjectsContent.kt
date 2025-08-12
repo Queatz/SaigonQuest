@@ -27,7 +27,8 @@ fun WorldObjectsContent(
     onCreateObject: () -> Unit = {},
     onRemove: (String) -> Unit,
     onLocate: (String) -> Unit = {},
-    onEdit: (String) -> Unit = {}
+    onEdit: (String) -> Unit = {},
+    onDuplicate: (String) -> Unit = {}
 ) {
     // Container for the content
     Div(
@@ -116,6 +117,16 @@ fun WorldObjectsContent(
                                 }
                             ) {
                                 Text("Edit")
+                            }
+                            
+                            // Duplicate button
+                            Button(
+                                attrs = {
+                                    classes(EditorStyles.editButton)
+                                    onClick { onDuplicate(obj.key) }
+                                }
+                            ) {
+                                Text("Duplicate")
                             }
                             
                             // Remove button

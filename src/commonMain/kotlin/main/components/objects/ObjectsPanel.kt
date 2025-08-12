@@ -2,6 +2,7 @@ package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.components.SimpleSidePanel
+import main.components.translated
 import models.World
 
 /**
@@ -27,7 +28,7 @@ fun ObjectsPanel(
         currentWorld = currentWorld
     ) { tabContent ->
         SimpleSidePanel(
-            title = "Objects",
+            title = translated("Objects"),
             onClose = onClose,
             content = { tabContent() }
         )

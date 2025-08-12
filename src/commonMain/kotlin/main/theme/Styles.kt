@@ -32,7 +32,6 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
@@ -43,7 +42,6 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
-import org.jetbrains.compose.web.css.maxHeight
 import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
@@ -777,15 +775,7 @@ object Styles : StyleSheet() {
         fontSize(14.px)
         color(Theme.colors.onBackground)
     }
-    
-    val formInput by style {
-        width(100.percent)
-        padding(8.px)
-        property("border-radius", "4px")
-        property("border", "1px solid ${Theme.colors.outline}")
-        property("box-sizing", "border-box")
-    }
-    
+
     val formHelpText by style {
         fontSize(12.px)
         color(Theme.colors.onSurfaceVariant)

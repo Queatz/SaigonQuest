@@ -78,7 +78,7 @@ class ShadowManager(
         // Configure shadow generator properties
         shadowGenerator.apply {
             lambda = .667f
-            bias = 0.005f
+            bias = 0.0125f
             normalBias = 0.005f
             
             // Enable transparent shadows

@@ -80,6 +80,8 @@ fun AdminDialog(
                     Translated("Asset type")
                     Select(
                         attrs = {
+                            classes(Styles.inputField)
+
                             style {
                                 width(100.percent)
                                 padding(8.px)

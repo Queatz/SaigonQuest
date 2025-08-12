@@ -13,7 +13,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import models.Object
+import models.Position
 import models.World
+import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.Position as CssPosition
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.bottom
+import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.left
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.position
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
 
 /**
@@ -172,7 +188,72 @@ fun ObjectsContent(
             showFeedback("Cannot edit object: Object not found", true)
         }
     }
+
+    // Function to duplicate an object with X offset +1
+    fun duplicateObject(objectId: String) {
+        val original = worldObjects.find { it.key == objectId }
+        if (original == null) {
+            console.error("Object not found: $objectId")
+            showFeedback("Cannot duplicate object: Object not found", true)
+            return
+        }
+
+        // Build a new Object instance to ensure a fresh key is generated client-side
+        val newObj = Object(
+            title = original.title,
+            data = original.data,
+            worldId = original.worldId,
+            file = original.file,
+            collection = original.collection,
+            position = Position(
+                x = (original.position.x + 1f),
+                y = original.position.y,
+                z = original.position.z,
+            ),
+            rotation = original.rotation,
+            scale = original.scale,
+            status = original.status,
+        )
+
+        scope.launch {
+            try {
+                val created = ObjectApi.createObject(newObj)
+                // Update local lists
+                worldObjects = worldObjects + created
+                if (ownedObjects.any { it.key == original.key }) {
+                    ownedObjects = ownedObjects + created
+                }
+                showFeedback("'${original.title}' duplicated")
+            } catch (error: Throwable) {
+                console.error("Error duplicating object", error)
+                showFeedback("Failed to duplicate '${original.title}': ${error.message ?: "Unknown error"}", true)
+            }
+        }
+    }
     
+    // Render feedback message if present (similar to InventoryTray)
+    if (feedbackMessage.isNotEmpty()) {
+        Div(
+            attrs = {
+                style {
+                    position(CssPosition.Absolute)
+                    bottom(70.px)
+                    left(50.percent)
+                    property("transform", "translateX(-50%) translateY(-10px)")
+                    padding(8.px, 12.px)
+                    backgroundColor(if (isFeedbackError) rgba(255, 0, 0, 0.7) else rgba(0, 150, 0, 0.7))
+                    color(Color.white)
+                    fontSize(14.px)
+                    property("border-radius", "4px")
+                    property("pointer-events", "none")
+                    opacity(0.9)
+                }
+            }
+        ) {
+            Text(feedbackMessage)
+        }
+    }
+
     // Call the content lambda with the tab content as a lambda
     content {
         WorldObjectsContent(
@@ -182,7 +263,8 @@ fun ObjectsContent(
             onCreateObject = { onOpenObjectEditor(true) },
             onRemove = { objectId -> removeObject(objectId) },
             onLocate = { objectId -> locateObject(objectId) },
-            onEdit = { objectId -> editObject(objectId) }
+            onEdit = { objectId -> editObject(objectId) },
+            onDuplicate = { objectId -> duplicateObject(objectId) }
         )
     }
 }

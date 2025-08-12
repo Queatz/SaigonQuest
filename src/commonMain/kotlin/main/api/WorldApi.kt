@@ -179,7 +179,7 @@ object WorldApi {
                 } catch (e: Throwable) {
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.NotFound) {
-                        ErrorResponse(message = "World not found", code = response.status.value)
+                            ErrorResponse(message = "World not found", code = response.status.value)
                     } else {
                         ErrorResponse(message = response.bodyAsText(), code = response.status.value)
                     }

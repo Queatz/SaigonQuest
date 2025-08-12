@@ -283,10 +283,14 @@ class WorldLoader(private val scene: Scene) {
             }
         } catch (error: Throwable) {
             // Log the error but don't re-throw it
+            console.error("[WORLD ERROR]", error)
             println("[ERROR] Failed to load world: ${error.message}")
 
+            // Set the API error fallback flag
+            isApiErrorFallback = (error as? ErrorResponse)?.code == 404
+
             // Create a fallback world due to API error
-            return createFallbackWorld(isApiError = (error as? ErrorResponse)?.code == 404)
+            return createFallbackWorld()
         }
     }
     
@@ -296,11 +300,8 @@ class WorldLoader(private val scene: Scene) {
      * @param isApiError Whether this fallback world is being created due to an API error
      * @return An array containing the fallback world meshes
      */
-    private fun createFallbackWorld(isApiError: Boolean = false): Array<AbstractMesh> {
+    private fun createFallbackWorld(): Array<AbstractMesh> {
         println("[INFO] Creating fallback world with a 10x10 plane")
-        
-        // Set the API error fallback flag
-        isApiErrorFallback = isApiError
         
         // Create a 10x10 plane
         val plane = MeshBuilder.CreatePlane(
