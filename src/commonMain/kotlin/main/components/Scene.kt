@@ -695,6 +695,11 @@ fun SceneComponent(url: String) {
                 console.log("[DEBUG_LOG] Scene: Initializing teleport listener")
                 playerController.initializeTeleportListener(router)
                 console.log("[DEBUG_LOG] Scene: Teleport listener initialization completed")
+
+                // Initialize pause listener (single-device enforcement)
+                console.log("[DEBUG_LOG] Scene: Initializing pause listener")
+                playerController.initializePauseListener(router)
+                console.log("[DEBUG_LOG] Scene: Pause listener initialization completed")
                 
                 // Register player mesh as shadow caster and receiver
                 playerController.getPlayerHandle()?.node?.let { playerMesh ->

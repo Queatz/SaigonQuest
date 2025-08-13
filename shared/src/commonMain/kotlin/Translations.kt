@@ -688,6 +688,12 @@ vi: Không thể thả vật phẩm
 Failed to pick up item
 vi: Không thể nhặt vật phẩm
 
+Resume to
+vi: Tiếp tục vào
+
+Paused.
+vi: Đã tạm dừng.
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

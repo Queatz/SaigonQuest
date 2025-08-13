@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.updatePlayer
 import main.api.updatePlayerStatus
 import main.components.player.CharacterRenderer
 import main.theme.Styles
@@ -334,7 +335,25 @@ fun PlayerDialog(
                         coroutineScope.launch {
                             try {
                                 // Update user on the server
-                                UserApi.updateUserCustomization(updatedUser)
+                                val newUser = UserApi.updateUserCustomization(updatedUser)
+                                // Update local state to reflect changes immediately
+                                main.components.inventory.InventoryState.currentUser = newUser
+                                // Refresh the local avatar to apply customization (skin, hair, eyes, body type)
+                                try {
+                                    SceneManager.getPlayerController()?.refreshWornItems()
+                                } catch (e: Throwable) {
+                                    console.error("Failed to refresh local avatar after customization: ${e.message}")
+                                }
+                                // Broadcast an appearance update so other clients refresh this avatar
+                                try {
+                                    WebSocketApi.updatePlayer(
+                                        name = newUser.username,
+                                        isPlayer = newUser.isPlayer,
+                                        status = newUser.status
+                                    )
+                                } catch (e: Throwable) {
+                                    console.error("Failed to broadcast customization update: ${e.message}")
+                                }
                             } catch (e: Throwable) {
                                 console.error("Failed to update user customization: ${e.message}")
                             }

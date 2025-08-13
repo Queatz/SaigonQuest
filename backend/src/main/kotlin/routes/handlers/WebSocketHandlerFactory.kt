@@ -43,6 +43,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.OPEN_URL -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.NOTIFICATION -> NullHandler() // This is only sent by the server, not received
+            WebSocketAction.PAUSE -> NullHandler() // This is only sent by the server, not received
             null -> NullHandler()
         }
     }

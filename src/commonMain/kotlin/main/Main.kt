@@ -9,6 +9,7 @@ import main.api.WebSocketConnectionManager
 import main.theme.Styles
 import main.components.SceneComponent
 import main.components.ByePage
+import main.components.PausedPage
 import main.theme.EditorStyles
 import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
@@ -40,10 +41,10 @@ fun main() {
 
                 // Render the 3D scene with the URL from the path or Bye page
                 key(url) {
-                    if (url == "bye") {
-                        ByePage()
-                    } else {
-                        SceneComponent(url = url)
+                    when (url) {
+                        "bye" -> ByePage()
+                        "paused" -> PausedPage()
+                        else -> SceneComponent(url = url)
                     }
                 }
             }

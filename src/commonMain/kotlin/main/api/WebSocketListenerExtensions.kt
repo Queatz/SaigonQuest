@@ -3,6 +3,7 @@ package main.api
 import app.softwork.routingcompose.Router
 import kotlinx.coroutines.launch
 import models.DialogueData
+import models.PauseData
 import models.PlayerPositionData
 import models.UpdatePlayerData
 import models.UserJoinData
@@ -178,4 +179,28 @@ fun WebSocketApi.addDialogueListener(listener: (DialogueData) -> Unit): Listener
     val listenerCount = getListenerCount(WebSocketAction.SHOW_DIALOGUE)
     console.log("WebSocketApi: Now have $listenerCount SHOW_DIALOGUE listeners")
     return ListenerToken(WebSocketAction.SHOW_DIALOGUE, handler)
+}
+
+/**
+ * Add a listener for pause events (single-device enforcement)
+ *
+ * On receiving PAUSE, navigate to "/paused" and disconnect WebSocket.
+ */
+fun WebSocketApi.addPauseListener(router: Router, listener: (PauseData) -> Unit = {}): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val pauseData = ApiClient.json.decodeFromString<PauseData>(message.data)
+            // Store for resume UI
+            main.PausedState.set(pauseData.worldUrl, pauseData.worldName)
+            // Navigate to paused screen
+            router.navigate("/paused")
+            // Kill the WebSocket connection completely
+            WebSocketConnectionManager.disconnect()
+            listener(pauseData)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing PAUSE data", e)
+        }
+    }
+    addListener(WebSocketAction.PAUSE, handler)
+    return ListenerToken(WebSocketAction.PAUSE, handler)
 }

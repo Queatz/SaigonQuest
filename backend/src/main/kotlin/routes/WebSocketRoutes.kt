@@ -22,6 +22,7 @@ import models.WebSocketAction
 import repository.ChatRepository
 import repository.ObjectRepository
 import repository.UserRepository
+import repository.WorldRepository
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -63,6 +64,7 @@ fun Routing.configureWebSocketRoutes() {
     val chatRepository = ChatRepository()
     val userRepository = UserRepository()
     val objectRepository = ObjectRepository()
+    val worldRepository = WorldRepository()
     
     // Create handler factory
     val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository, objectRepository)
@@ -128,6 +130,41 @@ fun Routing.configureWebSocketRoutes() {
         try {
             // Add connection to active connections
             activeConnections.getOrPut(worldId) { mutableListOf() }.add(connection)
+
+            // After registering this connection, notify and pause any other active sessions
+            // for the same user across all worlds
+            try {
+                // Collect targets first to avoid concurrent modification
+                val targets = activeConnections.entries.flatMap { (wId, conns) ->
+                    // Create a snapshot list for safe iteration
+                    val copy = ArrayList(conns)
+                    copy.filter { it.userId == connection.userId && it.session != connection.session }
+                        .map { it to wId }
+                }
+
+                // Resolve world info for each target and send PAUSE
+                targets.forEach { (otherConn, otherWorldId) ->
+                    val world = worldRepository.getById(otherWorldId) ?: worldRepository.getByUrl(otherWorldId)
+                    val pauseData = models.PauseData(
+                        userId = otherConn.userId,
+                        worldUrl = world?.url ?: otherWorldId,
+                        worldName = world?.title ?: "World"
+                    )
+                    val pauseMessage = WebSocketMessage(
+                        action = WebSocketAction.PAUSE,
+                        data = json.encodeToString(pauseData)
+                    )
+                    val payload = json.encodeToString(pauseMessage)
+                    WebSocketDebug.logMessage("PAUSE_SEND", payload, this)
+                    try {
+                        otherConn.session.send(payload)
+                    } catch (e: Throwable) {
+                        WebSocketDebug.logError("Error sending PAUSE message", e, this)
+                    }
+                }
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Error while processing PAUSE notifications", e, this)
+            }
             
             // Log active connections for debugging
             WebSocketDebug.logConnection("ACTIVE_WORLDS", this, "all", "system")

@@ -138,3 +138,17 @@ data class NotificationData(
     val otherUserId: String,
     val timestamp: Long
 )
+
+/**
+ * Pause event data model
+ *
+ * Sent to all other active sessions for the same user when a new
+ * session is established. The client should navigate to "/paused"
+ * and allow resuming back to the provided world.
+ */
+@Serializable
+data class PauseData(
+    val userId: String,
+    val worldUrl: String,
+    val worldName: String
+)

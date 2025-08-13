@@ -146,7 +146,7 @@ allowing the project to remain maintainable as it grows.
 - **Kotlin inline objects like `object { val field: String = "" }` DO NOT work in JavaScript**: Create an `external interface` to handle POJOs correctly.
 - **DO NOT** put globals on the `window` object, just use top-level Kotlin vals
 - **No more than one @Composable function per file**
-- **750 lines max in one file**: Split larger files into smaller ones 
+- **750 lines max in one file**: Split larger files into several smaller ones when the line count is high. Always check the file line count after adding code.
 - **Avoid JS Promises**: Use Kotlin coroutines instead 
 - **Always use Ktor for networking**: This includes SSE, WebSockets, HTTP, etc.
 - **Avoid using `js()`, `dynamic` and `asDynamic()` at all costs:** Implement the interface in the correct library file instead.
