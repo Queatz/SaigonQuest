@@ -80,14 +80,9 @@ fun Routing.configureWorldRoutes() {
                 HttpStatusCode.BadRequest,
                 ErrorResponse(message = "Missing id parameter", code = HttpStatusCode.BadRequest.value)
             )
-            // Fetch world by ID to translate to presence key (URL slug)
-            val world = worldRepository.getById(id) ?: return@get call.respond(
-                HttpStatusCode.NotFound,
-                ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
-            )
-            // Presence store uses world URL (which may be empty for home world) as the key
-            val presenceKey = world.url
-            val snapshot = state.WorldStateStore.snapshot(presenceKey)
+            // Use the same key as WebSocket presence (worldId passed to /ws)
+            // This ensures snapshot aligns with state updated by WS handlers
+            val snapshot = state.WorldStateStore.snapshot(id)
             call.respond(snapshot)
         }
         

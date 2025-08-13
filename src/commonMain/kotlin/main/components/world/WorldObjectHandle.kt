@@ -67,6 +67,17 @@ interface WorldObjectHandle {
     fun updateActivity(activity: PlayerActivity?) {
         // Default implementation does nothing
     }
+
+    /**
+     * Updates appearance of a character object in-place.
+     * No-op for non-character objects.
+     *
+     * @param additionalSpriteSheets Optional list of additional sprite sheets to apply
+     * @param skinTone Optional skin tone value (0f..1f)
+     */
+    fun updateAppearance(additionalSpriteSheets: List<SpriteSheet>?, skinTone: Float?) {
+        // Default implementation does nothing
+    }
     
     /**
      * Helper method to get all meshes for this object

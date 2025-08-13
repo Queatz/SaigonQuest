@@ -34,6 +34,8 @@ class WorldObjectManager(private val scene: Scene) {
         
         // Render the object in the scene
         val node = obj.render(scene) ?: return null
+        // Initialize object's visual state (UVs, direction, etc.) immediately so it's visible on first frame
+        try { obj.update(0f) } catch (_: Throwable) {}
         
         // Store the object
         objects[obj.id] = obj
@@ -116,7 +118,8 @@ class WorldObjectManager(private val scene: Scene) {
         position: Vector3 = Vector3(0f, 0f, 0f),
         activity: PlayerActivity? = null,
         additionalSpriteSheets: List<SpriteSheet> = emptyList(),
-        user: User? = null
+        user: User? = null,
+        initialScale: Float = 1f
     ): WorldObjectHandle? {
         // Get worn item sprite sheets only if a user is explicitly provided
         // This prevents other players from using the current player's worn items
@@ -150,6 +153,8 @@ class WorldObjectManager(private val scene: Scene) {
             additionalSpriteSheets = combinedSpriteSheets
         )
         character.position = position
+        // Set initial scale so initial render matches desired size (used for join animation)
+        character.scale = Vector3(initialScale, initialScale, initialScale)
         // Initialize skin tone from user if present
         character.skinTone = user?.skinTone ?: 0.5f
         
@@ -335,6 +340,15 @@ class WorldObjectManager(private val scene: Scene) {
                     obj.activity = activity
                 } else {
                     console.log("[DEBUG_LOG] WorldObjectHandle: Object is not a Character, ignoring activity update")
+                }
+            }
+
+            override fun updateAppearance(additionalSpriteSheets: List<SpriteSheet>?, skinTone: Float?) {
+                if (obj is Character) {
+                    additionalSpriteSheets?.let { obj.updateSpriteSheets(it) }
+                    skinTone?.let { obj.skinTone = it }
+                    // Force immediate re-render of updated sprite sheets
+                    try { obj.update(0f, null) } catch (_: Throwable) {}
                 }
             }
             

@@ -171,6 +171,38 @@ fun Routing.configureWebSocketRoutes() {
             activeConnections.forEach { (wId, connections) ->
                 WebSocketDebug.logConnection("ACTIVE_CONNECTIONS", this, wId, "system")
             }
+
+            // If this is an authenticated connection and we still have a visitor connection from the same browser (visitorId),
+            // broadcast USER_LEAVE for the visitor and remove it from the world state and active connections to avoid duplicates
+            try {
+                if (token.isNotBlank() && visitorId.isNotBlank()) {
+                    val visitorUser = userRepository.getByVisitorId(visitorId)
+                    if (visitorUser != null && visitorUser.key != connection.userId) {
+                        // Remove from world state
+                        state.WorldStateStore.removePlayer(worldId, visitorUser.key)
+
+                        // Broadcast USER_LEAVE for the visitor
+                        val leaveData = UserLeaveData(userId = visitorUser.key, worldId = worldId)
+                        val leaveMessage = WebSocketMessage(
+                            action = WebSocketAction.USER_LEAVE,
+                            data = json.encodeToString(leaveData)
+                        )
+                        val leavePayload = json.encodeToString(leaveMessage)
+                        WebSocketDebug.logMessage("BROADCAST_VISITOR_LEAVE", leavePayload, this)
+                        broadcastToWorld(worldId, leavePayload, activeConnections)
+
+                        // Close and remove any active visitor connections in this world
+                        activeConnections[worldId]?.toList()?.forEach { otherConn ->
+                            if (otherConn.userId == visitorUser.key) {
+                                try { otherConn.session.close(CloseReason(CloseReason.Codes.NORMAL, "Upgraded to player")) } catch (_: Throwable) {}
+                                activeConnections[worldId]?.remove(otherConn)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Error handling visitor->player deduplication", e, this)
+            }
             
             // Send user join notification to all clients in the world
             val isPlayer = connection.user.isPlayer
@@ -201,15 +233,20 @@ fun Routing.configureWebSocketRoutes() {
             
             // Make a copy of the list to avoid concurrent modification issues
             val existingConnectionsCopy = ArrayList(existingConnections)
+            // Get snapshot once to provide accurate positions/status for existing users
+            val snapshot = state.WorldStateStore.snapshot(worldId)
+            val playerById = snapshot.players.associateBy { it.userId }
             
             existingConnectionsCopy.forEach { existingConnection ->
                 if (existingConnection.userId != connection.userId) {
                     WebSocketDebug.logMessage("PROCESSING_USER", existingConnection.userId, this)
+                    val snap = playerById[existingConnection.userId]
+                    val pos = snap?.position ?: Position(0f, 0f, 0f)
                     val existingUserJoinData = UserJoinData(
                         userId = existingConnection.userId,
                         username = existingConnection.user.username.ifBlank { "Visitor" },
                         isPlayer = existingConnection.user.isPlayer,
-                        position = Position(0f, 0f, 0f), // Default position, will be updated by client
+                        position = pos,
                         worldId = worldId
                     )
                     
@@ -260,6 +297,10 @@ fun Routing.configureWebSocketRoutes() {
             WebSocketDebug.logError("Error in WebSocket connection", e, this)
         } finally {
             // Send user leave notification to all clients in the world
+            // Update authoritative world state first
+            try {
+                state.WorldStateStore.removePlayer(worldId, connection.userId)
+            } catch (_: Throwable) {}
             val leaveData = UserLeaveData(
                 userId = connection.userId,
                 worldId = worldId

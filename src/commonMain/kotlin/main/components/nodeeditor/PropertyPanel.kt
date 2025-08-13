@@ -1,6 +1,7 @@
 package main.components.nodeeditor
 
 // Import the node data types and parser
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -151,7 +152,7 @@ fun PropertyPanel(
                     attr("for", "node-label")
                 }
             ) {
-                Text(Translations.str("Label"))
+                Text(str("Label"))
             }
             
             TextInput(
@@ -199,7 +200,7 @@ fun PropertyPanel(
                                                 }
                                             }
                                             attr("rows", "4")
-                                            placeholder(Translations.str("Enter text"))
+                                            placeholder(str("Enter text"))
                                         }
                                     )
                                 } else {
@@ -259,7 +260,7 @@ fun PropertyPanel(
                                                 it[propDef.key] = event.value
                                             }
                                         }
-                                        placeholder(Translations.str("x,y,z"))
+                                        placeholder(str("x,y,z"))
                                     }
                                 )
                             }
@@ -301,7 +302,7 @@ fun PropertyPanel(
         // For dialogue nodes, add button management UI
         if (node.type.id == models.NodeId.Dialogue) {
             // Get current buttons or default to "OK"
-            val buttonsValue = propertyValues[PropertyKey.BUTTONS] ?: "OK"
+            val buttonsValue = propertyValues[PropertyKey.BUTTONS] ?: str("Ok")
             val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
             
             // State for new button text
@@ -366,7 +367,7 @@ fun PropertyPanel(
                         value = newButtonText,
                         attrs = {
                             classes(NodeEditorStyles.propertyInput)
-                            placeholder(Translations.str("New button text"))
+                            placeholder(str("New button text"))
                             onInput { event ->
                                 newButtonText = event.value
                             }

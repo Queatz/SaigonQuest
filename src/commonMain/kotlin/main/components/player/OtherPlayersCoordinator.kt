@@ -1,0 +1,520 @@
+package main.components.player
+
+import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import lib.AbstractMesh
+import lib.Scene
+import lib.Vector3
+import main.api.ApiClient
+import main.api.UserApi
+import main.api.WebSocketApi
+import main.api.WebSocketConnectionManager
+import main.api.WorldApi
+import main.api.addPlayerPositionListener
+import main.api.addUpdatePlayerListener
+import main.api.addUserJoinListener
+import main.api.addUserLeaveListener
+import main.api.sendUserJoin
+import main.components.shadow.ShadowManager
+import main.components.world.CharacterDirection
+import main.components.world.PlayerActivity
+import main.components.world.SpriteSheet
+import main.components.world.WorldObjectHandle
+import main.components.world.WorldObjectManager
+import models.ChatMessage
+import models.PlayerPositionData
+import models.UpdatePlayerData
+import models.UserJoinData
+import models.UserLeaveData
+import models.WebSocketAction
+
+class OtherPlayersCoordinator(private val scene: Scene) {
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private val players = mutableMapOf<String, OtherPlayer>()
+
+    // Managers – must be set before initialize()
+    lateinit var worldObjectManager: WorldObjectManager
+    var shadowManager: ShadowManager? = null
+    var httpWorldIdOverride: String? = null
+    var myUserId: String? = null
+
+    private val hud = OtherPlayersHudManager(
+        managerProvider = { worldObjectManager },
+        myUserIdProvider = { myUserId },
+        positionProvider = { uid -> players[uid]?.handle?.position }
+    )
+
+    private var initialized = false
+    private val baseMovementSpeed: Float = 3.0f
+    private val joinLeaveDuration: Double = 0.6
+    private val movementDelta = FrameDeltaTracker()
+    private val usernameTextHandles = mutableMapOf<String, main.components.world.WorldObjectHandle>()
+
+    fun setWorldObjectManager(manager: WorldObjectManager) { worldObjectManager = manager }
+    fun setShadowManager(manager: ShadowManager) { shadowManager = manager }
+    fun setHttpWorldId(id: String) { httpWorldIdOverride = id }
+
+    fun initialize() {
+        if (!this::worldObjectManager.isInitialized) {
+            console.error("OtherPlayersCoordinator: worldObjectManager must be set before initialize()")
+            return
+        }
+        if (initialized) return
+        initialized = true
+
+        // Identify current user and prune any accidental self-spawn
+        scope.launch {
+            try {
+                myUserId = UserApi.getCurrentUser().key
+                pruneSelfIfPresent()
+            } catch (_: Throwable) {}
+        }
+
+        // Register frame update
+        scene.registerBeforeRender { update() }
+
+        // Listeners
+        WebSocketApi.addUserJoinListener { onUserJoin(it) }
+        WebSocketApi.addUserLeaveListener { onUserLeave(it) }
+        WebSocketApi.addPlayerPositionListener { onPlayerPosition(it) }
+        WebSocketApi.addUpdatePlayerListener { onUpdatePlayer(it) }
+        WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                if (message.isValid()) {
+                    val chat = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                    hud.showChatMessage(chat.userId, chat.message)
+                }
+            } catch (_: Throwable) {}
+        }
+
+        // Typing
+        WebSocketApi.addListener(WebSocketAction.PLAYER_TYPING) { message ->
+            try {
+                if (message.isValid()) {
+                    val data = ApiClient.json.decodeFromString(models.PlayerTypingData.serializer(), message.data)
+                    if (data.userId.isNotEmpty()) hud.setTyping(data.userId, data.isTyping)
+                }
+            } catch (_: Throwable) {}
+        }
+
+        // Announce join and seed snapshot
+        scope.launch {
+            try {
+                if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
+                    val user = UserApi.getCurrentUser()
+                    val wsWorldId = WebSocketConnectionManager.currentWorldId.value
+                    val httpWorldId = httpWorldIdOverride ?: wsWorldId
+                    if (wsWorldId != null) {
+                        val playerController = main.components.SceneManager.getPlayerController()
+                        val pos = playerController?.getPlayerPosition() ?: Vector3(0f, 0f, 0f)
+                        WebSocketApi.sendUserJoin(wsWorldId, models.Position(pos.x, pos.y, pos.z), user.isPlayer)
+                        val effectiveWorldId = httpWorldId ?: wsWorldId
+                        val snapshot = WorldApi.getWorldState(effectiveWorldId)
+                        if (myUserId == null) myUserId = user.key
+                        // Ensure we never keep a self entry from any earlier race
+                        pruneSelfIfPresent()
+                        snapshot.players.forEach { p ->
+                            if (p.userId != myUserId) {
+                                ensurePlayer(p.userId).also { op ->
+                                    op.username = p.username
+                                    op.isPlayer = p.isPlayer
+                                    op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
+                                    if (p.isPlayer) removePotentialVisitorDuplicates(
+                                        newUserId = p.userId,
+                                        newUsername = p.username,
+                                        newPosition = Vector3(p.position.x, p.position.y, p.position.z)
+                                    )
+                                    attemptSpawnWithUser(op)
+                                    if (!p.status.isNullOrBlank()) {
+                                        op.status = p.status.orEmpty()
+                                        hud.setDesiredStatus(p.userId, p.status.orEmpty())
+                                    }
+                                    if (p.isTyping == true) hud.setTyping(p.userId, true)
+                                }
+                            }
+                        }
+                        // Fallback: if snapshot had players but none spawned yet (due to timing), retry shortly
+                        if (snapshot.players.isNotEmpty()) {
+                            val nonSelf = snapshot.players.filter { it.userId != myUserId }
+                            if (nonSelf.isNotEmpty()) {
+                                window.setTimeout({
+                                    nonSelf.forEach { p ->
+                                        ensurePlayer(p.userId).also { op ->
+                                            if (op.handle == null) {
+                                                op.username = p.username
+                                                op.isPlayer = p.isPlayer
+                                                op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
+                                                attemptSpawnWithUser(op)
+                                            }
+                                        }
+                                    }
+                                }, 200)
+                            }
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("OtherPlayersCoordinator: Presence init failed", t)
+            }
+        }
+    }
+
+    fun dispose() {
+        // Remove meshes and HUD
+        players.values.forEach { it.handle?.remove() }
+        players.clear()
+        hud.disposeAll()
+        usernameTextHandles.values.forEach { it.remove() }
+        usernameTextHandles.clear()
+    }
+
+    // Public HUD API
+    fun displayChatMessage(userId: String, message: String) = hud.showChatMessage(userId, message)
+    fun displayPlayerStatus(userId: String, status: String) = hud.setDesiredStatus(userId, status)
+    fun displayTypingIndicator(userId: String, isTyping: Boolean) = hud.setTyping(userId, isTyping)
+
+    // Queries
+    fun getUserIdForMesh(mesh: dynamic): String? =
+        players.entries.find { (_, p) ->
+            p.handle?.node?.getChildMeshes()?.any { it === mesh } == true
+        }?.key
+
+    fun getPlayerData(userId: String): Pair<String, Boolean>? {
+        val p = players[userId] ?: return null
+        return Pair(p.username, p.isPlayer)
+    }
+
+    fun getUserIdForUsername(username: String): String? =
+        players.entries.find { it.value.username == username }?.key
+
+    fun getPlayerMeshes(): Array<AbstractMesh> =
+        players.values.mapNotNull { it.handle?.node }
+            .map { it.getChildMeshes() }
+            .toTypedArray()
+            .flatten()
+            .toTypedArray()
+
+    // Event handlers
+    private fun onUserJoin(join: UserJoinData) {
+        if (join.userId == myUserId) return
+        val op = ensurePlayer(join.userId)
+        scope.launch {
+            op.mutex.withLock {
+                // If a visitor likely corresponds to this player, remove it to avoid duplicates
+                if (join.isPlayer) removePotentialVisitorDuplicates(
+                    newUserId = join.userId,
+                    newUsername = join.username,
+                    newPosition = Vector3(join.position.x, join.position.y, join.position.z)
+                )
+                op.username = join.username
+                op.isPlayer = join.isPlayer
+                op.targetPos = Vector3(join.position.x, join.position.y, join.position.z)
+                attemptSpawnWithUser(op)
+            }
+        }
+    }
+
+    private fun removePotentialVisitorDuplicates(newUserId: String, newUsername: String, newPosition: Vector3) {
+        val radius = 0.6f
+        val candidates = players.values.filter { existing ->
+            existing.userId != newUserId && !existing.isPlayer &&
+            run {
+                val pos = existing.targetPos ?: existing.handle?.position
+                if (pos == null) false else pos.subtract(newPosition).length() <= radius
+            }
+        }
+        // Also consider same-username visitors anywhere (brittle but catches common case)
+        val sameName = players.values.filter { it.userId != newUserId && !it.isPlayer && it.username == newUsername }
+        (candidates + sameName).distinct().forEach { dup ->
+            dup.handle?.remove()
+            players.remove(dup.userId)
+            hud.removeHud(dup.userId)
+            usernameTextHandles.remove(dup.userId)?.remove()
+        }
+    }
+
+    private fun onUserLeave(leave: UserLeaveData) {
+        val op = players[leave.userId] ?: return
+        scope.launch {
+            op.mutex.withLock {
+                // Begin scale-out animation
+                op.leaveStartMs = window.performance.now()
+                window.setTimeout({
+                    op.handle?.remove()
+                    players.remove(leave.userId)
+                    hud.removeHud(leave.userId)
+                    usernameTextHandles.remove(leave.userId)?.remove()
+                }, (joinLeaveDuration * 1000).toInt())
+            }
+        }
+    }
+
+    private fun onPlayerPosition(pos: PlayerPositionData) {
+        if (pos.userId == myUserId) return
+        val op = ensurePlayer(pos.userId)
+        op.isPlayer = pos.isPlayer
+        op.targetPos = Vector3(pos.position.x, pos.position.y, pos.position.z)
+        attemptSpawnWithUser(op)
+    }
+
+    private fun onUpdatePlayer(update: UpdatePlayerData) {
+        if (update.userId == myUserId) return
+        val op = ensurePlayer(update.userId)
+        scope.launch {
+            op.mutex.withLock {
+                val prevIsPlayer = op.isPlayer
+                op.username = update.name
+                op.isPlayer = update.isPlayer
+                update.status?.let { s -> op.status = s; hud.setDesiredStatus(update.userId, s) }
+                // Track explicit activity if server provides it
+                op.activity = update.activity
+                // If username changed, refresh username billboard
+                refreshUsernameBillboard(op)
+                // If appearance-related changes exist server-side, we can bump revision and re-assemble
+                assembleAppearance(op)
+                if (prevIsPlayer != op.isPlayer) {
+                    // Remove old mesh and respawn to reflect new role cleanly
+                    op.handle?.remove(); op.handle = null
+                    usernameTextHandles.remove(op.userId)?.remove()
+                    attemptSpawnWithUser(op)
+                }
+            }
+        }
+    }
+
+    // Spawning and appearance
+    private fun ensurePlayer(userId: String): OtherPlayer =
+        players[userId] ?: OtherPlayer(userId = userId).also { players[userId] = it }
+
+    private fun spawnIfNeeded(op: OtherPlayer) {
+        if (op.handle != null) return
+        val startPos = op.targetPos ?: Vector3(0f, 0f, 0f)
+        val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(null, null)
+        val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
+            spriteSheet = baseSprite,
+            direction = op.direction,
+            position = startPos,
+            additionalSpriteSheets = emptyList(),
+            user = null,
+            initialScale = .5f
+        )
+        if (handle == null) return
+        // Start with scale 0 for join animation
+        handle.scale = Vector3(.5f, .5f, .5f)
+        op.handle = handle
+        op.lastPos = startPos
+        op.hasSnapped = false
+        op.joinStartMs = window.performance.now()
+
+        // Shadows
+        shadowManager?.let { mgr ->
+            handle.node.getChildMeshes().forEach { mesh ->
+                mgr.addShadowCaster(mesh)
+                mgr.configureShadowReceiver(mesh)
+            }
+        }
+
+        // HUD (only apply non-blank status to avoid clearing an earlier set value)
+        if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)
+        // Username billboard
+        createOrUpdateUsernameBillboard(op, startPos)
+
+        // Assemble appearance asynchronously
+        scope.launch { assembleAppearance(op) }
+    }
+
+    private fun attemptSpawnWithUser(op: OtherPlayer) {
+        if (op.handle != null) return
+        // Fallback: spawn placeholder if user fetch isn't quick
+        val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
+        scope.launch {
+            try {
+                val user = UserApi.getUserById(op.userId)
+                if (user != null) {
+                    window.clearTimeout(fallbackId)
+                    if (op.handle == null) {
+                        val startPos = op.targetPos ?: Vector3(0f, 0f, 0f)
+                        val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(user.sex, user.bodyType)
+                        val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
+                            spriteSheet = baseSprite,
+                            direction = op.direction,
+                            position = startPos,
+                            additionalSpriteSheets = emptyList(),
+                            user = user,
+                            initialScale = .5f
+                        )
+                        if (handle != null) {
+                            // Start with scale 0 for join animation
+                            handle.scale = Vector3(.5f, .5f, .5f)
+                            op.handle = handle
+                            op.lastPos = startPos
+                            op.hasSnapped = false
+                            op.joinStartMs = window.performance.now()
+                            shadowManager?.let { mgr ->
+                                handle.node.getChildMeshes().forEach { mesh ->
+                                    mgr.addShadowCaster(mesh)
+                                    mgr.configureShadowReceiver(mesh)
+                                }
+                            }
+                            // Prefer server status if available
+                            if (!user.status.isNullOrBlank()) op.status = user.status
+                            if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)
+                            createOrUpdateUsernameBillboard(op, startPos)
+                        }
+                    } else {
+                        val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+                        val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
+                        val worn = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+                        val sheets = listOfNotNull(hair, eyes) + worn
+                        op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                        if (op.status.isBlank() && !user.status.isNullOrBlank()) {
+                            op.status = user.status
+                            hud.setDesiredStatus(op.userId, op.status)
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("OtherPlayersCoordinator: attemptSpawnWithUser failed for ${op.userId}", t)
+            }
+        }
+    }
+
+    private suspend fun assembleAppearance(op: OtherPlayer) {
+        try {
+            val user = UserApi.getUserById(op.userId) ?: return
+            op.profile = user
+            // Build additional sheets: hair, eyes (worn items left for a later step if needed)
+            val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+            val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
+            val worn = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+            val sheets = listOfNotNull(hair, eyes) + worn
+            op.additionalSpriteSheets = sheets
+            op.skinTone = user.skinTone ?: 0.5f
+            op.handle?.updateAppearance(sheets, op.skinTone)
+        } catch (t: Throwable) {
+            console.error("OtherPlayersCoordinator: assembleAppearance failed for ${op.userId}", t)
+        }
+    }
+
+    // Per-frame movement and HUD positioning
+    private fun update() {
+        val deltaTime = movementDelta.nextDeltaSeconds()
+        val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
+        val now = window.performance.now()
+        val initialJoinScale = 0.5f
+
+        players.values.forEach { op ->
+            val handle = op.handle ?: return@forEach
+            // Join scale-in animation
+            op.joinStartMs?.let { start ->
+                val elapsed = (now - start) / 1000.0
+                if (elapsed < joinLeaveDuration) {
+                    val progress = (elapsed / joinLeaveDuration).coerceIn(0.0, 1.0)
+                    val s = (initialJoinScale + (1f - initialJoinScale) * progress.toFloat()).coerceIn(0f, 1f)
+                    handle.scale = Vector3(s, s, s)
+                } else {
+                    handle.scale = Vector3(1f, 1f, 1f)
+                    op.joinStartMs = null
+                }
+            }
+            // Leave scale-out animation
+            op.leaveStartMs?.let { start ->
+                val elapsed = (now - start) / 1000.0
+                if (elapsed < joinLeaveDuration) {
+                    val progress = 1.0 - (elapsed / joinLeaveDuration)
+                    val s = progress.toFloat().coerceIn(0f, 1f)
+                    handle.scale = Vector3(s, s, s)
+                } else {
+                    handle.scale = Vector3(0f, 0f, 0f)
+                }
+            }
+            val targetPos = op.targetPos ?: return@forEach
+            val currentPos = handle.position
+            val direction = targetPos.subtract(currentPos)
+            val distance = direction.length()
+            if (distance < 0.001f) {
+                // Close enough
+                handle.position = targetPos
+                hud.updateHudPosition(op.userId, targetPos)
+                if (op.activity == PlayerActivity.Moving) {
+                    handle.updateActivity(null)
+                    op.activity = null
+                }
+                // Keep username billboard in sync
+                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
+                return@forEach
+            }
+            // Snap only once (initially) after spawn; afterwards always animate
+            if (!op.hasSnapped) {
+                handle.position = targetPos
+                hud.updateHudPosition(op.userId, targetPos)
+                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
+                op.hasSnapped = true
+                return@forEach
+            }
+
+            // Update facing with hysteresis
+            val currentFacing = op.direction
+            val newFacing = main.components.world.calculateFacingFromVector(direction, currentFacing)
+            if (newFacing != currentFacing) {
+                op.direction = newFacing
+                handle.updateDirection(newFacing)
+            }
+
+            direction.normalize()
+            val step = kotlin.math.min(frameMovementSpeed, distance)
+            direction.scaleInPlace(step)
+            val newPosition = currentPos.add(direction)
+            handle.position = newPosition
+            hud.updateHudPosition(op.userId, newPosition)
+            PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
+            if (op.activity != PlayerActivity.Sit) {
+                if (op.activity != PlayerActivity.Moving) {
+                    handle.updateActivity(PlayerActivity.Moving)
+                }
+                op.activity = PlayerActivity.Moving
+            }
+        }
+    }
+
+    private fun createOrUpdateUsernameBillboard(op: OtherPlayer, basePosition: Vector3) {
+        // Remove old
+        usernameTextHandles.remove(op.userId)?.remove()
+        val handle = PlayerUiUtils.createUsernameBillboard(
+            manager = worldObjectManager,
+            username = op.username,
+            basePosition = basePosition
+        )
+        if (handle != null) usernameTextHandles[op.userId] = handle
+    }
+
+    private fun refreshUsernameBillboard(op: OtherPlayer) {
+        val pos = op.handle?.position ?: return
+        createOrUpdateUsernameBillboard(op, pos)
+    }
+
+    // Public: refresh current user id and prune any mistakenly-spawned self entry
+    fun refreshCurrentUserId() {
+        scope.launch {
+            try {
+                myUserId = UserApi.getCurrentUser().key
+                pruneSelfIfPresent()
+            } catch (t: Throwable) {
+                console.error("OtherPlayersCoordinator: refreshCurrentUserId failed", t)
+            }
+        }
+    }
+
+    // Remove any OtherPlayer entry that matches myUserId to avoid self-duplication
+    private fun pruneSelfIfPresent() {
+        val selfId = myUserId ?: return
+        players.remove(selfId)?.let { selfOp ->
+            selfOp.handle?.remove()
+            hud.removeHud(selfId)
+            usernameTextHandles.remove(selfId)?.remove()
+        }
+    }
+}

@@ -19,6 +19,9 @@ vi: Trạng thái
 Player Account
 vi: Tài khoản người chơi
 
+Player
+vi: Người chơi
+
 Language
 vi: Ngôn ngữ
 

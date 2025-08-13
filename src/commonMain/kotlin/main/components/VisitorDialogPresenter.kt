@@ -47,9 +47,18 @@ fun VisitorDialogPresenter(
                 onSuccess = { user ->
                     // Update player name in the scene
                     updatePlayerName(user.username)
-                    
+
                     // Call the onSuccess callback
                     onSuccess(user)
+
+                    // Re-show local player's status after registration
+                    try {
+                        if (!user.status.isNullOrBlank()) {
+                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status!!)
+                        }
+                    } catch (e: Throwable) {
+                        console.error("VisitorDialogPresenter: Failed to display status after registration", e)
+                    }
                     
                     // Show world edit panel if requested
                     if (showWorldEditPanel) {
@@ -65,9 +74,18 @@ fun VisitorDialogPresenter(
                 onSuccess = { user ->
                     // Update player name in the scene
                     updatePlayerName(user.username)
-                    
+
                     // Call the onSuccess callback
                     onSuccess(user)
+
+                    // Re-show local player's status after login
+                    try {
+                        if (!user.status.isNullOrBlank()) {
+                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status!!)
+                        }
+                    } catch (e: Throwable) {
+                        console.error("VisitorDialogPresenter: Failed to display status after login", e)
+                    }
                 }
             )
         }
@@ -123,6 +141,13 @@ private fun handleRegistration(
                             console.error("Error updating player state after registration", e)
                         }
                         
+                        // Inform other-players system of our new identity to avoid self-duplication
+                        try {
+                            SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
+                        } catch (e: Throwable) {
+                            console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController (registration retry path)", e)
+                        }
+
                         // Refresh inventory and customizations so the local avatar updates
                         try {
                             InventoryState.refreshInventory(registrationScope)
@@ -159,6 +184,13 @@ private fun handleRegistration(
                         console.error("Error updating player state after registration", e)
                     }
                     
+                    // Inform other-players system of our new identity to avoid self-duplication
+                    try {
+                        SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
+                    } catch (e: Throwable) {
+                        console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController (registration)", e)
+                    }
+
                     // Refresh inventory and customizations so the local avatar updates
                     try {
                         InventoryState.refreshInventory(registrationScope)
