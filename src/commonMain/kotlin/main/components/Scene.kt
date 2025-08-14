@@ -48,6 +48,7 @@ import org.w3c.dom.events.Event
 import kotlin.random.Random
 import Translations.str
 import io.ktor.http.HttpStatusCode
+import kotlin.math.min
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -125,8 +126,7 @@ fun SceneComponent(url: String) {
     data class PendingDrop(val x: Int, val y: Int, val data: String, val worldId: String, val maxQuantity: Int)
     val showDropQuantityDialog = remember { mutableStateOf(false) }
     val pendingDrop = remember { mutableStateOf<PendingDrop?>(null) }
-    val onConfirmDropQuantity = remember { mutableStateOf<((Int) -> Unit)?>(null) }
-    
+
     // Coroutine scope for friendship-related operations
     val scope = rememberCoroutineScope()
     
@@ -459,13 +459,19 @@ fun SceneComponent(url: String) {
             message = translated("Drop quantity"),
             defaultValue = "1",
             isNumber = true,
+            min = 1,
+            max = pd.maxQuantity,
             onSubmit = { value ->
                 val objectManager = SceneManager.getObjectManager()
                 val requested = value.toIntOrNull()
                 if (requested == null || requested <= 0) {
                     objectManager?.onError?.invoke(str("Invalid quantity"))
                 } else {
-                    val qty = if (requested > pd.maxQuantity) pd.maxQuantity else requested
+                    val qty = if (requested > pd.maxQuantity) {
+                        pd.maxQuantity
+                    } else {
+                        requested
+                    }
                     objectManager?.handleInventoryItemDrop(pd.x, pd.y, pd.data, pd.worldId, quantityOverride = qty)
                 }
                 showDropQuantityDialog.value = false

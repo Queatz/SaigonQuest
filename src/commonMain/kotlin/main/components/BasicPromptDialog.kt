@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.theme.Styles
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.max
+import org.jetbrains.compose.web.attributes.min
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
@@ -31,6 +34,8 @@ fun BasicPromptDialog(
     message: String,
     defaultValue: String = "",
     isNumber: Boolean = false,
+    min: Int? = null,
+    max: Int? = null,
     onSubmit: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -56,7 +61,18 @@ fun BasicPromptDialog(
                 Input(
                     type = if (isNumber) InputType.Number else InputType.Text,
                     attrs = {
+                        classes(Styles.inputField)
+
+                        if (min != null) {
+                            min(min.toString())
+                        }
+
+                        if (max != null) {
+                            max(max.toString())
+                        }
+
                         value(value)
+
                         onInput { ev ->
                             value = ev.value.toString()
                         }

@@ -171,11 +171,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         usernameTextHandles.clear()
     }
 
-    // Public HUD API
-    fun displayChatMessage(userId: String, message: String) = hud.showChatMessage(userId, message)
-    fun displayPlayerStatus(userId: String, status: String) = hud.setDesiredStatus(userId, status)
-    fun displayTypingIndicator(userId: String, isTyping: Boolean) = hud.setTyping(userId, isTyping)
-
     // Queries
     fun getUserIdForMesh(mesh: dynamic): String? =
         players.entries.find { (_, p) ->
