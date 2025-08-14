@@ -28,7 +28,7 @@ import models.WebSocketAction
 suspend fun WebSocketApi.updatePlayerPosition(position: Position, isPlayer: Boolean): Boolean {
     try {
         if (!isConnected()) {
-            console.warn("Cannot update player position: WebSocket not connected")
+            console.warn("[MOVEMENT] Cannot update player position: WebSocket not connected")
             return false
         }
         
@@ -42,7 +42,7 @@ suspend fun WebSocketApi.updatePlayerPosition(position: Position, isPlayer: Bool
         val message = WebSocketMessage.fromEnum(WebSocketAction.UPDATE_PLAYER_POSITION, ApiClient.json.encodeToString(positionData))
         return sendMessage(message)
     } catch (e: Throwable) {
-        console.error("Error updating player position", e)
+        console.error("[MOVEMENT] Error updating player position", e)
         return false
     }
 }

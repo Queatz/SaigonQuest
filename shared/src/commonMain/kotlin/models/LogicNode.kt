@@ -124,6 +124,28 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Sends a notification to the current user"
     ) : LogicNode
+
+    /**
+     * ObjectOwnerNotification node - sends a notification to the object's owner
+     */
+    @Serializable
+    data class ObjectOwnerNotification(
+        override val id: NodeId = NodeId.ObjectOwnerNotification,
+        override val label: String = "Notify object owner",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Sends a notification to the object's owner"
+    ) : LogicNode
+
+    /**
+     * Delay node - waits for a specified time before continuing
+     */
+    @Serializable
+    data class Delay(
+        override val id: NodeId = NodeId.Delay,
+        override val label: String = "Delay",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Wait for N seconds, then continue"
+    ) : LogicNode
 }
 
 /**
@@ -138,7 +160,9 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.UserLanguage(),
         LogicNode.HasItem(),
         LogicNode.OpenUrl(),
-        LogicNode.ObjectNotification()
+        LogicNode.ObjectNotification(),
+        LogicNode.ObjectOwnerNotification(),
+        LogicNode.Delay()
     )
 }
 

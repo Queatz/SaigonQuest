@@ -12,6 +12,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import io.ktor.client.plugins.ResponseException
+import js.promise.Promise
+import js.promise.await
+import js.typedarrays.Uint8Array
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -21,24 +24,36 @@ import main.api.AssetApi
 import main.api.ChatApi
 import main.api.NotificationApi
 import main.api.ObjectApi
+import main.api.PushApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
-import models.NotificationData
-import models.WebSocketAction
-import models.ChatMessage
 import main.components.inventory.InventoryTray
 import main.theme.Styles
+import main.utils.BrowserNotifications
 import main.utils.PathUtils
+import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
+import models.ChatMessage
+import models.NotificationData
 import models.Object
 import models.User
+import models.WebSocketAction
 import models.World
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLElement
-import kotlin.random.Random
+import web.console.console
+import web.encoding.atob
+import web.navigator.navigator
+import web.notifications.Notification
+import web.notifications.NotificationPermission
+import web.notifications.granted
+import web.notifications.requestPermission
+import web.push.getSubscription
+import web.push.subscribe
+import web.serviceworker.register
 import kotlin.time.ExperimentalTime
 
 
@@ -169,11 +184,75 @@ fun WorldUI() {
         }
     }
     
+    // Helper used by push registration
+    // Properly decodes a Base64URL-encoded public VAPID key into a Uint8Array
+    fun urlBase64ToUint8Array(base64String: String): dynamic {
+        val padding = "=".repeat((4 - base64String.length % 4) % 4)
+        val base64 = (base64String + padding).replace('-', '+').replace('_', '/')
+        val rawData = atob(base64)
+        val outputArray = js("new Uint8Array(rawData.length)")
+        val len = (rawData.length as Int)
+        var i = 0
+        while (i < len) {
+            // Set each byte from the decoded string charCode
+            outputArray[i] = rawData[i].code
+            i++
+        }
+        return outputArray
+    }
+
+    // Helper: register SW and subscribe to push for players
+    suspend fun tryRegisterAndSubscribePush() {
+        try {
+            val nav = navigator
+            val perm: NotificationPermission? = try { Notification.permission } catch (_: Throwable) { null }
+            if (perm != NotificationPermission.granted) {
+                try {
+                    val res = Notification.requestPermission()
+                    console.log("[PUSH] requestPermission result", res)
+                } catch (e: Throwable) {
+                    console.warn("[PUSH] requestPermission error", e)
+                }
+            }
+            val swUrl = window.location.origin + "/service-worker.js"
+            console.log("[PUSH] Registering service worker at", swUrl)
+            val regPromise = nav.serviceWorker.registerAsync(swUrl)
+            val reg = regPromise.await()
+            console.log("[PUSH] Service worker registered", reg)
+            val subExisting = (reg.pushManager.getSubscriptionAsync()).await()
+            console.log("[PUSH] Existing subscription", subExisting)
+            val subscription = if (subExisting == null) {
+                val vapidKey = PushApi.getPublicKey()
+                console.log("[PUSH] Public VAPID key fetched", vapidKey)
+                val options: dynamic = object {}
+                options.userVisibleOnly = true
+                options.applicationServerKey = urlBase64ToUint8Array(vapidKey)
+                val newSub = (reg.pushManager.subscribeAsync(options)).await()
+                console.log("[PUSH] Created new subscription", newSub)
+                newSub
+            } else subExisting
+
+            val endpoint = subscription.endpoint
+            val keys = subscription.toJSON().keys
+            val p256dh = keys?.get("p256dh").orEmpty()
+            val auth = keys?.get("auth").orEmpty()
+            val ua = navigator.userAgent
+            console.log("[PUSH] Subscribing server-side", endpoint)
+            PushApi.subscribe(endpoint, p256dh, auth, ua)
+            console.log("[PUSH] Server subscription completed")
+        } catch (e: Throwable) {
+            console.warn("Push subscription failed", e)
+        }
+    }
+
     // Fetch current user on component initialization
     LaunchedEffect(Unit) {
         try {
             val user = UserApi.getCurrentUser()
             currentUser = user
+            if (user.isPlayer) {
+                tryRegisterAndSubscribePush()
+            }
         } catch (error: Throwable) {
             console.error("Error fetching user", error)
         }
@@ -274,6 +353,27 @@ fun WorldUI() {
     
     // Set up WebSocket listener for notifications
     DisposableEffect(Unit) {
+        // Listen for messages from Service Worker (e.g., notification clicks)
+        val nav: dynamic = js("navigator")
+        try {
+            nav.serviceWorker?.addEventListener?.call(nav.serviceWorker, "message", { event: dynamic ->
+                val msg = event.data
+                if (msg != null && msg.type == "OPEN_NOTIFICATION") {
+                    // Open notifications panel
+                    togglePanel(SidePanelState.Notifications)
+                    // Navigate to world if provided
+                    val worldUrl = msg.data?.worldUrl as? String
+                    if (worldUrl != null && worldUrl.isNotBlank()) {
+                        val detail: dynamic = object {}
+                        detail.path = "/$worldUrl"
+                        detail.hardReload = false
+                        val evt = createCustomEvent("navigateWithFade", detail)
+                        window.dispatchEvent(evt)
+                    }
+                }
+            })
+        } catch (_: Throwable) {}
+
         // Add listener for NOTIFICATION events
         WebSocketApi.addListener(WebSocketAction.NOTIFICATION) { message ->
             try {
@@ -286,6 +386,15 @@ fun WorldUI() {
                 // Increment the unread notification count
                 unreadNotificationCount++
                 
+                // Also trigger Browser (native) notification
+                // TODO enable if the window hasn't focus
+//                scope.launch {
+//                    BrowserNotifications.show(
+//                        title = notificationData.title,
+//                        body = notificationData.description
+//                    )
+//                }
+
                 console.log("Received notification: ${notificationData.title}")
             } catch (e: Throwable) {
                 console.error("Error processing notification", e)
@@ -331,6 +440,9 @@ fun WorldUI() {
     
     // Main UI overlay container
     WorldUIContainer {
+        // Reconnecting banner at the very top (fixed)
+        ReconnectBanner()
+        
         // World name and subtitle (center top)
         WorldTitle(
             currentWorld = currentWorld,
@@ -602,8 +714,26 @@ fun WorldUI() {
                     user = currentUser!!,
                     onClose = { updatePanelState(SidePanelState.None) },
                     onLogout = {
-                        UserApi.logout()
-                        router.navigate("/bye")
+                        scope.launch {
+                            // Unsubscribe push for this endpoint if present
+                            try {
+                                val nav = navigator
+                                val reg = nav.serviceWorker.getRegistrationAsync().await()
+                                val sub = reg?.pushManager?.getSubscriptionAsync()?.await()
+                                if (sub != null) {
+                                    val endpoint = sub.endpoint
+                                    try { PushApi.unsubscribe(endpoint) } catch (_: Throwable) {}
+                                    try { sub.unsubscribeAsync().await() } catch (_: Throwable) {}
+                                }
+                            } catch (_: Throwable) {}
+                            UserApi.logout()
+                            // Request a fade-to-black transition before navigating
+                            val detail: dynamic = object {}
+                            detail.path = "/bye"
+                            detail.hardReload = false
+                            val evt = createCustomEvent("navigateWithFade", detail)
+                            window.dispatchEvent(evt)
+                        }
                     }
                 )
             } else {
@@ -615,6 +745,10 @@ fun WorldUI() {
                         // Update the current user
                         currentUser = user
                         updatePanelState(SidePanelState.None)
+                        // When a visitor becomes a player, set up push
+                        if (user.isPlayer) {
+                            scope.launch { tryRegisterAndSubscribePush() }
+                        }
                     },
                     updatePlayerName = { username ->
                         // Update the player's own username text

@@ -895,25 +895,7 @@ class InputHandler(
         
         return moveDirection
     }
-    
-    /**
-     * Gets the set of currently pressed keys.
-     * 
-     * @return The set of pressed keys
-     */
-    fun getPressedKeys(): Set<String> {
-        return pressedKeys
-    }
-    
-    /**
-     * Checks if any keys are currently pressed.
-     * 
-     * @return True if any keys are pressed, false otherwise
-     */
-    fun areKeysPressed(): Boolean {
-        return pressedKeys.isNotEmpty()
-    }
-    
+
     /**
      * Cleans up resources used by the InputHandler.
      * This should be called when the InputHandler is no longer needed.

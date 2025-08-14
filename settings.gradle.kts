@@ -16,4 +16,4 @@ rootProject.name = "saigon-quest"
 
 include(":shared")
 include(":backend")
-
+include(":sw")

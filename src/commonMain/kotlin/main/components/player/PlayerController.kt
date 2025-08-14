@@ -26,7 +26,9 @@ import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
+import main.components.world.calculateFacingFromVector
 import models.Position
+import utils.throttleLatest
 
 // Controller for the local player: creation, movement, HUD, and sync.
 @OptIn(FlowPreview::class)
@@ -79,7 +81,7 @@ class PlayerController(private val scene: Scene) {
         // Collect position updates with 500ms debounce
         playerPositionFlow
             .filterNotNull()
-            .debounce(500)
+            .throttleLatest(500)
             .onEach { validPos ->
                 try {
                     // Check connection state using WebSocketConnectionManager
@@ -93,16 +95,16 @@ class PlayerController(private val scene: Scene) {
                             isPlayer = UserApi.getCurrentUser().isPlayer
                         )
                         if (!success) {
-                            console.warn("Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
+                            console.warn("[MOVEMENT] Failed to update player position: ${WebSocketApi.getLastError() ?: "Unknown error"}")
                         }
                     } else {
                         // Don't spam the console with warnings - only log occasionally
                         if (window.performance.now() % 3000 < 16) { // Log roughly once every 3 seconds
-                            console.warn("Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
+                            console.warn("[MOVEMENT] Cannot update player position: WebSocket not connected (state: ${WebSocketConnectionManager.connectionState.value})")
                         }
                     }
                 } catch (e: Throwable) {
-                    console.error("Error updating player position", e)
+                    console.error("[MOVEMENT] Error updating player position", e)
                 }
             }
             .launchIn(coroutineScope)
@@ -173,8 +175,10 @@ class PlayerController(private val scene: Scene) {
     
     fun setPlayerActivity(activity: PlayerActivity?) {
         if (activity == playerActivity) return
+
         playerActivity = activity
         playerHandle?.updateActivity(activity)
+
         coroutineScope.launch {
             try {
                 if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
@@ -263,13 +267,15 @@ class PlayerController(private val scene: Scene) {
      * @return The new position if movement occurred, null otherwise
      */
     fun updatePlayerPosition(moveDirection: Vector3): Vector3? {
-        // Calculate delta time for framerate-independent movement
-        val deltaTime = movementDelta.nextDeltaSeconds()
-        val frameMovementSpeed = (3.0f * deltaTime).toFloat()
-        
         val handle = playerHandle ?: return null
         val coll = collider ?: return null
-        val validPos = mover.update(moveDirection, handle, coll, worldMeshes, moveCircle)
+        val validPos = mover.update(
+            moveDirection = moveDirection,
+            playerHandle = handle,
+            collider = coll,
+            worldMeshes = worldMeshes,
+            moveCircle = moveCircle
+        )
         if (validPos != null) {
             coll.position = validPos
             handle.position = validPos
@@ -320,7 +326,7 @@ class PlayerController(private val scene: Scene) {
         }
         
         // Determine direction using shared utility
-        val newDirection = main.components.world.calculateFacingFromVector(normalizedDirection, playerDirection)
+        val newDirection = calculateFacingFromVector(normalizedDirection, playerDirection)
         
         // Only update if the direction has changed
         if (newDirection != playerDirection) {

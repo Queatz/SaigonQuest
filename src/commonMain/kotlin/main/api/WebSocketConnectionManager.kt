@@ -48,6 +48,10 @@ object WebSocketConnectionManager {
     private val _currentWorldId = mutableStateOf<String?>(null)
     val currentWorldId: State<String?> = _currentWorldId
     
+    // Tracks if we've ever successfully connected since the last explicit connect
+    private val _hasEverConnected = mutableStateOf(false)
+    val hasEverConnected: State<Boolean> = _hasEverConnected
+    
     /**
      * Initialize the connection manager
      * 
@@ -93,6 +97,7 @@ object WebSocketConnectionManager {
         }
         
         _currentWorldId.value = worldId
+        _hasEverConnected.value = false
         
         if (_connectionState.value != ConnectionState.CONNECTED) {
             WebSocketApi.connect(worldId)
@@ -113,6 +118,7 @@ object WebSocketConnectionManager {
             WebSocketApi.disconnect()
             _connectionState.value = ConnectionState.DISCONNECTED
             _currentWorldId.value = null
+            _hasEverConnected.value = false
         }
     }
     
@@ -125,6 +131,7 @@ object WebSocketConnectionManager {
         WebSocketApi.disconnect()
         _connectionState.value = ConnectionState.DISCONNECTED
         _currentWorldId.value = null
+        _hasEverConnected.value = false
     }
     
     /**
@@ -145,10 +152,14 @@ object WebSocketConnectionManager {
      * This should be called whenever the WebSocketApi connection state changes.
      */
     fun updateConnectionState() {
-        _connectionState.value = when {
+        val newState = when {
             WebSocketApi.isConnected() -> ConnectionState.CONNECTED
             WebSocketApi.isConnecting() -> ConnectionState.CONNECTING
             else -> ConnectionState.DISCONNECTED
+        }
+        _connectionState.value = newState
+        if (newState == ConnectionState.CONNECTED) {
+            _hasEverConnected.value = true
         }
     }
 }

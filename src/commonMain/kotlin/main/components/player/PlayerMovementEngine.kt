@@ -43,7 +43,6 @@ class PlayerMovementEngine(
         isMoving = false
         lastSignificantPosition = null
         timeWithMinimalMovement = 0.0
-        if (getActivity() == PlayerActivity.Moving) setActivity(null)
     }
 
     /**
@@ -70,7 +69,9 @@ class PlayerMovementEngine(
             stopMovement()
             isPlayerMoving = true
             // Stand if sitting
-            if (getActivity() == PlayerActivity.Sit) setActivity(null)
+            if (getActivity() == PlayerActivity.Sit) {
+                setActivity(null)
+            }
             timeSinceLastMovement = 0.0
         } else if (isMoving && playerTargetPosition != null) {
             val currentPos = playerHandle.position
@@ -85,7 +86,9 @@ class PlayerMovementEngine(
                 finalMoveDirection = direction
                 onMoveDirection(direction)
                 isPlayerMoving = true
-                if (getActivity() == PlayerActivity.Sit) setActivity(null)
+                if (getActivity() == PlayerActivity.Sit) {
+                    setActivity(null)
+                }
                 timeSinceLastMovement = 0.0
             }
         }
@@ -95,7 +98,9 @@ class PlayerMovementEngine(
             if (timeSinceLastMovement >= autoSitTimeout && getActivity() != PlayerActivity.Sit) {
                 setActivity(PlayerActivity.Sit)
             }
-            if (getActivity() == PlayerActivity.Moving) setActivity(null)
+            if (getActivity() == PlayerActivity.Moving) {
+                setActivity(null)
+            }
         } else if (getActivity() != PlayerActivity.Moving) {
             setActivity(PlayerActivity.Moving)
         }

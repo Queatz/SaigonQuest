@@ -1,9 +1,9 @@
 package main.components.player
 
-import lib.AbstractMesh
 import lib.Scene
 import main.components.shadow.ShadowManager
 import main.components.world.WorldObjectManager
+import lib.AbstractMesh
 
 /**
  * Facade delegating to a deterministic coordinator for other players.
@@ -18,6 +18,8 @@ class OtherPlayersController(scene: Scene) {
     fun refreshCurrentUserId() { coordinator.refreshCurrentUserId() }
 
     fun setShadowManager(manager: ShadowManager) { coordinator.setShadowManager(manager) }
+
+    fun setWorldMeshes(meshes: Array<AbstractMesh>) { coordinator.setWorldMeshes(meshes) }
 
     fun initialize() { coordinator.initialize() }
 

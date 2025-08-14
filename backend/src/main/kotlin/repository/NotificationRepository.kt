@@ -17,6 +17,7 @@ import routes.WebSocketMessage
 import routes.activeConnections
 import routes.handlers.WebSocketUtils
 import utils.json
+import push.PushNotificationService
 
 /**
  * Repository for notification operations
@@ -79,6 +80,17 @@ class NotificationRepository {
                     "Notification sent to user ${createdNotification.userId}: ${createdNotification.title}",
                     "notification"
                 )
+
+                // Send Web Push notification if no WebSocket is connected and keys are configured
+                try {
+                    PushNotificationService.sendIfEligible(createdNotification)
+                } catch (e: Throwable) {
+                    WebSocketDebug.logBroadcast(
+                        "PUSH_SEND_ERROR",
+                        "Error queueing web push for user ${createdNotification.userId}: ${e.message}",
+                        "notification"
+                    )
+                }
             } catch (e: Throwable) {
                 WebSocketDebug.logBroadcast(
                     "NOTIFICATION_ERROR", 

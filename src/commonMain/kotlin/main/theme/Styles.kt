@@ -45,6 +45,26 @@ import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
+    // Fullscreen fade overlay for world transitions
+    val fadeOverlay by style {
+        position(Position.Fixed)
+        top(0.px)
+        left(0.px)
+        width(100.percent)
+        height(100.percent)
+        backgroundColor(Color.black)
+        // Start above most UI, below critical banners if needed
+        property("z-index", "2500")
+        // Block interactions while visible
+        property("pointer-events", "auto")
+        // Animate opacity and backdrop blur
+        property("transition", "opacity 250ms ease, backdrop-filter 250ms ease, -webkit-backdrop-filter 250ms ease")
+        // Default blur when shown; can be overridden inline
+        property("backdrop-filter", "blur(8px)")
+        property("-webkit-backdrop-filter", "blur(8px)")
+        // Fully opaque by default; can be overridden inline
+        opacity(1)
+    }
     // Loading screen styles
     val loadingScreenContainer by style {
         position(Position.Absolute)
@@ -58,7 +78,8 @@ object Styles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
-        property("z-index", "10")
+        // Ensure loading text appears above the fade overlay
+        property("z-index", "3000")
         padding(16.px)
         property("text-align", "center")
         property("overflow", "hidden")
@@ -920,6 +941,28 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         minHeight(100.vh)
         gap(8.px)
+    }
+    
+    // Reconnecting banner across the top
+    val reconnectingBanner by style {
+        position(Position.Fixed)
+        top(16.px)
+        left(16.px)
+        borderRadius(12.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        padding(12.px, 16.px)
+        backgroundColor(Theme.colors.error)
+        color(Color.white)
+        fontWeight("bold")
+        property("z-index", "2000")
+        // Blur the background slightly behind the banner
+        property("backdrop-filter", "blur(2px)")
+        property("-webkit-backdrop-filter", "blur(2px)")
+
+        dark(self) {
+            backgroundColor(Theme.colors.errorDark)
+        }
     }
     
     init {

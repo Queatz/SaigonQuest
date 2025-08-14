@@ -35,7 +35,10 @@ enum class PropertyKey {
     NO,
     
     // OpenUrl properties
-    URL
+    URL,
+
+    // Delay properties
+    DELAY_SECONDS
 }
 
 /**
@@ -96,6 +99,44 @@ data class NodePropertyDefinition(
  */
 fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
     return when (this) {
+        // Delay node properties
+        is LogicNode.Delay -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.DELAY_SECONDS,
+                name = "Seconds",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "5"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // ObjectOwnerNotification node properties
+        is LogicNode.ObjectOwnerNotification -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Message",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            )
+        )
         // ObjectNotification node properties
         is LogicNode.ObjectNotification -> listOf(
             NodePropertyDefinition(

@@ -46,7 +46,8 @@ data class WebSocketConnection(
 @Serializable
 data class WebSocketMessage(
     val action: WebSocketAction? = null,
-    val data: String = ""
+    val data: String = "",
+    val worldUrl: String? = null
 )
 
 /**

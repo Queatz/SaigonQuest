@@ -42,6 +42,7 @@ import models.NotificationType
 import models.OpenUrlData
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
+import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -49,6 +50,7 @@ import kotlin.random.Random
 import Translations.str
 import io.ktor.http.HttpStatusCode
 import kotlin.math.min
+import main.components.Portal
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -106,6 +108,11 @@ fun SceneComponent(url: String) {
     
     // State to track if we're on mobile
     val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
+
+    // Fade overlay state (start black with blur)
+    var showFadeOverlay by remember { mutableStateOf(true) }
+    var fadeOpacity by remember { mutableStateOf(1.0) }
+    var fadeBlurPx by remember { mutableStateOf(8) }
     
     // State for other player dialog
     val showOtherPlayerDialog = remember { mutableStateOf(false) }
@@ -222,6 +229,59 @@ fun SceneComponent(url: String) {
         }
     )
     
+    // Helper to perform navigation with 250ms fade-to-black
+    val navigateWithFade: (String, Boolean) -> Unit = { path, hardReload ->
+        scope.launch {
+            showFadeOverlay = true
+            // If overlay was hidden, start from transparent/no-blur
+            fadeOpacity = 0.0
+            fadeBlurPx = 0
+            // Next frame, animate to black + blur
+            delay(10)
+            fadeOpacity = 1.0
+            fadeBlurPx = 8
+            delay(260)
+            if (hardReload) {
+                window.location.href = path
+            } else {
+                router.navigate(path)
+            }
+        }
+    }
+
+    // Listen for external fade navigation requests
+    DisposableEffect(Unit) {
+        val handler: (dynamic) -> Unit = { e ->
+            val detail = e.detail
+            val path = detail?.path as? String
+
+            path?.let { path ->
+                val hard = (detail.hardReload as? Boolean) ?: false
+                navigateWithFade(path, hard)
+            }
+        }
+        window.addEventListener("navigateWithFade", handler)
+        onDispose { window.removeEventListener("navigateWithFade", handler) }
+    }
+
+    // Fade from black only after the world and objects are ready
+    LaunchedEffect(isLoaded.value, loadingFailed.value) {
+        if (isLoaded.value && !loadingFailed.value) {
+            showFadeOverlay = true
+            // Animate to transparent and remove blur
+            delay(10)
+            fadeOpacity = 0.0
+            fadeBlurPx = 0
+            delay(260)
+            showFadeOverlay = false
+        } else if (loadingFailed.value) {
+            // Reveal the error/loading UI immediately
+            fadeOpacity = 0.0
+            fadeBlurPx = 0
+            showFadeOverlay = false
+        }
+    }
+
     // Loading screen or error message
     LoadingScreen(
         isLoaded = isLoaded.value,
@@ -231,9 +291,9 @@ fun SceneComponent(url: String) {
         showLoginDialog = showLoginDialog.value,
         onShowWorldEditPanel = { showWorldEditPanel.value = true },
         onShowLoginDialog = { showLoginDialog.value = true },
-        onNavigateHome = { router.navigate("/") },
+        onNavigateHome = { navigateWithFade("/", false) },
         showClaimOption = showClaimOption.value,
-        onRetry = { window.location.reload() },
+        onRetry = { navigateWithFade(window.location.pathname, true) },
     )
     
     // Show world edit panel if requested
@@ -243,8 +303,8 @@ fun SceneComponent(url: String) {
             isMobile = isMobile.value,
             onClose = { showWorldEditPanel.value = false },
             onSave = { newWorld ->
-                // After saving, reload the page to see the new world
-                window.location.href = "/${newWorld.url}"
+                // After saving, fade to black then hard reload to the new world
+                navigateWithFade("/${newWorld.url}", true)
             }
         )
     }
@@ -681,6 +741,7 @@ fun SceneComponent(url: String) {
                 // Set world meshes in controllers
                 playerController.setWorldMeshes(worldMeshes)
                 objectManager.setWorldMeshes(worldMeshes)
+                otherPlayersController.setWorldMeshes(worldMeshes)
                 
                 // Find a valid starting position for the player
                 val startPosition = playerController.findValidStartPosition()
@@ -824,8 +885,50 @@ fun SceneComponent(url: String) {
             }
         }
         
+        // ------- Graphics auto-leveling state -------
+        // Stop auto-leveling if we already are at the lowest settings on load
+        var graphicsAutoLevelingActive = !(GraphicsSettings.isLowGraphicsModeEnabled() && !GraphicsSettings.isPrettyGraphicsEnabled())
+        // Accumulates milliseconds during which FPS is continuously < 30
+        var lowFpsAccumulatedMs = 0.0
+
         // Set up the render loop
         scene.registerBeforeRender {
+            // Graphics auto-leveling: track FPS and adjust settings if needed
+            if (graphicsAutoLevelingActive) {
+                val dtMs = scene.deltaTime.toDouble()
+                val fps = if (dtMs > 0.0) 1000.0 / dtMs else 0.0
+
+                if (fps < 30.0) {
+                    lowFpsAccumulatedMs += dtMs
+                } else {
+                    // Reset if performance recovers
+                    lowFpsAccumulatedMs = 0.0
+                }
+
+                // If FPS has been < 30 for 10 seconds, degrade graphics
+                if (lowFpsAccumulatedMs >= 10_000.0) {
+                    // First step: disable pretty graphics if still enabled
+                    if (GraphicsSettings.isPrettyGraphicsEnabled()) {
+                        console.warn("[AutoLevel] Disabling pretty graphics due to sustained <30 FPS")
+                        GraphicsSettings.setPrettyGraphics(false)
+                        // Reset counter for potential next step
+                        lowFpsAccumulatedMs = 0.0
+                    } else if (!GraphicsSettings.isLowGraphicsModeEnabled()) {
+                        // Second step: enable low graphics if pretty is already disabled
+                        console.warn("[AutoLevel] Enabling low graphics mode due to sustained <30 FPS")
+                        GraphicsSettings.setLowGraphicsMode(true)
+                        // Reset counter after change
+                        lowFpsAccumulatedMs = 0.0
+                    }
+
+                    // If both low mode is on and pretty is off, stop auto-leveling until reload
+                    if (!GraphicsSettings.isPrettyGraphicsEnabled() && GraphicsSettings.isLowGraphicsModeEnabled()) {
+                        console.warn("[AutoLevel] Reached minimum graphics. Auto-leveling disabled until reload.")
+                        graphicsAutoLevelingActive = false
+                    }
+                }
+            }
+
             // Calculate movement direction from input
             val moveDirection = inputHandler.calculateMovementDirection()
 
@@ -880,6 +983,23 @@ fun SceneComponent(url: String) {
             // Dispose scene and engine
             scene.dispose()
             engine.dispose()
+        }
+    }
+
+    // Global fade overlay rendered above everything via portal
+    Portal(key = url) {
+        if (showFadeOverlay) {
+            Div(
+                attrs = {
+                    classes(Styles.fadeOverlay)
+                    style {
+                        property("opacity", fadeOpacity.toString())
+                        property("backdrop-filter", "blur(${fadeBlurPx}px)")
+                        property("-webkit-backdrop-filter", "blur(${fadeBlurPx}px)")
+                        property("pointer-events", "auto")
+                    }
+                }
+            ) {}
         }
     }
 }

@@ -40,7 +40,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
     implementation("org.glassfish:jakarta.json:2.0.1")
 
-
     // KotlinX Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
@@ -48,4 +47,12 @@ dependencies {
     
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.13")
+
+    // Web Push (VAPID + HTTP ECE)
+    implementation("nl.martijndwars:web-push:5.1.2")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
+
+    // Apache HttpComponents
+    implementation("org.apache.httpcomponents:httpcore:4.4.16")
 }

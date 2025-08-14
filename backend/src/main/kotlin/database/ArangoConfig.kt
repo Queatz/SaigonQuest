@@ -105,6 +105,7 @@ object CollectionsConfig {
     const val INVENTORY_ITEMS_COLLECTION = "inventory_items"
     const val ITEMS_COLLECTION = "items"
     const val ASSETS_COLLECTION = "assets"
+    const val PUSH_SUBSCRIPTIONS_COLLECTION = "push_subscriptions"
     
     // Collection definitions
     private val collections = mapOf(
@@ -119,6 +120,7 @@ object CollectionsConfig {
         INVENTORY_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         ASSETS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+        , PUSH_SUBSCRIPTIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
     )
     
     fun initializeCollections(database: ArangoDatabase) {

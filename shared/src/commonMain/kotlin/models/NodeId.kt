@@ -11,5 +11,7 @@ enum class NodeId {
     UserLanguage,
     HasItem,
     OpenUrl,
-    ObjectNotification
+    ObjectNotification,
+    ObjectOwnerNotification,
+    Delay
 }

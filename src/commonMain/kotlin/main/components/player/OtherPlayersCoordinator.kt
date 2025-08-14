@@ -19,7 +19,6 @@ import main.api.addUserJoinListener
 import main.api.addUserLeaveListener
 import main.api.sendUserJoin
 import main.components.shadow.ShadowManager
-import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
@@ -30,6 +29,7 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import kotlin.random.Random
 
 class OtherPlayersCoordinator(private val scene: Scene) {
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -51,11 +51,32 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private val baseMovementSpeed: Float = 3.0f
     private val joinLeaveDuration: Double = 0.6
     private val movementDelta = FrameDeltaTracker()
-    private val usernameTextHandles = mutableMapOf<String, main.components.world.WorldObjectHandle>()
+    private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    private var worldMeshes: Array<AbstractMesh> = emptyArray()
+
+    // Alpha flicker ranges between 0.5 and 1.0 (0.5 base + 0.0-0.5 random)
+    private fun computeFlickerAlpha(): Float {
+        val base = 0.25
+        val jitter = Random.nextDouble() * (1.0 - base)
+        return (base + jitter).coerceIn(0.0, 1.0).toFloat()
+    }
 
     fun setWorldObjectManager(manager: WorldObjectManager) { worldObjectManager = manager }
     fun setShadowManager(manager: ShadowManager) { shadowManager = manager }
     fun setHttpWorldId(id: String) { httpWorldIdOverride = id }
+    fun setWorldMeshes(meshes: Array<AbstractMesh>) { worldMeshes = meshes }
+
+    private fun snapToGround(position: Vector3): Vector3 {
+        if (worldMeshes.isEmpty()) return position
+        val snapped = WorldCollisionUtils.findValidYPosition(
+            worldMeshes = worldMeshes,
+            collider = null,
+            moveCircle = null,
+            position = position,
+            yPadding = 0.5f
+        )
+        return snapped ?: position
+    }
 
     fun initialize() {
         if (!this::worldObjectManager.isInitialized) {
@@ -206,7 +227,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 )
                 op.username = join.username
                 op.isPlayer = join.isPlayer
-                op.targetPos = Vector3(join.position.x, join.position.y, join.position.z)
+                op.targetPos = snapToGround(Vector3(join.position.x, join.position.y, join.position.z))
                 attemptSpawnWithUser(op)
             }
         }
@@ -251,7 +272,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         if (pos.userId == myUserId) return
         val op = ensurePlayer(pos.userId)
         op.isPlayer = pos.isPlayer
-        op.targetPos = Vector3(pos.position.x, pos.position.y, pos.position.z)
+        op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
         attemptSpawnWithUser(op)
     }
 
@@ -286,7 +307,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     private fun spawnIfNeeded(op: OtherPlayer) {
         if (op.handle != null) return
-        val startPos = op.targetPos ?: Vector3(0f, 0f, 0f)
+        val startPos = snapToGround(op.targetPos ?: Vector3(0f, 0f, 0f))
         val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(null, null)
         val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
             spriteSheet = baseSprite,
@@ -331,7 +352,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 if (user != null) {
                     window.clearTimeout(fallbackId)
                     if (op.handle == null) {
-                        val startPos = op.targetPos ?: Vector3(0f, 0f, 0f)
+        val startPos = snapToGround(op.targetPos ?: Vector3(0f, 0f, 0f))
                         val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(user.sex, user.bodyType)
                         val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
                             spriteSheet = baseSprite,
@@ -403,30 +424,48 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
         players.values.forEach { op ->
             val handle = op.handle ?: return@forEach
-            // Join scale-in animation
+            // Join scale-in animation (with alpha flicker)
             op.joinStartMs?.let { start ->
                 val elapsed = (now - start) / 1000.0
                 if (elapsed < joinLeaveDuration) {
                     val progress = (elapsed / joinLeaveDuration).coerceIn(0.0, 1.0)
                     val s = (initialJoinScale + (1f - initialJoinScale) * progress.toFloat()).coerceIn(0f, 1f)
-                    handle.scale = Vector3(s, s, s)
+                    handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
+                    // Apply random alpha flicker while joining
+                    val alpha = computeFlickerAlpha()
+                    handle.node.getChildMeshes().forEach { mesh ->
+                        try { mesh.material.alpha = alpha } catch (_: Throwable) {}
+                    }
                 } else {
                     handle.scale = Vector3(1f, 1f, 1f)
                     op.joinStartMs = null
+                    // Restore opaque alpha after animation completes
+                    handle.node.getChildMeshes().forEach { mesh ->
+                        try { mesh.material.alpha = 1f } catch (_: Throwable) {}
+                    }
                 }
             }
-            // Leave scale-out animation
+            // Leave scale-out animation (with alpha flicker)
             op.leaveStartMs?.let { start ->
                 val elapsed = (now - start) / 1000.0
                 if (elapsed < joinLeaveDuration) {
                     val progress = 1.0 - (elapsed / joinLeaveDuration)
                     val s = progress.toFloat().coerceIn(0f, 1f)
-                    handle.scale = Vector3(s, s, s)
+                    handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
+                    // Apply random alpha flicker while leaving
+                    val alpha = computeFlickerAlpha()
+                    handle.node.getChildMeshes().forEach { mesh ->
+                        try { mesh.material.alpha = alpha } catch (_: Throwable) {}
+                    }
                 } else {
-                    handle.scale = Vector3(0f, 0f, 0f)
+                    handle.scale = Vector3(0.5f, 0.5f, 0.5f)
+                    // Ensure fully transparent at the end of leave animation
+                    handle.node.getChildMeshes().forEach { mesh ->
+                        try { mesh.material.alpha = 0f } catch (_: Throwable) {}
+                    }
                 }
             }
-            val targetPos = op.targetPos ?: return@forEach
+            val targetPos = op.targetPos?.let { snapToGround(it) } ?: return@forEach
             val currentPos = handle.position
             val direction = targetPos.subtract(currentPos)
             val distance = direction.length()
@@ -462,7 +501,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             direction.normalize()
             val step = kotlin.math.min(frameMovementSpeed, distance)
             direction.scaleInPlace(step)
-            val newPosition = currentPos.add(direction)
+            val moved = currentPos.add(direction)
+            val newPosition = snapToGround(moved)
             handle.position = newPosition
             hud.updateHudPosition(op.userId, newPosition)
             PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)

@@ -196,6 +196,8 @@ fun createNode(
         NodeId.HasItem -> LogicNode.HasItem()
         NodeId.OpenUrl -> LogicNode.OpenUrl()
         NodeId.ObjectNotification -> LogicNode.ObjectNotification()
+        NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
+        NodeId.Delay -> LogicNode.Delay()
     }
     
     // Create ports based on node type and data

@@ -1,6 +1,7 @@
 package main.api
 
 import app.softwork.routingcompose.Router
+import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import models.DialogueData
 import models.PauseData
@@ -9,6 +10,7 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import main.utils.createCustomEvent
 
 /**
  * Extension functions for WebSocketApi related to listener operations
@@ -130,8 +132,13 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
                         // If targetWorldUrl is provided, navigate to it
                         val targetWorldUrl = teleportData["targetWorldUrl"]
                         if (targetWorldUrl != null) {
-                            console.log("WebSocketApi: Teleporting to world URL: $targetWorldUrl")
-                            router.navigate("/$targetWorldUrl")
+                            console.log("WebSocketApi: Teleporting with fade to world URL: $targetWorldUrl")
+                            // Dispatch a global event so Scene can fade out and navigate
+                            val detail: dynamic = object {}
+                            detail.path = "/$targetWorldUrl"
+                            detail.hardReload = false
+                            val evt = createCustomEvent("navigateWithFade", detail)
+                            window.dispatchEvent(evt)
                         } else {
                             console.error("WebSocketApi: Missing targetWorldUrl in teleport data")
                         }

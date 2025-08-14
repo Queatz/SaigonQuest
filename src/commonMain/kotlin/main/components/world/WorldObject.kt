@@ -414,7 +414,8 @@ class Character(
 
         // Enable transparency for the material
         material.backFaceCulling = false
-        material.transparencyMode = Material.MATERIAL_ALPHATEST
+        // Use alpha test + blend to keep crisp sprite edges while allowing smooth alpha changes
+        material.transparencyMode = Material.MATERIAL_ALPHATESTANDBLEND
         material.metallic = 0.0f       // Low metallic value for non-metallic appearance
         material.roughness = 0.4f      // Medium roughness for slight diffusion of light
         material.usePhysicalLightFalloff = true  // Enable physical light falloff

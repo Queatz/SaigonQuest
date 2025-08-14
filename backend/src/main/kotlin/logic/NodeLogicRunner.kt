@@ -405,6 +405,15 @@ class NodeLogicRunner(
                 HasItemNodeRunner(context)
             }
             
+            NodeId.Delay -> {
+                WebSocketDebug.logMessage(
+                    "DELAY_RUNNER_SELECTED",
+                    "Selected DelayNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                DelayNodeRunner(context)
+            }
+
             NodeId.OpenUrl -> {
                 WebSocketDebug.logMessage(
                     "OPEN_URL_RUNNER_SELECTED",
@@ -421,6 +430,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 ObjectNotificationNodeRunner(context)
+            }
+            NodeId.ObjectOwnerNotification -> {
+                WebSocketDebug.logMessage(
+                    "OBJECT_OWNER_NOTIFICATION_RUNNER_SELECTED",
+                    "Selected ObjectOwnerNotificationNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                ObjectOwnerNotificationNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

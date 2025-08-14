@@ -697,6 +697,9 @@ vi: Tiếp tục vào
 Paused.
 vi: Đã tạm dừng.
 
+Reconnecting
+vi: Đang kết nối lại
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

@@ -24,6 +24,7 @@ import routes.configureObjectRoutes
 import routes.configureUserRoutes
 import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
+import routes.configurePushRoutes
 import kotlin.time.Duration.Companion.seconds
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
@@ -68,6 +69,7 @@ fun Application.module() {
     
     // Configure routing
     routing {
+        // Note: Service worker and favicon are served by the frontend host in this setup.
         configureHealthRoutes()
         configureWorldRoutes()
         configureUserRoutes()
@@ -78,6 +80,7 @@ fun Application.module() {
         configureInventoryRoutes()
         configureItemRoutes()
         configureAssetRoutes()
+        configurePushRoutes()
         configureWebSocketRoutes()
     }
 }

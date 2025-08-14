@@ -22,6 +22,43 @@ tasks.register("run") {
 
 defaultTasks("run")
 
+// Prepare service-worker.js from ':sw' for frontend: copies to the correct folder for dev or prod
+tasks.register<Copy>("prepareDevServiceWorker") {
+    dependsOn(":sw:jsBrowserDevelopmentWebpack")
+    // Compute dev/prod at execution time; avoid capturing other Project instances
+    val variant = "developmentExecutable"
+    val swFile = rootProject.layout.projectDirectory
+        .file("sw/build/kotlin-webpack/js/$variant/service-worker.js")
+        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
+
+    val destDir = layout.buildDirectory.dir("kotlin-webpack/js/$variant")
+    from(swFile)
+    into(destDir)
+    val destDir2 = layout.buildDirectory.dir("processedResources/js/main")
+    from(swFile)
+    into(destDir2)
+    println("Copied service-worker.js to $destDir and $destDir2 (mode=dev)")
+}
+
+tasks.register<Copy>("prepareProdServiceWorker") {
+    dependsOn(":sw:jsBrowserProductionWebpack")
+    val variant = "productionExecutable"
+    val swFile = rootProject.layout.projectDirectory
+        .file("sw/build/kotlin-webpack/js/$variant/service-worker.js")
+        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
+    val destDir = layout.buildDirectory.dir("kotlin-webpack/js/$variant")
+    from(swFile)
+    into(destDir)
+    println("Copied service-worker.js to $destDir (mode=prod)")
+}
+
+// Convenience task: build SW and start frontend dev server
+tasks.register("devApp") {
+    group = "application"
+    description = "Builds the service worker and starts the frontend dev server"
+    dependsOn("prepareDevServiceWorker", "jsBrowserDevelopmentRun")
+}
+
 kotlin {
     js(IR) {
         browser {
@@ -59,7 +96,7 @@ kotlin {
                 implementation(npm("@babylonjs/materials", "8.18.0"))
                 implementation(npm("@babylonjs/loaders", "8.18.0"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.13")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.15")
 
                 // Ktor client
                 implementation("io.ktor:ktor-client-core:3.2.2")

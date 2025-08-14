@@ -210,11 +210,6 @@ object WebSocketApi {
             
             // Start heartbeat to keep connection alive
             startHeartbeat()
-            
-            // Send user join notification with default position
-            // The actual position will be updated later when the player moves
-            // This is now handled by the WebSocketPlayerExtensions.kt extension function
-            // The extension function will be called by the client code after connection
         }
 
         socket?.onmessage = { event ->
@@ -473,8 +468,8 @@ object WebSocketApi {
      */
     fun sendMessage(message: WebSocketMessage): Boolean {
         if (!_isConnected) {
-            console.warn("Cannot send message: WebSocket not connected")
-            _lastError = "WebSocket not connected"
+            console.warn("[MOVEMENT] Cannot send message: WebSocket not connected")
+            _lastError = "[MOVEMENT] WebSocket not connected"
             return false
         }
         
@@ -483,8 +478,8 @@ object WebSocketApi {
             socket?.send(messageString)
             return true
         } catch (e: Throwable) {
-            console.error("Error sending message", e)
-            _lastError = "Error sending message: ${e.message}"
+            console.error("[MOVEMENT] Error sending message", e)
+            _lastError = "[MOVEMENT] Error sending message: ${e.message}"
             return false
         }
     }

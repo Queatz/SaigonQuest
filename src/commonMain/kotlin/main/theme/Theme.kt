@@ -18,5 +18,10 @@ object Theme {
         val onSurface = Color("#000000")
         val onSurfaceVariant = Color("#404040")
         val outline = Color("#D3D3D3")
+        val success = Color("#4CAF50")
+        val successDark = Color("#2E7D32")
+        val error = Color("#EF5350")
+        val errorDark = Color("#C62828")
+
     }
 }
