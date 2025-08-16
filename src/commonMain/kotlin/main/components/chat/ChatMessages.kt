@@ -12,13 +12,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.ChatApi
+import main.api.WorldApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.deleteChatMessage
 import main.api.updateChatMessage
 import main.components.common.Spinner
+import main.components.Translated
 import main.theme.Styles
 import models.ChatMessage
+import models.ChatMessagePin
 import models.WebSocketAction
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -39,6 +42,11 @@ fun ChatMessages(worldId: String) {
     var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    // Pins state
+    var pins by remember { mutableStateOf<List<ChatMessagePin>>(emptyList()) }
+    val pinnedIds = remember(pins) { pins.map { it.messageId }.toSet() }
+    // Ownership state
+    var isOwner by remember { mutableStateOf(false) }
     
     // State for selected message (for editing/deleting)
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
@@ -83,8 +91,23 @@ fun ChatMessages(worldId: String) {
         error = null
         
         try {
+            // Determine if current user is owner of this world
+            try {
+                val me = UserApi.getCurrentUser()
+                val world = WorldApi.getWorld(worldId)
+                isOwner = me.key == world.userId
+            } catch (e: Throwable) {
+                console.warn("Unable to determine ownership", e)
+                isOwner = false
+            }
             val chatMessages = ChatApi.getChatMessages(worldId)
             messages = chatMessages.toList().sortedBy { it.timestamp }
+            // Load pins
+            try {
+                pins = ChatApi.listPins(worldId).toList()
+            } catch (e: Throwable) {
+                console.error("Failed to load pins", e)
+            }
             isLoading = false
             
             // Mark messages as read when chat is opened
@@ -165,11 +188,37 @@ fun ChatMessages(worldId: String) {
             }
         }
         
+        // Add listeners for pin events
+        WebSocketApi.addListener(WebSocketAction.PIN_ADDED) { message ->
+            try {
+                if (message.isValid()) {
+                    val pin = ApiClient.json.decodeFromString<ChatMessagePin>(message.data)
+                    if (pin.worldId == worldId) {
+                        pins = (pins + pin).distinctBy { it.messageId }.sortedByDescending { it.pinnedAt }
+                    }
+                }
+            } catch (e: Throwable) {
+                console.error("Error handling PIN_ADDED", e)
+            }
+        }
+        WebSocketApi.addListener(WebSocketAction.PIN_REMOVED) { message ->
+            try {
+                if (message.isValid()) {
+                    val messageId = ApiClient.json.decodeFromString<String>(message.data)
+                    pins = pins.filterNot { it.messageId == messageId }
+                }
+            } catch (e: Throwable) {
+                console.error("Error handling PIN_REMOVED", e)
+            }
+        }
+
         // Remove listeners when component is disposed
         onDispose {
             WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
             WebSocketApi.removeAllListeners(WebSocketAction.UPDATE_CHAT_MESSAGE)
             WebSocketApi.removeAllListeners(WebSocketAction.DELETE_CHAT_MESSAGE)
+            WebSocketApi.removeAllListeners(WebSocketAction.PIN_ADDED)
+            WebSocketApi.removeAllListeners(WebSocketAction.PIN_REMOVED)
         }
     }
     
@@ -232,19 +281,51 @@ fun ChatMessages(worldId: String) {
     }
     
     // Display messages
-    Div(
-        attrs = {
-            classes(Styles.chatMessagesContainer)
-            ref { element -> 
-                messagesContainerRef.value = element
-                onDispose { }
+    Div(attrs = { classes(Styles.chatMessagesWrapper) }) {
+        // Pinned section (outside scroll container so it stays fixed)
+        if (!isLoading && pins.isNotEmpty()) {
+            Div(attrs = { classes(Styles.chatPinnedSection) }) {
+                Div(attrs = { classes(Styles.chatSectionHeader) }) { Translated("Pinned messages") }
+                pins.forEach { pin ->
+                    val msg = messages.find { it.key == pin.messageId }
+                    Div(attrs = { classes(Styles.chatMessageItem) }) {
+                        P(attrs = { classes(Styles.chatMessageText) }) {
+                            if (msg != null && !msg.deleted) Text(msg.message) else Text("(message)")
+                        }
+                        if (isOwner) {
+                            Span(attrs = {
+                                classes(Styles.chatPinButton)
+                                onClick {
+                                    // Optimistic update
+                                    pins = pins.filterNot { it.messageId == pin.messageId }
+                                    scope.launch {
+                                        val ok = ChatApi.unpinMessage(worldId, pin.messageId)
+                                        if (!ok) {
+                                            try { pins = ChatApi.listPins(worldId).toList() } catch (_: Throwable) {}
+                                        }
+                                    }
+                                }
+                            }) { Translated("Unpin") }
+                        }
+                    }
+                }
             }
         }
-    ) {
-        if (isLoading) {
+
+        // Scrollable messages container
+        Div(
+            attrs = {
+                classes(Styles.chatMessagesContainer)
+                ref { element ->
+                    messagesContainerRef.value = element
+                    onDispose { }
+                }
+            }
+        ) {
+            if (isLoading) {
             // Use the reusable Spinner component
             Spinner(message = "Loading messages...")
-        } else if (error != null) {
+            } else if (error != null) {
             // Error message
             P(
                 attrs = {
@@ -253,7 +334,7 @@ fun ChatMessages(worldId: String) {
             ) {
                 Text(error ?: "Unknown error")
             }
-        } else if (messages.isEmpty()) {
+            } else if (messages.isEmpty()) {
             // Empty state
             P(
                 attrs = {
@@ -262,15 +343,30 @@ fun ChatMessages(worldId: String) {
             ) {
                 Text("No messages yet")
             }
-        } else {
+            } else {
             // Display messages
             messages.forEach { chatMessage ->
                 ChatMessageItem(
                     message = chatMessage,
-                    onMessageClick = { message ->
-                        selectedMessage = message
+                    onMessageClick = { message -> selectedMessage = message },
+                    isOwner = isOwner,
+                    isPinned = pinnedIds.contains(chatMessage.key),
+                    onPinToggle = {
+                        scope.launch {
+                            if (pinnedIds.contains(chatMessage.key)) {
+                                pins = pins.filterNot { it.messageId == chatMessage.key }
+                                val ok = ChatApi.unpinMessage(worldId, chatMessage.key)
+                                if (!ok) { try { pins = ChatApi.listPins(worldId).toList() } catch (_: Throwable) {} }
+                            } else {
+                                try {
+                                    val pin = ChatApi.pinMessage(worldId, chatMessage.key)
+                                    pins = (pins + pin).distinctBy { it.messageId }.sortedByDescending { it.pinnedAt }
+                                } catch (e: Throwable) { console.error("Pin failed", e) }
+                            }
+                        }
                     }
                 )
+            }
             }
         }
     }
@@ -285,7 +381,10 @@ fun ChatMessages(worldId: String) {
 @Composable
 fun ChatMessageItem(
     message: ChatMessage,
-    onMessageClick: (ChatMessage) -> Unit
+    onMessageClick: (ChatMessage) -> Unit,
+    isOwner: Boolean = false,
+    isPinned: Boolean = false,
+    onPinToggle: (() -> Unit)? = null,
 ) {
     // Get current user to determine if this message is from the current user
     val currentUserId = remember { mutableStateOf("") }
@@ -344,8 +443,21 @@ fun ChatMessageItem(
                         Text("•")
                     }
                 }
-                
                 Text(formatTimestamp(message.timestamp))
+
+                // Owner-only pin/unpin control
+                if (isOwner && onPinToggle != null) {
+                    Span(attrs = {
+                        classes(Styles.chatPinButton)
+                        onClick {
+                            it.stopPropagation()
+                            onPinToggle()
+                        }
+                    }) {
+                        Text(" ")
+                        if (isPinned) Translated("Unpin") else Translated("Pin")
+                    }
+                }
             }
         }
         

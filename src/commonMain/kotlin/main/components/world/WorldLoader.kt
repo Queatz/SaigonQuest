@@ -42,6 +42,9 @@ class WorldLoader(private val scene: Scene) {
         private var currentHemisphericLight: HemisphericLight? = null
         private var currentDirectionalLight: DirectionalLight? = null
 
+        // Whether the currently loaded world is outdoors
+        private var currentWorldIsOutdoors: Boolean = false
+
         // Reference to the current WorldLoader instance for cross-component notifications
         private var currentInstance: WorldLoader? = null
         
@@ -120,6 +123,9 @@ class WorldLoader(private val scene: Scene) {
                 println("[WARN] Hemispheric light not initialized; cannot update color")
             }
         }
+
+        /** Returns true if the active world is marked as outdoors. */
+        fun isOutdoorsActive(): Boolean = currentWorldIsOutdoors
 
         /**
          * Internal: register current lights so they can be updated globally.
@@ -221,6 +227,8 @@ class WorldLoader(private val scene: Scene) {
             
             // Store the world data
             currentWorld = world
+            // Expose outdoors flag for global systems
+            Companion.currentWorldIsOutdoors = world.isOutdoors
 
             // Set the scene fog density from the world model (applies in both modes)
             setSceneFogDensity(world.fogDensity)

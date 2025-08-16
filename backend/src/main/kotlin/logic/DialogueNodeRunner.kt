@@ -1,9 +1,8 @@
 package logic
 
 import debug.WebSocketDebug
-import io.ktor.websocket.Frame
-import io.ktor.websocket.readText
 import io.ktor.websocket.send
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import models.DialogueConfirmation
 import models.DialogueData
@@ -13,6 +12,7 @@ import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
 import utils.json
+import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
@@ -26,8 +26,9 @@ import kotlin.time.Duration.Companion.seconds
  */
 class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
     companion object {
-        // Map to track pending dialogue confirmations with button index
-        private val pendingConfirmations = ConcurrentHashMap<String, Pair<Boolean, Int>>()
+        private val logger = LoggerFactory.getLogger(DialogueNodeRunner::class.java)
+        // Map to track pending dialogue confirmations with a deferred button index
+        private val pendingConfirmations = ConcurrentHashMap<String, CompletableDeferred<Int>>()
         
         // Timeout for waiting for confirmation (in seconds)
         private const val CONFIRMATION_TIMEOUT = 300L // 5 minutes
@@ -40,11 +41,14 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
          */
         fun processConfirmation(confirmation: DialogueConfirmation): Boolean {
             val dialogueId = confirmation.dialogueId
-            if (pendingConfirmations.containsKey(dialogueId)) {
-                pendingConfirmations[dialogueId] = Pair(true, confirmation.buttonIndex)
-                return true
+            val deferred = pendingConfirmations[dialogueId]
+            if (deferred == null) {
+                logger.debug("Dialogue processConfirmation: no pending for id={}", dialogueId)
+                return false
             }
-            return false
+            val ok = deferred.complete(confirmation.buttonIndex)
+            logger.debug("Dialogue processConfirmation: completed id={} ok={} index={}", dialogueId, ok, confirmation.buttonIndex)
+            return ok
         }
     }
     
@@ -64,6 +68,9 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         // Extract text content
         val text = nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value ?: return false
         
+        // Extract optional image URL
+        val imageUrl = nodeData.properties.find { it.key == PropertyKey.IMAGE_URL }?.value?.takeIf { it.isNotBlank() }
+
         // Extract buttons (default to "OK" if none specified)
         val buttonsValue = nodeData.properties.find { it.key == PropertyKey.BUTTONS }?.value ?: "OK"
         val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
@@ -72,8 +79,10 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         // Generate a unique dialogue ID
         val dialogueId = UUID.randomUUID().toString()
         
-        // Register the dialogue ID in the pending confirmations map with default button index -1
-        pendingConfirmations[dialogueId] = Pair(false, -1)
+        // Register the dialogue ID in the pending confirmations map with a deferred result
+        val deferred = CompletableDeferred<Int>()
+        logger.debug("Dialogue register: id={}", dialogueId)
+        pendingConfirmations[dialogueId] = deferred
         
         // Create a dialogue data object with buttons
         val dialogueData = DialogueData(
@@ -81,7 +90,8 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             userId = context.connection.userId,
             text = text,
             nodeId = node.id,
-            buttons = buttonsList
+            buttons = buttonsList,
+            imageUrl = imageUrl
         )
         
         val dialogueMessage = WebSocketMessage(
@@ -90,48 +100,29 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         )
         
         // Send the dialogue message to the client
+        WebSocketDebug.logMessage("DIALOGUE_SHOW_SEND", "dialogueId=$dialogueId nodeId=${node.id}", context.session)
         context.connection.session.send(json.encodeToString(dialogueMessage))
         
-        // Set up a listener for the confirmation
-        val confirmationResult = withTimeoutOrNull(CONFIRMATION_TIMEOUT.seconds) {
-            // Wait until the confirmation is received or timeout
-            while (!pendingConfirmations.getOrDefault(dialogueId, Pair(false, -1)).first) {
-                // Check for incoming messages
-                val frame = context.connection.session.incoming.receive()
-                if (frame is Frame.Text) {
-                    val text = frame.readText()
-                    try {
-                        val message = json.decodeFromString<WebSocketMessage>(text)
-                        if (message.action == WebSocketAction.DIALOGUE_CONFIRM) {
-                            val confirmation = json.decodeFromString<DialogueConfirmation>(message.data)
-                            if (confirmation.dialogueId == dialogueId) {
-                                pendingConfirmations[dialogueId] = Pair(true, confirmation.buttonIndex)
-                                break
-                            }
-                        }
-                    } catch (e: Throwable) {
-                        // Ignore parsing errors
-                    }
-                }
+        // Await the confirmation result via the deferred
+        val buttonIndex = try {
+            WebSocketDebug.logMessage("DIALOGUE_AWAIT_START", "dialogueId=$dialogueId", context.session)
+            withTimeoutOrNull(CONFIRMATION_TIMEOUT.seconds) {
+                deferred.await()
             }
-            pendingConfirmations[dialogueId]
-        } ?: Pair(false, -1)
-        
-        // Get the button index that was confirmed
-        val buttonIndex = confirmationResult.second
-        
-        // Clean up
-        pendingConfirmations.remove(dialogueId)
-        
-        // Return the button index as part of the event data for the next node
-        if (confirmationResult.first && buttonIndex >= 0) {
-            // Add the button index to the event data
-            eventData["buttonIndex"] = buttonIndex
-            
-            // The NodeLogicRunner will use this buttonIndex to determine which connection to follow
-            return true
+        } finally {
+            // Clean up regardless of outcome
+            pendingConfirmations.remove(dialogueId)
+            if (!deferred.isCompleted) deferred.cancel()
         }
-        
-        return false
+
+        // If confirmed within timeout, propagate button index; otherwise fail
+        return if (buttonIndex != null && buttonIndex >= 0) {
+            WebSocketDebug.logMessage("DIALOGUE_CONFIRMED", "dialogueId=$dialogueId buttonIndex=$buttonIndex", context.session)
+            eventData["buttonIndex"] = buttonIndex
+            true
+        } else {
+            WebSocketDebug.logMessage("DIALOGUE_TIMEOUT_OR_INVALID", "dialogueId=$dialogueId", context.session)
+            false
+        }
     }
 }

@@ -511,6 +511,9 @@ fun SceneComponent(url: String) {
     // Add DialogueBox component for displaying dialogue messages
     DialogueBox()
 
+    // Add TakeItems dialog for item transfer prompts
+    TakeItemsDialog()
+
     // Quantity prompt dialog for inventory item drop
     if (showDropQuantityDialog.value && pendingDrop.value != null) {
         val pd = pendingDrop.value!!
@@ -898,15 +901,15 @@ fun SceneComponent(url: String) {
                 val dtMs = scene.deltaTime.toDouble()
                 val fps = if (dtMs > 0.0) 1000.0 / dtMs else 0.0
 
-                if (fps < 30.0) {
+                if (fps < 45.0) {
                     lowFpsAccumulatedMs += dtMs
                 } else {
                     // Reset if performance recovers
                     lowFpsAccumulatedMs = 0.0
                 }
 
-                // If FPS has been < 30 for 10 seconds, degrade graphics
-                if (lowFpsAccumulatedMs >= 10_000.0) {
+                // If FPS has been < 30 for 5 seconds, degrade graphics
+                if (lowFpsAccumulatedMs >= 5_000.0) {
                     // First step: disable pretty graphics if still enabled
                     if (GraphicsSettings.isPrettyGraphicsEnabled()) {
                         console.warn("[AutoLevel] Disabling pretty graphics due to sustained <30 FPS")
@@ -934,6 +937,10 @@ fun SceneComponent(url: String) {
 
             // Update player position
             val newPosition = playerController.updatePlayerPosition(moveDirection)
+            if (newPosition == null) {
+                // No movement this frame; zero out instantaneous velocity for sway
+                SceneManager.setPlayerVelocity(lib.Vector3(0f, 0f, 0f))
+            }
 
             // Update camera target if player moved
             if (newPosition != null) {

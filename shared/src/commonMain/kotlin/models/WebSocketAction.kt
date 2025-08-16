@@ -27,5 +27,11 @@ enum class WebSocketAction {
     PLAYER_TYPING,
     OPEN_URL,
     NOTIFICATION,
-    PAUSE
+    PAUSE,
+    PIN_ADDED,
+    PIN_REMOVED,
+    // Inventory and item transfer related
+    SHOW_TAKE_ITEMS,
+    TAKE_ITEMS_CONFIRM,
+    INVENTORY_CHANGED
 }

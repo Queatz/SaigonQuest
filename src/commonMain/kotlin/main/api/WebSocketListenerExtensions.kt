@@ -211,3 +211,35 @@ fun WebSocketApi.addPauseListener(router: Router, listener: (PauseData) -> Unit 
     addListener(WebSocketAction.PAUSE, handler)
     return ListenerToken(WebSocketAction.PAUSE, handler)
 }
+
+/**
+ * Add a listener for take-items prompts
+ */
+fun WebSocketApi.addTakeItemsListener(listener: (models.TakeItemsPrompt) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val data = ApiClient.json.decodeFromString<models.TakeItemsPrompt>(message.data)
+            listener(data)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing SHOW_TAKE_ITEMS data", e)
+        }
+    }
+    addListener(models.WebSocketAction.SHOW_TAKE_ITEMS, handler)
+    return ListenerToken(models.WebSocketAction.SHOW_TAKE_ITEMS, handler)
+}
+
+/**
+ * Add a listener for inventory changed notifications.
+ */
+fun WebSocketApi.addInventoryChangedListener(listener: (models.InventoryChanged) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val data = ApiClient.json.decodeFromString<models.InventoryChanged>(message.data)
+            listener(data)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing INVENTORY_CHANGED data", e)
+        }
+    }
+    addListener(models.WebSocketAction.INVENTORY_CHANGED, handler)
+    return ListenerToken(models.WebSocketAction.INVENTORY_CHANGED, handler)
+}

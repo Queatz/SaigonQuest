@@ -9,6 +9,8 @@ import lib.Scene
 import lib.Vector3
 import main.api.UserApi
 import main.components.inventory.InventoryState
+import main.api.WebSocketApi
+import main.api.addInventoryChangedListener
 import main.components.world.CharacterDirection
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
@@ -74,6 +76,14 @@ object PlayerInitializer {
         InventoryState.addOnRefreshCallback(refreshCallback)
         if (!(InventoryState.currentUser != null && InventoryState.items.isNotEmpty())) {
             coroutineScope.launch { InventoryState.loadInventory(coroutineScope) { onRefreshWornItems() } }
+        }
+
+        // Listen for inventory-changed notifications for this user
+        WebSocketApi.addInventoryChangedListener { evt ->
+            val userId = InventoryState.currentUser?.key
+            if (userId != null && evt.userId == userId) {
+                coroutineScope.launch { InventoryState.refreshInventory(coroutineScope) { onRefreshWornItems() } }
+            }
         }
     }
 }

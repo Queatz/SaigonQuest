@@ -2,6 +2,7 @@ package main.components.objects
 
 import androidx.compose.runtime.Composable
 import main.theme.EditorStyles
+import main.theme.Styles
 import models.Object
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -132,7 +133,7 @@ fun WorldObjectsContent(
                             // Remove button
                             Button(
                                 attrs = {
-                                    classes(EditorStyles.removeButton)
+                                    classes(EditorStyles.removeButton, Styles.primaryButton)
                                     onClick { onRemove(obj.key) }
                                 }
                             ) {

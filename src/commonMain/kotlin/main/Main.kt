@@ -17,7 +17,6 @@ import main.theme.NodeStyles
 import main.theme.NotificationStyles
 
 fun main() {
-    // Initialize WebSocketConnectionManager
     WebSocketConnectionManager.initialize()
     console.log("WebSocketConnectionManager initialized")
     
@@ -34,6 +33,14 @@ fun main() {
         ) {
             val router = Router.current
 
+            route("/bye") {
+                ByePage()
+            }
+
+            route("/paused") {
+                PausedPage()
+            }
+
             // Catch-all route for any other path
             noMatch {
                 // Get the current path from the window.location.pathname
@@ -41,11 +48,7 @@ fun main() {
 
                 // Render the 3D scene with the URL from the path or Bye page
                 key(url) {
-                    when (url) {
-                        "bye" -> ByePage()
-                        "paused" -> PausedPage()
-                        else -> SceneComponent(url = url)
-                    }
+                    SceneComponent(url = url)
                 }
             }
         }

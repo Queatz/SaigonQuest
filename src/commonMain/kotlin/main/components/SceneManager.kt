@@ -28,6 +28,9 @@ object SceneManager {
     
     // The BabylonJS scene instance
     private var scene: Scene? = null
+
+    // Last known local player velocity in world space (per frame delta)
+    private var playerVelocity: lib.Vector3? = null
     
     /**
      * Sets the camera controller instance.
@@ -123,6 +126,12 @@ object SceneManager {
     fun getScene(): Scene? {
         return scene
     }
+
+    /** Sets the local player's instantaneous velocity (world space units per frame). */
+    fun setPlayerVelocity(v: lib.Vector3?) { playerVelocity = v }
+
+    /** Gets the local player's instantaneous velocity. Null if unknown. */
+    fun getPlayerVelocity(): lib.Vector3? = playerVelocity
     
     /**
      * Clears all stored references.
@@ -134,6 +143,7 @@ object SceneManager {
         playerController = null
         otherPlayersController = null
         scene = null
+        playerVelocity = null
         println("[DEBUG] SceneManager cleared")
     }
 }

@@ -239,7 +239,7 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem) {
+            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems) {
                 // For HasItem nodes, use the outputProperty to select the correct connection
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -268,6 +268,7 @@ class NodeLogicRunner(
                         when (outputProperty) {
                             PropertyKey.YES -> connection.fromPort.endsWith("_out_0")
                             PropertyKey.NO -> connection.fromPort.endsWith("_out_1")
+                            PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
                             else -> false
                         }
                     }
@@ -438,6 +439,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 ObjectOwnerNotificationNodeRunner(context)
+            }
+            NodeId.TakeItems -> {
+                WebSocketDebug.logMessage(
+                    "TAKE_ITEMS_RUNNER_SELECTED",
+                    "Selected TakeItemsNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                TakeItemsNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

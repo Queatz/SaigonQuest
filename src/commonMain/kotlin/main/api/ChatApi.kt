@@ -6,6 +6,7 @@ import io.ktor.http.*
 import kotlinx.browser.window
 import models.ChatMessage
 import models.ChatReadMarker
+import models.ChatMessagePin
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -154,6 +155,51 @@ object ChatApi {
         } catch (e: Throwable) {
             console.error("Error deleting chat message", e)
             throw e
+        }
+    }
+
+    /**
+     * List pinned messages for a world
+     */
+    suspend fun listPins(worldId: String, limit: Int = 50, offset: Int = 0): Array<ChatMessagePin> {
+        try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/chat/$worldId/pins?limit=$limit&offset=$offset") {
+                ApiClient.addAuthHeader(this)
+            }
+            return response.body<Array<ChatMessagePin>>()
+        } catch (e: Throwable) {
+            console.error("Error fetching chat pins", e)
+            throw e
+        }
+    }
+
+    /**
+     * Pin a message (owner only)
+     */
+    suspend fun pinMessage(worldId: String, messageId: String): ChatMessagePin {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/chat/$worldId/messages/$messageId/pin") {
+                ApiClient.addAuthHeader(this)
+            }
+            return response.body<ChatMessagePin>()
+        } catch (e: Throwable) {
+            console.error("Error pinning message", e)
+            throw e
+        }
+    }
+
+    /**
+     * Unpin a message (owner only)
+     */
+    suspend fun unpinMessage(worldId: String, messageId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/chat/$worldId/messages/$messageId/pin") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error unpinning message", e)
+            false
         }
     }
 }

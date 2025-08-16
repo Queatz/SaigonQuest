@@ -3,6 +3,7 @@ package main.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import app.softwork.routingcompose.Router
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,9 +51,12 @@ fun PlayerDialog(
     
     // State to control character customization dialog visibility
     val showCustomizationDialog = remember { mutableStateOf(false) }
+    // State to control My Worlds dialog visibility
+    val showMyWorldsDialog = remember { mutableStateOf(false) }
 
     // Coroutine scope for async operations that persists beyond dialog closure
     val coroutineScope = remember { MainScope() }
+    val router = Router.current
 
     // Function to update user status
     val updateUserStatus = {
@@ -311,6 +315,16 @@ fun PlayerDialog(
                         id = "prettyGraphicsToggle"
                     )
 
+                    // My worlds button
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            onClick { showMyWorldsDialog.value = true }
+                        }
+                    ) {
+                        Translated("My Worlds")
+                    }
+
                     // Logout button
                     Button(
                         attrs = {
@@ -360,6 +374,14 @@ fun PlayerDialog(
                         }
                         showCustomizationDialog.value = false
                     }
+                )
+            }
+
+            // Render the My Worlds dialog when visible
+            if (showMyWorldsDialog.value) {
+                MyWorldsDialog(
+                    onClose = { showMyWorldsDialog.value = false },
+                    onNavigate = { path -> router.navigate(path) }
                 )
             }
         },

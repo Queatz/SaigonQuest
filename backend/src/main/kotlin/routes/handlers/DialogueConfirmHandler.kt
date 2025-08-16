@@ -43,9 +43,9 @@ class DialogueConfirmHandler : WebSocketHandler {
             val processed = DialogueNodeRunner.processConfirmation(confirmation)
             
             if (processed) {
-                WebSocketDebug.logMessage("DIALOGUE_CONFIRM_PROCESSED", "Dialogue confirmation processed successfully", session)
+                WebSocketDebug.logMessage("DIALOGUE_CONFIRM_PROCESSED", "dialogueId=${confirmation.dialogueId} buttonIndex=${confirmation.buttonIndex}", session)
             } else {
-                WebSocketDebug.logMessage("DIALOGUE_CONFIRM_IGNORED", "No pending dialogue found for this confirmation", session)
+                WebSocketDebug.logMessage("DIALOGUE_CONFIRM_IGNORED", "dialogueId=${confirmation.dialogueId}", session)
             }
         } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing dialogue confirmation", e, session)

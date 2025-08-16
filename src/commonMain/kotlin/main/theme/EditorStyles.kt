@@ -107,11 +107,5 @@ object EditorStyles : StyleSheet() {
     
     val removeButton by style {
         backgroundColor(rgba(255, 0, 0, 0.7))
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-        padding(4.px, 8.px)
-        cursor("pointer")
-        fontSize(12.px)
     }
 }

@@ -65,6 +65,10 @@ object WornItemsRenderer {
             cellWidthPx = 32,
             cellHeightPx = 48,
             columns = 8,
+            windEnabled = true,
+            // Typical apparel (dresses, capes): pinned near top, free at bottom
+            windFlipY = true,
+            windIntensityScale = 0.05f,
             directionOrder = listOf(
                 main.components.world.CharacterDirection.S,
                 main.components.world.CharacterDirection.SE,
@@ -85,6 +89,9 @@ object WornItemsRenderer {
             cellWidthPx = 32,
             cellHeightPx = 48,
             columns = 8,
+            windEnabled = true,
+            windFlipY = true,
+            windIntensityScale = 0.05f,
             directionOrder = listOf(
                 main.components.world.CharacterDirection.S,
                 main.components.world.CharacterDirection.SE,

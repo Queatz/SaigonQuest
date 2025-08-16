@@ -7,6 +7,7 @@ import com.arangodb.ArangoDatabase
 import com.arangodb.entity.CollectionType
 import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
+import com.arangodb.model.PersistentIndexOptions
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -99,6 +100,7 @@ object CollectionsConfig {
     const val OBJECTS_COLLECTION = "objects"
     const val CHAT_MESSAGES_COLLECTION = "chat_messages"
     const val CHAT_READ_MARKERS_COLLECTION = "chat_read_markers"
+    const val CHAT_MESSAGE_PINS_COLLECTION = "chat_message_pins"
     const val NOTIFICATIONS_COLLECTION = "notifications"
     const val FRIENDS_COLLECTION = "friends"
     const val INVENTORIES_COLLECTION = "inventories"
@@ -114,6 +116,7 @@ object CollectionsConfig {
         OBJECTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         CHAT_MESSAGES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         CHAT_READ_MARKERS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        CHAT_MESSAGE_PINS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         NOTIFICATIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         FRIENDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         INVENTORIES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
@@ -131,5 +134,18 @@ object CollectionsConfig {
                 database.createCollection(collectionName, options)
             }
         }
+
+        // Ensure indexes for chat_message_pins collection
+        try {
+            val pins = database.collection(CHAT_MESSAGE_PINS_COLLECTION)
+            // Unique to prevent duplicate pins per world/message
+            try {
+                pins.ensurePersistentIndex(listOf("worldId", "messageId"), PersistentIndexOptions().unique(true))
+            } catch (_: Throwable) {}
+            // For fast listing and sorting
+            try {
+                pins.ensurePersistentIndex(listOf("worldId", "pinnedAt"), PersistentIndexOptions().unique(false))
+            } catch (_: Throwable) {}
+        } catch (_: Throwable) {}
     }
 }

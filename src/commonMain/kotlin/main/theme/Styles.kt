@@ -42,6 +42,7 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
@@ -685,8 +686,52 @@ object Styles : StyleSheet() {
     }
     
     // Chat Messages styles
+    // Section header used for grouping (e.g., Pinned messages)
+    val chatSectionHeader by style {
+        color(rgba(255, 255, 255, 0.7))
+        fontWeight("bold")
+    }
+
+    // Generic chat message text (used in simple list items like pins)
+    val chatMessageText by style {
+        margin(0.px)
+        color(Color.white)
+    }
+
+    // Sticky container for pinned messages at the top of the list
+    val chatPinnedSection by style {
+        position(Position.Sticky)
+        top(0.px)
+        // Keep above scrolling content
+        property("z-index", "2")
+        // Subtle separation from the rest of the messages
+        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
+        // Optional: soften with a slight blur
+        padding(16.px, 0.px)
+    }
+
+    // Clickable pin/unpin action style
+    val chatPinButton by style {
+        padding(2.px, 8.px)
+        cursor("pointer")
+        color(rgba(180, 180, 180, 0.95))
+        property("border-radius", "4px")
+        property("margin-left", "8px")
+    }
+
+    // Outer wrapper for chat area; holds pinned header and scroll area
+    val chatMessagesWrapper by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        property("flex-grow", "1")
+        // Only side/bottom padding so no content scrolls under top padding
+        property("padding", "0 16px 16px")
+        // Prevent outer from scrolling; only inner container scrolls
+        property("overflow", "hidden")
+    }
+
+    // Scroll container for messages only
     val chatMessagesContainer by style {
-        padding(16.px)
         property("overflow-y", "auto")
         property("flex-grow", "1")
         display(DisplayStyle.Flex)

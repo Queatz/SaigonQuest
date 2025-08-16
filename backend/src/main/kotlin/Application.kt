@@ -25,6 +25,8 @@ import routes.configureUserRoutes
 import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
 import routes.configurePushRoutes
+import routes.configureAuthRoutes
+import utils.json
 import kotlin.time.Duration.Companion.seconds
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
@@ -32,11 +34,7 @@ fun main(args: Array<String>): Unit = EngineMain.main(args)
 fun Application.module() {
     // Install Content Negotiation with JSON
     install(ContentNegotiation) {
-        json(Json {
-            prettyPrint = true
-            isLenient = true
-            ignoreUnknownKeys = true
-        })
+        json(json)
     }
     
     // Install CORS
@@ -81,6 +79,7 @@ fun Application.module() {
         configureItemRoutes()
         configureAssetRoutes()
         configurePushRoutes()
+        configureAuthRoutes()
         configureWebSocketRoutes()
     }
 }

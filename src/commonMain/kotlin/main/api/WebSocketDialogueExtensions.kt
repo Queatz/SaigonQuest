@@ -51,3 +51,26 @@ fun WebSocketApi.sendDialogueConfirmation(dialogueId: String, userId: String, bu
         return false
     }
 }
+
+/**
+ * Send a take-items confirmation message
+ *
+ * @param requestId The prompt request ID
+ * @param userId The confirming user ID
+ * @param accepted Whether the user accepted the transfer
+ */
+fun WebSocketApi.sendTakeItemsConfirmation(requestId: String, userId: String, accepted: Boolean): Boolean {
+    console.log("WebSocketApi: Sending take-items confirmation for requestId=$requestId accepted=$accepted")
+    if (!isConnected()) return false
+    return try {
+        val confirmation = models.TakeItemsConfirmation(requestId = requestId, userId = userId, accepted = accepted)
+        val message = WebSocketMessage.fromEnum(
+            action = models.WebSocketAction.TAKE_ITEMS_CONFIRM,
+            data = ApiClient.json.encodeToString(confirmation)
+        )
+        sendMessage(message)
+    } catch (e: Throwable) {
+        console.error("WebSocketApi: Error sending take-items confirmation", e)
+        false
+    }
+}

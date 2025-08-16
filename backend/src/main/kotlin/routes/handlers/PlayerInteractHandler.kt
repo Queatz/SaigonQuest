@@ -4,6 +4,7 @@ import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import logic.NodeLogicRunner
 import logic.NodeRunnerContext
+import kotlinx.coroutines.launch
 import models.LogicNode
 import models.PlayerInteractData
 import repository.ObjectRepository
@@ -72,14 +73,30 @@ class PlayerInteractHandler(
                 
                 // Process the appropriate starting node based on whether the user is a player or visitor
                 if (interactData.isPlayer) {
-                    WebSocketDebug.logMessage("PROCESSING_PLAYER_INTERACT", "Processing as player interaction", session)
-                    nodeLogicRunner.processNodes(LogicNode.PlayerInteract(), eventData)
+                    WebSocketDebug.logMessage("PROCESSING_PLAYER_INTERACT", "Processing as player interaction (async)", session)
+                    // Launch asynchronously so multiple NodeLogicRunner instances can run concurrently per user
+                    session.launch {
+                        try {
+                            nodeLogicRunner.processNodes(LogicNode.PlayerInteract(), eventData)
+                        } catch (e: Throwable) {
+                            WebSocketDebug.logError("Error in async PlayerInteract processing", e, session)
+                        } finally {
+                            WebSocketDebug.logMessage("NODE_PROCESSING_COMPLETE", "Completed node processing for object: ${objectModel.title}", session)
+                        }
+                    }
                 } else {
-                    WebSocketDebug.logMessage("PROCESSING_VISITOR_INTERACT", "Processing as visitor interaction", session)
-                    nodeLogicRunner.processNodes(LogicNode.VisitorInteract(), eventData)
+                    WebSocketDebug.logMessage("PROCESSING_VISITOR_INTERACT", "Processing as visitor interaction (async)", session)
+                    // Launch asynchronously so multiple NodeLogicRunner instances can run concurrently per user
+                    session.launch {
+                        try {
+                            nodeLogicRunner.processNodes(LogicNode.VisitorInteract(), eventData)
+                        } catch (e: Throwable) {
+                            WebSocketDebug.logError("Error in async VisitorInteract processing", e, session)
+                        } finally {
+                            WebSocketDebug.logMessage("NODE_PROCESSING_COMPLETE", "Completed node processing for object: ${objectModel.title}", session)
+                        }
+                    }
                 }
-                
-                WebSocketDebug.logMessage("NODE_PROCESSING_COMPLETE", "Completed node processing for object: ${objectModel.title}", session)
             } else {
                 WebSocketDebug.logError("Object not found with ID: ${interactData.objectId}", null, session)
             }

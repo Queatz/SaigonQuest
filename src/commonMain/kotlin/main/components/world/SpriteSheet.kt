@@ -9,6 +9,14 @@ class SpriteSheet(
     val cellHeightPx: Int,
     val columns: Int,
     val framesPerSecond: Float = 8f,
+    // Wind animation options (disabled by default)
+    val windEnabled: Boolean = false,
+    // 5x5 weights in row-major order (top-left -> bottom-right). Null -> use defaults.
+    val windWeights5x5: FloatArray? = null,
+    // Optional orientation: flip vertically to swap pinned/loose edges for billboards
+    val windFlipY: Boolean = false,
+    // Per-item amplitude scale (meters)
+    val windIntensityScale: Float = .25f,
     private val directionOrder: List<CharacterDirection> = listOf(
         CharacterDirection.S,
         CharacterDirection.SE,
@@ -132,6 +140,10 @@ class SpriteSheet(
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
+                windEnabled = true,
+                // Hair: pinned at root (top), strong at tips (bottom) -> flip Y
+                windFlipY = true,
+                windIntensityScale = 0.065f,
             )
         }
 

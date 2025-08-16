@@ -146,6 +146,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Wait for N seconds, then continue"
     ) : LogicNode
+
+    /**
+     * TakeItems node - prompts the user to transfer items to the world owner
+     */
+    @Serializable
+    data class TakeItems(
+        override val id: NodeId = NodeId.TakeItems,
+        override val label: String = "Take items",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Prompt user to transfer selected items to the world owner"
+    ) : LogicNode
 }
 
 /**
@@ -162,7 +173,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.OpenUrl(),
         LogicNode.ObjectNotification(),
         LogicNode.ObjectOwnerNotification(),
-        LogicNode.Delay()
+        LogicNode.Delay(),
+        LogicNode.TakeItems()
     )
 }
 

@@ -114,7 +114,7 @@ fun main() {
                     null
                 } else {
                     val idPart: String = try { data?.id as? String ?: "" } catch (_: Throwable) { "" }
-                    val openUrl = if (!worldUrl.isNullOrBlank()) "/$worldUrl?notif=$idPart" else "/"
+                    val openUrl = if (!worldUrl.isNullOrBlank()) "/$worldUrl" else "/"
                     self.clients.openWindow(openUrl)
                 }
             }

@@ -43,6 +43,24 @@ vi: Đặt trạng thái của bạn
 World Chat
 vi: Trò chuyện thế giới
 
+Pinned messages
+vi: Tin nhắn được ghim
+
+Pin
+vi: Ghim
+
+Unpin
+vi: Bỏ ghim
+
+Pin to top
+vi: Ghim lên đầu
+
+Unpin message
+vi: Bỏ ghim tin nhắn
+
+No pinned messages yet
+vi: Chưa có tin nhắn được ghim
+
 © 2025 Saigon.Quest v0.1
 vi: © 2025 Saigon.Quest v0.1
 
@@ -699,6 +717,22 @@ vi: Đã tạm dừng.
 
 Reconnecting
 vi: Đang kết nối lại
+
+Take these items?
+vi: Nhận những vật phẩm này?
+
+Decline
+vi: Từ chối
+
+Take items
+vi: Nhận vật phẩm
+
+Give these items?
+vi: Tặng những vật phẩm này?
+
+Give items
+vi: Tặng vật phẩm
+
 
 """
 

@@ -12,6 +12,11 @@ import models.ChatMessage
 import models.ChatReadMarker
 import models.ErrorResponse
 import repository.ChatRepository
+import repository.WorldRepository
+import models.ChatMessagePin
+import models.WebSocketAction
+import routes.activeConnections
+import utils.json
 import repository.UserRepository
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -22,6 +27,7 @@ import java.time.temporal.ChronoUnit
 fun Routing.configureChatRoutes() {
     val chatRepository = ChatRepository()
     val userRepository = UserRepository()
+    val worldRepository = WorldRepository()
     
     route("/chat") {
         // Get chat messages for a world - no authentication required for reading
@@ -194,6 +200,114 @@ fun Routing.configureChatRoutes() {
                         ErrorResponse(message = "Message not found or you don't have permission to modify it", code = HttpStatusCode.NotFound.value)
                     )
                 }
+            }
+        }
+
+        // List pinned messages for a world (public)
+        get("/{worldId}/pins") {
+            val worldId = call.parameters["worldId"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+            )
+
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
+            val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+
+            val pins = chatRepository.listPins(worldId, limit, offset)
+            call.respond(pins)
+        }
+
+        // Pin a message (owner only)
+        authenticate {
+            post("/{worldId}/messages/{messageId}/pin") {
+                val worldId = call.parameters["worldId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val messageId = call.parameters["messageId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing messageId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val world = worldRepository.getById(worldId) ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
+                )
+
+                if (world.userId != userId) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Only the world owner can pin messages", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                val pin = chatRepository.pinMessage(worldId, messageId, userId)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "Message not found or not in this world", code = HttpStatusCode.NotFound.value)
+                    )
+
+                // Broadcast pin added to websocket clients
+                try {
+                    val wsMessage = routes.WebSocketMessage(
+                        action = WebSocketAction.PIN_ADDED,
+                        data = json.encodeToString(ChatMessagePin.serializer(), pin)
+                    )
+                    val payload = json.encodeToString(wsMessage)
+                    routes.handlers.broadcastToWorldNoSession(worldId, payload, activeConnections)
+                } catch (_: Throwable) {}
+
+                call.respond(HttpStatusCode.OK, pin)
+            }
+        }
+
+        // Unpin a message (owner only)
+        authenticate {
+            delete("/{worldId}/messages/{messageId}/pin") {
+                val worldId = call.parameters["worldId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val messageId = call.parameters["messageId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing messageId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
+
+                val world = worldRepository.getById(worldId) ?: return@delete call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
+                )
+
+                if (world.userId != userId) {
+                    return@delete call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Only the world owner can unpin messages", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                val removed = chatRepository.unpinMessage(worldId, messageId)
+                if (!removed) {
+                    return@delete call.respond(HttpStatusCode.NotFound,
+                        ErrorResponse(message = "Pin not found", code = HttpStatusCode.NotFound.value))
+                }
+
+                // Broadcast pin removed to websocket clients (send messageId as payload)
+                try {
+                    val wsMessage = routes.WebSocketMessage(
+                        action = WebSocketAction.PIN_REMOVED,
+                        data = json.encodeToString(messageId)
+                    )
+                    val payload = json.encodeToString(wsMessage)
+                    routes.handlers.broadcastToWorldNoSession(worldId, payload, activeConnections)
+                } catch (_: Throwable) {}
+
+                call.respond(HttpStatusCode.NoContent)
             }
         }
     }

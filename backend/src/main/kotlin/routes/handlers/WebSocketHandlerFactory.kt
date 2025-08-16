@@ -44,6 +44,11 @@ class WebSocketHandlerFactory(
             WebSocketAction.OPEN_URL -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.NOTIFICATION -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.PAUSE -> NullHandler() // This is only sent by the server, not received
+            WebSocketAction.PIN_ADDED -> NullHandler() // Server -> clients only
+            WebSocketAction.PIN_REMOVED -> NullHandler() // Server -> clients only
+            WebSocketAction.SHOW_TAKE_ITEMS -> NullHandler() // Server -> clients only
+            WebSocketAction.INVENTORY_CHANGED -> NullHandler() // Server -> clients only
+            WebSocketAction.TAKE_ITEMS_CONFIRM -> TakeItemsConfirmHandler()
             null -> NullHandler()
         }
     }

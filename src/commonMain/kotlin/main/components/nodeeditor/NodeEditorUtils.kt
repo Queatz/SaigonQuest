@@ -198,6 +198,7 @@ fun createNode(
         NodeId.ObjectNotification -> LogicNode.ObjectNotification()
         NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
         NodeId.Delay -> LogicNode.Delay()
+        NodeId.TakeItems -> LogicNode.TakeItems()
     }
     
     // Create ports based on node type and data

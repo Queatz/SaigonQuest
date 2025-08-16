@@ -8,11 +8,19 @@ import lib.Mesh
 import lib.MeshBuilder
 import lib.Node
 import lib.PBRMaterial
+import lib.PBRCustomMaterial
 import lib.Scene
 import lib.Texture
 import lib.TextureOptions
 import lib.TransformNode
+import lib.Vector2
 import lib.Vector3
+import lib.VertexBuffer
+import lib.VertexData
+import main.components.world.effect.WindSystem
+import kotlin.js.asDynamic
+import kotlin.math.abs
+import kotlin.math.atan2
 
 /**
  * Base class for all objects that can be rendered in the world.
@@ -80,6 +88,20 @@ class Character(
     private var characterMesh: AbstractMesh? = null
     // List to store meshes for additional sprite sheets
     private var additionalMeshes: MutableList<AbstractMesh> = mutableListOf()
+    // Track wind-enabled materials with their sprite sheet for per-frame uniforms
+    private data class WindEntry(
+        val material: PBRCustomMaterial,
+        val sheet: SpriteSheet,
+        val mesh: Mesh,
+        val basePositions: Array<Float>,
+        val halfWidth: Float,
+        var gpuActive: Boolean = false,
+        var hookPresent: Boolean = false,
+        var bindCount: Int = 0,
+        var effectNullCount: Int = 0,
+        var debugLogCount: Int = 0
+    )
+    private val windEntries: MutableList<WindEntry> = mutableListOf()
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
     // The direction to display based on camera angle
@@ -123,14 +145,15 @@ class Character(
         // Clear any existing additional meshes
         additionalMeshes.forEach { it.dispose() }
         additionalMeshes.clear()
+        windEntries.clear()
         
         // Create the main character mesh
         val characterMesh = createMeshForSpriteSheet(
-            spriteSheet,
-            "character_${id}",
-            scene,
-            container,
-            0f
+            spriteSheet = spriteSheet,
+            name = "character_${id}",
+            scene = scene,
+            parent = container,
+            zOffset = 0f
         )
         this.characterMesh = characterMesh
         // Apply initial skin tone to the base mesh
@@ -139,13 +162,13 @@ class Character(
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
-            val zOffset = 0.01f * (index + 1)
+            val zOffset = 0.1f * (index + 1)
             val additionalMesh = createMeshForSpriteSheet(
-                additionalSpriteSheet,
-                "character_additional_${index}_${id}",
-                scene,
-                container,
-                zOffset
+                spriteSheet = additionalSpriteSheet,
+                name = "character_additional_${index}_${id}",
+                scene = scene,
+                parent = container,
+                zOffset = zOffset
             )
             additionalMeshes.add(additionalMesh)
         }
@@ -180,6 +203,7 @@ class Character(
             characterMesh?.dispose()
             additionalMeshes.forEach { it.dispose() }
             additionalMeshes.clear()
+            windEntries.clear()
             
             // Re-render if we have a scene reference
             currentScene?.let { scene ->
@@ -199,13 +223,13 @@ class Character(
                     // Create meshes for additional sprite sheets with increasing z-offset
                     additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
                         // Use a small z-offset to ensure proper layering (0.01 units per layer)
-                        val zOffset = 0.01f * (index + 1)
+                        val zOffset = 0.1f * (index + 1)
                         val additionalMesh = createMeshForSpriteSheet(
-                            additionalSpriteSheet,
-                            "character_additional_${index}_${id}",
-                            scene,
-                            container,
-                            zOffset
+                            spriteSheet = additionalSpriteSheet,
+                            name = "character_additional_${index}_${id}",
+                            scene = scene,
+                            parent = container,
+                            zOffset = zOffset
                         )
                         additionalMeshes.add(additionalMesh)
                     }
@@ -234,6 +258,9 @@ class Character(
         
         // Always update the sprite animation to reflect the current display direction
         updateSpriteAnimation()
+
+        // Update per-frame wind uniforms for wind-enabled materials
+        updateWindUniforms()
     }
     
     /**
@@ -384,6 +411,201 @@ class Character(
             texture.vScale = spriteSheet.cellHeightPx.toFloat() / spriteSheet.imageHeight.toFloat()
         }
     }
+
+    /** Build 5x5 weight grid (row-major). If provided weights (size==25) exist, use them; else default gradient. */
+    private fun buildWeights5x5(flippedY: Boolean, provided: FloatArray?): Array<FloatArray> {
+        val rows: Array<FloatArray> = Array(5) { FloatArray(5) }
+        if (provided != null && provided.size >= 25) {
+            var idx = 0
+            for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = provided[idx++]
+        } else {
+            val rv = floatArrayOf(0f, 0.0125f, 0.025f, 0.5f, 1f)
+            for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = rv[j]
+        }
+        return if (flippedY) rows.reversed().toTypedArray() else rows
+    }
+
+    /** Configure custom shader code + uniforms for wind displacement. */
+    private fun setupWindShader(material: PBRCustomMaterial, spriteSheet: SpriteSheet): Boolean {
+        val rows5 = buildWeights5x5(spriteSheet.windFlipY, spriteSheet.windWeights5x5)
+
+        // Register 5x5 uniforms: each row split into vec3 (cols 0..2) and vec2 (cols 3..4)
+        for (ri in 0 until 5) {
+            material.AddUniform("w${ri}a", "vec3")
+            material.AddUniform("w${ri}b", "vec2")
+        }
+        console.log("[WIND] Registered 5x5 uniforms for material: ${material.name}")
+        material.AddUniform("intensityScale", "float")
+        material.AddUniform("moveFactor", "float")
+        material.AddUniform("windDirLocal", "vec3")
+        material.AddUniform("windIntensity", "float")
+        material.AddUniform("time", "float")
+        material.AddUniform("spatialFreq", "float")
+        material.AddUniform("temporalFreq", "float")
+        material.AddUniform("swayVecLocal", "vec3")
+
+        // Ensure static uniforms are applied when the material binds (baseline)
+        material.onBindObservable.add { _ ->
+            val effect = material.getEffect() ?: return@add Unit.also {
+                console.error("[WIND] effect is null (material=${material.name})")
+            }
+            try {
+                val rows5 = buildWeights5x5(spriteSheet.windFlipY, spriteSheet.windWeights5x5)
+                for (ri in 0 until 5) {
+                    effect.setVector3("w${ri}a", Vector3(rows5[ri][0], rows5[ri][1], rows5[ri][2]))
+                    effect.setVector2("w${ri}b", Vector2(rows5[ri][3], rows5[ri][4]))
+                }
+                effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
+                effect.setFloat("moveFactor", 0.5f)
+                console.log("[WIND] Baseline uniforms set (material=${material.name}, w00=" + rows5[0][0] + ", w44=" + rows5[4][4] + ", scale=" + spriteSheet.windIntensityScale + ")")
+            } catch (e: Throwable) {
+                console.error("[WIND] Failed to set baseline uniforms", e)
+            }
+        }
+
+        // GPU displacement attempt using a late hook (if provided by runtime).
+        try {
+            val dyn = material.asDynamic()
+            if (dyn.Vertex_Before_PositionUpdated != undefined) {
+                dyn.Vertex_Before_PositionUpdated(
+                    """
+                    float u01 = uv.x; float v01 = uv.y;
+                    float colf = clamp(floor(u01 * 4.0 + 0.5), 0.0, 4.0);
+                    float rowf = clamp(floor(v01 * 4.0 + 0.5), 0.0, 4.0);
+                    int col = int(colf);
+                    int row = int(rowf);
+                    float w = 0.0;
+                    if (row == 0) { w = (col==0)? w0a.x : (col==1)? w0a.y : (col==2)? w0a.z : (col==3)? w0b.x : w0b.y; }
+                    else if (row == 1) { w = (col==0)? w1a.x : (col==1)? w1a.y : (col==2)? w1a.z : (col==3)? w1b.x : w1b.y; }
+                    else if (row == 2) { w = (col==0)? w2a.x : (col==1)? w2a.y : (col==2)? w2a.z : (col==3)? w2b.x : w2b.y; }
+                    else if (row == 3) { w = (col==0)? w3a.x : (col==1)? w3a.y : (col==2)? w3a.z : (col==3)? w3b.x : w3b.y; }
+                    else { w = (col==0)? w4a.x : (col==1)? w4a.y : (col==2)? w4a.z : (col==3)? w4b.x : w4b.y; }
+                    float n = sin(dot(vec2(u01,v01), vec2(1.0, 0.0)) * spatialFreq + time * temporalFreq);
+                    n += 0.5 * sin(dot(vec2(u01,v01), vec2(0.5, 0.866)) * spatialFreq * 0.7 + time * temporalFreq * 0.7);
+                    float gust = n * 0.66;
+                    float amp = 4.0 * (windIntensity * (0.6 + 0.4 * gust) * intensityScale);
+                    float sgn = (windDirLocal.x >= 0.0) ? 1.0 : -1.0;
+                    positionUpdated.x += sgn * amp * w;
+                    """.trimIndent()
+                )
+                console.log("[WIND] Injected Vertex_Before_PositionUpdated hook for material: ${material.name}")
+                return true
+            } else {
+                console.warn("[WIND] Vertex_MainEnd/Before_PositionUpdated not available for material: ${material.name}")
+            }
+        } catch (e: Throwable) {
+            console.error("[WIND] Error injecting GPU vertex hook for ${material.name}", e)
+        }
+        return false
+    }
+
+    /** Update per-frame wind uniforms for all wind-enabled meshes. */
+    private fun updateWindUniforms() {
+        val camera = main.components.SceneManager.getCameraController()?.getCamera()
+        val camDir = if (camera != null) {
+            val d = camera.target.subtract(camera.position).normalize()
+            Vector3(d.x, 0f, d.z).normalize()
+        } else Vector3(0f, 0f, -1f)
+
+        // Billboard yaw in radians (align local +Z to camera direction)
+        val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
+
+        // Rotate world wind and player velocity into local (billboard) space
+        val worldWind = WindSystem.direction
+        val windLocal = WindSystem.rotateY(worldWind, -yaw)
+
+        // Fetch velocity from SceneManager if available
+        val velWorld = main.components.SceneManager.getPlayerVelocity() ?: Vector3(0f, 0f, 0f)
+        val velLocal = WindSystem.rotateY(velWorld, -yaw)
+
+        val outdoors = WorldLoader.isOutdoorsActive()
+        val intensity = if (outdoors) WindSystem.intensity else 0f
+        val t = WindSystem.timeSeconds
+        console.log("[WIND] update: entries=${windEntries.size}, outdoors=${outdoors}, intensity=" + intensity)
+
+        windEntries.forEach { entry ->
+            val m = entry.material
+            val sheet = entry.sheet
+            val mesh = entry.mesh
+
+            val effect = m.getEffect() ?: run {
+                entry.effectNullCount += 1
+                if (entry.effectNullCount < 5 || entry.effectNullCount % 60 == 0) {
+                    console.warn("[WIND] effect is null (material=${m.name}, nullCount=${entry.effectNullCount})")
+                }
+                // Mark GPU inactive so CPU fallback can take over next frames
+                entry.gpuActive = false
+                return@forEach
+            }
+            effect.setVector3("windDirLocal", windLocal)
+            effect.setFloat("windIntensity", intensity)
+            effect.setFloat("time", t)
+            effect.setFloat("spatialFreq", WindSystem.spatialFreq)
+            effect.setFloat("temporalFreq", WindSystem.temporalFreq)
+            effect.setVector3("swayVecLocal", velLocal)
+            // Also ensure static uniforms are set
+            // Set 5x5 rows as vec3+vec2 per row
+            val weights5 = buildWeights5x5(sheet.windFlipY, sheet.windWeights5x5)
+            for (ri in 0 until 5) {
+                effect.setVector3("w${ri}a", Vector3(weights5[ri][0], weights5[ri][1], weights5[ri][2]))
+                effect.setVector2("w${ri}b", Vector2(weights5[ri][3], weights5[ri][4]))
+            }
+            effect.setFloat("intensityScale", sheet.windIntensityScale)
+            effect.setFloat("moveFactor", 0.5f)
+
+            if (entry.debugLogCount < 2) {
+                console.log(
+                    "[WIND] per-frame set (material=" + m.name +
+                        ", gpuActive=" + entry.gpuActive +
+                        ", windLocalX=" + windLocal.x +
+                        ", w00=" + weights5[0][0] +
+                        ", w44=" + weights5[4][4] +
+                        ", time=" + t + ")"
+                )
+                entry.debugLogCount += 1
+            }
+
+            // CPU-side sway (fallback only). Run ONLY if GPU is inactive.
+            if (!entry.gpuActive) try {
+                val base = entry.basePositions
+                if (base.isNotEmpty()) {
+                    val newPos = base.copyOf()
+                    // gust noise
+                    val p = 0.0f // no spatial variation for now
+                    val gust = kotlin.math.sin((p + t * WindSystem.temporalFreq).toDouble()).toFloat()
+                    // amplitude (3x)
+                    val amp = 3.0f * intensity * (0.6f + 0.4f * gust) * sheet.windIntensityScale
+                    val dirSign = if (windLocal.x >= 0f) 1f else -1f
+                    // iterate all vertices; derive nearest 5x5 weight for any N x N grid
+                    val vertCount = base.size / 3
+                    val n = kotlin.math.sqrt(vertCount.toDouble()).toInt().coerceAtLeast(1)
+                    var vi = 0
+                    for (j in 0 until n) {
+                        for (i in 0 until n) {
+                            val colIdx = kotlin.math.round((i.toFloat() / (n - 1)) * 4f).toInt().coerceIn(0, 4)
+                            val rowIdx = kotlin.math.round((j.toFloat() / (n - 1)) * 4f).toInt().coerceIn(0, 4)
+                            val w = weights5[rowIdx][colIdx]
+
+                            // x displacement only (camera-space X via billboard local X)
+                            val dx = dirSign * amp * w
+                            newPos[vi] = base[vi] + dx
+                            // keep Y unchanged to avoid depth changes due to camera tilt
+                            newPos[vi + 1] = base[vi + 1]
+                            // z unchanged
+                            newPos[vi + 2] = base[vi + 2]
+                            vi += 3
+                        }
+                    }
+                    mesh.setVerticesData(VertexBuffer.PositionKind, newPos, true)
+                    console.log("[WIND] CPU fallback applied (material=${m.name}, amp=" + amp + ", dirSign=" + dirSign + ")")
+                }
+            } catch (e: Throwable) {
+                console.error("[WIND] Failed to update vertex data", e)
+                entry.gpuActive = false
+            }
+            // else: GPU hook present; CPU disabled entirely
+        }
+    }
     
     /**
      * Creates a mesh for a sprite sheet with the specified z-offset
@@ -403,7 +625,26 @@ class Character(
         zOffset: Float = 0f
     ): AbstractMesh {
         // Create a material with the sprite sheet texture
-        val material = PBRMaterial("${name}_material", scene)
+        val material: PBRMaterial = if (spriteSheet.windEnabled) {
+            PBRCustomMaterial("${name}_material", scene).apply {
+                asDynamic().__origResolve = customShaderNameResolve
+
+                val newResolver =
+                    js("""
+                        (function(shaderName, uniforms, uniformBuffers, samplers, defines, attributes, options) {
+                            // --- OPTIONAL: tweak defines/attributes here if you need ---
+                            // defines.push("#define MY_FLAG");
+                
+                            // delegate to the original with the correct `this`
+                            return this.__origResolve(shaderName, uniforms, uniformBuffers, samplers, defines, attributes, options);
+                        })
+                    """) as (String, Array<String>, Array<String>, Array<String>, Array<String>, Array<String>, dynamic) -> String
+
+                customShaderNameResolve = newResolver
+            }
+        } else {
+            PBRMaterial("${name}_material", scene)
+        }
         // Create texture with NEAREST_SAMPLINGMODE for crisp pixel art rendering
         val texture = Texture(spriteSheet.imageUrl, scene, object : TextureOptions {
             override val samplingMode = Texture.NEAREST_SAMPLINGMODE
@@ -415,25 +656,30 @@ class Character(
         // Enable transparency for the material
         material.backFaceCulling = false
         // Use alpha test + blend to keep crisp sprite edges while allowing smooth alpha changes
-        material.transparencyMode = Material.MATERIAL_ALPHATESTANDBLEND
+        material.transparencyMode = Material.MATERIAL_ALPHATEST//ANDBLEND
         material.metallic = 0.0f       // Low metallic value for non-metallic appearance
         material.roughness = 0.4f      // Medium roughness for slight diffusion of light
         material.usePhysicalLightFalloff = true  // Enable physical light falloff
 
-        // Create a plane with the correct aspect ratio
+        // Create a plane with the correct aspect ratio (vertical billboard-friendly)
         val aspectRatio = spriteSheet.cellHeightPx.toFloat() / spriteSheet.cellWidthPx.toFloat()
-        val mesh = MeshBuilder.CreatePlane(
-            name,
-            object : CreatePlaneOptions {
-                override val width = 1f / aspectRatio
-                override val height = 1f
-            },
-            scene
-        )
+        val mesh: Mesh = if (spriteSheet.windEnabled && material is PBRCustomMaterial) {
+            createWindGridMesh(name, scene, aspectRatio)
+        } else {
+            MeshBuilder.CreatePlane(
+                name,
+                object : CreatePlaneOptions {
+                    override val width = 1f / aspectRatio
+                    override val height = 1f
+                },
+                scene
+            )
+        }
 
-        // Apply z-offset for layering if specified
+        // Apply depth bias for overlays only (pull towards camera, avoid depth write issues)
         if (zOffset != 0f) {
-            material.zOffsetUnits = zOffset
+            material.zOffset = -abs(zOffset)
+            material.zOffsetUnits = -abs(zOffset)
         }
         
         mesh.material = material
@@ -444,12 +690,119 @@ class Character(
         // Make the mesh a child of the parent
         mesh.parent = parent
 
-        // Set image dimensions for the sprite sheet
-        spriteSheet.setImageDimensions(
-            spriteSheet.cellWidthPx * spriteSheet.columns,
-            spriteSheet.cellWidthPx * spriteSheet.columns // assume square
-        )
+        // Set image dimensions for the sprite sheet (assets are 256x256)
+        spriteSheet.setImageDimensions(256, 256)
         
+        // If wind is enabled, attach shader and track material
+        if (spriteSheet.windEnabled && material is PBRCustomMaterial) {
+            console.log("[WIND] attaching wind shader to $name")
+            val hookPresent = setupWindShader(material, spriteSheet)
+            val basePos = mesh.getVerticesData(VertexBuffer.PositionKind) ?: arrayOf()
+        val entry = WindEntry(
+                material = material,
+                sheet = spriteSheet,
+                mesh = mesh,
+                basePositions = basePos.sliceArray(0 until basePos.size),
+                halfWidth = (1f / aspectRatio) * 0.5f,
+                gpuActive = hookPresent,
+                hookPresent = hookPresent
+            )
+            windEntries.add(entry)
+
+            // Bind-time uniform updates (dynamic + static) and GPU activation flag
+            material.onBindObservable.add { _ ->
+                val effect = material.getEffect() ?: return@add
+                try {
+                    // Compute camera-local wind and velocity
+                    val camera = main.components.SceneManager.getCameraController()?.getCamera()
+                    val camDir = if (camera != null) {
+                        val d = camera.target.subtract(camera.position).normalize()
+                        Vector3(d.x, 0f, d.z).normalize()
+                    } else Vector3(0f, 0f, -1f)
+                    val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
+                    val windLocal = WindSystem.rotateY(WindSystem.direction, -yaw)
+                    val velLocal = WindSystem.rotateY(main.components.SceneManager.getPlayerVelocity() ?: Vector3(0f, 0f, 0f), -yaw)
+                    val outdoors = WorldLoader.isOutdoorsActive()
+                    val intensity = if (outdoors) WindSystem.intensity else 0f
+                    val t = WindSystem.timeSeconds
+
+                    effect.setVector3("windDirLocal", windLocal)
+                    effect.setFloat("windIntensity", intensity)
+                    effect.setFloat("time", t)
+                    effect.setFloat("spatialFreq", WindSystem.spatialFreq)
+                    effect.setFloat("temporalFreq", WindSystem.temporalFreq)
+                    effect.setVector3("swayVecLocal", velLocal)
+                    // Static 5x5 weights (vec3 + vec2 per row)
+                    val rows5 = buildWeights5x5(spriteSheet.windFlipY, spriteSheet.windWeights5x5)
+                    for (ri in 0 until 5) {
+                        effect.setVector3("w${ri}a", Vector3(rows5[ri][0], rows5[ri][1], rows5[ri][2]))
+                        effect.setVector2("w${ri}b", Vector2(rows5[ri][3], rows5[ri][4]))
+                    }
+                    effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
+                    effect.setFloat("moveFactor", 0.5f)
+
+                    // Mark GPU active only if a GPU hook was successfully injected
+                    entry.gpuActive = entry.hookPresent
+                    entry.bindCount += 1
+                    console.log("[WIND] onBind set uniforms (material=${material.name}, bindCount=${entry.bindCount}, hookPresent=${entry.hookPresent}, gpuActive=${entry.gpuActive}, intensity=" + intensity + ", w00=" + rows5[0][0] + ", w44=" + rows5[4][4] + ")")
+                } catch (e: Throwable) {
+                    console.error("[WIND] Failed to update wind shader uniforms", e)
+                }
+            }
+        }
+
+        return mesh
+    }
+
+    private fun createWindGridMesh(name: String, scene: Scene, aspectRatio: Float): Mesh {
+        val mesh = Mesh(name, scene)
+        val halfWidth = (1f / aspectRatio) * 0.5f
+        val halfHeight = 0.5f
+
+        // 5x5 grid vertices (row-major: bottom->top, left->right)
+        val positions = mutableListOf<Float>()
+        val uvs = mutableListOf<Float>()
+        val steps = 4 // 0..4
+        for (j in 0..steps) {
+            val fy = j.toFloat() / steps
+            val y = -halfHeight + fy * (2f * halfHeight)
+            for (i in 0..steps) {
+                val fx = i.toFloat() / steps
+                val x = -halfWidth + fx * (2f * halfWidth)
+                positions.add(x); positions.add(y); positions.add(0f)
+                uvs.add(fx); uvs.add(fy)
+            }
+        }
+
+        val indices = mutableListOf<Int>()
+        fun idx(i: Int, j: Int) = j * (steps + 1) + i
+        for (j in 0 until steps) {
+            for (i in 0 until steps) {
+                val i0 = idx(i, j)
+                val i1 = idx(i + 1, j)
+                val i2 = idx(i, j + 1)
+                val i3 = idx(i + 1, j + 1)
+                // two triangles: (i0,i1,i2) and (i1,i3,i2)
+                indices.add(i0); indices.add(i1); indices.add(i2)
+                indices.add(i1); indices.add(i3); indices.add(i2)
+            }
+        }
+        // Flat normals facing +Z
+        val normals = MutableList(positions.size) { 0f }.toMutableList()
+        var k = 0
+        while (k < positions.size) {
+            normals[k] = 0f
+            normals[k + 1] = 0f
+            normals[k + 2] = 1f
+            k += 3
+        }
+
+        val vd = VertexData()
+        vd.positions = positions.toTypedArray()
+        vd.indices = indices.toTypedArray()
+        vd.normals = normals.toTypedArray()
+        vd.uvs = uvs.toTypedArray()
+        vd.applyToMesh(mesh, true)
         return mesh
     }
     
@@ -457,6 +810,7 @@ class Character(
         characterMesh?.dispose()
         additionalMeshes.forEach { it.dispose() }
         additionalMeshes.clear()
+        windEntries.clear()
         node?.dispose()
     }
 }

@@ -13,5 +13,6 @@ enum class NodeId {
     OpenUrl,
     ObjectNotification,
     ObjectOwnerNotification,
-    Delay
+    Delay,
+    TakeItems
 }

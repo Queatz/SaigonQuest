@@ -6,6 +6,7 @@ import com.arangodb.model.DocumentCreateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
 import models.ChatMessage
+import models.ChatMessagePin
 import models.ChatReadMarker
 
 /**
@@ -17,6 +18,7 @@ import models.ChatReadMarker
 class ChatRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_MESSAGES_COLLECTION)
     private val readMarkersCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_READ_MARKERS_COLLECTION)
+    private val pinsCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION)
 
     /**
      * Save a chat message to the database
@@ -227,11 +229,107 @@ class ChatRepository {
             
             // Update the message
             collection.updateDocument(messageKey, deletedMessage)
-            
+
+            // Clean up any pins referencing this message
+            try {
+                removePinsForMessage(messageKey)
+            } catch (_: Throwable) {}
+
             // Return the updated message
             return collection.getDocument(messageKey, ChatMessage::class.java)
         } catch (e: Throwable) {
             return null
         }
+    }
+
+    /**
+     * List pinned messages for a world, newest first
+     */
+    fun listPins(worldId: String, limit: Int = 50, offset: Int = 0): List<ChatMessagePin> {
+        val query = """
+            FOR p IN @@pins
+            FILTER p.worldId == @worldId
+            SORT p.pinnedAt DESC
+            LIMIT @offset, @limit
+            RETURN p
+        """.trimIndent()
+
+        val bindVars = mapOf(
+            "@pins" to CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION,
+            "worldId" to worldId,
+            "limit" to limit,
+            "offset" to offset
+        )
+
+        return ArangoConfig.db.query(query, ChatMessagePin::class.java, bindVars).toList()
+    }
+
+    /**
+     * Pin a message in a world. Idempotent: returns existing doc if already pinned.
+     */
+    fun pinMessage(worldId: String, messageId: String, userId: String): ChatMessagePin? {
+        // Validate the message exists and belongs to the world
+        val msg = try {
+            collection.getDocument(messageId, ChatMessage::class.java)
+        } catch (e: Throwable) { null }
+        if (msg == null || msg.worldId != worldId) return null
+
+        val query = """
+            UPSERT { worldId: @worldId, messageId: @messageId }
+            INSERT { worldId: @worldId, messageId: @messageId, pinnedByUserId: @userId, pinnedAt: DATE_NOW() }
+            UPDATE { pinnedByUserId: @userId, pinnedAt: DATE_NOW() }
+            IN @@pins
+            RETURN NEW
+        """.trimIndent()
+
+        val bindVars = mapOf(
+            "@pins" to CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION,
+            "worldId" to worldId,
+            "messageId" to messageId,
+            "userId" to userId
+        )
+
+        val results = ArangoConfig.db.query(query, ChatMessagePin::class.java, bindVars).toList()
+        return results.firstOrNull()
+    }
+
+    /**
+     * Unpin a message in a world. Returns true if a pin was removed.
+     */
+    fun unpinMessage(worldId: String, messageId: String): Boolean {
+        val query = """
+            FOR p IN @@pins
+            FILTER p.worldId == @worldId AND p.messageId == @messageId
+            REMOVE p IN @@pins
+            RETURN 1
+        """.trimIndent()
+
+        val bindVars = mapOf(
+            "@pins" to CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION,
+            "worldId" to worldId,
+            "messageId" to messageId
+        )
+
+        val results = ArangoConfig.db.query(query, Int::class.java, bindVars).toList()
+        return results.isNotEmpty()
+    }
+
+    /**
+     * Remove all pins referencing a specific message ID (used on delete)
+     */
+    fun removePinsForMessage(messageId: String): Long {
+        val query = """
+            FOR p IN @@pins
+            FILTER p.messageId == @messageId
+            REMOVE p IN @@pins
+            RETURN 1
+        """.trimIndent()
+
+        val bindVars = mapOf(
+            "@pins" to CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION,
+            "messageId" to messageId
+        )
+
+        return ArangoConfig.db.query(query, Int::class.java, bindVars).count().toLong()
     }
 }

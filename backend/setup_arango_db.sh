@@ -6,6 +6,7 @@
 
 # Configuration variables (matching ArangoConfig.kt)
 DB_NAME="saigon_quest"
+UPLOADS_DB_NAME="saigon_quest_uploads"
 ADMIN_USER="root"
 ADMIN_PASSWORD="root"
 APP_USER="saigonquest"
@@ -16,6 +17,7 @@ PORT="8529"
 # Collections to create
 WORLDS_COLLECTION="worlds"
 USERS_COLLECTION="users"
+CONTENT_UPLOADS_COLLECTION="content_uploads"
 
 echo "Setting up ArangoDB for Saigon.Quest..."
 
@@ -58,7 +60,7 @@ arangosh \
         console.log('Creating user: $APP_USER');
         users.save('$APP_USER', '$APP_PASSWORD');
         users.grantDatabase('$APP_USER', '$DB_NAME', 'rw');
-        
+
         // Grant access to collections
         users.grantCollection('$APP_USER', '$DB_NAME', '$WORLDS_COLLECTION', 'rw');
         users.grantCollection('$APP_USER', '$DB_NAME', '$USERS_COLLECTION', 'rw');
@@ -72,6 +74,32 @@ arangosh \
     } catch (e) {
       console.error('Error creating user:', e);
     }
+
+    // --- Setup uploads database ---
+    if (!db._databases().includes('$UPLOADS_DB_NAME')) {
+      console.log('Creating uploads database: $UPLOADS_DB_NAME');
+      db._createDatabase('$UPLOADS_DB_NAME');
+    } else {
+      console.log('Database $UPLOADS_DB_NAME already exists');
+    }
+
+    db._useDatabase('$UPLOADS_DB_NAME');
+
+    if (!db._collection('$CONTENT_UPLOADS_COLLECTION')) {
+      console.log('Creating collection: $CONTENT_UPLOADS_COLLECTION');
+      db._createDocumentCollection('$CONTENT_UPLOADS_COLLECTION');
+    } else {
+      console.log('Collection $CONTENT_UPLOADS_COLLECTION already exists');
+    }
+
+    try {
+      const users = require('@arangodb/users');
+      // Ensure the same app user has access to uploads DB and collection
+      users.grantDatabase('$APP_USER', '$UPLOADS_DB_NAME', 'rw');
+      users.grantCollection('$APP_USER', '$UPLOADS_DB_NAME', '$CONTENT_UPLOADS_COLLECTION', 'rw');
+    } catch (e) {
+      console.error('Error granting user access to uploads DB:', e);
+    }
   "
 
 # Check if the command was successful
@@ -79,6 +107,8 @@ if [ $? -eq 0 ]; then
   echo "ArangoDB setup completed successfully!"
   echo "Database: $DB_NAME"
   echo "Collections: $WORLDS_COLLECTION, $USERS_COLLECTION"
+  echo "Uploads DB: $UPLOADS_DB_NAME"
+  echo "Uploads Collections: $CONTENT_UPLOADS_COLLECTION"
   echo "Application user: $APP_USER"
   
   echo ""

@@ -93,6 +93,7 @@ object NodeEditorJsonUtil {
             NodeId.ObjectNotification -> LogicNode.ObjectNotification()
             NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
             NodeId.Delay -> LogicNode.Delay()
+            NodeId.TakeItems -> LogicNode.TakeItems()
         }
 
         return NodeData(

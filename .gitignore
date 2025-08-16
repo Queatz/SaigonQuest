@@ -1,6 +1,7 @@
 /.gradle/
-/backend/build/
-/shared/build/
 /build/
+/backend/build/
+/content/build/
+/shared/build/
 .kotlin/
 .idea/

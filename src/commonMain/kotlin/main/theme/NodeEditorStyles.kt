@@ -473,19 +473,13 @@ object NodeEditorStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.SpaceBetween)
-        padding(4.px, 8.px)
+        padding(8.px)
         backgroundColor(rgba(0, 0, 0, 0.1))
         borderRadius(4.px)
     }
 
     val removeButton by style {
-        padding(2.px, 6.px)
         backgroundColor(rgba(255, 0, 0, 0.2))
-        borderRadius(4.px)
-        cursor("pointer")
-        marginLeft(8.px)
-        
-        property(":hover", "{background-color: rgba(255, 0, 0, 0.4);}")
     }
 
     val addButtonContainer by style {

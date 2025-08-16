@@ -201,7 +201,7 @@ external class Scene(engine: Engine? = definedExternally) {
     var deltaTime: Float
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
-    
+
     /**
      * List of all meshes in the scene
      */
@@ -315,6 +315,7 @@ abstract external class Material {
     var cullBackFaces: Boolean
     var transparencyMode: Int
     var alphaTestCutoff: Float
+    var forceDepthWrite: Boolean
 
     var disableColorWrite: Boolean
     var disableDepthWrite: Boolean
@@ -1512,15 +1513,15 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
      * @param options The options to customize the shader
      * @return The resolved shader name or options
      */
-    var customShaderNameResolve: ((
+    var customShaderNameResolve: (
         shaderName: String,
-        uniforms: dynamic,
-        uniformBuffers: dynamic,
-        samplers: dynamic,
-        defines: dynamic,
-        attributes: dynamic,
-        options: dynamic
-    ) -> dynamic)?
+        uniforms: Array<String>,
+        uniformBuffers: Array<String>,
+        samplers: Array<String>,
+        defines: Array<String>,
+        attributes: Array<String>,
+        options: dynamic /* ICustomShaderNameResolveOptions? */
+    ) -> String
 }
 
 /**

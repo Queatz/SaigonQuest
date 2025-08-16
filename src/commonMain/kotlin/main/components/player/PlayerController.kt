@@ -63,6 +63,7 @@ class PlayerController(private val scene: Scene) {
     
     // Time tracking for framerate-independent movement
     private val movementDelta = FrameDeltaTracker()
+    private var lastPosition: Vector3? = null
 
     // Movement engine encapsulating movement state
     private val mover = PlayerMovementEngine(
@@ -277,6 +278,15 @@ class PlayerController(private val scene: Scene) {
             moveCircle = moveCircle
         )
         if (validPos != null) {
+            // Update velocity for wind sway (units per frame)
+            lastPosition?.let { prev ->
+                val vel = validPos.subtract(prev)
+                main.components.SceneManager.setPlayerVelocity(vel)
+            } ?: run {
+                main.components.SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
+            }
+            lastPosition = validPos
+
             coll.position = validPos
             handle.position = validPos
             hud.updateAllPositions(validPos)

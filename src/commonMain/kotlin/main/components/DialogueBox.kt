@@ -14,8 +14,13 @@ import main.api.addDialogueListener
 import main.api.sendDialogueConfirmation
 import main.theme.NodeStyles
 import models.DialogueData
+import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -48,6 +53,18 @@ fun DialogueBox() {
             Div({
                 classes(NodeStyles.dialogueContainer)
             }) {
+                // Optional image above the text
+                if (!dialogue.imageUrl.isNullOrBlank()) {
+                    Img(
+                        src = dialogue.imageUrl!!,
+                        attrs = {
+                            style {
+                                width(100.percent)
+                                borderRadius(8.px)
+                            }
+                        }
+                    )
+                }
                 // Dialogue text
                 P({
                     classes(NodeStyles.dialogueText)

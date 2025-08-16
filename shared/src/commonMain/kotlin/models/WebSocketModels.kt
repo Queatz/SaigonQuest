@@ -94,7 +94,8 @@ data class DialogueData(
     val userId: String,
     val text: String,
     val nodeId: String,
-    val buttons: List<String> = listOf("OK") // Default to a single "OK" button
+    val buttons: List<String> = listOf("OK"), // Default to a single "OK" button
+    val imageUrl: String? = null // Optional image URL to display above text
 )
 
 /**
@@ -107,6 +108,44 @@ data class DialogueConfirmation(
     val dialogueId: String,
     val userId: String,
     val buttonIndex: Int = 0 // Index of the button that was clicked (0 is the default/first button)
+)
+
+/**
+ * Take-items prompt sent to a user.
+ */
+@Serializable
+data class TakeItemsPrompt(
+    val requestId: String,
+    val userId: String,
+    val nodeId: String,
+    val items: List<TakeItemEntry>
+)
+
+@Serializable
+data class TakeItemEntry(
+    val itemId: String,
+    val quantity: Int,
+    val title: String,
+    val file: String,
+    val assetIndex: Int
+)
+
+/**
+ * Client confirmation for a take-items prompt.
+ */
+@Serializable
+data class TakeItemsConfirmation(
+    val requestId: String,
+    val userId: String,
+    val accepted: Boolean
+)
+
+/**
+ * Inventory change notification.
+ */
+@Serializable
+data class InventoryChanged(
+    val userId: String
 )
 
 /**

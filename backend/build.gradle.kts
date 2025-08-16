@@ -56,3 +56,7 @@ dependencies {
     // Apache HttpComponents
     implementation("org.apache.httpcomponents:httpcore:4.4.16")
 }
+
+kotlin {
+    jvmToolchain(21)
+}

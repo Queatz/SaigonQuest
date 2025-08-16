@@ -18,6 +18,7 @@ enum class PropertyKey {
 
     // Dialogue properties
     BUTTONS,
+    IMAGE_URL,
 
     // Teleport properties
     TARGET_WORLD_ID,
@@ -33,6 +34,11 @@ enum class PropertyKey {
     QUANTITY,
     YES,
     NO,
+    // TakeItems specific output when player lacks items
+    NOT_ENOUGH,
+    // TakeItems properties
+    ITEMS,
+    QUANTITIES,
     
     // OpenUrl properties
     URL,
@@ -79,7 +85,6 @@ enum class PropertyDirection {
     INPUT,
     OUTPUT
 }
-
 
 /**
  * Data class representing a node property definition
@@ -220,6 +225,14 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 defaultValue = ""
             ),
             NodePropertyDefinition(
+                key = PropertyKey.IMAGE_URL,
+                name = "Image URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "",
+                description = "Optional image shown above the text"
+            ),
+            NodePropertyDefinition(
                 key = PropertyKey.BUTTONS,
                 name = "Buttons",
                 type = PropertyType.STRING,
@@ -306,6 +319,51 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = "https://"
+            )
+        )
+
+        // TakeItems node properties
+        is LogicNode.TakeItems -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ITEMS,
+                name = "Items",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "",
+                description = "Comma-separated item IDs"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUANTITIES,
+                name = "Quantities",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "1",
+                description = "Comma-separated quantities matching items"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Accepted",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "Declined",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NOT_ENOUGH,
+                name = "Not enough",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT,
+                description = "Player does not have enough items"
             )
         )
     }
