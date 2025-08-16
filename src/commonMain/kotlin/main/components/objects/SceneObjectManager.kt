@@ -684,7 +684,22 @@ class SceneObjectManager(
         val position = Vector3(obj.position.x, obj.position.y, obj.position.z)
         val rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
         val scale = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
-        
+
+        fun createFallbackSphereForObject() {
+            // Create a permanent fallback sphere for objects without file and collection
+            val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
+
+            // Store the fallback sphere in our map for future reference
+            console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
+            objectMeshes[obj.key] = fallbackSphere
+
+            // Track model source used for this object (may be blank strings)
+            objectModelSources[obj.key] = Pair(obj.file, obj.collection)
+
+            // Handle status text
+            handleObjectStatusText(obj.key, obj.status, fallbackSphere)
+        }
+
         try {
             
             // Check if the object has a file and collection specified
@@ -749,40 +764,17 @@ class SceneObjectManager(
                     },
                     onError = { errorMessage ->
                         console.error("[DEBUG_OBJECT] Error loading 3D model: $errorMessage")
+                        createFallbackSphereForObject()
                     }
                 )
             } else {
                 console.log("[DEBUG_OBJECT] No file or collection specified, creating fallback sphere")
-                
-                // Create a permanent fallback sphere for objects without file and collection
-                val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
-                
-                // Store the fallback sphere in our map for future reference
-                console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
-                objectMeshes[obj.key] = fallbackSphere
-                
-                // Track model source used for this object (may be blank strings)
-                objectModelSources[obj.key] = Pair(obj.file, obj.collection)
-                
-                // Handle status text
-                handleObjectStatusText(obj.key, obj.status, fallbackSphere)
+                createFallbackSphereForObject()
             }
         } catch (error: Throwable) {
             console.error("[DEBUG_OBJECT] Error creating 3D object", error)
             onError?.invoke("Failed to create 3D object: ${error.message ?: "Unknown error"}")
-
-            // Create a permanent fallback sphere for objects without file and collection
-            val fallbackSphere = createFallbackSphere(obj.key, position, rotation, scale)
-
-            // Store the fallback sphere in our map for future reference
-            console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
-            objectMeshes[obj.key] = fallbackSphere
-
-            // Track model source used for this object (may be blank strings)
-            objectModelSources[obj.key] = Pair(obj.file, obj.collection)
-
-            // Handle status text
-            handleObjectStatusText(obj.key, obj.status, fallbackSphere)
+            createFallbackSphereForObject()
         }
     }
     

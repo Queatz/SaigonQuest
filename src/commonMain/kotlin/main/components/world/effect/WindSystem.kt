@@ -13,10 +13,10 @@ object WindSystem {
     // Base wind direction in world space (XZ plane)
     var direction: Vector3 = Vector3(1f, 0f, 0f)
     // Global wind intensity multiplier (meters scale)
-    var intensity: Float = 2f
+    var intensity: Float = .5f
     // Spatial/temporal frequencies for procedural gusting
     // Increase spatial/temporal frequencies to reduce floatiness
-    var spatialFreq: Float = 4f
+    var spatialFreq: Float = 8f
     var temporalFreq: Float = 4f
 
     /** Current time in seconds (from performance.now). */

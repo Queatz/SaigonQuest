@@ -1,6 +1,9 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+My Worlds
+vi: Thế giới của tôi
+
 Close
 vi: Đóng
 

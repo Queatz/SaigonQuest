@@ -114,7 +114,12 @@ class ObjectAssetManager(private val scene: Scene) {
             }
         } else {
             // Load the file
-            loadFile(file, collection, onSuccess, onError)
+            loadFile(
+                file = file,
+                requestedCollection = collection,
+                onSuccess = onSuccess,
+                onError = onError
+            )
         }
     }
     
@@ -248,6 +253,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     if (foundRequestedNode) {
                         return@then
                     } else {
+                        onError("Did not find node")
                         console.error("[ASSET_MANAGER] Did not find node: $requestedCollection")
                     }
                 }.catch { error ->
