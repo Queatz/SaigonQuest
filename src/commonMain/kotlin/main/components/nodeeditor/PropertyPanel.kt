@@ -275,7 +275,15 @@ fun PropertyPanel(
 
                                     if (imageUrl.isNotBlank()) {
                                         // Show preview and remove button
-                                        Img(src = imageUrl)
+                                        Img(
+                                            src = imageUrl,
+                                            attrs = {
+                                                style {
+                                                    property("border-radius", "8px")
+                                                    property("overflow", "hidden")
+                                                }
+                                            }
+                                        )
                                         Button(attrs = {
                                             classes(NodeEditorStyles.removeButton, Styles.primaryButton)
                                             onClick {
@@ -283,16 +291,16 @@ fun PropertyPanel(
                                                     it[PropertyKey.IMAGE_URL] = ""
                                                 }
                                             }
-                                        }) { Text("Remove image") }
+                                        }) { Translated("Remove image") }
                                     } else {
                                         // Add image button triggers file input click
                                         Button(attrs = {
-                                            classes(NodeEditorStyles.addButton)
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
                                             onClick {
                                                 val el = document.getElementById(fileInputId) as? HTMLInputElement
                                                 el?.click()
                                             }
-                                        }) { Text("Add image") }
+                                        }) { Translated("Add image") }
                                     }
                                 } else {
                                     // Use Input for other string properties
@@ -467,7 +475,7 @@ fun PropertyPanel(
                     
                     Button(
                         attrs = {
-                            classes(NodeEditorStyles.addButton)
+                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
                             onClick {
                                 if (newButtonText.isNotEmpty()) {
                                     // Add new button

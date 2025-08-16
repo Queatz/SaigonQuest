@@ -65,14 +65,6 @@ fun BezierConnection(
                 classes(NodeEditorStyles.connectionSelected)
             }
 
-            // Add click handler if provided
-            if (onClick != null) {
-                onClick { 
-                    it.stopPropagation() // Prevent canvas click
-                    onClick() 
-                }
-            }
-            
             // Add data attribute for debugging
             if (connectionId != null) {
                 attr("data-connection-id", connectionId)
@@ -94,7 +86,7 @@ fun BezierConnection(
         )
         
         // Use DisposableEffect to create and manage the SVG element
-        DisposableEffect(path, actualColor, actualThickness, containerRef) {
+        DisposableEffect(path, actualColor, actualThickness, containerRef, onClick) {
             // Get the container element
             val container = containerRef
             
@@ -112,6 +104,16 @@ fun BezierConnection(
                 pathElement.setAttribute("stroke", actualColor.toString())
                 pathElement.setAttribute("stroke-width", actualThickness.toString())
                 pathElement.setAttribute("fill", "none")
+                // Ensure only the stroke is clickable
+                pathElement.setAttribute("style", "pointer-events: stroke;")
+
+                // Attach click handler to the path only, if provided
+                if (onClick != null) {
+                    pathElement.addEventListener("click", { evt ->
+                        evt.stopPropagation()
+                        onClick()
+                    })
+                }
 
                 // Append path to SVG
                 svg.appendChild(pathElement)

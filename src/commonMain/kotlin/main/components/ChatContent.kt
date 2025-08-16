@@ -288,18 +288,7 @@ fun ChatContent(worldId: String) {
                         defaultEmotes.forEach { emote ->
                             Div(
                                 attrs = {
-                                    style {
-                                        width(48.px)
-                                        height(48.px)
-                                        display(DisplayStyle.Flex)
-                                        justifyContent(JustifyContent.Center)
-                                        alignItems(AlignItems.Center)
-                                        fontSize(32.px)
-                                        cursor("pointer")
-                                        property("border-radius", "4px")
-                                        property("transition", "background-color 0.2s")
-                                        property(":hover", "{ background-color: rgba(255, 255, 255, 0.1); }")
-                                    }
+                                    classes(Styles.emoteButton)
                                     onClick { e ->
                                         e.stopPropagation()
                                         WebSocketApi.sendChatMessage(worldId, emote) { success ->

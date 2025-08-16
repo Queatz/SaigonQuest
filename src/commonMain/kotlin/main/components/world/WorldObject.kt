@@ -162,7 +162,7 @@ class Character(
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
-            val zOffset = 0.1f * (index + 1)
+            val zOffset = (additionalSpriteSheets.lastIndex - index) + 1f
             val additionalMesh = createMeshForSpriteSheet(
                 spriteSheet = additionalSpriteSheet,
                 name = "character_additional_${index}_${id}",
@@ -223,7 +223,7 @@ class Character(
                     // Create meshes for additional sprite sheets with increasing z-offset
                     additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
                         // Use a small z-offset to ensure proper layering (0.01 units per layer)
-                        val zOffset = 0.1f * (index + 1)
+                        val zOffset = (additionalSpriteSheets.lastIndex - index) + 1f
                         val additionalMesh = createMeshForSpriteSheet(
                             spriteSheet = additionalSpriteSheet,
                             name = "character_additional_${index}_${id}",
@@ -678,10 +678,11 @@ class Character(
 
         // Apply depth bias for overlays only (pull towards camera, avoid depth write issues)
         if (zOffset != 0f) {
-            material.zOffset = -abs(zOffset)
-            material.zOffsetUnits = -abs(zOffset)
+            material.zOffsetUnits = -zOffset
         }
-        
+
+        console.log("[ZOFFSET] zOffset=$zOffset name=$name")
+
         mesh.material = material
         
         // Set billboard mode to Y-axis only (rotate around Y-axis)

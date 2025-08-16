@@ -54,22 +54,15 @@ fun RenderConnection(
     var invalidate by remember { mutableStateOf(0) }
     var invalidateTrigger by remember { mutableStateOf(0) }
 
-    // Kick an initial re-measure after first composition to ensure correct connection positions
+    // Kick an initial re-measure after first composition once layout is ready
     LaunchedEffect(Unit) {
-        // Wait for layout to settle and controller to register DOM refs
-        awaitAnimationFrame()
-        // In some cases an extra frame helps when styles load asynchronously
-        awaitAnimationFrame()
-        invalidate++
-
-        // After NodeEditorPanel registers canvas/wrapper (100ms timeout), re-measure again
-        delay(150)
+        // Wait for a single frame to ensure DOM is mounted
         awaitAnimationFrame()
         invalidate++
     }
 
     LaunchedEffect(invalidate) {
-        delay(50)
+        // Advance to next frame so reads happen post-layout without arbitrary delay
         awaitAnimationFrame()
         invalidateTrigger = invalidate
     }

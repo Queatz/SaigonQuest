@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.outline
+import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
@@ -99,12 +100,16 @@ object NodeEditorStyles : StyleSheet() {
         fontWeight("bold")
         marginBottom(8.px)
         textAlign("center")
+        overflow("hidden")
+        property("text-overflow", "ellipsis")
     }
     // Node header
     val nodeDescription by style {
         fontSize(80.percent)
         marginBottom(8.px)
         textAlign("center")
+        overflow("hidden")
+        property("text-overflow", "ellipsis")
     }
     
     // Node content
@@ -149,7 +154,9 @@ object NodeEditorStyles : StyleSheet() {
     }
     
     val portConnectorHover by style {
-        property(":hover", "{box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);}")
+        self + hover style {
+            property("box-shadow", "0 0 8px rgba(255, 255, 255, 0.8)")
+        }
     }
     
     val portConnectorInput by style {
@@ -261,12 +268,12 @@ object NodeEditorStyles : StyleSheet() {
     // Connection styles
     val connectionLine by style {
         position(Position.Absolute)
-        property("pointer-events", "auto") // Enable mouse events
+        property("pointer-events", "none") // Let only the SVG path capture events
         property("z-index", "1")
         left(0.px)
         top(0.px)
-        width(0.px)
-        height(0.px)
+        width(100.percent)
+        height(100.percent)
         cursor("pointer") // Show pointer cursor on hover
     }
     
@@ -274,8 +281,8 @@ object NodeEditorStyles : StyleSheet() {
         position(Position.Absolute)
         left(0.px)
         top(0.px)
-        width(0.px)
-        height(0.px)
+        width(100.percent)
+        height(100.percent)
     }
     
     val connectionSelected by style {
@@ -286,9 +293,13 @@ object NodeEditorStyles : StyleSheet() {
         property("stroke-width", "2")
         property("stroke", "rgba(255, 255, 255, 0.7)")
         property("transition", "stroke 0.2s, stroke-width 0.2s")
-        property(":hover", "{stroke: rgba(255, 255, 255, 0.9); stroke-width: 3;}")
+
+        self + hover style {
+            property("stroke", "rgba(255, 255, 255, 0.9)")
+            property("stroke-width", "3")
+        }
     }
-    
+
     val connectionPathSelected by style {
         property("stroke-width", "3")
         property("stroke", "rgba(100, 200, 255, 0.9)")
@@ -489,12 +500,7 @@ object NodeEditorStyles : StyleSheet() {
     }
 
     val addButton by style {
-        padding(4.px, 8.px)
         backgroundColor(rgba(0, 128, 0, 0.2))
-        borderRadius(4.px)
-        cursor("pointer")
-        
-        property(":hover", "{background-color: rgba(0, 128, 0, 0.4);}")
     }
     
     val propertyButton by style {
@@ -506,9 +512,14 @@ object NodeEditorStyles : StyleSheet() {
         cursor("pointer")
         marginTop(8.px)
         property("align-self", "flex-end")
-        
-        property(":hover", "{background-color: rgba(0, 140, 255, 0.8);}")
-        property(":active", "{background-color: rgba(0, 100, 255, 0.9);}")
+
+        self + hover style {
+            backgroundColor(rgba(0, 140, 255, 0.8))
+        }
+
+        self + active style {
+            backgroundColor(rgba(0, 100, 255, 0.8))
+        }
     }
     
     // Connection preview styles

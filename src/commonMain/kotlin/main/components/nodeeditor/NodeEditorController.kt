@@ -87,7 +87,7 @@ class NodeEditorController(
      *
      * @param element The canvas element
      */
-    fun setCanvasElement(element: HTMLElement) {
+    fun setCanvasElement(element: HTMLElement?) {
         canvasElement = element
         updateCanvasSize()
     }
@@ -97,7 +97,7 @@ class NodeEditorController(
      *
      * @param element The wrapper element
      */
-    fun setWrapperElement(element: HTMLElement) {
+    fun setWrapperElement(element: HTMLElement?) {
         wrapperElement = element
         updateCanvasSize()
     }

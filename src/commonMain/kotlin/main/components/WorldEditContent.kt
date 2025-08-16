@@ -584,7 +584,9 @@ fun WorldEditContent(
                         fontSize(14.px)
                     }
                 }
-            ) { Text("Outdoors (realtime sun)") }
+            ) {
+                Translated("Outdoors")
+            }
 
             // Checkbox control
             Div(

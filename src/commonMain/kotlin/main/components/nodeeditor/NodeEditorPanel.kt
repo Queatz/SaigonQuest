@@ -27,33 +27,18 @@ fun NodeEditorPanel(
     onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null,
     onNodeDelete: ((nodeId: String) -> Unit)? = null
 ) {
-    // Effect to find and register DOM elements with the controller
-    DisposableEffect(Unit) {
-        // Use a small delay to ensure the DOM elements are rendered
-        val timeoutId = window.setTimeout({
-            // Find the canvas element
-            val canvasElement = document.querySelector("[data-canvas='node-editor-canvas']") as? HTMLElement
-            if (canvasElement != null) {
-                controller.setCanvasElement(canvasElement)
-            }
-            
-            // Find the wrapper element
-            val wrapperElement = document.querySelector("[data-wrapper='node-editor-canvas-wrapper']") as? HTMLElement
-            if (wrapperElement != null) {
-                controller.setWrapperElement(wrapperElement)
-            }
-        }, 100) // 100ms delay
-        
-        onDispose {
-            // Clear the timeout when the component is disposed
-            window.clearTimeout(timeoutId)
-        }
-    }
+    // Register DOM elements with the controller as soon as they mount, no timeout
     // Node editor canvas wrapper
     Div(
         attrs = {
             classes(NodeEditorStyles.nodeEditorCanvasWrapper)
             attr("data-wrapper", "node-editor-canvas-wrapper")
+            // Register wrapper element immediately via ref
+            ref { element ->
+                controller.setWrapperElement(element)
+
+                onDispose { controller.setWrapperElement(null) }
+            }
             
             // Add keyboard event listener
             if (onKeyDown != null) {
@@ -121,6 +106,12 @@ fun NodeEditorPanel(
                 
                 // Add a data attribute to identify the canvas element
                 attr("data-canvas", "node-editor-canvas")
+                // Register canvas element immediately via ref
+                ref { element ->
+                    controller.setCanvasElement(element)
+
+                    onDispose { controller.setCanvasElement(null) }
+                }
                 
                 // Add click handler to deselect nodes and connections when clicking on empty areas
                 onClick { event ->

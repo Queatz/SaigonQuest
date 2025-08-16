@@ -46,6 +46,18 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflowY
 
 object Styles : StyleSheet() {
+    val emoteButton by style {
+        width(48.px)
+        height(48.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        fontSize(32.px)
+        cursor("pointer")
+        property("border-radius", "4px")
+        property("transition", "background-color 0.2s")
+    }
+
     // Fullscreen fade overlay for world transitions
     val fadeOverlay by style {
         position(Position.Fixed)

@@ -1,6 +1,18 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Outdoors
+vi: Ngoài trời
+    
+Add
+vi: Thêm
+
+Remove image
+vi: Xóa hình ảnh
+
+Add image
+vi: Thêm hình ảnh
+
 My Worlds
 vi: Thế giới của tôi
 
