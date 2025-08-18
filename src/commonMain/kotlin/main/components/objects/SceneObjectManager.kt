@@ -426,10 +426,7 @@ class SceneObjectManager(
                         )
                     )
 
-                    // Server will broadcast ADD_OBJECT; no client self-broadcast
-
-                    // Create a 3D representation of the item in the scene
-                    createInventoryItemInScene(savedObj, item)
+                    // Server will broadcast ADD_OBJECT; rely on broadcast to render
 
                     // Refresh inventory state to reflect server-authoritative changes
                     InventoryState.refreshInventory(
@@ -480,6 +477,8 @@ class SceneObjectManager(
             if (node != null) {
                 // Store the object in our map for future reference
                 objectMeshes[obj.key] = node
+                // Track as inventory-based source to stabilize model-change checks
+                objectModelSources[obj.key] = Pair("", "")
 
                 node.getChildMeshes().also { meshes ->
                     console.log("[DEBUG_ITEM] Adding shadows: ${meshes}")
@@ -657,7 +656,13 @@ class SceneObjectManager(
      * @param obj The object to create
      */
     private fun createObjectPreferInventory(obj: Object) {
-        // Prefer rendering based on object-owned inventory contents
+        // If object has explicit model info, render directly as a model
+        if (obj.file.isNotEmpty() && obj.collection.isNotEmpty()) {
+            createObjectInScene(obj)
+            return
+        }
+
+        // Otherwise, prefer inventory-based rendering and skip fallback if empty
         coroutineScope.launch {
             try {
                 val inv = InventoryApi.getObjectInventory(obj.key)
@@ -667,13 +672,12 @@ class SceneObjectManager(
                     // Load item definition and render as inventory object
                     val itemDef = ItemApi.getItemById(first.item)
                     createInventoryItemInScene(obj, itemDef)
-                    return@launch
+                } else {
+                    console.log("[INVENTORY_RENDER] No items for ${obj.key}; skipping render")
                 }
             } catch (e: Throwable) {
-                console.warn("[INVENTORY_RENDER] Failed to fetch/render from object inventory for ${'$'}{obj.key}: ${'$'}{e.message}")
+                console.warn("[INVENTORY_RENDER] Failed inventory render for ${obj.key}: ${e.message}; skipping render")
             }
-            // Fallback to legacy render logic
-            createObjectInScene(obj)
         }
     }
 
@@ -1234,6 +1238,10 @@ class SceneObjectManager(
         document.body?.style?.cursor = "default"
         
         console.log("Disposing SceneObjectManager resources")
+    }
+
+    fun onMouseLeave() {
+        document.body?.style?.cursor = "default"
     }
     
     /**

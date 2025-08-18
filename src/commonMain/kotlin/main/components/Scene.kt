@@ -226,6 +226,10 @@ fun SceneComponent(url: String) {
                 // Use the helper function to dispatch the custom event with the data type
                 dispatchObjectDropEvent(clientX, clientY, data, dataType)
             }
+
+            onMouseLeave {
+                SceneManager.getObjectManager()?.onMouseLeave()
+            }
         }
     )
     

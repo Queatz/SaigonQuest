@@ -5,9 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import main.theme.Styles
 import models.Asset
 import models.AssetType
+import main.api.NotificationApi
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -43,6 +46,14 @@ fun AdminDialog(
     // State for the asset registration form
     var selectedAssetType by remember { mutableStateOf(AssetType.Items) }
     var assetFileName by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    // State for system notification form
+    var targetUsername by remember { mutableStateOf("") }
+    var notificationTitle by remember { mutableStateOf("") }
+    var notificationMessage by remember { mutableStateOf("") }
+    var showBroadcastConfirm by remember { mutableStateOf(false) }
+    var showBalanceRequestsDialog by remember { mutableStateOf(false) }
     
     // Use the BaseDialog component
     BaseDialog(
@@ -133,6 +144,84 @@ fun AdminDialog(
                         }
                     )
                 }
+
+                // Divider spacing
+                Div(attrs = { style { margin(16.px) } }) {}
+
+                // System notification form
+                H3 {
+                    Translated("Send system notification")
+                }
+                // Target username input (leave blank to broadcast)
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                            width(100.percent)
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Translated("Target username (leave blank to broadcast)")
+                    TextInput(
+                        value = targetUsername,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { event -> targetUsername = event.value }
+                        }
+                    )
+                }
+                // Notification title input
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                            width(100.percent)
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Translated("Title")
+                    TextInput(
+                        value = notificationTitle,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { event -> notificationTitle = event.value }
+                        }
+                    )
+                }
+                // Notification message input
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                            width(100.percent)
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Translated("Message")
+                    TextInput(
+                        value = notificationMessage,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { event -> notificationMessage = event.value }
+                        }
+                    )
+                }
+
+                // Divider spacing
+                Div(attrs = { style { margin(16.px) } }) {}
+
+                // Balance requests section
+                H3 { Translated("Pending Balance Requests") }
+                DialogButton(
+                    onClick = { showBalanceRequestsDialog = true },
+                    isPrimary = true
+                ) { Translated("Open") }
             }
         },
         actions = {
@@ -152,6 +241,32 @@ fun AdminDialog(
             ) {
                 Translated("Register asset")
             }
+
+            // Send system notification button
+            DialogButton(
+                onClick = {
+                    if (notificationTitle.isNotBlank() && notificationMessage.isNotBlank()) {
+                        if (targetUsername.trim().isBlank()) {
+                            showBroadcastConfirm = true
+                        } else {
+                            scope.launch {
+                                val ok = NotificationApi.sendSystemNotification(
+                                    username = targetUsername,
+                                    title = notificationTitle,
+                                    description = notificationMessage
+                                )
+                                if (ok) {
+                                    notificationTitle = ""
+                                    notificationMessage = ""
+                                }
+                            }
+                        }
+                    }
+                },
+                isPrimary = true
+            ) {
+                Translated("Send notification")
+            }
             
             // Close button
             DialogButton(
@@ -162,4 +277,34 @@ fun AdminDialog(
             }
         }
     )
+
+    // Broadcast confirmation dialog
+    if (showBroadcastConfirm) {
+        BasicConfirmDialog(
+            message = translated("Send this notification to all users?"),
+            onConfirm = {
+                showBroadcastConfirm = false
+                scope.launch {
+                    val ok = NotificationApi.sendSystemNotification(
+                        username = "",
+                        title = notificationTitle,
+                        description = notificationMessage
+                    )
+                    if (ok) {
+                        notificationTitle = ""
+                        notificationMessage = ""
+                    }
+                }
+            },
+            onCancel = { showBroadcastConfirm = false }
+        )
+    }
+
+    if (showBalanceRequestsDialog) {
+        main.components.AdminBalanceRequestsDialog(
+            baseUrl = main.api.ApiConstants.API_BASE_URL,
+            bearerToken = main.api.UserApi.getToken() ?: "",
+            onClose = { showBalanceRequestsDialog = false }
+        )
+    }
 }

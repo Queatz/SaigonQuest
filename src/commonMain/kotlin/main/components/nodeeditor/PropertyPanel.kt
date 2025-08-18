@@ -45,6 +45,7 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URL
 import org.w3c.fetch.RequestInit
 import org.w3c.xhr.FormData
+import main.components.media.UploadMediaDialog
 
 /**
  * A panel for editing node properties.
@@ -219,62 +220,9 @@ fun PropertyPanel(
                                     )
                                 } else if (propDef.key == PropertyKey.IMAGE_URL) {
                                     val imageUrl = propertyValues[propDef.key] ?: ""
-                                    val fileInputId = "image-upload-${nodeId}"
-
-                                    // Hidden file input for selecting an image
-                                    Input(InputType.File, attrs = {
-                                        id(fileInputId)
-                                        attr("accept", "image/*")
-                                        attr("style", "display:none")
-                                        onInput { event ->
-                                            val input = event.target as HTMLInputElement
-                                            val file = input.files?.item(0)
-                                            if (file != null) {
-                                                val scope = MainScope()
-                                                scope.launch {
-                                                    try {
-                                                        // Ensure we have a valid token
-                                                        val user = UserApi.getCurrentUser()
-                                                        val token = UserApi.getToken() ?: ""
-
-                                                        val formData = FormData()
-                                                        formData.append("API_USER_BEARER_TOKEN", token)
-                                                        formData.append("file", file, file.name)
-
-                                                        val uploadUrl = ContentApiConstants.CONTENT_BASE_URL + "/upload"
-                                                        val init = js("({})").unsafeCast<RequestInit>().also {
-                                                            it.method = "POST"
-                                                            it.body = formData
-                                                        }
-                                                        val response = window.fetch(uploadUrl, init).await()
-                                                        val text = response.text().await()
-
-                                                        if (!response.ok) {
-                                                            console.error("Upload failed: ", text)
-                                                        } else {
-                                                            try {
-                                                                val record = ApiClient.json.decodeFromString<models.ContentUpload>(text)
-                                                                val finalUrl = ContentApiConstants.CONTENT_BASE_URL + record.uploadedFilePath
-                                                                propertyValues = propertyValues.edit {
-                                                                    it[PropertyKey.IMAGE_URL] = finalUrl
-                                                                }
-                                                            } catch (e: Throwable) {
-                                                                console.error("Failed parsing upload response", e)
-                                                            }
-                                                        }
-                                                    } catch (e: Throwable) {
-                                                        console.error("Error uploading image", e)
-                                                    } finally {
-                                                        // Reset input to allow re‑selecting the same file
-                                                        event.target.value = ""
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    })
+                                    var showDialog by remember(nodeId) { mutableStateOf(false) }
 
                                     if (imageUrl.isNotBlank()) {
-                                        // Show preview and remove button
                                         Img(
                                             src = imageUrl,
                                             attrs = {
@@ -284,23 +232,37 @@ fun PropertyPanel(
                                                 }
                                             }
                                         )
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                            onClick {
-                                                propertyValues = propertyValues.edit {
-                                                    it[PropertyKey.IMAGE_URL] = ""
-                                                }
-                                            }
-                                        }) { Translated("Remove image") }
-                                    } else {
-                                        // Add image button triggers file input click
+                                    }
+
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                        }
+                                    }) {
                                         Button(attrs = {
                                             classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick {
-                                                val el = document.getElementById(fileInputId) as? HTMLInputElement
-                                                el?.click()
+                                            onClick { showDialog = true }
+                                        }) { Translated(if (imageUrl.isBlank()) "Choose image" else "Change image") }
+
+                                        if (imageUrl.isNotBlank()) {
+                                            Button(attrs = {
+                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
+                                                onClick {
+                                                    propertyValues = propertyValues.edit { it[PropertyKey.IMAGE_URL] = "" }
+                                                }
+                                            }) { Translated("Remove image") }
+                                        }
+                                    }
+
+                                    if (showDialog) {
+                                        UploadMediaDialog(
+                                            onClose = { showDialog = false },
+                                            onSelect = { selectedUrl ->
+                                                propertyValues = propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
                                             }
-                                        }) { Translated("Add image") }
+                                        )
                                     }
                                 } else {
                                     // Use Input for other string properties

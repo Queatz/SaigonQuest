@@ -3,7 +3,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 private const val translations = """
 Outdoors
 vi: Ngoài trời
-    
+
 Add
 vi: Thêm
 
@@ -18,6 +18,27 @@ vi: Thế giới của tôi
 
 Close
 vi: Đóng
+
+Settings
+vi: Cài đặt
+
+Change Password
+vi: Đổi mật khẩu
+
+Current Password
+vi: Mật khẩu hiện tại
+
+New Password
+vi: Mật khẩu mới
+
+Repeat New Password
+vi: Nhập lại mật khẩu mới
+
+Passwords do not match
+vi: Mật khẩu không khớp
+
+Current password is incorrect
+vi: Mật khẩu hiện tại không đúng
 
 collected
 vi: đã thu thập
@@ -748,6 +769,90 @@ vi: Tặng những vật phẩm này?
 Give items
 vi: Tặng vật phẩm
 
+Pending requests
+vi: Yêu cầu đang chờ
+
+Pending Requests
+vi: Yêu cầu đang chờ
+
+Note
+vi: Ghi chú
+
+Upload proof of payment / VNQR screenshot
+vi: Tải ảnh xác minh thanh toán / ảnh chụp màn hình VNQR
+
+Amount must be positive
+vi: Số tiền phải là số dương
+
+Attachment image is required
+vi: Cần có hình ảnh đính kèm
+
+Insufficient funds
+vi: Không đủ tiền
+
+Balance
+vi: Số dư
+
+Current balance
+vi: Số dư hiện tại
+
+View all
+vi: Xem tất cả
+
+Balance history
+vi: Lịch sử số dư
+
+Last 5 events
+vi: 5 sự kiện gần đây
+
+Withdraw
+vi: Rút tiền
+
+Deposit
+vi: Nạp tiền
+
+Amount (VND)
+vi: Số tiền (VND)
+
+Notes
+vi: Ghi chú
+
+Upload proof of payment
+vi: Tải ảnh xác minh thanh toán
+
+Upload your VNQR
+vi: Tải ảnh chụp màn hình VNQR của bạn
+
+Submit
+vi: Gửi
+
+Submitting...
+vi:Đang gửi...
+
+Pending Withdraws
+vi: Rút tiền đang chờ
+
+Pending Deposits
+vi: Nạp tiền đang chờ
+
+Status
+vi: Trạng thái
+
+Received
+vi: Đã nhận
+
+Complete
+vi: Hoàn thành
+
+Denied
+vi: Bị từ chối
+
+Approve
+vi: Chấp thuận
+
+Deny
+vi: Từ chối
+
 
 """
 
@@ -757,7 +862,7 @@ object Translations {
     private const val DEFAULT_LANGUAGE = "en"
 
     private val _translations =
-        translations.trim().split("\n\n").associate {
+        translations.trim().split("""\n\s*\n""".toRegex()).associate {
             val lines = it.split("\n")
             lines[0] to lines.drop(1).associate { line ->
                 val parts = line.split(":", limit = 2)

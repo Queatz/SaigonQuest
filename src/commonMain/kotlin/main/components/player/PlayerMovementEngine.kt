@@ -5,6 +5,7 @@ import lib.Mesh
 import lib.Vector3
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
+import main.components.world.effect.WindSystem
 
 /**
  * Encapsulates local player movement + click-to-move state and logic.
@@ -68,6 +69,8 @@ class PlayerMovementEngine(
             // Cancel click-to-move
             stopMovement()
             isPlayerMoving = true
+            // Temporary wind boost while moving (extends 1s tail)
+            WindSystem.triggerMovementBoost()
             // Stand if sitting
             if (getActivity() == PlayerActivity.Sit) {
                 setActivity(null)
@@ -86,6 +89,8 @@ class PlayerMovementEngine(
                 finalMoveDirection = direction
                 onMoveDirection(direction)
                 isPlayerMoving = true
+                // Temporary wind boost while moving-to-target as well
+                WindSystem.triggerMovementBoost()
                 if (getActivity() == PlayerActivity.Sit) {
                     setActivity(null)
                 }

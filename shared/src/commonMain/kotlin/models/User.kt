@@ -14,6 +14,7 @@ data class User(
     var isPlayer: Boolean = false,
     var isAdmin: Boolean = false,
     var visitorId: String = "",
+    @Transient
     var passwordHash: String = "",
     @Contextual
     var lastActive: Instant = Clock.System.now(),

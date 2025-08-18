@@ -366,6 +366,51 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 description = "Player does not have enough items"
             )
         )
+        
+        // GiveItems node properties
+        is LogicNode.GiveItems -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ITEMS,
+                name = "Items",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "",
+                description = "Comma-separated item IDs"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUANTITIES,
+                name = "Quantities",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "1",
+                description = "Comma-separated quantities matching items"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Accepted",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "Declined",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NOT_ENOUGH,
+                name = "Not enough",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT,
+                description = "World owner does not have enough of item"
+            )
+        )
     }
 }
 

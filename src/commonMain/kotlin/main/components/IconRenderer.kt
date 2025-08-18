@@ -43,7 +43,7 @@ fun IconRenderer(
                 // index moves horizontally and wraps vertically
                 val col = index % 10 // 10 columns (320px / 32px = 10)
                 val row = index / 10
-                backgroundPosition("-${col * 32}px -${row * 32}px")
+                backgroundPosition("-${col * 32}px -${(10 - row) * 32}px")
             }
             
             // Add click handler if provided

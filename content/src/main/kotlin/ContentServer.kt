@@ -1,4 +1,3 @@
-import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -30,6 +29,12 @@ import io.ktor.utils.io.jvm.javaio.toInputStream
 import models.ContentUpload
 import models.ValidateTokenResponse
 import repository.UploadRepository
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.headers
+import io.ktor.http.contentType
+import io.ktor.http.ContentType
+import kotlinx.serialization.Serializable
 import utils.json
 import java.io.File
 import java.util.UUID
@@ -140,6 +145,18 @@ fun Application.module() {
             )
 
             val saved = repo.save(record)
+
+            // Also notify backend to record in the user's media library
+            try {
+                BackendClient(apiBase).createMedia(token, CreateUserMediaRequest(
+                    type = "Image",
+                    path = saved.uploadedFilePath,
+                    originalFileName = saved.originalFileName
+                ))
+            } catch (_: Throwable) {
+                // Do not fail the upload if media insert fails
+            }
+
             call.respond(HttpStatusCode.Created, saved)
         }
     }
@@ -157,5 +174,26 @@ private class AuthClient(private val baseUrl: String) {
         if (res.status != HttpStatusCode.OK) return null
         val body: ValidateTokenResponse = res.body()
         return if (body.valid) body.userId else null
+    }
+}
+
+@Serializable
+private data class CreateUserMediaRequest(
+    val type: String,
+    val path: String,
+    val originalFileName: String
+)
+
+private class BackendClient(private val baseUrl: String) {
+    private val client = io.ktor.client.HttpClient(io.ktor.client.engine.cio.CIO) {
+        install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+    }
+
+    suspend fun createMedia(bearerToken: String, body: CreateUserMediaRequest) {
+        client.post("$baseUrl/media") {
+            headers { append(HttpHeaders.Authorization, "Bearer $bearerToken") }
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
     }
 }

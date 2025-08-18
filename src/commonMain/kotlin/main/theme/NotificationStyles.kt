@@ -28,6 +28,7 @@ import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.paddingLeft
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
@@ -105,6 +106,12 @@ object NotificationStyles : StyleSheet() {
     val notificationItemUnread by style {
         backgroundColor(rgba(60, 60, 60, 0.8))
     }
+
+    // System notification accent (e.g., subtle blue left border)
+    val notificationItemSystem by style {
+        property("border-left", "4px solid rgba(80, 160, 255, 0.9)")
+        paddingLeft(10.px) // compensate for left border
+    }
     
     val notificationHeader by style {
         display(DisplayStyle.Flex)
@@ -129,6 +136,16 @@ object NotificationStyles : StyleSheet() {
         margin(0.px)
         color(rgba(255, 255, 255, 0.8))
         fontSize(14.px)
+    }
+
+    // Small badge for system notifications
+    val systemBadge by style {
+        backgroundColor(rgba(80, 160, 255, 0.15))
+        color(Color("#a6c8ff"))
+        borderRadius(12.px)
+        padding(2.px, 8.px)
+        fontSize(12.px)
+        marginRight(8.px)
     }
     
     // Friend request notification specific styles

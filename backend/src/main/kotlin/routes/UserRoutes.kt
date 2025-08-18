@@ -13,6 +13,7 @@ import models.AuthResponse
 import models.ErrorResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
+import models.ChangePasswordRequest
 import models.StatusUpdateRequest
 import models.UpgradeRequest
 import models.User
@@ -242,6 +243,41 @@ fun Routing.configureUserRoutes() {
                     )
                 
                 call.respond(HttpStatusCode.OK, updatedUser)
+            }
+
+            // Change password - requires authentication
+            post("/change-password") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val request = call.receive<ChangePasswordRequest>()
+
+                if (request.newPassword.length < 8) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Password must be at least 8 characters", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                // Verify current password
+                val ok = userRepository.verifyPassword(userId, request.currentPassword)
+                if (!ok) {
+                    return@post call.respond(
+                        HttpStatusCode.Unauthorized,
+                        ErrorResponse(message = "Current password is incorrect", code = HttpStatusCode.Unauthorized.value)
+                    )
+                }
+
+                val updatedUser = userRepository.updatePassword(userId, request.newPassword)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+
+                // Generate new JWT token
+                val token = JwtConfig.generateToken(updatedUser.key)
+                updatedUser.token = token
+                call.respond(HttpStatusCode.OK, AuthResponse(updatedUser, token))
             }
         }
     }

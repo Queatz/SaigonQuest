@@ -39,6 +39,7 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.cursor
+import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
@@ -462,6 +463,10 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("flex-grow", "1")
+        color(Theme.colors.onBackground)
+        dark(self) {
+            color(Theme.colors.onBackgroundDark)
+        }
     }
     
     val baseDialogFooter by style {
@@ -684,6 +689,7 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         padding(8.px, 16.px)  // Increased padding for better appearance
         cursor("pointer")
+        flexGrow(1)
         property("transition", "background-color 0.3s, color 0.3s")
     }
     
@@ -852,11 +858,13 @@ object Styles : StyleSheet() {
         marginBottom(4.px)
         fontSize(14.px)
         color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
 
     val formHelpText by style {
         fontSize(12.px)
         color(Theme.colors.onSurfaceVariant)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
         property("margin-top", "4px")
     }
     
@@ -871,6 +879,31 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         property("margin-top", "24px")
+    }
+
+    // Balance sections styling
+    val balanceSectionTitle by style {
+        marginTop(16.px)
+        marginBottom(8.px)
+        color(Theme.colors.onBackground)
+        fontSize(16.px)
+        property("font-weight", "bold")
+    }
+
+    val balanceListItem by style {
+        padding(8.px)
+        property("border-radius", "4px")
+        backgroundColor(rgba(255, 255, 255, 0.05))
+        marginBottom(6.px)
+    }
+
+    // Small square image preview (used for proof image)
+    val imageThumb by style {
+        width(96.px)
+        height(96.px)
+        property("object-fit", "cover")
+        property("border-radius", "4px")
+        property("border", "1px solid rgba(255, 255, 255, 0.2)")
     }
     
     val primaryButton by style {
@@ -1048,6 +1081,10 @@ object Styles : StyleSheet() {
             visited {
                 property("color", Theme.colors.primary.toString())
             }
+        }
+
+        "textarea" {
+            property("resize", "vertical")
         }
     }
 }

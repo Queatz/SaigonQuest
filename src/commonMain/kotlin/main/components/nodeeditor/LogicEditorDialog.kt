@@ -140,6 +140,7 @@ fun LogicEditorDialog(
         title = dialogTitle,
         maxWidth = "100%",
         clickOutside = false,
+        isFullHeight = true,
         isFullscreen = isFullscreen,
         // Custom header actions for fullscreen toggle
         headerActions = {

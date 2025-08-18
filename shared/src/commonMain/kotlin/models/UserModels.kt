@@ -37,3 +37,9 @@ data class StatusUpdateRequest(val status: String)
 data class UnreadCountResponse(
     val unreadCount: Int = 0
 )
+
+@Serializable
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
+)

@@ -4,6 +4,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.browser.window
+import kotlinx.serialization.Serializable
 import models.Friend
 import models.Notification
 import models.NotificationType
@@ -17,6 +18,12 @@ import models.UnreadCountResponse
  * It also provides methods for handling friend request notifications.
  */
 object NotificationApi {
+    @Serializable
+    data class SystemNotificationRequest(
+        val username: String,
+        val title: String,
+        val description: String
+    )
     
     /**
      * Get notifications for the current user
@@ -37,7 +44,25 @@ object NotificationApi {
             return emptyArray()
         }
     }
-    
+
+    /**
+     * Send a system notification to a user (admin only)
+     */
+    suspend fun sendSystemNotification(username: String, title: String, description: String): Boolean {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/notification/system") {
+                ApiClient.addAuthHeader(this)
+                contentType(ContentType.Application.Json)
+                setBody(SystemNotificationRequest(username, title, description))
+            }
+
+            return response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error sending system notification", e)
+            return false
+        }
+    }
+
     /**
      * Mark a notification as read
      *

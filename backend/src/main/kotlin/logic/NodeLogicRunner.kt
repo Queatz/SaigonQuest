@@ -239,7 +239,7 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems) {
+            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems) {
                 // For HasItem nodes, use the outputProperty to select the correct connection
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -447,6 +447,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 TakeItemsNodeRunner(context)
+            }
+            NodeId.GiveItems -> {
+                WebSocketDebug.logMessage(
+                    "GIVE_ITEMS_RUNNER_SELECTED",
+                    "Selected GiveItemsNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                GiveItemsNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

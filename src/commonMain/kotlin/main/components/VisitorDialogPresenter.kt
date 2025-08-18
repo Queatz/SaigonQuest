@@ -277,7 +277,7 @@ private fun handleLogin(
                         val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
                         val position = if (playerPos != null) Position(playerPos.x, playerPos.y, playerPos.z) else Position(0f, 0f, 0f)
 
-                        console.log("VisitorDialogPresenter: Sending USER_JOIN for player after reconnect at position: ${'$'}position")
+                        console.log("VisitorDialogPresenter: Sending USER_JOIN for player after reconnect at position: $position")
                         WebSocketApi.sendUserJoin(worldId, position, isPlayer = true)
 
                         // Update player state in WebSocket to notify other clients

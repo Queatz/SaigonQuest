@@ -3,6 +3,7 @@ package routes.handlers
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import logic.TakeItemsNodeRunner
+import logic.GiveItemsNodeRunner
 import models.TakeItemsConfirmation
 import routes.WebSocketConnection
 import routes.WebSocketMessage
@@ -26,7 +27,10 @@ class TakeItemsConfirmHandler : WebSocketHandler {
                 WebSocketDebug.logError("TakeItemsConfirm: UserId mismatch", null, session)
                 return
             }
-            val ok = TakeItemsNodeRunner.processConfirmation(confirmation)
+            var ok = TakeItemsNodeRunner.processConfirmation(confirmation)
+            if (!ok) {
+                ok = GiveItemsNodeRunner.processConfirmation(confirmation)
+            }
             if (ok) {
                 WebSocketDebug.logMessage("TAKE_ITEMS_CONFIRM_PROCESSED", "requestId=${confirmation.requestId} accepted=${confirmation.accepted}", session)
             } else {

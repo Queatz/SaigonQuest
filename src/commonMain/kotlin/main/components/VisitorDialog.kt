@@ -32,6 +32,7 @@ fun VisitorDialog(
     var isLoginMode by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var yearOfBirth by remember { mutableStateOf<Int?>(null) }
     var sex by remember { mutableStateOf<Sex?>(null) }
     var errorMessage by remember { mutableStateOf("") }
@@ -50,9 +51,15 @@ fun VisitorDialog(
                 errorMessage = str("Password cannot be empty")
                 return
             }
-            
+
             !isLoginMode && password.length < 8 -> {
                 errorMessage = str("Password must be at least 8 characters")
+                return
+            }
+
+            // Confirm password must match during registration
+            !isLoginMode && confirmPassword != password -> {
+                errorMessage = str("Passwords do not match")
                 return
             }
             
@@ -145,6 +152,32 @@ fun VisitorDialog(
                     ) {
                         Translated("Password must be at least 8 characters")
                     }
+                }
+            }
+
+            // Confirm Password input (only in registration mode)
+            if (!isLoginMode) {
+                Div(
+                    attrs = {
+                        classes(Styles.formFieldContainer)
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            classes(Styles.formLabel)
+                        }
+                    ) {
+                        Translated("Confirm Password")
+                    }
+                    Input(
+                        type = InputType.Password,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder(str("Re-enter password"))
+                            value(confirmPassword)
+                            onInput { confirmPassword = it.value }
+                        }
+                    )
                 }
             }
             
@@ -305,6 +338,9 @@ fun VisitorDialog(
                     onClick = {
                         isLoginMode = !isLoginMode
                         errorMessage = ""
+                        // Reset sensitive fields when switching modes
+                        password = ""
+                        confirmPassword = ""
                     }
                 ) {
                     Translated(if (isLoginMode) "Create Account" else "Log In")

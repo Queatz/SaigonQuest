@@ -53,6 +53,11 @@ fun PlayerDialog(
     val showCustomizationDialog = remember { mutableStateOf(false) }
     // State to control My Worlds dialog visibility
     val showMyWorldsDialog = remember { mutableStateOf(false) }
+    // State to control Settings dialog visibility
+    val showSettingsDialog = remember { mutableStateOf(false) }
+    // State to control Balance dialogs visibility
+    val showBalanceDialog = remember { mutableStateOf(false) }
+    val showBalanceHistoryDialog = remember { mutableStateOf(false) }
 
     // Coroutine scope for async operations that persists beyond dialog closure
     val coroutineScope = remember { MainScope() }
@@ -325,6 +330,28 @@ fun PlayerDialog(
                         Translated("My Worlds")
                     }
 
+                    // Balance button
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            style { marginTop(8.px) }
+                            onClick { showBalanceDialog.value = true }
+                        }
+                    ) {
+                        Translated("Balance")
+                    }
+
+                    // Settings button
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            style { marginTop(8.px) }
+                            onClick { showSettingsDialog.value = true }
+                        }
+                    ) {
+                        Translated("Settings")
+                    }
+
                     // Logout button
                     Button(
                         attrs = {
@@ -382,6 +409,34 @@ fun PlayerDialog(
                 MyWorldsDialog(
                     onClose = { showMyWorldsDialog.value = false },
                     onNavigate = { path -> router.navigate(path) }
+                )
+            }
+
+            // Render the Settings dialog when visible
+            if (showSettingsDialog.value) {
+                SettingsDialog(
+                    onClose = { showSettingsDialog.value = false }
+                )
+            }
+
+            // Render Balance dialogs
+            if (showBalanceDialog.value) {
+                main.components.BalanceDialog(
+                    baseUrl = main.api.ApiConstants.API_BASE_URL,
+                    bearerToken = main.api.UserApi.getToken() ?: "",
+                    onClose = { showBalanceDialog.value = false },
+                    onViewAll = {
+                        showBalanceDialog.value = false
+                        showBalanceHistoryDialog.value = true
+                    }
+                )
+            }
+
+            if (showBalanceHistoryDialog.value) {
+                main.components.BalanceHistoryDialog(
+                    baseUrl = main.api.ApiConstants.API_BASE_URL,
+                    bearerToken = main.api.UserApi.getToken() ?: "",
+                    onClose = { showBalanceHistoryDialog.value = false }
                 )
             }
         },

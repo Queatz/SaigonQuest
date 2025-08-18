@@ -173,3 +173,8 @@ allowing the project to remain maintainable as it grows.
 - **Routing**: Use the Route sealed interface for type-safe routing, and the extension functions in RouterExtensions.kt for navigation.
 - **UI Components**: Place reusable UI components in the `main/components` package.
 - **Styling**: Use the theme system defined in `main/theme` for consistent styling.
+
+## Git Guidelines
+
+ - DO NOT commit any files
+ - DO track newly added files to git

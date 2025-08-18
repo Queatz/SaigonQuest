@@ -26,6 +26,8 @@ import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
 import routes.configurePushRoutes
 import routes.configureAuthRoutes
+import routes.configureMediaRoutes
+import routes.configureBalanceRoutes
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 
@@ -80,6 +82,8 @@ fun Application.module() {
         configureAssetRoutes()
         configurePushRoutes()
         configureAuthRoutes()
+        configureMediaRoutes()
+        configureBalanceRoutes()
         configureWebSocketRoutes()
     }
 }

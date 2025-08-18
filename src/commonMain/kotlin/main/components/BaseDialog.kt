@@ -32,6 +32,7 @@ fun BaseDialog(
     maxWidth: String = "400px",
     isFullscreen: Boolean = false,
     clickOutside: Boolean = true,
+    isFullHeight: Boolean = false,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -64,6 +65,9 @@ fun BaseDialog(
                             // Apply regular styling
                             property("max-width", maxWidth)
                             maxHeight("calc(100vh - 64px)")
+                            if (isFullHeight) {
+                                property("height", "calc(100vh - 64px)")
+                            }
                         }
                     }
                     // Stop propagation to prevent closing when clicking inside the dialog
@@ -125,6 +129,12 @@ fun BaseDialog(
                 Div(
                     attrs = {
                         classes(Styles.baseDialogContent)
+
+                        style {
+                            if (isFullHeight) {
+                                height(0.px)
+                            }
+                        }
                     }
                 ) {
                     content()

@@ -20,6 +20,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Span
 
 /**
  * Content for the notifications panel/dialog.
@@ -145,11 +146,14 @@ private fun NotificationItem(
         attrs = {
             classes(
                 NotificationStyles.notificationItem,
-                if (notification.isRead) 
-                    NotificationStyles.notificationItemRead 
-                else 
-                    NotificationStyles.notificationItemUnread
+                if (notification.isRead)
+                    NotificationStyles.notificationItemRead
+                else
+                    NotificationStyles.notificationItemUnread,
             )
+            if (notification.type == NotificationType.SYSTEM) {
+                classes(NotificationStyles.notificationItemSystem)
+            }
             onClick { onClick() }
         }
     ) {
@@ -162,6 +166,11 @@ private fun NotificationItem(
             
             // Timestamp
             P(attrs = { classes(NotificationStyles.notificationTimestamp) }) {
+                if (notification.type == NotificationType.SYSTEM) {
+                    Span(attrs = { classes(NotificationStyles.systemBadge) }) {
+                        Translated("System")
+                    }
+                }
                 Text(TimeUtils.formatTimestamp(notification.timestamp))
             }
         }

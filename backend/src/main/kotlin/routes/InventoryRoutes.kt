@@ -265,14 +265,14 @@ fun Routing.configureInventoryRoutes() {
                         )
                     }
 
-                    // Broadcast ADD_OBJECT to all clients in the world
+                    // Broadcast ADD_OBJECT to all clients in the world (canonical key only)
                     try {
                         val broadcastMessage = routes.WebSocketMessage(
                             action = WebSocketAction.ADD_OBJECT,
                             data = json.encodeToString(created),
                         )
                         val messageString = json.encodeToString(broadcastMessage)
-                        routes.handlers.broadcastToWorldNoSession(req.worldId, messageString, activeConnections)
+                        routes.handlers.broadcastToWorldNoSession(created.worldId, messageString, activeConnections)
                     } catch (e: Throwable) {
                         // Log but do not fail the request
                         println("[WS_BROADCAST] Failed to broadcast ADD_OBJECT: ${e.message}")
@@ -308,6 +308,8 @@ fun Routing.configureInventoryRoutes() {
                                 data = json.encodeToString(obj.key),
                             )
                             val messageString = json.encodeToString(broadcastMessage)
+
+                            // Broadcast only to the canonical world key
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
                         } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast REMOVE_OBJECT (empty inventory): ${e.message}")
@@ -346,6 +348,7 @@ fun Routing.configureInventoryRoutes() {
                                 data = json.encodeToString(obj.key),
                             )
                             val messageString = json.encodeToString(broadcastMessage)
+                            // Broadcast only to the canonical world key
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
                         } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast REMOVE_OBJECT: ${e.message}")
@@ -359,6 +362,7 @@ fun Routing.configureInventoryRoutes() {
                                 data = json.encodeToString(obj),
                             )
                             val messageString = json.encodeToString(broadcastMessage)
+                            // Broadcast only to the canonical world key
                             routes.handlers.broadcastToWorldNoSession(obj.worldId, messageString, activeConnections)
                         } catch (e: Throwable) {
                             println("[WS_BROADCAST] Failed to broadcast OBJECT_UPDATE: ${e.message}")

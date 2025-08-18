@@ -19,7 +19,6 @@ import lib.VertexBuffer
 import lib.VertexData
 import main.components.world.effect.WindSystem
 import kotlin.js.asDynamic
-import kotlin.math.abs
 import kotlin.math.atan2
 
 /**
@@ -30,38 +29,38 @@ sealed class WorldObject {
      * Unique identifier for this object
      */
     var id: String = ""
-    
+
     /**
      * Position in the 3D world
      */
     var position: Vector3 = Vector3(0f, 0f, 0f)
-    
+
     /**
      * Rotation in the 3D world
      */
     var rotation: Vector3 = Vector3(0f, 0f, 0f)
-    
+
     /**
      * Scale in the 3D world
      */
     var scale: Vector3 = Vector3(1f, 1f, 1f)
-    
+
     /**
      * Renders this object in the given scene
-     * 
+     *
      * @param scene The scene to render in
      * @return The created node or null if rendering failed
      */
     abstract fun render(scene: Scene): Node?
-    
+
     /**
      * Updates the object's state
-     * 
+     *
      * @param deltaTime Time since last update in seconds
      * @param camera Optional camera to use for display direction calculation
      */
     open fun update(deltaTime: Float, camera: lib.ArcRotateCamera? = null) {}
-    
+
     /**
      * Disposes resources used by this object
      */
@@ -75,19 +74,21 @@ class Character(
     var spriteSheet: SpriteSheet,
     var direction: CharacterDirection,
     var activity: PlayerActivity? = null,
-    var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf()
+    var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf(),
 ) : WorldObject() {
-    
+
     var skinTone: Float = 0.5f
         set(value) {
             field = value.coerceIn(0f, 1f)
             // Update base mesh material color in realtime when skin tone changes
             applySkinToneToBaseMesh()
         }
-    
+
     private var characterMesh: AbstractMesh? = null
+
     // List to store meshes for additional sprite sheets
     private var additionalMeshes: MutableList<AbstractMesh> = mutableListOf()
+
     // Track wind-enabled materials with their sprite sheet for per-frame uniforms
     private data class WindEntry(
         val material: PBRCustomMaterial,
@@ -99,24 +100,32 @@ class Character(
         var hookPresent: Boolean = false,
         var bindCount: Int = 0,
         var effectNullCount: Int = 0,
-        var debugLogCount: Int = 0
+        var debugLogCount: Int = 0,
     )
+
     private val windEntries: MutableList<WindEntry> = mutableListOf()
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
+
     // The direction to display based on camera angle
     private var displayDirection: CharacterDirection = direction
+
     // Flag to indicate if the character needs to be re-rendered
     private var needsRerender: Boolean = false
+
     // Reference to the scene for re-rendering
     private var currentScene: Scene? = null
-    
+
     // Compute a soft gradient between light and dark skin tones
     private fun computeSkinColor(tone: Float): Color3 {
         val t = tone.coerceIn(0f, 1f)
         // Define light and dark skin anchor colors (RGB, linear-ish)
-        val lightR = 1.00f; val lightG = 0.86f; val lightB = 0.75f
-        val darkR = 0.36f; val darkG = 0.24f; val darkB = 0.17f
+        val lightR = 1.00f;
+        val lightG = 0.86f;
+        val lightB = 0.75f
+        val darkR = 0.36f;
+        val darkG = 0.24f;
+        val darkB = 0.17f
         val r = lightR + (darkR - lightR) * t
         val g = lightG + (darkG - lightG) * t
         val b = lightB + (darkB - lightB) * t
@@ -129,24 +138,24 @@ class Character(
         val material = mesh.material as? PBRMaterial ?: return
         material.albedoColor = computeSkinColor(skinTone)
     }
-    
+
     override fun render(scene: Scene): Node? {
         // Store the scene reference for re-rendering
         currentScene = scene
-        
+
         // Create a transform node that will act as our container
         val container = TransformNode("character_container_${id}", scene)
-        
+
         // Set the container's position, rotation, and scale
         container.position = position
         container.rotation = rotation
         container.scaling = scale
-        
+
         // Clear any existing additional meshes
         additionalMeshes.forEach { it.dispose() }
         additionalMeshes.clear()
         windEntries.clear()
-        
+
         // Create the main character mesh
         val characterMesh = createMeshForSpriteSheet(
             spriteSheet = spriteSheet,
@@ -158,7 +167,7 @@ class Character(
         this.characterMesh = characterMesh
         // Apply initial skin tone to the base mesh
         applySkinToneToBaseMesh()
-        
+
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
@@ -172,30 +181,30 @@ class Character(
             )
             additionalMeshes.add(additionalMesh)
         }
-        
+
         // Reset the re-render flag
         needsRerender = false
-        
+
         this.node = container
         return container
     }
-    
+
     /**
      * Updates the list of additional sprite sheets
-     * 
+     *
      * @param spriteSheets The new list of sprite sheets
      */
     fun updateSpriteSheets(spriteSheets: List<SpriteSheet>) {
         // Clear the existing list
         additionalSpriteSheets.clear()
-        
+
         // Add all the new sprite sheets
         additionalSpriteSheets.addAll(spriteSheets)
-        
+
         // Set the flag to re-render on the next update
         needsRerender = true
     }
-    
+
     override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
         // Check if we need to re-render the character
         if (needsRerender) {
@@ -204,7 +213,7 @@ class Character(
             additionalMeshes.forEach { it.dispose() }
             additionalMeshes.clear()
             windEntries.clear()
-            
+
             // Re-render if we have a scene reference
             currentScene?.let { scene ->
                 node?.let { container ->
@@ -219,7 +228,7 @@ class Character(
                     this.characterMesh = characterMesh
                     // Apply initial skin tone to the base mesh after re-render
                     applySkinToneToBaseMesh()
-                    
+
                     // Create meshes for additional sprite sheets with increasing z-offset
                     additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
                         // Use a small z-offset to ensure proper layering (0.01 units per layer)
@@ -233,13 +242,13 @@ class Character(
                         )
                         additionalMeshes.add(additionalMesh)
                     }
-                    
+
                     // Reset the re-render flag
                     needsRerender = false
                 }
             }
         }
-        
+
         // Calculate the display direction based on camera angle
         if (camera != null) {
             // Use the provided camera
@@ -248,30 +257,30 @@ class Character(
             // Use the default camera from SceneManager
             calculateDisplayDirection()
         }
-        
+
         // Update animation frame based on direction and movement state
         if (activity == PlayerActivity.Moving) {
             animationTime += deltaTime
         } else {
             animationTime = 0f
         }
-        
+
         // Always update the sprite animation to reflect the current display direction
         updateSpriteAnimation()
 
         // Update per-frame wind uniforms for wind-enabled materials
         updateWindUniforms()
     }
-    
+
     /**
      * Calculates which direction sprite to display based on the relative angle
      * between the player's facing direction and the camera's facing direction.
-     * 
+     *
      * This is the key method that implements the requirement to show the correct
      * sprite direction based on the camera's perspective. For example:
      * - If camera faces north and player faces south, we show south sprite
      * - If camera faces south and player faces north, we also show south sprite
-     * 
+     *
      * The calculation works by finding the angle between the camera's facing direction
      * and the player's facing direction in the horizontal (XZ) plane, then mapping
      * this angle to one of the 8 sprite directions.
@@ -280,53 +289,53 @@ class Character(
         // Get the camera controller from SceneManager
         val cameraController = main.components.SceneManager.getCameraController() ?: return
         val camera = cameraController.getCamera()
-        
+
         // Use the common implementation with the obtained camera
         calculateDisplayDirectionWithCamera(camera)
     }
-    
+
     /**
      * Calculates which direction sprite to display based on the relative angle
      * between the player's facing direction and the provided camera's facing direction.
-     * 
+     *
      * This version allows passing in a specific camera instead of using the SceneManager.
-     * 
+     *
      * @param camera The camera to use for calculation
      */
     private fun calculateDisplayDirectionWithCamera(camera: lib.ArcRotateCamera) {
         // Convert player direction to a vector
         val playerDirectionVector = directionToVector(direction)
-        
+
         // Get camera direction (from camera to target)
         val cameraPosition = camera.position
         val cameraTarget = camera.target
         val cameraDirection = cameraTarget.subtract(cameraPosition).normalize()
-        
+
         // We only care about the horizontal angle (in the XZ plane)
         // Project both vectors onto the XZ plane and normalize them
         val cameraDirectionXZ = Vector3(cameraDirection.x, 0f, cameraDirection.z).normalize()
         val playerDirectionXZ = Vector3(playerDirectionVector.x, 0f, playerDirectionVector.z).normalize()
-        
+
         // Calculate the dot product of the two vectors
         // For unit vectors, dot product = cos(angle)
         val dotProduct = Vector3.Dot(cameraDirectionXZ, playerDirectionXZ)
-        
+
         // Calculate the angle in radians using the dot product
         // acos(dot product) gives us the angle between the vectors
         val angle = kotlin.math.acos(dotProduct.toDouble()).toFloat()
-        
+
         // Convert angle to degrees for easier mapping to directions
         val angleDegrees = angle * (180f / kotlin.math.PI.toFloat())
-        
+
         // Determine if the angle is positive or negative (clockwise or counterclockwise)
         // We need to know if the player is to the left or right of the camera
         // This is equivalent to the Y component of the cross product
         val crossProductY = cameraDirectionXZ.x * playerDirectionXZ.z - cameraDirectionXZ.z * playerDirectionXZ.x
         val isNegativeAngle = crossProductY < 0
-        
+
         // Adjust the angle based on the sign
         val signedAngleDegrees = if (isNegativeAngle) -angleDegrees else angleDegrees
-        
+
         // Map the angle to one of the 8 directions
         // The sprite sheet has directions in this order: S, SE, E, NE, N, NW, W, SW
         // We divide the 360 degrees into 8 sectors of 45 degrees each
@@ -342,7 +351,7 @@ class Character(
             else -> CharacterDirection.S // Default to South if something goes wrong
         }
     }
-    
+
     /**
      * Converts a CharacterDirection enum to a direction vector.
      */
@@ -362,19 +371,19 @@ class Character(
     /**
      * Updates the sprite animation to show the correct frame based on the current
      * display direction and animation time.
-     * 
+     *
      * This method calculates which frame to show based on the animation time and
      * updates the texture's UV coordinates to display that frame from the sprite sheet.
      */
     private fun updateSpriteAnimation() {
         // Calculate current frame based on animationTime
         val frameIndex = (animationTime / 1000f * spriteSheet.framesPerSecond).toInt() % spriteSheet.getFrameCount()
-            
+
         // Update UV coordinates on the main character mesh
         characterMesh?.let { mesh ->
             updateMeshUVCoordinates(mesh, spriteSheet, frameIndex)
         }
-        
+
         // Update UV coordinates on all additional meshes
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             val additionalMesh = if (index < additionalMeshes.size) additionalMeshes[index] else null
@@ -383,10 +392,10 @@ class Character(
             }
         }
     }
-    
+
     /**
      * Updates the UV coordinates for a mesh to show the correct frame from a sprite sheet
-     * 
+     *
      * @param mesh The mesh to update
      * @param spriteSheet The sprite sheet to use
      * @param frameIndex The frame index to show
@@ -402,7 +411,7 @@ class Character(
                 frameIndex = frameIndex,
                 activity = activity
             )
-            
+
             // BabylonJS handles the UV mapping internally when we set these properties
             // Set the UV coordinates using the properly exposed properties
             texture.uOffset = uvCoords.uMin
@@ -436,7 +445,6 @@ class Character(
         }
         console.log("[WIND] Registered 5x5 uniforms for material: ${material.name}")
         material.AddUniform("intensityScale", "float")
-        material.AddUniform("moveFactor", "float")
         material.AddUniform("windDirLocal", "vec3")
         material.AddUniform("windIntensity", "float")
         material.AddUniform("time", "float")
@@ -455,8 +463,11 @@ class Character(
                     effect.setVector3("w${ri}a", Vector3(rows5[ri][0], rows5[ri][1], rows5[ri][2]))
                     effect.setVector2("w${ri}b", Vector2(rows5[ri][3], rows5[ri][4]))
                 }
-                effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
-                effect.setFloat("moveFactor", 0.5f)
+                val outdoors = WorldLoader.isOutdoorsActive()
+                val intensity = WindSystem.getIntensity(outdoors = outdoors)
+                // Drive amplitude via intensityScale; use unit windIntensity
+                effect.setFloat("intensityScale", spriteSheet.windIntensityScale * intensity)
+                effect.setFloat("windIntensity", 1.0f)
                 console.log("[WIND] Baseline uniforms set (material=${material.name}, w00=" + rows5[0][0] + ", w44=" + rows5[4][4] + ", scale=" + spriteSheet.windIntensityScale + ")")
             } catch (e: Throwable) {
                 console.error("[WIND] Failed to set baseline uniforms", e)
@@ -519,7 +530,14 @@ class Character(
         val velLocal = WindSystem.rotateY(velWorld, -yaw)
 
         val outdoors = WorldLoader.isOutdoorsActive()
-        val intensity = if (outdoors) WindSystem.intensity else 0f
+        val intensity = WindSystem.getIntensity(outdoors = outdoors)
+        // Per-frame boost debug log
+        run {
+            val mult = WindSystem.getBoostMultiplier()
+            val tleft = WindSystem.getBoostTimeRemaining()
+            val tleftRounded = (kotlin.math.round(tleft * 100f) / 100f)
+            console.log("[BOOST] mult=" + mult + ", timeLeft=" + tleftRounded + "s, effectiveIntensity=" + intensity)
+        }
         val t = WindSystem.timeSeconds
         console.log("[WIND] update: entries=${windEntries.size}, outdoors=${outdoors}, intensity=" + intensity)
 
@@ -538,7 +556,8 @@ class Character(
                 return@forEach
             }
             effect.setVector3("windDirLocal", windLocal)
-            effect.setFloat("windIntensity", intensity)
+            // Drive amplitude via intensityScale; use unit windIntensity
+            effect.setFloat("windIntensity", 1.0f)
             effect.setFloat("time", t)
             effect.setFloat("spatialFreq", WindSystem.spatialFreq)
             effect.setFloat("temporalFreq", WindSystem.temporalFreq)
@@ -550,17 +569,16 @@ class Character(
                 effect.setVector3("w${ri}a", Vector3(weights5[ri][0], weights5[ri][1], weights5[ri][2]))
                 effect.setVector2("w${ri}b", Vector2(weights5[ri][3], weights5[ri][4]))
             }
-            effect.setFloat("intensityScale", sheet.windIntensityScale)
-            effect.setFloat("moveFactor", 0.5f)
+            effect.setFloat("intensityScale", sheet.windIntensityScale * intensity)
 
             if (entry.debugLogCount < 2) {
                 console.log(
                     "[WIND] per-frame set (material=" + m.name +
-                        ", gpuActive=" + entry.gpuActive +
-                        ", windLocalX=" + windLocal.x +
-                        ", w00=" + weights5[0][0] +
-                        ", w44=" + weights5[4][4] +
-                        ", time=" + t + ")"
+                            ", gpuActive=" + entry.gpuActive +
+                            ", windLocalX=" + windLocal.x +
+                            ", w00=" + weights5[0][0] +
+                            ", w44=" + weights5[4][4] +
+                            ", time=" + t + ")"
                 )
                 entry.debugLogCount += 1
             }
@@ -606,10 +624,10 @@ class Character(
             // else: GPU hook present; CPU disabled entirely
         }
     }
-    
+
     /**
      * Creates a mesh for a sprite sheet with the specified z-offset
-     * 
+     *
      * @param spriteSheet The sprite sheet to use for the mesh
      * @param name The name of the mesh
      * @param scene The scene to create the mesh in
@@ -622,15 +640,17 @@ class Character(
         name: String,
         scene: Scene,
         parent: Node,
-        zOffset: Float = 0f
+        zOffset: Float = 0f,
     ): AbstractMesh {
         // Create a material with the sprite sheet texture
         val material: PBRMaterial = if (spriteSheet.windEnabled) {
             PBRCustomMaterial("${name}_material", scene).apply {
                 asDynamic().__origResolve = customShaderNameResolve
 
+                // Ensure the vertex shader applies to the depth pre-pass
                 val newResolver =
-                    js("""
+                    js(
+                        """
                         (function(shaderName, uniforms, uniformBuffers, samplers, defines, attributes, options) {
                             // --- OPTIONAL: tweak defines/attributes here if you need ---
                             // defines.push("#define MY_FLAG");
@@ -638,7 +658,8 @@ class Character(
                             // delegate to the original with the correct `this`
                             return this.__origResolve(shaderName, uniforms, uniformBuffers, samplers, defines, attributes, options);
                         })
-                    """) as (String, Array<String>, Array<String>, Array<String>, Array<String>, Array<String>, dynamic) -> String
+                    """
+                    ) as (String, Array<String>, Array<String>, Array<String>, Array<String>, Array<String>, dynamic) -> String
 
                 customShaderNameResolve = newResolver
             }
@@ -684,22 +705,22 @@ class Character(
         console.log("[ZOFFSET] zOffset=$zOffset name=$name")
 
         mesh.material = material
-        
+
         // Set billboard mode to Y-axis only (rotate around Y-axis)
         mesh.billboardMode = Mesh.BILLBOARDMODE_Y
-        
+
         // Make the mesh a child of the parent
         mesh.parent = parent
 
         // Set image dimensions for the sprite sheet (assets are 256x256)
         spriteSheet.setImageDimensions(256, 256)
-        
+
         // If wind is enabled, attach shader and track material
         if (spriteSheet.windEnabled && material is PBRCustomMaterial) {
             console.log("[WIND] attaching wind shader to $name")
             val hookPresent = setupWindShader(material, spriteSheet)
             val basePos = mesh.getVerticesData(VertexBuffer.PositionKind) ?: arrayOf()
-        val entry = WindEntry(
+            val entry = WindEntry(
                 material = material,
                 sheet = spriteSheet,
                 mesh = mesh,
@@ -722,9 +743,12 @@ class Character(
                     } else Vector3(0f, 0f, -1f)
                     val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
                     val windLocal = WindSystem.rotateY(WindSystem.direction, -yaw)
-                    val velLocal = WindSystem.rotateY(main.components.SceneManager.getPlayerVelocity() ?: Vector3(0f, 0f, 0f), -yaw)
+                    val velLocal = WindSystem.rotateY(
+                        main.components.SceneManager.getPlayerVelocity() ?: Vector3(0f, 0f, 0f),
+                        -yaw
+                    )
                     val outdoors = WorldLoader.isOutdoorsActive()
-                    val intensity = if (outdoors) WindSystem.intensity else 0f
+                    val intensity = WindSystem.getIntensity(outdoors = outdoors)
                     val t = WindSystem.timeSeconds
 
                     effect.setVector3("windDirLocal", windLocal)
@@ -739,8 +763,7 @@ class Character(
                         effect.setVector3("w${ri}a", Vector3(rows5[ri][0], rows5[ri][1], rows5[ri][2]))
                         effect.setVector2("w${ri}b", Vector2(rows5[ri][3], rows5[ri][4]))
                     }
-                    effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
-                    effect.setFloat("moveFactor", 0.5f)
+            effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
 
                     // Mark GPU active only if a GPU hook was successfully injected
                     entry.gpuActive = entry.hookPresent
@@ -806,7 +829,7 @@ class Character(
         vd.applyToMesh(mesh, true)
         return mesh
     }
-    
+
     override fun dispose() {
         characterMesh?.dispose()
         additionalMeshes.forEach { it.dispose() }
@@ -820,12 +843,12 @@ class Character(
  * A 3D model that can be rendered in the world
  */
 class Model(
-    var mesh: AbstractMesh
+    var mesh: AbstractMesh,
 ) : WorldObject() {
-    
+
     private var modelMesh: AbstractMesh? = null
     private var node: TransformNode? = null
-    
+
     override fun render(scene: Scene): Node? {
         // Create a transform node that will act as our container
         val container = TransformNode("model_container_${id}", scene)
@@ -833,18 +856,18 @@ class Model(
         // Clone the mesh and make it a child of the container
         val clonedMesh = mesh.clone("model_${id}")
         clonedMesh.parent = container
-        
+
         // Store references to the meshes
         modelMesh = clonedMesh
         node = container
-        
+
         return container
     }
-    
+
     override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
         // Model doesn't need camera for updates
     }
-    
+
     override fun dispose() {
         modelMesh?.dispose()
         node?.dispose()

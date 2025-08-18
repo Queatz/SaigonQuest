@@ -8,8 +8,10 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import models.ErrorResponse
 import models.Notification
+import models.NotificationType
 import models.UnreadCountResponse
 import repository.NotificationRepository
 import repository.UserRepository
@@ -124,6 +126,79 @@ fun Routing.configureNotificationRoutes() {
                 val createdNotification = notificationRepository.create(notification)
                 
                 call.respond(HttpStatusCode.Created, createdNotification)
+            }
+
+            // Create a SYSTEM notification for a specific user (admin only)
+            post("/system") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                // Ensure current user is admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                // Request payload for system notification
+                @Serializable
+                data class SystemNotificationRequest(
+                    val username: String,
+                    val title: String,
+                    val description: String
+                )
+
+                val body = try {
+                    call.receive<SystemNotificationRequest>()
+                } catch (e: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request body", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val trimmedUsername = body.username.trim()
+
+                if (trimmedUsername.isBlank()) {
+                    // Broadcast to all users
+                    val allIds = userRepository.getAllIds()
+                    var sent = 0
+                    allIds.forEach { id ->
+                        try {
+                            val n = Notification(
+                                userId = id,
+                                title = body.title,
+                                description = body.description,
+                                isRead = false,
+                                type = NotificationType.SYSTEM
+                            )
+                            notificationRepository.create(n)
+                            sent++
+                        } catch (_: Throwable) { /* continue */ }
+                    }
+                    return@post call.respond(HttpStatusCode.Accepted, mapOf("sent" to sent))
+                }
+
+                // Targeted notification: find user by username
+                val targetUser = userRepository.getByUsername(trimmedUsername)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "Target user not found", code = HttpStatusCode.NotFound.value)
+                    )
+
+                val notification = Notification(
+                    userId = targetUser.key,
+                    title = body.title,
+                    description = body.description,
+                    isRead = false,
+                    type = NotificationType.SYSTEM
+                )
+
+                val created = notificationRepository.create(notification)
+                call.respond(HttpStatusCode.Created, created)
             }
         }
     }

@@ -145,7 +145,7 @@ fun Routing.configureWebSocketRoutes() {
 
                 // Resolve world info for each target and send PAUSE
                 targets.forEach { (otherConn, otherWorldId) ->
-                    val world = worldRepository.getById(otherWorldId) ?: worldRepository.getByUrl(otherWorldId)
+                    val world = worldRepository.getById(otherWorldId)
                     val pauseData = models.PauseData(
                         userId = otherConn.userId,
                         worldUrl = world?.url ?: otherWorldId,

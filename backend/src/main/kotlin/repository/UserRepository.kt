@@ -75,6 +75,17 @@ class UserRepository {
         val users = ArangoConfig.db.query(query, User::class.java, bindVars).toList()
         return users.firstOrNull()
     }
+
+    /**
+     * Returns all user IDs (keys).
+     */
+    fun getAllIds(): List<String> {
+        val query = "FOR u IN @@collection RETURN u._key"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION
+        )
+        return ArangoConfig.db.query(query, String::class.java, bindVars).toList()
+    }
     
     /**
      * Updates a user in the database
@@ -149,6 +160,23 @@ class UserRepository {
         }
         
         return user
+    }
+
+    /**
+     * Verifies the provided current password for the user
+     */
+    fun verifyPassword(id: String, currentPassword: String): Boolean {
+        val user = getById(id) ?: return false
+        return user.passwordHash == hashPassword(currentPassword)
+    }
+
+    /**
+     * Updates the user's password (no validation)
+     */
+    fun updatePassword(id: String, newPassword: String): User? {
+        val user = getById(id) ?: return null
+        user.passwordHash = hashPassword(newPassword)
+        return update(id, user)
     }
     
     /**

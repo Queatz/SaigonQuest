@@ -584,7 +584,7 @@ class WorldLoader(private val scene: Scene) {
                 WorldLoader.updateDirectionalLightColorHex(world.directionalLightColor)
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to apply edited world lighting: ${'$'}{e.message}")
+            println("[ERROR] Failed to apply edited world lighting: ${e.message}")
         }
     }
     
@@ -636,7 +636,7 @@ class WorldLoader(private val scene: Scene) {
                 scene.fogColor = skyColor
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to set outdoors background color: ${'$'}{e.message}")
+            println("[ERROR] Failed to set outdoors background color: ${e.message}")
         }
 
         // Update hemispheric light
@@ -651,7 +651,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update hemispheric light: ${'$'}{e.message}")
+            println("[ERROR] Failed to update hemispheric light: ${e.message}")
         }
 
         // Update directional light
@@ -675,7 +675,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update directional light: ${'$'}{e.message}")
+            println("[ERROR] Failed to update directional light: ${e.message}")
         }
     }
 

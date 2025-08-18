@@ -3,211 +3,66 @@ package repository
 import com.arangodb.ArangoCollection
 import com.arangodb.entity.DocumentCreateEntity
 import com.arangodb.model.DocumentCreateOptions
-import com.arangodb.model.DocumentReadOptions
-import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
-import debug.WebSocketDebug
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import models.Notification
-import models.NotificationData
-import models.WebSocketAction
-import routes.WebSocketMessage
-import routes.activeConnections
-import routes.handlers.WebSocketUtils
-import utils.json
-import push.PushNotificationService
 
-/**
- * Repository for notification operations
- *
- * This repository provides methods for saving, retrieving, and managing notifications,
- * as well as tracking unread notifications.
- */
 class NotificationRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.NOTIFICATIONS_COLLECTION)
 
-    /**
-     * Create a new notification
-     *
-     * @param notification The notification to create
-     * @return The created notification with its key
-     */
     fun create(notification: Notification): Notification {
         val result: DocumentCreateEntity<Notification> = collection.insertDocument(
             notification,
             DocumentCreateOptions().returnNew(true)
         )
-        
-        val createdNotification = result.new
-        
-        // Send WebSocket notification to the user using a coroutine
-        GlobalScope.launch {
-            try {
-                // Create NotificationData from the created notification
-                val notificationData = NotificationData(
-                    id = createdNotification.key,
-                    userId = createdNotification.userId,
-                    title = createdNotification.title,
-                    description = createdNotification.description,
-                    isRead = createdNotification.isRead,
-                    type = createdNotification.type,
-                    worldId = createdNotification.worldId,
-                    objectId = createdNotification.objectId,
-                    otherUserId = createdNotification.otherUserId,
-                    timestamp = createdNotification.timestamp
-                )
-                
-                // Create WebSocketMessage with NOTIFICATION action and NotificationData
-                val webSocketMessage = WebSocketMessage(
-                    action = WebSocketAction.NOTIFICATION,
-                    data = json.encodeToString(notificationData)
-                )
-                
-                // Convert WebSocketMessage to JSON string
-                val messageString = json.encodeToString(webSocketMessage)
-                
-                // Send WebSocket message to the user
-                WebSocketUtils.broadcastToUser(
-                    userId = createdNotification.userId,
-                    message = messageString,
-                    activeConnections = activeConnections
-                )
-                
-                WebSocketDebug.logBroadcast(
-                    "NOTIFICATION_SENT", 
-                    "Notification sent to user ${createdNotification.userId}: ${createdNotification.title}",
-                    "notification"
-                )
+        return result.new
+    }
 
-                // Send Web Push notification if no WebSocket is connected and keys are configured
-                try {
-                    PushNotificationService.sendIfEligible(createdNotification)
-                } catch (e: Throwable) {
-                    WebSocketDebug.logBroadcast(
-                        "PUSH_SEND_ERROR",
-                        "Error queueing web push for user ${createdNotification.userId}: ${e.message}",
-                        "notification"
-                    )
-                }
-            } catch (e: Throwable) {
-                WebSocketDebug.logBroadcast(
-                    "NOTIFICATION_ERROR", 
-                    "Error sending notification to user ${createdNotification.userId}: ${e.message}",
-                    "notification"
-                )
-            }
-        }
-        
-        return createdNotification
-    }
-    
-    /**
-     * Get a notification by its ID
-     *
-     * @param id The ID of the notification
-     * @return The notification, or null if not found
-     */
-    fun getById(id: String): Notification? {
-        return try {
-            collection.getDocument(
-                id,
-                Notification::class.java,
-                DocumentReadOptions()
-            )
-        } catch (e: Throwable) {
-            null
-        }
-    }
-    
-    /**
-     * Get all notifications for a user
-     *
-     * @param userId The ID of the user
-     * @param limit The maximum number of notifications to return (default: 100)
-     * @return A list of notifications for the user
-     */
     fun getByUserId(userId: String, limit: Int = 100): List<Notification> {
         val query = """
-            FOR n IN @@collection
+            FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
             FILTER n.userId == @userId
             SORT n.timestamp DESC
             LIMIT @limit
             RETURN n
         """.trimIndent()
-        
-        val bindVars = mapOf(
-            "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION,
-            "userId" to userId,
-            "limit" to limit
-        )
-        
-        return ArangoConfig.db.query(query, Notification::class.java, bindVars).toList()
+        val bind = mapOf("userId" to userId, "limit" to limit)
+        return ArangoConfig.db.query(query, Notification::class.java, bind).toList()
     }
-    
-    /**
-     * Mark a notification as read
-     *
-     * @param id The ID of the notification
-     * @return The updated notification, or null if not found
-     */
-    fun markAsRead(id: String): Notification? {
-        val notification = getById(id) ?: return null
-        
-        notification.isRead = true
-        
-        val result = collection.updateDocument(
-            id,
-            notification,
-            DocumentUpdateOptions().returnNew(true)
-        )
-        
-        return result.new
-    }
-    
-    /**
-     * Mark all notifications for a user as read
-     *
-     * @param userId The ID of the user
-     * @return The number of notifications marked as read
-     */
-    fun markAllAsRead(userId: String): Int {
-        val query = """
-            FOR n IN @@collection
-            FILTER n.userId == @userId AND n.read != true
-            UPDATE n WITH { read: true } IN @@collection
-            RETURN OLD
-        """.trimIndent()
-        
-        val bindVars = mapOf(
-            "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION,
-            "userId" to userId
-        )
-        
-        return ArangoConfig.db.query(query, Notification::class.java, bindVars).toList().size
-    }
-    
-    /**
-     * Get the count of unread notifications for a user
-     *
-     * @param userId The ID of the user
-     * @return The number of unread notifications
-     */
+
     fun getUnreadCount(userId: String): Int {
         val query = """
-            FOR n IN @@collection
-            FILTER n.userId == @userId AND n.isRead == false
-            COLLECT WITH COUNT INTO count
-            RETURN count
+            RETURN LENGTH(
+              FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+              FILTER n.userId == @userId AND n.isRead == false
+              RETURN 1
+            )
         """.trimIndent()
-        
-        val bindVars = mapOf(
-            "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION,
-            "userId" to userId
-        )
-        
-        val results = ArangoConfig.db.query(query, Int::class.java, bindVars).toList()
-        return results.firstOrNull() ?: 0
+        val bind = mapOf("userId" to userId)
+        val list = ArangoConfig.db.query(query, Int::class.java, bind).toList()
+        return list.firstOrNull() ?: 0
+    }
+
+    fun getById(id: String): Notification? {
+        return try { collection.getDocument(id, Notification::class.java) } catch (_: Throwable) { null }
+    }
+
+    fun markAsRead(id: String): Notification? {
+        val existing = getById(id) ?: return null
+        existing.isRead = true
+        return collection.updateDocument(id, existing, com.arangodb.model.DocumentUpdateOptions().returnNew(true)).new
+    }
+
+    fun markAllAsRead(userId: String): Int {
+        val query = """
+            FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+            FILTER n.userId == @userId AND n.isRead == false
+            UPDATE n WITH { isRead: true } IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+            COLLECT WITH COUNT INTO length
+            RETURN length
+        """.trimIndent()
+        val bind = mapOf("userId" to userId)
+        val list = ArangoConfig.db.query(query, Int::class.java, bind).toList()
+        return list.firstOrNull() ?: 0
     }
 }

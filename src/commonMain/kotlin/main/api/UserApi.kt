@@ -28,6 +28,7 @@ import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
 import models.AuthResponse
+import models.ChangePasswordRequest
 import models.LanguageUpdateRequest
 import models.LoginRequest
 import models.Sex
@@ -412,6 +413,34 @@ object UserApi {
         } catch (e: Throwable) {
             console.error("Error fetching user", e)
             null
+        }
+    }
+    /**
+     * Changes the current user's password and refreshes the token
+     */
+    suspend fun changePassword(currentPassword: String, newPassword: String): User {
+        val request = ChangePasswordRequest(currentPassword, newPassword)
+
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/change-password") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+
+            if (response.status.isSuccess()) {
+                val authResponse: AuthResponse = response.body()
+                // Save new token
+                saveToken(authResponse.token)
+                // Update cached user to returned player
+                user = authResponse.user
+                return authResponse.user
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Throwable) {
+            console.error("Error changing password: ${e.message}")
+            throw e
         }
     }
 }

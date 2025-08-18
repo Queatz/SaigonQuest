@@ -80,7 +80,7 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
 
     fun initPauseListener(router: Router) {
         WebSocketApi.addPauseListener(router) { pauseData ->
-            console.log("PlayerNetworkSync: pause event for user ${'$'}{pauseData.userId}")
+            console.log("PlayerNetworkSync: pause event for user ${pauseData.userId}")
         }
     }
 

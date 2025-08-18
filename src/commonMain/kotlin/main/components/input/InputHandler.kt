@@ -801,17 +801,12 @@ class InputHandler(
 
                 // Call the unified transfer API to pick up the item (default: all)
                 val result = main.api.InventoryApi.transferPickup(objectId)
-                
                 if (result.objectDeleted) {
                     console.log("[DEBUG_LOG] Successfully collected inventory item: $objectId (object deleted)")
-                    
-                    // Remove the object from the scene
+                    // Remove the object locally to mirror server REMOVE_OBJECT
                     objectManager?.removeObject(objectId)
-                    
-                    // Server broadcasts REMOVE_OBJECT; no client self-broadcast
                 } else {
-                    console.log("[DEBUG_LOG] Collected from object but object remains with reduced quantity: $objectId")
-                    // Optionally, update the object visuals if needed (not required for MVP)
+                    console.log("[DEBUG_LOG] Collected from object; awaiting OBJECT_UPDATE for visual update: $objectId")
                 }
                 
                 // Notify UI via custom event so InventoryTray can show feedback
