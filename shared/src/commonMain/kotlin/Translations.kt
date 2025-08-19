@@ -751,6 +751,9 @@ vi: Không thể thả vật phẩm
 Failed to pick up item
 vi: Không thể nhặt vật phẩm
 
+Resume
+vi: Tiếp tục
+
 Resume to
 vi: Tiếp tục vào
 
@@ -805,6 +808,9 @@ vi: Số dư hiện tại
 View all
 vi: Xem tất cả
 
+Recent events
+vi: Sự kiện gần đây
+
 Balance history
 vi: Lịch sử số dư
 
@@ -816,6 +822,9 @@ vi: Rút tiền
 
 Deposit
 vi: Nạp tiền
+
+Deposit / Withdraw
+vi: Nạp tiền / Rút tiền
 
 Amount (VND)
 vi: Số tiền (VND)
@@ -874,6 +883,9 @@ vi: Giá
 Cost (VND)
 vi: Giá (đ)
 
+VND
+vi: đ
+
 Customize wind weights
 vi: Tùy chỉnh trọng số gió
 
@@ -886,6 +898,50 @@ vi: Đặt lại về mặc định
 Wind weights are invalid
 vi: Trọng số gió không hợp lệ
 
+Pending balance requests
+vi: Yêu cầu số dư đang chờ
+
+Send system notification
+vi: Gửi thông báo hệ thống
+
+Transfer
+vi: Chuyển tiền
+
+Jan
+vi: Thg 1
+
+Feb
+vi: Thg 2
+
+Mar
+vi: Thg 3
+
+Apr
+vi: Thg 4
+
+May
+vi: Thg 5
+
+Jun
+vi: Thg 6
+
+Jul
+vi: Thg 7
+
+Aug
+vi: Thg 8
+
+Sep
+vi: Thg 9
+
+Oct
+vi: Thg 10
+
+Nov
+vi: Thg 11
+
+Dec
+vi: Thg 12
 
 """
 

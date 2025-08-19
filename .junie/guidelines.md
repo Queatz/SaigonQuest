@@ -154,14 +154,15 @@ allowing the project to remain maintainable as it grows.
 - **Avoid using inline styles like `attrs = { style { ... } }`:** Style definitions are in Styles.kt, Theme.kt, and new stylesheet files can be created as needed by adding an entry for them in Main.kt.
 - **Use `by remember`** when possible to avoid the need to reference and set using `.value`
 - **Use dark, mobile, desktop helpers**: change the colors and other styles based on the situation. 
-- Use trailing commas
+- **Prefer using trailing commas**
 - Always put arguments on separate lines
 - Always use named arguments when possible
 - **Use `Throwable` for exception handling**: `Exception` is not enough!
 
 ## Code Style and Development Guidelines
 
-- **Use @Serializable data class**: For all data models
+- **DO NOT swallow errors**: Only when an error is truly expected can we swallow it
+- **Use @Serializable data classes**: For all data models
 - **Use enum classes instead of raw strings**: For all enumerated values
 - **Enums use** PascalCase (UpperCamelCase)
 - **Shared data classes**: All shared models go in the shared module

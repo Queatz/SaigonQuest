@@ -3,7 +3,7 @@ package models
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class UserBalanceHistoryEventType { Spend, Withdraw, Deposit, Give }
+enum class UserBalanceHistoryEventType { Use, Withdraw, Deposit, Give }
 
 @Serializable
 data class UserBalanceHistory(
@@ -17,4 +17,3 @@ data class UserBalanceHistory(
     /** VND */
     var endBalance: Long = 0L
 ) : BaseModel()
-

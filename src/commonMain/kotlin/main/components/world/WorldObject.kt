@@ -466,7 +466,6 @@ class Character(
                 // Drive amplitude via intensityScale; use unit windIntensity
                 effect.setFloat("intensityScale", spriteSheet.windIntensityScale * intensity)
                 effect.setFloat("windIntensity", 1.0f)
-                console.log("[WIND] Baseline uniforms set (material=${material.name}, w00=" + rows5[0][0] + ", w44=" + rows5[4][4] + ", scale=" + spriteSheet.windIntensityScale + ")")
             } catch (e: Throwable) {
                 console.error("[WIND] Failed to set baseline uniforms", e)
             }
@@ -529,15 +528,7 @@ class Character(
 
         val outdoors = WorldLoader.isOutdoorsActive()
         val intensity = WindSystem.getIntensity(outdoors = outdoors)
-        // Per-frame boost debug log
-        run {
-            val mult = WindSystem.getBoostMultiplier()
-            val tleft = WindSystem.getBoostTimeRemaining()
-            val tleftRounded = (kotlin.math.round(tleft * 100f) / 100f)
-            console.log("[BOOST] mult=" + mult + ", timeLeft=" + tleftRounded + "s, effectiveIntensity=" + intensity)
-        }
         val t = WindSystem.timeSeconds
-        console.log("[WIND] update: entries=${windEntries.size}, outdoors=${outdoors}, intensity=" + intensity)
 
         windEntries.forEach { entry ->
             val m = entry.material
@@ -762,11 +753,9 @@ class Character(
                         effect.setVector2("w${ri}b", Vector2(rows5[ri][3], rows5[ri][4]))
                     }
             effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
-
                     // Mark GPU active only if a GPU hook was successfully injected
                     entry.gpuActive = entry.hookPresent
                     entry.bindCount += 1
-                    console.log("[WIND] onBind set uniforms (material=${material.name}, bindCount=${entry.bindCount}, hookPresent=${entry.hookPresent}, gpuActive=${entry.gpuActive}, intensity=" + intensity + ", w00=" + rows5[0][0] + ", w44=" + rows5[4][4] + ")")
                 } catch (e: Throwable) {
                     console.error("[WIND] Failed to update wind shader uniforms", e)
                 }

@@ -15,8 +15,8 @@ fun PausedPage() {
     Div(attrs = { classes(Styles.byePageContainer) }) {
         Div { Translated("Paused.") }
         Div {
-            val worldName = PausedState.lastWorldName.value.ifBlank { "world" }
-            val buttonText = "${translated("Resume to")} \"$worldName\""
+            val worldName = PausedState.lastWorldName.value.ifBlank { null }
+            val buttonText = if (worldName == null) translated("Resume") else "${translated("Resume to")} \"$worldName\""
             Button(attrs = {
                 classes(Styles.primaryButton)
 

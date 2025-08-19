@@ -1,21 +1,17 @@
 @file:OptIn(kotlin.time.ExperimentalTime::class)
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.*
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.parameter
-import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
+import main.api.AdminBalanceApi
 import main.api.UserApi
 import main.components.common.formatAmount
 import main.components.common.formatTimestampLikeChat
-import main.httpClient
 import main.theme.Styles
 import models.User
 import models.UserBalanceChangeRequest
+import models.UserBalanceChangeStatus
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.P
@@ -43,31 +39,8 @@ fun AdminBalanceRequestsHistoryDialog(
                 items = emptyList()
                 return@LaunchedEffect
             }
-            // Fetch both pending and resolved to show full history with status handling
-            val pendingResp = httpClient.get("$baseUrl/admin/balance-requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                parameter("resolved", false)
-                parameter("limit", 500)
-            }
-            val resolvedResp = httpClient.get("$baseUrl/admin/balance-requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                parameter("resolved", true)
-                parameter("limit", 500)
-            }
-
-            if (pendingResp.status.value !in 200..299 || resolvedResp.status.value !in 200..299) {
-                val err = buildString {
-                    append("Failed to load requests: ")
-                    if (pendingResp.status.value !in 200..299) append("pending ${pendingResp.status.value} ")
-                    if (resolvedResp.status.value !in 200..299) append("resolved ${resolvedResp.status.value}")
-                }
-                error = try { pendingResp.body<models.ErrorResponse>().message } catch (_: Throwable) { err }
-                items = emptyList()
-                return@LaunchedEffect
-            }
-
-            val pending: List<UserBalanceChangeRequest> = pendingResp.body()
-            val resolved: List<UserBalanceChangeRequest> = resolvedResp.body()
+            val pending: List<UserBalanceChangeRequest> = AdminBalanceApi.getRequests(resolved = false, limit = 500)
+            val resolved: List<UserBalanceChangeRequest> = AdminBalanceApi.getRequests(resolved = true, limit = 500)
             val fetched = (pending + resolved)
             items = fetched.sortedByDescending { it.createdAt.epochSeconds }
 
@@ -80,12 +53,13 @@ fun AdminBalanceRequestsHistoryDialog(
             users = pairList.mapNotNull { (k, u) -> if (u != null) k to u else null }.toMap()
         } catch (t: Throwable) {
             error = t.message
+            items = emptyList()
         }
     }
 
     BaseDialog(
         onClose = onClose,
-        title = "All Requests History",
+        title = str("All Requests History"),
         maxWidth = "820px",
         showCloseButton = true,
         isFullHeight = true,
@@ -93,7 +67,7 @@ fun AdminBalanceRequestsHistoryDialog(
             error?.let { e -> P { Text("Error: $e") } }
 
             if (items.isEmpty() && error == null) {
-                P { Text("No requests found") }
+                P { Translated("No requests found") }
             } else {
                 items.forEach { r ->
                     // Row container
@@ -103,19 +77,21 @@ fun AdminBalanceRequestsHistoryDialog(
                         Div({ classes(Styles.requestHeader) }) {
                             Div({ classes(Styles.requestMeta) }) {
                                 Div({ classes(Styles.eventTypeBadge, if (isDeposit) Styles.eventTypeDeposit else Styles.eventTypeWithdraw) }) {
-                                    Text(if (isDeposit) "Deposit" else "Withdraw")
+                                    Translated(if (isDeposit) "Deposit" else "Withdraw")
                                 }
                                 Span({ classes(if (isDeposit) Styles.amountPositive else Styles.amountNegative) }) {
-                                    Text("${if (isDeposit) "+" else "-"}${formatAmount(r.amount)} VND")
+                                    Text("${if (isDeposit) "+" else "-"}${formatAmount(r.amount)} ${translated("VND")}")
                                 }
                                 // Status chip
-                                val statusStr = when (r.status.toString()) {
-                                    "Complete" -> "Approved"
-                                    else -> r.status.toString()
+                                val statusStr = when (r.status) {
+                                    UserBalanceChangeStatus.Complete -> translated("Approved")
+                                    UserBalanceChangeStatus.Received -> translated("Received")
+                                    UserBalanceChangeStatus.Denied -> translated("Denied")
+                                    UserBalanceChangeStatus.CancelledByUser -> translated("Cancelled by user")
                                 }
-                                val statusClass = when (statusStr) {
-                                    "Approved" -> Styles.statusApproved
-                                    "Denied" -> Styles.statusDenied
+                                val statusClass = when (r.status) {
+                                    UserBalanceChangeStatus.Complete -> Styles.statusApproved
+                                    UserBalanceChangeStatus.Denied -> Styles.statusDenied
                                     else -> Styles.statusReceived
                                 }
                                 Span({ classes(Styles.statusChip, statusClass) }) { Text(statusStr) }
@@ -155,7 +131,7 @@ fun AdminBalanceRequestsHistoryDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose) { Text("Close") }
+            DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
 }

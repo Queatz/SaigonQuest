@@ -142,6 +142,37 @@ class WorldLoader(private val scene: Scene) {
             currentHemisphericLight = null
             currentDirectionalLight = null
         }
+
+        /**
+         * Reapply the currently active world's lighting to the scene.
+         * Useful for restoring state after temporary UI previews.
+         */
+        fun reapplyCurrentWorld() {
+            try {
+                val loader = currentInstance
+                if (loader == null) {
+                    println("[WARN] No current WorldLoader instance; cannot reapply world")
+                    return
+                }
+                val world = loader.getCurrentWorld()
+                if (world == null) {
+                    println("[WARN] No current world available to reapply")
+                    return
+                }
+                loader.applyWorldEditLighting(world)
+                println("[DEBUG] Reapplied current world lighting")
+            } catch (e: Throwable) {
+                println("[ERROR] Failed to reapply current world: ${e.message}")
+            }
+        }
+
+        /**
+         * Returns the currently active world from the active WorldLoader instance, if any.
+         */
+        fun getActiveWorld(): World? {
+            val loader = currentInstance
+            return loader?.getCurrentWorld()
+        }
     }
     
     // World meshes for collision detection and interaction

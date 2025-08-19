@@ -10,8 +10,7 @@ data class UserBalance(
 ) : BaseModel()
 
 @Serializable
-enum class UserBalanceChangeType { Deposit, Withdraw }
+enum class UserBalanceChangeType { Deposit, Withdraw, Use }
 
 @Serializable
 enum class UserBalanceChangeStatus { Received, Complete, Denied, CancelledByUser }
-

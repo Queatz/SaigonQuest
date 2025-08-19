@@ -233,14 +233,7 @@ class PlayerController(private val scene: Scene) {
      * Stops any current movement and resets movement tracking.
      */
     fun stopMovement() { mover.stopMovement() }
-    
-    /**
-     * Creates a move circle at the target position.
-     * 
-     * @param position The position for the move circle
-     */
-    private fun createMoveCircle(position: Vector3) { /* replaced by MoveCircleEffect */ }
-    
+
     /**
      * Checks if a position is valid (has ground below).
      * 
@@ -301,12 +294,24 @@ class PlayerController(private val scene: Scene) {
      * 
      * @return A valid starting position, or Vector3.Zero() if none found
      */
+    /**
+     * Finds a valid starting position for the player using a spiral search pattern.
+     * Starts from (0,0) and expands outward in a spiral until finding a valid position.
+     *
+     * @return A valid starting position, or Vector3.Zero() if none found
+     */
     fun findValidStartPosition(): Vector3 {
         var startPosition = Vector3.Zero()
-        
-        // Try positions in a grid around the origin
-        for (x in -5..5) {
-            for (z in -5..5) {
+
+        // Starting from center (0,0), expanding outward
+        var x = 0
+        var z = 0
+        var dx = 0
+        var dz = -1
+        var maxSteps = 11 * 11 // Maximum area to search (-5..5 square)
+
+        while (maxSteps > 0) {
+            if (x >= -5 && x <= 5 && z >= -5 && z <= 5) {
                 val testPosition = Vector3(x.toFloat(), 0f, z.toFloat())
                 if (isValidPosition(testPosition)) {
                     // Find the exact y position by raycasting
@@ -317,8 +322,18 @@ class PlayerController(private val scene: Scene) {
                     }
                 }
             }
+
+            // Move to next position in spiral
+            if (x == z || (x < 0 && x == -z) || (x > 0 && x == 1 - z)) {
+                val temp = dx
+                dx = -dz
+                dz = temp
+            }
+            x += dx
+            z += dz
+            maxSteps--
         }
-        
+
         return startPosition
     }
     

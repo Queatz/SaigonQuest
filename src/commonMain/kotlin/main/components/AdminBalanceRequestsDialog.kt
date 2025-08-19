@@ -7,20 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.contentType
 import kotlinx.coroutines.launch
-import main.httpClient
+import main.api.AdminBalanceApi
 import main.components.common.AdminRequestRow
 import main.components.common.formatAmount
 import main.theme.Styles
-import models.AdminDecisionRequest
 import models.UserBalanceChangeRequest
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
@@ -50,52 +41,27 @@ fun AdminBalanceRequestsDialog(
                 items = emptyList()
                 return
             }
-            // Fetch items with explicit status handling to avoid decoding errors on 401/403
-            val resp = httpClient.get("$baseUrl/admin/balance-requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-            }
-            if (resp.status.value in 200..299) {
-                items = resp.body()
-            } else {
-                // Try to parse backend error to show a friendly message
-                val errMsg = try {
-                    resp.body<models.ErrorResponse>().message
-                } catch (_: Throwable) {
-                    "Failed to load balance requests (${resp.status.value})"
-                }
-                error = errMsg
-                items = emptyList()
-                return
-            }
+            error = null
+            // Load pending requests (default behavior on backend)
+            items = AdminBalanceApi.getRequests()
 
             // Fetch balances for involved users
             val uniqueUserIds = items.map { it.userId }.distinct()
             val map = mutableMapOf<String, Long>()
             for (uid in uniqueUserIds) {
-                try {
-                    val ubResp = httpClient.get("$baseUrl/admin/balance-requests/balance/$uid") {
-                        header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                    }
-                    if (ubResp.status.value in 200..299) {
-                        val ub: models.UserBalance = ubResp.body()
-                        map[uid] = ub.balance
-                    } else {
-                        map[uid] = 0L
-                    }
-                } catch (_: Throwable) { map[uid] = 0L }
+                map[uid] = try { AdminBalanceApi.getUserBalance(uid).balance } catch (_: Throwable) { 0L }
             }
             balances = map
 
             // Fetch usernames for involved users
             val userMap = mutableMapOf<String, models.User>()
             for (uid in uniqueUserIds) {
-                try {
-                    main.api.UserApi.getUserById(uid)?.let { userMap[uid] = it }
-                } catch (_: Throwable) {}
+                try { main.api.UserApi.getUserById(uid)?.let { userMap[uid] = it } } catch (_: Throwable) {}
             }
             users = userMap
         } catch (t: Throwable) {
             error = t.message
+            items = emptyList()
         }
     }
 
@@ -123,11 +89,7 @@ fun AdminBalanceRequestsDialog(
                     onApprove = {
                         scope.launch {
                             try {
-                                httpClient.post("$baseUrl/admin/balance-requests/${r.key}/approve") {
-                                    header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                                    contentType(ContentType.Application.Json)
-                                    setBody(AdminDecisionRequest(noteVal))
-                                }
+                                AdminBalanceApi.approveRequest(r.key, noteVal)
                                 load()
                             } catch (t: Throwable) { error = t.message }
                         }
@@ -135,11 +97,7 @@ fun AdminBalanceRequestsDialog(
                     onDeny = {
                         scope.launch {
                             try {
-                                httpClient.post("$baseUrl/admin/balance-requests/${r.key}/deny") {
-                                    header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                                    contentType(ContentType.Application.Json)
-                                    setBody(AdminDecisionRequest(noteVal))
-                                }
+                                AdminBalanceApi.denyRequest(r.key, noteVal)
                                 load()
                             } catch (t: Throwable) { error = t.message }
                         }

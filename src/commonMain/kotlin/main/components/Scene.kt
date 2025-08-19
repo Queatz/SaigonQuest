@@ -1,5 +1,6 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -10,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpStatusCode
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
@@ -47,10 +49,6 @@ import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import kotlin.random.Random
-import Translations.str
-import io.ktor.http.HttpStatusCode
-import kotlin.math.min
-import main.components.Portal
 
 /**
  * Helper function to dispatch an object drop event with the necessary data.
@@ -755,6 +753,8 @@ fun SceneComponent(url: String) {
                 
                 // Create the player using the WorldObjectManager
                 playerController.createPlayer(startPosition, worldObjectManager)
+
+                otherPlayersController.sendJoinEvent(startPosition)
                 
                 // Initialize chat message listener
                 console.log("[DEBUG_LOG] Scene: Initializing chat message listener")

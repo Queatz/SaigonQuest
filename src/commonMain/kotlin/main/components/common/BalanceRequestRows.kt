@@ -2,7 +2,9 @@ package main.components.common
 
 import androidx.compose.runtime.Composable
 import main.components.Translated
+import main.components.translated
 import main.theme.Styles
+import models.User
 import models.UserBalanceChangeRequest
 import models.UserBalanceChangeStatus
 import models.UserBalanceChangeType
@@ -28,14 +30,15 @@ fun PendingRequestRow(
                     if (isDeposit) Translated("Deposit") else Translated("Withdraw")
                 }
                 Span({ classes(if (isDeposit) Styles.amountPositive else Styles.amountNegative) }) {
-                    Text("${if (isDeposit) "+" else "-"}${formatAmount(request.amount)} VND")
+                    Text("${if (isDeposit) "+" else "-"}${formatAmount(request.amount)} ${translated("VND")}")
                 }
                 Span({}) { Text("•") }
                 run {
                     val displayKey = when (request.status) {
-                        UserBalanceChangeStatus.Complete -> "Approved"
-                        UserBalanceChangeStatus.CancelledByUser -> "Cancelled"
-                        else -> request.status.toString()
+                        UserBalanceChangeStatus.Complete -> translated("Approved")
+                        UserBalanceChangeStatus.Received -> translated("Received")
+                        UserBalanceChangeStatus.Denied -> translated("Denied")
+                        UserBalanceChangeStatus.CancelledByUser -> translated("Cancelled by user")
                     }
                     val statusClass = when (request.status) {
                         UserBalanceChangeStatus.Complete -> Styles.statusApproved
@@ -95,19 +98,25 @@ fun AdminRequestRow(
                 }
                 // Amount
                 Span({ classes(if (isDeposit) Styles.amountPositive else Styles.amountNegative) }) {
-                    Text("${if (isDeposit) "+" else "-"}${formatAmount(request.amount)} VND")
+                    Text("${if (isDeposit) "+" else "-"}${formatAmount(request.amount)} ${translated("VND")}")
                 }
                 // Status chip
                 run {
-                    val statusClass = when (request.status.toString()) {
-                        "Approved" -> Styles.statusApproved
-                        "Denied" -> Styles.statusDenied
+                    val statusStr = when (request.status) {
+                        UserBalanceChangeStatus.Complete -> translated("Approved")
+                        UserBalanceChangeStatus.Received -> translated("Received")
+                        UserBalanceChangeStatus.Denied -> translated("Denied")
+                        UserBalanceChangeStatus.CancelledByUser -> translated("Cancelled by user")
+                    }
+                    val statusClass = when (request.status) {
+                        UserBalanceChangeStatus.Complete -> Styles.statusApproved
+                        UserBalanceChangeStatus.Denied -> Styles.statusDenied
                         else -> Styles.statusReceived
                     }
-                    Span({ classes(Styles.statusChip, statusClass) }) { Text(request.status.toString()) }
+                    Span({ classes(Styles.statusChip, statusClass) }) { Text(statusStr) }
                 }
                 // Balance
-                Span({ classes(Styles.requestUserId) }) { Text("Balance: ${formatAmount(currentBalance)} VND") }
+                Span({ classes(Styles.requestUserId) }) { Text("${translated("Balance")}: ${formatAmount(currentBalance)} ${translated("VND")}") }
             }
         }
         // User + Notes
@@ -133,17 +142,24 @@ fun AdminRequestRow(
 
         // Insufficient funds warning
         if (insufficient) {
-            P({ classes(Styles.formErrorMessage) }) { Text("Insufficient funds") }
+            P({ classes(Styles.formErrorMessage) }) { Translated("Insufficient funds") }
         }
 
         // Decision note input
         Label { Text("Note") }
-        TextInput(value = noteValue, attrs = { classes(Styles.inputField); onInput { onNoteChange(it.value) } })
+        TextInput(
+            value = noteValue,
+            attrs = {
+                classes(Styles.inputField)
+                onInput { onNoteChange(it.value)
+                }
+            }
+        )
 
         // Actions
         Div({ classes(Styles.requestActions) }) {
-            main.components.DialogButton(onClick = onApprove, isPrimary = true) { Text("Approve") }
-            main.components.DialogButtonDanger(onClick = onDeny) { Text("Deny") }
+            main.components.DialogButton(onClick = onApprove, isPrimary = true) { Translated("Approve") }
+            main.components.DialogButtonDanger(onClick = onDeny) { Translated("Deny") }
         }
     }
 }

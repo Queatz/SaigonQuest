@@ -1,6 +1,8 @@
 package main.components
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import kotlinx.browser.localStorage
 
 /**
@@ -41,6 +43,9 @@ object LanguageSettings {
     fun getCurrentLanguage(): String {
         return _currentLanguage.value
     }
+
+    @Composable
+    fun rememberCurrentLanguage() = remember { _currentLanguage }.value
     
     /**
      * Set the current language.

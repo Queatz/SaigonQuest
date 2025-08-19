@@ -25,10 +25,12 @@ import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import models.ChatMessage
 import models.PlayerPositionData
+import models.Position
 import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import web.html.HtmlTagName.p
 import kotlin.random.Random
 
 class OtherPlayersCoordinator(private val scene: Scene) {
@@ -61,10 +63,21 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         return (base + jitter).coerceIn(0.0, 1.0).toFloat()
     }
 
-    fun setWorldObjectManager(manager: WorldObjectManager) { worldObjectManager = manager }
-    fun setShadowManager(manager: ShadowManager) { shadowManager = manager }
-    fun setHttpWorldId(id: String) { httpWorldIdOverride = id }
-    fun setWorldMeshes(meshes: Array<AbstractMesh>) { worldMeshes = meshes }
+    fun setWorldObjectManager(manager: WorldObjectManager) {
+        worldObjectManager = manager
+    }
+
+    fun setShadowManager(manager: ShadowManager) {
+        shadowManager = manager
+    }
+
+    fun setHttpWorldId(id: String) {
+        httpWorldIdOverride = id
+    }
+
+    fun setWorldMeshes(meshes: Array<AbstractMesh>) {
+        worldMeshes = meshes
+    }
 
     private fun snapToGround(position: Vector3): Vector3 {
         if (worldMeshes.isEmpty()) return position
@@ -91,7 +104,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             try {
                 myUserId = UserApi.getCurrentUser().key
                 pruneSelfIfPresent()
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }
 
         // Register frame update
@@ -108,7 +122,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     val chat = ApiClient.json.decodeFromString<ChatMessage>(message.data)
                     hud.showChatMessage(chat.userId, chat.message)
                 }
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }
 
         // Typing
@@ -118,7 +133,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     val data = ApiClient.json.decodeFromString(models.PlayerTypingData.serializer(), message.data)
                     if (data.userId.isNotEmpty()) hud.setTyping(data.userId, data.isTyping)
                 }
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }
 
         // Announce join and seed snapshot
@@ -129,9 +145,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     val wsWorldId = WebSocketConnectionManager.currentWorldId.value
                     val httpWorldId = httpWorldIdOverride ?: wsWorldId
                     if (wsWorldId != null) {
-                        val playerController = main.components.SceneManager.getPlayerController()
-                        val pos = playerController?.getPlayerPosition() ?: Vector3(0f, 0f, 0f)
-                        WebSocketApi.sendUserJoin(wsWorldId, models.Position(pos.x, pos.y, pos.z), user.isPlayer)
                         val effectiveWorldId = httpWorldId ?: wsWorldId
                         val snapshot = WorldApi.getWorldState(effectiveWorldId)
                         if (myUserId == null) myUserId = user.key
@@ -139,7 +152,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                         pruneSelfIfPresent()
                         snapshot.players.forEach { p ->
                             if (p.userId != myUserId) {
-                                ensurePlayer(p.userId).also { op ->
+                                ensurePlayer(p.userId, p.position).also { op ->
                                     op.username = p.username
                                     op.isPlayer = p.isPlayer
                                     op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
@@ -163,7 +176,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             if (nonSelf.isNotEmpty()) {
                                 window.setTimeout({
                                     nonSelf.forEach { p ->
-                                        ensurePlayer(p.userId).also { op ->
+                                        ensurePlayer(p.userId, p.position).also { op ->
                                             if (op.handle == null) {
                                                 op.username = p.username
                                                 op.isPlayer = p.isPlayer
@@ -216,7 +229,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     // Event handlers
     private fun onUserJoin(join: UserJoinData) {
         if (join.userId == myUserId) return
-        val op = ensurePlayer(join.userId)
+        val op = ensurePlayer(join.userId, join.position)
         scope.launch {
             op.mutex.withLock {
                 // If a visitor likely corresponds to this player, remove it to avoid duplicates
@@ -237,10 +250,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val radius = 0.6f
         val candidates = players.values.filter { existing ->
             existing.userId != newUserId && !existing.isPlayer &&
-            run {
-                val pos = existing.targetPos ?: existing.handle?.position
-                if (pos == null) false else pos.subtract(newPosition).length() <= radius
-            }
+                    run {
+                        val pos = existing.targetPos ?: existing.handle?.position
+                        if (pos == null) false else pos.subtract(newPosition).length() <= radius
+                    }
         }
         // Also consider same-username visitors anywhere (brittle but catches common case)
         val sameName = players.values.filter { it.userId != newUserId && !it.isPlayer && it.username == newUsername }
@@ -270,7 +283,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     private fun onPlayerPosition(pos: PlayerPositionData) {
         if (pos.userId == myUserId) return
-        val op = ensurePlayer(pos.userId)
+        val op = ensurePlayer(pos.userId, pos.position)
         op.isPlayer = pos.isPlayer
         op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
         attemptSpawnWithUser(op)
@@ -278,7 +291,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     private fun onUpdatePlayer(update: UpdatePlayerData) {
         if (update.userId == myUserId) return
-        val op = ensurePlayer(update.userId)
+        val op = ensurePlayer(update.userId, null)
         scope.launch {
             op.mutex.withLock {
                 val prevIsPlayer = op.isPlayer
@@ -302,12 +315,16 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     }
 
     // Spawning and appearance
-    private fun ensurePlayer(userId: String): OtherPlayer =
-        players[userId] ?: OtherPlayer(userId = userId).also { players[userId] = it }
+    private fun ensurePlayer(userId: String, position: Position?): OtherPlayer =
+        players[userId] ?: OtherPlayer(
+            userId = userId,
+            targetPos = Vector3(position?.x ?: 0f, position?.y ?: 0f, position?.z ?: 0f),
+            lastPos = Vector3(position?.x ?: 0f, position?.y ?: 0f, position?.z ?: 0f)
+        ).also { players[userId] = it }
 
     private fun spawnIfNeeded(op: OtherPlayer) {
         if (op.handle != null) return
-        val startPos = snapToGround(op.targetPos ?: Vector3(0f, 0f, 0f))
+        val startPos = snapToGround(op.targetPos ?: op.lastPos)
         val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(null, null)
         val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
             spriteSheet = baseSprite,
@@ -322,7 +339,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         handle.scale = Vector3(.5f, .5f, .5f)
         op.handle = handle
         op.lastPos = startPos
-        op.hasSnapped = false
         op.joinStartMs = window.performance.now()
 
         // Shadows
@@ -352,7 +368,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 if (user != null) {
                     window.clearTimeout(fallbackId)
                     if (op.handle == null) {
-        val startPos = snapToGround(op.targetPos ?: Vector3(0f, 0f, 0f))
+                        val startPos = snapToGround(op.targetPos ?: op.lastPos)
                         val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(user.sex, user.bodyType)
                         val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
                             spriteSheet = baseSprite,
@@ -367,7 +383,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             handle.scale = Vector3(.5f, .5f, .5f)
                             op.handle = handle
                             op.lastPos = startPos
-                            op.hasSnapped = false
+                            op.targetPos = startPos
                             op.joinStartMs = window.performance.now()
                             shadowManager?.let { mgr ->
                                 handle.node.getChildMeshes().forEach { mesh ->
@@ -376,17 +392,17 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                 }
                             }
                             // Prefer server status if available
-                            if (!user.status.isNullOrBlank()) op.status = user.status
+                            if (user.status.isNotBlank()) op.status = user.status
                             if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)
                             createOrUpdateUsernameBillboard(op, startPos)
                         }
                     } else {
                         val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
                         val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-                        val worn = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+                        val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
                         val sheets = listOfNotNull(hair, eyes) + worn
                         op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
-                        if (op.status.isBlank() && !user.status.isNullOrBlank()) {
+                        if (op.status.isBlank() && user.status.isNotBlank()) {
                             op.status = user.status
                             hud.setDesiredStatus(op.userId, op.status)
                         }
@@ -405,13 +421,27 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             // Build additional sheets: hair, eyes (worn items left for a later step if needed)
             val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
             val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-            val worn = main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+            val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
             val sheets = listOfNotNull(hair, eyes) + worn
             op.additionalSpriteSheets = sheets
-            op.skinTone = user.skinTone ?: 0.5f
+            op.skinTone = user.skinTone
             op.handle?.updateAppearance(sheets, op.skinTone)
         } catch (t: Throwable) {
             console.error("OtherPlayersCoordinator: assembleAppearance failed for ${op.userId}", t)
+        }
+    }
+
+    fun sendJoinEvent(pos: Vector3) {
+        scope.launch {
+            val user = UserApi.getCurrentUser()
+            val wsWorldId = WebSocketConnectionManager.currentWorldId.value
+            if (wsWorldId != null) {
+                WebSocketApi.sendUserJoin(
+                    worldId = wsWorldId,
+                    position = Position(pos.x, pos.y, pos.z),
+                    isPlayer = user.isPlayer
+                )
+            }
         }
     }
 
@@ -434,14 +464,20 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     // Apply random alpha flicker while joining
                     val alpha = computeFlickerAlpha()
                     handle.node.getChildMeshes().forEach { mesh ->
-                        try { mesh.material.alpha = alpha } catch (_: Throwable) {}
+                        try {
+                            mesh.material.alpha = alpha
+                        } catch (_: Throwable) {
+                        }
                     }
                 } else {
                     handle.scale = Vector3(1f, 1f, 1f)
                     op.joinStartMs = null
                     // Restore opaque alpha after animation completes
                     handle.node.getChildMeshes().forEach { mesh ->
-                        try { mesh.material.alpha = 1f } catch (_: Throwable) {}
+                        try {
+                            mesh.material.alpha = 1f
+                        } catch (_: Throwable) {
+                        }
                     }
                 }
             }
@@ -455,13 +491,19 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     // Apply random alpha flicker while leaving
                     val alpha = computeFlickerAlpha()
                     handle.node.getChildMeshes().forEach { mesh ->
-                        try { mesh.material.alpha = alpha } catch (_: Throwable) {}
+                        try {
+                            mesh.material.alpha = alpha
+                        } catch (_: Throwable) {
+                        }
                     }
                 } else {
                     handle.scale = Vector3(0.5f, 0.5f, 0.5f)
                     // Ensure fully transparent at the end of leave animation
                     handle.node.getChildMeshes().forEach { mesh ->
-                        try { mesh.material.alpha = 0f } catch (_: Throwable) {}
+                        try {
+                            mesh.material.alpha = 0f
+                        } catch (_: Throwable) {
+                        }
                     }
                 }
             }
@@ -481,14 +523,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
                 return@forEach
             }
-            // Snap only once (initially) after spawn; afterwards always animate
-            if (!op.hasSnapped) {
-                handle.position = targetPos
-                hud.updateHudPosition(op.userId, targetPos)
-                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
-                op.hasSnapped = true
-                return@forEach
-            }
 
             // Update facing with hysteresis
             val currentFacing = op.direction
@@ -504,6 +538,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val moved = currentPos.add(direction)
             val newPosition = snapToGround(moved)
             handle.position = newPosition
+            console.log("[OTHER] id=${op.userId} newPosition=$newPosition")
             hud.updateHudPosition(op.userId, newPosition)
             PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
             if (op.activity != PlayerActivity.Sit) {

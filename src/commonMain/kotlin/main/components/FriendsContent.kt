@@ -19,8 +19,9 @@ import main.api.ListenerToken
 import main.api.addUserJoinListener
 import main.api.addUserLeaveListener
 import main.api.addTeleportPlayerListener
+import main.api.WebSocketApiGlobal
+import main.api.addFriendStatusChangedListener
 import main.components.world.WorldLoader
-import main.components.BasicConfirmDialog
 import models.Friend
 import models.Position
 import org.jetbrains.compose.web.css.AlignItems
@@ -53,7 +54,9 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import main.components.Translated
 import Translations.str
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.disabled
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -102,7 +105,8 @@ fun FriendsContent() {
     }
 
     // Register WebSocket listeners to update friends in realtime
-    var listenerTokens by remember { mutableStateOf<List<ListenerToken>>(emptyList()) }
+    var worldListenerTokens by remember { mutableStateOf<List<ListenerToken>>(emptyList()) }
+    var globalListenerTokens by remember { mutableStateOf<List<ListenerToken>>(emptyList()) }
 
     // Helper to refresh the friends list and online map
     fun refreshFriendsList() {
@@ -131,12 +135,32 @@ fun FriendsContent() {
         }
     }
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(Unit) {
+        // Ensure global socket is connected for cross-world friend updates
+        try { WebSocketApiGlobal.connectGlobal() } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+
         // Add listeners once
-        val tokens = mutableListOf<ListenerToken>()
+        val worldTokens = mutableListOf<ListenerToken>()
+        val globalTokens = mutableListOf<ListenerToken>()
+
+        // Listen for global friend status changes
+        globalTokens += WebSocketApiGlobal.addFriendStatusChangedListener { data ->
+            try {
+                if (friends.any { it.friendId == data.userId }) {
+                    // Update online map immediately
+                    onlineMap = onlineMap.toMutableMap().apply { this[data.userId] = data.isOnline }
+                    // Refresh to get latest world/position details
+                    refreshFriendsList()
+                }
+            } catch (e: Throwable) {
+                console.error("[Friends] Error handling FRIEND_STATUS_CHANGED", e)
+            }
+        }
 
         // When any user joins a world
-        tokens += WebSocketApi.addUserJoinListener { data ->
+        worldTokens += WebSocketApi.addUserJoinListener { data ->
             try {
                 if (friends.any { it.friendId == data.userId }) {
                     // Optimistically mark online
@@ -149,7 +173,7 @@ fun FriendsContent() {
         }
 
         // When any user leaves a world
-        tokens += WebSocketApi.addUserLeaveListener { data ->
+        worldTokens += WebSocketApi.addUserLeaveListener { data ->
             try {
                 if (friends.any { it.friendId == data.userId }) {
                     // Optimistically mark offline
@@ -162,7 +186,7 @@ fun FriendsContent() {
         }
 
         // When any user teleports to another world (world change)
-        tokens += WebSocketApi.addTeleportPlayerListener(router) { payload ->
+        worldTokens += WebSocketApi.addTeleportPlayerListener(router) { payload ->
             try {
                 val userId = payload["userId"]
                 if (userId != null && friends.any { it.friendId == userId }) {
@@ -173,15 +197,16 @@ fun FriendsContent() {
             }
         }
 
-        listenerTokens = tokens
-    }
+        worldListenerTokens = worldTokens
+        globalListenerTokens = globalTokens
 
-    // Ensure listeners are removed when this component is disposed
-    DisposableEffect(Unit) {
         onDispose {
             try {
-                listenerTokens.forEach { token ->
+                worldListenerTokens.forEach { token: ListenerToken ->
                     WebSocketApi.removeListener(token)
+                }
+                globalListenerTokens.forEach { token: ListenerToken ->
+                    WebSocketApiGlobal.removeListener(token)
                 }
             } catch (e: Throwable) {
                 console.error("[Friends] Error cleaning up WebSocket listeners", e)
@@ -190,13 +215,16 @@ fun FriendsContent() {
     }
 
     // Periodic refresh while component is active (cross-world updates)
-    LaunchedEffect("friends-poll") {
+    LaunchedEffect(Unit) {
         while (true) {
             try {
-                kotlinx.coroutines.delay(7000L)
+                delay(5000L)
                 refreshFriendsList()
             } catch (e: Throwable) {
                 console.error("[Friends] Polling refresh failed", e)
+                if (e is CancellationException) {
+                    break
+                }
             }
         }
     }

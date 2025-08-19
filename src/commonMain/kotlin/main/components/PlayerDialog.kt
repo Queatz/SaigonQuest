@@ -261,29 +261,6 @@ fun PlayerDialog(
                         classes(Styles.playerDialogRightColumn)
                     }
                 ) {
-                    // Balance summary (clickable)
-                    Div(
-                        attrs = {
-                            classes(Styles.balanceSummaryBox, Styles.clickable)
-                            onClick { showBalanceDialog.value = true }
-                        }
-                    ) {
-                        val b = balanceState.value
-                        if (b == null) {
-                            P { Text("Loading...") }
-                        } else {
-                            Div(
-                                attrs = { classes(Styles.balanceAmountText) }
-                            ) {
-                                Text("${formatAmount(b.balance)} VND")
-                            }
-                            P(
-                                attrs = { classes(Styles.balanceSubtext) }
-                            ) {
-                                Text("Current balance")
-                            }
-                        }
-                    }
                     // User info
                     Div(
                         attrs = {
@@ -307,6 +284,37 @@ fun PlayerDialog(
                         ) {
                             Translated("Player Account")
                         }
+                    }
+                    // Balance summary (clickable)
+                    Div(
+                        attrs = {
+                            classes(Styles.balanceSummaryBox, Styles.clickable)
+                            onClick { showBalanceDialog.value = true }
+                        }
+                    ) {
+                        val b = balanceState.value
+                        if (b == null) {
+                            P { Translated("Loading...") }
+                        } else {
+                            Div(
+                                attrs = { classes(Styles.balanceAmountText) }
+                            ) {
+                                Text("${formatAmount(b.balance)} ${translated("VND")}")
+                            }
+                            Div(
+                                attrs = { classes(Styles.balanceSubtext) }
+                            ) {
+                                Translated("Current balance")
+                            }
+                        }
+                    }
+                    Button(
+                        attrs = {
+                            classes(Styles.primaryButton)
+                            onClick { showBalanceDialog.value = true }
+                        }
+                    ) {
+                        Translated("Deposit / Withdraw")
                     }
 
                     // Language switcher
@@ -461,7 +469,7 @@ fun PlayerDialog(
 
             // Render Balance dialogs
             if (showBalanceDialog.value) {
-                main.components.BalanceDialog(
+                BalanceDialog(
                     baseUrl = main.api.ApiConstants.API_BASE_URL,
                     bearerToken = main.api.UserApi.getToken() ?: "",
                     onClose = { showBalanceDialog.value = false },
@@ -473,7 +481,7 @@ fun PlayerDialog(
             }
 
             if (showBalanceHistoryDialog.value) {
-                main.components.BalanceHistoryDialog(
+                BalanceHistoryDialog(
                     baseUrl = main.api.ApiConstants.API_BASE_URL,
                     bearerToken = main.api.UserApi.getToken() ?: "",
                     onClose = { showBalanceHistoryDialog.value = false }

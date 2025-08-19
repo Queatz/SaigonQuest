@@ -224,6 +224,7 @@ fun Routing.configureBalanceRoutes() {
                 val after = when (updated.type) {
                     UserBalanceChangeType.Deposit -> before + updated.amount
                     UserBalanceChangeType.Withdraw -> before - updated.amount
+                    UserBalanceChangeType.Use -> before - updated.amount
                 }
 
                 val savedBalance = balances.upsert(userId) { it.balance = after }
@@ -233,6 +234,7 @@ fun Routing.configureBalanceRoutes() {
                         eventType = when (updated.type) {
                             UserBalanceChangeType.Deposit -> UserBalanceHistoryEventType.Deposit
                             UserBalanceChangeType.Withdraw -> UserBalanceHistoryEventType.Withdraw
+                            UserBalanceChangeType.Use -> UserBalanceHistoryEventType.Use
                         },
                         notes = updated.notes,
                         changeAmount = if (updated.type == UserBalanceChangeType.Deposit) updated.amount else -updated.amount,

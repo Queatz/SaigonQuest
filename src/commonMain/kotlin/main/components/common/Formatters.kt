@@ -1,11 +1,20 @@
 package main.components.common
 
+import Translations.str
+import androidx.compose.runtime.Composable
 import kotlinx.datetime.Instant
+import main.components.LanguageSettings.rememberCurrentLanguage
 import kotlin.js.Date
 
+@Composable
 fun formatAmount(value: Long): String {
     val s = value.toString()
-    val parts = s.reversed().chunked(3).joinToString(",").reversed()
+    val parts = s.reversed().chunked(3).joinToString(
+        when (rememberCurrentLanguage()) {
+            "vi" -> "."
+            else -> ","
+        }
+    ).reversed()
     return parts
 }
 
@@ -25,10 +34,21 @@ fun formatTimestampLikeChat(timestamp: Long): String {
         today.getTime() -> "Today, $timeString"
         yesterday.getTime() -> "Yesterday, $timeString"
         else -> {
-            val month = when (date.getMonth()) {
-                0 -> "Jan"; 1 -> "Feb"; 2 -> "Mar"; 3 -> "Apr"; 4 -> "May"; 5 -> "Jun"
-                6 -> "Jul"; 7 -> "Aug"; 8 -> "Sep"; 9 -> "Oct"; 10 -> "Nov"; else -> "Dec"
-            }
+            val months = arrayOf(
+                str("Jan"),
+                str("Feb"),
+                str("Mar"),
+                str("Apr"),
+                str("May"),
+                str("Jun"),
+                str("Jul"),
+                str("Aug"),
+                str("Sep"),
+                str("Oct"),
+                str("Nov"),
+                str("Dec"),
+            )
+            val month = months[date.getMonth()]
             val day = date.getDate().toString()
             "$month $day, $timeString"
         }

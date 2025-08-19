@@ -26,6 +26,7 @@ import lib.Color4
 import lib.PBRMaterial
 import lib.TextureOptions
 import lib.CreateTubeOptions
+import lib.DefaultRenderingPipeline
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
@@ -88,9 +89,13 @@ fun LatLngPicker3D(
     DisposableEffect(canvasId) {
         val canvas = document.getElementById(canvasId) as HTMLCanvasElement?
         if (canvas != null) {
-            val eng = Engine(canvas, true, object : EngineOptions {
-                override val alpha = true
-            })
+            val eng = Engine(
+                canvas = canvas,
+                antialias = true,
+                options = object : EngineOptions {
+                    override val alpha = true
+                }
+            )
             engine = eng
 
             val scn = Scene(eng)
@@ -116,15 +121,27 @@ fun LatLngPicker3D(
             cam.upperRadiusLimit = 5f
             camera = cam
 
+            val pipeline = DefaultRenderingPipeline(
+                name = "pbrPipeline",
+                hdr = true,
+                scene = scn,
+                cameras = arrayOf(camera)
+            ).apply {
+                bloomEnabled = true
+                bloomThreshold = 0.0f
+                bloomWeight = 0.25f
+                bloomKernel = 32f
+            }
+
             // If props provide an initial lat/lng, center the camera on that location
             run {
                 val la = lat
                 val lo = lng
                 if (la != null && lo != null && la in -90.0..90.0 && lo in -180.0..180.0) {
-                    val latRad = (la * kotlin.math.PI / 180.0)
-                    val lonRad = (lo * kotlin.math.PI / 180.0)
+                    val latRad = (la * PI / 180.0)
+                    val lonRad = (lo * PI / 180.0)
                     cam.alpha = lonRad.toFloat()
-                    cam.beta = (kotlin.math.PI / 2 - latRad).toFloat()
+                    cam.beta = (PI / 2 - latRad).toFloat()
                 }
             }
 
@@ -132,7 +149,7 @@ fun LatLngPicker3D(
             val sunDir = SunMath.computeSunDirectionUtc(kotlin.js.Date().getTime())
             val lightDir = Vector3((sunDir.first).toFloat(), (-sunDir.second).toFloat(), (sunDir.third).toFloat())
             val dirLight = DirectionalLight("pickerSun", lightDir, scn)
-            dirLight.intensity = 3.0f
+            dirLight.intensity = 12.0f
             light = dirLight
 
             // Earth sphere
@@ -174,8 +191,8 @@ fun LatLngPicker3D(
                 },
                 scene = scn,
             )
-            val markerMat = StandardMaterial("markerMat", scn)
-            markerMat.diffuseColor = Color3(1f, 0.1f, 0.1f)
+            val markerMat = PBRMaterial("markerMat", scn)
+            markerMat.albedoColor = Color3(1f, 0.1f, 0.1f)
             markerMat.emissiveColor = Color3(1f, 0.1f, 0.1f)
             markerMesh.material = markerMat
             marker = markerMesh
@@ -366,9 +383,8 @@ fun LatLngPicker3D(
                     },
                     scene = scn,
                 )
-                val pinMat = StandardMaterial("markerPinMat", scn)
-                pinMat.diffuseColor = Color3(1f, 1f, 1f)
-                pinMat.emissiveColor = Color3(1f, 1f, 1f)
+                val pinMat = PBRMaterial("markerPinMat", scn)
+                pinMat.albedoColor = Color3(.5f, .5f, .5f)
                 tube.material = pinMat
                 markerPin = tube
             } else {

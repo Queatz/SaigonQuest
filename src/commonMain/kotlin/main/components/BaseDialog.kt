@@ -29,7 +29,7 @@ fun BaseDialog(
     title: String? = null,
     showCloseButton: Boolean = true,
     headerActions: (@Composable () -> Unit)? = null,
-    maxWidth: String = "400px",
+    maxWidth: String = "800px",
     isFullscreen: Boolean = false,
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,

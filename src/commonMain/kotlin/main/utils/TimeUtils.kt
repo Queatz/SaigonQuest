@@ -1,5 +1,6 @@
 package main.utils
 
+import Translations.str
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -55,7 +56,20 @@ object TimeUtils {
         val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
         
         // Get month name (abbreviated)
-        val months = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val months = arrayOf(
+            str("Jan"),
+            str("Feb"),
+            str("Mar"),
+            str("Apr"),
+            str("May"),
+            str("Jun"),
+            str("Jul"),
+            str("Aug"),
+            str("Sep"),
+            str("Oct"),
+            str("Nov"),
+            str("Dec"),
+        )
         val month = months[localDateTime.month.ordinal]
         
         // Get day of month

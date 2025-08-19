@@ -162,26 +162,6 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                             timestamp = System.currentTimeMillis()
                         )
                     )
-                    val notifData = NotificationData(
-                        id = created.key,
-                        userId = created.userId,
-                        title = created.title,
-                        description = created.description,
-                        isRead = created.isRead,
-                        type = created.type,
-                        worldId = created.worldId,
-                        objectId = created.objectId,
-                        otherUserId = created.otherUserId,
-                        timestamp = created.timestamp
-                    )
-                    val wsPayload = json.encodeToString(
-                        WebSocketMessage(
-                            action = WebSocketAction.NOTIFICATION,
-                            data = json.encodeToString(notifData),
-                            worldUrl = try { WorldRepository().getById(created.worldId)?.url } catch (_: Throwable) { null }
-                        )
-                    )
-                    WebSocketUtils.broadcastToUser(ownerUserId, wsPayload, context.activeConnections, context.session)
                 } catch (e: Throwable) {
                     WebSocketDebug.logError("Failed to create/broadcast owner notification for GiveItems NOT_ENOUGH", e, context.session)
                 }
@@ -223,26 +203,6 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                                     timestamp = System.currentTimeMillis()
                                 )
                             )
-                            val notifData = NotificationData(
-                                id = created.key,
-                                userId = created.userId,
-                                title = created.title,
-                                description = created.description,
-                                isRead = created.isRead,
-                                type = created.type,
-                                worldId = created.worldId,
-                                objectId = created.objectId,
-                                otherUserId = created.otherUserId,
-                                timestamp = created.timestamp
-                            )
-                            val wsPayload = json.encodeToString(
-                                WebSocketMessage(
-                                    action = WebSocketAction.NOTIFICATION,
-                                    data = json.encodeToString(notifData),
-                                    worldUrl = try { WorldRepository().getById(created.worldId)?.url } catch (_: Throwable) { null }
-                                )
-                            )
-                            WebSocketUtils.broadcastToUser(ownerUserId, wsPayload, context.activeConnections, context.session)
                         } catch (ex: Throwable) {
                             WebSocketDebug.logError("Failed to create/broadcast owner notification for GiveItems NOT_ENOUGH (transfer)", ex, context.session)
                         }

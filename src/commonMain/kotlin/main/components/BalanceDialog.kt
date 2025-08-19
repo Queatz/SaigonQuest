@@ -7,37 +7,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import main.api.BalanceApi
 import kotlinx.coroutines.launch
+import main.api.BalanceApi
+import main.components.common.BalanceEventRow
+import main.components.common.PendingRequestRow
+import main.components.common.formatAmount
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.CreateBalanceChangeRequest
 import models.UserBalance
 import models.UserBalanceChangeRequest
+import models.UserBalanceChangeStatus
 import models.UserBalanceChangeType
 import models.UserBalanceHistory
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.selected
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexWrap
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexWrap
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Option
+import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
-import main.components.common.formatAmount
-import org.jetbrains.compose.web.attributes.InputMode
-import org.jetbrains.compose.web.dom.NumberInput
-import kotlin.math.min
 
 @Composable
 fun BalanceDialog(
@@ -67,7 +56,7 @@ fun BalanceDialog(
         try {
             balance = BalanceApi.getBalance()
             recent = BalanceApi.getRecent(5)
-            pending = BalanceApi.getRequests("Received")
+            pending = BalanceApi.getRequests(UserBalanceChangeStatus.Received)
         } catch (t: Throwable) {
             error = t.message
         }
@@ -95,7 +84,7 @@ fun BalanceDialog(
             type = UserBalanceChangeType.Deposit
             lastSubmittedType = submittedType
             showSentToast = true
-            pending = BalanceApi.getRequests("Received")
+            pending = BalanceApi.getRequests(UserBalanceChangeStatus.Received)
             balance = BalanceApi.getBalance()
             recent = BalanceApi.getRecent(5)
         } catch (t: Throwable) {
@@ -107,18 +96,17 @@ fun BalanceDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = "Balance",
+        title = translated("Balance"),
         showCloseButton = true,
-        maxWidth = "520px",
         isFullscreen = false,
         content = {
             // Balance summary box
             Div({ classes(Styles.balanceSummaryBox) }) {
                 when (val b = balance) {
-                    null -> P { Text("Loading...") }
+                    null -> P { Translated("Loading...") }
                     else -> {
-                        Div({ classes(Styles.balanceAmountText) }) { Text("${formatAmount(b.balance)} VND") }
-                        P({ classes(Styles.balanceSubtext) }) { Text("Current balance") }
+                        Div({ classes(Styles.balanceAmountText) }) { Text("${formatAmount(b.balance)} ${translated("VND")}") }
+                        P({ classes(Styles.balanceSubtext) }) { Translated("Current balance") }
                     }
                 }
             }
@@ -142,14 +130,14 @@ fun BalanceDialog(
             if (pending.isNotEmpty()) {
                 H4({ classes(Styles.balanceSectionTitle) }) { Translated("Pending requests") }
                 pending.forEach { r ->
-                    main.components.common.PendingRequestRow(
+                    PendingRequestRow(
                         request = r,
                         onImageClick = { url -> imageToView = url },
                         onCancel = {
                             scope.launch {
                                 try {
                                     BalanceApi.cancelRequest(r.key)
-                                    pending = BalanceApi.getRequests("Received")
+                                    pending = BalanceApi.getRequests(UserBalanceChangeStatus.Received)
                                 } catch (t: Throwable) {
                                     error = t.message
                                 }
@@ -164,7 +152,7 @@ fun BalanceDialog(
             }
 
             // Request form
-            Div({ classes(Styles.formGroup) }) {
+            Div({ classes(Styles.formGroup, Styles.container) }) {
                 Label(attrs = { classes(Styles.formLabel) }) { Translated("Type") }
                 Div(attrs = { classes(Styles.languageSwitcherContainer) }) {
                     Div(attrs = {
@@ -226,19 +214,19 @@ fun BalanceDialog(
 
                 // Submit
                 Div({ classes(Styles.formButtonsContainer) }) {
-                    DialogButton(onClick = onClose, isPrimary = false) { Translated("Close") }
-
-                    DialogButton(onClick = { if (!submitting) submitNonce++ }, isPrimary = true) { Text(if (submitting) translated("Submitting...") else translated("Submit")) }
+                    DialogButton(onClick = { if (!submitting) submitNonce++ }, isPrimary = true) {
+                        Text(if (submitting) translated("Submitting...") else translated("Submit"))
+                    }
                 }
             }
 
             // Recent events at the bottom
-            H4({ classes(Styles.balanceSectionTitle) }) { Text("Recent events") }
+            H4({ classes(Styles.balanceSectionTitle) }) { Translated("Recent events") }
             recent.forEach { h ->
-                main.components.common.BalanceEventRow(item = h)
+                BalanceEventRow(item = h)
             }
             onViewAll?.let {
-                DialogButton(onClick = it, isPrimary = false) { Text("View all") }
+                DialogButton(onClick = it, isPrimary = false) { Translated("View all") }
             }
 
             if (showUpload) {

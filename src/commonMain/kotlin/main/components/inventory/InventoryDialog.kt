@@ -565,33 +565,10 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
         )
     }
-    
-    // Header actions for the dialog
-    val headerActions: @Composable () -> Unit = {
-        // New item button
-        Button(
-            attrs = {
-                style {
-                    backgroundColor(rgba(0, 120, 255, 0.7))
-                    color(Color.white)
-                    property("border", "0")
-                    property("border-radius", "4px")
-                    padding(4.px, 8.px)
-                    marginRight(8.px)
-                    cursor("pointer")
-                    fontSize(14.px)
-                }
-                onClick { showCreateItemDialog = true }
-            }
-        ) {
-            Text("+ " + translated("New"))
-        }
-    }
-    
+
     BaseDialog(
         onClose = onClose,
         title = translated("Inventory"),
-        headerActions = headerActions,
         maxWidth = "600px",
         content = {
             Div(

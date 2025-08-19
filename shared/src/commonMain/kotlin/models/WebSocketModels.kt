@@ -149,6 +149,19 @@ data class InventoryChanged(
 )
 
 /**
+ * Friend status change notification.
+ * Sent over the global WebSocket to a user's friends.
+ */
+@Serializable
+data class FriendStatusChanged(
+    val userId: String,
+    val isOnline: Boolean,
+    val worldId: String? = null,
+    val worldName: String? = null,
+    val position: Position? = null,
+)
+
+/**
  * Open URL data model
  * 
  * This model is sent when an OpenUrl node is executed to prompt the user to open a URL.

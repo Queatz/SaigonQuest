@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,9 +20,6 @@ import models.World
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.min
-import org.jetbrains.compose.web.attributes.max
-import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -50,7 +48,6 @@ import org.jetbrains.compose.web.dom.TextArea
 import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
-import org.jetbrains.compose.web.dom.NumberInput
 
 /**
  * Content component for the world edit form.
@@ -226,6 +223,37 @@ fun WorldEditContent(
     // Determine if form fields should be enabled
     val fieldsEnabled = !isEditing || isOwner
     
+    // Snapshot the active world at editor open to allow restore on cancel
+    val initialActiveWorldSnapshot = remember { WorldLoader.getActiveWorld() }
+    // Track whether a save occurred
+    var didSave by remember { mutableStateOf(false) }
+
+    // Function to restore original lighting/state
+    fun restoreOriginalState() {
+        try {
+            if (currentWorld != null) {
+                WorldLoader.notifyWorldEdited(currentWorld)
+            } else {
+                if (initialActiveWorldSnapshot != null) {
+                    WorldLoader.notifyWorldEdited(initialActiveWorldSnapshot)
+                } else {
+                    WorldLoader.reapplyCurrentWorld()
+                }
+            }
+        } catch (t: Throwable) {
+            console.warn("[WARN] Failed to restore original world state: ${t.message}")
+        }
+    }
+
+    // Ensure restore on unmount if user closes without saving
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!didSave) {
+                restoreOriginalState()
+            }
+        }
+    }
+
     // Function to handle form submission
     val handleSubmit = {
         isSubmitting = true
@@ -281,6 +309,7 @@ fun WorldEditContent(
                 WorldLoader.notifyWorldEdited(savedWorld)
                 
                 isSubmitting = false
+                didSave = true
                 onSave(savedWorld)
                 onClose()
             } catch (error: Throwable) {
@@ -317,6 +346,7 @@ fun WorldEditContent(
                 property("flex-grow", "1")
                 padding(16.px)
                 property("overflow-y", "auto")
+                property("overflow-x", "hidden")
                 display(DisplayStyle.Flex)
                 flexDirection(FlexDirection.Column)
                 property("gap", "16px")
@@ -668,42 +698,24 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                NumberInput(
-                    value = latitude.toDoubleOrNull(),
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder("Latitude (-90 to 90)")
-                        min("-90")
-                        max("90")
-                        step(0.000001)
-                        if (fieldsEnabled) {
-                            onInput { event ->
-                                latitude = (event.value?.toString() ?: "")
-                                previewLightingFromForm()
-                            }
-                        } else {
-                            disabled()
-                        }
-                    }
+                DecimalNumberInput(
+                    value = latitude,
+                    enabled = fieldsEnabled,
+                    placeholder = "Latitude (-90 to 90)",
+                    onChange = { next ->
+                        latitude = next
+                        previewLightingFromForm()
+                    },
                 )
 
-                NumberInput(
-                    value = longitude.toDoubleOrNull(),
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder("Longitude (-180 to 180)")
-                        min("-180")
-                        max("180")
-                        step(0.000001)
-                        if (fieldsEnabled) {
-                            onInput { event ->
-                                longitude = (event.value?.toString() ?: "")
-                                previewLightingFromForm()
-                            }
-                        } else {
-                            disabled()
-                        }
-                    }
+                DecimalNumberInput(
+                    value = longitude,
+                    enabled = fieldsEnabled,
+                    placeholder = "Longitude (-180 to 180)",
+                    onChange = { next ->
+                        longitude = next
+                        previewLightingFromForm()
+                    },
                 )
             }
         }
@@ -959,7 +971,10 @@ fun WorldEditContent(
                     cursor("pointer")
                     flexGrow(1)
                 }
-                onClick { onClose() }
+                onClick {
+                    restoreOriginalState()
+                    onClose()
+                }
             }
         ) {
             Text("Cancel")

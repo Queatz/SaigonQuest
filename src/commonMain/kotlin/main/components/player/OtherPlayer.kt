@@ -25,7 +25,6 @@ data class OtherPlayer(
     var appearanceRevision: Int = 0,
     var additionalSpriteSheets: List<SpriteSheet> = emptyList(),
     var skinTone: Float = 0.5f,
-    var hasSnapped: Boolean = false,
     var joinStartMs: Double? = null,
     var leaveStartMs: Double? = null,
 ) {

@@ -20,6 +20,7 @@ import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
 import repository.ChatRepository
+import repository.FriendRepository
 import repository.ObjectRepository
 import repository.UserRepository
 import repository.WorldRepository
@@ -59,6 +60,11 @@ data class WebSocketMessage(
 val activeConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
 
 /**
+ * Global map of user-level WebSocket connections by userId (not tied to a world)
+ */
+val globalUserConnections = ConcurrentHashMap<String, MutableList<WebSocketConnection>>()
+
+/**
  * Configure routes for WebSocket operations
  */
 fun Routing.configureWebSocketRoutes() {
@@ -66,12 +72,46 @@ fun Routing.configureWebSocketRoutes() {
     val userRepository = UserRepository()
     val objectRepository = ObjectRepository()
     val worldRepository = WorldRepository()
+    val friendRepository = FriendRepository()
     
     // Create handler factory
     val handlerFactory = routes.handlers.WebSocketHandlerFactory(chatRepository, userRepository, objectRepository)
     
     // JSON serializer
     val json = utils.json
+
+    suspend fun notifyFriendsStatus(
+        userId: String,
+        isOnline: Boolean,
+        worldId: String? = null,
+        worldName: String? = null,
+        position: Position? = null,
+    ) {
+        try {
+            val friends = friendRepository.getByUserId(userId)
+            if (friends.isEmpty()) return
+            val payload = models.FriendStatusChanged(
+                userId = userId,
+                isOnline = isOnline,
+                worldId = worldId,
+                worldName = worldName,
+                position = position,
+            )
+            val message = WebSocketMessage(
+                action = WebSocketAction.FRIEND_STATUS_CHANGED,
+                data = json.encodeToString(payload)
+            )
+            val messageString = json.encodeToString(message)
+            friends.forEach { f ->
+                val sessions = globalUserConnections[f.friendId]
+                sessions?.toList()?.forEach { conn ->
+                    try {
+                        conn.session.send(messageString)
+                    } catch (_: Throwable) { }
+                }
+            }
+        } catch (_: Throwable) { }
+    }
     
     // WebSocket route
     webSocket("/ws") {
@@ -226,6 +266,20 @@ fun Routing.configureWebSocketRoutes() {
             WebSocketDebug.logMessage("BROADCAST", messageString, this)
             broadcastToWorld(worldId, messageString, activeConnections)
             WebSocketDebug.logConnection("USER_JOINED", this, worldId, connection.userId)
+
+            // Notify friends globally about this user's online status/world
+            try {
+                val worldName = worldRepository.getById(worldId)?.title
+                notifyFriendsStatus(
+                    userId = connection.userId,
+                    isOnline = true,
+                    worldId = worldId,
+                    worldName = worldName,
+                    position = null,
+                )
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
             
             // Send information about all existing users to the new connection
             WebSocketDebug.logMessage("SENDING_EXISTING_USERS", "", this)
@@ -314,6 +368,19 @@ fun Routing.configureWebSocketRoutes() {
             
             broadcastToWorld(worldId, json.encodeToString(leaveMessage), activeConnections)
             WebSocketDebug.logConnection("USER_LEFT", this, worldId, connection.userId)
+
+            // Notify friends that this user went offline (world left)
+            try {
+                notifyFriendsStatus(
+                    userId = connection.userId,
+                    isOnline = false,
+                    worldId = null,
+                    worldName = null,
+                    position = null,
+                )
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
             
             // Remove connection from active connections
             WebSocketDebug.logConnection("REMOVING_CONNECTION", this, worldId, connection.userId)
@@ -330,6 +397,37 @@ fun Routing.configureWebSocketRoutes() {
             WebSocketDebug.logConnection("ACTIVE_WORLDS_AFTER_REMOVAL", this, "all", "system")
             activeConnections.forEach { (wId, connections) ->
                 WebSocketDebug.logConnection("REMAINING_CONNECTIONS", this, wId, "system")
+            }
+        }
+    }
+
+    // Global user-level WebSocket (not tied to a world)
+    webSocket("/ws/global") {
+        // Validate token and get user
+        val token = call.parameters["token"] ?: ""
+        val user = try {
+            val decodedJWT = JwtConfig.verifier.verify(token)
+            val extractedUserId = decodedJWT.getClaim("userId").asString()
+            userRepository.getById(extractedUserId)
+        } catch (_: Throwable) {
+            null
+        }
+        if (user == null) {
+            try { close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid token")) } catch (_: Throwable) {}
+            return@webSocket
+        }
+
+        val connection = WebSocketConnection(this, user)
+        try {
+            globalUserConnections.getOrPut(user.key) { mutableListOf() }.add(connection)
+            // Consume frames (no-op)
+            incoming.consumeEach { _ -> }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        } finally {
+            globalUserConnections[user.key]?.remove(connection)
+            if (globalUserConnections[user.key]?.isEmpty() == true) {
+                globalUserConnections.remove(user.key)
             }
         }
     }

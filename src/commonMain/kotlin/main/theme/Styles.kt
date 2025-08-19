@@ -37,16 +37,21 @@ import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.FlexWrap
+import org.jetbrains.compose.web.css.LineStyle
+import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflowY
+import org.jetbrains.compose.web.css.textAlign
+import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
     val emoteButton by style {
@@ -464,6 +469,7 @@ object Styles : StyleSheet() {
         padding(24.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
+        overflowY("auto")
         property("flex-grow", "1")
         color(Theme.colors.onBackground)
         dark(self) {
@@ -502,68 +508,17 @@ object Styles : StyleSheet() {
         width(100.percent)
         padding(8.px)
         backgroundColor(rgba(255, 255, 255, 0.1))
-        color(Color.white)
+        color(Color.black)
         property("border", "1px solid rgba(255, 255, 255, 0.2)")
         property("border-radius", "4px")
         property("outline", "none")
         property("box-sizing", "border-box")
+
+        dark(self) {
+            color(Color.white)
+        }
     }
-    
-    // Style for inventory box
-    val inventoryBox by style {
-        width(48.px)
-        height(48.px)
-        backgroundColor(rgba(255, 255, 255, 0.2))
-        property("border", "1px solid rgba(255, 255, 255, 0.5)")
-        property("border-radius", "4px")
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.Center)
-        alignItems(AlignItems.Center)
-        cursor("pointer")
-        // Make box interactive
-        property("pointer-events", "auto")
-    }
-    
-    // ObjectEditorDialog styles
-    val objectEditorDialogContent by style {
-        width(90.percent)
-        property("max-width", "600px")
-        backgroundColor(rgba(30, 30, 30, 0.95))
-        property("border-radius", "8px")
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-    }
-    
-    val objectEditorDialogHeader by style {
-        padding(16.px)
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-    }
-    
-    val objectEditorDialogTitle by style {
-        margin(0.px)
-        color(Color.white)
-    }
-    
-    val objectEditorDialogCloseButton by style {
-        backgroundColor(Color.transparent)
-        property("border", "0")
-        color(Color.white)
-        cursor("pointer")
-        fontSize(20.px)
-    }
-    
-    val objectEditorDialogFormContent by style {
-        property("flex-grow", "1")
-        padding(16.px)
-        property("overflow-y", "auto")
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        property("gap", "16px")
-    }
-    
+
     val objectEditorDialogLogicPreview by style {
         width(100.percent)
         height(200.px)
@@ -593,42 +548,7 @@ object Styles : StyleSheet() {
         property("text-align", "center")
         padding(0.px, 16.px)
     }
-    
-    val objectEditorDialogFooter by style {
-        padding(16.px)
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.FlexEnd)
-        property("gap", "8px")
-        property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
-    }
-    
-    val objectEditorDialogCancelButton by style {
-        padding(8.px, 16.px)
-        backgroundColor(rgba(255, 255, 255, 0.1))
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
-        property("border-radius", "4px")
-        cursor("pointer")
-    }
-    
-    val objectEditorDialogSaveButton by style {
-        padding(8.px, 16.px)
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-        property("margin-left", "8px")
-    }
-    
-    val objectEditorDialogSaveButtonActive by style {
-        backgroundColor(rgba(0, 120, 255, 0.7))
-        cursor("pointer")
-    }
-    
-    val objectEditorDialogSaveButtonInactive by style {
-        backgroundColor(rgba(100, 100, 100, 0.5))
-        cursor("default")
-    }
-    
+
     val objectEditorDialogErrorMessage by style {
         color(Color.red)
         margin(0.px)
@@ -831,10 +751,15 @@ object Styles : StyleSheet() {
     val chatMessageTimestamp by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
-        fontSize(12.px)
-        color(rgba(150, 150, 150, 0.8))
+        fontSize(14.px)
+        textAlign("right")
     }
-    
+
+    val endAmount by style {
+        fontWeight("bold")
+        fontSize(18.px)
+    }
+
     val chatMessageEditedIndicator by style {
         property("margin-right", "4px")
         color(rgba(150, 150, 150, 0.8))
@@ -861,6 +786,20 @@ object Styles : StyleSheet() {
         fontSize(14.px)
         color(Theme.colors.onBackground)
         dark(self) { color(Theme.colors.onBackgroundDark) }
+    }
+
+    val container by style {
+        backgroundColor(Theme.colors.surface)
+        color(Theme.colors.onSurface)
+        padding(16.px)
+        borderRadius(8.px)
+        border(1.px, LineStyle.Solid, Theme.colors.outline)
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+            color(Theme.colors.onSurfaceDark)
+            border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
+        }
     }
 
     val formHelpText by style {
@@ -972,20 +911,21 @@ object Styles : StyleSheet() {
     val eventRow by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
         padding(10.px, 12.px)
         property("border-radius", "6px")
         backgroundColor(rgba(255, 255, 255, 0.04))
         property("border", "1px solid rgba(255, 255, 255, 0.08)")
         marginBottom(8.px)
         property("gap", "12px")
+        alignItems(alignItems = AlignItems.Center)
     }
 
     val eventTypeBadge by style {
         fontSize(12.px)
         fontWeight("bold")
         padding(4.px, 8.px)
-        property("border-radius", "999px")
+        property("border-radius", "100px")
+        flexShrink(0)
     }
 
     val eventTypeDeposit by style {
@@ -1004,7 +944,6 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         property("gap", "10px")
-        flexGrow(1)
     }
 
     val amountPositive by style { color(Theme.colors.success) }
@@ -1012,6 +951,19 @@ object Styles : StyleSheet() {
 
     val eventNotes by style {
         color(Theme.colors.onSurfaceVariant)
+    }
+
+    // Column container for timestamp and end balance on the right side of event row
+    val eventMetaColumn by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        flexGrow(1)
+    }
+    // Column container for timestamp and end balance on the right side of event row
+    val eventMetaColumnEnd by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.FlexEnd)
         flexGrow(1)
     }
 

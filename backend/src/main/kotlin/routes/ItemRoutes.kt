@@ -23,6 +23,27 @@ fun Routing.configureItemRoutes() {
             call.respond(items)
         }
         
+        // Get all items (admin) - requires authentication
+        authenticate {
+            get("/admin") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+
+                // Check if admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
+                    return@get call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                val items = itemRepository.getAllItems()
+                call.respond(items)
+            }
+        }
+        
         // Get item by ID - no authentication required
         get("/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(

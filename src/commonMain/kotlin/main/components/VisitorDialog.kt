@@ -10,6 +10,7 @@ import main.theme.Styles
 import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
@@ -17,8 +18,10 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.PasswordInput
 import org.jetbrains.compose.web.dom.RadioInput
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog for visitor users to register or login
@@ -111,13 +114,17 @@ fun VisitorDialog(
                 ) {
                     Translated("Username")
                 }
-                Input(
-                    type = InputType.Text,
+                TextInput(
+                    value = username,
                     attrs = {
                         classes(Styles.inputField)
                         placeholder(str("Enter username"))
-                        value(username)
                         onInput { username = it.value }
+                        onKeyUp { event ->
+                            if (event.key == "Enter") {
+                                validateAndSubmit()
+                            }
+                        }
                     }
                 )
             }
@@ -135,13 +142,17 @@ fun VisitorDialog(
                 ) {
                     Translated("Password")
                 }
-                Input(
-                    type = InputType.Password,
+                PasswordInput(
+                    value = password,
                     attrs = {
                         classes(Styles.inputField)
                         placeholder(str("Enter password"))
-                        value(password)
                         onInput { password = it.value }
+                        onKeyUp { event ->
+                            if (event.key == "Enter") {
+                                validateAndSubmit()
+                            }
+                        }
                     }
                 )
                 if (!isLoginMode) {
@@ -215,7 +226,7 @@ fun VisitorDialog(
                             value = "",
                             attrs = {
                                 if (yearOfBirth == null) {
-                                    attr("selected", "selected")
+                                    selected()
                                 }
                             }
                         ) {
@@ -229,7 +240,7 @@ fun VisitorDialog(
                                 value = year.toString(),
                                 attrs = {
                                     if (yearOfBirth == year) {
-                                        attr("selected", "selected")
+                                        selected()
                                     }
                                 }
                             ) {

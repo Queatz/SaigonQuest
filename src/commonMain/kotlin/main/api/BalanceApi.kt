@@ -5,11 +5,13 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.utils.EmptyContent.status
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import models.CreateBalanceChangeRequest
 import models.UserBalance
 import models.UserBalanceChangeRequest
+import models.UserBalanceChangeStatus
 import models.UserBalanceHistory
 
 /**
@@ -40,7 +42,7 @@ object BalanceApi {
     /**
      * Fetch balance change requests by status (default: Received)
      */
-    suspend fun getRequests(status: String = "Received"): List<UserBalanceChangeRequest> {
+    suspend fun getRequests(status: UserBalanceChangeStatus = UserBalanceChangeStatus.Received): List<UserBalanceChangeRequest> {
         val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/balance/requests") {
             ApiClient.addAuthHeader(this)
             parameter("status", status)
@@ -51,7 +53,7 @@ object BalanceApi {
     /**
      * Fetch count of balance change requests by status (default: Received)
      */
-    suspend fun getRequestsCount(status: String = "Received"): Int {
+    suspend fun getRequestsCount(status: UserBalanceChangeStatus = UserBalanceChangeStatus.Received): Int {
         return try {
             getRequests(status).size
         } catch (t: Throwable) {
