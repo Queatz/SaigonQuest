@@ -11,6 +11,7 @@ data class UserBalanceChangeRequest(
     /** VND */
     var amount: Long = 0L,
     /** Image URLs (from content server) */
-    var attachments: List<String> = emptyList()
+    var attachments: List<String> = emptyList(),
+    /** Whether this request has been resolved (approved/denied). */
+    var resolved: Boolean = false
 ) : BaseModel()
-

@@ -568,25 +568,6 @@ fun InventoryDialog(onClose: () -> Unit) {
     
     // Header actions for the dialog
     val headerActions: @Composable () -> Unit = {
-        // Refresh button
-        Button(
-            attrs = {
-                style {
-                    backgroundColor(rgba(0, 150, 0, 0.7))
-                    color(Color.white)
-                    property("border", "0")
-                    property("border-radius", "4px")
-                    padding(4.px, 8.px)
-                    marginRight(8.px)
-                    cursor("pointer")
-                    fontSize(14.px)
-                }
-                onClick { refreshInventory() }
-            }
-        ) {
-            Text("↻ " + translated("Refresh"))
-        }
-        
         // New item button
         Button(
             attrs = {

@@ -67,7 +67,8 @@ fun Routing.configureBalanceRoutes() {
                     status = UserBalanceChangeStatus.Received,
                     notes = body.notes.orEmpty(),
                     amount = body.amount,
-                    attachments = atts
+                    attachments = atts,
+                    resolved = false
                 )
                 call.respond(HttpStatusCode.Created, requests.create(req))
             }
@@ -102,7 +103,22 @@ fun Routing.configureBalanceRoutes() {
 
             get {
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
-                call.respond(requests.listPending(limit))
+                val statusParam = call.request.queryParameters["status"]
+                val statuses = statusParam?.split(',')
+                    ?.mapNotNull { runCatching { UserBalanceChangeStatus.valueOf(it) }.getOrNull() }
+                    ?.toSet()
+                val resolvedParam = call.request.queryParameters["resolved"]
+                val resolved = when (resolvedParam?.lowercase()) {
+                    "true" -> true
+                    "false" -> false
+                    else -> null
+                }
+                // Default behavior preserved: no filters -> pending list
+                if (statuses == null && resolved == null) {
+                    call.respond(requests.listPending(limit))
+                } else {
+                    call.respond(requests.listAdmin(statuses, resolved, limit))
+                }
             }
 
             // Fetch a user's current balance (admin helper)

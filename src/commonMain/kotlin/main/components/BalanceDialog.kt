@@ -43,6 +43,10 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
+import main.components.common.formatAmount
+import org.jetbrains.compose.web.attributes.InputMode
+import org.jetbrains.compose.web.dom.NumberInput
+import kotlin.math.min
 
 @Composable
 fun BalanceDialog(
@@ -62,6 +66,9 @@ fun BalanceDialog(
     var attachments by remember { mutableStateOf<List<String>>(emptyList()) }
     var showUpload by remember { mutableStateOf(false) }
     var submitNonce by remember { mutableStateOf(0) }
+    var imageToView by remember { mutableStateOf<String?>(null) }
+    var showSentToast by remember { mutableStateOf(false) }
+    var lastSubmittedType by remember { mutableStateOf<UserBalanceChangeType?>(null) }
 
     val scope = rememberCoroutineScope()
 
@@ -103,10 +110,13 @@ fun BalanceDialog(
                 setBody(body)
             }
             // Reset form and reload lists
+            val submittedType = type
             amount = 0
             notes = ""
             attachments = emptyList()
             type = UserBalanceChangeType.Deposit
+            lastSubmittedType = submittedType
+            showSentToast = true
             pending = httpClient.get("$baseUrl/balance/requests") {
                 header(HttpHeaders.Authorization, "Bearer $bearerToken")
                 parameter("status", "Received")
@@ -130,23 +140,40 @@ fun BalanceDialog(
         maxWidth = "520px",
         isFullscreen = false,
         content = {
-            when (val b = balance) {
-                null -> P { Text("Loading...") }
-                else -> P { Text("Current balance: ${b.balance} VND") }
+            // Balance summary box
+            Div({ classes(Styles.balanceSummaryBox) }) {
+                when (val b = balance) {
+                    null -> P { Text("Loading...") }
+                    else -> {
+                        Div({ classes(Styles.balanceAmountText) }) { Text("${formatAmount(b.balance)} VND") }
+                        P({ classes(Styles.balanceSubtext) }) { Text("Current balance") }
+                    }
+                }
             }
 
-            H4 { Text("Last 5 events") }
-            recent.forEach { h ->
-                P { Text("${h.eventType}: ${h.changeAmount} → ${h.endBalance} | ${h.notes}") }
-            }
-            onViewAll?.let {
-                DialogButton(onClick = it, isPrimary = false) { Text("View all") }
+            // Success toast
+            if (showSentToast) {
+                Div({ classes(Styles.formSuccessMessage) }) {
+                    val lt = lastSubmittedType
+                    Text(
+                        if (lt == UserBalanceChangeType.Withdraw) translated("Withdraw request sent")
+                        else translated("Deposit request sent")
+                    )
+                }
+                LaunchedEffect(showSentToast) {
+                    kotlinx.coroutines.delay(3000)
+                    showSentToast = false
+                }
             }
 
+            // Pending requests section (if any)
             if (pending.isNotEmpty()) {
-                H4 { Text("Pending requests") }
+                H4({ classes(Styles.balanceSectionTitle) }) { Text("Pending requests") }
                 pending.forEach { r ->
-                    P { Text("${r.type} | ${r.amount} VND | ${r.status} | ${r.notes}") }
+                    main.components.common.PendingRequestRow(
+                        request = r,
+                        onImageClick = { url -> imageToView = url }
+                    )
                 }
             }
 
@@ -154,8 +181,8 @@ fun BalanceDialog(
                 Div({ classes(Styles.formErrorMessage) }) { Text(e) }
             }
 
-            // Simple request form (attachments handled elsewhere)
-            Div({ classes(Styles.formFieldContainer) }) {
+            // Request form
+            Div({ classes(Styles.formGroup) }) {
                 Label(attrs = { classes(Styles.formLabel) }) { Translated("Type") }
                 Div(attrs = { classes(Styles.languageSwitcherContainer) }) {
                     Div(attrs = {
@@ -175,16 +202,20 @@ fun BalanceDialog(
                 }
 
                 Label(attrs = { classes(Styles.formLabel) }) { Translated("Amount (VND)") }
-                Input(type = InputType.Number, attrs = {
-                    classes(Styles.inputField)
-                    onInput { amount = it.value?.toLong() ?: 0L }
-                })
+                NumberInput(
+                    value = amount,
+                    min = 1,
+                    attrs = {
+                        classes(Styles.inputField)
+                        onInput { amount = it.value?.toLong() ?: 0L }
+                    }
+                )
 
                 Label(attrs = { classes(Styles.formLabel) }) { Translated("Notes") }
                 TextArea(value = notes, attrs = { classes(Styles.inputField); onInput { notes = it.value } })
 
                 // Attachments
-                Div({ classes(Styles.formFieldContainer) }) {
+                Div({ classes(Styles.formGroup) }) {
                     Label(attrs = { classes(Styles.formLabel) }) {
                         if (type == UserBalanceChangeType.Withdraw) {
                             Translated("Upload your VNQR")
@@ -194,19 +225,19 @@ fun BalanceDialog(
 
                     }
                     if (attachments.isNotEmpty()) {
-                        Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px); flexWrap(FlexWrap.Wrap) } }) {
+                        Div(attrs = { classes(Styles.imageThumbRow) }) {
                             attachments.forEach { url ->
-                                A(href = url, attrs = { attr("target", "_blank"); attr("rel", "noopener noreferrer") }) {
-                                    org.jetbrains.compose.web.dom.Img(src = url, attrs = { classes(Styles.imageThumb) })
-                                }
+                                org.jetbrains.compose.web.dom.Img(src = url, attrs = {
+                                    classes(Styles.imageThumb)
+                                    onClick { imageToView = url }
+                                })
                             }
                         }
                     }
-                    DialogButton(onClick = { showUpload = true }, isPrimary = false) { Translated("Add image") }
+                    DialogButton(onClick = { showUpload = true }, isPrimary = true) { Translated("Add image") }
                     if (attachments.isNotEmpty()) {
-                        DialogButton(
-                            onClick = { attachments = emptyList() },
-                            isPrimary = false
+                        DialogButtonDanger(
+                            onClick = { attachments = emptyList() }
                         ) { Translated("Remove image") }
                     }
                 }
@@ -219,11 +250,24 @@ fun BalanceDialog(
                 }
             }
 
+            // Recent events at the bottom
+            H4({ classes(Styles.balanceSectionTitle) }) { Text("Recent events") }
+            recent.forEach { h ->
+                main.components.common.BalanceEventRow(item = h)
+            }
+            onViewAll?.let {
+                DialogButton(onClick = it, isPrimary = false) { Text("View all") }
+            }
+
             if (showUpload) {
                 UploadMediaDialog(
                     onClose = { showUpload = false },
                     onSelect = { url: String -> attachments = listOf(url); showUpload = false }
                 )
+            }
+
+            imageToView?.let { url ->
+                ImageDialog(imageUrl = url, onClose = { imageToView = null })
             }
         }
     )

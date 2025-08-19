@@ -30,11 +30,13 @@ import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.flexWrap
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.boxSizing
@@ -875,6 +877,17 @@ object Styles : StyleSheet() {
         property("text-align", "center")
     }
     
+    val formSuccessMessage by style {
+        color(Theme.colors.success)
+        marginBottom(16.px)
+        fontSize(14.px)
+        property("text-align", "center")
+        backgroundColor(rgba(76, 175, 80, 0.12))
+        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+        padding(8.px, 12.px)
+        property("border-radius", "6px")
+    }
+    
     val formButtonsContainer by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
@@ -886,6 +899,7 @@ object Styles : StyleSheet() {
         marginTop(16.px)
         marginBottom(8.px)
         color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
         fontSize(16.px)
         property("font-weight", "bold")
     }
@@ -897,6 +911,48 @@ object Styles : StyleSheet() {
         marginBottom(6.px)
     }
 
+    // Balance summary box
+    val balanceSummaryBox by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        padding(16.px)
+        property("border-radius", "8px")
+        backgroundColor(rgba(255, 255, 255, 0.06))
+        property("border", "1px solid rgba(255, 255, 255, 0.15)")
+        marginBottom(16.px)
+        property("text-align", "center")
+    }
+
+    val balanceAmountText by style {
+        fontSize(28.px)
+        fontWeight("bold")
+        color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
+    }
+
+    val balanceSubtext by style {
+        marginTop(4.px)
+        fontSize(13.px)
+        color(Theme.colors.onSurfaceVariant)
+    }
+
+    // Form grouping
+    val formGroup by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        property("gap", "12px")
+        marginBottom(16.px)
+    }
+
+    // Thumbnails row for attachments
+    val imageThumbRow by style {
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(8.px)
+    }
+
     // Small square image preview (used for proof image)
     val imageThumb by style {
         width(96.px)
@@ -904,6 +960,127 @@ object Styles : StyleSheet() {
         property("object-fit", "cover")
         property("border-radius", "4px")
         property("border", "1px solid rgba(255, 255, 255, 0.2)")
+        cursor("pointer")
+    }
+
+    // Event row styles
+    val eventRow by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        padding(10.px, 12.px)
+        property("border-radius", "6px")
+        backgroundColor(rgba(255, 255, 255, 0.04))
+        property("border", "1px solid rgba(255, 255, 255, 0.08)")
+        marginBottom(8.px)
+        property("gap", "12px")
+    }
+
+    val eventTypeBadge by style {
+        fontSize(12.px)
+        fontWeight("bold")
+        padding(4.px, 8.px)
+        property("border-radius", "999px")
+    }
+
+    val eventTypeDeposit by style {
+        backgroundColor(rgba(76, 175, 80, 0.15))
+        color(Theme.colors.success)
+        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+    }
+
+    val eventTypeWithdraw by style {
+        backgroundColor(rgba(239, 83, 80, 0.15))
+        color(Theme.colors.error)
+        property("border", "1px solid rgba(239, 83, 80, 0.35)")
+    }
+
+    val eventAmounts by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        property("gap", "10px")
+        flexGrow(1)
+    }
+
+    val amountPositive by style { color(Theme.colors.success) }
+    val amountNegative by style { color(Theme.colors.error) }
+
+    val eventNotes by style {
+        color(Theme.colors.onSurfaceVariant)
+        flexGrow(1)
+    }
+
+    // Button variants
+    val baseDialogButtonDangerPrimary by style {
+        padding(8.px, 16.px)
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        property("border-radius", "4px")
+        property("cursor", "pointer")
+    }
+
+    // Request row styles (pending requests)
+    val requestRow by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        padding(12.px)
+        property("border-radius", "8px")
+        backgroundColor(rgba(255, 255, 255, 0.04))
+        property("border", "1px solid rgba(255, 255, 255, 0.08)")
+        marginBottom(10.px)
+        property("gap", "8px")
+    }
+
+    val requestHeader by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        property("gap", "12px")
+    }
+
+    val requestMeta by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        property("gap", "12px")
+        flexGrow(1)
+    }
+
+    val statusChip by style {
+        fontSize(12.px)
+        fontWeight("bold")
+        padding(4.px, 8.px)
+        property("border-radius", "999px")
+    }
+
+    val statusReceived by style {
+        backgroundColor(rgba(80, 160, 255, 0.15))
+        color(Color("#a6c8ff"))
+        property("border", "1px solid rgba(80, 160, 255, 0.35)")
+    }
+
+    val statusApproved by style {
+        backgroundColor(rgba(76, 175, 80, 0.15))
+        color(Theme.colors.success)
+        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+    }
+
+    val statusDenied by style {
+        backgroundColor(rgba(239, 83, 80, 0.15))
+        color(Theme.colors.error)
+        property("border", "1px solid rgba(239, 83, 80, 0.35)")
+    }
+
+    val requestActions by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.FlexEnd)
+        property("gap", "8px")
+        marginTop(8.px)
+    }
+
+    val requestUserId by style {
+        color(Theme.colors.onSurfaceVariant)
+        fontSize(12.px)
     }
     
     val primaryButton by style {

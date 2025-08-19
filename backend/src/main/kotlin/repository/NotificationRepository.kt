@@ -34,7 +34,7 @@ class NotificationRepository {
         val query = """
             RETURN LENGTH(
               FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
-              FILTER n.userId == @userId AND n.isRead == false
+              FILTER n.userId == @userId AND n.read == false
               RETURN 1
             )
         """.trimIndent()
@@ -56,8 +56,8 @@ class NotificationRepository {
     fun markAllAsRead(userId: String): Int {
         val query = """
             FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
-            FILTER n.userId == @userId AND n.isRead == false
-            UPDATE n WITH { isRead: true } IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+            FILTER n.userId == @userId AND n.read == false
+            UPDATE n WITH { read: true } IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
             COLLECT WITH COUNT INTO length
             RETURN length
         """.trimIndent()

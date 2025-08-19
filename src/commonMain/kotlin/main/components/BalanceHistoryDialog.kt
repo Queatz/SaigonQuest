@@ -9,6 +9,8 @@ import io.ktor.http.HttpHeaders
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.httpClient
+import main.components.common.BalanceEventRow
+import main.theme.Styles
 import models.UserBalanceHistory
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -38,13 +40,17 @@ fun BalanceHistoryDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = "Balance history",
+        title = translated("Balance history"),
         maxWidth = "560px",
         showCloseButton = true,
         content = {
             error?.let { e -> P { Text("Error: $e") } }
-            items.forEach { h ->
-                P { Text("${h.eventType}: ${h.changeAmount} → ${h.endBalance} | ${h.notes}") }
+            if (items.isEmpty() && error == null) {
+                P { Text("No history yet.") }
+            } else {
+                items.forEach { h ->
+                    BalanceEventRow(item = h)
+                }
             }
         },
         actions = {

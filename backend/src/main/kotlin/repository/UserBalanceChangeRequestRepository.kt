@@ -23,6 +23,7 @@ class UserBalanceChangeRequestRepository {
     fun updateStatus(id: String, status: UserBalanceChangeStatus, notes: String? = null): UserBalanceChangeRequest? {
         val existing = getById(id) ?: return null
         existing.status = status
+        existing.resolved = status != UserBalanceChangeStatus.Received
         if (notes != null) existing.notes = notes
         return collection.updateDocument(existing.key, existing, DocumentUpdateOptions().returnNew(true)).new
     }
@@ -51,6 +52,23 @@ class UserBalanceChangeRequestRepository {
             RETURN r
         """.trimIndent()
         val bind = mapOf("status" to UserBalanceChangeStatus.Received, "limit" to limit)
+        return ArangoConfig.db.query(query, UserBalanceChangeRequest::class.java, bind).toList()
+    }
+
+    fun listAdmin(statuses: Set<UserBalanceChangeStatus>?, resolved: Boolean?, limit: Int = 500): List<UserBalanceChangeRequest> {
+        val query = buildString {
+            append("FOR r IN ${CollectionsConfig.USER_BALANCE_CHANGE_REQUESTS_COLLECTION} ")
+            val filters = mutableListOf<String>()
+            if (!statuses.isNullOrEmpty()) filters.add("r.status IN @statuses")
+            if (resolved != null) filters.add("r.resolved == @resolved")
+            if (filters.isNotEmpty()) append("FILTER ${filters.joinToString(" AND ")} ")
+            append("SORT r.createdAt DESC ")
+            append("LIMIT @limit ")
+            append("RETURN r")
+        }
+        val bind = mutableMapOf<String, Any>("limit" to limit)
+        statuses?.let { bind["statuses"] = it.toList() }
+        resolved?.let { bind["resolved"] = it }
         return ArangoConfig.db.query(query, UserBalanceChangeRequest::class.java, bind).toList()
     }
 }

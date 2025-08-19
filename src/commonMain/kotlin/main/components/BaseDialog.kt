@@ -181,3 +181,16 @@ fun DialogButton(
         content()
     }
 }
+
+@Composable
+fun DialogButtonDanger(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Button(
+        attrs = {
+            classes(Styles.baseDialogButtonDangerPrimary)
+            onClick { onClick() }
+        }
+    ) { content() }
+}
