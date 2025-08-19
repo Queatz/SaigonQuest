@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
+import main.api.BalanceApi
 import main.theme.Styles
 import models.Asset
 import models.AssetType
@@ -43,17 +45,21 @@ fun AdminDialog(
     onClose: () -> Unit,
     onRegisterAsset: (Asset) -> Unit
 ) {
-    // State for the asset registration form
-    var selectedAssetType by remember { mutableStateOf(AssetType.Items) }
-    var assetFileName by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-
-    // State for system notification form
-    var targetUsername by remember { mutableStateOf("") }
-    var notificationTitle by remember { mutableStateOf("") }
-    var notificationMessage by remember { mutableStateOf("") }
-    var showBroadcastConfirm by remember { mutableStateOf(false) }
+    // Admin modal states
+    var showRegisterAssetDialog by remember { mutableStateOf(false) }
+    var showSendNotificationDialog by remember { mutableStateOf(false) }
     var showBalanceRequestsDialog by remember { mutableStateOf(false) }
+    var pendingCount by remember { mutableStateOf<Int?>(null) }
+    val scope = rememberCoroutineScope()
+    var adminAuthError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            pendingCount = BalanceApi.getRequestsCount("Received")
+        } catch (t: Throwable) {
+            pendingCount = null
+        }
+    }
     
     // Use the BaseDialog component
     BaseDialog(
@@ -72,231 +78,77 @@ fun AdminDialog(
                     }
                 }
             ) {
-                // Asset registration form
+                // Asset actions
                 H3 {
                     Translated("Register new asset")
                 }
-                
-                // Asset type selection
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            width(100.percent)
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Translated("Asset type")
-                    Select(
-                        attrs = {
-                            classes(Styles.inputField)
-
-                            style {
-                                width(100.percent)
-                                padding(8.px)
-                                margin(8.px, 0.px)
-                            }
-                            onInput { event ->
-                                val value = event.value
-                                if (value != null) {
-                                    selectedAssetType = AssetType.valueOf(value)
-                                }
-                            }
-                        }
-                    ) {
-                        AssetType.entries.forEach { type ->
-                            Option(
-                                value = type.name,
-                                attrs = {
-                                    if (type == selectedAssetType) {
-                                        attr("selected", "true")
-                                    }
-                                }
-                            ) {
-                                Text(type.name)
-                            }
-                        }
-                    }
-                }
-                
-                // Asset filename input
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            width(100.percent)
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Translated("File name (without extension)")
-                    TextInput(
-                        value = assetFileName,
-                        attrs = {
-                            classes(Styles.inputField)
-
-                            onInput { event ->
-                                assetFileName = event.value
-                            }
-                        }
-                    )
-                }
+                DialogButton(
+                    onClick = { showRegisterAssetDialog = true },
+                    isPrimary = true,
+                ) { Translated("Open") }
 
                 // Divider spacing
                 Div(attrs = { style { margin(16.px) } }) {}
 
-                // System notification form
-                H3 {
-                    Translated("Send system notification")
-                }
-                // Target username input (leave blank to broadcast)
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            width(100.percent)
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Translated("Target username (leave blank to broadcast)")
-                    TextInput(
-                        value = targetUsername,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> targetUsername = event.value }
-                        }
-                    )
-                }
-                // Notification title input
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            width(100.percent)
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Translated("Title")
-                    TextInput(
-                        value = notificationTitle,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> notificationTitle = event.value }
-                        }
-                    )
-                }
-                // Notification message input
-                Div(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            width(100.percent)
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Translated("Message")
-                    TextInput(
-                        value = notificationMessage,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> notificationMessage = event.value }
-                        }
-                    )
-                }
+                // System notification
+                H3 { Translated("Send system notification") }
+                DialogButton(
+                    onClick = { showSendNotificationDialog = true },
+                    isPrimary = true,
+                ) { Translated("Open") }
 
                 // Divider spacing
                 Div(attrs = { style { margin(16.px) } }) {}
 
                 // Balance requests section
                 H3 { Translated("Pending Balance Requests") }
+                Div(attrs = { style { marginBottom(8.px) } }) {
+                    Text(
+                        pendingCount?.let { "You have $it pending requests" } ?: "Unable to load pending requests"
+                    )
+                }
                 DialogButton(
-                    onClick = { showBalanceRequestsDialog = true },
-                    isPrimary = true
-                ) { Translated("Open") }
+                    onClick = {
+                        val token = main.api.UserApi.getToken()
+                        if (token.isNullOrEmpty()) {
+                            adminAuthError = "Please sign in to access admin tools"
+                        } else {
+                            adminAuthError = null
+                            showBalanceRequestsDialog = true
+                        }
+                    },
+                    isPrimary = ((pendingCount ?: 0) > 0)
+                ) {
+                    Text("Open (" + (pendingCount?.toString() ?: "?") + ")")
+                }
+                adminAuthError?.let { msg ->
+                    Div { Text(msg) }
+                }
             }
         },
         actions = {
-            // Register asset button
-            DialogButton(
-                onClick = {
-                    if (assetFileName.isNotBlank()) {
-                        val asset = Asset(
-                            type = selectedAssetType,
-                            file = assetFileName
-                        )
-                        onRegisterAsset(asset)
-                        onClose()
-                    }
-                },
-                isPrimary = true
-            ) {
-                Translated("Register asset")
-            }
-
-            // Send system notification button
-            DialogButton(
-                onClick = {
-                    if (notificationTitle.isNotBlank() && notificationMessage.isNotBlank()) {
-                        if (targetUsername.trim().isBlank()) {
-                            showBroadcastConfirm = true
-                        } else {
-                            scope.launch {
-                                val ok = NotificationApi.sendSystemNotification(
-                                    username = targetUsername,
-                                    title = notificationTitle,
-                                    description = notificationMessage
-                                )
-                                if (ok) {
-                                    notificationTitle = ""
-                                    notificationMessage = ""
-                                }
-                            }
-                        }
-                    }
-                },
-                isPrimary = true
-            ) {
-                Translated("Send notification")
-            }
-            
-            // Close button
             DialogButton(
                 onClick = onClose,
-                isPrimary = false
+                isPrimary = false,
             ) {
                 Translated("Close")
             }
         }
     )
 
-    // Broadcast confirmation dialog
-    if (showBroadcastConfirm) {
-        BasicConfirmDialog(
-            message = translated("Send this notification to all users?"),
-            onConfirm = {
-                showBroadcastConfirm = false
-                scope.launch {
-                    val ok = NotificationApi.sendSystemNotification(
-                        username = "",
-                        title = notificationTitle,
-                        description = notificationMessage
-                    )
-                    if (ok) {
-                        notificationTitle = ""
-                        notificationMessage = ""
-                    }
-                }
+    if (showRegisterAssetDialog) {
+        AdminRegisterAssetDialog(
+            onClose = { showRegisterAssetDialog = false },
+            onRegisterAsset = {
+                onRegisterAsset(it)
+                showRegisterAssetDialog = false
             },
-            onCancel = { showBroadcastConfirm = false }
+        )
+    }
+
+    if (showSendNotificationDialog) {
+        AdminSendNotificationDialog(
+            onClose = { showSendNotificationDialog = false },
         )
     }
 
@@ -304,7 +156,12 @@ fun AdminDialog(
         main.components.AdminBalanceRequestsDialog(
             baseUrl = main.api.ApiConstants.API_BASE_URL,
             bearerToken = main.api.UserApi.getToken() ?: "",
-            onClose = { showBalanceRequestsDialog = false }
+            onClose = {
+                showBalanceRequestsDialog = false
+                scope.launch {
+                    try { pendingCount = BalanceApi.getRequestsCount("Received") } catch (_: Throwable) {}
+                }
+            }
         )
     }
 }

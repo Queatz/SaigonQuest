@@ -10,9 +10,15 @@ import app.softwork.routingcompose.Router
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.DisposableEffect
 import lib.Vector3
 import main.api.FriendApi
 import main.api.WorldApi
+import main.api.WebSocketApi
+import main.api.ListenerToken
+import main.api.addUserJoinListener
+import main.api.addUserLeaveListener
+import main.api.addTeleportPlayerListener
 import main.components.world.WorldLoader
 import main.components.BasicConfirmDialog
 import models.Friend
@@ -93,6 +99,106 @@ fun FriendsContent() {
                 isLoading = false
             }
         )
+    }
+
+    // Register WebSocket listeners to update friends in realtime
+    var listenerTokens by remember { mutableStateOf<List<ListenerToken>>(emptyList()) }
+
+    // Helper to refresh the friends list and online map
+    fun refreshFriendsList() {
+        coroutineScope.launch {
+            try {
+                fetchFriends(
+                    onSuccess = { fetchedFriends ->
+                        friends = fetchedFriends
+                        // Also refresh online states
+                        coroutineScope.launch {
+                            try {
+                                val ids = fetchedFriends.map { it.friendId }
+                                onlineMap = FriendApi.getFriendsOnline(ids)
+                            } catch (e: Throwable) {
+                                console.error("[Friends] Error refreshing online map", e)
+                            }
+                        }
+                    },
+                    onError = { err ->
+                        error = err
+                    }
+                )
+            } catch (e: Throwable) {
+                console.error("[Friends] Error refreshing friends list", e)
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        // Add listeners once
+        val tokens = mutableListOf<ListenerToken>()
+
+        // When any user joins a world
+        tokens += WebSocketApi.addUserJoinListener { data ->
+            try {
+                if (friends.any { it.friendId == data.userId }) {
+                    // Optimistically mark online
+                    onlineMap = onlineMap.toMutableMap().apply { this[data.userId] = true }
+                    refreshFriendsList()
+                }
+            } catch (e: Throwable) {
+                console.error("[Friends] Error handling USER_JOIN for friends list", e)
+            }
+        }
+
+        // When any user leaves a world
+        tokens += WebSocketApi.addUserLeaveListener { data ->
+            try {
+                if (friends.any { it.friendId == data.userId }) {
+                    // Optimistically mark offline
+                    onlineMap = onlineMap.toMutableMap().apply { this[data.userId] = false }
+                    refreshFriendsList()
+                }
+            } catch (e: Throwable) {
+                console.error("[Friends] Error handling USER_LEAVE for friends list", e)
+            }
+        }
+
+        // When any user teleports to another world (world change)
+        tokens += WebSocketApi.addTeleportPlayerListener(router) { payload ->
+            try {
+                val userId = payload["userId"]
+                if (userId != null && friends.any { it.friendId == userId }) {
+                    refreshFriendsList()
+                }
+            } catch (e: Throwable) {
+                console.error("[Friends] Error handling TELEPORT_PLAYER for friends list", e)
+            }
+        }
+
+        listenerTokens = tokens
+    }
+
+    // Ensure listeners are removed when this component is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                listenerTokens.forEach { token ->
+                    WebSocketApi.removeListener(token)
+                }
+            } catch (e: Throwable) {
+                console.error("[Friends] Error cleaning up WebSocket listeners", e)
+            }
+        }
+    }
+
+    // Periodic refresh while component is active (cross-world updates)
+    LaunchedEffect("friends-poll") {
+        while (true) {
+            try {
+                kotlinx.coroutines.delay(7000L)
+                refreshFriendsList()
+            } catch (e: Throwable) {
+                console.error("[Friends] Polling refresh failed", e)
+            }
+        }
     }
     
     // Friends content

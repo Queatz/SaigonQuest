@@ -50,6 +50,14 @@ object UserApi {
     private var user: User? = null
 
     /**
+     * Returns true if the current cached user is a logged-in player.
+     * This is a pure, synchronous check that defaults to false when unknown.
+     */
+    fun isLoggedInAsPlayer(): Boolean {
+        return user?.isPlayer == true
+    }
+
+    /**
      * Gets the current user from local storage or creates a new visitor
      */
     suspend fun getCurrentUser(forceReload: Boolean = false): User {

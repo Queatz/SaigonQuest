@@ -5,6 +5,7 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
@@ -12,6 +13,7 @@ import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.flexWrap
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
@@ -69,8 +71,9 @@ object EditorStyles : StyleSheet() {
     
     val objectItem by style {
         display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.FlexStart)
+        gap(8.px)
         padding(8.px)
         backgroundColor(rgba(255, 255, 255, 0.1))
         property("border-radius", "4px")
@@ -82,7 +85,8 @@ object EditorStyles : StyleSheet() {
     
     val actionButtonsContainer by style {
         display(DisplayStyle.Flex)
-        gap(4.px)
+        flexWrap(FlexWrap.Wrap)
+        gap(8.px)
     }
     
     val locateButton by style {

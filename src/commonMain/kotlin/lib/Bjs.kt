@@ -1264,6 +1264,20 @@ external interface CreateDiscOptions {
     val updatable: Boolean? get() = definedExternally
 }
 
+// Strongly-typed options for MeshBuilder.CreateTube to avoid using `dynamic`
+external interface CreateTubeOptions {
+    // Ordered list of points describing the center path of the tube
+    val path: Array<Vector3>? get() = definedExternally
+    // Constant radius of the tube along the path
+    val radius: Float? get() = definedExternally
+    // Number of radial segments
+    val tessellation: Int? get() = definedExternally
+    // Whether the geometry is updatable for in-place updates
+    val updatable: Boolean? get() = definedExternally
+    // When provided, updates the given instance instead of creating a new mesh
+    val instance: Mesh? get() = definedExternally
+}
+
 external interface DynamicTextureOptions {
     val width: Int? get() = definedExternally
     val height: Int? get() = definedExternally
@@ -1781,4 +1795,13 @@ external class EffectWrapper {
      * @param options Options to create the effect
      */
     constructor(options: EffectWrapperOptions)
+}
+
+
+// Engine context options for creation (typed wrapper instead of dynamic)
+external interface EngineOptions {
+    val alpha: Boolean? get() = definedExternally
+    val preserveDrawingBuffer: Boolean? get() = definedExternally
+    val stencil: Boolean? get() = definedExternally
+    val disableWebGL2Support: Boolean? get() = definedExternally
 }

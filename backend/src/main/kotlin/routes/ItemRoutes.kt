@@ -2,7 +2,6 @@ package routes
 
 import auth.JWTUtils
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
@@ -11,9 +10,11 @@ import io.ktor.server.routing.*
 import models.ErrorResponse
 import models.Item
 import repository.ItemRepository
+import repository.UserRepository
 
 fun Routing.configureItemRoutes() {
     val itemRepository = ItemRepository()
+    val userRepository = UserRepository()
     
     route("/items") {
         // Get all items - no authentication required
@@ -53,12 +54,20 @@ fun Routing.configureItemRoutes() {
         // Create new item - requires authentication
         authenticate {
             post {
-                val item = call.receive<Item>()
-                
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
-                
+
+                // Check if admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                val item = call.receive<Item>()
                 val createdItem = itemRepository.create(item)
                 call.respond(HttpStatusCode.Created, createdItem)
             }
@@ -71,24 +80,33 @@ fun Routing.configureItemRoutes() {
                     HttpStatusCode.BadRequest,
                     ErrorResponse(message = "Missing id parameter", code = HttpStatusCode.BadRequest.value)
                 )
-                val itemUpdate = call.receive<Item>()
-                
+
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
-                
+
+                // Check if admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
+                    return@put call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
                 // Check if the item exists
                 val existingItem = itemRepository.getItemById(id) ?: return@put call.respond(
                     HttpStatusCode.NotFound,
                     ErrorResponse(message = "Item not found", code = HttpStatusCode.NotFound.value)
                 )
-                
+
+                val itemUpdate = call.receive<Item>()
                 val updatedItem = itemRepository.update(id, itemUpdate)
                     ?: return@put call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "Failed to update item", code = HttpStatusCode.NotFound.value)
                     )
-                    
+
                 call.respond(updatedItem)
             }
         }
@@ -104,6 +122,15 @@ fun Routing.configureItemRoutes() {
                 // Get user ID from JWT token
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
+
+                // Check if admin
+                val user = userRepository.getById(userId)
+                if (user == null || !user.isAdmin) {
+                    return@delete call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
                 
                 // Check if the item exists
                 val existingItem = itemRepository.getItemById(id) ?: return@delete call.respond(

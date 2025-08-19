@@ -38,17 +38,36 @@ fun AdminBalanceRequestsHistoryDialog(
     LaunchedEffect(Unit) {
         try {
             error = null
-            // Fetch both pending and resolved to show full history
-            val pending: List<UserBalanceChangeRequest> = httpClient.get("$baseUrl/admin/balance-requests") {
+            if (bearerToken.isBlank()) {
+                error = "Please sign in to view admin balance request history"
+                items = emptyList()
+                return@LaunchedEffect
+            }
+            // Fetch both pending and resolved to show full history with status handling
+            val pendingResp = httpClient.get("$baseUrl/admin/balance-requests") {
                 header(HttpHeaders.Authorization, "Bearer $bearerToken")
                 parameter("resolved", false)
                 parameter("limit", 500)
-            }.body()
-            val resolved: List<UserBalanceChangeRequest> = httpClient.get("$baseUrl/admin/balance-requests") {
+            }
+            val resolvedResp = httpClient.get("$baseUrl/admin/balance-requests") {
                 header(HttpHeaders.Authorization, "Bearer $bearerToken")
                 parameter("resolved", true)
                 parameter("limit", 500)
-            }.body()
+            }
+
+            if (pendingResp.status.value !in 200..299 || resolvedResp.status.value !in 200..299) {
+                val err = buildString {
+                    append("Failed to load requests: ")
+                    if (pendingResp.status.value !in 200..299) append("pending ${pendingResp.status.value} ")
+                    if (resolvedResp.status.value !in 200..299) append("resolved ${resolvedResp.status.value}")
+                }
+                error = try { pendingResp.body<models.ErrorResponse>().message } catch (_: Throwable) { err }
+                items = emptyList()
+                return@LaunchedEffect
+            }
+
+            val pending: List<UserBalanceChangeRequest> = pendingResp.body()
+            val resolved: List<UserBalanceChangeRequest> = resolvedResp.body()
             val fetched = (pending + resolved)
             items = fetched.sortedByDescending { it.createdAt.epochSeconds }
 

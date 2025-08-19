@@ -925,6 +925,10 @@ object Styles : StyleSheet() {
         property("text-align", "center")
     }
 
+    val clickable by style {
+        cursor("pointer")
+    }
+
     val balanceAmountText by style {
         fontSize(28.px)
         fontWeight("bold")
@@ -936,6 +940,7 @@ object Styles : StyleSheet() {
         marginTop(4.px)
         fontSize(13.px)
         color(Theme.colors.onSurfaceVariant)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
 
     // Form grouping
@@ -1127,6 +1132,7 @@ object Styles : StyleSheet() {
         property("margin-left", "4px")
         fontSize(14.px)
         color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
     
     val userInfoContainer by style {
@@ -1138,12 +1144,14 @@ object Styles : StyleSheet() {
         fontSize(18.px)
         property("font-weight", "bold")
         color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
         marginBottom(8.px)
     }
     
     val userStatusText by style {
         fontSize(14.px)
         color(Theme.colors.onSurfaceVariant)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
     
     val settingsSectionContainer by style {
@@ -1159,6 +1167,7 @@ object Styles : StyleSheet() {
     val settingsSectionLabel by style {
         padding(8.px)
         color(Theme.colors.onSurfaceVariant)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
     
     val settingsControlContainer by style {

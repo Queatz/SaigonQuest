@@ -7,18 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.parameter
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.HttpHeaders
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
+import main.api.BalanceApi
 import kotlinx.coroutines.launch
 import main.components.media.UploadMediaDialog
-import main.httpClient
 import main.theme.Styles
 import models.CreateBalanceChangeRequest
 import models.UserBalance
@@ -74,18 +65,9 @@ fun BalanceDialog(
 
     LaunchedEffect(Unit) {
         try {
-            balance =
-                httpClient.get("$baseUrl/balance") { header(HttpHeaders.Authorization, "Bearer $bearerToken") }.body()
-            recent = httpClient.get("$baseUrl/balance/history") {
-                header(
-                    HttpHeaders.Authorization,
-                    "Bearer $bearerToken"
-                ); parameter("limit", 5)
-            }.body()
-            pending = httpClient.get("$baseUrl/balance/requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                parameter("status", "Received")
-            }.body()
+            balance = BalanceApi.getBalance()
+            recent = BalanceApi.getRecent(5)
+            pending = BalanceApi.getRequests("Received")
         } catch (t: Throwable) {
             error = t.message
         }
@@ -104,11 +86,7 @@ fun BalanceDialog(
                 notes = notes,
                 attachments = attachments
             )
-            httpClient.post("$baseUrl/balance/requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                contentType(ContentType.Application.Json)
-                setBody(body)
-            }
+            BalanceApi.submitRequest(body)
             // Reset form and reload lists
             val submittedType = type
             amount = 0
@@ -117,15 +95,9 @@ fun BalanceDialog(
             type = UserBalanceChangeType.Deposit
             lastSubmittedType = submittedType
             showSentToast = true
-            pending = httpClient.get("$baseUrl/balance/requests") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                parameter("status", "Received")
-            }.body()
-            balance = httpClient.get("$baseUrl/balance") { header(HttpHeaders.Authorization, "Bearer $bearerToken") }.body()
-            recent = httpClient.get("$baseUrl/balance/history") {
-                header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                parameter("limit", 5)
-            }.body()
+            pending = BalanceApi.getRequests("Received")
+            balance = BalanceApi.getBalance()
+            recent = BalanceApi.getRecent(5)
         } catch (t: Throwable) {
             error = t.message
         } finally {
@@ -168,11 +140,21 @@ fun BalanceDialog(
 
             // Pending requests section (if any)
             if (pending.isNotEmpty()) {
-                H4({ classes(Styles.balanceSectionTitle) }) { Text("Pending requests") }
+                H4({ classes(Styles.balanceSectionTitle) }) { Translated("Pending requests") }
                 pending.forEach { r ->
                     main.components.common.PendingRequestRow(
                         request = r,
-                        onImageClick = { url -> imageToView = url }
+                        onImageClick = { url -> imageToView = url },
+                        onCancel = {
+                            scope.launch {
+                                try {
+                                    BalanceApi.cancelRequest(r.key)
+                                    pending = BalanceApi.getRequests("Received")
+                                } catch (t: Throwable) {
+                                    error = t.message
+                                }
+                            }
+                        }
                     )
                 }
             }

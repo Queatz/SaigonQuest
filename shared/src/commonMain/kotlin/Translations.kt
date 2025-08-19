@@ -106,6 +106,12 @@ vi: Yêu cầu thế giới này
 Login and Claim this World
 vi: Đăng nhập và yêu cầu thế giới này
 
+Claim this world
+vi: Yêu cầu thế giới này
+
+Login and claim this world
+vi: Đăng nhập và yêu cầu thế giới này
+
 Go home
 vi: Về trang chủ
 
@@ -847,11 +853,38 @@ vi: Hoàn thành
 Denied
 vi: Bị từ chối
 
+Cancelled
+vi: Đã hủy
+
+Cancel request
+vi: Hủy yêu cầu
+
+Approved
+vi: Đã chấp thuận
+
 Approve
 vi: Chấp thuận
 
 Deny
 vi: Từ chối
+
+Cost
+vi: Giá
+
+Cost (VND)
+vi: Giá (đ)
+
+Customize wind weights
+vi: Tùy chỉnh trọng số gió
+
+Wind weights (5x5)
+vi: Trọng số gió (5x5)
+
+Reset to defaults
+vi: Đặt lại về mặc định
+
+Wind weights are invalid
+vi: Trọng số gió không hợp lệ
 
 
 """

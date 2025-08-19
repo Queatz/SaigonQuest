@@ -8,6 +8,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.routing.Routing
 import models.*
 import repository.NotificationRepository
 import repository.UserBalanceChangeRequestRepository
@@ -82,26 +83,54 @@ fun Routing.configureBalanceRoutes() {
                     ?.toSet()
                 call.respond(requests.listForUser(userId, statuses))
             }
+
+            post("/requests/{id}/cancel") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                val id = call.parameters["id"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing id", code = HttpStatusCode.BadRequest.value)
+                )
+                val req = requests.getById(id) ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "Request not found", code = HttpStatusCode.NotFound.value)
+                )
+                if (req.userId != userId) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Not allowed to cancel this request", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+                if (req.status != UserBalanceChangeStatus.Received) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Only pending requests can be cancelled", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+                val updated = requests.updateStatus(id, UserBalanceChangeStatus.CancelledByUser)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "Request not found", code = HttpStatusCode.NotFound.value)
+                    )
+                call.respond(HttpStatusCode.OK, updated)
+            }
         }
     }
 
     authenticate {
         route("/admin/balance-requests") {
-            // Admin only
-            intercept(ApplicationCallPipeline.Call) {
+
+            get {
+                // Admin check inline (after JWT auth resolution)
                 val principal = call.principal<JWTPrincipal>()
-                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@intercept finish()
-                val user = users.getById(userId)
-                if (user == null || !user.isAdmin) {
-                    call.respond(
+                val adminUserId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                val adminUser = users.getById(adminUserId)
+                if (adminUser == null || !adminUser.isAdmin) {
+                    return@get call.respond(
                         HttpStatusCode.Forbidden,
                         ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
                     )
-                    finish()
                 }
-            }
-
-            get {
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
                 val statusParam = call.request.queryParameters["status"]
                 val statuses = statusParam?.split(',')
@@ -123,6 +152,16 @@ fun Routing.configureBalanceRoutes() {
 
             // Fetch a user's current balance (admin helper)
             get("/balance/{userId}") {
+                // Admin check inline (after JWT auth resolution)
+                val principal = call.principal<JWTPrincipal>()
+                val adminUserId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                val adminUser = users.getById(adminUserId)
+                if (adminUser == null || !adminUser.isAdmin) {
+                    return@get call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
                 val userId = call.parameters["userId"] ?: return@get call.respond(
                     HttpStatusCode.BadRequest,
                     ErrorResponse(message = "Missing userId", code = HttpStatusCode.BadRequest.value)
@@ -132,6 +171,16 @@ fun Routing.configureBalanceRoutes() {
             }
 
             post("/{id}/approve") {
+                // Admin check inline (after JWT auth resolution)
+                val principal = call.principal<JWTPrincipal>()
+                val adminUserId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                val adminUser = users.getById(adminUserId)
+                if (adminUser == null || !adminUser.isAdmin) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "Admin access required", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
                 val id = call.parameters["id"] ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
                     ErrorResponse(message = "Missing id", code = HttpStatusCode.BadRequest.value)

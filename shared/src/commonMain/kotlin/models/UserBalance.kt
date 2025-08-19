@@ -13,5 +13,5 @@ data class UserBalance(
 enum class UserBalanceChangeType { Deposit, Withdraw }
 
 @Serializable
-enum class UserBalanceChangeStatus { Received, Complete, Denied }
+enum class UserBalanceChangeStatus { Received, Complete, Denied, CancelledByUser }
 

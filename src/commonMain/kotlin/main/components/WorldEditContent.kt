@@ -19,6 +19,9 @@ import models.World
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.min
+import org.jetbrains.compose.web.attributes.max
+import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -45,6 +48,7 @@ import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import app.softwork.routingcompose.Router
+import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
 import org.jetbrains.compose.web.dom.NumberInput
 
@@ -643,6 +647,18 @@ fun WorldEditContent(
                 }
             ) { Text("Latitude and longitude") }
 
+            // Mini globe picker (click to select coordinates)
+            LatLngPicker3D(
+                lat = latitude.toDoubleOrNull(),
+                lng = longitude.toDoubleOrNull(),
+                enabled = fieldsEnabled,
+                onChange = { la, lo ->
+                    latitude = la.toString()
+                    longitude = lo.toString()
+                    previewLightingFromForm()
+                },
+            )
+
             Div(
                 attrs = {
                     style {
@@ -657,6 +673,9 @@ fun WorldEditContent(
                     attrs = {
                         classes(Styles.inputField)
                         placeholder("Latitude (-90 to 90)")
+                        min("-90")
+                        max("90")
+                        step(0.000001)
                         if (fieldsEnabled) {
                             onInput { event ->
                                 latitude = (event.value?.toString() ?: "")
@@ -673,6 +692,9 @@ fun WorldEditContent(
                     attrs = {
                         classes(Styles.inputField)
                         placeholder("Longitude (-180 to 180)")
+                        min("-180")
+                        max("180")
+                        step(0.000001)
                         if (fieldsEnabled) {
                             onInput { event ->
                                 longitude = (event.value?.toString() ?: "")

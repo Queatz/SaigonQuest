@@ -58,6 +58,17 @@ object WornItemsRenderer {
     private fun createSpriteSheetForWearableItem(item: Item): SpriteSheet? {
         // Check if the item is wearable and has a wearableFile
         if (!item.wearable || item.wearableFile == null) return null
+
+        // Parse optional wind weights from the item (CSV of 25 numbers, row-major)
+        fun parseWeights(input: String?): FloatArray? {
+            if (input.isNullOrBlank()) return null
+            val parts = input.split(',',' ',';','\n','\t').mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+            if (parts.size < 25) return null
+            val nums = parts.take(25).mapNotNull { it.toDoubleOrNull()?.toFloat() }
+            if (nums.size != 25) return null
+            return FloatArray(25) { idx -> nums[idx] }
+        }
+        val weights = parseWeights(item.wearableWeights)
         
         // Create a sprite sheet for the wearable item
         return SpriteSheet(
@@ -66,6 +77,7 @@ object WornItemsRenderer {
             cellHeightPx = 48,
             columns = 8,
             windEnabled = true,
+            windWeights5x5 = weights,
             // Typical apparel (dresses, capes): pinned near top, free at bottom
             windFlipY = true,
             windIntensityScale = 0.05f,

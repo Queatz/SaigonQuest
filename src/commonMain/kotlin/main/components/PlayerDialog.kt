@@ -14,7 +14,16 @@ import main.api.updatePlayerStatus
 import main.components.player.CharacterRenderer
 import main.theme.Styles
 import models.User
+import models.UserBalance
+import main.httpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
+import main.components.common.formatAmount
+import androidx.compose.runtime.LaunchedEffect
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.JustifyContent
@@ -59,9 +68,27 @@ fun PlayerDialog(
     val showBalanceDialog = remember { mutableStateOf(false) }
     val showBalanceHistoryDialog = remember { mutableStateOf(false) }
 
+    // Current balance for summary button
+    val balanceState = remember { mutableStateOf<UserBalance?>(null) }
+
     // Coroutine scope for async operations that persists beyond dialog closure
     val coroutineScope = remember { MainScope() }
     val router = Router.current
+
+    // Load current balance for summary button
+    LaunchedEffect(Unit) {
+        val token = main.api.UserApi.getToken()
+        if (!token.isNullOrEmpty()) {
+            try {
+                val b: UserBalance = httpClient.get("${main.api.ApiConstants.API_BASE_URL}/balance") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body()
+                balanceState.value = b
+            } catch (t: Throwable) {
+                console.error("[DEBUG_LOG] PlayerDialog: Failed to load balance: ${t.message}")
+            }
+        }
+    }
 
     // Function to update user status
     val updateUserStatus = {
@@ -234,6 +261,29 @@ fun PlayerDialog(
                         classes(Styles.playerDialogRightColumn)
                     }
                 ) {
+                    // Balance summary (clickable)
+                    Div(
+                        attrs = {
+                            classes(Styles.balanceSummaryBox, Styles.clickable)
+                            onClick { showBalanceDialog.value = true }
+                        }
+                    ) {
+                        val b = balanceState.value
+                        if (b == null) {
+                            P { Text("Loading...") }
+                        } else {
+                            Div(
+                                attrs = { classes(Styles.balanceAmountText) }
+                            ) {
+                                Text("${formatAmount(b.balance)} VND")
+                            }
+                            P(
+                                attrs = { classes(Styles.balanceSubtext) }
+                            ) {
+                                Text("Current balance")
+                            }
+                        }
+                    }
                     // User info
                     Div(
                         attrs = {
@@ -330,16 +380,6 @@ fun PlayerDialog(
                         Translated("My Worlds")
                     }
 
-                    // Balance button
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            style { marginTop(8.px) }
-                            onClick { showBalanceDialog.value = true }
-                        }
-                    ) {
-                        Translated("Balance")
-                    }
 
                     // Settings button
                     Button(

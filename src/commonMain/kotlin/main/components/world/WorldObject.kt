@@ -436,8 +436,6 @@ class Character(
 
     /** Configure custom shader code + uniforms for wind displacement. */
     private fun setupWindShader(material: PBRCustomMaterial, spriteSheet: SpriteSheet): Boolean {
-        val rows5 = buildWeights5x5(spriteSheet.windFlipY, spriteSheet.windWeights5x5)
-
         // Register 5x5 uniforms: each row split into vec3 (cols 0..2) and vec2 (cols 3..4)
         for (ri in 0 until 5) {
             material.AddUniform("w${ri}a", "vec3")

@@ -38,6 +38,7 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
+import org.jetbrains.compose.web.dom.NumberInput
 
 /**
  * A dialog for creating new items.
@@ -54,9 +55,12 @@ fun CreateItemDialog(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var file by remember { mutableStateOf("") }
+    var cost by remember { mutableStateOf(0L) }
     var assetIndex by remember { mutableStateOf("0") }
     var wearable by remember { mutableStateOf(false) }
     var wearableFile by remember { mutableStateOf("") }
+    var customizeWeights by remember { mutableStateOf(false) }
+    var weightGrid by remember { mutableStateOf(List(5) { List(5) { "" } }) }
 
     // Validation state
     var titleError by remember { mutableStateOf("") }
@@ -124,6 +128,32 @@ fun CreateItemDialog(
         if (!validateForm()) {
             return
         }
+
+        // If customizing weights, build CSV (row-major, 25 values). Validate numeric.
+        var weightsCsv: String? = null
+        if (wearable && customizeWeights) {
+            // Convert grid to numbers, allowing blanks to be 0
+            val nums = mutableListOf<String>()
+            loop@ for (j in 0 until 5) {
+                for (i in 0 until 5) {
+                    val s = weightGrid[j][i].trim()
+                    if (s.isEmpty()) {
+                        nums.add("0")
+                    } else {
+                        val v = s.toDoubleOrNull()
+                        if (v == null) {
+                            errorMessage = "Wind weights are invalid"
+                            return
+                        }
+                        val clamped = v.coerceIn(0.0, 1.0)
+                        nums.add(clamped.toString())
+                    }
+                }
+            }
+            if (nums.size == 25) {
+                weightsCsv = nums.joinToString(",")
+            }
+        }
         
         isSubmitting = true
         errorMessage = ""
@@ -135,9 +165,11 @@ fun CreateItemDialog(
                     title = title.trim(),
                     description = description.trim(),
                     file = file.trim(),
+                    cost = cost,
                     assetIndex = assetIndex.toInt(),
                     wearable = wearable,
                     wearableFile = if (wearable) wearableFile.trim() else null,
+                    wearableWeights = if (wearable) weightsCsv else null,
                 )
                 
                 val createdItem = ItemApi.createItem(newItem)
@@ -316,6 +348,36 @@ fun CreateItemDialog(
                     }
                 }
                 
+                // Cost field
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                color(Color.white)
+                                marginBottom(4.px)
+                            }
+                        }
+                    ) {
+                        Translated("Cost (VND)")
+                    }
+
+                    NumberInput(
+                        value = cost,
+                        min = 0,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { cost = it.value?.toLong() ?: 0L }
+                        }
+                    )
+                }
+                
                 // Asset Index field
                 Div(
                     attrs = {
@@ -455,6 +517,93 @@ fun CreateItemDialog(
                                 }
                             ) {
                                 Translated(wearableFileError)
+                            }
+                        }
+                    }
+
+                    // Customize wind weights toggle
+                    Div(
+                        attrs = {
+                            style {
+                                marginBottom(8.px)
+                                display(DisplayStyle.Flex)
+                                property("align-items", "center")
+                            }
+                        }
+                    ) {
+                        Input(
+                            type = InputType.Checkbox,
+                            attrs = {
+                                checked(customizeWeights)
+                                onChange { event -> customizeWeights = event.target.checked }
+                                style { marginTop(4.px) }
+                            }
+                        )
+                        Label(
+                            attrs = {
+                                style {
+                                    color(Color.white)
+                                    marginBottom(4.px)
+                                    marginTop(2.px)
+                                    padding(0.px, 0.px, 0.px, 8.px)
+                                }
+                            }
+                        ) { Translated("Customize wind weights") }
+                    }
+
+                    if (customizeWeights) {
+                        // Controls for 5x5 weights
+                        Label(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Block)
+                                    color(Color.white)
+                                    marginBottom(4.px)
+                                }
+                            }
+                        ) { Translated("Wind weights (5x5)") }
+
+                        // Buttons row
+                        Div(attrs = { style { marginBottom(8.px) } }) {
+                            DialogButton(onClick = {
+                                val rv = listOf("0", "0.0125", "0.025", "0.5", "1")
+                                weightGrid = List(5) { j -> List(5) { rv[j] } }
+                            }, isPrimary = false) { Translated("Reset to defaults") }
+                        }
+
+                        // 5x5 grid inputs
+                        Div(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Grid)
+                                    property("grid-template-columns", "repeat(5, 64px)")
+                                    property("gap", "6px")
+                                    marginBottom(16.px)
+                                }
+                            }
+                        ) {
+                            for (j in 0 until 5) {
+                                for (i in 0 until 5) {
+                                    NumberInput(
+                                        value = weightGrid[j][i].toDoubleOrNull(),
+                                        attrs = {
+                                            classes(Styles.inputField)
+                                            onInput { ev ->
+                                                val v = ev.value?.toString() ?: ""
+                                                weightGrid = weightGrid.mapIndexed { r, row ->
+                                                    if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
+                                                }
+                                            }
+                                            attr("min", "0")
+                                            attr("max", "1")
+                                            attr("step", "0.0125")
+                                            style {
+                                                property("width", "64px")
+                                                property("padding", "4px")
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

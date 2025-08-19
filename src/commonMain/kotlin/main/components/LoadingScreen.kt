@@ -58,22 +58,20 @@ fun LoadingScreen(
                             attrs = {
                                 classes(Styles.loadingScreenPrimaryButton)
                                 onClick {
-                                    // Check if user is logged in
-                                    if (UserApi.getToken() != null) {
-                                        // User is logged in, show world edit panel
+                                    // Only allow players to open the world editor
+                                    if (UserApi.isLoggedInAsPlayer()) {
                                         onShowWorldEditPanel()
                                     } else {
-                                        // User is not logged in, show login dialog
                                         onShowLoginDialog()
                                     }
                                 }
                             }
                         ) {
                             // Show different text based on login status
-                            if (UserApi.getToken() != null) {
-                                Translated("Claim this World")
+                            if (UserApi.isLoggedInAsPlayer()) {
+                                Translated("Claim this world")
                             } else {
-                                Translated("Login and Claim this World")
+                                Translated("Login and claim this world")
                             }
                         }
                     } else {

@@ -44,7 +44,7 @@ fun WorldObjectsContent(
                 onClick { onCreateObject() }
             }
         ) {
-            Text("Create Object")
+            Text("Create object")
         }
         // Loading or error message
         if (isLoading) {

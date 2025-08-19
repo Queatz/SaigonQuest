@@ -45,16 +45,43 @@ fun AdminBalanceRequestsDialog(
 
     suspend fun load() {
         try {
-            items = httpClient.get("$baseUrl/admin/balance-requests") { header(HttpHeaders.Authorization, "Bearer $bearerToken") }.body()
+            if (bearerToken.isBlank()) {
+                error = "Please sign in to view admin balance requests"
+                items = emptyList()
+                return
+            }
+            // Fetch items with explicit status handling to avoid decoding errors on 401/403
+            val resp = httpClient.get("$baseUrl/admin/balance-requests") {
+                header(HttpHeaders.Authorization, "Bearer $bearerToken")
+            }
+            if (resp.status.value in 200..299) {
+                items = resp.body()
+            } else {
+                // Try to parse backend error to show a friendly message
+                val errMsg = try {
+                    resp.body<models.ErrorResponse>().message
+                } catch (_: Throwable) {
+                    "Failed to load balance requests (${resp.status.value})"
+                }
+                error = errMsg
+                items = emptyList()
+                return
+            }
+
             // Fetch balances for involved users
             val uniqueUserIds = items.map { it.userId }.distinct()
             val map = mutableMapOf<String, Long>()
             for (uid in uniqueUserIds) {
                 try {
-                    val ub: models.UserBalance = httpClient.get("$baseUrl/admin/balance-requests/balance/$uid") {
+                    val ubResp = httpClient.get("$baseUrl/admin/balance-requests/balance/$uid") {
                         header(HttpHeaders.Authorization, "Bearer $bearerToken")
-                    }.body()
-                    map[uid] = ub.balance
+                    }
+                    if (ubResp.status.value in 200..299) {
+                        val ub: models.UserBalance = ubResp.body()
+                        map[uid] = ub.balance
+                    } else {
+                        map[uid] = 0L
+                    }
                 } catch (_: Throwable) { map[uid] = 0L }
             }
             balances = map

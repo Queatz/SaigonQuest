@@ -1,8 +1,10 @@
 package main.components.common
 
 import androidx.compose.runtime.Composable
+import main.components.Translated
 import main.theme.Styles
 import models.UserBalanceChangeRequest
+import models.UserBalanceChangeStatus
 import models.UserBalanceChangeType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
@@ -14,7 +16,8 @@ import org.jetbrains.compose.web.dom.TextInput
 @Composable
 fun PendingRequestRow(
     request: UserBalanceChangeRequest,
-    onImageClick: (String) -> Unit = {}
+    onImageClick: (String) -> Unit = {},
+    onCancel: (() -> Unit)? = null,
 ) {
     val isDeposit = request.type == UserBalanceChangeType.Deposit
     Div({ classes(Styles.requestRow) }) {
@@ -22,23 +25,24 @@ fun PendingRequestRow(
         Div({ classes(Styles.requestHeader) }) {
             Div({ classes(Styles.requestMeta) }) {
                 Div({ classes(Styles.eventTypeBadge, if (isDeposit) Styles.eventTypeDeposit else Styles.eventTypeWithdraw) }) {
-                    Text(if (isDeposit) "Deposit" else "Withdraw")
+                    if (isDeposit) Translated("Deposit") else Translated("Withdraw")
                 }
                 Span({ classes(if (isDeposit) Styles.amountPositive else Styles.amountNegative) }) {
                     Text("${if (isDeposit) "+" else "-"}${formatAmount(request.amount)} VND")
                 }
                 Span({}) { Text("•") }
                 run {
-                    val statusStr = when (request.status.toString()) {
-                        "Complete" -> "Approved"
+                    val displayKey = when (request.status) {
+                        UserBalanceChangeStatus.Complete -> "Approved"
+                        UserBalanceChangeStatus.CancelledByUser -> "Cancelled"
                         else -> request.status.toString()
                     }
-                    val statusClass = when (statusStr) {
-                        "Approved" -> Styles.statusApproved
-                        "Denied" -> Styles.statusDenied
+                    val statusClass = when (request.status) {
+                        UserBalanceChangeStatus.Complete -> Styles.statusApproved
+                        UserBalanceChangeStatus.Denied, UserBalanceChangeStatus.CancelledByUser -> Styles.statusDenied
                         else -> Styles.statusReceived
                     }
-                    Span({ classes(Styles.statusChip, statusClass) }) { Text(statusStr) }
+                    Span({ classes(Styles.statusChip, statusClass) }) { Translated(displayKey) }
                 }
             }
         }
@@ -56,6 +60,13 @@ fun PendingRequestRow(
                         onClick { onImageClick(url) }
                     })
                 }
+            }
+        }
+
+        // Actions (cancel)
+        if (request.status == UserBalanceChangeStatus.Received && onCancel != null) {
+            Div({ classes(Styles.requestActions) }) {
+                main.components.DialogButtonDanger(onClick = onCancel) { Translated("Cancel request") }
             }
         }
     }
@@ -80,7 +91,7 @@ fun AdminRequestRow(
             Div({ classes(Styles.requestMeta) }) {
                 // Type
                 Div({ classes(Styles.eventTypeBadge, if (isDeposit) Styles.eventTypeDeposit else Styles.eventTypeWithdraw) }) {
-                    Text(if (isDeposit) "Deposit" else "Withdraw")
+                    if (isDeposit) Translated("Deposit") else Translated("Withdraw")
                 }
                 // Amount
                 Span({ classes(if (isDeposit) Styles.amountPositive else Styles.amountNegative) }) {
