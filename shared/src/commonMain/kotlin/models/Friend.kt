@@ -23,7 +23,6 @@ data class Friend(
     var userId: String = "",
     var friendId: String = "",
     var friendUsername: String = "",
-    @Contextual
     var lastActive: Instant = Clock.System.now(),
     var lastWorldId: String = "",
     var lastWorldName: String = "",

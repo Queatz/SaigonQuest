@@ -36,10 +36,11 @@ fun AdminDialog(
     onRegisterAsset: (Asset) -> Unit
 ) {
     // Admin modal states
-    var showRegisterAssetDialog by remember { mutableStateOf(false) }
     var showSendNotificationDialog by remember { mutableStateOf(false) }
     var showBalanceRequestsDialog by remember { mutableStateOf(false) }
     var showItemsDialog by remember { mutableStateOf(false) }
+    var showAssetsDialog by remember { mutableStateOf(false) }
+
     var pendingCount by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
     var adminAuthError by remember { mutableStateOf<String?>(null) }
@@ -72,9 +73,9 @@ fun AdminDialog(
             ) {
                 // Asset actions
                 DialogButton(
-                    onClick = { showRegisterAssetDialog = true },
+                    onClick = { showAssetsDialog = true },
                     isPrimary = true,
-                ) { Translated("Register new asset") }
+                ) { Translated("View assets") }
 
                 // System notification
                 DialogButton(
@@ -91,6 +92,7 @@ fun AdminDialog(
                 // Balance requests section
                 Div(attrs = { style { marginBottom(8.px) } }) {
                     Text(
+                        // todo: translate
                         pendingCount?.let { "You have $it pending requests" } ?: "Unable to load pending requests"
                     )
                 }
@@ -123,16 +125,6 @@ fun AdminDialog(
         }
     )
 
-    if (showRegisterAssetDialog) {
-        AdminRegisterAssetDialog(
-            onClose = { showRegisterAssetDialog = false },
-            onRegisterAsset = {
-                onRegisterAsset(it)
-                showRegisterAssetDialog = false
-            },
-        )
-    }
-
     if (showSendNotificationDialog) {
         AdminSendNotificationDialog(
             onClose = { showSendNotificationDialog = false },
@@ -155,6 +147,12 @@ fun AdminDialog(
     if (showItemsDialog) {
         AdminItemsDialog(
             onClose = { showItemsDialog = false }
+        )
+    }
+
+    if (showAssetsDialog) {
+        AdminAssetsDialog(
+            onClose = { showAssetsDialog = false }
         )
     }
 }

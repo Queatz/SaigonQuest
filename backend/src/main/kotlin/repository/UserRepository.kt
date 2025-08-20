@@ -15,6 +15,7 @@ import models.User
 import utils.json
 import java.security.MessageDigest
 import java.util.UUID
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class UserRepository {
@@ -215,6 +216,15 @@ class UserRepository {
         // Update language
         user.language = language
         
+        return update(id, user)
+    }
+    
+    /**
+     * Updates the user's lastActive timestamp to now
+     */
+    fun updateLastActiveNow(id: String): User? {
+        val user = getById(id) ?: return null
+        user.lastActive = Clock.System.now()
         return update(id, user)
     }
     

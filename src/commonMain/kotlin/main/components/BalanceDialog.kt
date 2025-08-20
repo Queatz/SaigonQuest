@@ -220,8 +220,8 @@ fun BalanceDialog(
                 }
             }
 
-            // Recent events at the bottom
-            H4({ classes(Styles.balanceSectionTitle) }) { Translated("Recent events") }
+            // Balance history at the bottom
+            H4({ classes(Styles.balanceSectionTitle) }) { Translated("Balance history") }
             recent.forEach { h ->
                 BalanceEventRow(item = h)
             }

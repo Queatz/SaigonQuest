@@ -7,6 +7,21 @@ vi: Ngoài trời
 Add
 vi: Thêm
 
+Just now
+vi: Vừa xong
+
+minutes ago
+vi: phút trước
+
+hours ago
+vi: giờ trước
+
+days ago
+vi: ngày trước
+
+Long time ago 
+vi: Lâu lắm rồi
+
 Remove image
 vi: Xóa hình ảnh
 
@@ -781,9 +796,6 @@ vi: Tặng vật phẩm
 Pending requests
 vi: Yêu cầu đang chờ
 
-Pending Requests
-vi: Yêu cầu đang chờ
-
 Note
 vi: Ghi chú
 
@@ -814,8 +826,14 @@ vi: Sự kiện gần đây
 Balance history
 vi: Lịch sử số dư
 
+History
+vi: Lịch sử
+
 Last 5 events
 vi: 5 sự kiện gần đây
+
+View history
+vi: Xem lịch sử
 
 Withdraw
 vi: Rút tiền
@@ -904,6 +922,21 @@ vi: Yêu cầu số dư đang chờ
 Send system notification
 vi: Gửi thông báo hệ thống
 
+Assets
+vi: Tài nguyên
+
+View assets
+vi: Xem tài nguyên
+
+No assets found
+vi: Không tìm thấy tài nguyên
+
+File
+vi: Tệp
+
+(untitled)
+vi: (không tiêu đề)
+
 Transfer
 vi: Chuyển tiền
 
@@ -942,6 +975,8 @@ vi: Thg 11
 
 Dec
 vi: Thg 12
+
+
 
 """
 

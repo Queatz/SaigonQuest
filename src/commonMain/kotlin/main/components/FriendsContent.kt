@@ -537,16 +537,17 @@ fun FriendListItem(
  * @return A human-readable string
  */
 @OptIn(ExperimentalTime::class)
+@Composable
 private fun formatLastActive(lastActive: kotlin.time.Instant): String {
     val now = kotlin.time.Clock.System.now()
     val diff = now - lastActive
     
     return when {
-        diff < 1.minutes -> "Just now"
-        diff < 1.hours -> "${diff.inWholeMinutes} minutes ago"
-        diff < 1.days -> "${diff.inWholeHours} hours ago"
-        diff < 7.days -> "${diff.inWholeDays} days ago"
-        else -> "Long time ago"
+        diff < 1.minutes -> translated("Just now")
+        diff < 1.hours -> "${diff.inWholeMinutes} ${translated("minutes ago")}"
+        diff < 1.days -> "${diff.inWholeHours} ${translated("hours ago")}"
+        diff < 7.days -> "${diff.inWholeDays} ${translated("days ago")}"
+        else -> translated("A long time ago")
     }
 }
 

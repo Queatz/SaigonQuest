@@ -10,14 +10,9 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.AdminBalanceApi
 import main.components.common.AdminRequestRow
-import main.components.common.formatAmount
-import main.theme.Styles
 import models.UserBalanceChangeRequest
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 
 @Composable
 fun AdminBalanceRequestsDialog(
@@ -69,11 +64,11 @@ fun AdminBalanceRequestsDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = "Pending Requests",
+        title = translated("Pending requests"),
         maxWidth = "720px",
         showCloseButton = true,
         headerActions = {
-            DialogButton(onClick = { showHistory = true }, isPrimary = false) { Text("View history") }
+            DialogButton(onClick = { showHistory = true }, isPrimary = false) { Translated("View history") }
         },
         content = {
             error?.let { e -> P { Text("Error: $e") } }
@@ -108,7 +103,7 @@ fun AdminBalanceRequestsDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose) { Text("Close") }
+            DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
 

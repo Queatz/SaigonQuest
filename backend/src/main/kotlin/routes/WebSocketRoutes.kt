@@ -172,6 +172,11 @@ fun Routing.configureWebSocketRoutes() {
             // Add connection to active connections
             activeConnections.getOrPut(worldId) { mutableListOf() }.add(connection)
 
+            // Update user's last active time on join
+            try {
+                userRepository.updateLastActiveNow(connection.userId)
+            } catch (_: Throwable) { }
+
             // After registering this connection, notify and pause any other active sessions
             // for the same user across all worlds
             try {
@@ -351,6 +356,10 @@ fun Routing.configureWebSocketRoutes() {
             // Unexpected error
             WebSocketDebug.logError("Error in WebSocket connection", e, this)
         } finally {
+            // Update user's last active time on leave
+            try {
+                userRepository.updateLastActiveNow(connection.userId)
+            } catch (_: Throwable) { }
             // Send user leave notification to all clients in the world
             // Update authoritative world state first
             try {
@@ -420,11 +429,19 @@ fun Routing.configureWebSocketRoutes() {
         val connection = WebSocketConnection(this, user)
         try {
             globalUserConnections.getOrPut(user.key) { mutableListOf() }.add(connection)
+            // Update user's last active time on global connect
+            try {
+                userRepository.updateLastActiveNow(user.key)
+            } catch (_: Throwable) { }
             // Consume frames (no-op)
             incoming.consumeEach { _ -> }
         } catch (e: Throwable) {
             e.printStackTrace()
         } finally {
+            // Update user's last active time on global disconnect
+            try {
+                userRepository.updateLastActiveNow(user.key)
+            } catch (_: Throwable) { }
             globalUserConnections[user.key]?.remove(connection)
             if (globalUserConnections[user.key]?.isEmpty() == true) {
                 globalUserConnections.remove(user.key)

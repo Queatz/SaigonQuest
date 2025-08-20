@@ -19,6 +19,7 @@ import repository.NotificationRepository
 import repository.UserRepository
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Routes for friend operations
@@ -61,7 +62,9 @@ fun Routing.configureFriendRoutes() {
                         lastPosition = position,
                     )
                 } else {
-                    f
+                    f.copy(
+                        lastActive = userRepository.getById(f.friendId)?.lastActive ?: Instant.DISTANT_PAST,
+                    )
                 }
             }
 

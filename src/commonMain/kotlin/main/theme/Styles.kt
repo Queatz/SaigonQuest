@@ -882,6 +882,27 @@ object Styles : StyleSheet() {
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
 
+    // Assets list styles
+    val assetsGridHeader by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "1fr 2fr")
+        property("gap", "8px")
+        color(rgba(220, 220, 220, 0.9))
+        fontSize(12.px)
+        marginBottom(8.px)
+    }
+
+    val assetsGridRow by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "1fr 2fr")
+        property("gap", "8px")
+        alignItems(AlignItems.Center)
+        padding(8.px)
+        property("border", "1px solid rgba(255,255,255,0.08)")
+        property("border-radius", "6px")
+        marginBottom(6.px)
+    }
+
     // Form grouping
     val formGroup by style {
         display(DisplayStyle.Flex)

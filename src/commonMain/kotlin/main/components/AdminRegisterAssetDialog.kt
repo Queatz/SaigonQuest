@@ -39,7 +39,6 @@ fun AdminRegisterAssetDialog(
         title = translated("Register new asset"),
         showCloseButton = true,
         content = {
-            H3 { Translated("Register new asset") }
             // Asset type selection
             Div(
                 attrs = {
