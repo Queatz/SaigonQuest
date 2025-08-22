@@ -57,6 +57,11 @@ fun PlayerDialog(
 
     // State for user status
     val status = remember { mutableStateOf(user.status) }
+
+    // State for user bars
+    val healthState = remember { mutableStateOf(user.health.coerceIn(0, 10)) }
+    val mindState = remember { mutableStateOf(user.mind.coerceIn(0, 10)) }
+    val spiritState = remember { mutableStateOf(user.spirit.coerceIn(0, 10)) }
     
     // State to control character customization dialog visibility
     val showCustomizationDialog = remember { mutableStateOf(false) }
@@ -251,6 +256,51 @@ fun PlayerDialog(
                                 placeholder(placeholder)
                                 onInput { event -> status.value = event.value }
                             }
+                        )
+                    }
+
+                    // Health, mind, spirit bars
+                    Div(
+                        attrs = {
+                            classes(Styles.settingsSectionContainer)
+                        }
+                    ) {
+                        // Label
+                        Span(
+                            attrs = {
+                                classes(Styles.settingsSectionLabel)
+                            }
+                        ) {
+                            Translated("Health, mind, spirit")
+                        }
+
+                        UserStatusBars(
+                            health = healthState.value,
+                            mind = mindState.value,
+                            spirit = spiritState.value,
+                            readOnly = false,
+                            onChange = { h: Int, m: Int, s: Int ->
+                                healthState.value = h
+                                mindState.value = m
+                                spiritState.value = s
+                                // Persist via API
+                                coroutineScope.launch {
+                                    try {
+                                        val updated = UserApi.updateUserStatusBars(
+                                            health = h,
+                                            mind = m,
+                                            spirit = s,
+                                        )
+                                        // Update local user object as well
+                                        user.health = updated.health
+                                        user.mind = updated.mind
+                                        user.spirit = updated.spirit
+                                    } catch (e: Throwable) {
+                                        console.error("Failed to update status bars: ${e.message}")
+                                    }
+                                }
+                            },
+                            size = 24,
                         )
                     }
                 }

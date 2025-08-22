@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+
 
 package repository
 
@@ -16,7 +16,7 @@ import utils.json
 import java.security.MessageDigest
 import java.util.UUID
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 
 class UserRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.USERS_COLLECTION)
@@ -89,6 +89,17 @@ class UserRepository {
     }
     
     /**
+     * Returns all admin user IDs (keys).
+     */
+    fun listAdminIds(): List<String> {
+        val query = "FOR u IN @@collection FILTER u.isAdmin == true RETURN u._key"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION
+        )
+        return ArangoConfig.db.query(query, String::class.java, bindVars).toList()
+    }
+    
+    /**
      * Updates a user in the database
      */
     fun update(id: String, user: User): User? {
@@ -122,6 +133,7 @@ class UserRepository {
     
     /**
      * Upgrades a visitor to a player with a username, password, year of birth, sex, and language
+     * Additionally, if there are no existing players in the database yet, make this user an admin (first player rule).
      */
     fun upgradeToPlayer(
         id: String,
@@ -138,9 +150,20 @@ class UserRepository {
             return null
         }
         
+        // Determine if there are any existing players before this upgrade
+        val anyPlayersQuery = "FOR u IN @@collection FILTER u.isPlayer == true LIMIT 1 RETURN u._key"
+        val anyPlayersBindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION
+        )
+        val anyPlayers = ArangoConfig.db.query(anyPlayersQuery, String::class.java, anyPlayersBindVars).toList().isNotEmpty()
+        
         user.username = username
         user.passwordHash = hashPassword(password)
         user.isPlayer = true
+        // First player becomes admin
+        if (!anyPlayers) {
+            user.isAdmin = true
+        }
         user.yearOfBirth = yearOfBirth
         user.sex = sex
         user.language = language

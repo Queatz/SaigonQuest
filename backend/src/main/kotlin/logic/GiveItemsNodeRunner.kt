@@ -1,3 +1,5 @@
+
+
 package logic
 
 import debug.WebSocketDebug
@@ -19,7 +21,9 @@ import routes.handlers.WebSocketUtils
 import utils.json
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+
 
 /**
  * Runner for GiveItems nodes
@@ -159,7 +163,7 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                             worldId = context.worldId,
                             objectId = objectId,
                             otherUserId = context.connection.userId,
-                            timestamp = System.currentTimeMillis()
+                            timestamp = Clock.System.now()
                         )
                     )
                 } catch (e: Throwable) {
@@ -200,7 +204,7 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                                     worldId = context.worldId,
                                     objectId = objectId,
                                     otherUserId = context.connection.userId,
-                                    timestamp = System.currentTimeMillis()
+                                    timestamp = Clock.System.now()
                                 )
                             )
                         } catch (ex: Throwable) {
@@ -252,7 +256,7 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                         worldId = context.worldId,
                         objectId = objectId,
                         otherUserId = context.connection.userId,
-                        timestamp = System.currentTimeMillis()
+                        timestamp = Clock.System.now()
                     )
                 )
             } catch (e: Throwable) {

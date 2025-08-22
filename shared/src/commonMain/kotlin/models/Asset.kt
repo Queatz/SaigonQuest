@@ -22,5 +22,37 @@ enum class AssetType {
 @Serializable
 data class Asset(
     var type: AssetType = AssetType.Items,
-    var file: String = ""
+    var file: String = "",
+) : BaseModel()
+
+@Serializable
+data class ItemAssetItem(
+    var assetId: String = "",
+    var title: String = "",
+    var category: String = "",
+    var index: Int = 0,
+) : BaseModel()
+
+@Serializable
+data class ObjectAssetItem(
+    var assetId: String = "",
+    var title: String = "",
+    var category: String = "",
+    var collection: String = "",
+) : BaseModel()
+
+@Serializable
+data class WorldAssetItem(
+    var assetId: String = "",
+    var title: String = "",
+    var category: String = "",
+) : BaseModel()
+
+@Serializable
+data class SpriteSheetAssetItem(
+    var assetId: String = "",
+    var title: String = "",
+    var category: String = "",
+    var customWeights: Boolean = false,
+    var weightsCsv: String? = null,
 ) : BaseModel()

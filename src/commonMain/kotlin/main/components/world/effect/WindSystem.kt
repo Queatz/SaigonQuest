@@ -20,40 +20,40 @@ object WindSystem {
     var spatialFreq: Float = 8f
     var temporalFreq: Float = 4f
 
-    // Temporary boost state
+    // Temporary boost state (vector-based)
     private var boostUntilTime: Float = 0f
     private var boostStartTime: Float = 0f
     private var boostDuration: Float = 1f
-    private var boostMultiplier: Float = 1f
+    private var boostVector: Vector3 = Vector3(0f, 0f, 0f)
 
     /** Current time in seconds (from performance.now). */
     val timeSeconds: Float
         get() = (window.performance.now() / 1000.0).toFloat()
 
-    /** Returns the current wind intensity including any temporary boost. */
+    /** Returns the current wind intensity; vector boost no longer affects base intensity. */
     fun getIntensity(outdoors: Boolean): Float {
-        val now = timeSeconds
-        val influence = getBoostInfluence(now)
-        val scale = (if (outdoors) 1f else 0f) + (boostMultiplier - 1f) * influence
+        val scale = if (outdoors) 1f else 0f
         return intensity * scale
     }
 
     /**
      * Trigger a temporary wind boost (e.g., when the player moves).
+     * The boost vector is the negation of the last movement delta.
      * Repeated calls extend the boost window.
      */
-    fun triggerMovementBoost(durationSeconds: Float = .5f, multiplier: Float = 3.0f) {
-        boostMultiplier = multiplier
+    fun triggerMovementBoost(movementDelta: Vector3, durationSeconds: Float = .5f) {
+        // Store the negation of the last movement (XZ plane; preserve Y if provided)
+        boostVector = Vector3(-movementDelta.x, -movementDelta.y, -movementDelta.z)
         boostDuration = durationSeconds.coerceAtLeast(0.001f)
         val now = timeSeconds
         boostStartTime = now
         boostUntilTime = now + boostDuration
     }
 
-    /** Current active boost multiplier (1 if inactive). */
-    fun getBoostMultiplier(): Float {
-        val now = timeSeconds
-        return if (now <= boostUntilTime) boostMultiplier else 1f
+    /** Current decayed boost vector (Zero if inactive). */
+    fun getBoostVector(now: Float = timeSeconds): Vector3 {
+        val influence = getBoostInfluence(now)
+        return if (influence <= 0f) Vector3(0f, 0f, 0f) else boostVector.scale(influence)
     }
 
     /** Seconds remaining in the current boost window (0 if inactive). */

@@ -11,12 +11,16 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
 import main.theme.Styles
+import models.AssetType
 import models.Object
 import models.Rotation
 import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Input
@@ -55,6 +59,9 @@ fun ObjectEditorDialog(
             }
         )
     }
+    
+    // Asset browser dialog toggle
+    var showCollectionBrowser by remember { mutableStateOf(false) }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -180,38 +187,32 @@ fun ObjectEditorDialog(
                     )
                 }
                 
-                // File field
+                // Asset field
                 Div {
                     P {
-                        Text("File (without .glb)")
+                        Text("Asset")
                     }
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("e.g. world1")
-                            value(file)
-                            onInput { event -> file = event.value }
+                    Div {
+                        Button(attrs = {
+                            classes(Styles.baseDialogButtonSecondary)
+                            onClick { showCollectionBrowser = true }
+                        }) {
+                            Text("Browse")
                         }
-                    )
-                }
-                
-                // Collection field
-                Div {
-                    P {
-                        Text("Collection")
                     }
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("e.g. chair_collection")
-                            value(collection)
-                            onInput { event -> collection = event.value }
-                        }
-                    )
                 }
-                
+
+                // Preview the selected asset
+                if (file.isNotEmpty() && collection.isNotEmpty()) {
+                    Div(attrs = {
+                    }) {
+                        BasicSceneRenderer(
+                            filename = file,
+                            collection = collection
+                        )
+                    }
+                }
+
                 // Status field
                 Div {
                     P {
@@ -334,4 +335,16 @@ fun ObjectEditorDialog(
         },
         actions = footerActions
     )
+
+    // Asset browsers
+    if (showCollectionBrowser) {
+        AssetBrowserDialog(
+            type = AssetType.Objects,
+            onSelect = { r ->
+                file = r.asset!!.file
+                collection = r.collection ?: ""
+            },
+            onClose = { showCollectionBrowser = false },
+        )
+    }
 }

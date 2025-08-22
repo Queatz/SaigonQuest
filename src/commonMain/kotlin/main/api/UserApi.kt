@@ -38,6 +38,7 @@ import models.User
 import models.VisitorRequest
 import models.WornItemsRequest
 import models.UserCustomizationRequest
+import models.StatusBarsUpdateRequest
 
 
 /**
@@ -334,6 +335,34 @@ object UserApi {
             }
         } catch (e: Throwable) {
             console.error("Error updating user worn items: ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Updates user status bars (health/mind/spirit)
+     */
+    suspend fun updateUserStatusBars(
+        health: Int? = null,
+        mind: Int? = null,
+        spirit: Int? = null,
+    ): User {
+        val request = StatusBarsUpdateRequest(health = health, mind = mind, spirit = spirit)
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/status-bars") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(request)
+            }
+            if (response.status.isSuccess()) {
+                val updatedUser = response.body<User>()
+                user = updatedUser
+                return updatedUser
+            } else {
+                throw Error(response.bodyAsText())
+            }
+        } catch (e: Throwable) {
+            console.error("Error updating user status bars: ${e.message}")
             throw e
         }
     }

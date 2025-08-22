@@ -70,18 +70,27 @@ fun CharacterRenderer(
                     coroutineScope = coroutineScope,
                     onSuccess = {
                         // Get the sprite sheets for worn items
-                        wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+                        wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                            InventoryState.currentUser,
+                            InventoryState.items,
+                        )
                     }
                 )
             }
         } else {
             // Get the sprite sheets for worn items
-            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                InventoryState.currentUser,
+                InventoryState.items,
+            )
         }
         
         // Register a callback to update worn items when inventory changes
         val refreshCallback = {
-            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(InventoryState.currentUser)
+            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                InventoryState.currentUser,
+                InventoryState.items,
+            )
         }
         
         InventoryState.addOnRefreshCallback(refreshCallback)

@@ -1,3 +1,5 @@
+
+
 package logic
 
 import debug.WebSocketDebug
@@ -10,6 +12,8 @@ import repository.NotificationRepository
 import repository.ObjectRepository
 import repository.WorldRepository
 import utils.json
+import kotlin.time.Clock
+
 
 /**
  * Runner for ObjectNotification nodes
@@ -67,7 +71,7 @@ class ObjectNotificationNodeRunner(private val context: NodeRunnerContext) : Nod
             type = NotificationType.OBJECT_NOTIFICATION,
             worldId = objectData.worldId,
             objectId = objectData.key,
-            timestamp = System.currentTimeMillis()
+            timestamp = Clock.System.now()
         )
         
         // Save the notification

@@ -18,8 +18,9 @@ import models.WebSocketAction
 import routes.activeConnections
 import utils.json
 import repository.UserRepository
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+import kotlin.time.Clock
+
+import kotlin.time.Instant
 
 /**
  * Configure routes for chat operations
@@ -39,7 +40,9 @@ fun Routing.configureChatRoutes() {
             
             // Optional parameters
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
-            val olderThan = call.request.queryParameters["olderThan"]?.toLongOrNull() ?: System.currentTimeMillis()
+            val olderThan = call.request.queryParameters["olderThan"]?.toLongOrNull()?.let {
+                Instant.fromEpochMilliseconds(it)
+            } ?: Clock.System.now()
             
             // Get messages
             val messages = chatRepository.getMessagesByWorldId(worldId, limit, olderThan)
@@ -50,7 +53,7 @@ fun Routing.configureChatRoutes() {
 
             // Update last read
             if (userId != null) {
-                chatRepository.updateLastReadTimestamp(userId, worldId, System.currentTimeMillis())
+                chatRepository.updateLastReadTimestamp(userId, worldId, Clock.System.now())
             }
             
             // Return messages
@@ -107,7 +110,7 @@ fun Routing.configureChatRoutes() {
                 val readMarker = ChatReadMarker(
                     userId = userId,
                     worldId = worldId,
-                    lastReadTimestamp = timestamp
+                    lastReadTimestamp = Instant.fromEpochMilliseconds(timestamp)
                 )
                 
                 // Update last read timestamp using the ChatReadMarker object
@@ -158,11 +161,54 @@ fun Routing.configureChatRoutes() {
                     userId = userId,
                     username = user.username,
                     message = messageText,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis())
                 )
                 
                 // Save message
                 val savedMessage = chatRepository.saveMessage(chatMessage)
+
+                // After saving, send one-time "new chat" notifications to eligible users
+                try {
+                    val world = try { worldRepository.getById(worldId) } catch (_: Throwable) { null }
+
+                    // Build presence map: userId -> worldId they're currently in (if any)
+                    val worldByUser: Map<String, String> = activeConnections.flatMap { (wId, conns) ->
+                        conns.map { it.userId to wId }
+                    }.toMap()
+
+                    val markers = try { chatRepository.getReadMarkersByWorld(worldId) } catch (_: Throwable) { emptyList() }
+
+                    val notificationRepo = repository.NotificationRepository()
+                    markers.forEach { marker ->
+                        try {
+                            // Skip sender
+                            if (marker.userId == savedMessage.userId) return@forEach
+                            // Already notified since last visit
+                            if (marker.notificationSent) return@forEach
+                            // If their last read is at/after this message timestamp, skip
+                            if (marker.lastReadTimestamp >= savedMessage.timestamp) return@forEach
+                            // If online and currently in this same world, skip
+                            val currentWorldForUser = worldByUser[marker.userId]
+                            if (currentWorldForUser == worldId) return@forEach
+
+                            val title = "New chat from \"${savedMessage.username}\" in \"${world?.title ?: "World"}\""
+                            val description = savedMessage.message
+                            val notification = models.Notification(
+                                userId = marker.userId,
+                                title = title,
+                                description = description,
+                                isRead = false,
+                                type = models.NotificationType.CHAT_NEW,
+                                worldId = worldId,
+                                objectId = "",
+                                otherUserId = savedMessage.userId,
+                                timestamp = savedMessage.timestamp,
+                            )
+                            notificationRepo.create(notification)
+                            chatRepository.setNotificationSent(marker.userId, worldId, true)
+                        } catch (_: Throwable) { /* continue per user */ }
+                    }
+                } catch (_: Throwable) { /* keep REST path resilient */ }
                 
                 call.respond(HttpStatusCode.Created, savedMessage)
             }

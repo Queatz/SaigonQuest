@@ -158,9 +158,12 @@ allowing the project to remain maintainable as it grows.
 - Always put arguments on separate lines
 - Always use named arguments when possible
 - **Use `Throwable` for exception handling**: `Exception` is not enough!
+- **Use `kotlin.time.Instant` in database models and DTOs.**
+- **data classes that are used in the database MUST have default values for all fields**: Jackson needs a zero-argument constructor to deserialize the data.
 
 ## Code Style and Development Guidelines
 
+- **DO NOT duplicate code**: ALWAYS refactor code before reusing it to ensure we do not create duplicate code
 - **DO NOT swallow errors**: Only when an error is truly expected can we swallow it
 - **Use @Serializable data classes**: For all data models
 - **Use enum classes instead of raw strings**: For all enumerated values

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+
 
 package main.components
 
@@ -35,6 +35,7 @@ import main.utils.PathUtils
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
 import models.ChatMessage
+import models.ErrorResponse
 import models.NotificationData
 import models.Object
 import models.User
@@ -54,7 +55,7 @@ import web.notifications.requestPermission
 import web.push.getSubscription
 import web.push.subscribe
 import web.serviceworker.register
-import kotlin.time.ExperimentalTime
+
 
 
 /**
@@ -191,7 +192,7 @@ fun WorldUI() {
         val base64 = (base64String + padding).replace('-', '+').replace('_', '/')
         val rawData = atob(base64)
         val outputArray = js("new Uint8Array(rawData.length)")
-        val len = (rawData.length as Int)
+        val len = rawData.length
         var i = 0
         while (i < len) {
             // Set each byte from the decoded string charCode
@@ -286,11 +287,15 @@ fun WorldUI() {
             currentWorld = world
             isWorldLoading = false
         } catch (error: Throwable) {
-            console.error("Error fetching world", error)
-            console.error("Error", error)
-            console.error("Error TYPE ", error is ResponseException)
-            console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
-            worldErrorMessage = error.message ?: "Failed to load world"
+            error.printStackTrace()
+            when (error) {
+                is ResponseException -> {
+                    worldErrorMessage = error.message ?: "Failed to load world"
+                }
+                is ErrorResponse -> {
+                    worldErrorMessage = error.message
+                }
+            }
             isWorldLoading = false
         }
     }
@@ -639,6 +644,10 @@ fun WorldUI() {
                 // Open the Logic Editor dialog with the object
                 currentEditingObject = obj
                 updatePanelState(SidePanelState.LogicEditor)
+            },
+            onSaveWorld = { world ->
+                // Update current world in UI state so all children receive latest values
+                currentWorld = world
             }
         )
         

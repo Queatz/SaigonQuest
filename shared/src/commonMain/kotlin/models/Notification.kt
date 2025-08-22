@@ -2,7 +2,8 @@ package models
 
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
+import kotlin.time.Instant
 
 /**
  * Represents a notification for a user.
@@ -17,9 +18,9 @@ import kotlin.time.ExperimentalTime
  * @property otherUserId Optional user ID related to this notification (e.g., friend request sender)
  * @property timestamp The time when the notification was created (milliseconds since epoch)
  */
-@OptIn(ExperimentalTime::class)
+
 @Serializable
-data class Notification(
+ data class Notification(
     var userId: String = "",
     var title: String = "",
     var description: String = "",
@@ -28,5 +29,5 @@ data class Notification(
     var worldId: String = "",
     var objectId: String = "",
     var otherUserId: String = "",
-    var timestamp: Long = Clock.System.now().toEpochMilliseconds()
+    var timestamp: Instant = Clock.System.now()
 ) : BaseModel()

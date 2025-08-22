@@ -3,7 +3,7 @@ package models
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 import kotlin.time.Instant
 
 /**
@@ -17,7 +17,7 @@ import kotlin.time.Instant
  * @property lastWorldName The name of the world where the friend was last seen
  * @property lastPosition The position where the friend was last seen
  */
-@OptIn(ExperimentalTime::class)
+
 @Serializable
 data class Friend(
     var userId: String = "",

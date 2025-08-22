@@ -33,6 +33,7 @@ fun LoadingScreen(
     onShowLoginDialog: () -> Unit,
     onNavigateHome: () -> Unit,
     showClaimOption: Boolean,
+    isNoAccess: Boolean,
     onRetry: () -> Unit,
 ) {
     if (!isLoaded && !showWorldEditPanel && !showLoginDialog) {
@@ -75,19 +76,21 @@ fun LoadingScreen(
                             }
                         }
                     } else {
-                        // Show retry button for non-404 errors
-                        Button(
-                            attrs = {
-                                classes(Styles.loadingScreenPrimaryButton)
-                                onClick {
-                                    onRetry()
+                        // Show retry button for non-404 and non-403 errors
+                        if (!isNoAccess) {
+                            Button(
+                                attrs = {
+                                    classes(Styles.loadingScreenPrimaryButton)
+                                    onClick {
+                                        onRetry()
+                                    }
                                 }
+                            ) {
+                                Translated("Retry")
                             }
-                        ) {
-                            Translated("Retry")
                         }
                     }
-                    
+
                     // Go back button
                     Button(
                         attrs = {

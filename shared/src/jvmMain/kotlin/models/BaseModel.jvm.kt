@@ -8,11 +8,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 import java.util.UUID
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 import kotlin.time.Instant
 
 @Serializable
-@OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
+@OptIn(ExperimentalSerializationApi::class)
 actual open class BaseModel {
     @Key
     @JsonNames("key", "_key")

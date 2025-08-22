@@ -1,17 +1,13 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
 package main.components.common
 
 import androidx.compose.runtime.Composable
 import main.components.Translated
+import main.components.translated
 import main.theme.Styles
 import models.UserBalanceHistory
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import main.components.common.formatAmount
-import main.components.common.formatTimestampLikeChat
-import main.components.translated
 
 @Composable
 fun BalanceEventRow(item: UserBalanceHistory) {

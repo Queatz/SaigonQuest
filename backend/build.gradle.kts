@@ -14,6 +14,12 @@ application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.time.ExperimentalTime")
+    }
+}
+
 dependencies {
     implementation(project(":shared"))
     

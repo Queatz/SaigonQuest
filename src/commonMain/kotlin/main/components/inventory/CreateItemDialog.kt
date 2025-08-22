@@ -6,13 +6,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
 import main.api.ItemApi
+import main.api.AssetApi
+import main.api.AssetItemApi
+import models.AssetType
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
+import main.components.IconRenderer
+import main.components.AssetBrowserDialog
 import Translations.str
 import main.theme.Styles
 import models.InventoryItem
@@ -61,6 +67,8 @@ fun CreateItemDialog(
     var wearableFile by remember { mutableStateOf("") }
     var customizeWeights by remember { mutableStateOf(false) }
     var weightGrid by remember { mutableStateOf(List(5) { List(5) { "" } }) }
+    var showAssetBrowser by remember { mutableStateOf(false) }
+    var showWearableBrowser by remember { mutableStateOf(false) }
 
     // Validation state
     var titleError by remember { mutableStateOf("") }
@@ -74,6 +82,44 @@ fun CreateItemDialog(
     
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
+    
+    // Prefill wind weights from asset items when wearable file changes
+    LaunchedEffect(wearable, wearableFile) {
+        try {
+            if (!wearable) return@LaunchedEffect
+            val fileName = wearableFile.trim()
+            if (fileName.isEmpty()) return@LaunchedEffect
+            // Avoid overriding if user already enabled custom weights
+            if (customizeWeights) return@LaunchedEffect
+            // Find the spritesheet asset matching the filename (without extension)
+            val spriteAssets = AssetApi.getAssetsByType(AssetType.SpriteSheet)
+            val matched = spriteAssets.firstOrNull { it.file.equals(fileName, ignoreCase = true) }
+            if (matched != null) {
+                val items = AssetItemApi.getSpriteSheetAssetItemsByAsset(matched.key)
+                val cfg = items.firstOrNull { it.customWeights && !it.weightsCsv.isNullOrBlank() }
+                val csv = cfg?.weightsCsv
+                if (!csv.isNullOrBlank()) {
+                    fun parseCsv(input: String): List<List<String>>? {
+                        val parts = input.split(',', ' ', ';', '\n', '\t')
+                            .mapNotNull { s -> s.trim().takeIf { it.isNotEmpty() } }
+                        if (parts.size < 25) return null
+                        val nums = parts.take(25).mapNotNull { it.toDoubleOrNull() }
+                        if (nums.size != 25) return null
+                        val asStrings = nums.map { it.coerceIn(0.0, 1.0).toString() }
+                        // Row-major 5x5
+                        return List(5) { r -> List(5) { c -> asStrings[r * 5 + c] } }
+                    }
+                    val grid = parseCsv(csv)
+                    if (grid != null) {
+                        customizeWeights = true
+                        weightGrid = grid
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            console.warn("Failed to prefill wearable weights from asset:", t.message)
+        }
+    }
     
     // Function to validate the form
     fun validateForm(): Boolean {
@@ -302,7 +348,7 @@ fun CreateItemDialog(
                     )
                 }
                 
-                // File field
+                // Asset selection
                 Div(
                     attrs = {
                         style {
@@ -318,35 +364,26 @@ fun CreateItemDialog(
                                 marginBottom(4.px)
                             }
                         }
-                    ) {
-                        Translated("File path (URL to sprite sheet)")
+                    ) { Translated("Asset") }
+
+                    // Preview of selected asset (if any)
+                    if (file.isNotBlank()) {
+                        val idx = assetIndex.toIntOrNull() ?: 0
+                        IconRenderer(
+                            url = "/raw/data/spritesheets/$file.png",
+                            index = idx,
+                            size = 48,
+                        )
+                    } else {
+                        P { Translated("No results") }
                     }
-                    
-                    val filePlaceholder = translated("Enter file path")
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder(filePlaceholder)
-                            value(file)
-                            onInput { file = it.value }
-                        }
-                    )
-                    
-                    if (fileError.isNotEmpty()) {
-                        P(
-                            attrs = {
-                                style {
-                                    color(rgba(255, 100, 100, 0.9))
-                                    fontSize(12.px)
-                                    marginTop(4.px)
-                                }
-                            }
-                        ) {
-                            Translated(fileError)
-                        }
-                    }
+
+                    DialogButton(
+                        onClick = { showAssetBrowser = true },
+                        isPrimary = false,
+                    ) { Translated("Browse assets") }
                 }
+
                 
                 // Cost field
                 Div(
@@ -378,56 +415,6 @@ fun CreateItemDialog(
                     )
                 }
                 
-                // Asset Index field
-                Div(
-                    attrs = {
-                        style {
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                color(Color.white)
-                                marginBottom(4.px)
-                            }
-                        }
-                    ) {
-                        Translated("Asset index (0-99)")
-                    }
-                    
-                    val assetIndexPlaceholder = translated("Enter asset index")
-                    Input(
-                        type = InputType.Number,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder(assetIndexPlaceholder)
-                            value(assetIndex)
-                            onInput { 
-                                // Convert Number? to String
-                                assetIndex = it.value?.toString() ?: "0"
-                            }
-                            attr("min", "0")
-                            attr("max", "99")
-                        }
-                    )
-                    
-                    if (assetIndexError.isNotEmpty()) {
-                        P(
-                            attrs = {
-                                style {
-                                    color(rgba(255, 100, 100, 0.9))
-                                    fontSize(12.px)
-                                    marginTop(4.px)
-                                }
-                            }
-                        ) {
-                            Translated(assetIndexError)
-                        }
-                    }
-                }
                 
                 // Wearable checkbox
                 Div(
@@ -475,7 +462,7 @@ fun CreateItemDialog(
                 
                 // Conditional wearable fields
                 if (wearable) {
-                    // Wearable File field
+                    // Wearable File field + browser/preview
                     Div(
                         attrs = {
                             style {
@@ -492,19 +479,35 @@ fun CreateItemDialog(
                                 }
                             }
                         ) {
-                            Translated("Wearable file path (URL to sprite sheet)")
+                            Translated("Wearable asset")
+                        }
+
+                        // Preview first 32x48 cell if set
+                        if (wearableFile.isNotBlank()) {
+                            Div(attrs = {
+                                style {
+                                    display(DisplayStyle.Block)
+                                    marginTop(8.px)
+                                }
+                            }) {
+                                Div(attrs = {
+                                    classes(Styles.iconRenderer)
+                                    style {
+                                        property("width", "32px")
+                                        property("height", "48px")
+                                        property("background-image", "url(\"/raw/data/spritesheets/$wearableFile.png\")")
+                                        property("background-size", "${32 * 8}px ${48 * 8}px")
+                                        property("background-position", "0px 0px")
+                                    }
+                                }) {}
+                            }
                         }
                         
-                        val wearablePlaceholder = translated("Enter wearable file path")
-                        Input(
-                            type = InputType.Text,
-                            attrs = {
-                                classes(Styles.inputField)
-                                placeholder(wearablePlaceholder)
-                                value(wearableFile)
-                                onInput { wearableFile = it.value }
-                            }
-                        )
+                        // Browse button for wearable sprite sheet
+                        DialogButton(
+                            onClick = { showWearableBrowser = true },
+                            isPrimary = false,
+                        ) { Translated("Browse assets") }
                         
                         if (wearableFileError.isNotEmpty()) {
                             P(
@@ -563,49 +566,11 @@ fun CreateItemDialog(
                             }
                         ) { Translated("Wind weights (5x5)") }
 
-                        // Buttons row
-                        Div(attrs = { style { marginBottom(8.px) } }) {
-                            DialogButton(onClick = {
-                                val rv = listOf("0", "0.0125", "0.025", "0.5", "1")
-                                weightGrid = List(5) { j -> List(5) { rv[j] } }
-                            }, isPrimary = false) { Translated("Reset to defaults") }
-                        }
-
-                        // 5x5 grid inputs
-                        Div(
-                            attrs = {
-                                style {
-                                    display(DisplayStyle.Grid)
-                                    property("grid-template-columns", "repeat(5, 64px)")
-                                    property("gap", "6px")
-                                    marginBottom(16.px)
-                                }
-                            }
-                        ) {
-                            for (j in 0 until 5) {
-                                for (i in 0 until 5) {
-                                    NumberInput(
-                                        value = weightGrid[j][i].toDoubleOrNull(),
-                                        attrs = {
-                                            classes(Styles.inputField)
-                                            onInput { ev ->
-                                                val v = ev.value?.toString() ?: ""
-                                                weightGrid = weightGrid.mapIndexed { r, row ->
-                                                    if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
-                                                }
-                                            }
-                                            attr("min", "0")
-                                            attr("max", "1")
-                                            attr("step", "0.0125")
-                                            style {
-                                                property("width", "64px")
-                                                property("padding", "4px")
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        main.components.WeightsGridEditor(
+                            grid = weightGrid,
+                            onGridChange = { weightGrid = it },
+                            showReset = true,
+                        )
                     }
                 }
                 
@@ -644,4 +609,27 @@ fun CreateItemDialog(
             }
         }
     )
+
+    if (showAssetBrowser) {
+        AssetBrowserDialog(
+            type = AssetType.Items,
+            onSelect = { r ->
+                file = r.asset!!.file
+                assetIndex = (r.index ?: 0).toString()
+                showAssetBrowser = false
+            },
+            onClose = { showAssetBrowser = false },
+        )
+    }
+
+    if (showWearableBrowser) {
+        AssetBrowserDialog(
+            type = AssetType.SpriteSheet,
+            onSelect = { r ->
+                wearableFile = r.asset!!.file
+                showWearableBrowser = false
+            },
+            onClose = { showWearableBrowser = false },
+        )
+    }
 }

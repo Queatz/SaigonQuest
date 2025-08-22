@@ -1,4 +1,3 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
 package main.components
 
 import Translations.str

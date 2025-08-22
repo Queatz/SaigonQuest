@@ -8,7 +8,8 @@ import models.ChatMessage
 import models.ChatReadMarker
 import models.ChatMessagePin
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
+import kotlin.time.Instant
 
 /**
  * API client for chat operations
@@ -53,12 +54,6 @@ object ChatApi {
                 return 0
             }
             
-            // Create a ChatReadMarker object to represent the query
-            // We don't need to set userId as it will be determined from the token on the server
-            val readMarker = ChatReadMarker(
-                worldId = worldId
-            )
-            
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/chat/$worldId/unread-count") {
                 ApiClient.addAuthHeader(this)
             }
@@ -77,14 +72,14 @@ object ChatApi {
      * @param timestamp Optional timestamp to use (defaults to current time)
      * @return True if successful, false otherwise
      */
-    @OptIn(ExperimentalTime::class)
+    
     suspend fun markMessagesAsRead(worldId: String, timestamp: Long = Clock.System.now().toEpochMilliseconds()): Boolean {
         try {
             // Create a ChatReadMarker object
             // We don't need to set userId as it will be determined from the token on the server
             val readMarker = ChatReadMarker(
                 worldId = worldId,
-                lastReadTimestamp = timestamp
+                lastReadTimestamp = Instant.fromEpochMilliseconds(timestamp)
             )
             
             val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/chat/$worldId/mark-read?timestamp=$timestamp") {

@@ -4,7 +4,7 @@ import kotlinx.coroutines.launch
 import models.ChatMessage
 import models.WebSocketAction
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 
 /**
  * Extension functions for WebSocketApi related to chat operations
@@ -51,7 +51,7 @@ private fun WebSocketApi.sendChatMessageData(action: WebSocketAction, data: Chat
  * @param messageText The content of the message
  * @param callback A callback function that will be called with the result (true if successful, false otherwise)
  */
-@OptIn(ExperimentalTime::class)
+
 fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback: (Boolean) -> Unit) {
     // Validate input parameters
     if (worldId.isEmpty()) {
@@ -97,7 +97,7 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
                 userId = user.key,
                 username = user.username,
                 message = messageText,
-                timestamp = Clock.System.now().toEpochMilliseconds()
+                timestamp = Clock.System.now()
             )
 
             // Send message

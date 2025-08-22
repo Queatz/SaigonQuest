@@ -80,6 +80,9 @@ kotlin {
         }
         binaries.executable()
     }
+    compilerOptions {
+        optIn.add("kotlin.time.ExperimentalTime")
+    }
     sourceSets {
         val commonMain by getting {
             dependencies {

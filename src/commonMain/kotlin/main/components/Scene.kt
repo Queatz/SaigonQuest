@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
 import kotlinx.browser.document
@@ -40,6 +41,7 @@ import main.components.world.WorldObjectManager
 import main.theme.Styles
 import main.utils.DataType
 import main.utils.createObjectDropEvent
+import models.ErrorResponse
 import models.NotificationType
 import models.OpenUrlData
 import org.jetbrains.compose.web.css.outline
@@ -103,7 +105,10 @@ fun SceneComponent(url: String) {
     
     // State to indicate whether we should show the Claim option (only on 404 world not found)
     val showClaimOption = remember { mutableStateOf(false) }
-    
+
+    // State to indicate the world exists but the user has no access to it
+    val isNoAccess = remember { mutableStateOf(false) }
+
     // State to track if we're on mobile
     val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
 
@@ -294,6 +299,7 @@ fun SceneComponent(url: String) {
         onShowWorldEditPanel = { showWorldEditPanel.value = true },
         onShowLoginDialog = { showLoginDialog.value = true },
         onNavigateHome = { navigateWithFade("/", false) },
+        isNoAccess = isNoAccess.value,
         showClaimOption = showClaimOption.value,
         onRetry = { navigateWithFade(window.location.pathname, true) },
     )
@@ -495,8 +501,7 @@ fun SceneComponent(url: String) {
                     when (otherPlayerFriendshipStatus.value) {
                         FriendshipStatus.NOT_FRIENDS -> sendFriendRequest()
                         FriendshipStatus.REQUEST_RECEIVED -> acceptFriendRequest()
-                        else -> { /* Do nothing for other states */
-                        }
+                        else -> { /* Do nothing for other states */ }
                     }
                 }
             },
@@ -506,7 +511,8 @@ fun SceneComponent(url: String) {
             onClose = {
                 // Close the dialog
                 showOtherPlayerDialog.value = false
-            }
+            },
+            otherUserId = otherPlayerId.value,
         )
     }
 
@@ -599,7 +605,11 @@ fun SceneComponent(url: String) {
         window.addEventListener("resize", resizeHandler)
 
         // Create the scene
-        val scene = Scene(engine)
+        val scene = Scene(engine).apply {
+            imageProcessingConfiguration.isEnabled = true
+            imageProcessingConfiguration.applyByPostProcess = true
+            imageProcessingConfiguration.gamma = 1.8f
+        }
         
         // Register scene with SceneManager for global access
         SceneManager.setScene(scene)
@@ -872,22 +882,21 @@ fun SceneComponent(url: String) {
             } catch (error: Throwable) {
                 console.error("Error loading world: ${error.message}")
                 console.error("Error", error)
-                console.error("Error TYPE ", error is ResponseException)
-                console.error("Error STATUS ", (error as? ResponseException)?.response?.status)
+                console.error("Error TYPE ", error is ErrorResponse)
+                console.error("Error STATUS ", (error as? ErrorResponse)?.code)
 
                 loadingFailed.value = true
-                showClaimOption.value = (error as? ResponseException)?.response?.status == HttpStatusCode.NotFound
-                
-                // Set specific error message based on the error
-                if (error.message?.contains("World not found") == true) {
-                    errorMessage.value = str("No world found at") + " saigon.quest/${url.ifEmpty { "" }}"
-                } else if (error.message?.contains("Failed to fetch") == true || 
-                           error.message?.contains("NetworkError") == true) {
-                    errorMessage.value = str("Network error: Unable to connect to the server. Please check your internet connection.")
-                } else if (error.message?.contains("500") == true) {
-                    errorMessage.value = str("Server error: Something went wrong on our end. Please try again later.")
-                } else {
-                    errorMessage.value = str("Error loading world") + ": " + (error.message ?: str("Unknown error"))
+                showClaimOption.value = (error as? ErrorResponse)?.code == HttpStatusCode.NotFound.value
+                isNoAccess.value = (error as? ErrorResponse)?.code == HttpStatusCode.Forbidden.value
+
+                when (error) {
+                    is ErrorResponse -> {
+                        errorMessage.value = error.message
+                    }
+                    else -> {
+                        // Prefer server-provided message (e.g., friendly access-denied text) without prefix
+                        errorMessage.value = error.message ?: str("Unknown error")
+                    }
                 }
             }
         }

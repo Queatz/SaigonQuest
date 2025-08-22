@@ -2,7 +2,6 @@ package routes
 
 import auth.JWTUtils
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
@@ -71,7 +70,42 @@ fun Routing.configureBalanceRoutes() {
                     attachments = atts,
                     resolved = false
                 )
-                call.respond(HttpStatusCode.Created, requests.create(req))
+                val created = requests.create(req)
+
+                // Notify all admins about the new balance change request
+                try {
+                    val adminIds = users.listAdminIds()
+                    val requester = users.getById(userId)
+                    val requesterLabel = requester?.username?.takeIf { it.isNotBlank() } ?: userId
+                    val title = "New balance request: ${created.type}"
+                    val details = buildString {
+                        append("User: $requesterLabel\n")
+                        append("Type: ${created.type}\n")
+                        append("Amount: ${created.amount} VND\n")
+                        if (created.notes.isNotBlank()) append("Notes: ${created.notes}\n")
+                    }
+
+                    adminIds.forEach { adminId ->
+                        try {
+                            notifications.create(
+                                Notification(
+                                    userId = adminId,
+                                    title = title,
+                                    description = details,
+                                    isRead = false,
+                                    type = NotificationType.SYSTEM,
+                                    otherUserId = created.userId
+                                )
+                            )
+                        } catch (e: Throwable) {
+                            call.application.environment.log.warn("Failed to notify admin $adminId about balance request ${created.key}: ${e.message}")
+                        }
+                    }
+                } catch (e: Throwable) {
+                    call.application.environment.log.warn("Failed to prepare admin notifications for balance request ${created.key}: ${e.message}")
+                }
+
+                call.respond(HttpStatusCode.Created, created)
             }
 
             get("/requests") {

@@ -245,6 +245,57 @@ fun Routing.configureUserRoutes() {
                 call.respond(HttpStatusCode.OK, updatedUser)
             }
 
+            // Update user status bars - requires authentication
+            post("/status-bars") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                // Get request body
+                val request = call.receive<models.StatusBarsUpdateRequest>()
+
+                // Get the user
+                val user = userRepository.getById(userId)
+                    ?: return@post call.respond(
+                        HttpStatusCode.NotFound,
+                        ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
+                    )
+
+                var updated = false
+                val now = kotlin.time.Clock.System.now()
+
+                request.health?.let { v ->
+                    user.health = v.coerceIn(0, 10)
+                    user.healthUpdatedAt = now
+                    updated = true
+                }
+                request.mind?.let { v ->
+                    user.mind = v.coerceIn(0, 10)
+                    user.mindUpdatedAt = now
+                    updated = true
+                }
+                request.spirit?.let { v ->
+                    user.spirit = v.coerceIn(0, 10)
+                    user.spiritUpdatedAt = now
+                    updated = true
+                }
+
+                if (!updated) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "No fields to update", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val updatedUser = userRepository.update(userId, user)
+                    ?: return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Failed to update user", code = HttpStatusCode.InternalServerError.value)
+                    )
+
+                call.respond(HttpStatusCode.OK, updatedUser)
+            }
+
             // Change password - requires authentication
             post("/change-password") {
                 val principal = call.principal<JWTPrincipal>()

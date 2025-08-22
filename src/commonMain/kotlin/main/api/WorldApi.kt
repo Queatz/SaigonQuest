@@ -79,9 +79,10 @@ object WorldApi {
                 throw Error("Title is required")
             }
 
-            if (world.file.isEmpty()) {
-                throw Error("File is required")
-            }
+            // TODO: Currently there is no way to create world assets before creating the 1st world
+//            if (world.file.isEmpty()) {
+//                throw Error("File is required")
+//            }
 
             // Validate URL format if provided
             if (world.url.isNotEmpty() && !world.url.matches(Regex("^[a-zA-Z0-9_-]*$"))) {
@@ -101,6 +102,7 @@ object WorldApi {
                 val errorResponse = try {
                     response.body<ErrorResponse>()
                 } catch (e: Throwable) {
+                    e.printStackTrace()
                     // Fallback if response is not a valid ErrorResponse
                     if (response.status == HttpStatusCode.Unauthorized) {
                         ErrorResponse(message = "You must be logged in to create a world", code = response.status.value)
@@ -158,9 +160,9 @@ object WorldApi {
             }
 
             val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/url") {
-                url {
-                    parameters.append("url", url)
-                }
+                parameter("url", url)
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
             }
 
             if (response.status.isSuccess()) {

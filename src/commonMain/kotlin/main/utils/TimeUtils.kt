@@ -1,10 +1,8 @@
 package main.utils
 
 import Translations.str
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.ExperimentalTime
 
 /**
  * Utility functions for time and date operations.
@@ -17,10 +15,10 @@ object TimeUtils {
      * @param timestamp The timestamp in milliseconds
      * @return A human-readable string (e.g., "2 hours ago", "Yesterday", "Jul 29")
      */
-    @OptIn(ExperimentalTime::class)
-    fun formatTimestamp(timestamp: Long): String {
+    
+    fun formatTimestamp(timestamp: kotlin.time.Instant): String {
         val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
-        val diff = now - timestamp
+        val diff = now - timestamp.toEpochMilliseconds()
         
         // Less than a minute
         if (diff < 60 * 1000) {
@@ -52,8 +50,7 @@ object TimeUtils {
         
         // For older dates, just return a simple date string
         // Create a Kotlin datetime object from the timestamp
-        val instant = Instant.fromEpochMilliseconds(timestamp)
-        val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val localDateTime = timestamp.toLocalDateTime(TimeZone.currentSystemDefault())
         
         // Get month name (abbreviated)
         val months = arrayOf(

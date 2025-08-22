@@ -3,6 +3,7 @@ package repository
 import com.arangodb.ArangoCollection
 import com.arangodb.entity.DocumentCreateEntity
 import com.arangodb.model.DocumentCreateOptions
+import com.arangodb.model.DocumentUpdateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
 import debug.WebSocketDebug
@@ -94,25 +95,25 @@ class NotificationRepository {
 
     fun getByUserId(userId: String, limit: Int = 100): List<Notification> {
         val query = """
-            FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+            FOR n IN @@collection
             FILTER n.userId == @userId
             SORT n.timestamp DESC
             LIMIT @limit
             RETURN n
         """.trimIndent()
-        val bind = mapOf("userId" to userId, "limit" to limit)
+        val bind = mapOf("userId" to userId, "limit" to limit, "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION)
         return ArangoConfig.db.query(query, Notification::class.java, bind).toList()
     }
 
     fun getUnreadCount(userId: String): Int {
         val query = """
             RETURN LENGTH(
-              FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
-              FILTER n.userId == @userId AND n.read != true
+              FOR n IN @@collection
+              FILTER n.userId == @userId AND n.isRead != true
               RETURN 1
             )
         """.trimIndent()
-        val bind = mapOf("userId" to userId)
+        val bind = mapOf("userId" to userId, "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION)
         val list = ArangoConfig.db.query(query, Int::class.java, bind).toList()
         return list.firstOrNull() ?: 0
     }
@@ -124,18 +125,18 @@ class NotificationRepository {
     fun markAsRead(id: String): Notification? {
         val existing = getById(id) ?: return null
         existing.isRead = true
-        return collection.updateDocument(id, existing, com.arangodb.model.DocumentUpdateOptions().returnNew(true)).new
+        return collection.updateDocument(id, existing, DocumentUpdateOptions().returnNew(true)).new
     }
 
     fun markAllAsRead(userId: String): Int {
         val query = """
-            FOR n IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
-            FILTER n.userId == @userId AND n.read == false
-            UPDATE n WITH { read: true } IN ${CollectionsConfig.NOTIFICATIONS_COLLECTION}
+            FOR n IN @@collection
+            FILTER n.userId == @userId AND n.isRead != true
+            UPDATE n WITH { isRead: true } IN @@collection
             COLLECT WITH COUNT INTO length
             RETURN length
         """.trimIndent()
-        val bind = mapOf("userId" to userId)
+        val bind = mapOf("userId" to userId, "@collection" to CollectionsConfig.NOTIFICATIONS_COLLECTION)
         val list = ArangoConfig.db.query(query, Int::class.java, bind).toList()
         return list.firstOrNull() ?: 0
     }

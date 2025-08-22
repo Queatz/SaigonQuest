@@ -1,9 +1,17 @@
 package main.components.player
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import main.components.BaseDialog
+import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.Translated
+import main.components.UserStatusBars
+import Translations.str
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -33,8 +41,23 @@ fun OtherPlayerDialog(
     errorMessage: String? = null,
     onAddFriend: () -> Unit,
     onRemoveFriend: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    otherUserId: String = "",
 ) {
+    // Load other user's status bars when possible
+    val otherUserState = remember { mutableStateOf<models.User?>(null) }
+    var showConfirmRemove by remember { mutableStateOf(false) }
+    if (otherUserId.isNotEmpty()) {
+        LaunchedEffect(otherUserId) {
+            try {
+                val u = main.api.UserApi.getUserById(otherUserId)
+                otherUserState.value = u
+            } catch (t: Throwable) {
+                console.error("Failed to load other user: ${t.message}")
+            }
+        }
+    }
+
     BaseDialog(
         onClose = onClose,
         title = username,
@@ -46,6 +69,23 @@ fun OtherPlayerDialog(
                 }
             }) {
                 Translated(if (isPlayer) "Player Account" else "Visitor Account")
+            }
+
+            // Show status bars for other player
+            if (isPlayer) {
+                otherUserState.value?.let { ou ->
+                    Div({
+                        style { property("margin", "0 0 16px 0") }
+                    }) {
+                        UserStatusBars(
+                            health = ou.health,
+                            mind = ou.mind,
+                            spirit = ou.spirit,
+                            readOnly = true,
+                            size = 18
+                        )
+                    }
+                }
             }
 
             if (isPlayer && isCurrentUserPlayer) {
@@ -113,7 +153,7 @@ fun OtherPlayerDialog(
                         }
                         FriendshipStatus.FRIENDS -> {
                             DialogButton(
-                                onClick = { if (!isLoading) onRemoveFriend() },
+                                onClick = { if (!isLoading) showConfirmRemove = true },
                                 isPrimary = false
                             ) {
                                 if (isLoading) {
@@ -121,6 +161,20 @@ fun OtherPlayerDialog(
                                 } else {
                                     Translated("Remove friend")
                                 }
+                            }
+                            if (showConfirmRemove) {
+                                BasicConfirmDialog(
+                                    message = "${str("Are you sure you want to remove")} $username ${str("from your friends list?")}",
+                                    onConfirm = {
+                                        if (!isLoading) {
+                                            onRemoveFriend()
+                                        }
+                                        showConfirmRemove = false
+                                    },
+                                    onCancel = {
+                                        showConfirmRemove = false
+                                    }
+                                )
                             }
                         }
                     }

@@ -1,7 +1,7 @@
 package models
 
 import kotlinx.serialization.Serializable
-import kotlin.time.ExperimentalTime
+
 
 /**
  * Inventory owners can be users or objects (containers, ground piles, etc.).
@@ -16,7 +16,7 @@ enum class InventoryOwnerType {
  * Represents an inventory that belongs to an owner (user or object).
  * Contains a list of InventoryItem keys in display order.
  */
-@OptIn(ExperimentalTime::class)
+
 @Serializable
 data class Inventory(
     var ownerType: InventoryOwnerType = InventoryOwnerType.USER,
@@ -28,7 +28,7 @@ data class Inventory(
  * Represents an item type.
  * Contains definition metadata used by InventoryItems.
  */
-@OptIn(ExperimentalTime::class)
+
 @Serializable
 data class Item(
     var title: String = "",
@@ -44,7 +44,7 @@ data class Item(
 /**
  * Represents an item entry within an inventory.
  */
-@OptIn(ExperimentalTime::class)
+
 @Serializable
 data class InventoryItem(
     var inventoryId: String = "",

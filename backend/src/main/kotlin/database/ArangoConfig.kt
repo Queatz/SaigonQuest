@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
-
 package database
 
 import com.arangodb.ArangoDB
@@ -7,11 +5,27 @@ import com.arangodb.ArangoDatabase
 import com.arangodb.entity.CollectionType
 import com.arangodb.model.CollectionCreateOptions
 import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
+import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.PropertyAccessor
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import db.StableNamingStrategy
+import kotlin.time.Instant
 
 object ArangoConfig {
     private const val HOST = "localhost"
@@ -21,31 +35,39 @@ object ArangoConfig {
     private const val PASSWORD = "saigonquest" // Use env vars in production
 
     // Support kotlinx.datetime.Instant used in BaseModel.createdAt
-    private class KotlinxInstantSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<kotlin.time.Instant>(kotlin.time.Instant::class.java) {
-        override fun serialize(value: kotlin.time.Instant, gen: com.fasterxml.jackson.core.JsonGenerator, provider: com.fasterxml.jackson.databind.SerializerProvider) {
+    private class KotlinxInstantSerializer : StdSerializer<Instant>(Instant::class.java) {
+        override fun serialize(value: Instant, gen: JsonGenerator, provider: SerializerProvider) {
             gen.writeString(value.toString())
         }
     }
 
-    private class KotlinxInstantDeserializer : com.fasterxml.jackson.databind.deser.std.StdDeserializer<kotlin.time.Instant>(kotlin.time.Instant::class.java) {
-        override fun deserialize(p: com.fasterxml.jackson.core.JsonParser, ctxt: com.fasterxml.jackson.databind.DeserializationContext): kotlin.time.Instant {
+    private class KotlinxInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
+        override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Instant {
             val text = p.valueAsString
-            return kotlin.time.Instant.parse(text)
+            return Instant.parse(text)
         }
     }
 
-    private val kotlinxDateTimeModule = com.fasterxml.jackson.databind.module.SimpleModule("KotlinxDateTimeModule").apply {
-        addSerializer(kotlin.time.Instant::class.java, KotlinxInstantSerializer())
-        addDeserializer(kotlin.time.Instant::class.java, KotlinxInstantDeserializer())
+    private val kotlinxDateTimeModule = SimpleModule("KotlinxDateTimeModule").apply {
+        addSerializer(Instant::class.java, KotlinxInstantSerializer())
+        addDeserializer(Instant::class.java, KotlinxInstantDeserializer())
     }
 
-    private val objectMapper = ObjectMapper().apply {
-        registerModule(JavaTimeModule())
-        registerModule(kotlinxDateTimeModule)
-        registerKotlinModule()
-        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES.also { feature -> disable(feature) }
-    }
+    private val objectMapper = JsonMapper.builder()
+        .addModule(JavaTimeModule())
+        .addModule(kotlinxDateTimeModule)
+        .addModule(kotlinModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .disable(MapperFeature.AUTO_DETECT_GETTERS)
+        .disable(MapperFeature.AUTO_DETECT_IS_GETTERS)
+        .disable(MapperFeature.AUTO_DETECT_SETTERS)
+        .visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+        .visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
+        .visibility(PropertyAccessor.SETTER, JsonAutoDetect.Visibility.NONE)
+        .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+        .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
+        .build()
 
     private val jacksonSerde = JacksonSerdeImpl(objectMapper)
 
@@ -82,6 +104,11 @@ object CollectionsConfig {
     const val USER_BALANCES_COLLECTION = "user_balances"
     const val USER_BALANCE_CHANGE_REQUESTS_COLLECTION = "user_balance_change_requests"
     const val USER_BALANCE_HISTORY_COLLECTION = "user_balance_history"
+    // New asset item collections
+    const val ITEM_ASSET_ITEMS_COLLECTION = "item_asset_items"
+    const val SPRITESHEET_ASSET_ITEMS_COLLECTION = "spritesheet_asset_items"
+    const val WORLD_ASSET_ITEMS_COLLECTION = "world_asset_items"
+    const val OBJECT_ASSET_ITEMS_COLLECTION = "object_asset_items"
     
     // Collection definitions
     private val collections = mapOf(
@@ -101,7 +128,11 @@ object CollectionsConfig {
         USER_MEDIA_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         USER_BALANCES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         USER_BALANCE_CHANGE_REQUESTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USER_BALANCE_HISTORY_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+        USER_BALANCE_HISTORY_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        ITEM_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        SPRITESHEET_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        WORLD_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        OBJECT_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
     )
 
     fun initializeCollections(database: ArangoDatabase) {

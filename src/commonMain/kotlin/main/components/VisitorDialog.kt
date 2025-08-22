@@ -30,7 +30,7 @@ import org.jetbrains.compose.web.dom.TextInput
 fun VisitorDialog(
     onClose: () -> Unit,
     onRegister: (username: String, password: String, yearOfBirth: Int?, sex: Sex?) -> Unit,
-    onLogin: (username: String, password: String) -> Unit
+    onLogin: (username: String, password: String, onError: (String) -> Unit) -> Unit
 ) {
     var isLoginMode by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
@@ -78,7 +78,9 @@ fun VisitorDialog(
             
             else -> {
                 if (isLoginMode) {
-                    onLogin(username, password)
+                    onLogin(username, password) { msg ->
+                        errorMessage = if (msg.isNotBlank()) msg else str("Log in failed")
+                    }
                 } else {
                     onRegister(username, password, yearOfBirth, sex)
                 }

@@ -28,7 +28,7 @@ data class NotificationData(
     val worldId: String,
     val objectId: String,
     val otherUserId: String,
-    val timestamp: Long
+    val timestamp: String
 )
 
 private val json = Json { ignoreUnknownKeys = true }

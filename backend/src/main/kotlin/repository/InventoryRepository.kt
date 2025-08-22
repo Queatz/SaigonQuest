@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+
 
 package repository
 
@@ -13,7 +13,7 @@ import database.CollectionsConfig
 import models.Inventory
 import models.InventoryItem
 import utils.json
-import kotlin.time.ExperimentalTime
+
 
 /**
  * Repository for managing inventories and inventory items.
@@ -22,6 +22,11 @@ class InventoryRepository {
     private val inventoriesCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.INVENTORIES_COLLECTION)
     private val inventoryItemsCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.INVENTORY_ITEMS_COLLECTION)
     private val json = utils.json
+
+    /**
+     * Checks whether the given user currently has at least one unit of the specified item.
+     */
+    fun userHasItem(userId: String, itemId: String): Boolean = getTotalItemQuantity(userId, itemId) > 0
 
     data class TransferResult(
         val fromInventory: Inventory,

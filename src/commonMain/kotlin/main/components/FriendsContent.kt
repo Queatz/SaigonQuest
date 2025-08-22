@@ -60,13 +60,13 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
+
 
 /**
  * Content for the friends panel/dialog.
  * This component contains the shared UI elements for both mobile and desktop views.
  */
-@OptIn(ExperimentalTime::class)
+
 @Composable
 fun FriendsContent() {
     // State for friends list
@@ -351,7 +351,7 @@ fun FriendsContent() {
  * @param onJumpToFriend Callback when the Jump to Friend button is clicked
  * @param onRemoveFriend Callback when the Remove Friend button is clicked
  */
-@OptIn(ExperimentalTime::class)
+
 @Composable
 fun FriendListItem(
     friend: Friend,
@@ -536,7 +536,7 @@ fun FriendListItem(
  * @param lastActive The last active time
  * @return A human-readable string
  */
-@OptIn(ExperimentalTime::class)
+
 @Composable
 private fun formatLastActive(lastActive: kotlin.time.Instant): String {
     val now = kotlin.time.Clock.System.now()

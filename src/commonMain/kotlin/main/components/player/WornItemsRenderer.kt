@@ -1,6 +1,5 @@
 package main.components.player
 
-import main.components.inventory.InventoryState
 import main.components.world.SpriteSheet
 import models.Item
 import models.User
@@ -10,43 +9,31 @@ import models.User
  */
 object WornItemsRenderer {
     /**
-     * Gets the list of sprite sheets for a specific user's worn items
-     * 
-     * @param user The user whose worn items to get
-     * @return A list of sprite sheets for the user's worn items
+     * Gets the list of sprite sheets for a specific user's worn items using a map of items.
      */
-    fun getWornItemSpriteSheetsForUser(user: User?): List<SpriteSheet> {
-        // If user is null, return empty list
-        if (user == null) return emptyList()
-        
-        // Get the list of worn items from the user
-        val wornItemIds = user.wornItems
-        if (wornItemIds.isEmpty()) {
-            return listOf(createDefaultApparelSpriteSheet())
-        }
-        
-        // Get the corresponding Item objects for each worn item
-        val wornItems = wornItemIds.mapNotNull { itemId ->
-            // Find the item in the items map
-            InventoryState.items[itemId]
-        }
-        
-        // Filter for wearable items with valid wearableFile
-        val wearableItems = wornItems.filter { item ->
-            item.wearable && item.wearableFile != null
-        }
-        
-        // Create sprite sheets for each wearable item
-        val sheets = wearableItems.mapNotNull { item ->
-            createSpriteSheetForWearableItem(item)
-        }
+    fun getWornItemSpriteSheetsForUser(
+        user: User?,
+        itemsById: Map<String, Item>,
+    ): List<SpriteSheet> = getWornItemSpriteSheetsForUser(user) { id -> itemsById[id] }
 
-        // If no valid wearable sheets resolved, fallback to default apparel
-        return if (sheets.isEmpty()) {
-            listOf(createDefaultApparelSpriteSheet())
-        } else {
-            sheets
-        }
+    /**
+     * Gets the list of sprite sheets for a specific user's worn items using a custom resolver.
+     * The resolver should return the Item for a given itemId or null if not available.
+     */
+    fun getWornItemSpriteSheetsForUser(
+        user: User?,
+        resolver: (String) -> Item?,
+    ): List<SpriteSheet> {
+        if (user == null) return emptyList()
+        val wornItemIds = user.wornItems
+        if (wornItemIds.isEmpty()) return listOf(createDefaultApparelSpriteSheet())
+
+        val wornItems: List<Item> = wornItemIds.mapNotNull { itemId -> resolver(itemId) }
+
+        val wearableItems = wornItems.filter { item -> item.wearable && item.wearableFile != null }
+        val sheets = wearableItems.mapNotNull { item -> createSpriteSheetForWearableItem(item) }
+
+        return sheets.ifEmpty { listOf(createDefaultApparelSpriteSheet()) }
     }
     
     /**

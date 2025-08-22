@@ -14,6 +14,12 @@ application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.time.ExperimentalTime")
+    }
+}
+
 dependencies {
     implementation(project(":shared"))
 
@@ -36,6 +42,7 @@ dependencies {
     implementation("com.arangodb:arangodb-java-driver:7.17.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+    implementation("org.glassfish:jakarta.json:2.0.1")
 
     // KotlinX
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")

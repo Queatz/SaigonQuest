@@ -4,8 +4,12 @@ import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import kotlinx.serialization.json.Json
 import models.ChatMessage
+import models.Notification
+import models.NotificationType
 import models.WebSocketAction
 import repository.ChatRepository
+import repository.NotificationRepository
+import repository.WorldRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
 import utils.json
@@ -49,6 +53,50 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                 WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, session)
                 
                 WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
+
+                // After broadcasting, send one-time "new chat" notifications to eligible users
+                try {
+                    val worldRepo = WorldRepository()
+                    val notificationRepo = NotificationRepository()
+                    val world = try { worldRepo.getById(worldId) } catch (_: Throwable) { null }
+
+                    // Build presence map: userId -> worldId they're currently in (if any)
+                    val worldByUser: Map<String, String> = activeConnections.flatMap { (wId, conns) ->
+                        conns.map { it.userId to wId }
+                    }.toMap()
+
+                    val markers = try { chatRepository.getReadMarkersByWorld(worldId) } catch (_: Throwable) { emptyList() }
+
+                    markers.forEach { marker ->
+                        try {
+                            // Skip sender
+                            if (marker.userId == savedMessage.userId) return@forEach
+                            // Already notified since last visit
+                            if (marker.notificationSent) return@forEach
+                            // If their last read is at/after this message timestamp, skip
+                            if (marker.lastReadTimestamp >= savedMessage.timestamp) return@forEach
+                            // If online and currently in this same world, skip
+                            val currentWorldForUser = worldByUser[marker.userId]
+                            if (currentWorldForUser == worldId) return@forEach
+
+                            val title = "New chat from \"${savedMessage.username}\" in \"${world?.title ?: "World"}\""
+                            val description = savedMessage.message
+                            val notification = Notification(
+                                userId = marker.userId,
+                                title = title,
+                                description = description,
+                                isRead = false,
+                                type = NotificationType.CHAT_NEW,
+                                worldId = worldId,
+                                objectId = "",
+                                otherUserId = savedMessage.userId,
+                                timestamp = savedMessage.timestamp,
+                            )
+                            notificationRepo.create(notification)
+                            chatRepository.setNotificationSent(marker.userId, worldId, true)
+                        } catch (_: Throwable) { /* continue per user */ }
+                    }
+                } catch (_: Throwable) { /* keep chat pipeline resilient */ }
             } catch (e: Throwable) {
                 WebSocketDebug.logError("Error saving chat message to database", e, session)
             }

@@ -1,5 +1,6 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,11 +12,10 @@ import main.api.WebSocketConnectionManager
 import main.api.sendUserJoin
 import main.api.sendUserLeave
 import main.api.updatePlayer
-import main.components.SceneManager
 import main.components.inventory.InventoryState
+import models.Position
 import models.Sex
 import models.User
-import models.Position
 
 /**
  * Presenter component for VisitorDialog
@@ -67,7 +67,7 @@ fun VisitorDialogPresenter(
                 }
             )
         },
-        onLogin = { username, password ->
+        onLogin = { username, password, onError ->
             handleLogin(
                 username = username,
                 password = password,
@@ -86,7 +86,8 @@ fun VisitorDialogPresenter(
                     } catch (e: Throwable) {
                         console.error("VisitorDialogPresenter: Failed to display status after login", e)
                     }
-                }
+                },
+                onError = onError,
             )
         }
     )
@@ -216,7 +217,8 @@ private fun handleRegistration(
 private fun handleLogin(
     username: String,
     password: String,
-    onSuccess: (User) -> Unit
+    onSuccess: (User) -> Unit,
+    onError: (String) -> Unit,
 ) {
     // Create a new coroutine scope that won't be cancelled when the composable is recomposed
     val loginScope = CoroutineScope(Dispatchers.Default)
@@ -325,6 +327,11 @@ private fun handleLogin(
             onSuccess(user)
         } catch (error: Throwable) {
             console.error("Login error: ${error.message}")
+            try {
+                onError(str("Log in failed"))
+            } catch (ignored: Throwable) {
+                // keep logging, do not throw
+            }
         }
     }
 }

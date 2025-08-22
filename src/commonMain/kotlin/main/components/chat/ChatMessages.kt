@@ -444,7 +444,7 @@ fun ChatMessageItem(
                         Text("•")
                     }
                 }
-                Text(formatTimestamp(message.timestamp))
+                Text(formatTimestamp(message.timestamp.toEpochMilliseconds()))
 
                 // Owner-only pin/unpin control
                 if (isOwner && onPinToggle != null) {

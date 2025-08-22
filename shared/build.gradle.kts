@@ -22,7 +22,9 @@ kotlin {
             }
         }
     }
-    
+    compilerOptions {
+        optIn.add("kotlin.time.ExperimentalTime")
+    }
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -39,6 +41,7 @@ kotlin {
                 implementation("com.arangodb:arangodb-java-driver:7.17.0")
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+
             }
         }
     }

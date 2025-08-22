@@ -1,7 +1,11 @@
+
+
 package models
 
 import kotlinx.serialization.Serializable
 import main.components.world.PlayerActivity
+
+import kotlin.time.Instant
 
 /**
  * Player typing data model
@@ -188,7 +192,7 @@ data class NotificationData(
     val worldId: String,
     val objectId: String,
     val otherUserId: String,
-    val timestamp: Long
+    val timestamp: Instant
 )
 
 /**

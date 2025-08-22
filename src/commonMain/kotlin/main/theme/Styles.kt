@@ -54,6 +54,43 @@ import org.jetbrains.compose.web.css.textAlign
 import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
+    val playerAttrStatusHeader by style {
+        display(DisplayStyle.Flex)
+        height(18.px)
+        alignItems(AlignItems.Center)
+        fontSize(14.px)
+    }
+
+    // Asset editor: SpriteSheet-specific styles
+    val assetEditorSection by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(8.px)
+        padding(8.px)
+    }
+
+    val spriteSheetPreview by style {
+        width(256.px)
+        height(256.px)
+        property("object-fit", "contain")
+        property("image-rendering", "pixelated")
+        marginBottom(8.px)
+    }
+
+    val weightsPreviewGrid by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "repeat(5, 20px)")
+        property("grid-template-rows", "repeat(5, 20px)")
+        gap(4.px)
+        marginBottom(8.px)
+    }
+
+    val weightsPreviewCell by style {
+        width(20.px)
+        height(20.px)
+        border(1.px, LineStyle.Solid, rgba(255,255,255,0.12))
+        borderRadius(2.px)
+    }
     val emoteButton by style {
         width(48.px)
         height(48.px)

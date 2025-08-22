@@ -18,13 +18,13 @@ import repository.FriendRepository
 import repository.NotificationRepository
 import repository.UserRepository
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 import kotlin.time.Instant
 
 /**
  * Routes for friend operations
  */
-@OptIn(ExperimentalTime::class)
+
 fun Routing.configureFriendRoutes() {
     val friendRepository = FriendRepository()
     val userRepository = UserRepository()

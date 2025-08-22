@@ -27,7 +27,8 @@ fun SidePanel(
     onOpenObjectEditor: (isCreate: Boolean) -> Unit,
     onEditObject: (String) -> Unit,
     onSaveObject: (Object) -> Unit,
-    onOpenLogicEditor: (Object) -> Unit
+    onOpenLogicEditor: (Object) -> Unit,
+    onSaveWorld: (World) -> Unit
 ) {
     val router = Router.current
     val scope = rememberCoroutineScope()
@@ -54,6 +55,7 @@ fun SidePanel(
                 onSave = { world ->
                     // Handle saved world
                     console.log("World saved: ${world.title}")
+                    onSaveWorld(world)
                 }
             )
         }
@@ -69,26 +71,21 @@ fun SidePanel(
                     
                     // Handle different notification types
                     when (notification.type) {
-                        // For object notifications, navigate to the world URL
-                        models.NotificationType.OBJECT_NOTIFICATION -> {
+                        // For object or chat notifications, navigate to the world URL
+                        models.NotificationType.OBJECT_NOTIFICATION,
+                        models.NotificationType.CHAT_NEW -> {
                             if (notification.worldId.isNotEmpty()) {
-                                // Get the world URL from the repository
                                 console.log("Navigating to world: ${notification.worldId}")
-                                
-                                // Navigate to the world URL
                                 scope.launch {
                                     val worldUrl = WorldApi.getWorld(notification.worldId).url
                                     router.navigate("/$worldUrl")
                                 }
-                                
-                                // Close the notifications panel
                                 onClose()
                             } else {
                                 console.log("Navigating to world failed: missing worldId")
                             }
                         }
                         else -> {
-                            // For other notification types, just log
                             console.log("Notification of type ${notification.type} clicked")
                         }
                     }

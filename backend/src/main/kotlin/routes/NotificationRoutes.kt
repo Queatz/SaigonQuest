@@ -1,3 +1,5 @@
+
+
 package routes
 
 import auth.JWTUtils
@@ -15,6 +17,7 @@ import models.NotificationType
 import models.UnreadCountResponse
 import repository.NotificationRepository
 import repository.UserRepository
+
 
 /**
  * Configure routes for notification operations

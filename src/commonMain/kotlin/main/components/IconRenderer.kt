@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import main.theme.Styles
 import org.jetbrains.compose.web.css.backgroundImage
 import org.jetbrains.compose.web.css.backgroundPosition
+import org.jetbrains.compose.web.css.backgroundRepeat
 import org.jetbrains.compose.web.css.backgroundSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.px
@@ -36,14 +37,15 @@ fun IconRenderer(
                     height(size.px)
                 }
 
-                backgroundImage("url(\"$url\")")
-                backgroundSize("320px 320px")
-
                 // Calculate position based on index
-                // index moves horizontally and wraps vertically
-                val col = index % 10 // 10 columns (320px / 32px = 10)
+                // Index 0 starts at bottom left, moving rightwards then upwards
+                val col = index % 10
                 val row = index / 10
-                backgroundPosition("-${col * 32}px -${(10 - row) * 32}px")
+
+                backgroundImage("url(\"$url\")")
+                backgroundSize("${size * 10}px ${size * 10}px")
+                backgroundRepeat("no-repeat")
+                backgroundPosition("-${col * size}px -${(9 - row) * size}px")
             }
             
             // Add click handler if provided
@@ -51,5 +53,5 @@ fun IconRenderer(
                 onClick { handler() }
             }
         }
-    ) {}
+    )
 }

@@ -385,9 +385,6 @@ vi: Mô tả
 Enter item description
 vi: Nhập mô tả vật phẩm
 
-File path (URL to sprite sheet)
-vi: Đường dẫn tệp (URL tới sprite sheet)
-
 Enter file path
 vi: Nhập đường dẫn tệp
 
@@ -400,8 +397,8 @@ vi: Nhập chỉ số tài nguyên
 Is this item wearable?
 vi: Vật phẩm này có thể mặc được không?
 
-Wearable file path (URL to sprite sheet)
-vi: Đường dẫn tệp vật phẩm có thể mặc (URL tới sprite sheet)
+Wearable asset
+vi: Vật phẩm có thể mặc
 
 Enter wearable file path
 vi: Nhập đường dẫn tệp vật phẩm có thể mặc
@@ -976,7 +973,102 @@ vi: Thg 11
 Dec
 vi: Thg 12
 
+Edit asset
+vi: Chỉnh sửa tài sản
 
+Are you sure you want to delete this asset?
+vi: Bạn có chắc muốn xóa tài sản này không?
+
+Scene preview for
+vi: Xem trước cảnh cho
+
+Items asset editor (sheet 320x320): click a 32x32 cell to edit title and category (coming soon)
+vi: Trình chỉnh sửa tài sản vật phẩm (bảng 320x320): bấm vào ô 32x32 để sửa tiêu đề và danh mục (sắp ra mắt)
+
+Spritesheet editor (256x256): wind weights toggle/list, title, category (coming soon)
+vi: Trình chỉnh sửa spritesheet (256x256): bật/tắt/trình bày trọng số gió, tiêu đề, danh mục (sắp ra mắt)
+
+World preview
+vi: Xem trước thế giới
+
+Title and category editors (coming soon)
+vi: Trình chỉnh sửa tiêu đề và danh mục (sắp ra mắt)
+
+Objects preview
+vi: Xem trước đối tượng
+
+Collections list editor (coming soon)
+vi: Trình chỉnh sửa danh sách bộ sưu tập (sắp ra mắt)
+
+Category
+vi: Danh mục
+
+Collection
+vi: Bộ sưu tập
+
+Weights CSV (25 numbers, row-major)
+vi: CSV trọng số (25 số, theo hàng)
+
+
+Asset browser
+vi: Trình duyệt tài sản
+
+Search by title
+vi: Tìm theo tiêu đề
+
+All categories
+vi: Tất cả danh mục
+
+No results
+vi: Không có kết quả
+
+Browse assets
+vi: Duyệt tài sản
+
+Asset
+vi: Tài sản
+
+Select
+vi: Chọn
+
+Invalid weights CSV
+vi: CSV trọng số không hợp lệ
+
+Expected 25 numbers between 0 and 1
+vi: Yêu cầu 25 số trong khoảng từ 0 đến 1
+
+Values are clamped to [0, 1]
+vi: Giá trị được giới hạn trong [0, 1]
+
+Preview
+vi: Xem trước
+
+Access control
+vi: Kiểm soát truy cập
+
+All visitors
+vi: Tất cả khách truy cập
+
+All players
+vi: Tất cả người chơi
+
+Friends of owners
+vi: Bạn của chủ sở hữu
+
+Holders of an item (access card)
+vi: Người sở hữu vật phẩm (thẻ truy cập)
+
+Select item
+vi: Chọn vật phẩm
+
+No item selected
+vi: Chưa chọn vật phẩm
+
+Selected item
+vi: Vật phẩm đã chọn
+
+Clear
+vi: Xóa
 
 """
 

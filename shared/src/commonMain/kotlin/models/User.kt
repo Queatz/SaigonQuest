@@ -4,10 +4,10 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 import kotlin.time.Instant
 
-@OptIn(ExperimentalTime::class)
+
 @Serializable
 data class User(
     var username: String = "",
@@ -22,6 +22,16 @@ data class User(
     var sex: Sex? = null,
     var language: String? = null,
     var status: String = "",
+    // Status bars (0..10 representing 0 to 5 icons with half-steps)
+    var health: Int = 10,
+    var mind: Int = 10,
+    var spirit: Int = 10,
+    @Contextual
+    var healthUpdatedAt: Instant = Clock.System.now(),
+    @Contextual
+    var mindUpdatedAt: Instant = Clock.System.now(),
+    @Contextual
+    var spiritUpdatedAt: Instant = Clock.System.now(),
     // Character customization properties
     var bodyType: String = "Normal", // Skinny, Normal, Fat
     var skinTone: Float = 0.5f,      // 0-1 tone slider

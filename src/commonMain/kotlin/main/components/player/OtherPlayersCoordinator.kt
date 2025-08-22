@@ -10,6 +10,7 @@ import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
 import main.api.UserApi
+import main.api.ItemApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.api.WorldApi
@@ -399,7 +400,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     } else {
                         val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
                         val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-                        val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+                        val itemsById = try {
+                            val ids = user.wornItems
+                            if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
+                        } catch (_: Throwable) { emptyMap() }
+                        val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
                         val sheets = listOfNotNull(hair, eyes) + worn
                         op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
                         if (op.status.isBlank() && user.status.isNotBlank()) {
@@ -421,7 +426,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             // Build additional sheets: hair, eyes (worn items left for a later step if needed)
             val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
             val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-            val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+            val itemsById = try {
+                val ids = user.wornItems
+                if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
+            } catch (_: Throwable) { emptyMap() }
+            val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
             val sheets = listOfNotNull(hair, eyes) + worn
             op.additionalSpriteSheets = sheets
             op.skinTone = user.skinTone

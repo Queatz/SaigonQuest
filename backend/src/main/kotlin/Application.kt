@@ -28,6 +28,7 @@ import routes.configurePushRoutes
 import routes.configureAuthRoutes
 import routes.configureMediaRoutes
 import routes.configureBalanceRoutes
+import routes.configureAssetItemRoutes
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 
@@ -80,6 +81,7 @@ fun Application.module() {
         configureInventoryRoutes()
         configureItemRoutes()
         configureAssetRoutes()
+        configureAssetItemRoutes()
         configurePushRoutes()
         configureAuthRoutes()
         configureMediaRoutes()

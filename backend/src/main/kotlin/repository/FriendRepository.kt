@@ -10,14 +10,14 @@ import database.CollectionsConfig
 import models.Friend
 import models.Position
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 
 /**
  * Repository for friend operations
  *
  * This repository provides methods for saving, retrieving, and managing friendships.
  */
-@OptIn(ExperimentalTime::class)
+
 class FriendRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.FRIENDS_COLLECTION)
     

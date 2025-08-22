@@ -124,7 +124,7 @@ class WorldObjectManager(private val scene: Scene) {
         // Get worn item sprite sheets only if a user is explicitly provided
         // This prevents other players from using the current player's worn items
         val wornItemSpriteSheets = if (user != null) {
-            main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user)
+            main.components.player.WornItemsRenderer.getWornItemSpriteSheetsForUser(user, main.components.inventory.InventoryState.items)
         } else {
             // If no user is provided, assume no worn items (for other players)
             emptyList()
@@ -350,9 +350,22 @@ class WorldObjectManager(private val scene: Scene) {
 
             override fun updateAppearance(additionalSpriteSheets: List<SpriteSheet>?, skinTone: Float?) {
                 if (obj is Character) {
-                    additionalSpriteSheets?.let { obj.updateSpriteSheets(it) }
-                    skinTone?.let { obj.skinTone = it }
-                    // Force immediate re-render of updated sprite sheets
+                    // Authoritative replacement: the provided list fully defines the additional layers.
+                    // We clear any previously applied additional layers before applying the new set
+                    // to ensure stale layers are not retained (e.g., after removing the last worn item).
+                    if (additionalSpriteSheets != null) {
+                        // 1) Clear existing additional sheets and dispose old meshes immediately
+                        obj.updateSpriteSheets(emptyList())
+                        try { obj.update(0f, null) } catch (_: Throwable) {}
+
+                        // 2) Apply the new authoritative set
+                        obj.updateSpriteSheets(additionalSpriteSheets)
+                    }
+                    // Update skin tone if provided
+                    if (skinTone != null) {
+                        obj.skinTone = skinTone
+                    }
+                    // Force render to reflect changes immediately
                     try { obj.update(0f, null) } catch (_: Throwable) {}
                 }
             }

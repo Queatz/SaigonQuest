@@ -70,7 +70,7 @@ class PlayerMovementEngine(
             stopMovement()
             isPlayerMoving = true
             // Temporary wind boost while moving (extends 1s tail)
-            WindSystem.triggerMovementBoost()
+            WindSystem.triggerMovementBoost(finalMoveDirection)
             // Stand if sitting
             if (getActivity() == PlayerActivity.Sit) {
                 setActivity(null)
@@ -90,7 +90,7 @@ class PlayerMovementEngine(
                 onMoveDirection(direction)
                 isPlayerMoving = true
                 // Temporary wind boost while moving-to-target as well
-                WindSystem.triggerMovementBoost()
+                WindSystem.triggerMovementBoost(finalMoveDirection)
                 if (getActivity() == PlayerActivity.Sit) {
                     setActivity(null)
                 }

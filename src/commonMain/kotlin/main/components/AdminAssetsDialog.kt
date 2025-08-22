@@ -47,6 +47,8 @@ fun AdminAssetsDialog(
     LaunchedEffect(Unit) { loadAssets() }
 
     var showRegisterAssetDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var selectedAsset by remember { mutableStateOf<Asset?>(null) }
 
     val headerActions: @Composable () -> Unit = {
         Button(attrs = {
@@ -78,18 +80,29 @@ fun AdminAssetsDialog(
                     Div(attrs = { classes(Styles.assetsGridHeader) }) {
                         Span { Translated("Type") }
                         Span { Translated("File") }
+                        Span { Translated("Actions") }
                     }
                     // Rows
                     for (asset in assets) {
                         Div(attrs = { classes(Styles.assetsGridRow) }) {
                             Span { Text(asset.type.name) }
                             Span {
-                            if (asset.file.isBlank()) {
-                                Translated("(untitled)")
-                            } else {
-                                Text(asset.file)
+                                if (asset.file.isBlank()) {
+                                    Translated("(untitled)")
+                                } else {
+                                    Text(asset.file)
+                                }
                             }
-                        }
+                            // Actions
+                            Span {
+                                Button(attrs = {
+                                    classes(Styles.baseDialogButtonSecondary)
+                                    onClick {
+                                        selectedAsset = asset
+                                        showEditDialog = true
+                                    }
+                                }) { Translated("Edit") }
+                            }
                         }
                     }
                 }
@@ -108,7 +121,10 @@ fun AdminAssetsDialog(
                     try {
                         errorMessage = null
                         isLoading = true
-                        AssetApi.createAsset(asset)
+                        val created = AssetApi.createAsset(asset)
+                        // Immediately open edit dialog for the created asset
+                        selectedAsset = created
+                        showEditDialog = true
                     } catch (t: Throwable) {
                         console.error("Failed to create asset", t)
                         errorMessage = t.message ?: "Failed to create asset"
@@ -117,6 +133,17 @@ fun AdminAssetsDialog(
                         loadAssets()
                     }
                 }
+            },
+        )
+    }
+
+    if (showEditDialog && selectedAsset != null) {
+        AdminEditAssetDialog(
+            asset = selectedAsset!!,
+            onClose = { showEditDialog = false },
+            onDeleted = {
+                showEditDialog = false
+                loadAssets()
             },
         )
     }

@@ -35,5 +35,10 @@ enum class NotificationType {
     /**
      * Object notification from logic node
      */
-    OBJECT_NOTIFICATION
+    OBJECT_NOTIFICATION,
+
+    /**
+     * New chat in a world since last visit
+     */
+    CHAT_NEW,
 }

@@ -34,6 +34,71 @@ import models.ErrorResponse
  */
 class WorldLoader(private val scene: Scene) {
     
+    private fun reloadWorldFileInternal(world: World) {
+        try {
+            // Update current world reference and outdoors flag
+            currentWorld = world
+            Companion.currentWorldIsOutdoors = world.isOutdoors
+
+            // Dispose previous world meshes if any
+            try {
+                for (m in worldMeshes) {
+                    try { m.dispose() } catch (_: Throwable) {}
+                }
+            } catch (_: Throwable) {}
+            worldMeshes = emptyArray()
+
+            if (world.file.isBlank()) {
+                println("[INFO] No world file specified after save; creating fallback plane")
+                worldMeshes = createFallbackWorld()
+                // Propagate to controllers
+                SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+                SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
+                SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+                // Apply lighting state
+                applyWorldEditLighting(world)
+                return
+            }
+
+            val sceneFilename = "${world.file}.glb"
+            // Import new world asset
+            SceneLoader.ImportMesh(
+                meshNames = "",
+                rootUrl = "/raw/data/",
+                sceneFilename = sceneFilename,
+                scene = scene,
+                onSuccess = { meshes, _, _, _ ->
+                    try {
+                        worldMeshes = meshes
+                        applyMaterials(meshes)
+                        // Propagate to controllers
+                        SceneManager.getPlayerController()?.setWorldMeshes(meshes)
+                        SceneManager.getObjectManager()?.setWorldMeshes(meshes)
+                        SceneManager.getOtherPlayersController()?.setWorldMeshes(meshes)
+                        // Apply edited lighting immediately
+                        applyWorldEditLighting(world)
+                        println("[DEBUG] Reloaded world asset '$sceneFilename' successfully")
+                    } catch (e: Throwable) {
+                        println("[ERROR] Failed during world reload success handling: ${e.message}")
+                    }
+                },
+                onError = { _, message, exception ->
+                    println("[ERROR] Error reloading world model: $message. $exception")
+                    try {
+                        // Attempt fallback world on error
+                        worldMeshes = createFallbackWorld()
+                        SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+                        SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
+                        SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+                        applyWorldEditLighting(world)
+                    } catch (_: Throwable) {}
+                }
+            )
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to reload world file: ${e.message}")
+        }
+    }
+    
     companion object {
         // Callback to be executed when the world is loaded
         private var onWorldLoadedCallback: (() -> Unit)? = null
@@ -76,6 +141,16 @@ class WorldLoader(private val scene: Scene) {
         /** Register or clear the current WorldLoader instance */
         fun registerCurrentInstance(loader: WorldLoader?) {
             currentInstance = loader
+        }
+
+        /** Reload the currently loaded world's asset file and propagate to controllers. */
+        fun reloadWorldFile(world: World) {
+            val loader = currentInstance
+            if (loader == null) {
+                println("[WARN] No current WorldLoader instance; cannot reload world file")
+                return
+            }
+            loader.reloadWorldFileInternal(world)
         }
 
         /**
@@ -239,7 +314,7 @@ class WorldLoader(private val scene: Scene) {
         occlusionManager = OcclusionManager(scene)
 
         // Register current lights for global updates
-        WorldLoader.setCurrentLights(hemisphericLight, directionalLight)
+        setCurrentLights(hemisphericLight, directionalLight)
     }
     
     /**
@@ -259,7 +334,7 @@ class WorldLoader(private val scene: Scene) {
             // Store the world data
             currentWorld = world
             // Expose outdoors flag for global systems
-            Companion.currentWorldIsOutdoors = world.isOutdoors
+            currentWorldIsOutdoors = world.isOutdoors
 
             // Set the scene fog density from the world model (applies in both modes)
             setSceneFogDensity(world.fogDensity)
@@ -273,7 +348,7 @@ class WorldLoader(private val scene: Scene) {
             } else {
                 // Indoor or invalid lat/lng: preserve existing behavior
                 setSceneBackgroundColor(world.backgroundColor)
-                WorldLoader.updateDirectionalLightColorHex(
+                updateDirectionalLightColorHex(
                     hexColor = world.directionalLightColor
                 )
             }
@@ -321,15 +396,18 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (error: Throwable) {
-            // Log the error but don't re-throw it
+            // Log the error; for 404 return fallback, otherwise rethrow so UI can show precise message
             console.error("[WORLD ERROR]", error)
             println("[ERROR] Failed to load world: ${error.message}")
 
-            // Set the API error fallback flag
-            isApiErrorFallback = (error as? ErrorResponse)?.code == 404
-
-            // Create a fallback world due to API error
-            return createFallbackWorld()
+            val apiCode = (error as? ErrorResponse)?.code
+            // Only treat 404 as API fallback (claimable). Propagate others (e.g., 403 access denied).
+            isApiErrorFallback = apiCode == 404
+            return if (apiCode == 404) {
+                createFallbackWorld()
+            } else {
+                throw error
+            }
         }
     }
     
@@ -527,7 +605,7 @@ class WorldLoader(private val scene: Scene) {
     private fun setSceneBackgroundColor(hexColor: String) {
         try {
             // Convert hex color string to Color3
-            val color3 = Color3.FromHexString(hexColor)
+            val color3 = Color3.FromHexString(hexColor).toLinearSpace()
             
             // Convert Color3 to Color4 with alpha=1 (fully opaque)
             val color4 = color3.toColor4()
@@ -537,7 +615,7 @@ class WorldLoader(private val scene: Scene) {
             scene.clearColor = color4
             
             // Sync hemispheric light color to match background
-            WorldLoader.updateHemisphericLightColor(color3)
+            updateHemisphericLightColor(color3)
             
             // If fog is enabled (fogDensity > 0), update the fog color to match the background color
             if (scene.fogDensity > 0.0f) {
@@ -662,7 +740,7 @@ class WorldLoader(private val scene: Scene) {
         // Update scene background color (ignore world background in outdoors mode)
         try {
             val color4 = skyColor.toColor4().also { it.a = 1.0f }
-            scene.clearColor = color4
+            scene.clearColor = color4.toLinearSpace()
             if (scene.fogDensity > 0.0f) {
                 scene.fogColor = skyColor
             }

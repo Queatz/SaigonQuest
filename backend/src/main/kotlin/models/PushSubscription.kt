@@ -2,11 +2,11 @@ package models
 
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+
 import kotlin.time.Instant
 
 @Serializable
-@OptIn(ExperimentalTime::class)
+
 data class PushSubscription(
     var userId: String = "",
     var endpoint: String = "",

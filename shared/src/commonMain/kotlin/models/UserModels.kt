@@ -34,6 +34,13 @@ data class LanguageUpdateRequest(val language: String)
 data class StatusUpdateRequest(val status: String)
 
 @Serializable
+data class StatusBarsUpdateRequest(
+    val health: Int? = null,
+    val mind: Int? = null,
+    val spirit: Int? = null,
+)
+
+@Serializable
 data class UnreadCountResponse(
     val unreadCount: Int = 0
 )
