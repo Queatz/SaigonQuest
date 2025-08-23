@@ -769,7 +769,6 @@ fun SceneComponent(url: String) {
                 // Create the player using the WorldObjectManager
                 playerController.createPlayer(startPosition, worldObjectManager)
 
-                otherPlayersController.sendJoinEvent(startPosition)
                 
                 // Initialize chat message listener
                 console.log("[DEBUG_LOG] Scene: Initializing chat message listener")
@@ -833,6 +832,8 @@ fun SceneComponent(url: String) {
                 
                 if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
                     console.log("WebSocket connection established successfully!")
+                    // Send USER_JOIN now that WebSocket is connected to ensure world state upsert even if player doesn't move
+                    otherPlayersController.sendJoinEvent(startPosition)
                     
                     // Set up OPEN_URL listener
                     WebSocketApi.addListener(models.WebSocketAction.OPEN_URL) { message ->

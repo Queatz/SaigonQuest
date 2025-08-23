@@ -7,6 +7,11 @@ import models.WebSocketAction
  * Listener extensions for friend request lifecycle events on the global WebSocket.
  * These helpers parse FriendRequestData and return a ListenerToken for removal.
  */
+/**
+ * Currently unused by design (no dedicated Requests UI). The flow relies on
+ * notifications and OtherPlayerDialog for request handling. Kept for potential
+ * future Requests UI.
+ */
 fun WebSocketApiGlobal.addFriendRequestCreatedListener(
     listener: (FriendRequestData) -> Unit,
 ): ListenerToken {
@@ -35,6 +40,11 @@ fun WebSocketApiGlobal.addFriendRequestAcceptedListener(
     return addListenerWithToken(WebSocketAction.FRIEND_REQUEST_ACCEPTED, handler)
 }
 
+/**
+ * Currently unused by design (no dedicated Requests UI). The flow relies on
+ * notifications and OtherPlayerDialog for request handling. Kept for potential
+ * future Requests UI.
+ */
 fun WebSocketApiGlobal.addFriendRequestDeclinedListener(
     listener: (FriendRequestData) -> Unit,
 ): ListenerToken {
@@ -49,6 +59,11 @@ fun WebSocketApiGlobal.addFriendRequestDeclinedListener(
     return addListenerWithToken(WebSocketAction.FRIEND_REQUEST_DECLINED, handler)
 }
 
+/**
+ * Currently unused by design (no dedicated Requests UI). The flow relies on
+ * notifications and OtherPlayerDialog for request handling. Kept for potential
+ * future Requests UI.
+ */
 fun WebSocketApiGlobal.addFriendRequestCancelledListener(
     listener: (FriendRequestData) -> Unit,
 ): ListenerToken {

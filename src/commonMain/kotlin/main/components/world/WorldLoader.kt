@@ -407,7 +407,11 @@ class WorldLoader(private val scene: Scene) {
             console.error("[WORLD ERROR]", error)
             println("[ERROR] Failed to load world: ${error.message}")
 
-            val apiCode = (error as? ErrorResponse)?.code
+            val apiCode = when (error) {
+                is ErrorResponse -> error.code
+                is ResponseException -> error.response.status.value
+                else -> null
+            }
             // Only treat 404 as API fallback (claimable). Propagate others (e.g., 403 access denied).
             isApiErrorFallback = apiCode == 404
             return if (apiCode == 404) {
@@ -450,12 +454,22 @@ class WorldLoader(private val scene: Scene) {
         
         // Apply the material to the plane
         plane.material = material
+        plane.isPickable = true
         
         // Store the plane as the world mesh
         worldMeshes = arrayOf(plane)
         
         // Configure shadows for the plane
         shadowManager?.configureShadowReceiver(plane)
+        
+        // Propagate world meshes to controllers so they can react immediately (e.g., snap player to ground)
+        try {
+            SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+            SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
+            SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
         
         // Execute the world loaded callback
         executeWorldLoadedCallback()

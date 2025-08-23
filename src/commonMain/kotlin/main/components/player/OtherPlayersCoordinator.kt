@@ -31,7 +31,6 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
-import web.html.HtmlTagName.p
 import kotlin.random.Random
 
 class OtherPlayersCoordinator(private val scene: Scene) {
@@ -169,7 +168,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                         newUsername = p.username,
                                         newPosition = Vector3(p.position.x, p.position.y, p.position.z)
                                     )
-                                    attemptSpawnWithUser(op)
+                                    attemptSpawnWithUser(op,)
                                     if (!p.status.isNullOrBlank()) {
                                         op.status = p.status.orEmpty()
                                         hud.setDesiredStatus(p.userId, p.status.orEmpty())
@@ -189,7 +188,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                                 op.username = p.username
                                                 op.isPlayer = p.isPlayer
                                                 op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
-                                                attemptSpawnWithUser(op)
+                                                attemptSpawnWithUser(op,)
                                             }
                                         }
                                     }
@@ -253,7 +252,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.username = join.username
                 op.isPlayer = join.isPlayer
                 op.targetPos = snapToGround(Vector3(join.position.x, join.position.y, join.position.z))
-                attemptSpawnWithUser(op)
+                attemptSpawnWithUser(op,)
             }
         }
     }
@@ -301,7 +300,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val op = ensurePlayer(pos.userId, pos.position)
         op.isPlayer = pos.isPlayer
         op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
-        attemptSpawnWithUser(op)
+        attemptSpawnWithUser(op,)
     }
 
     private fun onUpdatePlayer(update: UpdatePlayerData) {
@@ -318,12 +317,12 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // If username changed, refresh username billboard
                 refreshUsernameBillboard(op)
                 // If appearance-related changes exist server-side, we can bump revision and re-assemble
-                assembleAppearance(op)
+                assembleAppearance(op, scale = false)
                 if (prevIsPlayer != op.isPlayer) {
                     // Remove old mesh and respawn to reflect new role cleanly
                     op.handle?.remove(); op.handle = null
                     usernameTextHandles.remove(op.userId)?.remove()
-                    attemptSpawnWithUser(op)
+                    attemptSpawnWithUser(op,)
                 }
             }
         }
@@ -406,7 +405,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 clearSpawnRetry(op.userId)
                 return@setTimeout
             }
-            attemptSpawnWithUser(still)
+            attemptSpawnWithUser(still,)
         }, delay)
         spawnRetryTimeouts[op.userId] = id
     }
@@ -416,7 +415,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         spawnRetryTimeouts.remove(userId)?.let { window.clearTimeout(it) }
     }
 
-    private fun attemptSpawnWithUser(op: OtherPlayer) {
+    private fun attemptSpawnWithUser(op: OtherPlayer, scale: Boolean = true) {
         // Fallback: spawn placeholder if user fetch isn't quick
         val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
         scope.launch {
@@ -433,15 +432,17 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             position = startPos,
                             additionalSpriteSheets = emptyList(),
                             user = user,
-                            initialScale = .5f
+                            initialScale = if (scale) .5f else 1f
                         )
                         if (handle != null) {
-                            // Start with scale 0 for join animation
-                            handle.scale = Vector3(.5f, .5f, .5f)
                             op.handle = handle
                             op.lastPos = startPos
                             op.targetPos = startPos
-                            op.joinStartMs = window.performance.now()
+                            if (scale) {
+                                op.joinStartMs = window.performance.now()
+                            }
+                            // Track the profile so we can detect future base changes
+                            op.profile = user
                             // Success: clear retry state
                             spawnRetryCounts.remove(op.userId)
                             shadowManager?.let { mgr ->
@@ -466,7 +467,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                 val sheets = listOfNotNull(hair, eyes) + worn
                                 op.additionalSpriteSheets = sheets
                                 op.skinTone = user.skinTone
-                                handle.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                                handle.updateAppearance(sheets, user.skinTone)
                             } catch (t: Throwable) {
                                 console.error("OtherPlayersCoordinator: initial appearance apply failed for ${op.userId}", t)
                             }
@@ -495,11 +496,31 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         }
     }
 
-    private suspend fun assembleAppearance(op: OtherPlayer) {
+    private suspend fun assembleAppearance(op: OtherPlayer, scale: Boolean = true) {
         try {
+            val prev = op.profile
             val user = UserApi.getUserById(op.userId) ?: return
+
+            // Detect base body change (sex or bodyType) which requires base spritesheet swap
+            val baseChanged = (prev == null) || (prev.sex != user.sex) || (prev.bodyType != user.bodyType)
+
+            if (baseChanged) {
+                // Preserve current transform/state
+                val currentPos = op.handle?.position ?: op.targetPos ?: op.lastPos
+                val currentDir = op.direction
+                // Remove current mesh and trigger respawn with updated base body
+                op.handle?.remove()
+                op.handle = null
+                op.targetPos = currentPos
+                op.lastPos = currentPos
+                op.profile = user
+                // Attempt spawn using fresh user so base body type is applied
+                attemptSpawnWithUser(op, scale = scale)
+                return
+            }
+
+            // No base change: update only additional layers and skin tone
             op.profile = user
-            // Build additional sheets: hair, eyes (worn items left for a later step if needed)
             val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
             val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
             val itemsById = try {

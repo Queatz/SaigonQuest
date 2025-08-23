@@ -311,6 +311,22 @@ fun WorldEditContent(
     // Function to restore original lighting/state
     fun restoreOriginalState() {
         try {
+            // If editing and the file was changed during preview, reload the original file
+            if (isEditing && currentWorld != null && file != currentWorld.file) {
+                WorldLoader.reloadWorldFile(currentWorld)
+                // Also ensure lighting is restored to the original world values
+                WorldLoader.notifyWorldEdited(currentWorld)
+                return
+            }
+
+            // If creating (not editing) and we previewed a file, reload the original active world file if available
+            if (!isEditing && initialActiveWorldSnapshot != null) {
+                WorldLoader.reloadWorldFile(initialActiveWorldSnapshot)
+                WorldLoader.notifyWorldEdited(initialActiveWorldSnapshot)
+                return
+            }
+
+            // Otherwise, just restore lighting to whatever was originally active
             if (currentWorld != null) {
                 WorldLoader.notifyWorldEdited(currentWorld)
             } else {
@@ -721,6 +737,50 @@ fun WorldEditContent(
                     assetId = result.asset!!.key
                     selectedWorldAssetTitle = result.title ?: result.asset?.file
                     showWorldAssetBrowser = false
+
+                    // Live preview: reload the scene with the newly selected world file
+                    try {
+                        val lat = latitude.toDoubleOrNull()
+                        val lon = longitude.toDoubleOrNull()
+                        val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+
+                        val previewWorld = if (isEditing && currentWorld != null) {
+                            currentWorld.copy(
+                                file = file,
+                                assetId = assetId,
+                                isOutdoors = isOutdoors,
+                                latLng = latLngList,
+                                backgroundColor = backgroundColor,
+                                directionalLightColor = directionalLightColor,
+                                fogDensity = fogDensity,
+                            )
+                        } else {
+                            // Create temporary world model for preview when creating a new world
+                            World(
+                                title = title,
+                                subtitle = subtitle,
+                                description = description,
+                                url = url,
+                                assetId = assetId,
+                                file = file,
+                                isOutdoors = isOutdoors,
+                                latLng = latLngList,
+                                backgroundColor = backgroundColor,
+                                directionalLightColor = directionalLightColor,
+                                fogDensity = fogDensity,
+                                // Access control (use current form values)
+                                allowAllVisitors = allowAllVisitors,
+                                allowAllPlayers = allowAllPlayers,
+                                allowFriendsOfOwners = allowFriendsOfOwners,
+                                allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() },
+                                chatLongevity = 0.0,
+                            )
+                        }
+
+                        WorldLoader.reloadWorldFile(previewWorld)
+                    } catch (e: Throwable) {
+                        console.warn("[WARN] Failed to preview world file: ${e.message}")
+                    }
                 },
                 onClose = { showWorldAssetBrowser = false },
             )
@@ -1031,7 +1091,7 @@ fun WorldEditContent(
                         onChange { chatLongevityEnabled = !chatLongevityEnabled }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Expire older messages") }
+                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Expire messages") }
             }
 
             if (chatLongevityEnabled) {

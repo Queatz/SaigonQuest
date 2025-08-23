@@ -118,9 +118,6 @@ vi: © 2025 Saigon.Quest v0.1
 Claim this World
 vi: Yêu cầu thế giới này
 
-Login and Claim this World
-vi: Đăng nhập và yêu cầu thế giới này
-
 Claim this world
 vi: Yêu cầu thế giới này
 
@@ -1073,8 +1070,8 @@ vi: Xóa
 Chat history
 vi: Lịch sử trò chuyện
 
-Expire older messages
-vi: Hết hạn tin nhắn cũ
+Expire messages
+vi: Hết hạn tin nhắn
 
 Keep messages for (days)
 vi: Giữ tin nhắn trong (ngày)
@@ -1120,6 +1117,12 @@ vi: đã gửi lời mời kết bạn cho bạn
 
 Friend request to
 vi: Lời mời kết bạn tới
+
+Unable to jump to your friend right now
+vi: Không thể nhảy đến bạn của bạn ngay bây giờ
+
+Unable to determine your friend's exact location
+vi: Không thể xác định vị trí chính xác của bạn của bạn
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

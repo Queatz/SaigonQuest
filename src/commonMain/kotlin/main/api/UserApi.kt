@@ -13,6 +13,10 @@ package main.api
  * - Provides error handling with detailed error messages
  */
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -48,12 +52,13 @@ object UserApi {
     private const val TOKEN_STORAGE_KEY = "auth_token"
     private const val VISITOR_ID_STORAGE_KEY = "visitor_id"
 
-    private var user: User? = null
+    private var user: User? by mutableStateOf(null)
 
     /**
      * Returns true if the current cached user is a logged-in player.
      * This is a pure, synchronous check that defaults to false when unknown.
      */
+    @Composable
     fun isLoggedInAsPlayer(): Boolean {
         return user?.isPlayer == true
     }
@@ -300,7 +305,19 @@ object UserApi {
             }
             
             if (response.status.isSuccess()) {
-                return response.body<User>()
+                val updatedUser = response.body<User>()
+                // Update local cache
+                this@UserApi.user = updatedUser
+                // Notify others via WebSocket to refresh appearance immediately
+                try {
+                    WebSocketApi.updatePlayer(
+                        name = updatedUser.username,
+                        isPlayer = updatedUser.isPlayer,
+                        activity = null,
+                        status = null,
+                    )
+                } catch (_: Throwable) { }
+                return updatedUser
             } else {
                 throw Error(response.bodyAsText())
             }
@@ -329,7 +346,19 @@ object UserApi {
             }
             
             if (response.status.isSuccess()) {
-                return response.body<User>()
+                val updatedUser = response.body<User>()
+                // Update local cache
+                this@UserApi.user = updatedUser
+                // Notify others via WebSocket to refresh appearance immediately
+                try {
+                    WebSocketApi.updatePlayer(
+                        name = updatedUser.username,
+                        isPlayer = updatedUser.isPlayer,
+                        activity = null,
+                        status = null,
+                    )
+                } catch (_: Throwable) { }
+                return updatedUser
             } else {
                 throw Error(response.bodyAsText())
             }

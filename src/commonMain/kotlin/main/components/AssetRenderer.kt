@@ -28,8 +28,6 @@ fun AssetRenderer(
         }
         AssetType.SpriteSheet -> {
             // Render first 32x48 cell
-            val w = 32
-            val h = 48
             Div(attrs = {
                 classes(Styles.iconRenderer)
                 classes(main.theme.AssetStyles.assetSpriteSheetIcon)

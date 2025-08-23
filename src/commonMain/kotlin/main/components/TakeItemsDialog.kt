@@ -57,7 +57,7 @@ fun TakeItemsDialog() {
                             alignItems(AlignItems.Center)
                             padding(8.px)
                             backgroundColor(rgba(0, 0, 0, 0.1))
-                            borderRadius(6.px)
+                            borderRadius(12.px)
                             minWidth(80.px)
                         }
                     }) {

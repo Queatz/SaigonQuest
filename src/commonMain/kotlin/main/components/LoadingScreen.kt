@@ -54,13 +54,15 @@ fun LoadingScreen(
                     }
                 ) {
                     if (showClaimOption) {
+                        val isPlayer = UserApi.isLoggedInAsPlayer()
+
                         // Create this world or Login button
                         Button(
                             attrs = {
                                 classes(Styles.loadingScreenPrimaryButton)
                                 onClick {
                                     // Only allow players to open the world editor
-                                    if (UserApi.isLoggedInAsPlayer()) {
+                                    if (isPlayer) {
                                         onShowWorldEditPanel()
                                     } else {
                                         onShowLoginDialog()
@@ -69,7 +71,7 @@ fun LoadingScreen(
                             }
                         ) {
                             // Show different text based on login status
-                            if (UserApi.isLoggedInAsPlayer()) {
+                            if (isPlayer) {
                                 Translated("Claim this world")
                             } else {
                                 Translated("Login and claim this world")

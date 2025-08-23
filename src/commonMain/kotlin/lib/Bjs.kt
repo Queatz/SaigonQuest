@@ -724,6 +724,7 @@ external class ExecuteCodeAction(
 external class Ray {
     var origin: Vector3
     var direction: Vector3
+    var length: Double
 
     /**
      * Tests if the ray intersects a mesh

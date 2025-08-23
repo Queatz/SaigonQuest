@@ -53,10 +53,11 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import main.components.Translated
 import Translations.str
 import kotlinx.coroutines.delay
+import main.theme.Styles
 import org.jetbrains.compose.web.attributes.disabled
+import org.jetbrains.compose.web.css.position
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -81,7 +82,24 @@ fun FriendsContent() {
     
     // Router for navigation
     val router = Router.current
-    
+
+    // Toast-style feedback state (similar to InventoryTray)
+    var feedbackMessage by remember { mutableStateOf<String?>(null) }
+    var isToastError by remember { mutableStateOf(false) }
+
+    // Helper to show transient feedback/toast
+    fun showFeedback(message: String, errorToast: Boolean = false) {
+        console.log("[FEEDBACK] $message")
+        feedbackMessage = message
+        isToastError = errorToast
+    }
+
+    LaunchedEffect(feedbackMessage) {
+        delay(3000)
+        console.log("[FEEDBACK] HIDE MESSAGE")
+        feedbackMessage = null
+    }
+
     // Fetch friends when the component is first rendered
     LaunchedEffect(Unit) {
         fetchFriends(
@@ -249,9 +267,28 @@ fun FriendsContent() {
                 padding(16.px)
                 height(100.percent)
                 overflow("hidden")
+                position(org.jetbrains.compose.web.css.Position.Relative)
             }
         }
     ) {
+        // Toast feedback message (non-blocking)
+        feedbackMessage?.let { message ->
+            Div(
+                attrs = {
+                    classes(
+                        Styles.toastMessage,
+                        if (isToastError) {
+                            Styles.toastError
+                        } else {
+                            Styles.toastSuccess
+                        }
+                    )
+                }
+            ) {
+                Text(message)
+            }
+        }
+
         // Loading state
         if (isLoading) {
             Div(
@@ -331,9 +368,13 @@ fun FriendsContent() {
                                 worldId = worldId,
                                 position = position,
                                 onError = { errorMsg ->
-                                    error = errorMsg
+                                    console.log("[FEEDBACK] errorMsg=$errorMsg")
+                                    showFeedback(errorMsg, true)
                                 }
                             )
+                        },
+                        onError = { errorMsg ->
+                            showFeedback(errorMsg, true)
                         },
                         onRemoveFriend = { friendId ->
                             removeFriend(
@@ -343,7 +384,7 @@ fun FriendsContent() {
                                     friends = friends.filter { it.friendId != friendId }
                                 },
                                 onError = { errorMsg ->
-                                    error = errorMsg
+                                    showFeedback(errorMsg, true)
                                 }
                             )
                         }
@@ -367,6 +408,7 @@ fun FriendListItem(
     friend: Friend,
     isOnline: Boolean,
     onJumpToFriend: (String, String, Position?) -> Unit,
+    onError: (String) -> Unit,
     onRemoveFriend: (String) -> Unit
 ) {
     // State to control the visibility of the confirmation dialog
@@ -486,14 +528,12 @@ fun FriendListItem(
                         borderRadius(4.px)
                         property("cursor", "pointer")
                     }
-                    if (friend.lastWorldId.isEmpty()) {
-                        disabled()
-                    }
                     onClick {
                         if (friend.lastWorldId.isNotEmpty()) {
                             onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
                         } else {
                             console.log("[FRIEND] lastWorldId is null")
+                            onError(str("Unable to jump to your friend right now"))
                         }
                     }
                 }
@@ -640,6 +680,8 @@ private fun jumpToFriend(
                     val vector3Position = Vector3(position.x, position.y, position.z)
                     playerController?.teleportTo(vector3Position)
                 } else {
+                    // Provide user feedback when we can't teleport within the same world
+                    onError(str("Unable to jump to your friend right now"))
                     console.warn("[Friends] No position available to jump within the current world")
                 }
             } else {
@@ -666,10 +708,14 @@ private fun jumpToFriend(
                                     console.warn("[Friends] Timed out waiting for player to initialize; jump-to-friend not applied")
                                 }
                             } catch (e: Throwable) {
+                                onError(str("Unable to determine your friend's exact location"))
                                 console.error("[Friends] Error while waiting for player to initialize for jump-to-friend", e)
                             }
                         }
                     }
+                } else {
+                    // Provide user feedback when we can't place you precisely in the target world
+                    onError(str("Unable to determine your friend's exact location"))
                 }
                 // Navigate to the world
                 router.navigate("/${targetWorld.url}")

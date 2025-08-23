@@ -474,6 +474,7 @@ class Character(
             try {
                 applyWindWeightUniforms(effect, spriteSheet.windFlipY, spriteSheet.windWeights5x5)
                 val outdoors = WorldLoader.isOutdoorsActive()
+                val intensity = WindSystem.getIntensity(outdoors)
                 // Drive base amplitude via intensityScale (sheet scale only; outdoors gating moved into windIntensity)
                 effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
                 // Set initial windDirLocal including decayed movement boost
@@ -488,8 +489,8 @@ class Character(
                 val boostLocal = WindSystem.rotateY(boostWorld, -yaw)
                 val windWithBoost = windLocal.add(boostLocal)
                 // Boost amplitude based on boost magnitude, even when indoors
-                val boostLen = boostLocal.length()
-                val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+                val boostLen = boostLocal.length() * 10.0f
+                val windIntensity = intensity + boostLen
                 effect.setFloat("windIntensity", windIntensity)
                 effect.setVector3("windDirLocal", windWithBoost)
             } catch (e: Throwable) {
@@ -571,8 +572,8 @@ class Character(
             }
             effect.setVector3("windDirLocal", windWithBoost)
             // Boost amplitude based on boost magnitude; apply even indoors
-            val boostLen = boostLocal.length()
-            val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+            val boostLen = boostLocal.length() * 10.0f
+            val windIntensity = intensity + boostLen
             effect.setFloat("windIntensity", windIntensity)
             effect.setFloat("time", t)
             effect.setFloat("spatialFreq", WindSystem.spatialFreq)
@@ -769,7 +770,7 @@ class Character(
 
                     effect.setVector3("windDirLocal", windWithBoost)
                     val boostLen = boostLocal.length()
-                    val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+                    val windIntensity = intensity + boostLen
                     effect.setFloat("windIntensity", windIntensity)
                     effect.setFloat("time", t)
                     effect.setFloat("spatialFreq", WindSystem.spatialFreq)

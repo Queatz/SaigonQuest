@@ -39,7 +39,7 @@ fun BasicSceneRenderer(
             padding(0.px)
             marginBottom(8.px)
             border(1.px, LineStyle.Solid, Color.gray)
-            borderRadius(6.px)
+            borderRadius(12.px)
             backgroundColor(rgb(20, 22, 24))
             property("overflow", "hidden")
         }

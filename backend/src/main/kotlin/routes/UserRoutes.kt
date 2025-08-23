@@ -1,25 +1,27 @@
 package routes
 
-import auth.JwtConfig
 import auth.JWTUtils
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import auth.JwtConfig
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import models.AuthResponse
+import models.ChangePasswordRequest
 import models.ErrorResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
-import models.ChangePasswordRequest
 import models.StatusUpdateRequest
 import models.UpgradeRequest
-import models.User
+import models.UserCustomizationRequest
 import models.VisitorRequest
 import models.WornItemsRequest
-import models.UserCustomizationRequest
 import repository.UserRepository
 
 fun Routing.configureUserRoutes() {

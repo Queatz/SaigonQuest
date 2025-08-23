@@ -21,6 +21,7 @@ import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.api.updatePlayer
 import main.api.updatePlayerPosition
+import main.components.SceneManager
 import main.components.inventory.InventoryState
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
@@ -29,6 +30,7 @@ import main.components.world.WorldObjectManager
 import main.components.world.calculateFacingFromVector
 import models.Position
 import utils.throttleLatest
+import web.animations.awaitAnimationFrame
 
 // Controller for the local player: creation, movement, HUD, and sync.
 @OptIn(FlowPreview::class)
@@ -148,14 +150,26 @@ class PlayerController(private val scene: Scene) {
             hud = hud,
             coroutineScope = coroutineScope,
             onRefreshWornItems = { refreshWornItems() },
-            onSetCollider = { collider = it },
-            onSetPlayerHandle = { playerHandle = it },
+            onSetCollider = { itMesh ->
+                collider = itMesh
+                trySnapToGroundNow()
+            },
+            onSetPlayerHandle = { itHandle ->
+                playerHandle = itHandle
+                trySnapToGroundNow()
+            },
             onRegisterInventoryCallback = { cb -> inventoryRefreshCallback = cb }
         )
     }
     
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {
         worldMeshes = meshes
+        // Attempt to snap the player to the ground immediately when world meshes become available
+        try {
+            trySnapToGroundNow()
+        } catch (t: Throwable) {
+            console.error("[PlayerController] Error snapping to ground after world meshes set", t)
+        }
     }
     
     fun getWorldMeshes(): Array<AbstractMesh> {
@@ -492,5 +506,34 @@ class PlayerController(private val scene: Scene) {
         
         // Remove WebSocket listeners scoped to this controller
         netSync.dispose()
+    }
+
+    /**
+     * Attempts to snap the player to the ground immediately if possible.
+     * Returns true if a snap occurred.
+     */
+    private fun trySnapToGroundNow() {
+        coroutineScope.launch {
+            awaitAnimationFrame()
+            try {
+                if (worldMeshes.isEmpty()) return@launch
+                val currentPos = playerHandle?.position ?: collider?.position ?: return@launch
+                val snapped = findValidYPosition(currentPos) ?: return@launch
+
+                // Apply snapped position to both collider and handle if present
+                collider?.position = snapped
+                playerHandle?.position = snapped
+
+                // Update HUD and movement state
+                hud.updateAllPositions(snapped)
+                SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
+                lastPosition = snapped
+
+                // Emit position to network (debounced)
+                playerPositionFlow.value = snapped
+            } catch (t: Throwable) {
+                console.error("[SNAP] trySnapToGroundNow failed", t)
+            }
+        }
     }
 }

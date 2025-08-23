@@ -1264,6 +1264,29 @@ object Styles : StyleSheet() {
         }
     }
     
+    // Transient toast message centered at the bottom of the viewport
+    val toastMessage by style {
+        position(Position.Fixed)
+        top(84.px)
+        left(50.percent)
+        property("transform", "translateX(-50%) translateY(-10px)")
+        padding(8.px, 12.px)
+        color(rgba(255, 255, 255, 0.95))
+        fontSize(14.px)
+        property("border-radius", "4px")
+        property("pointer-events", "none")
+        // Ensure above general UI, below dialogs if needed
+        property("z-index", "1500")
+    }
+
+    val toastSuccess by style {
+        backgroundColor(rgba(0, 150, 0, 0.7))
+    }
+
+    val toastError by style {
+        backgroundColor(rgba(255, 0, 0, 0.7))
+    }
+    
     init {
         "body" style {
             margin(0.cssRem)
