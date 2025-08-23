@@ -91,6 +91,9 @@ class SpriteSheet(
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
+                // Enable wind on base to ensure movement boost has visible target even without hair
+                windEnabled = true,
+                windIntensityScale = 0.02f,
             )
         }
 
@@ -118,6 +121,9 @@ class SpriteSheet(
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
+                // Enable wind on base to ensure movement boost has visible target even without hair
+                windEnabled = true,
+                windIntensityScale = 0.02f,
             )
         }
 

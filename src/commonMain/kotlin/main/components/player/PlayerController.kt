@@ -230,6 +230,37 @@ class PlayerController(private val scene: Scene) {
     }
     
     /**
+     * Instantly relocates the player to the given position (teleport).
+     * - Stops any current movement
+     * - Adjusts Y to a valid ground position if possible
+     * - Updates collider, handle, HUD and pushes position to network flow
+     */
+    fun teleportTo(position: Vector3) {
+        // Stop current movement to avoid the mover fighting manual relocation
+        stopMovement()
+
+        // Try to adjust Y to a valid ground position
+        val adjusted = findValidYPosition(position) ?: position
+
+        val handle = playerHandle ?: return
+        val coll = collider
+
+        // Update internal last position and SceneManager velocity to zero
+        lastPosition = adjusted
+        main.components.SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
+
+        // Apply position to physics collider and visual handle
+        coll?.position = adjusted
+        handle.position = adjusted
+
+        // Update HUD/billboards to the new location
+        hud.updateAllPositions(adjusted)
+
+        // Emit to sync over network (debounced)
+        playerPositionFlow.value = adjusted
+    }
+    
+    /**
      * Stops any current movement and resets movement tracking.
      */
     fun stopMovement() { mover.stopMovement() }

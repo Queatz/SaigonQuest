@@ -92,8 +92,10 @@ class CameraController(private val scene: Scene) {
     init {
         // Create a separate ImageProcessingPostProcess for vignette effect
         // This approach allows adding vignette without modifying the DefaultRenderingPipeline
-        vignettePostProcess = ImageProcessingPostProcess("vignette", 1.0f, camera)
-        
+        vignettePostProcess = ImageProcessingPostProcess("vignette", 1.0f, camera).apply {
+            fromLinearSpace = true
+        }
+
         // Enable and configure the vignette effect directly on the post process
         vignettePostProcess.vignetteEnabled = true
         vignettePostProcess.vignetteStretch = 2.5f
@@ -359,10 +361,9 @@ class CameraController(private val scene: Scene) {
                 } catch (e: Throwable) {
                     println("[ERROR] Failed to set grainEnabled: ${e.message}")
                 }
-                
+
                 try {
-                    // Enable/disable image processing
-                    imageProcessingEnabled = isPrettyEnabled
+                    imageProcessingEnabled = false
                 } catch (e: Throwable) {
                     println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
@@ -418,18 +419,6 @@ class CameraController(private val scene: Scene) {
                         }
                     } catch (e: Throwable) {
                         println("[ERROR] Failed to configure grain: ${e.message}")
-                    }
-                    
-                    try {
-                        // Check if image processing is available before configuring
-                        if (imageProcessingEnabled) {
-                            // Configure image processing settings
-//                            imageProcessing.contrast = 2f
-//                            imageProcessing.exposure = .75f
-                            println("[DEBUG] Image processing settings configured successfully")
-                        }
-                    } catch (e: Throwable) {
-                        println("[ERROR] Failed to configure image processing: ${e.message}")
                     }
                 }
             }

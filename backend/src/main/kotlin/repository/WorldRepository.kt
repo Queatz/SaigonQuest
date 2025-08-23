@@ -62,8 +62,10 @@ class WorldRepository {
     fun update(id: String, world: World): World? {
         val existingWorld = getById(id) ?: return null
         
-        // Preserve the original key and creation date
+        // Preserve the original key, creation date and userId
         world.key = existingWorld.key
+        world.createdAt = existingWorld.createdAt
+        world.userId = existingWorld.userId
         
         // Update the document directly using the World object
         val result: DocumentUpdateEntity<World> = collection.updateDocument(

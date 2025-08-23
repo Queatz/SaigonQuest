@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.components.translated
+import Translations.str
 
 /**
  * A responsive chat component that adapts between a dialog (mobile) and a side panel (desktop).
@@ -16,10 +17,34 @@ fun Chat(
     isMobile: Boolean,
     onClose: () -> Unit
 ) {
+    // Fetch world to get chat longevity
+    val longevityState = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Double?>(null) }
+    androidx.compose.runtime.LaunchedEffect(worldId) {
+        try {
+            val w = main.api.WorldApi.getWorld(worldId)
+            longevityState.value = w.chatLongevity
+        } catch (_: Throwable) {
+            longevityState.value = null
+        }
+    }
+
     ResponsivePanel(
         title = translated("World Chat"),
         isMobile = isMobile,
-        onClose = onClose
+        onClose = onClose,
+        headerRight = {
+            val days = longevityState.value
+            if (days != null) {
+                val text = if (days <= 0.0) {
+                    translated("Kept forever")
+                } else {
+                    val rounded = kotlin.math.round((days * 100.0)) / 100.0
+                    val numberText = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+                    "${translated("Kept for")} $numberText ${if (rounded == 1.0) translated("day") else translated("days")}"
+                }
+                org.jetbrains.compose.web.dom.Text(text)
+            }
+        }
     ) {
         ChatContent(worldId = worldId)
     }

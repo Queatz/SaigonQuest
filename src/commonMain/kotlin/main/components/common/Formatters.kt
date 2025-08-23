@@ -2,7 +2,7 @@ package main.components.common
 
 import Translations.str
 import androidx.compose.runtime.Composable
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import main.components.LanguageSettings.rememberCurrentLanguage
 import kotlin.js.Date
 

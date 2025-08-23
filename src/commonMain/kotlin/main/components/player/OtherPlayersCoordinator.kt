@@ -57,6 +57,13 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
 
+    // Spawn retry state to ensure other players appear even if world assets are not yet ready
+    private val spawnRetryCounts = mutableMapOf<String, Int>()
+    private val maxSpawnRetries = 15
+    private val spawnRetryInitialDelayMs = 150
+    private val spawnRetryMaxDelayMs = 2000
+    private val spawnRetryTimeouts = mutableMapOf<String, Int>()
+
     // Alpha flicker ranges between 0.5 and 1.0 (0.5 base + 0.0-0.5 random)
     private fun computeFlickerAlpha(): Float {
         val base = 0.25
@@ -204,6 +211,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         hud.disposeAll()
         usernameTextHandles.values.forEach { it.remove() }
         usernameTextHandles.clear()
+        // Clear any pending spawn retries
+        spawnRetryTimeouts.values.forEach { window.clearTimeout(it) }
+        spawnRetryTimeouts.clear()
+        spawnRetryCounts.clear()
     }
 
     // Queries
@@ -263,6 +274,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             players.remove(dup.userId)
             hud.removeHud(dup.userId)
             usernameTextHandles.remove(dup.userId)?.remove()
+            clearSpawnRetry(dup.userId)
         }
     }
 
@@ -272,6 +284,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             op.mutex.withLock {
                 // Begin scale-out animation
                 op.leaveStartMs = window.performance.now()
+                // Stop any pending spawn retries
+                clearSpawnRetry(leave.userId)
                 window.setTimeout({
                     op.handle?.remove()
                     players.remove(leave.userId)
@@ -335,12 +349,18 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             user = null,
             initialScale = .5f
         )
-        if (handle == null) return
+        if (handle == null) {
+            scheduleSpawnRetry(op, "createCharacter returned null (placeholder)")
+            return
+        }
         // Start with scale 0 for join animation
         handle.scale = Vector3(.5f, .5f, .5f)
         op.handle = handle
         op.lastPos = startPos
         op.joinStartMs = window.performance.now()
+
+        // Success: clear retry state
+        clearSpawnRetry(op.userId)
 
         // Shadows
         shadowManager?.let { mgr ->
@@ -359,8 +379,44 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         scope.launch { assembleAppearance(op) }
     }
 
+    private fun scheduleSpawnRetry(op: OtherPlayer, reason: String) {
+        // If already spawned, no retry needed
+        if (op.handle != null) {
+            clearSpawnRetry(op.userId)
+            return
+        }
+        val count = (spawnRetryCounts[op.userId] ?: 0)
+        if (count >= maxSpawnRetries) {
+            console.warn("OtherPlayersCoordinator: spawn retries exceeded for ${op.userId} (reason=$reason)")
+            clearSpawnRetry(op.userId)
+            return
+        }
+        spawnRetryCounts[op.userId] = count + 1
+        val prev = spawnRetryTimeouts.remove(op.userId)
+        if (prev != null) window.clearTimeout(prev)
+        val delay = kotlin.math.min(spawnRetryInitialDelayMs * (1 shl count), spawnRetryMaxDelayMs)
+        console.log("OtherPlayersCoordinator: scheduling spawn retry #${count + 1} for ${op.userId} in ${delay}ms (reason=$reason)")
+        val id = window.setTimeout({
+            val still = players[op.userId]
+            if (still == null) {
+                clearSpawnRetry(op.userId)
+                return@setTimeout
+            }
+            if (still.handle != null) {
+                clearSpawnRetry(op.userId)
+                return@setTimeout
+            }
+            attemptSpawnWithUser(still)
+        }, delay)
+        spawnRetryTimeouts[op.userId] = id
+    }
+
+    private fun clearSpawnRetry(userId: String) {
+        spawnRetryCounts.remove(userId)
+        spawnRetryTimeouts.remove(userId)?.let { window.clearTimeout(it) }
+    }
+
     private fun attemptSpawnWithUser(op: OtherPlayer) {
-        if (op.handle != null) return
         // Fallback: spawn placeholder if user fetch isn't quick
         val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
         scope.launch {
@@ -386,6 +442,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             op.lastPos = startPos
                             op.targetPos = startPos
                             op.joinStartMs = window.performance.now()
+                            // Success: clear retry state
+                            spawnRetryCounts.remove(op.userId)
                             shadowManager?.let { mgr ->
                                 handle.node.getChildMeshes().forEach { mesh ->
                                     mgr.addShadowCaster(mesh)
@@ -396,6 +454,24 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             if (user.status.isNotBlank()) op.status = user.status
                             if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)
                             createOrUpdateUsernameBillboard(op, startPos)
+                            // Apply full appearance (hair, eyes, worn) immediately so it doesn't wait for movement
+                            try {
+                                val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+                                val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
+                                val itemsById = try {
+                                    val ids = user.wornItems
+                                    if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
+                                } catch (_: Throwable) { emptyMap() }
+                                val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
+                                val sheets = listOfNotNull(hair, eyes) + worn
+                                op.additionalSpriteSheets = sheets
+                                op.skinTone = user.skinTone
+                                handle.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                            } catch (t: Throwable) {
+                                console.error("OtherPlayersCoordinator: initial appearance apply failed for ${op.userId}", t)
+                            }
+                        } else {
+                            scheduleSpawnRetry(op, "createCharacter returned null (with user)")
                         }
                     } else {
                         val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
@@ -595,5 +671,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             hud.removeHud(selfId)
             usernameTextHandles.remove(selfId)?.remove()
         }
+        clearSpawnRetry(selfId)
     }
 }

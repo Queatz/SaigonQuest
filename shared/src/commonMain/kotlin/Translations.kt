@@ -1070,6 +1070,56 @@ vi: Vật phẩm đã chọn
 Clear
 vi: Xóa
 
+Chat history
+vi: Lịch sử trò chuyện
+
+Expire older messages
+vi: Hết hạn tin nhắn cũ
+
+Keep messages for (days)
+vi: Giữ tin nhắn trong (ngày)
+
+Please enter a positive number of days
+vi: Vui lòng nhập số ngày dương
+
+Kept forever
+vi: Giữ vĩnh viễn
+
+Kept for
+vi: Giữ trong
+
+day
+vi: ngày
+
+days
+vi: ngày
+
+Friend requests
+vi: Lời mời kết bạn
+
+Incoming
+vi: Đến
+
+Outgoing
+vi: Đi
+
+No incoming requests
+vi: Không có lời mời đến
+
+No outgoing requests
+vi: Không có lời mời đi
+
+Accept
+vi: Chấp nhận
+
+Decline
+vi: Từ chối
+
+sent you a friend request
+vi: đã gửi lời mời kết bạn cho bạn
+
+Friend request to
+vi: Lời mời kết bạn tới
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

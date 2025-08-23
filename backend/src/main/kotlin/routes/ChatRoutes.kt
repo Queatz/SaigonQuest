@@ -43,9 +43,20 @@ fun Routing.configureChatRoutes() {
             val olderThan = call.request.queryParameters["olderThan"]?.toLongOrNull()?.let {
                 Instant.fromEpochMilliseconds(it)
             } ?: Clock.System.now()
+
+            // Determine minimum timestamp based on world's chat longevity (0.0 = forever)
+            val minTimestamp = try {
+                val world = worldRepository.getById(worldId)
+                val days = world?.chatLongevity ?: 0.0
+                if (days > 0.0) {
+                    val nowMs = Clock.System.now().toEpochMilliseconds()
+                    val cutoffMs = nowMs - (days * 24.0 * 60.0 * 60.0 * 1000.0).toLong()
+                    Instant.fromEpochMilliseconds(cutoffMs)
+                } else null
+            } catch (_: Throwable) { null }
             
             // Get messages
-            val messages = chatRepository.getMessagesByWorldId(worldId, limit, olderThan)
+            val messages = chatRepository.getMessagesByWorldId(worldId, limit, olderThan, minTimestamp)
             
             // If authenticated, update last read timestamp
             val principal = call.principal<JWTPrincipal>()

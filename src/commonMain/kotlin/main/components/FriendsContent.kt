@@ -21,6 +21,7 @@ import main.api.addUserLeaveListener
 import main.api.addTeleportPlayerListener
 import main.api.WebSocketApiGlobal
 import main.api.addFriendStatusChangedListener
+import main.api.addFriendRequestAcceptedListener
 import main.components.world.WorldLoader
 import models.Friend
 import models.Position
@@ -156,6 +157,15 @@ fun FriendsContent() {
                 }
             } catch (e: Throwable) {
                 console.error("[Friends] Error handling FRIEND_STATUS_CHANGED", e)
+            }
+        }
+
+        // Refresh friends list immediately when a friend request is accepted
+        globalTokens += WebSocketApiGlobal.addFriendRequestAcceptedListener {
+            try {
+                refreshFriendsList()
+            } catch (e: Throwable) {
+                console.error("[Friends] Error handling FRIEND_REQUEST_ACCEPTED", e)
             }
         }
 
@@ -616,22 +626,53 @@ private fun jumpToFriend(
 ) {
     CoroutineScope(Dispatchers.Default).launch {
         try {
-            // Get the world details
-            val world = WorldApi.getWorld(worldId)
+            // Get the target world details
+            val targetWorld = WorldApi.getWorld(worldId)
 
-            // Navigate to the world
-            router.navigate("/${world.url}")
+            // Determine if we are already in the same world
+            val currentWorld = WorldLoader.getActiveWorld()
+            val sameWorld = currentWorld?.key == targetWorld.key
 
-            // Set the player position if available
-            if (position != null) {
-                // Wait for the world to load
-                WorldLoader.onWorldLoaded {
-                    // Get the player controller and set the target position
+            if (sameWorld) {
+                // Already in target world: relocate immediately if we have a position
+                if (position != null) {
                     val playerController = SceneManager.getPlayerController()
-                    // Convert Position to Vector3
                     val vector3Position = Vector3(position.x, position.y, position.z)
-                    playerController?.setTargetPosition(vector3Position)
+                    playerController?.teleportTo(vector3Position)
+                } else {
+                    console.warn("[Friends] No position available to jump within the current world")
                 }
+            } else {
+                // Different world: set relocation callback BEFORE navigating
+                if (position != null) {
+                    WorldLoader.onWorldLoaded {
+                        // Wait until PlayerController and its player character are ready
+                        CoroutineScope(Dispatchers.Default).launch {
+                            try {
+                                var attempts = 0
+                                val maxAttempts = 80 // ~4s at 50ms intervals
+                                while (attempts < maxAttempts) {
+                                    val pc = SceneManager.getPlayerController()
+                                    val handle = pc?.getPlayerHandle()
+                                    if (pc != null && handle != null) {
+                                        val vector3Position = Vector3(position.x, position.y, position.z)
+                                        pc.teleportTo(vector3Position)
+                                        break
+                                    }
+                                    delay(50)
+                                    attempts++
+                                }
+                                if (attempts >= maxAttempts) {
+                                    console.warn("[Friends] Timed out waiting for player to initialize; jump-to-friend not applied")
+                                }
+                            } catch (e: Throwable) {
+                                console.error("[Friends] Error while waiting for player to initialize for jump-to-friend", e)
+                            }
+                        }
+                    }
+                }
+                // Navigate to the world
+                router.navigate("/${targetWorld.url}")
             }
         } catch (e: Throwable) {
             console.error("Error jumping to friend", e)

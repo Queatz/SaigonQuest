@@ -17,6 +17,7 @@ import org.jetbrains.compose.web.dom.*
 fun SimpleSidePanel(
     title: String,
     onClose: () -> Unit,
+    headerRight: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Div(
@@ -37,14 +38,19 @@ fun SimpleSidePanel(
             ) {
                 Text(title)
             }
-            
-            Button(
-                attrs = {
-                    classes(Styles.closeButton)
-                    onClick { onClose() }
+            // Right side: hint + close
+            Div(attrs = { classes(Styles.panelHeaderRight) }) {
+                if (headerRight != null) {
+                    Div(attrs = { classes(Styles.panelHeaderHint) }) { headerRight() }
                 }
-            ) {
-                Text("×")
+                Button(
+                    attrs = {
+                        classes(Styles.closeButton)
+                        onClick { onClose() }
+                    }
+                ) {
+                    Text("×")
+                }
             }
         }
         

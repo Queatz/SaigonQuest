@@ -4,18 +4,7 @@ import androidx.compose.runtime.Composable
 import main.theme.Styles
 import models.AssetSearchResult
 import models.AssetType
-import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.backgroundImage
-import org.jetbrains.compose.web.css.backgroundPosition
-import org.jetbrains.compose.web.css.backgroundRepeat
-import org.jetbrains.compose.web.css.backgroundSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.lineHeight
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -43,14 +32,9 @@ fun AssetRenderer(
             val h = 48
             Div(attrs = {
                 classes(Styles.iconRenderer)
+                classes(main.theme.AssetStyles.assetSpriteSheetIcon)
                 style {
-                    width(w.px)
-                    height(h.px)
                     backgroundImage("url(\"/raw/data/spritesheets/${result.asset!!.file}.png\")")
-                    backgroundRepeat("no-repeat")
-                    backgroundSize("${w * 8}px ${h * 8}px")
-                    // First cell at (0,0)
-                    backgroundPosition("0px 0px")
                 }
             }) {}
         }
@@ -68,11 +52,6 @@ fun AssetRenderer(
     }
     // Simple caption
     P(attrs = {
-        style {
-            textAlign("center")
-            lineHeight(20.px)
-            marginBottom(4.px)
-            color(Color.white)
-        }
+        classes(main.theme.AssetStyles.assetCaption)
     }) { Text(result.title ?: result.asset!!.file) }
 }

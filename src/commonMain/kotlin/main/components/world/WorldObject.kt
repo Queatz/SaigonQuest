@@ -474,9 +474,8 @@ class Character(
             try {
                 applyWindWeightUniforms(effect, spriteSheet.windFlipY, spriteSheet.windWeights5x5)
                 val outdoors = WorldLoader.isOutdoorsActive()
-                val intensity = WindSystem.getIntensity(outdoors = outdoors)
-                // Drive base amplitude via intensityScale
-                effect.setFloat("intensityScale", spriteSheet.windIntensityScale * intensity)
+                // Drive base amplitude via intensityScale (sheet scale only; outdoors gating moved into windIntensity)
+                effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
                 // Set initial windDirLocal including decayed movement boost
                 val camera = main.components.SceneManager.getCameraController()?.getCamera()
                 val camDir = if (camera != null) {
@@ -488,10 +487,10 @@ class Character(
                 val boostWorld = WindSystem.getBoostVector()
                 val boostLocal = WindSystem.rotateY(boostWorld, -yaw)
                 val windWithBoost = windLocal.add(boostLocal)
-                // Boost amplitude based on boost magnitude (camera-local)
+                // Boost amplitude based on boost magnitude, even when indoors
                 val boostLen = boostLocal.length()
-                val windIntensityBoost = (1.0f + (boostLen * 10.0f))//.coerceAtMost(3.0f)
-                effect.setFloat("windIntensity", windIntensityBoost)
+                val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+                effect.setFloat("windIntensity", windIntensity)
                 effect.setVector3("windDirLocal", windWithBoost)
             } catch (e: Throwable) {
                 console.error("[WIND] Failed to set baseline uniforms", e)
@@ -571,17 +570,17 @@ class Character(
                 return@forEach
             }
             effect.setVector3("windDirLocal", windWithBoost)
-            // Boost amplitude based on boost magnitude (camera-local)
+            // Boost amplitude based on boost magnitude; apply even indoors
             val boostLen = boostLocal.length()
-            val windIntensityBoost = (1.0f + (boostLen * 10.0f))//.coerceAtMost(3.0f)
-            effect.setFloat("windIntensity", windIntensityBoost)
+            val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+            effect.setFloat("windIntensity", windIntensity)
             effect.setFloat("time", t)
             effect.setFloat("spatialFreq", WindSystem.spatialFreq)
             effect.setFloat("temporalFreq", WindSystem.temporalFreq)
             // Also ensure static uniforms are set
             // Set 5x5 rows as vec3+vec2 per row
             val weights5 = applyWindWeightUniforms(effect, sheet.windFlipY, sheet.windWeights5x5)
-            effect.setFloat("intensityScale", sheet.windIntensityScale * intensity)
+            effect.setFloat("intensityScale", sheet.windIntensityScale)
 
             if (entry.debugLogCount < 2) {
                 console.log(
@@ -589,8 +588,8 @@ class Character(
                             ", gpuActive=" + entry.gpuActive +
                             ", windLocalX=" + windWithBoost.x +
                             ", boostLen=" + boostLen +
-                            ", windIntensityBoost=" + windIntensityBoost +
-                            ", intensityScale=" + (sheet.windIntensityScale * intensity) +
+                            ", windIntensity=" + windIntensity +
+                            ", intensityScale=" + (sheet.windIntensityScale) +
                             ", outdoors=" + outdoors +
                             ", w00=" + weights5[0][0] +
                             ", w44=" + weights5[4][4] +
@@ -607,8 +606,8 @@ class Character(
                     // gust noise
                     val p = 0.0f // no spatial variation for now
                     val gust = kotlin.math.sin((p + t * WindSystem.temporalFreq).toDouble()).toFloat()
-                    // amplitude (3x) scaled by boost-driven windIntensity
-                    val amp = (3.0f * intensity * (0.6f + 0.4f * gust) * sheet.windIntensityScale) * windIntensityBoost
+                    // amplitude (3x) scaled by windIntensity (allows indoor boosts)
+                    val amp = 3.0f * windIntensity * (0.6f + 0.4f * gust) * sheet.windIntensityScale
                     val dirSign = if (windWithBoost.x >= 0f) 1f else -1f
                     // iterate all vertices; derive nearest 5x5 weight for any N x N grid
                     val vertCount = base.size / 3
@@ -770,14 +769,14 @@ class Character(
 
                     effect.setVector3("windDirLocal", windWithBoost)
                     val boostLen = boostLocal.length()
-                    val windIntensityBoost = (1.0f + (boostLen * 10.0f))//.coerceAtMost(3.0f)
-                    effect.setFloat("windIntensity", windIntensityBoost)
+                    val windIntensity = if (outdoors) (1.0f + (boostLen * 10.0f)) else (boostLen * 10.0f)
+                    effect.setFloat("windIntensity", windIntensity)
                     effect.setFloat("time", t)
                     effect.setFloat("spatialFreq", WindSystem.spatialFreq)
                     effect.setFloat("temporalFreq", WindSystem.temporalFreq)
                     // Static 5x5 weights (vec3 + vec2 per row)
                     applyWindWeightUniforms(effect, spriteSheet.windFlipY, spriteSheet.windWeights5x5)
-                    effect.setFloat("intensityScale", spriteSheet.windIntensityScale * intensity)
+                    effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
                     // Mark GPU active only if a GPU hook was successfully injected
                     entry.gpuActive = entry.hookPresent
                     entry.bindCount += 1

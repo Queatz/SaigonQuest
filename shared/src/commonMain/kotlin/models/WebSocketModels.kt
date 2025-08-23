@@ -208,3 +208,15 @@ data class PauseData(
     val worldUrl: String,
     val worldName: String
 )
+
+// Friend request lifecycle payload for WebSocket events
+@Serializable
+data class FriendRequestData(
+    val id: String,
+    val requesterId: String,
+    val requesterUsername: String,
+    val addresseeId: String,
+    val status: FriendRequestStatus,
+    val createdAt: Instant,
+    val decidedAt: Instant? = null,
+)

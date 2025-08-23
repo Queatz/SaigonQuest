@@ -93,7 +93,11 @@ fun FriendRequestNotificationContent(
                 Button(
                     attrs = {
                         classes(NotificationStyles.acceptButton)
-                        onClick { acceptFriendRequest() }
+                        onClick {
+                            it.stopPropagation()
+                            it.preventDefault()
+                            acceptFriendRequest()
+                        }
                     }
                 ) {
                     Text("Add friend")
@@ -102,7 +106,11 @@ fun FriendRequestNotificationContent(
                 Button(
                     attrs = {
                         classes(NotificationStyles.rejectButton)
-                        onClick { rejectFriendRequest() }
+                        onClick {
+                            it.stopPropagation()
+                            it.preventDefault()
+                            rejectFriendRequest()
+                        }
                     }
                 ) {
                     Text("Ignore")

@@ -432,6 +432,19 @@ object Styles : StyleSheet() {
         fontSize(20.px)
     }
     
+    // Header right container and hint
+    val panelHeaderRight by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+    }
+    
+    val panelHeaderHint by style {
+        color(Color.white)
+        opacity(0.65)
+        fontSize(12.px)
+    }
+    
     // Responsive panel styles
     val dialogContainer by style {
         width(90.percent)

@@ -50,6 +50,10 @@ class WebSocketHandlerFactory(
             WebSocketAction.INVENTORY_CHANGED -> NullHandler() // Server -> clients only
             WebSocketAction.TAKE_ITEMS_CONFIRM -> TakeItemsConfirmHandler()
             WebSocketAction.FRIEND_STATUS_CHANGED -> NullHandler() // Server -> clients only
+            WebSocketAction.FRIEND_REQUEST_CREATED -> NullHandler() // Server -> clients only
+            WebSocketAction.FRIEND_REQUEST_ACCEPTED -> NullHandler() // Server -> clients only
+            WebSocketAction.FRIEND_REQUEST_DECLINED -> NullHandler() // Server -> clients only
+            WebSocketAction.FRIEND_REQUEST_CANCELLED -> NullHandler() // Server -> clients only
             null -> NullHandler()
         }
     }

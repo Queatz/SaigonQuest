@@ -51,6 +51,7 @@ import org.jetbrains.compose.web.dom.TextArea
 import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
+import Translations.str
 
 /**
  * Content component for the world edit form.
@@ -162,6 +163,11 @@ fun WorldEditContent(
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#ffffff") }
     var directionalLightColor by remember { mutableStateOf(currentWorld?.directionalLightColor ?: "#ffffff") }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
+    // Chat history
+    var chatLongevityEnabled by remember { mutableStateOf((currentWorld?.chatLongevity ?: 0.0) > 0.0) }
+    var chatLongevityDays by remember { mutableStateOf(
+        currentWorld?.chatLongevity?.takeIf { it > 0.0 }?.toString() ?: ""
+    ) }
     // Outdoors/time-of-day
     var isOutdoors by remember { mutableStateOf(currentWorld?.isOutdoors ?: false) }
     var latitude by remember { mutableStateOf(currentWorld?.latLng?.getOrNull(0)?.toString() ?: "") }
@@ -189,6 +195,10 @@ fun WorldEditContent(
         backgroundColor = currentWorld?.backgroundColor ?: "#ffffff"
         directionalLightColor = currentWorld?.directionalLightColor ?: "#ffffff"
         fogDensity = currentWorld?.fogDensity ?: 0.0f
+        // Chat
+        chatLongevityEnabled = (currentWorld?.chatLongevity ?: 0.0) > 0.0
+        chatLongevityDays = currentWorld?.chatLongevity?.takeIf { it > 0.0 }?.toString() ?: ""
+        // Outdoors/time-of-day
         isOutdoors = currentWorld?.isOutdoors ?: false
         latitude = currentWorld?.latLng?.getOrNull(0)?.toString() ?: ""
         longitude = currentWorld?.latLng?.getOrNull(1)?.toString() ?: ""
@@ -325,9 +335,20 @@ fun WorldEditContent(
     }
 
     // Function to handle form submission
-    val handleSubmit = {
+    val handleSubmit = submit@ { 
         isSubmitting = true
         errorMessage = ""
+        
+        // Validate chat longevity input if enabled
+        val chatLongevityValue: Double = if (chatLongevityEnabled) {
+            val parsed = chatLongevityDays.toDoubleOrNull()
+            if (parsed == null || parsed.isNaN() || parsed <= 0.0) {
+                isSubmitting = false
+                errorMessage = str("Please enter a positive number of days")
+                return@submit
+            }
+            parsed
+        } else 0.0
         
         val worldModel = if (isEditing) {
             // Update existing world
@@ -347,10 +368,13 @@ fun WorldEditContent(
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
+                // Access control
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
                 allowFriendsOfOwners = allowFriendsOfOwners,
-                allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() }
+                allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() },
+                // Chat settings
+                chatLongevity = chatLongevityValue,
             )
         } else {
             // Create new world
@@ -373,7 +397,8 @@ fun WorldEditContent(
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
                 allowFriendsOfOwners = allowFriendsOfOwners,
-                allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() }
+                allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() },
+                chatLongevity = chatLongevityValue,
             )
         }
         
@@ -972,6 +997,58 @@ fun WorldEditContent(
                             }
                         },
                         onClose = { showAccessItemBrowser = false },
+                    )
+                }
+            }
+        }
+        
+        // Chat history
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                    property("margin-top", "16px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        color(Color.white)
+                        fontSize(14.px)
+                    }
+                }
+            ) { Translated("Chat history") }
+
+            // Enable expiration
+            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
+                CheckboxInput(
+                    checked = chatLongevityEnabled,
+                    attrs = {
+                        if (!fieldsEnabled) disabled()
+                        onChange { chatLongevityEnabled = !chatLongevityEnabled }
+                    }
+                )
+                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Expire older messages") }
+            }
+
+            if (chatLongevityEnabled) {
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            property("gap", "8px")
+                            property("align-items", "center")
+                        }
+                    }
+                ) {
+                    DecimalNumberInput(
+                        value = chatLongevityDays,
+                        enabled = fieldsEnabled,
+                        placeholder = translated("Keep messages for (days)"),
+                        onChange = { next -> chatLongevityDays = next },
                     )
                 }
             }

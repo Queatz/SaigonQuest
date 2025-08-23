@@ -21,4 +21,6 @@ data class World(
     var allowAllPlayers: Boolean = false,
     var allowFriendsOfOwners: Boolean = false,
     var allowHoldersOfItemId: String? = null,
+    // Chat settings
+    var chatLongevity: Double = 0.0, // in days; 0.0 means forever
 ) : BaseModel()

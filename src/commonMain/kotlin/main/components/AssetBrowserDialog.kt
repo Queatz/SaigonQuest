@@ -13,15 +13,6 @@ import main.theme.Styles
 import models.AssetSearchResult
 import models.AssetType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.gridTemplateColumns
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
@@ -100,15 +91,10 @@ fun AssetBrowserDialog(
         maxWidth = "860px",
         content = {
             Div(attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    gap(8.px)
-                    padding(8.px)
-                }
+                classes(main.theme.AssetStyles.assetDialogContent)
             }) {
                 // Filters row
-                Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px) } }) {
+                Div(attrs = { classes(main.theme.AssetStyles.assetFiltersRow) }) {
                     // Title search
                     Label { Translated("Title") }
                     Input(type = org.jetbrains.compose.web.attributes.InputType.Text, attrs = {
@@ -147,12 +133,7 @@ fun AssetBrowserDialog(
                     else -> {
                         // Grid of results
                         Div(attrs = {
-                            style {
-                                display(DisplayStyle.Grid)
-                                gridTemplateColumns("repeat(auto-fill, minmax(128px, 1fr))")
-                                gap(12.px)
-                                marginBottom(8.px)
-                            }
+                            classes(main.theme.AssetStyles.assetGrid)
                         }) {
                             for (r in results) {
                                 Div {

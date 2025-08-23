@@ -194,6 +194,7 @@ external class Scene(engine: Engine? = definedExternally) {
     var fogDensity: Float
     var fogColor: Color3
     var clearColor: Color4
+    var autoClear: Boolean
     var ambientColor: Color3
     var activeCamera: Camera?
     var pointerX: Int
@@ -201,6 +202,8 @@ external class Scene(engine: Engine? = definedExternally) {
     var deltaTime: Float
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
+    
+    var imageProcessingConfiguration: ImageProcessingConfiguration
 
     /**
      * List of all meshes in the scene
@@ -881,7 +884,22 @@ external class ImageProcessingPostProcess {
     var vignette: VignetteEffect
     
     /**
-     * Creates a new ImageProcessingPostProcess
+     * The clear color to use when clearing the render target
+     */
+    var clearColor: Color4
+
+    /**
+     * Whether to automatically clear the render target before applying the effect
+     */
+    var autoClear: Boolean
+
+    /**
+     * Whether the color inputs are in linear space
+     */
+    var fromLinearSpace: Boolean
+
+    /**
+    * Creates a new ImageProcessingPostProcess
      * 
      * @param name The name of the post process
      * @param ratio The ratio of the post process (1.0 for full resolution)
@@ -921,6 +939,16 @@ external class ImageProcessingConfiguration {
     var toneMappingEnabled: Boolean
 
     var gamma: Float
+
+    /**
+     * Gets whether the effects should be applied through a post process
+     */
+    var applyByPostProcess: Boolean
+
+    /**
+     * Gets whether the image processing is enabled
+     */
+    var isEnabled: Boolean
 }
 
 /**

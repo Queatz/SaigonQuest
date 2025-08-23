@@ -36,4 +36,10 @@ enum class WebSocketAction {
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,
+
+    // Friend request lifecycle events
+    FRIEND_REQUEST_CREATED,
+    FRIEND_REQUEST_ACCEPTED,
+    FRIEND_REQUEST_DECLINED,
+    FRIEND_REQUEST_CANCELLED,
 }

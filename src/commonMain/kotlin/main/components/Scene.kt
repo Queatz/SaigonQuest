@@ -126,6 +126,7 @@ fun SceneComponent(url: String) {
     val otherPlayerIsLoading = remember { mutableStateOf(false) }
     val otherPlayerErrorMessage = remember { mutableStateOf<String?>(null) }
     val otherPlayerId = remember { mutableStateOf("") }
+    val otherPlayerRequestId = remember { mutableStateOf<String?>(null) }
     
     // State for open URL dialog
     val showOpenUrlDialog = remember { mutableStateOf(false) }
@@ -356,27 +357,24 @@ fun SceneComponent(url: String) {
         coroutineScope.launch {
             try {
                 otherPlayerIsLoading.value = true
-                
-                // Check if they are already friends
-                val isFriend = FriendApi.checkFriendship(otherPlayerId.value)
-                if (isFriend) {
-                    otherPlayerFriendshipStatus.value = FriendshipStatus.FRIENDS
-                    otherPlayerIsLoading.value = false
-                    return@launch
-                }
-                
-                // Check if there's a pending friend request from the other player
-                val friendRequests = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
-                val requestFromFriend = friendRequests.find { notification -> notification.otherUserId == otherPlayerId.value }
-                
-                if (requestFromFriend != null) {
-                    otherPlayerFriendshipStatus.value = FriendshipStatus.REQUEST_RECEIVED
+
+                val dto = FriendApi.getFriendshipStatusDto(otherPlayerId.value)
+                if (dto != null) {
+                    otherPlayerRequestId.value = dto.requestId
+                    otherPlayerFriendshipStatus.value = when (dto.status) {
+                        models.FriendshipState.Friends -> FriendshipStatus.FRIENDS
+                        models.FriendshipState.IncomingRequest -> FriendshipStatus.REQUEST_RECEIVED
+                        models.FriendshipState.OutgoingRequest -> FriendshipStatus.REQUEST_SENT
+                        models.FriendshipState.NotFriends -> FriendshipStatus.NOT_FRIENDS
+                    }
                 } else {
-                    otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+                    otherPlayerRequestId.value = null
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.UNKNOWN
                 }
             } catch (e: Throwable) {
                 console.error("Error checking friendship status", e)
-                otherPlayerFriendshipStatus.value = FriendshipStatus.NOT_FRIENDS
+                otherPlayerRequestId.value = null
+                otherPlayerFriendshipStatus.value = FriendshipStatus.UNKNOWN
             } finally {
                 otherPlayerIsLoading.value = false
             }
@@ -422,28 +420,35 @@ fun SceneComponent(url: String) {
             otherPlayerErrorMessage.value = "Could not identify player"
             return
         }
-        
+
         otherPlayerIsLoading.value = true
         otherPlayerErrorMessage.value = null
-        
+
         val coroutineScope = CoroutineScope(Dispatchers.Main)
         coroutineScope.launch {
             try {
-                // Find the notification for this friend request
-                val friendRequests = NotificationApi.getNotificationsByType(NotificationType.FRIEND_REQUEST)
-                val requestFromFriend = friendRequests.find { notification -> notification.otherUserId == otherPlayerId.value }
-                
-                if (requestFromFriend != null) {
-                    // Accept the friend request
-                    val friend = NotificationApi.acceptFriendRequest(requestFromFriend)
-                    
-                    if (friend != null) {
-                        otherPlayerFriendshipStatus.value = FriendshipStatus.FRIENDS
+                var requestId = otherPlayerRequestId.value
+                if (requestId == null) {
+                    val dto = FriendApi.getFriendshipStatusDto(otherPlayerId.value)
+                    if (dto?.status == models.FriendshipState.IncomingRequest) {
+                        requestId = dto.requestId
+                        otherPlayerRequestId.value = requestId
                     } else {
-                        otherPlayerErrorMessage.value = "Failed to accept friend request"
+                        otherPlayerErrorMessage.value = "No pending friend request found"
+                        return@launch
                     }
+                }
+
+                if (requestId == null) {
+                    otherPlayerErrorMessage.value = "No pending friend request found"
+                    return@launch
+                }
+
+                val friend = FriendApi.acceptRequest(requestId)
+                if (friend != null) {
+                    otherPlayerFriendshipStatus.value = FriendshipStatus.FRIENDS
                 } else {
-                    otherPlayerErrorMessage.value = "Friend request not found"
+                    otherPlayerErrorMessage.value = "Failed to accept friend request"
                 }
             } catch (e: Throwable) {
                 console.error("Error accepting friend request", e)

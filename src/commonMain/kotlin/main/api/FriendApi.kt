@@ -3,9 +3,11 @@ package main.api
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.browser.window
 import main.components.player.FriendshipStatus
 import models.Friend
+import models.FriendRequest
+import models.FriendshipState
+import models.FriendshipStatusDto
 import models.Notification
 import models.NotificationType
 import models.Position
@@ -190,27 +192,104 @@ object FriendApi {
     }
 
     suspend fun getFriendshipStatus(friendId: String): FriendshipStatus {
-        try {
-            // Check if they are already friends
-            if (checkFriendship(friendId)) {
-                return FriendshipStatus.FRIENDS
+        return try {
+            val dto: FriendshipStatusDto = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/friendships/status/$friendId") {
+                ApiClient.addAuthHeader(this)
+            }.body()
+            when (dto.status) {
+                FriendshipState.Friends -> FriendshipStatus.FRIENDS
+                FriendshipState.IncomingRequest -> FriendshipStatus.REQUEST_RECEIVED
+                FriendshipState.OutgoingRequest -> FriendshipStatus.REQUEST_SENT
+                FriendshipState.NotFriends -> FriendshipStatus.NOT_FRIENDS
             }
-            
-            // Check if a friend request has been sent
-            if (checkRequestSent(friendId)) {
-                return FriendshipStatus.REQUEST_SENT
-            }
-            
-            // Check if a friend request has been received
-            if (checkRequestReceived(friendId)) {
-                return FriendshipStatus.REQUEST_RECEIVED
-            }
-            
-            // If none of the above, they are not friends
-            return FriendshipStatus.NOT_FRIENDS
         } catch (e: Throwable) {
             console.error("Error getting friendship status", e)
-            return FriendshipStatus.UNKNOWN
+            FriendshipStatus.UNKNOWN
+        }
+    }
+
+    suspend fun getFriendshipStatusDto(friendId: String): FriendshipStatusDto? {
+        return try {
+            ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/friendships/status/$friendId") {
+                ApiClient.addAuthHeader(this)
+            }.body()
+        } catch (e: Throwable) {
+            console.error("Error getting friendship status dto", e)
+            null
+        }
+    }
+
+    // New Friend Requests API (server-driven)
+    suspend fun getPendingIncoming(): List<FriendRequest> {
+        return try {
+            ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/friend-requests?direction=in") {
+                ApiClient.addAuthHeader(this)
+            }.body()
+        } catch (e: Throwable) {
+            console.error("Error fetching incoming friend requests", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getPendingOutgoing(): List<FriendRequest> {
+        return try {
+            ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/friend-requests?direction=out") {
+                ApiClient.addAuthHeader(this)
+            }.body()
+        } catch (e: Throwable) {
+            console.error("Error fetching outgoing friend requests", e)
+            emptyList()
+        }
+    }
+
+    suspend fun sendFriendRequestNew(toUserId: String): FriendRequest? {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend-requests") {
+                ApiClient.addAuthHeader(this)
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("toUserId" to toUserId))
+            }
+            if (response.status == HttpStatusCode.NoContent) return null
+            if (response.status.isSuccess()) response.body() else null
+        } catch (e: Throwable) {
+            console.error("Error sending friend request (new endpoint)", e)
+            null
+        }
+    }
+
+    suspend fun acceptRequest(id: String): Friend? {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend-requests/$id/accept") {
+                ApiClient.addAuthHeader(this)
+            }
+            if (response.status.isSuccess()) response.body() else null
+        } catch (e: Throwable) {
+            console.error("Error accepting friend request", e)
+            null
+        }
+    }
+
+    suspend fun declineRequest(id: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend-requests/$id/decline") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error declining friend request", e)
+            false
+        }
+    }
+
+    suspend fun cancelRequest(id: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend-requests/$id/cancel") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error cancelling friend request", e)
+            false
         }
     }
 }

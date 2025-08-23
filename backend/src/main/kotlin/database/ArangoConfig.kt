@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.SerializerProvider
@@ -21,10 +20,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.kotlinModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import db.StableNamingStrategy
 import kotlin.time.Instant
 
 object ArangoConfig {
@@ -95,6 +91,7 @@ object CollectionsConfig {
     const val CHAT_MESSAGE_PINS_COLLECTION = "chat_message_pins"
     const val NOTIFICATIONS_COLLECTION = "notifications"
     const val FRIENDS_COLLECTION = "friends"
+    const val FRIEND_REQUESTS_COLLECTION = "friend_requests"
     const val INVENTORIES_COLLECTION = "inventories"
     const val INVENTORY_ITEMS_COLLECTION = "inventory_items"
     const val ITEMS_COLLECTION = "items"
@@ -120,6 +117,7 @@ object CollectionsConfig {
         CHAT_MESSAGE_PINS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         NOTIFICATIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         FRIENDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        FRIEND_REQUESTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         INVENTORIES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         INVENTORY_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),

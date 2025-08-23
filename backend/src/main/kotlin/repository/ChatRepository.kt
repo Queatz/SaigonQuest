@@ -49,11 +49,14 @@ class ChatRepository {
     fun getMessagesByWorldId(
         worldId: String,
         limit: Int = 100,
-        olderThan: Instant = Clock.System.now()
+        olderThan: Instant = Clock.System.now(),
+        minTimestamp: Instant? = null,
     ): List<ChatMessage> {
         val query = """
             FOR m IN @@collection
-            FILTER m.worldId == @worldId AND m.timestamp <= @olderThan
+            FILTER m.worldId == @worldId 
+               AND m.timestamp <= @olderThan
+               AND (IS_NULL(@minTimestamp) OR m.timestamp >= @minTimestamp)
             SORT m.timestamp DESC
             LIMIT @limit
             RETURN m
@@ -63,7 +66,8 @@ class ChatRepository {
             "@collection" to CollectionsConfig.CHAT_MESSAGES_COLLECTION,
             "worldId" to worldId,
             "limit" to limit,
-            "olderThan" to olderThan
+            "olderThan" to olderThan,
+            "minTimestamp" to minTimestamp
         )
         
         return ArangoConfig.db.query(query, ChatMessage::class.java, bindVars).toList()

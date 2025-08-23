@@ -100,8 +100,8 @@ class WorldLoader(private val scene: Scene) {
     }
     
     companion object {
-        // Callback to be executed when the world is loaded
-        private var onWorldLoadedCallback: (() -> Unit)? = null
+        // Callbacks to be executed when the world is loaded
+        private val onWorldLoadedCallbacks: MutableList<() -> Unit> = mutableListOf()
 
         // References to the currently active lights for global updates
         private var currentHemisphericLight: HemisphericLight? = null
@@ -119,16 +119,23 @@ class WorldLoader(private val scene: Scene) {
          * @param callback The callback to execute
          */
         fun onWorldLoaded(callback: () -> Unit) {
-            onWorldLoadedCallback = callback
+            onWorldLoadedCallbacks.add(callback)
         }
         
         /**
-         * Execute the onWorldLoaded callback if it exists
+         * Execute all onWorldLoaded callbacks, if any
          */
         private fun executeWorldLoadedCallback() {
-            onWorldLoadedCallback?.invoke()
-            // Clear the callback after execution
-            onWorldLoadedCallback = null
+            if (onWorldLoadedCallbacks.isEmpty()) return
+            val snapshot = onWorldLoadedCallbacks.toList()
+            onWorldLoadedCallbacks.clear()
+            for (cb in snapshot) {
+                try {
+                    cb.invoke()
+                } catch (e: Throwable) {
+                    println("[ERROR] onWorldLoaded callback failed: ${e.message}")
+                }
+            }
         }
 
         /**
@@ -673,6 +680,8 @@ class WorldLoader(private val scene: Scene) {
     private fun applyWorldEditLighting(world: World) {
         try {
             currentWorld = world
+            // Update outdoors flag so global systems (e.g., wind) react immediately during edits
+            currentWorldIsOutdoors = world.isOutdoors
             // Always ensure fog matches edited value
             setSceneFogDensity(world.fogDensity)
 

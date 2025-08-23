@@ -16,6 +16,11 @@ enum class NotificationType {
      * Friend request notification
      */
     FRIEND_REQUEST,
+
+    /**
+     * Friend request accepted notification
+     */
+    FRIEND_REQUEST_ACCEPTED,
     
     /**
      * Achievement notification

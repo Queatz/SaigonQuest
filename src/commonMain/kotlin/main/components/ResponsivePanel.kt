@@ -18,6 +18,7 @@ fun ResponsivePanel(
     title: String,
     isMobile: Boolean,
     onClose: () -> Unit,
+    headerRight: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     if (isMobile) {
@@ -47,14 +48,19 @@ fun ResponsivePanel(
                     ) {
                         Text(title)
                     }
-                    
-                    Button(
-                        attrs = {
-                            classes(Styles.closeButton)
-                            onClick { onClose() }
+                    // Right side: hint + close
+                    Div(attrs = { classes(Styles.panelHeaderRight) }) {
+                        if (headerRight != null) {
+                            Div(attrs = { classes(Styles.panelHeaderHint) }) { headerRight() }
                         }
-                    ) {
-                        Text("×")
+                        Button(
+                            attrs = {
+                                classes(Styles.closeButton)
+                                onClick { onClose() }
+                            }
+                        ) {
+                            Text("×")
+                        }
                     }
                 }
                 
@@ -73,6 +79,7 @@ fun ResponsivePanel(
         SimpleSidePanel(
             title = title,
             onClose = onClose,
+            headerRight = headerRight,
             content = content
         )
     }
