@@ -9,6 +9,7 @@ import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
@@ -62,16 +63,25 @@ fun UserStatusBars(
             Span(
                 attrs = {
                     classes(Styles.playerAttrStatusHeader)
+                    style {
+                        height(size.px)
+                    }
                 }
-            ) { Translated("Health") }
+            ) { Translated("Body") }
             Span(
                 attrs = {
                     classes(Styles.playerAttrStatusHeader)
+                    style {
+                        height(size.px)
+                    }
                 }
             ) { Translated("Mind") }
             Span(
                 attrs = {
                     classes(Styles.playerAttrStatusHeader)
+                    style {
+                        height(size.px)
+                    }
                 }
             ) { Translated("Spirit") }
         }
@@ -95,24 +105,37 @@ fun UserStatusBars(
             }) {
                 repeat(5) { i ->
                     val idx = iconIndexFor(health.coerceIn(0, 10), i, Triple(10, 11, 12))
-                    IconRenderer(
-                        url = sheetUrl,
-                        index = idx,
-                        size = size,
-                        onClick = if (readOnly || onChange == null) null else {
-                            {
-                                val full = (i + 1) * 2
-                                val half = i * 2 + 1
-                                val empty = i * 2
-                                val newVal = when {
-                                    health >= full && health < full + 2 -> half
-                                    health == half -> empty
-                                    else -> full
-                                }.coerceIn(0, 10)
-                                onChange.invoke(newVal, mind, spirit)
-                            }
+                    val rate = when (idx) {
+                        10 -> 1f
+                        11 -> .5f
+                        else -> 0f
+                    } / 4f
+                    Sparkle(
+                        ratePerSecond = rate,
+                    ) {
+                        RandomJitter(
+                            seedKey = "health-$i",
+                        ) {
+                            IconRenderer(
+                                url = sheetUrl,
+                                index = idx,
+                                size = size,
+                                onClick = if (readOnly || onChange == null) null else {
+                                    {
+                                        val full = (i + 1) * 2
+                                        val half = i * 2 + 1
+                                        val empty = i * 2
+                                        val newVal = when {
+                                            health >= full && health < full + 2 -> half
+                                            health == half -> empty
+                                            else -> full
+                                        }.coerceIn(0, 10)
+                                        onChange.invoke(newVal, mind, spirit)
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
@@ -126,24 +149,37 @@ fun UserStatusBars(
             }) {
                 repeat(5) { i ->
                     val idx = iconIndexFor(mind.coerceIn(0, 10), i, Triple(13, 14, 15))
-                    IconRenderer(
-                        url = sheetUrl,
-                        index = idx,
-                        size = size,
-                        onClick = if (readOnly || onChange == null) null else {
-                            {
-                                val full = (i + 1) * 2
-                                val half = i * 2 + 1
-                                val empty = i * 2
-                                val newVal = when {
-                                    mind >= full && mind < full + 2 -> half
-                                    mind == half -> empty
-                                    else -> full
-                                }.coerceIn(0, 10)
-                                onChange.invoke(health, newVal, spirit)
-                            }
+                    val rate = when (idx) {
+                        13 -> 1f
+                        14 -> .5f
+                        else -> 0f
+                    } / 4f
+                    Sparkle(
+                        ratePerSecond = rate,
+                    ) {
+                        RandomJitter(
+                            seedKey = "mind-$i",
+                        ) {
+                            IconRenderer(
+                                url = sheetUrl,
+                                index = idx,
+                                size = size,
+                                onClick = if (readOnly || onChange == null) null else {
+                                    {
+                                        val full = (i + 1) * 2
+                                        val half = i * 2 + 1
+                                        val empty = i * 2
+                                        val newVal = when {
+                                            mind >= full && mind < full + 2 -> half
+                                            mind == half -> empty
+                                            else -> full
+                                        }.coerceIn(0, 10)
+                                        onChange.invoke(health, newVal, spirit)
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
@@ -157,24 +193,37 @@ fun UserStatusBars(
             }) {
                 repeat(5) { i ->
                     val idx = iconIndexFor(spirit.coerceIn(0, 10), i, Triple(16, 17, 18))
-                    IconRenderer(
-                        url = sheetUrl,
-                        index = idx,
-                        size = size,
-                        onClick = if (readOnly || onChange == null) null else {
-                            {
-                                val full = (i + 1) * 2
-                                val half = i * 2 + 1
-                                val empty = i * 2
-                                val newVal = when {
-                                    spirit >= full && spirit < full + 2 -> half
-                                    spirit == half -> empty
-                                    else -> full
-                                }.coerceIn(0, 10)
-                                onChange.invoke(health, mind, newVal)
-                            }
+                    val rate = when (idx) {
+                        16 -> 1f
+                        17 -> .5f
+                        else -> 0f
+                    } / 4f
+                    Sparkle(
+                        ratePerSecond = rate,
+                    ) {
+                        RandomJitter(
+                            seedKey = "spirit-$i",
+                        ) {
+                            IconRenderer(
+                                url = sheetUrl,
+                                index = idx,
+                                size = size,
+                                onClick = if (readOnly || onChange == null) null else {
+                                    {
+                                        val full = (i + 1) * 2
+                                        val half = i * 2 + 1
+                                        val empty = i * 2
+                                        val newVal = when {
+                                            spirit >= full && spirit < full + 2 -> half
+                                            spirit == half -> empty
+                                            else -> full
+                                        }.coerceIn(0, 10)
+                                        onChange.invoke(health, mind, newVal)
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }

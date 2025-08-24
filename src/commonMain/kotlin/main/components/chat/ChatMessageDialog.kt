@@ -34,6 +34,8 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun ChatMessageDialog(
     message: ChatMessage,
+    isOwner: Boolean,
+    isCurrentUser: Boolean,
     onClose: () -> Unit,
     onEdit: (String) -> Unit,
     onDelete: () -> Unit
@@ -168,15 +170,19 @@ fun ChatMessageDialog(
                 }
             } else {
                 // Normal mode actions
-                DialogButton(
-                    onClick = { showDeleteConfirmation = true }
-                ) {
-                    Translated("Delete")
+                if (isOwner || isCurrentUser) {
+                    DialogButton(
+                        onClick = { showDeleteConfirmation = true }
+                    ) {
+                        Translated("Delete")
+                    }
                 }
-                DialogButton(
-                    onClick = { isEditing = true }
-                ) {
-                    Translated("Edit")
+                if (isCurrentUser) {
+                    DialogButton(
+                        onClick = { isEditing = true }
+                    ) {
+                        Translated("Edit")
+                    }
                 }
                 DialogButton(
                     onClick = onClose,

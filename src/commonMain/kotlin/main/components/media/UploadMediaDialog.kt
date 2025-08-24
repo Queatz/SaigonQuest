@@ -20,6 +20,7 @@ import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLInputElement
 import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
+import org.w3c.files.File
 
 @Composable
 fun UploadMediaDialog(
@@ -63,7 +64,7 @@ fun UploadMediaDialog(
         }
     }
 
-    fun uploadFile(file: dynamic) {
+    fun uploadFile(file: File) {
         val scope = MainScope()
         scope.launch {
             uploading = true
@@ -72,7 +73,7 @@ fun UploadMediaDialog(
                 val token = UserApi.getToken() ?: ""
                 val form = org.w3c.xhr.FormData()
                 form.append("API_USER_BEARER_TOKEN", token)
-                form.append("file", file, file.name as String)
+                form.append("file", file, file.name)
 
                 val url = ContentApiConstants.CONTENT_BASE_URL + "/upload"
                 val init = js("({})").unsafeCast<RequestInit>().also {

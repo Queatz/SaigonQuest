@@ -151,9 +151,20 @@ private fun NotificationItem(
                 else
                     NotificationStyles.notificationItemUnread,
             )
-            if (notification.type == NotificationType.SYSTEM) {
-                classes(NotificationStyles.notificationItemSystem)
+
+            when (notification.type) {
+                NotificationType.SYSTEM -> {
+                    classes(NotificationStyles.notificationItemSystem)
+                }
+                NotificationType.CHAT_NEW -> {
+                    classes(NotificationStyles.notificationItemChatNew)
+                }
+                NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED -> {
+                    classes(NotificationStyles.notificationItemFriend)
+                }
+                else -> Unit
             }
+
             onClick { onClick() }
         }
     ) {
@@ -166,10 +177,23 @@ private fun NotificationItem(
             
             // Timestamp
             P(attrs = { classes(NotificationStyles.notificationTimestamp) }) {
-                if (notification.type == NotificationType.SYSTEM) {
-                    Span(attrs = { classes(NotificationStyles.systemBadge) }) {
-                        Translated("System")
+                when (notification.type) {
+                    NotificationType.SYSTEM -> {
+                        Span(attrs = { classes(NotificationStyles.systemBadge) }) {
+                            Translated("System")
+                        }
                     }
+                    NotificationType.CHAT_NEW -> {
+                        Span(attrs = { classes(NotificationStyles.chatBadge) }) {
+                            Translated("Chat")
+                        }
+                    }
+                    NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED -> {
+                        Span(attrs = { classes(NotificationStyles.friendBadge) }) {
+                            Translated("Friends")
+                        }
+                    }
+                    else -> Unit
                 }
                 Text(TimeUtils.formatTimestamp(notification.timestamp))
             }

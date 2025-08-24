@@ -57,7 +57,19 @@ fun ChatMessages(worldId: String) {
     
     // Reference to the messages container for scrolling
     val messagesContainerRef = remember { mutableStateOf<HTMLDivElement?>(null) }
-    
+
+    // Get current user to determine if this message is from the current user
+    val currentUserId = remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        try {
+            val user = UserApi.getCurrentUser()
+            currentUserId.value = user.key
+        } catch (e: Throwable) {
+            console.error("Error getting current user", e)
+        }
+    }
+
     // Function to scroll to the bottom of the messages container with smooth scrolling
     fun scrollToBottom() {
         try {
@@ -227,6 +239,8 @@ fun ChatMessages(worldId: String) {
     selectedMessage?.let { currentMessage ->
         ChatMessageDialog(
             message = currentMessage,
+            isOwner = isOwner,
+            isCurrentUser = currentMessage.userId == currentUserId.value,
             onClose = { selectedMessage = null },
             onEdit = { newText ->
                 // Update the message using WebSocketApi
@@ -351,6 +365,7 @@ fun ChatMessages(worldId: String) {
                     message = chatMessage,
                     onMessageClick = { message -> selectedMessage = message },
                     isOwner = isOwner,
+                    isCurrentUser = currentUserId.value == chatMessage.userId,
                     isPinned = pinnedIds.contains(chatMessage.key),
                     onPinToggle = {
                         scope.launch {
@@ -384,32 +399,16 @@ fun ChatMessageItem(
     message: ChatMessage,
     onMessageClick: (ChatMessage) -> Unit,
     isOwner: Boolean = false,
+    isCurrentUser: Boolean = false,
     isPinned: Boolean = false,
     onPinToggle: (() -> Unit)? = null,
 ) {
-    // Get current user to determine if this message is from the current user
-    val currentUserId = remember { mutableStateOf("") }
-    
-    LaunchedEffect(Unit) {
-        try {
-            val user = UserApi.getCurrentUser()
-            currentUserId.value = user.key
-        } catch (e: Throwable) {
-            console.error("Error getting current user", e)
-        }
-    }
-    
-    val isCurrentUser = message.userId == currentUserId.value
-    
     Div(
         attrs = {
             classes(Styles.chatMessageItem)
             classes(if (isCurrentUser) Styles.chatMessageItemCurrentUser else Styles.chatMessageItemOtherUser)
             
-            // Add click handler for user's own messages
-            if (isCurrentUser) {
-                onClick { onMessageClick(message) }
-            }
+            onClick { onMessageClick(message) }
         }
     ) {
         // Username and timestamp

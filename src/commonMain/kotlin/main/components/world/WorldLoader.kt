@@ -165,7 +165,7 @@ class WorldLoader(private val scene: Scene) {
          */
         fun updateDirectionalLightColorHex(hexColor: String) {
             try {
-                val color = Color3.FromHexString(hexColor)
+                val color = Color3.FromHexString(hexColor).toLinearSpace()
                 val light = currentDirectionalLight
                 if (light != null) {
                     light.diffuse = color
@@ -183,7 +183,7 @@ class WorldLoader(private val scene: Scene) {
          */
         fun updateHemisphericLightColorHex(hexColor: String) {
             try {
-                val color = Color3.FromHexString(hexColor)
+                val color = Color3.FromHexString(hexColor).toLinearSpace()
                 updateHemisphericLightColor(color)
             } catch (e: Throwable) {
                 println("[ERROR] Failed to update hemispheric light color: ${e.message}")
@@ -713,7 +713,7 @@ class WorldLoader(private val scene: Scene) {
                 }
                 // Apply indoor lighting immediately
                 setSceneBackgroundColor(world.backgroundColor)
-                WorldLoader.updateDirectionalLightColorHex(world.directionalLightColor)
+                updateDirectionalLightColorHex(world.directionalLightColor)
             }
         } catch (e: Throwable) {
             println("[ERROR] Failed to apply edited world lighting: ${e.message}")
@@ -765,7 +765,7 @@ class WorldLoader(private val scene: Scene) {
             val color4 = skyColor.toColor4().also { it.a = 1.0f }
             scene.clearColor = color4.toLinearSpace()
             if (scene.fogDensity > 0.0f) {
-                scene.fogColor = skyColor
+                scene.fogColor = skyColor.toLinearSpace()
             }
         } catch (e: Throwable) {
             println("[ERROR] Failed to set outdoors background color: ${e.message}")

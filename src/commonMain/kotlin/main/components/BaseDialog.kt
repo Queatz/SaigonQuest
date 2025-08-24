@@ -33,6 +33,7 @@ fun BaseDialog(
     isFullscreen: Boolean = false,
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,
+    isFullWidth: Boolean = false,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -68,6 +69,9 @@ fun BaseDialog(
                             if (isFullHeight) {
                                 property("height", "calc(100vh - 64px)")
                             }
+                            if (isFullWidth) {
+                                property("width", "calc(100vw - 64px)")
+                            }
                         }
                     }
                     // Stop propagation to prevent closing when clicking inside the dialog
@@ -102,6 +106,7 @@ fun BaseDialog(
                                     display(DisplayStyle.Flex)
                                     alignItems(AlignItems.Center)
                                     property("gap", "8px")
+                                    marginLeft(16.px)
                                 }
                             }
                         ) {

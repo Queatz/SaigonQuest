@@ -35,7 +35,7 @@ class DeleteChatMessageHandler(private val chatRepository: ChatRepository) : Web
             // Delete message in database
             WebSocketDebug.logMessage("DELETING", "Deleting chat message in database", session)
             try {
-                val deletedMessage = chatRepository.deleteMessage(chatMessage.key, chatMessage.userId)
+                val deletedMessage = chatRepository.deleteMessage(chatMessage.key, connection.user.key)
                 
                 if (deletedMessage != null) {
                     WebSocketDebug.logMessage("DELETED", "Message deleted with ID: ${deletedMessage.key}", session)

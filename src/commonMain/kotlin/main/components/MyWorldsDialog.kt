@@ -8,10 +8,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.WorldApi
 import models.World
+import app.softwork.routingcompose.Router
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.borderRadius
@@ -35,12 +35,14 @@ import org.jetbrains.compose.web.dom.Text
  */
 @Composable
 fun MyWorldsDialog(
+    router: Router,
     onClose: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
     var worlds by remember { mutableStateOf<List<World>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showNewWorldPrompt by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -57,6 +59,12 @@ fun MyWorldsDialog(
     BaseDialog(
         onClose = onClose,
         title = translated("My Worlds"),
+        headerActions = {
+            DialogButton(
+                onClick = { showNewWorldPrompt = true },
+                isPrimary = true,
+            ) { Translated("New world") }
+        },
         maxWidth = "560px",
         content = {
             when {
@@ -156,4 +164,22 @@ fun MyWorldsDialog(
             DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
+
+    if (showNewWorldPrompt) {
+        BasicPromptDialog(
+            title = translated("New world"),
+            message = translated("Enter world URL"),
+            defaultValue = "",
+            isNumber = false,
+            onSubmit = { input ->
+                val slug = input.trim().trim('/')
+                if (slug.isNotEmpty()) {
+                    showNewWorldPrompt = false
+                    onClose()
+                    router.navigate("/$slug")
+                }
+            },
+            onCancel = { showNewWorldPrompt = false },
+        )
+    }
 }

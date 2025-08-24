@@ -8,6 +8,7 @@ import database.CollectionsConfig
 import models.ChatMessage
 import models.ChatMessagePin
 import models.ChatReadMarker
+import models.World
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -22,6 +23,7 @@ class ChatRepository {
     private val collection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_MESSAGES_COLLECTION)
     private val readMarkersCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_READ_MARKERS_COLLECTION)
     private val pinsCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.CHAT_MESSAGE_PINS_COLLECTION)
+    private val worldsCollection: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.WORLDS_COLLECTION)
 
     /**
      * Save a chat message to the database
@@ -213,21 +215,28 @@ class ChatRepository {
      */
     fun deleteMessage(messageKey: String, userId: String): ChatMessage? {
         try {
-            // Ensure the message exists and belongs to the user trying to delete it
+            // Load the message
             val existingMessage = collection.getDocument(messageKey, ChatMessage::class.java)
-            
-            // Only delete if the user IDs match
-            if (existingMessage.userId != userId) {
+
+            // Allow deletion if the requester is either the author or the world owner
+            val isAuthor = existingMessage.userId == userId
+            val isWorldOwner = try {
+                val world = worldsCollection.getDocument(existingMessage.worldId, World::class.java)
+                world.userId == userId
+            } catch (_: Throwable) {
+                false
+            }
+            if (!isAuthor && !isWorldOwner) {
                 return null
             }
-            
+
             // Mark as deleted and clear message content
             val deletedMessage = existingMessage.copy(
                 message = "",
                 deleted = true,
                 edited = false
             )
-            
+
             // Update the message
             collection.updateDocument(messageKey, deletedMessage)
 

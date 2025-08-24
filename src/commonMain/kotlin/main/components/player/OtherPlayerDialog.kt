@@ -185,7 +185,7 @@ fun OtherPlayerDialog(
             // Close button in footer
             DialogButton(
                 onClick = { onClose() },
-                isPrimary = false
+                isPrimary = true
             ) {
                 Translated("Close")
             }

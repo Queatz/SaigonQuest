@@ -112,7 +112,19 @@ object NotificationStyles : StyleSheet() {
         property("border-left", "4px solid rgba(80, 160, 255, 0.9)")
         paddingLeft(10.px) // compensate for left border
     }
-    
+
+    // System notification accent (e.g., subtle blue left border)
+    val notificationItemChatNew by style {
+        property("border-left", "4px solid rgba(255, 160, 80, 0.9)")
+        paddingLeft(10.px) // compensate for left border
+    }
+
+    // System notification accent (e.g., subtle blue left border)
+    val notificationItemFriend by style {
+        property("border-left", "4px solid rgba(160, 255, 80, 0.9)")
+        paddingLeft(10.px) // compensate for left border
+    }
+
     val notificationHeader by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
@@ -147,7 +159,27 @@ object NotificationStyles : StyleSheet() {
         fontSize(12.px)
         marginRight(8.px)
     }
-    
+
+    // Small badge for system notifications
+    val chatBadge by style {
+        backgroundColor(rgba(255, 160, 80, 0.15))
+        color(Color("#a6c8ff"))
+        borderRadius(12.px)
+        padding(2.px, 8.px)
+        fontSize(12.px)
+        marginRight(8.px)
+    }
+
+    // Small badge for system notifications
+    val friendBadge by style {
+        backgroundColor(rgba(160, 255, 80, 0.15))
+        color(Color("#a6c8ff"))
+        borderRadius(12.px)
+        padding(2.px, 8.px)
+        fontSize(12.px)
+        marginRight(8.px)
+    }
+
     // Friend request notification specific styles
     val friendRequestContent by style {
         display(DisplayStyle.Flex)

@@ -134,6 +134,7 @@ fun Application.module() {
             val userId = try {
                 AuthClient(apiBase).validate(token)
             } catch (e: Throwable) {
+                e.printStackTrace()
                 return@post call.respond(HttpStatusCode.Unauthorized, "Token validation failed")
             }
             if (userId == null) return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")

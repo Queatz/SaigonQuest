@@ -271,7 +271,7 @@ fun PlayerDialog(
                                 classes(Styles.settingsSectionLabel)
                             }
                         ) {
-                            Translated("Health, mind, spirit")
+                            Translated("Health")
                         }
 
                         UserStatusBars(
@@ -505,6 +505,7 @@ fun PlayerDialog(
             // Render the My Worlds dialog when visible
             if (showMyWorldsDialog.value) {
                 MyWorldsDialog(
+                    router = router,
                     onClose = { showMyWorldsDialog.value = false },
                     onNavigate = { path -> router.navigate(path) }
                 )

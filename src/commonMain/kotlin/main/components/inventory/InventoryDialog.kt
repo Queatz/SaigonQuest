@@ -977,20 +977,16 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     ) {
                                         // Use button
                                         DialogButton(
-                                            onClick = { handleUseItem(itemId) },
+                                            onClick = {
+                                                if (item.wearable) {
+                                                    handleWearItem(itemId)
+                                                } else {
+                                                    handleUseItem(itemId)
+                                                }
+                                            },
                                             isPrimary = true
                                         ) {
-                                            Text(translated("Use"))
-                                        }
-                                        
-                                        // Wear button for wearable items
-                                        if (item.wearable) {
-                                            DialogButton(
-                                                onClick = { handleWearItem(itemId) },
-                                                isPrimary = false
-                                            ) {
-                                                Text("Wear")
-                                            }
+                                            Text(translated(if (item.wearable) "Wear" else "Use"))
                                         }
                                     }
                                 }

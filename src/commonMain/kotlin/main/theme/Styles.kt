@@ -56,9 +56,9 @@ import web.cssom.BorderStyle
 object Styles : StyleSheet() {
     val playerAttrStatusHeader by style {
         display(DisplayStyle.Flex)
-        height(18.px)
         alignItems(AlignItems.Center)
         fontSize(14.px)
+        fontWeight("bold")
     }
 
     // Asset editor: SpriteSheet-specific styles
@@ -393,6 +393,9 @@ object Styles : StyleSheet() {
         width(32.px)
         height(32.px)
         display(DisplayStyle.Block)
+        property("image-rendering", "pixelated")
+        property("image-rendering", "-moz-crisp-edges")
+        property("image-rendering", "crisp-edges")
     }
     
     // Panel styles
@@ -484,8 +487,6 @@ object Styles : StyleSheet() {
     
     // Base dialog styles (for the new BaseDialog component)
     val baseDialogContainer by style {
-        width(90.percent)
-        property("max-width", "400px")
         backgroundColor(rgba(30, 30, 30, 0.95))
         property("border-radius", "8px")
         property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
@@ -548,7 +549,7 @@ object Styles : StyleSheet() {
         padding(8.px, 16.px)
         backgroundColor(Color.transparent)
         color(Theme.colors.primary)
-        property("border", "0")
+        property("border", "1px solid ${Theme.colors.primary}")
         property("border-radius", "4px")
         property("cursor", "pointer")
     }
@@ -767,13 +768,13 @@ object Styles : StyleSheet() {
     val chatMessageItem by style {
         marginBottom(12.px)
         padding(8.px)
+        cursor("pointer")
         property("border-radius", "4px")
         property("word-break", "break-word")
     }
     
     val chatMessageItemCurrentUser by style {
         backgroundColor(rgba(0, 100, 200, 0.1))
-        cursor("pointer")
     }
     
     val chatMessageItemOtherUser by style {
@@ -879,8 +880,7 @@ object Styles : StyleSheet() {
     
     val formButtonsContainer by style {
         display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        property("margin-top", "24px")
+        justifyContent(JustifyContent.FlexEnd)
     }
 
     // Balance sections styling

@@ -122,7 +122,7 @@ fun WorldEditContent(
             if (scene != null) {
                 if (density > 0.0f) {
                     // Enable fog in the scene
-                    scene.fogMode = Scene.Companion.FOGMODE_EXP2
+                    scene.fogMode = Scene.FOGMODE_EXP2
                     
                     // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
                     scene.fogDensity = density * 0.1f
@@ -312,7 +312,7 @@ fun WorldEditContent(
     fun restoreOriginalState() {
         try {
             // If editing and the file was changed during preview, reload the original file
-            if (isEditing && currentWorld != null && file != currentWorld.file) {
+            if (isEditing && file != currentWorld.file) {
                 WorldLoader.reloadWorldFile(currentWorld)
                 // Also ensure lighting is restored to the original world values
                 WorldLoader.notifyWorldEdited(currentWorld)
@@ -453,14 +453,14 @@ fun WorldEditContent(
             val lat = latitude.toDoubleOrNull()
             val lon = longitude.toDoubleOrNull()
             val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
-            val previewWorld = World(
+            val previewWorld = currentWorld?.copy(
                 // Only fields relevant to lighting are necessary
                 isOutdoors = isOutdoors,
                 latLng = latLngList,
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
-            )
+            ) ?: return
             WorldLoader.notifyWorldEdited(previewWorld)
         } catch (e: Throwable) {
             console.warn("[WARN] Failed to preview lighting from form: ${e.message}")

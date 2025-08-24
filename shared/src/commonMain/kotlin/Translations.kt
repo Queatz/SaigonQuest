@@ -1,6 +1,15 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Health
+vi: Sức khỏe
+
+Mind
+vi: Tâm trí
+
+Spirit
+vi: Tinh thần
+
 Outdoors
 vi: Ngoài trời
 
@@ -1123,6 +1132,12 @@ vi: Không thể nhảy đến bạn của bạn ngay bây giờ
 
 Unable to determine your friend's exact location
 vi: Không thể xác định vị trí chính xác của bạn của bạn
+
+New world
+vi: Thế giới mới
+
+Enter world URL
+vi: Nhập URL thế giới
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
