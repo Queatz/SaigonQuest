@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import kotlinx.browser.document
 import main.theme.Styles
 import main.theme.Theme
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.AlignItems
@@ -123,7 +124,7 @@ fun BaseDialog(
                                         onClick { onClose() }
                                     }
                                 ) {
-                                    Text("×")
+                                    Text("✖️")
                                 }
                             }
                         }
@@ -171,6 +172,7 @@ fun BaseDialog(
 fun DialogButton(
     onClick: () -> Unit,
     isPrimary: Boolean = false,
+    isDisabled: Boolean = false,
     content: @Composable () -> Unit
 ) {
     Button(
@@ -180,6 +182,11 @@ fun DialogButton(
             } else {
                 classes(Styles.baseDialogButtonSecondary)
             }
+
+            if (isDisabled) {
+                disabled()
+            }
+
             onClick { onClick() }
         }
     ) {

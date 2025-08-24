@@ -147,12 +147,12 @@ fun BalanceDialog(
                 }
             }
 
-            error?.let { e ->
-                Div({ classes(Styles.formErrorMessage) }) { Text(e) }
-            }
-
             // Request form
             Div({ classes(Styles.formGroup, Styles.container) }) {
+                error?.let { e ->
+                    Div({ classes(Styles.formErrorMessage) }) { Text(e) }
+                }
+
                 Label(attrs = { classes(Styles.formLabel) }) { Translated("Type") }
                 Div(attrs = { classes(Styles.languageSwitcherContainer) }) {
                     Div(attrs = {

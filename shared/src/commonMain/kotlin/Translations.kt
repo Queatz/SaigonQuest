@@ -658,6 +658,12 @@ vi: Làm mới
 New
 vi: Mới
 
+Bought
+vi: Đã mua
+
+Give
+vi: Cho
+
 Loading inventory...
 vi: Đang tải kho đồ...
 
@@ -679,11 +685,14 @@ vi: Chưa mặc vật phẩm nào. Kéo vật phẩm có thể mặc vào nhân 
 (Click to remove)
 vi: (Nhấp để gỡ)
 
-Inventory Items
+Inventory items
 vi: Vật phẩm trong kho
 
 Your inventory is empty. Click '+ New' to create an item.
 vi: Kho đồ của bạn trống. Nhấp '+ Mới' để tạo vật phẩm.
+
+Collect item
+vi: Lượm vật phẩm
 
 Wearable
 vi: Có thể mặc
@@ -693,6 +702,9 @@ vi: Dùng
 
 Wear
 vi: Mặc
+
+Take off
+vi: Cời
 
 Inventory refreshed
 vi: Kho đồ đã được làm mới
@@ -1156,6 +1168,30 @@ vi: Thế giới mới
 
 Enter world URL
 vi: Nhập URL thế giới
+
+Marketplace
+vi: Chợ
+
+Your balance
+vi: Số dư của bạn
+
+Search items
+vi: Tìm kiếm vật phẩm
+
+Buy item
+vi: Mua vật phẩm
+
+Per item
+vi: Mỗi vật phẩm
+
+Total
+vi: Tổng
+
+Buy
+vi: Mua
+
+for
+vi: với
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

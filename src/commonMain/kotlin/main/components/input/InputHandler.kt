@@ -13,6 +13,7 @@ import lib.PointerEventTypes
 import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
+import Translations.str
 import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -40,7 +41,8 @@ class InputHandler(
     private val scene: Scene,
     private val playerController: PlayerController,
     private val cameraController: CameraController,
-    private val onShowOtherPlayerDialog: ((username: String, isPlayer: Boolean) -> Unit)? = null
+    private val onShowOtherPlayerDialog: ((username: String, isPlayer: Boolean) -> Unit)? = null,
+    private val onShowMessageDialog: ((message: String) -> Unit)? = null,
 ) {
     // Get the object manager from SceneManager
     private val objectManager: SceneObjectManager? = SceneManager.getObjectManager()
@@ -787,9 +789,22 @@ class InputHandler(
         
         // Use a coroutine to call the API
         scope.launch {
+            // Prevent visitors (unauthenticated users) from picking up items
+            val isPlayer = try {
+                UserApi.getCurrentUser().isPlayer
+            } catch (_: Throwable) {
+                false
+            }
+
+            if (!isPlayer) {
+                // Show a confirm dialog prompting login
+                onShowMessageDialog?.invoke(str("Log in to pick up items"))
+                return@launch
+            }
+
             try {
                 // Retrieve object details first to get the title before it may be removed on the server
-                var itemTitle: String = "Item"
+                var itemTitle = "Item"
                 try {
                     val obj = ObjectApi.getObject(objectId)
                     if (obj.title.isNotBlank()) {
@@ -821,7 +836,7 @@ class InputHandler(
                 console.error("[DEBUG_LOG] Error collecting inventory item", e)
                 
                 // Show error message
-                window.alert("Error collecting item: ${e.message}")
+                onShowMessageDialog?.invoke(str("Error collecting item") + ": ${'$'}{e.message}")
             }
         }
     }

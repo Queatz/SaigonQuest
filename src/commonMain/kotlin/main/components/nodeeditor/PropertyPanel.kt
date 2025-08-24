@@ -141,7 +141,7 @@ fun PropertyPanel(
                 }
                 Text(typeString)
                 Text(" • " )
-                Text(node.type.id.name) // todo translate
+                Text(node.type.label)
             }
         }
         
@@ -157,7 +157,7 @@ fun PropertyPanel(
                     attr("for", "node-label")
                 }
             ) {
-                Text(str("Label"))
+                Translated("Label")
             }
             
             TextInput(
@@ -173,6 +173,7 @@ fun PropertyPanel(
         // Render editable properties (excluding trigger properties which are handled by ports)
         propertyDefinitions
             .filter { it.type != PropertyType.TRIGGER }
+            .filter { it.key !in listOf(PropertyKey.QUANTITIES, PropertyKey.QUANTITY) }
             .forEach { propDef ->
                 // Only render input properties in the property panel
                 if (propDef.direction == PropertyDirection.INPUT) {
@@ -458,28 +459,18 @@ fun PropertyPanel(
                                 }
                             }
                             PropertyType.NUMBER -> {
-                                when (propDef.key) {
-                                    PropertyKey.QUANTITY -> {
-                                        // Handled by the ITEM_ID field
-                                    }
-                                    PropertyKey.QUANTITIES -> {
-                                        // Handled by the ITEMS field
-                                    }
-                                    else -> {
-                                        NumberInput(
-                                            value = propertyValues[propDef.key]?.toFloat() ?: 0.0f,
-                                            attrs = {
-                                                classes(NodeEditorStyles.propertyInput)
-                                                id("prop-${propDef.key.name.lowercase()}")
-                                                onInput { event ->
-                                                    propertyValues = propertyValues.edit {
-                                                        it[propDef.key] = event.value.toString()
-                                                    }
-                                                }
+                                NumberInput(
+                                    value = propertyValues[propDef.key]?.toFloat() ?: 0.0f,
+                                    attrs = {
+                                        classes(NodeEditorStyles.propertyInput)
+                                        id("prop-${propDef.key.name.lowercase()}")
+                                        onInput { event ->
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = event.value.toString()
                                             }
-                                        )
+                                        }
                                     }
-                                }
+                                )
                             }
                             PropertyType.BOOLEAN -> {
                                 CheckboxInput(
@@ -597,7 +588,7 @@ fun PropertyPanel(
                                         }
                                     }
                                 ) {
-                                    Text("×")
+                                    Text("✖️")
                                 }
                             }
                         }

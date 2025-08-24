@@ -15,6 +15,18 @@ import models.Item
  */
 object ItemApi {
     
+    @kotlinx.serialization.Serializable
+    data class BuyItemRequest(
+        val itemId: String,
+        val quantity: Int,
+    )
+
+    @kotlinx.serialization.Serializable
+    data class BuyItemResponse(
+        val balance: models.UserBalance,
+        val inventory: models.Inventory,
+    )
+    
     /**
      * Gets all items (admin protected)
      */
@@ -184,6 +196,28 @@ object ItemApi {
             }
         } catch (e: Throwable) {
             console.error("Error deleting item", e)
+            throw e
+        }
+    }
+
+    /**
+     * Buy an item
+     */
+    suspend fun buyItem(itemId: String, quantity: Int): BuyItemResponse {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/items/buy") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(BuyItemRequest(itemId = itemId, quantity = quantity))
+            }
+            if (response.status.isSuccess()) {
+                return response.body<BuyItemResponse>()
+            } else {
+                val errorResponse = try { response.body<ErrorResponse>() } catch (e: Throwable) { ErrorResponse(message = response.bodyAsText()) }
+                throw Error(errorResponse.message)
+            }
+        } catch (e: Throwable) {
+            console.error("Error buying item", e)
             throw e
         }
     }

@@ -285,9 +285,18 @@ fun Routing.configureInventoryRoutes() {
             // Pickup from OBJECT to USER
             authenticate {
                 post("/pickup") {
-                    val req = call.receive<TransferPickupRequest>()
                     val principal = call.principal<JWTPrincipal>()
+                    if (principal == null) {
+                        return@post call.respond(
+                            HttpStatusCode.Unauthorized,
+                            ErrorResponse(
+                                message = "Log in to pick up items",
+                                code = HttpStatusCode.Unauthorized.value,
+                            )
+                        )
+                    }
                     val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                    val req = call.receive<TransferPickupRequest>()
 
                     val obj = objectRepository.getById(req.objectId) ?: return@post call.respond(
                         HttpStatusCode.NotFound,

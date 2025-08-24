@@ -57,6 +57,8 @@ import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
 import main.components.translated
 import Translations.str
+import main.components.Translated
+import org.jetbrains.compose.web.css.margin
 
 /**
  * An inventory dialog that displays the user's inventory items.
@@ -70,6 +72,7 @@ fun InventoryDialog(onClose: () -> Unit) {
     var errorMessage by remember { mutableStateOf("") }
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var showCreateItemDialog by remember { mutableStateOf(false) }
+    var showMarketplaceDialog by remember { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<User?>(null) }
     
     // State for feedback messages
@@ -552,6 +555,20 @@ fun InventoryDialog(onClose: () -> Unit) {
         )
     }
     
+    // Marketplace dialog
+    if (showMarketplaceDialog) {
+        MarketplaceDialog(
+            onClose = { showMarketplaceDialog = false },
+            onPurchased = {
+                InventoryState.refreshInventory(
+                    coroutineScope = coroutineScope,
+                    onSuccess = { showFeedback(str("Inventory refreshed")) },
+                    onError = { message -> showFeedback(str("Failed to refresh inventory") + ": " + message, true) }
+                )
+            }
+        )
+    }
+    
     // Function to refresh inventory data
     fun refreshInventory() {
         // Use the shared inventory state to refresh data
@@ -570,6 +587,12 @@ fun InventoryDialog(onClose: () -> Unit) {
         onClose = onClose,
         title = translated("Inventory"),
         maxWidth = "600px",
+        headerActions = {
+            DialogButton(
+                onClick = { showMarketplaceDialog = true },
+                isPrimary = true,
+            ) { Translated("Marketplace") }
+        },
         content = {
             Div(
                 attrs = {
@@ -858,7 +881,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text(translated("Inventory Items"))
+                        Translated("Inventory items")
                     }
                     
                     if (inventory?.itemOrder?.isEmpty() == true) {
@@ -870,7 +893,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Your inventory is empty. Click '+ New' to create an item."))
+                            Translated("Your inventory is empty. Click '+ New' to create an item.")
                         }
                     } else {
                         // Display inventory items
@@ -938,7 +961,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 Div(
                                                     attrs = {
                                                         style {
-                                                            marginLeft(8.px)
+                                                            margin(8.px)
                                                             padding(2.px, 6.px)
                                                             backgroundColor(rgba(100, 200, 255, 0.2))
                                                             color(rgba(100, 200, 255, 0.9))
@@ -986,7 +1009,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             },
                                             isPrimary = true
                                         ) {
-                                            Text(translated(if (item.wearable) "Wear" else "Use"))
+                                            Translated(
+                                                when {
+                                                    item.wearable && currentUser?.wornItems?.any { it == item.key } == true -> "Take off"
+                                                    item.wearable -> "Wear"
+                                                    else -> "Use"
+                                                }
+                                            )
                                         }
                                     }
                                 }

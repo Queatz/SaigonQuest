@@ -47,6 +47,7 @@ import models.OpenUrlData
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -132,6 +133,10 @@ fun SceneComponent(url: String) {
     val showOpenUrlDialog = remember { mutableStateOf(false) }
     val openUrlValue = remember { mutableStateOf("") }
     val openUrlCallback = remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // State for simple message dialog (replacing window.alert)
+    val showMessageDialog = remember { mutableStateOf(false) }
+    val messageDialogText = remember { mutableStateOf("") }
     
     // State for drop quantity dialog for inventory item drops
     data class PendingDrop(val x: Int, val y: Int, val data: String, val worldId: String, val maxQuantity: Int)
@@ -340,7 +345,9 @@ fun SceneComponent(url: String) {
     
     // Add the UI overlay when the world is loaded
     if (isLoaded.value) {
-        WorldUI()
+        WorldUI(
+            onRequestCanvasFocus = { canvasRef?.focus() },
+        )
     }
 
     LaunchedEffect(isLoaded.value, canvasRef) {
@@ -527,6 +534,35 @@ fun SceneComponent(url: String) {
     // Add TakeItems dialog for item transfer prompts
     TakeItemsDialog()
 
+    // Simple message dialog host
+    if (showMessageDialog.value) {
+        BaseDialog(
+            onClose ={ showMessageDialog.value = false },
+            title = translated("Collect item"),
+            content = {
+                Text(messageDialogText.value)
+            },
+            actions = {
+                DialogButton(
+                    onClick = { showMessageDialog.value = false },
+                    isPrimary = false,
+                ) {
+                    Translated("Close")
+                }
+
+                DialogButton(
+                    onClick = {
+                        showMessageDialog.value = false
+                        showLoginDialog.value = true
+                    },
+                    isPrimary = true,
+                ) {
+                    Translated("Log in")
+                }
+            }
+        )
+    }
+
     // Quantity prompt dialog for inventory item drop
     if (showDropQuantityDialog.value && pendingDrop.value != null) {
         val pd = pendingDrop.value!!
@@ -685,6 +721,10 @@ fun SceneComponent(url: String) {
 
                 // Show the dialog
                 showOtherPlayerDialog.value = true
+            },
+            onShowMessageDialog = { message ->
+                messageDialogText.value = message
+                showMessageDialog.value = true
             }
         )
 

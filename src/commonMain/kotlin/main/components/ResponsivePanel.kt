@@ -59,7 +59,7 @@ fun ResponsivePanel(
                                 onClick { onClose() }
                             }
                         ) {
-                            Text("×")
+                            Text("✖️")
                         }
                     }
                 }

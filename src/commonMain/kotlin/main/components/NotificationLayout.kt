@@ -102,7 +102,7 @@ fun NotificationLayout(
                     }
                 }
             ) {
-                Text("×")
+                Text("✖️")
             }
         }
     }

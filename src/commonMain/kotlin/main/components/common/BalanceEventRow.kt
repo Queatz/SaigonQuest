@@ -5,6 +5,7 @@ import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.UserBalanceHistory
+import models.UserBalanceHistoryEventType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -16,7 +17,13 @@ fun BalanceEventRow(item: UserBalanceHistory) {
         val isDeposit = item.changeAmount >= 0
         val badgeClass = if (isDeposit) Styles.eventTypeDeposit else Styles.eventTypeWithdraw
         Div({ classes(Styles.eventTypeBadge, badgeClass) }) {
-            Translated(if (isDeposit) "Deposit" else "Withdraw")
+            Translated(
+                when (item.eventType) {
+                    UserBalanceHistoryEventType.Use -> "Use"
+                    UserBalanceHistoryEventType.Give -> "Give"
+                    else -> if (isDeposit) "Deposit" else "Withdraw"
+                }
+            )
         }
 
         Div({ classes(Styles.eventMetaColumn) }) {

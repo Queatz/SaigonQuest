@@ -1,5 +1,6 @@
 package routes
 
+import Translations.str
 import auth.JWTUtils
 import io.ktor.http.*
 import io.ktor.server.auth.*
@@ -7,14 +8,25 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import models.ErrorResponse
+import models.Inventory
 import models.Item
+import models.UserBalance
+import models.UserBalanceHistory
+import models.UserBalanceHistoryEventType
+import repository.InventoryRepository
 import repository.ItemRepository
+import repository.UserBalanceHistoryRepository
+import repository.UserBalanceRepository
 import repository.UserRepository
 
 fun Routing.configureItemRoutes() {
     val itemRepository = ItemRepository()
     val userRepository = UserRepository()
+    val inventoryRepository = InventoryRepository()
+    val balanceRepository = UserBalanceRepository()
+    val historyRepository = UserBalanceHistoryRepository()
     
     route("/items") {
         // Get all items - no authentication required
@@ -168,6 +180,69 @@ fun Routing.configureItemRoutes() {
                         ErrorResponse(message = "Failed to delete item", code = HttpStatusCode.InternalServerError.value)
                     )
                 }
+            }
+        }
+
+        // Buy item - authenticated
+        authenticate {
+            @Serializable
+            data class BuyItemRequest(
+                val itemId: String,
+                val quantity: Int,
+            )
+            @Serializable
+            data class BuyItemResponse(
+                val balance: UserBalance,
+                val inventory: Inventory,
+            )
+
+            post("/buy") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val body = try { call.receive<BuyItemRequest>() } catch (e: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request body", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+                if (body.quantity <= 0) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Quantity must be positive", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val item = itemRepository.getItemById(body.itemId) ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "Item not found", code = HttpStatusCode.NotFound.value)
+                )
+
+                val totalCost: Long = (item.cost) * (body.quantity.toLong())
+                val before = balanceRepository.getByUserId(userId)?.balance ?: 0L
+                if (totalCost > before) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Insufficient funds", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val after = before - totalCost
+                val savedBalance = balanceRepository.upsert(userId) { it.balance = after }
+                historyRepository.add(
+                    UserBalanceHistory(
+                        userId = userId,
+                        eventType = UserBalanceHistoryEventType.Use,
+                        notes = "${str("Bought")} ${item.title} x${body.quantity}",
+                        changeAmount = -totalCost,
+                        startBalance = before,
+                        endBalance = after,
+                    )
+                )
+
+                val updatedInventory = inventoryRepository.addOrCombineItemToUserInventory(userId, item.key, body.quantity)
+
+                call.respond(HttpStatusCode.OK, BuyItemResponse(balance = savedBalance, inventory = updatedInventory))
             }
         }
     }

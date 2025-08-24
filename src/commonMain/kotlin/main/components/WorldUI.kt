@@ -63,7 +63,9 @@ import web.serviceworker.register
  * Includes UI elements for both mobile (<=960px) and desktop views.
  */
 @Composable
-fun WorldUI() {
+fun WorldUI(
+    onRequestCanvasFocus: () -> Unit = {},
+) {
     // State for UI elements
     var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.None) }
     
@@ -347,6 +349,7 @@ fun WorldUI() {
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
             isFullscreen = document.fullscreenElement != null
+            onRequestCanvasFocus()
         }
         
         document.addEventListener("fullscreenchange", fullscreenChangeListener)
