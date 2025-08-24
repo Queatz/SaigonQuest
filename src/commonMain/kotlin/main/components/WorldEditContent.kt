@@ -491,7 +491,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text(errorMessage)
+                Translated(errorMessage)
             }
         }
         
@@ -508,7 +508,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("You don't own this world.")
+                Translated("You don't own this world.")
             }
         }
         
@@ -530,7 +530,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Title")
+                Translated("Title")
             }
             
             Input(
@@ -573,7 +573,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Subtitle")
+                Translated("Subtitle")
             }
             
             Input(
@@ -590,7 +590,7 @@ fun WorldEditContent(
                     if (fieldsEnabled) {
                         onInput { event -> subtitle = event.value }
                     }
-                    placeholder("Enter world subtitle")
+                    placeholder(str("Enter world subtitle"))
                     if (!fieldsEnabled) {
                         attr("disabled", "true")
                     }
@@ -616,7 +616,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Description")
+                Translated("Description")
             }
             
             TextArea(
@@ -634,7 +634,7 @@ fun WorldEditContent(
                     if (fieldsEnabled) {
                         onInput { event -> description = event.value }
                     }
-                    placeholder("Enter world description")
+                    placeholder(str("Enter world description"))
                     if (!fieldsEnabled) {
                         attr("disabled", "true")
                     }
@@ -660,7 +660,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("URL")
+                Translated("URL")
             }
             
             Input(
@@ -677,7 +677,7 @@ fun WorldEditContent(
                     if (fieldsEnabled) {
                         onInput { event -> url = event.value }
                     }
-                    placeholder("Enter external URL")
+                    placeholder(str("Enter external URL"))
                     if (!fieldsEnabled) {
                         attr("disabled", "true")
                     }
@@ -692,7 +692,7 @@ fun WorldEditContent(
                 }
             }
         ) {
-            Text("Asset")
+            Translated("Asset")
         }
         
         // File field
@@ -744,7 +744,7 @@ fun WorldEditContent(
                         val lon = longitude.toDoubleOrNull()
                         val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
 
-                        val previewWorld = if (isEditing && currentWorld != null) {
+                        val previewWorld = if (isEditing) {
                             currentWorld.copy(
                                 file = file,
                                 assetId = assetId,
@@ -1132,7 +1132,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Background Color")
+                Translated("Background color")
             }
             
             Div(
@@ -1211,7 +1211,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Light color")
+                Translated("Light color")
             }
 
             Div(
@@ -1283,7 +1283,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Text("Fog Density")
+                Translated("Fog density")
             }
             
             Div(
@@ -1371,7 +1371,7 @@ fun WorldEditContent(
                 }
             }
         ) {
-            Text("Cancel")
+            Translated("Cancel")
         }
         
         // Save button
@@ -1406,7 +1406,7 @@ fun WorldEditContent(
                 }
             }
         ) {
-            Text(
+            Translated(
                 when {
                     isSubmitting -> "Saving..."
                     isEditing && isOwner -> "Update"

@@ -232,23 +232,6 @@ fun EditItemDialog(
                     })
                 }
 
-                // Asset index
-                Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Asset index (0-99)") }
-                    val assetIndexPlaceholder = translated("Enter asset index")
-                    Input(type = InputType.Number, attrs = {
-                        classes(Styles.inputField)
-                        placeholder(assetIndexPlaceholder)
-                        value(assetIndex)
-                        onInput { assetIndex = it.value?.toString() ?: "0" }
-                        attr("min", "0")
-                        attr("max", "99")
-                    })
-                    if (assetIndexError.isNotEmpty()) {
-                        P(attrs = { style { color(rgba(255, 100, 100, 0.9)); fontSize(12.px); marginTop(4.px) } }) { Translated(assetIndexError) }
-                    }
-                }
-
                 // Wearable toggle
                 Div(attrs = { style { marginBottom(16.px) } }) {
                     Div(attrs = { style { display(DisplayStyle.Flex); marginBottom(4.px) } }) {

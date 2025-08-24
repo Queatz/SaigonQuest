@@ -51,6 +51,7 @@ import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
@@ -59,6 +60,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         fontSize(14.px)
         fontWeight("bold")
+        whiteSpace("nowrap")
     }
 
     // Asset editor: SpriteSheet-specific styles

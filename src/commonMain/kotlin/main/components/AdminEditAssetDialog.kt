@@ -139,7 +139,7 @@ fun AdminEditAssetDialog(
                         }) {
                             for (r in 0 until 10) {
                                 for (c in 0 until 10) {
-                                    val idx = r * 10 + c
+                                    val idx = (9 - r) * 10 + c
                                     val hasDef = getCellItem(idx) != null
                                     val isSel = selectedCellIndex == idx
                                     Div(attrs = {
@@ -149,8 +149,8 @@ fun AdminEditAssetDialog(
                                             property("box-sizing", "border-box")
                                             property("border", "1px solid rgba(255,255,255,0.08)")
                                             property("background", when {
-                                                isSel -> "#446"
-                                                hasDef -> "#2a2a3a"
+                                                isSel -> "#4468"
+                                                hasDef -> "#2a2a3a88"
                                                 else -> "transparent"
                                             })
                                             property("cursor", "pointer")

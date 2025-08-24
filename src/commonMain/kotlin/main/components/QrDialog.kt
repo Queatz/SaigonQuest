@@ -130,6 +130,7 @@ fun QrDialog(
                         flexDirection(FlexDirection.Column)
                         alignItems(AlignItems.Center)
                         property("gap", "16px")
+                        padding(0.px, 16.px)
                     }
                 }
             ) {

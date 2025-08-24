@@ -213,9 +213,9 @@ fun LatLngPicker3D(
                         },
                         scene = scn,
                     )
-                    val pinMat = StandardMaterial("markerPinMat", scn)
-                    pinMat.diffuseColor = Color3(1f, 1f, 1f)
-                    pinMat.emissiveColor = Color3(1f, 1f, 1f)
+                    val pinMat = PBRMaterial("markerPinMat", scn)
+                    pinMat.albedoColor = Color3(.75f, .75f, .75f)
+                    pinMat.emissiveColor = Color3(.25f, .25f, .25f)
                     tube.material = pinMat
                     markerPin = tube
                 } else {
@@ -384,7 +384,8 @@ fun LatLngPicker3D(
                     scene = scn,
                 )
                 val pinMat = PBRMaterial("markerPinMat", scn)
-                pinMat.albedoColor = Color3(.5f, .5f, .5f)
+                pinMat.albedoColor = Color3(.75f, .75f, .75f)
+                pinMat.emissiveColor = Color3(.25f, .25f, .25f)
                 tube.material = pinMat
                 markerPin = tube
             } else {

@@ -6,6 +6,7 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.NumberInput
 import main.theme.Styles
+import web.cssom.AtRules.Companion.property
 
 /**
  * Reusable 5x5 numeric grid editor for wind weights (values in [0,1]).
@@ -53,24 +54,13 @@ fun WeightsGridEditor(
     ) {
         for (j in 0 until 5) {
             for (i in 0 until 5) {
-                NumberInput(
-                    value = grid[j][i].toDoubleOrNull(),
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { ev ->
-                            val v = ev.value?.toString() ?: ""
-                            val newGrid = grid.mapIndexed { r, row ->
-                                if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
-                            }
-                            onGridChange(newGrid)
+                DecimalNumberInput(
+                    value = grid[j][i],
+                    onChange = { v ->
+                        val newGrid = grid.mapIndexed { r, row ->
+                            if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
                         }
-                        attr("min", "0")
-                        attr("max", "1")
-                        attr("step", "0.0125")
-                        style {
-                            property("width", "64px")
-                            property("padding", "4px")
-                        }
+                        onGridChange(newGrid)
                     }
                 )
             }

@@ -5,6 +5,7 @@ import app.softwork.routingcompose.BrowserRouter
 import app.softwork.routingcompose.Router
 import main.api.WebSocketConnectionManager
 import main.components.ByePage
+import main.components.LanguageSettings
 import main.components.PausedPage
 import main.components.SceneComponent
 import main.theme.EditorStyles
@@ -20,6 +21,9 @@ import org.jetbrains.compose.web.renderComposableInBody
 fun main() {
     WebSocketConnectionManager.initialize()
     console.log("WebSocketConnectionManager initialized")
+
+    // Init user language
+    LanguageSettings.getCurrentLanguage()
     
     try {
         renderComposableInBody {

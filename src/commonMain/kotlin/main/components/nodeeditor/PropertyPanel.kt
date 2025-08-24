@@ -8,16 +8,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.browser.document
-import kotlinx.browser.window
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.await
-import kotlinx.coroutines.launch
+import main.api.ItemApi
 import main.components.Translated
+import main.components.inventory.ItemRenderer
+import main.components.inventory.SelectItemDialog
+import main.components.media.UploadMediaDialog
 import main.components.translated
-import main.api.ApiClient
-import main.api.ContentApiConstants
-import main.api.UserApi
 import main.theme.NodeEditorStyles
 import main.theme.Styles
 import models.NodeCategory
@@ -33,19 +29,13 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.CheckboxInput
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Img
+import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.TextInput
-import kotlin.collections.getValue
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.url.URL
-import org.w3c.fetch.RequestInit
-import org.w3c.xhr.FormData
-import main.components.media.UploadMediaDialog
 
 /**
  * A panel for editing node properties.
@@ -264,6 +254,192 @@ fun PropertyPanel(
                                             }
                                         )
                                     }
+                                } else if (propDef.key == PropertyKey.ITEM_ID) {
+                                    val currentId = propertyValues[propDef.key] ?: ""
+                                    var selectedItem by remember(nodeId) { mutableStateOf<models.Item?>(null) }
+                                    var loadingItem by remember(nodeId) { mutableStateOf(false) }
+                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
+
+                                    LaunchedEffect(currentId) {
+                                        if (currentId.isNotBlank()) {
+                                            loadingItem = true
+                                            try {
+                                                selectedItem = ItemApi.getItemById(currentId)
+                                            } catch (t: Throwable) {
+                                                console.error("Failed to load item by id", t)
+                                                selectedItem = null
+                                            } finally {
+                                                loadingItem = false
+                                            }
+                                        } else {
+                                            selectedItem = null
+                                        }
+                                    }
+
+                                    // Preview and info
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                            property("align-items", "center")
+                                        }
+                                    }) {
+                                        if (selectedItem != null) {
+                                            ItemRenderer(item = selectedItem, size = 32)
+                                            val qty = propertyValues[PropertyKey.QUANTITY]?.toIntOrNull() ?: 1
+                                            Text(selectedItem!!.title.ifBlank { translated("Selected item") } + "  x" + qty)
+                                        } else if (loadingItem) {
+                                            Text(translated("Loading..."))
+                                        } else {
+                                            Text(translated("No item selected"))
+                                        }
+                                    }
+
+                                    // Actions
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                        }
+                                    }) {
+                                        Button(attrs = {
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
+                                            onClick { showSelect = true }
+                                        }) { Translated("Select item") }
+
+                                        if (currentId.isNotBlank()) {
+                                            Button(attrs = {
+                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
+                                                onClick {
+                                                    propertyValues = propertyValues.edit {
+                                                        it[PropertyKey.ITEM_ID] = ""
+                                                    }
+                                                }
+                                            }) { Translated("Clear") }
+                                        }
+                                    }
+
+                                    if (showSelect) {
+                                        SelectItemDialog(
+                                            initial = if (selectedItem != null) listOf(selectedItem!! to (propertyValues[PropertyKey.QUANTITY]?.toIntOrNull() ?: 1)) else emptyList(),
+                                            multiple = false,
+                                            useQuantities = true,
+                                            onConfirm = { list ->
+                                                val choice = list.firstOrNull()
+                                                propertyValues = propertyValues.edit {
+                                                    if (choice != null) {
+                                                        it[PropertyKey.ITEM_ID] = choice.first.key
+                                                        it[PropertyKey.QUANTITY] = choice.second.toString()
+                                                    }
+                                                }
+                                            },
+                                            onClose = { showSelect = false },
+                                        )
+                                    }
+                                } else if (propDef.key == PropertyKey.ITEMS) {
+                                    val itemsCsv = propertyValues[PropertyKey.ITEMS] ?: ""
+                                    val quantitiesCsv = propertyValues[PropertyKey.QUANTITIES] ?: ""
+                                    var previewPairs by remember(nodeId) { mutableStateOf<List<Pair<models.Item, Int>>>(emptyList()) }
+                                    var loadingList by remember(nodeId) { mutableStateOf(false) }
+                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
+
+                                    LaunchedEffect(itemsCsv, quantitiesCsv) {
+                                        val ids = itemsCsv.split(',').map { it.trim() }.filter { it.isNotBlank() }
+                                        if (ids.isEmpty()) {
+                                            previewPairs = emptyList()
+                                            return@LaunchedEffect
+                                        }
+                                        loadingList = true
+                                        try {
+                                            val qtys = quantitiesCsv.split(',').map { it.trim().toIntOrNull() ?: 1 }
+                                            val fetched = ItemApi.getItemsByIds(ids)
+                                            val byId = fetched.associateBy { it.key }
+                                            val pairs = ids.mapIndexedNotNull { index, id ->
+                                                val item = byId[id]
+                                                item?.let { it to (qtys.getOrNull(index) ?: 1) }
+                                            }
+                                            previewPairs = pairs
+                                        } catch (t: Throwable) {
+                                            console.error("Failed to load items for preview", t)
+                                            previewPairs = emptyList()
+                                        } finally {
+                                            loadingList = false
+                                        }
+                                    }
+
+                                    // Preview list
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("flex-direction", "column")
+                                            property("gap", "6px")
+                                        }
+                                    }) {
+                                        when {
+                                            loadingList -> Text(translated("Loading..."))
+                                            previewPairs.isEmpty() -> Text(translated("No item selected"))
+                                            else -> {
+                                                for ((item, qty) in previewPairs) {
+                                                    Div({
+                                                        style {
+                                                            property("display", "flex")
+                                                            property("gap", "8px")
+                                                            property("align-items", "center")
+                                                        }
+                                                    }) {
+                                                        ItemRenderer(item = item, size = 24)
+                                                        Text(item.title.ifBlank { translated("Selected item") } + "  x" + qty)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Actions
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                        }
+                                    }) {
+                                        Button(attrs = {
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
+                                            onClick { showSelect = true }
+                                        }) { Translated("Select items") }
+
+                                        if (!itemsCsv.isBlank()) {
+                                            Button(attrs = {
+                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
+                                                onClick {
+                                                    propertyValues = propertyValues.edit {
+                                                        it[PropertyKey.ITEMS] = ""
+                                                        it[PropertyKey.QUANTITIES] = ""
+                                                    }
+                                                }
+                                            }) { Translated("Clear") }
+                                        }
+                                    }
+
+                                    if (showSelect) {
+                                        SelectItemDialog(
+                                            initial = previewPairs,
+                                            multiple = true,
+                                            useQuantities = true,
+                                            onConfirm = { list ->
+                                                val itemsJoined = list.joinToString(",") { it.first.key }
+                                                val quantitiesJoined = list.joinToString(",") { it.second.toString() }
+                                                propertyValues = propertyValues.edit {
+                                                    it[PropertyKey.ITEMS] = itemsJoined
+                                                    it[PropertyKey.QUANTITIES] = quantitiesJoined
+                                                }
+                                            },
+                                            onClose = { showSelect = false },
+                                        )
+                                    }
                                 } else {
                                     // Use Input for other string properties
                                     TextInput(
@@ -282,18 +458,28 @@ fun PropertyPanel(
                                 }
                             }
                             PropertyType.NUMBER -> {
-                                NumberInput(
-                                    value = propertyValues[propDef.key]?.toFloat() ?: 0.0f,
-                                    attrs = {
-                                        classes(NodeEditorStyles.propertyInput)
-                                        id("prop-${propDef.key.name.lowercase()}")
-                                        onInput { event ->
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = event.value.toString()
-                                            }
-                                        }
+                                when (propDef.key) {
+                                    PropertyKey.QUANTITY -> {
+                                        // Handled by the ITEM_ID field
                                     }
-                                )
+                                    PropertyKey.QUANTITIES -> {
+                                        // Handled by the ITEMS field
+                                    }
+                                    else -> {
+                                        NumberInput(
+                                            value = propertyValues[propDef.key]?.toFloat() ?: 0.0f,
+                                            attrs = {
+                                                classes(NodeEditorStyles.propertyInput)
+                                                id("prop-${propDef.key.name.lowercase()}")
+                                                onInput { event ->
+                                                    propertyValues = propertyValues.edit {
+                                                        it[propDef.key] = event.value.toString()
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
                             }
                             PropertyType.BOOLEAN -> {
                                 CheckboxInput(

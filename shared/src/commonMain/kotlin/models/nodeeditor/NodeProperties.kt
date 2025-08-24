@@ -34,8 +34,10 @@ enum class PropertyKey {
     QUANTITY,
     YES,
     NO,
+
     // TakeItems specific output when player lacks items
     NOT_ENOUGH,
+
     // TakeItems properties
     ITEMS,
     QUANTITIES,

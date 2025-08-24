@@ -650,7 +650,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Your Character"))
+                            Text(translated("Your character"))
                         }
                         
                         // Character renderer with drop zone

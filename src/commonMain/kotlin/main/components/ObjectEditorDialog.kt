@@ -18,6 +18,7 @@ import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.height
+import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
@@ -69,7 +70,7 @@ fun ObjectEditorDialog(
     
     // Determine if we're editing or creating
     val isEditing = objectModel != null
-    val dialogTitle = if (isEditing) "Edit Object" else "Create Object"
+    val dialogTitle = if (isEditing) "Edit object" else "Create object"
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -195,6 +196,11 @@ fun ObjectEditorDialog(
                     Div {
                         Button(attrs = {
                             classes(Styles.baseDialogButtonSecondary)
+
+                            style {
+                                marginBottom(8.px)
+                            }
+
                             onClick { showCollectionBrowser = true }
                         }) {
                             Text("Browse")

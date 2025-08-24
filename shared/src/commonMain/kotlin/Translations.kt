@@ -13,6 +13,15 @@ vi: Tinh thần
 Outdoors
 vi: Ngoài trời
 
+Background color
+vi: Màu nền
+
+Light color
+vi: Màu sáng
+
+Fog density
+vi: Độ dày mây mù
+
 Add
 vi: Thêm
 
@@ -382,6 +391,9 @@ vi: Tạo vật phẩm mới
 Title
 vi: Tiêu đề
 
+Subtitle
+vi: Tóm tắt
+
 Enter item title
 vi: Nhập tiêu đề vật phẩm
 
@@ -649,7 +661,7 @@ vi: Mới
 Loading inventory...
 vi: Đang tải kho đồ...
 
-Your Character
+Your character
 vi: Nhân vật của bạn
 
 Drop to wear item
@@ -1075,6 +1087,12 @@ vi: Vật phẩm đã chọn
 
 Clear
 vi: Xóa
+
+Select items
+vi: Chọn nhiều vật phẩm
+
+Quantity
+vi: Số lượng
 
 Chat history
 vi: Lịch sử trò chuyện

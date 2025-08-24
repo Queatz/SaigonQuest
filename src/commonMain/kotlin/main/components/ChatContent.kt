@@ -429,7 +429,7 @@ fun ChatContent(worldId: String) {
                     }
                 }
             ) {
-                Translated("Send")
+                Translated("Confirm")
             }
         }
     }
