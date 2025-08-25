@@ -16,7 +16,7 @@ apt install nano certbot nodejs npm nginx python3-certbot-nginx
 ## Backend & Content
 
 ```bash
-apt install nano certbot nginx default-jre python3-certbot-nginx
+apt install nano certbot nodejs npm nginx default-jre python3-certbot-nginx
 ```
 
 ```bash
@@ -35,7 +35,33 @@ sudo apt-get install arangodb3e=3.12.5.2-1
 ```
 
 ```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+nvm install 24
+nvm use 24
+```
+
+```bash
 apt install openjdk-21-jdk -y
+```
+
+```bash
+npx web-push generate-vapid-keys
+ 
+=======================================
+
+Public Key:
+BMDAzYH2jDNtRAU3lpl9wrU3FDavNV9M5Mu8_GIqkpAWjCYoESAlJb1e2T7Y2NGbdMr4QZBB5Ti4zXzrvPt6aPg
+
+Private Key:
+KjuxzDj7xwj0F2tHibLNsItpY-633toE45czbhj7gjs
+
+=======================================
+```
+
+Update `run-backend.sh` to use these generated keys:
+
+```
+REMOTE_ENV="${REMOTE_ENV:-"VAPID_PUBLIC_KEY=BMDAzYH2jDNtRAU3lpl9wrU3FDavNV9M5Mu8_GIqkpAWjCYoESAlJb1e2T7Y2NGbdMr4QZBB5Ti4zXzrvPt6aPg VAPID_PRIVATE_KEY=KjuxzDj7xwj0F2tHibLNsItpY-633toE45czbhj7gjs"}"
 ```
 
 `./deploy-backend.sh -b`

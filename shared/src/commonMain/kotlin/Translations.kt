@@ -1198,6 +1198,15 @@ vi: Mua
 
 for
 vi: với
+
+Click or drop image to upload
+vi: Nhấp hoặc thả hình ảnh để tải lên
+
+Uploading...
+vi: Đang tải lên...
+
+Upload or choose image
+vi: Tải lên hoặc chọn hình ảnh
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

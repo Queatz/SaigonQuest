@@ -12,9 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import io.ktor.client.plugins.ResponseException
-import js.promise.Promise
 import js.promise.await
-import js.typedarrays.Uint8Array
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -31,7 +29,6 @@ import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.inventory.InventoryTray
 import main.theme.Styles
-import main.utils.BrowserNotifications
 import main.utils.PathUtils
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
@@ -53,10 +50,6 @@ import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
 import web.notifications.requestPermission
-import web.push.getSubscription
-import web.push.subscribe
-import web.serviceworker.register
-
 
 
 /**
@@ -401,15 +394,6 @@ fun WorldUI(
                 
                 // Increment the unread notification count
                 unreadNotificationCount++
-                
-                // Also trigger Browser (native) notification
-                // TODO enable if the window hasn't focus
-//                scope.launch {
-//                    BrowserNotifications.show(
-//                        title = notificationData.title,
-//                        body = notificationData.description
-//                    )
-//                }
 
                 console.log("Received notification: ${notificationData.title}")
             } catch (e: Throwable) {

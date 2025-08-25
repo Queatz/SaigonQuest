@@ -11,8 +11,11 @@ import main.api.ApiConstants
 import main.api.UserApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Translated
+import main.components.translated
 import main.theme.Styles
 import models.UserMedia
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.DataTransfer
@@ -21,11 +24,12 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
 import org.w3c.files.File
+import utils.json
 
 @Composable
 fun UploadMediaDialog(
     onClose: () -> Unit,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
     var loading by remember { mutableStateOf(false) }
@@ -83,7 +87,7 @@ fun UploadMediaDialog(
                 val res = window.fetch(url, init).await()
                 val text = res.text().await()
                 if (!res.ok) throw RuntimeException(text)
-                val record = main.api.ApiClient.json.decodeFromString<models.ContentUpload>(text)
+                val record = json.decodeFromString<models.ContentUpload>(text)
                 val finalUrl = imageUrlFor(record.uploadedFilePath)
                 onSelect(finalUrl)
                 onClose()
@@ -100,100 +104,108 @@ fun UploadMediaDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = "Upload or Select Image",
+        title = translated("Upload or choose image"),
         isFullscreen = false,
         maxWidth = "720px",
         isFullHeight = false,
         content = {
-        // Top drop/click area
-        val inputId = remember { "upload-media-input" + kotlin.random.Random.nextInt(0, 999999) }
-        var dragOver by remember { mutableStateOf(false) }
+            // Top drop/click area
+            var dragOver by remember { mutableStateOf(false) }
+            var inputElement by remember { mutableStateOf<HTMLInputElement?>(null) }
 
-        Div(attrs = {
-            style {
-                property("border", if (dragOver) "2px dashed #4A90E2" else "2px dashed #aaa")
-                property("border-radius", "8px")
-                padding(24.px)
-                textAlign("center")
-                property("cursor", if (uploading) "progress" else "pointer")
-                marginBottom(16.px)
-            }
-            onClick {
-                if (!uploading) {
-                    (document.getElementById(inputId) as? HTMLInputElement)?.click()
+            Div(attrs = {
+                style {
+                    property("border", if (dragOver) "2px dashed #4A90E2" else "2px dashed #aaa")
+                    property("border-radius", "8px")
+                    padding(24.px)
+                    textAlign("center")
+                    property("cursor", if (uploading) "progress" else "pointer")
+                    marginBottom(16.px)
                 }
-            }
-            onDragOver { ev ->
-                ev.preventDefault(); dragOver = true
-            }
-            onDragLeave { dragOver = false }
-            onDrop { event ->
-                event.preventDefault(); dragOver = false
-                val files = (event.nativeEvent as DragEvent).dataTransfer?.files
-                val first = files?.item(0)
-                if (first != null) uploadFile(first)
-            }
-        }) {
-            P { Text(if (uploading) "Uploading..." else "Click or drop image to upload") }
-            // Hidden file input
-            Input(type = org.jetbrains.compose.web.attributes.InputType.File, attrs = {
-                id(inputId)
-                attr("accept", "image/*")
-                attr("style", "display:none")
-                onInput { ev ->
-                    val input = ev.target
-                    val f = input.files?.item(0)
-                    if (f != null) uploadFile(f)
-                    input.value = ""
+                onClick {
+                    if (!uploading) {
+                        inputElement?.click()
+                    }
                 }
-            })
-        }
+                onDragOver { ev ->
+                    ev.preventDefault(); dragOver = true
+                }
+                onDragLeave { dragOver = false }
+                onDrop { event ->
+                    event.preventDefault(); dragOver = false
+                    val files = (event.nativeEvent as DragEvent).dataTransfer?.files
+                    val first = files?.item(0)
+                    if (first != null) uploadFile(first)
+                }
+            }) {
+                P { Translated(if (uploading) "Uploading..." else "Click or drop image to upload") }
+                // Hidden file input
+                Input(type = InputType.File, attrs = {
+                    attr("accept", "image/*")
+                    style {
+                        display(DisplayStyle.None)
+                    }
+                    onInput { ev ->
+                        val input = ev.target
+                        val f = input.files?.item(0)
+                        if (f != null) uploadFile(f)
+                        input.value = ""
+                    }
+                    ref {
+                        inputElement = it
 
-        // Error
-        if (error != null) {
-            Div({ style { color(Color.red) ; marginBottom(8.px) } }) { Text(error!!) }
-        }
-
-        // Library grid (bounded height, scrollable)
-        Div(attrs = {
-            style {
-                display(DisplayStyle.Grid)
-                property("grid-template-columns", "repeat(auto-fill, minmax(120px, 1fr))")
-                gap(12.px)
-                property("overflow-y", "auto")
-                minHeight(120.px)
-                maxHeight(360.px)
-            }
-        }) {
-            if (loading) {
-                P { Text("Loading media...") }
-            } else if (items.isEmpty()) {
-                P { Text("No media yet. Upload an image above.") }
-            } else {
-                items.forEach { item ->
-                    // Only show images for now
-                    val src = imageUrlFor(item.path)
-                    Div(attrs = {
-                        style {
-                            property("border-radius", "6px")
-                            height(100.px)
-                            property("cursor", "pointer")
+                        onDispose {
+                            inputElement = null
                         }
-                        onClick { onSelect(src); onClose() }
-                    }) {
-                        Img(src = src, attrs = {
+                    }
+                })
+            }
+
+            // Error
+            if (error != null) {
+                Div({ style { color(Color.red); marginBottom(8.px) } }) { Text(error!!) }
+            }
+
+            // Library grid (bounded height, scrollable)
+            Div(attrs = {
+                style {
+                    display(DisplayStyle.Grid)
+                    property("grid-template-columns", "repeat(auto-fill, minmax(120px, 1fr))")
+                    gap(12.px)
+                    property("overflow-y", "auto")
+                    minHeight(120.px)
+                    maxHeight(360.px)
+                }
+            }) {
+                if (loading) {
+                    P { Text("Loading media...") }
+                } else if (items.isEmpty()) {
+                    P { Text("No media yet. Upload an image above.") }
+                } else {
+                    items.forEach { item ->
+                        // Only show images for now
+                        val src = imageUrlFor(item.path)
+                        Div(attrs = {
                             style {
-                                width(100.percent)
-                                height(100.percent)
-                                property("object-fit", "cover")
-                                property("border-radius", "4px")
+                                property("border-radius", "6px")
+                                height(100.px)
+                                property("cursor", "pointer")
                             }
-                        })
+                            onClick { onSelect(src); onClose() }
+                        }) {
+                            Img(src = src, attrs = {
+                                style {
+                                    width(100.percent)
+                                    height(100.percent)
+                                    property("object-fit", "cover")
+                                    property("border-radius", "4px")
+                                }
+                            })
+                        }
                     }
                 }
             }
-        }
-    },
-        actions = { DialogButton(onClick = onClose) { Text("Close") } }
+        },
+        actions = { DialogButton(onClick = onClose) { Translated("Close") } }
     )
 }

@@ -22,6 +22,7 @@ import models.UserBalanceChangeType
 import models.UserBalanceHistory
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
+import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.P
@@ -30,8 +31,6 @@ import org.jetbrains.compose.web.dom.TextArea
 
 @Composable
 fun BalanceDialog(
-    baseUrl: String,
-    bearerToken: String,
     onClose: () -> Unit,
     onViewAll: (() -> Unit)? = null,
 ) {
@@ -197,7 +196,7 @@ fun BalanceDialog(
                     if (attachments.isNotEmpty()) {
                         Div(attrs = { classes(Styles.imageThumbRow) }) {
                             attachments.forEach { url ->
-                                org.jetbrains.compose.web.dom.Img(src = url, attrs = {
+                                Img(src = url, attrs = {
                                     classes(Styles.imageThumb)
                                     onClick { imageToView = url }
                                 })

@@ -6,17 +6,13 @@ package main.api
  * This file contains constants used across all API files to ensure consistency
  * and avoid duplication.
  */
-@Suppress("UnsafeCastFromDynamic")
 object ApiConstants {
-    /**
-     * Base URL for all API requests
-     */
     val API_BASE_URL: String by lazy {
         val fromEnv = try {
-            js("typeof process !== 'undefined' && process.env ? process.env.API_BASE_URL : null") as String?
+            js("process.env.API_SERVER_URL") as String?
         } catch (t: Throwable) {
             null
         }
-        (fromEnv?.trimEnd('/') ?: "https://api.saigon.quest").ifBlank { "https://api.saigon.quest" }
+        fromEnv?.trimEnd('/').orEmpty().ifBlank { "https://api.saigon.quest" }
     }
 }

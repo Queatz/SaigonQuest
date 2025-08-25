@@ -521,8 +521,6 @@ fun PlayerDialog(
             // Render Balance dialogs
             if (showBalanceDialog.value) {
                 BalanceDialog(
-                    baseUrl = main.api.ApiConstants.API_BASE_URL,
-                    bearerToken = main.api.UserApi.getToken() ?: "",
                     onClose = { showBalanceDialog.value = false },
                     onViewAll = {
                         showBalanceDialog.value = false
