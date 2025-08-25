@@ -50,7 +50,7 @@ class ItemRepository {
      * Gets all items
      */
     fun getAllItems(): List<Item> {
-        val query = "FOR i IN @@collection RETURN i"
+        val query = "FOR i IN @@collection SORT i.cost ASC RETURN i"
         val bindVars = mapOf(
             "@collection" to CollectionsConfig.ITEMS_COLLECTION
         )

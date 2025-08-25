@@ -57,6 +57,9 @@ import Translations.str
 import kotlinx.coroutines.delay
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.disabled
+import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.LineStyle
+import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.position
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.days
@@ -546,9 +549,9 @@ fun FriendListItem(
                 attrs = {
                     style {
                         padding(8.px, 12.px)
-                        backgroundColor(rgba(200, 60, 60, 0.8))
-                        color(rgba(255, 255, 255, 0.9))
-                        property("border", "none")
+                        backgroundColor(Color.transparent)
+                        border(1.px, LineStyle.Solid, rgba(200, 60, 60, 0.8))
+                        color(rgba(200, 60, 60, 0.8))
                         borderRadius(4.px)
                         property("cursor", "pointer")
                     }

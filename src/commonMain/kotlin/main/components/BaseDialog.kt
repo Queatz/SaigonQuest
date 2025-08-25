@@ -166,6 +166,8 @@ fun BaseDialog(
  *
  * @param onClick Callback when the button is clicked
  * @param isPrimary Whether this is a primary button (default: false)
+ * @param isDisabled Whether this button is disabled (default: false)
+ * @param color The color of the button (default: null)
  * @param content The content of the button
  */
 @Composable
@@ -173,6 +175,7 @@ fun DialogButton(
     onClick: () -> Unit,
     isPrimary: Boolean = false,
     isDisabled: Boolean = false,
+    color: String? = null,
     content: @Composable () -> Unit
 ) {
     Button(
@@ -181,6 +184,12 @@ fun DialogButton(
                 classes(Styles.baseDialogButtonPrimary)
             } else {
                 classes(Styles.baseDialogButtonSecondary)
+            }
+
+            if (color != null) {
+                style {
+                    backgroundColor(Color(color))
+                }
             }
 
             if (isDisabled) {

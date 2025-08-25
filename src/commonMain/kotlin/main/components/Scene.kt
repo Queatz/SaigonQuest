@@ -19,6 +19,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
@@ -142,6 +144,8 @@ fun SceneComponent(url: String) {
     data class PendingDrop(val x: Int, val y: Int, val data: String, val worldId: String, val maxQuantity: Int)
     val showDropQuantityDialog = remember { mutableStateOf(false) }
     val pendingDrop = remember { mutableStateOf<PendingDrop?>(null) }
+
+    val requestPanel = remember { MutableSharedFlow<SidePanelState>() }
 
     // Coroutine scope for friendship-related operations
     val scope = rememberCoroutineScope()
@@ -346,6 +350,7 @@ fun SceneComponent(url: String) {
     // Add the UI overlay when the world is loaded
     if (isLoaded.value) {
         WorldUI(
+            requestPanel = requestPanel,
             onRequestCanvasFocus = { canvasRef?.focus() },
         )
     }
@@ -553,7 +558,9 @@ fun SceneComponent(url: String) {
                 DialogButton(
                     onClick = {
                         showMessageDialog.value = false
-                        showLoginDialog.value = true
+                        scope.launch {
+                            requestPanel.emit(SidePanelState.Profile)
+                        }
                     },
                     isPrimary = true,
                 ) {

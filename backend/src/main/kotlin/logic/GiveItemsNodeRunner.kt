@@ -109,7 +109,8 @@ class GiveItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                 requestId = requestId,
                 userId = context.connection.userId,
                 nodeId = node.id,
-                items = entries
+                items = entries,
+                isReceiving = true,
             )
             val message = WebSocketMessage(
                 action = WebSocketAction.SHOW_TAKE_ITEMS,

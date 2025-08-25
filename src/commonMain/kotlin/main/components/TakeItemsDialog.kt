@@ -36,7 +36,11 @@ fun TakeItemsDialog() {
 
     Div({ classes(NodeStyles.dialogueOverlay) }) {
         Div({ classes(NodeStyles.dialogueContainer) }) {
-            P({ classes(NodeStyles.dialogueText) }) { Translated("Give these items?") }
+            P({ classes(NodeStyles.dialogueText) }) {
+                Translated(
+                    if (current.isReceiving) "Take these items?" else "Give these items?"
+                )
+            }
 
             // Items list
             Div({
@@ -86,7 +90,13 @@ fun TakeItemsDialog() {
                         WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, true)
                         prompt = null
                     }
-                } }) { Translated("Give items") }
+                } }) {
+                    if (current.isReceiving) {
+                        Translated("Take items")
+                    } else {
+                        Translated("Give items")
+                    }
+                }
             }
         }
     }

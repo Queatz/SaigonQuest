@@ -664,6 +664,9 @@ vi: Đã mua
 Give
 vi: Cho
 
+Worn items
+vi: Vật phẩm đang mặc
+
 Loading inventory...
 vi: Đang tải kho đồ...
 
@@ -816,6 +819,9 @@ vi: Nhận vật phẩm
 
 Give these items?
 vi: Tặng những vật phẩm này?
+
+Take these items?
+vi: Nhận những vật phẩm này?
 
 Give items
 vi: Tặng vật phẩm

@@ -122,7 +122,8 @@ data class TakeItemsPrompt(
     val requestId: String,
     val userId: String,
     val nodeId: String,
-    val items: List<TakeItemEntry>
+    val items: List<TakeItemEntry>,
+    val isReceiving: Boolean = false,
 )
 
 @Serializable

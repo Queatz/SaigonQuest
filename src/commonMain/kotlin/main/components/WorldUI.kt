@@ -18,6 +18,7 @@ import js.typedarrays.Uint8Array
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.AssetApi
@@ -64,6 +65,7 @@ import web.serviceworker.register
  */
 @Composable
 fun WorldUI(
+    requestPanel: Flow<SidePanelState>,
     onRequestCanvasFocus: () -> Unit = {},
 ) {
     // State for UI elements
@@ -110,6 +112,12 @@ fun WorldUI(
     var currentWorld by remember { mutableStateOf<World?>(null) }
     var isWorldLoading by remember { mutableStateOf(true) }
     var worldErrorMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(requestPanel) {
+        requestPanel.collect { panel ->
+            currentPanel = panel
+        }
+    }
     
     // Function to fetch unread notification count
     fun fetchUnreadNotificationCount() {

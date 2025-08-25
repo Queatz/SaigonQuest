@@ -132,13 +132,21 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
                         // If targetWorldUrl is provided, navigate to it
                         val targetWorldUrl = teleportData["targetWorldUrl"]
                         if (targetWorldUrl != null) {
-                            console.log("WebSocketApi: Teleporting with fade to world URL: $targetWorldUrl")
-                            // Dispatch a global event so Scene can fade out and navigate
-                            val detail: dynamic = object {}
-                            detail.path = "/$targetWorldUrl"
-                            detail.hardReload = false
-                            val evt = createCustomEvent("navigateWithFade", detail)
-                            window.dispatchEvent(evt)
+                            // Normalize paths and compare with current world
+                            val target = targetWorldUrl.trim().trim('/')
+                            val current = router.currentPath.path.trim().trim('/')
+
+                            if (current == target) {
+                                console.log("WebSocketApi: Teleport requested to current world ($current); skipping navigation")
+                            } else {
+                                console.log("WebSocketApi: Teleporting with fade to world URL: $target")
+                                // Dispatch a global event so Scene can fade out and navigate
+                                val detail: dynamic = object {}
+                                detail.path = "/$target"
+                                detail.hardReload = false
+                                val evt = createCustomEvent("navigateWithFade", detail)
+                                window.dispatchEvent(evt)
+                            }
                         } else {
                             console.error("WebSocketApi: Missing targetWorldUrl in teleport data")
                         }

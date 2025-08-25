@@ -545,6 +545,10 @@ object Styles : StyleSheet() {
         property("border", "0")
         property("border-radius", "4px")
         property("cursor", "pointer")
+
+        self + disabled style {
+            opacity(.25f)
+        }
     }
     
     val baseDialogButtonSecondary by style {
@@ -554,6 +558,10 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.primary}")
         property("border-radius", "4px")
         property("cursor", "pointer")
+
+        self + disabled style {
+            opacity(.25f)
+        }
     }
     
     // Common style for input elements with box-sizing: border-box

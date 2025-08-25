@@ -586,12 +586,12 @@ fun InventoryDialog(onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
         title = translated("Inventory"),
-        maxWidth = "600px",
         headerActions = {
             DialogButton(
                 onClick = { showMarketplaceDialog = true },
                 isPrimary = true,
-            ) { Translated("Marketplace") }
+                color = "rgb(53, 134, 36)"
+            ) { Text("🛍️ "); Translated("Marketplace") }
         },
         content = {
             Div(
@@ -782,7 +782,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Worn Items"))
+                            Text(translated("Worn items"))
                         }
                         
                         // Display worn items or a message if none

@@ -5,7 +5,6 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.ItemApi
 import main.components.BaseDialog
-import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.common.formatAmount

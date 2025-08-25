@@ -14,6 +14,8 @@ import models.Item
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 
 @Composable
@@ -68,8 +70,7 @@ fun MarketplaceDialog(
         headerActions = {
             Div({
                 style {
-                    property("color", "white")
-                    property("font-weight", "bold")
+                    fontSize(14.px)
                 }
             }) {
                 Text(balance?.let { formatAmount(it) } ?: "...")
