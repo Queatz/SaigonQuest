@@ -15,12 +15,6 @@ Saigon.Quest is a Kotlin Multiplatform project targeting JavaScript (Kotlin/JS) 
 - **Routing Compose**: For handling navigation and routing
 - **External JavaScript Libraries**: Including BabylonJS for 3D graphics, QR code generation, and Marked for Markdown rendering
 
-## Local Development Environment
-
-The web frontend is hosted at: `http://localhost:4080`
-
-The backend is hosted at: `http://localhost:8080`
-
 ## Build and Configuration
 
 ### Prerequisites
@@ -160,6 +154,7 @@ allowing the project to remain maintainable as it grows.
 - **Use `Throwable` for exception handling**: `Exception` is not enough!
 - **Use `kotlin.time.Instant` in database models and DTOs.**
 - **data classes that are used in the database MUST have default values for all fields**: Jackson needs a zero-argument constructor to deserialize the data.
+- **Do not use `${'$'}varNam` to insert variables into strings**: Use `$varName` or `${varName}` instead.
 
 ## Code Style and Development Guidelines
 

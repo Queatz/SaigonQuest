@@ -1,5 +1,6 @@
 package main.components.inventory
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,12 +13,15 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
-import main.api.ItemApi
 import main.api.WebSocketApi
 import main.api.addUpdatePlayerListener
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Translated
+import main.components.attrs.onTouchDrop
 import main.components.player.CharacterRenderer
+import main.components.translated
+import main.utils.DataType
 import models.Inventory
 import models.Item
 import models.User
@@ -37,9 +41,9 @@ import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
+import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginLeft
-import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
@@ -49,16 +53,12 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
-import main.components.translated
-import Translations.str
-import main.components.Translated
-import org.jetbrains.compose.web.css.margin
+import utils.json
 
 /**
  * An inventory dialog that displays the user's inventory items.
@@ -468,70 +468,57 @@ fun InventoryDialog(onClose: () -> Unit) {
         }
     }
     
-    // Function to handle drop for reordering inventory
-    fun handleDrop(event: dynamic, targetItemId: String) {
-        event.preventDefault()
-        
-        console.log("[DEBUG_LOG] handleDrop: sourceItemId=${draggedItemId}, targetItemId=${targetItemId}")
-        
-        val sourceItemId = draggedItemId ?: return
-        
-        // Validate that neither sourceItemId nor targetItemId are empty
+    // Helper to reorder items using source and target IDs
+    fun reorderItems(sourceItemId: String, targetItemId: String) {
+        console.log("[DEBUG_LOG] reorderItems: sourceItemId=$sourceItemId, targetItemId=$targetItemId")
+
         if (sourceItemId.isEmpty()) {
-            console.error("[DEBUG_LOG] handleDrop: sourceItemId is empty")
+            console.error("[DEBUG_LOG] reorderItems: sourceItemId is empty")
             return
         }
-        
         if (targetItemId.isEmpty()) {
-            console.error("[DEBUG_LOG] handleDrop: targetItemId is empty")
+            console.error("[DEBUG_LOG] reorderItems: targetItemId is empty")
             return
         }
-        
         if (sourceItemId == targetItemId) return
-        
-        // Get current inventory
+
         val currentInventory = inventory ?: return
         val currentOrder = currentInventory.itemOrder.toMutableList()
-        
-        // Find indices
+
         val sourceIndex = currentOrder.indexOf(sourceItemId)
         val targetIndex = currentOrder.indexOf(targetItemId)
-        
-        console.log("[DEBUG_LOG] handleDrop: sourceIndex=${sourceIndex}, targetIndex=${targetIndex}")
-        
+        console.log("[DEBUG_LOG] reorderItems: sourceIndex=$sourceIndex, targetIndex=$targetIndex")
+
         if (sourceIndex != -1 && targetIndex != -1) {
-            // Remove source item
             currentOrder.removeAt(sourceIndex)
-            
-            // Insert at target position
             val insertIndex = if (sourceIndex < targetIndex) targetIndex else targetIndex
             currentOrder.add(insertIndex, sourceItemId)
-            
+
             // Update local state
             inventory = currentInventory.copy(itemOrder = currentOrder)
-            
+
             // Save the updated order via API
             coroutineScope.launch {
                 try {
                     console.log("[DEBUG_LOG] Saving updated item order: ${currentOrder}")
                     val updatedInventory = InventoryApi.updateInventoryItemOrder(currentOrder)
                     console.log("[DEBUG_LOG] Successfully saved item order")
-                    
-                    // Update the shared inventory state
                     InventoryState.inventory = updatedInventory
-                    
-                    // Show success feedback
                     showFeedback("Item order updated")
                 } catch (error: Throwable) {
                     console.error("[DEBUG_LOG] Error saving item order", error)
                     showFeedback("Failed to save item order", true)
-                    
-                    // Revert to the original order if the API call fails
                     inventory = currentInventory
                 }
             }
         }
-        
+    }
+
+    // Function to handle drop for reordering inventory (mouse-based)
+    fun handleDrop(event: dynamic, targetItemId: String) {
+        event.preventDefault()
+        val sourceItemId = draggedItemId ?: return
+        reorderItems(sourceItemId, targetItemId)
         draggedItemId = null
     }
     
@@ -715,6 +702,19 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 onDrop { event -> 
                                     handleDropOnCharacter(event.nativeEvent)
                                     isDropTargetActive = false
+                                }
+                                onTouchDrop { _, _, data, dataType ->
+                                    if (dataType == DataType.INVENTORY_ITEM) {
+                                        try {
+                                            val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                            handleWearItem(payload.inventoryItemKey)
+                                        } catch (e: Throwable) {
+                                            console.error("[DEBUG_LOG] onTouchDrop character: error decoding payload", e)
+                                            showFeedback("Error: Could not equip item", true)
+                                        } finally {
+                                            isDropTargetActive = false
+                                        }
+                                    }
                                 }
                             }
                         ) {
@@ -916,6 +916,16 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
                                         onDragOver { event -> handleDragOver(event.nativeEvent) }
                                         onDrop { event -> handleDrop(event.nativeEvent, itemId) }
+                                        onTouchDrop { _, _, data, dataType ->
+                                            if (dataType == DataType.INVENTORY_ITEM) {
+                                                try {
+                                                    val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                                    reorderItems(payload.inventoryItemKey, itemId)
+                                                } catch (e: Throwable) {
+                                                    console.error("[DEBUG_LOG] onTouchDrop row: error decoding payload", e)
+                                                }
+                                            }
+                                        }
                                     }
                                 ) {
                                     // Use InventoryBox to render the item
@@ -923,7 +933,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         onClick = { /* No action on click */ },
                                         item = item,
                                         isLoading = isLoading,
-                                        quantity = InventoryState.getQuantityForInventoryItemKey(itemId)
+                                        quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
+                                        inventoryItemKey = itemId,
                                     )
                                     
                                     // Item details

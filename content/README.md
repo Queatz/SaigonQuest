@@ -48,7 +48,7 @@ API_BACKEND_URL=http://localhost:8080 ./gradlew :content:run
 - The web app expects the content server base URL from env var `CONTENT_SERVER_URL` at build time.
 - Example build/run with both backends locally:
 ```
-CONTENT_SERVER_URL=http://localhost:8090 ./gradlew :browser:run
+API_SERVER_URL=http://localhost:8080 CONTENT_SERVER_URL=http://localhost:8090 ./gradlew :browser:run
 ```
 If not provided, the UI falls back to `http://localhost:8090`.
 
@@ -104,3 +104,45 @@ curl -F "file=@/path/to/image.png" \
 - Ensure the API backend is running and `API_BACKEND_URL` is set correctly; otherwise `/upload` will return Unauthorized.
 - Ensure ArangoDB is running and the uploads DB exists: `./backend/setup_arango_db.sh`.
 - Check server logs for errors: `build/install/content/bin/content` run output or Gradle run logs.
+
+## Running
+
+File: `/etc/nginx/sites-enabled/default`
+
+```conf
+server {
+    server_name content.saigon.quest; # managed by Certbot
+
+    client_max_body_size 100m;
+
+    keepalive_timeout 300s;
+    send_timeout 300s;
+    client_body_timeout 300s;
+    client_header_timeout 300s;
+    proxy_connect_timeout 60s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+        location / {
+            proxy_pass http://localhost:8080;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+            proxy_buffering off;
+            proxy_cache off;
+        }
+}
+
+server {
+    if ($host = content.saigon.quest) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+        listen 80 ;
+        listen [::]:80 ;
+    server_name content.saigon.quest;
+    return 404; # managed by Certbot
+}
+
+```

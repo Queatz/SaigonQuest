@@ -10,7 +10,6 @@ object ContentApiConstants {
         } catch (t: Throwable) {
             null
         }
-        (fromEnv?.trimEnd('/') ?: "http://localhost:8090").ifBlank { "http://localhost:8090" }
+        (fromEnv?.trimEnd('/') ?: "https://content.saigon.quest").ifBlank { "https://content.saigon.quest" }
     }
 }
-

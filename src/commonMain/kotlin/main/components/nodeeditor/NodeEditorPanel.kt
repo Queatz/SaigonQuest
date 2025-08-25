@@ -1,16 +1,14 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import kotlinx.browser.document
-import kotlinx.browser.window
 import main.components.Translated
+import main.components.attrs.onTouchDrop
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.NodeId
+import main.utils.DataType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
-import org.w3c.dom.HTMLElement
 
 /**
  * Node editor panel component that contains the canvas for editing nodes and connections.
@@ -57,25 +55,67 @@ fun NodeEditorPanel(
             onDrop { event ->
                 // Prevent default behavior
                 event.preventDefault()
-                
+
+                // Optional data type validation from MIME hint
+                val typeHint = event.dataTransfer?.getData("application/x-data-type") ?: ""
+                if (typeHint.isNotEmpty() && typeHint != DataType.OBJECT.name) {
+                    // Not an object payload; ignore to avoid errors
+                    return@onDrop
+                }
+
                 // Get the data from the drag operation
                 val data = event.dataTransfer?.getData("text/plain") ?: ""
                 if (data.isNotEmpty() && onNodeAdd != null) {
-                    // Parse the data (format: "type:id:label")
+                    // Parse the data (format: "type:id:label"; label may contain colons)
                     val parts = data.split(":")
-                    if (parts.size >= 3) {
-                        val type = NodeCategory.valueOf(parts[0])
-                        val id = NodeId.valueOf(parts[1])
-                        val label = parts[2]
-                        
-                        // Convert screen coordinates to canvas coordinates
-                        val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
-                            event.clientX.toFloat(),
-                            event.clientY.toFloat()
-                        )
-                        
-                        // Add the node
-                        onNodeAdd(type, id, label, canvasX, canvasY)
+                    if (parts.size >= 2) {
+                        val typeStr = parts[0].trim()
+                        val idStr = parts[1].trim()
+                        val label = if (parts.size > 2) parts.subList(2, parts.size).joinToString(":") else ""
+                        try {
+                            val type = NodeCategory.valueOf(typeStr)
+                            val id = NodeId.valueOf(idStr)
+
+                            // Convert screen coordinates to canvas coordinates
+                            val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                                event.clientX.toFloat(),
+                                event.clientY.toFloat()
+                            )
+
+                            // Add the node
+                            onNodeAdd(type, id, label, canvasX, canvasY)
+                        } catch (t: Throwable) {
+                            console.error("[NodeEditor] Drop parse error for data='$data'", t)
+                        }
+                    }
+                }
+            }
+
+            // Touch drop handler for adding new nodes on mobile
+            onTouchDrop { clientX, clientY, data, dataType ->
+                // Only accept object payloads
+                if (dataType != DataType.OBJECT) return@onTouchDrop
+
+                if (data.isNotEmpty() && onNodeAdd != null) {
+                    val parts = data.split(":")
+                    if (parts.size >= 2) {
+                        val typeStr = parts[0].trim()
+                        val idStr = parts[1].trim()
+                        val label = if (parts.size > 2) parts.subList(2, parts.size).joinToString(":") else ""
+
+                        try {
+                            val type = NodeCategory.valueOf(typeStr)
+                            val id = NodeId.valueOf(idStr)
+
+                            val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                                clientX.toFloat(),
+                                clientY.toFloat()
+                            )
+
+                            onNodeAdd(type, id, label, canvasX, canvasY)
+                        } catch (t: Throwable) {
+                            console.error("[NodeEditor] Touch drop parse error for data='$data'", t)
+                        }
                     }
                 }
             }

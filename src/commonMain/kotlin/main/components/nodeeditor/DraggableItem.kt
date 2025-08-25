@@ -1,9 +1,10 @@
 package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
+import main.components.attrs.touchDraggable
 import main.theme.NodeEditorStyles
+import main.utils.DataType
 import models.LogicNode
-import models.NodeCategory
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.marginTop
@@ -37,6 +38,8 @@ fun DraggableItem(node: LogicNode) {
             onDragStart { event ->
                 // Set the drag data
                 event.dataTransfer?.setData("text/plain", "${node.category.name}:${id.name}:$label")
+                // Provide a data type hint for robust drops
+                event.dataTransfer?.setData("application/x-data-type", DataType.OBJECT.name)
                 // Set the drag effect
                 event.dataTransfer?.effectAllowed = "copy"
             }
@@ -50,6 +53,20 @@ fun DraggableItem(node: LogicNode) {
                 // Clean up after drag operation
                 event.preventDefault()
             }
+
+            // Touch drag support for mobile
+            touchDraggable(
+                dataProvider = { "${node.category.name}:${id.name}:$label" },
+                dataType = DataType.OBJECT,
+                previewBuilder = { preview ->
+                    preview.textContent = label
+                    preview.style.backgroundColor = "rgba(0, 0, 0, 0.6)"
+                    preview.style.color = "white"
+                    preview.style.padding = "4px 6px"
+                    preview.style.borderRadius = "4px"
+                    preview.style.fontSize = "12px"
+                },
+            )
         }
     ) {
         Div {
@@ -73,62 +90,3 @@ fun DraggableItem(node: LogicNode) {
     }
 }
 
-/**
- * A draggable item in the left panel.
- * 
- * @param label The display label for the item
- * @param type The type of node this item creates (event, dialogue, action, etc.)
- * @param id The unique identifier for the node type
- * @param description A short description of what this item does (optional)
- */
-@Composable
-fun DraggableItem(label: String, type: String, id: String, description: String = "") {
-    Div(
-        attrs = {
-            classes(NodeEditorStyles.draggableItem)
-            // Add draggable attributes
-            attr("draggable", "true")
-            attr("data-type", type)
-            attr("data-id", id)
-            attr("data-label", label)
-            attr("data-description", description)
-            
-            // Add drag event handlers
-            onDragStart { event ->
-                // Set the drag data
-                event.dataTransfer?.setData("text/plain", "$type:$id:$label")
-                // Set the drag effect
-                event.dataTransfer?.effectAllowed = "copy"
-            }
-            
-            onDrag { event ->
-                // Prevent default to allow drop
-                event.preventDefault()
-            }
-            
-            onDragEnd { event ->
-                // Clean up after drag operation
-                event.preventDefault()
-            }
-        }
-    ) {
-        Div {
-            Text(label)
-        }
-        
-        if (description.isNotEmpty()) {
-            Div(
-                attrs = {
-                    style {
-                        fontSize(11.px)
-                        color(rgba(200, 200, 200, 0.7))
-                        marginTop(3.px)
-                        property("line-height", "1.3")
-                    }
-                }
-            ) {
-                Text(description)
-            }
-        }
-    }
-}

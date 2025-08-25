@@ -4,9 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.browser.document
 import kotlinx.browser.window
-import main.api.ApiClient
+import main.components.attrs.touchDraggable
 import main.theme.InventoryStyles
-import main.theme.Styles
 import main.utils.DataType
 import models.Item
 import org.jetbrains.compose.web.attributes.Draggable
@@ -14,7 +13,7 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
+import utils.json
 
 /**
  * An inventory box that can display an item.
@@ -53,7 +52,7 @@ fun InventoryBox(
                             quantity = quantity,
                             inventoryId = null,
                         )
-                        event.dataTransfer?.setData("application/json", ApiClient.json.encodeToString(InventoryDragPayload.serializer(), payload))
+                        event.dataTransfer?.setData("application/json", json.encodeToString(InventoryDragPayload.serializer(), payload))
                         event.dataTransfer?.setData("application/x-data-type", DataType.INVENTORY_ITEM.name)
                     } else {
                         console.error("[Inventory] inventoryItemKey is null")
@@ -87,6 +86,35 @@ fun InventoryBox(
                     window.setTimeout({
                         document.body?.removeChild(dragIcon)
                     }, 0)
+                }
+
+                // Touch drag support
+                if (inventoryItemKey != null) {
+                    touchDraggable(
+                        dataProvider = {
+                            val payload = InventoryDragPayload(
+                                inventoryItemKey = inventoryItemKey,
+                                itemKey = item.key,
+                                quantity = quantity,
+                                inventoryId = null,
+                            )
+                            json.encodeToString(InventoryDragPayload.serializer(), payload)
+                        },
+                        dataType = DataType.INVENTORY_ITEM,
+                        previewBuilder = { preview ->
+                            preview.style.width = "32px"
+                            preview.style.height = "32px"
+                            preview.style.setProperty("pointer-events", "none")
+                            if (item.file.isNotEmpty()) {
+                                val url = "/raw/data/spritesheets/${item.file}.png"
+                                preview.style.setProperty("background-image", "url(\"$url\")")
+                                preview.style.setProperty("background-size", "320px 320px")
+                                val col = item.assetIndex % 10
+                                val row = item.assetIndex / 10
+                                preview.style.setProperty("background-position", "-${col * 32}px -${row * 32}px")
+                            }
+                        },
+                    )
                 }
             }
             

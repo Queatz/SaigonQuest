@@ -34,7 +34,9 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.headers
 import io.ktor.http.contentType
 import io.ktor.http.ContentType
+import io.ktor.server.routing.Routing
 import kotlinx.serialization.Serializable
+import models.HealthResponse
 import utils.json
 import java.io.File
 import java.util.UUID
@@ -55,7 +57,11 @@ fun Application.module() {
 
     routing {
         // Health check
-        get("/health") { call.respondText("OK", ContentType.Text.Plain) }
+        route("/") {
+            get {
+                call.respond(HealthResponse(alive = true))
+            }
+        }
 
         // Static files
         route("/static") {

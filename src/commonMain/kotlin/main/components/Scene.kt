@@ -10,8 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpStatusCode
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -20,17 +18,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
 import main.api.ApiClient
 import main.api.FriendApi
-import main.api.NotificationApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
+import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
 import main.components.input.InputHandler
 import main.components.objects.SceneObjectManager
@@ -44,7 +41,6 @@ import main.theme.Styles
 import main.utils.DataType
 import main.utils.createObjectDropEvent
 import models.ErrorResponse
-import models.NotificationType
 import models.OpenUrlData
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.dom.Canvas
@@ -53,6 +49,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
+import utils.json
 import kotlin.random.Random
 
 /**
@@ -238,6 +235,11 @@ fun SceneComponent(url: String) {
 
                 // Use the helper function to dispatch the custom event with the data type
                 dispatchObjectDropEvent(clientX, clientY, data, dataType)
+            }
+
+            // Touch drop mirrors mouse drop
+            onTouchDrop { clientX, clientY, data, dataType ->
+                dispatchObjectDropEvent(clientX.toInt(), clientY.toInt(), data, dataType)
             }
 
             onMouseLeave {
@@ -755,7 +757,7 @@ fun SceneComponent(url: String) {
             if (dataType == DataType.INVENTORY_ITEM) {
                 console.log("Handling inventory item drop")
                 try {
-                    val payload = ApiClient.json.decodeFromString(main.components.inventory.InventoryDragPayload.serializer(), data)
+                    val payload = json.decodeFromString(main.components.inventory.InventoryDragPayload.serializer(), data)
                     val maxQuantity = if (payload.quantity > 0) payload.quantity else 1
                     if (maxQuantity > 1) {
                         pendingDrop.value = PendingDrop(x = x, y = y, data = data, worldId = worldId, maxQuantity = maxQuantity)

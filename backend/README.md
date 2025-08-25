@@ -63,4 +63,45 @@ In a production environment, you should use environment variables for these cred
 
 ## Running the Backend
 
-[Add instructions for running the backend here]
+File: `/etc/nginx/sites-enabled/default`
+
+```conf
+server {
+    server_name api.saigon.quest; # managed by Certbot
+
+    client_max_body_size 100m;
+
+    keepalive_timeout 300s;
+    send_timeout 300s;
+    client_body_timeout 300s;
+    client_header_timeout 300s;
+    proxy_connect_timeout 60s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+        location / {
+            proxy_pass http://localhost:8080;
+            chunked_transfer_encoding off;
+            proxy_buffering off;
+            proxy_cache off;
+            
+            # WebSocket support
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $http_connection;
+        }
+}
+
+server {
+    if ($host = api.saigon.quest) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+        listen 80 ;
+        listen [::]:80 ;
+    server_name api.saigon.quest;
+    return 404; # managed by Certbot
+}
+
+```
