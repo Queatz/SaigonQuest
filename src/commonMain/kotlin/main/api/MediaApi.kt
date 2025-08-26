@@ -45,6 +45,28 @@ object MediaApi {
         }
     }
 
+    suspend fun favorite(id: String): UserMedia {
+        val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/media/$id/favorite") {
+            ApiClient.addAuthHeader(this)
+        }
+        if (response.status.isSuccess()) {
+            return response.body()
+        } else {
+            throw Error(response.bodyAsText())
+        }
+    }
+
+    suspend fun unfavorite(id: String): UserMedia {
+        val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/media/$id/favorite") {
+            ApiClient.addAuthHeader(this)
+        }
+        if (response.status.isSuccess()) {
+            return response.body()
+        } else {
+            throw Error(response.bodyAsText())
+        }
+    }
+
     suspend fun delete(id: String) {
         val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/media/$id") {
             ApiClient.addAuthHeader(this)

@@ -21,7 +21,7 @@ class UserMediaRepository {
         val query = """
             FOR m IN $collectionName
             FILTER m.userId == @userId
-            SORT m.createdAt DESC
+            SORT m.favorite DESC, m.createdAt DESC
             LIMIT @offset, @limit
             RETURN m
         """.trimIndent()
@@ -47,6 +47,22 @@ class UserMediaRepository {
         )
         val cursor: ArangoCursor<Int> = db.query(query, Int::class.java, bindVars)
         return cursor.hasNext()
+    }
+
+    fun updateFavoriteForUser(userId: String, key: String, favorite: Boolean): UserMedia? {
+        val query = """
+            FOR m IN $collectionName
+            FILTER m.userId == @userId AND m._key == @key
+            UPDATE m WITH { favorite: @favorite } IN $collectionName
+            RETURN NEW
+        """.trimIndent()
+        val bindVars = mapOf(
+            "userId" to userId,
+            "key" to key,
+            "favorite" to favorite,
+        )
+        val cursor: ArangoCursor<UserMedia> = db.query(query, UserMedia::class.java, bindVars)
+        return if (cursor.hasNext()) cursor.next() else null
     }
 }
 

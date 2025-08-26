@@ -10,6 +10,6 @@ data class UserMedia(
     var userId: String = "",
     var type: MediaType = MediaType.Image,
     var path: String = "",
+    var favorite: Boolean = false,
     var originalFileName: String = ""
 ) : BaseModel()
-

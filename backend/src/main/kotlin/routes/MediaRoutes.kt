@@ -53,6 +53,40 @@ fun Routing.configureMediaRoutes() {
             call.respond(HttpStatusCode.Created, saved)
         }
 
+        // Favorite a media record
+        post("/media/{id}/favorite") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserId(principal)
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+
+            val id = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing id")
+
+            val updated = repo.updateFavoriteForUser(userId, id, true)
+            if (updated != null) {
+                call.respond(HttpStatusCode.OK, updated)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Not found")
+            }
+        }
+
+        // Unfavorite a media record
+        delete("/media/{id}/favorite") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserId(principal)
+                ?: return@delete call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+
+            val id = call.parameters["id"]
+                ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing id")
+
+            val updated = repo.updateFavoriteForUser(userId, id, false)
+            if (updated != null) {
+                call.respond(HttpStatusCode.OK, updated)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Not found")
+            }
+        }
+
         // Delete a media record owned by the authenticated user
         delete("/media/{id}") {
             val principal = call.principal<JWTPrincipal>()

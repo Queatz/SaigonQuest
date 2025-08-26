@@ -12,6 +12,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
+import main.components.BasicConfirmDialog
 import models.Object
 import models.Position
 import models.World
@@ -54,6 +55,7 @@ fun ObjectsContent(
     var ownedObjects by remember { mutableStateOf<List<Object>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
+    var showRemoveObjectId by remember { mutableStateOf(null as String?) }
 
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf("") }
@@ -98,28 +100,7 @@ fun ObjectsContent(
             isLoading = false
         }
     }
-    
-    // JSON serializer
-    val json = utils.json
-    
-    // Function to handle drag start
-    fun handleDragStart(event: dynamic, obj: Object) {
-        // Set the drag data
-        event.dataTransfer.setData("application/json", json.encodeToString(Object.serializer(), obj))
-        
-        // Set a custom drag image
-        val dragImage = document.createElement("div") as HTMLElement
-        dragImage.style.width = "48px"
-        dragImage.style.height = "48px"
-        dragImage.style.backgroundColor = "rgba(0, 120, 255, 0.7)"
-        dragImage.style.borderRadius = "4px"
-        document.body?.appendChild(dragImage)
-        event.dataTransfer.setDragImage(dragImage, 24, 24)
-        
-        // Remove the drag image element after it's been used
-        window.setTimeout({ document.body?.removeChild(dragImage) }, 0)
-    }
-    
+
     // Function to remove an object with both HTTP and WebSocket persistence
     fun removeObject(objectId: String) {
         // Get the object title for feedback message
@@ -254,6 +235,17 @@ fun ObjectsContent(
         }
     }
 
+    if (showRemoveObjectId != null) {
+        BasicConfirmDialog(
+            message = "Are you sure you want to remove this object?",
+            onConfirm = {
+                removeObject(showRemoveObjectId!!)
+                showRemoveObjectId = null
+            },
+            onCancel = { showRemoveObjectId = null }
+        )
+    }
+
     // Call the content lambda with the tab content as a lambda
     content {
         WorldObjectsContent(
@@ -261,7 +253,7 @@ fun ObjectsContent(
             isLoading = isLoading,
             errorMessage = errorMessage,
             onCreateObject = { onOpenObjectEditor(true) },
-            onRemove = { objectId -> removeObject(objectId) },
+            onRemove = { objectId -> showRemoveObjectId = objectId },
             onLocate = { objectId -> locateObject(objectId) },
             onEdit = { objectId -> editObject(objectId) },
             onDuplicate = { objectId -> duplicateObject(objectId) }

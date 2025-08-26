@@ -52,6 +52,7 @@ import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
 import Translations.str
+import models.Item
 
 /**
  * Content component for the world edit form.
@@ -992,7 +993,7 @@ fun WorldEditContent(
                 P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Holders of an item (access card)") }
             }
 
-            if (!allowHoldersOfItemId.isNullOrBlank()) {
+            if (allowHoldersOfItemId != null) {
                 Div(attrs = {
                     style {
                         display(DisplayStyle.Flex)
@@ -1013,17 +1014,28 @@ fun WorldEditContent(
                         }
                     }) {
                         if (allowHoldersOfItemId!!.isBlank()) {
-                            Translated("No item selected")
+                            Translated("No item")
                         } else {
-                            Text("${translated("Selected item")}: $allowHoldersOfItemId")
+                            var item by remember { mutableStateOf(null as Item?) }
+
+                            LaunchedEffect(allowHoldersOfItemId) {
+                                allowHoldersOfItemId?.takeIf { it.isNotBlank() }?.let { itemId ->
+                                    item = ItemApi.getItemById(itemId)
+                                }
+                            }
+                            item?.let { item ->
+                                Translated(item.title)
+                            }
                         }
                     }
 
-                    Button(attrs = {
-                        classes(Styles.baseDialogButtonSecondary)
-                        if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
-                        onClick { allowHoldersOfItemId = null }
-                    }) { Translated("Clear") }
+                    if (allowHoldersOfItemId!!.isNotBlank()) {
+                        Button(attrs = {
+                            classes(Styles.baseDialogButtonSecondary)
+                            if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
+                            onClick { allowHoldersOfItemId = null }
+                        }) { Translated("Clear") }
+                    }
                 }
 
                 if (accessItemError != null) {

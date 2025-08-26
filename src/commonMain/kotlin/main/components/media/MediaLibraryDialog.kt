@@ -199,6 +199,7 @@ fun MediaLibraryDialog(
                                 property("border-radius", "6px")
                                 property("border", "1px solid #ccc")
                                 padding(6.px)
+                                property("position", "relative")
                             }
                         }) {
                             Img(src = src, attrs = {
@@ -212,6 +213,39 @@ fun MediaLibraryDialog(
                                 }
                                 onClick { previewUrl = src }
                             })
+
+                            // Favorite toggle overlay
+                            Button(attrs = {
+                                style {
+                                    property("position", "absolute")
+                                    property("top", "6px")
+                                    property("right", "6px")
+                                    property("background", "transparent")
+                                    property("border", "none")
+                                    property("cursor", "pointer")
+                                    width(24.px)
+                                    height(24.px)
+                                    fontSize(18.px)
+                                    if (item.favorite) {
+                                        color(Color("#ffee00"))
+                                    }
+                                }
+                                onClick {
+                                    val scope = MainScope()
+                                    scope.launch {
+                                        try {
+                                            if (item.favorite) {
+                                                MediaApi.unfavorite(item.key)
+                                            } else {
+                                                MediaApi.favorite(item.key)
+                                            }
+                                            refresh()
+                                        } catch (t: Throwable) {
+                                            error = t.message ?: "Failed to update favorite"
+                                        }
+                                    }
+                                }
+                            }) { Text(if (item.favorite) "★" else "☆") }
 
                             // Actions row
                             Div(attrs = {

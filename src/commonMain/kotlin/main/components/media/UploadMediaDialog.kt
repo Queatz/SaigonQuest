@@ -176,8 +176,8 @@ fun UploadMediaDialog(
                                 property("border-radius", "6px")
                                 height(100.px)
                                 property("cursor", "pointer")
+                                property("position", "relative")
                             }
-                            onClick { onSelect(src); onClose() }
                         }) {
                             Img(src = src, attrs = {
                                 style {
@@ -186,7 +186,43 @@ fun UploadMediaDialog(
                                     property("object-fit", "cover")
                                     property("border-radius", "4px")
                                 }
+                                onClick { onSelect(src); onClose() }
                             })
+
+                            // Favorite toggle overlay
+                            Button(attrs = {
+                                style {
+                                    property("position", "absolute")
+                                    property("top", "0")
+                                    property("right", "0")
+                                    property("background", "transparent")
+                                    property("border", "none")
+                                    property("cursor", "pointer")
+                                    width(24.px)
+                                    height(24.px)
+                                    fontSize(18.px)
+                                    if (item.favorite) {
+                                        color(Color("#ffee00"))
+                                    }
+                                }
+                                onClick {
+                                    val scope = MainScope()
+                                    scope.launch {
+                                        try {
+                                            if (item.favorite) {
+                                                MediaApi.unfavorite(item.key)
+                                            } else {
+                                                MediaApi.favorite(item.key)
+                                            }
+                                            refresh()
+                                        } catch (t: Throwable) {
+                                            error = t.message ?: "Failed to update favorite"
+                                        }
+                                    }
+                                }
+                            }) {
+                                Text(if (item.favorite) "★" else "☆")
+                            }
                         }
                     }
                 }

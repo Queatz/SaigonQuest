@@ -1055,6 +1055,9 @@ vi: Tất cả danh mục
 No results
 vi: Không có kết quả
 
+Browse asset
+vi: Duyệt tài sản
+
 Browse assets
 vi: Duyệt tài sản
 
@@ -1253,6 +1256,8 @@ vi: Đã nhận
 Manage items
 vi: Quản lý vật phẩm
 
+Are you sure you want to remove this object?
+vi: Bạn có chắc chắn muốn xóa đối tượng này không?
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

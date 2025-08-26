@@ -1,6 +1,7 @@
 package main.components.objects
 
 import androidx.compose.runtime.Composable
+import main.components.Translated
 import main.theme.EditorStyles
 import main.theme.Styles
 import models.Object
@@ -44,7 +45,7 @@ fun WorldObjectsContent(
                 onClick { onCreateObject() }
             }
         ) {
-            Text("Create object")
+            Translated("Create object")
         }
         // Loading or error message
         if (isLoading) {
@@ -53,7 +54,7 @@ fun WorldObjectsContent(
                     classes(EditorStyles.loadingMessage)
                 }
             ) {
-                Text("Loading objects...")
+                Translated("Loading objects...")
             }
         } else if (errorMessage.isNotEmpty()) {
             P(
@@ -69,7 +70,7 @@ fun WorldObjectsContent(
                     classes(EditorStyles.emptyMessage)
                 }
             ) {
-                Text("No objects in this world yet.")
+                Translated("No objects in this world yet.")
             }
         } else {
             // List of objects

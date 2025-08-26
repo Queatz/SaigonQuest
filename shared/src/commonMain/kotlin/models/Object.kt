@@ -11,7 +11,7 @@ data class Object(
     var title: String = "",
     var data: String = "", // JSON string containing node editor data
     var worldId: String = "", // Reference to the world this object belongs to
-    var file: String = "", // world file name without .glb
+    var file: String = "", // file name without .glb
     var collection: String = "", // collection in file to render as the object
     var position: Position = Position(), // Position in the 3D world
     var rotation: Rotation = Rotation(), // Rotation in the 3D world
