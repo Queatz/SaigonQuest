@@ -622,7 +622,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text(translated("Loading inventory..."))
+                        Translated("Loading inventory...")
                     }
                 } else if (errorMessage.isNotEmpty()) {
                     P(
@@ -633,7 +633,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     ) {
-                        Text(translated("Error:") + " " + errorMessage)
+                        Text(translated("Error") + ": " + errorMessage)
                     }
                 } else {
                     // Character renderer section
@@ -660,7 +660,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Your character"))
+                            Translated("Your character")
                         }
                         
                         // Character renderer with drop zone
@@ -744,7 +744,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         }
                                     }
                                 ) {
-                                    Text(translated("Drop to wear item"))
+                                    Translated("Drop to wear item")
                                 }
                             }
                         }
@@ -760,7 +760,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Drag wearable items here to equip them"))
+                            Translated("Drag wearable items here to equip them")
                         }
                     }
                     
@@ -782,7 +782,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         ) {
-                            Text(translated("Worn items"))
+                            Translated("Worn items")
                         }
                         
                         // Display worn items or a message if none
@@ -799,7 +799,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     }
                                 }
                             ) {
-                                Text(translated("No items worn. Drag wearable items to your character to wear them."))
+                                Translated("No items worn. Drag wearable items to your character to wear them.")
                             }
                         } else {
                             // Display worn items
@@ -862,7 +862,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                     }
                                                 }
                                             ) {
-                                                Text(translated("(Click to remove)"))
+                                                Translated("Click to remove")
                                             }
                                         }
                                     }
@@ -981,7 +981,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                         }
                                                     }
                                                 ) {
-                                                    Text(translated("Wearable"))
+                                                    Translated("Wearable")
                                                 }
                                             }
                                         }

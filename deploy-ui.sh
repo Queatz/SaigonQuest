@@ -10,7 +10,7 @@ HOST="154.205.142.48"
 SSH_USER="root"
 SSH_KEY="$HOME/.ssh/id_rsa"
 DEST_DIR="${UI_DEPLOY_DIR:-/root/saigonquest-ui}"
-GRADLE_TASK=":jsBrowserDistribution"
+GRADLE_TASK=":prodApp"
 LOCAL_BUILD_DIR="build/dist/js/productionExecutable"
 
 print_usage() {

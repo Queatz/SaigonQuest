@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BasicConfirmDialog
+import main.components.translated
 import models.Object
 import models.Position
 import models.World
@@ -237,7 +238,7 @@ fun ObjectsContent(
 
     if (showRemoveObjectId != null) {
         BasicConfirmDialog(
-            message = "Are you sure you want to remove this object?",
+            message = translated("Are you sure you want to remove this object?"),
             onConfirm = {
                 removeObject(showRemoveObjectId!!)
                 showRemoveObjectId = null

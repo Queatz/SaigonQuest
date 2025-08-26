@@ -320,7 +320,7 @@ fun FriendsContent() {
                     }
                 }
             ) {
-                Text("${str("Error:")} $error")
+                Text("${str("Error")}: $error")
             }
         }
         // Empty state

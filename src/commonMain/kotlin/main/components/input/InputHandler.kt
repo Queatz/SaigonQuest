@@ -37,6 +37,9 @@ import kotlin.math.abs
  * - Pointer input processing (click-to-move)
  * - Connecting inputs to player movement
  */
+
+private const val SLOP = 10
+
 class InputHandler(
     private val scene: Scene,
     private val playerController: PlayerController,
@@ -350,8 +353,8 @@ class InputHandler(
                     val deltaX = abs(scene.pointerX - pointerStartX)
                     val deltaY = abs(scene.pointerY - pointerStartY)
                     
-                    // Consider it a drag if moved more than 5 pixels in any direction
-                    if (deltaX > 5 || deltaY > 5) {
+                    // Consider it a drag if moved more than SLOP pixels in any direction
+                    if (deltaX > SLOP || deltaY > SLOP) {
                         isDragging = true
                         pendingSingleClickJob?.cancel()
                         pendingSingleClickJob = null

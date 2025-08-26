@@ -28,10 +28,10 @@ tasks.register<Copy>("prepareDevServiceWorker") {
     // Compute dev/prod at execution time; avoid capturing other Project instances
     val variant = "developmentExecutable"
     val swFile = rootProject.layout.projectDirectory
-        .file("sw/build/kotlin-webpack/js/$variant/service-worker.js")
+        .file("sw/build/dist/js/$variant/service-worker.js")
         if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
 
-    val destDir = layout.buildDirectory.dir("kotlin-webpack/js/$variant")
+    val destDir = layout.buildDirectory.dir("dist/js/$variant")
     from(swFile)
     into(destDir)
     val destDir2 = layout.buildDirectory.dir("processedResources/js/main")
@@ -41,12 +41,12 @@ tasks.register<Copy>("prepareDevServiceWorker") {
 }
 
 tasks.register<Copy>("prepareProdServiceWorker") {
-    dependsOn(":sw:jsBrowserProductionWebpack")
+    dependsOn(":sw:jsBrowserDistribution")
     val variant = "productionExecutable"
     val swFile = rootProject.layout.projectDirectory
-        .file("sw/build/kotlin-webpack/js/$variant/service-worker.js")
+        .file("sw/build/dist/js/$variant/service-worker.js")
         if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
-    val destDir = layout.buildDirectory.dir("kotlin-webpack/js/$variant")
+    val destDir = layout.buildDirectory.dir("dist/js/$variant")
     from(swFile)
     into(destDir)
     println("Copied service-worker.js to $destDir (mode=prod)")
@@ -57,6 +57,13 @@ tasks.register("devApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
     dependsOn("prepareDevServiceWorker", "jsBrowserDevelopmentRun")
+}
+
+// Convenience task: build SW and start frontend dev server
+tasks.register("prodApp") {
+    group = "application"
+    description = "Builds the service worker and starts the frontend dev server"
+    dependsOn("prepareProdServiceWorker")
 }
 
 kotlin {

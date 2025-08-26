@@ -334,8 +334,8 @@ vi: Đã xảy ra lỗi
 Loading friends...
 vi: Đang tải danh sách bạn bè...
 
-Error:
-vi: Lỗi:
+Error
+vi: Lỗi
 
 Last seen in:
 vi: Lần cuối xuất hiện ở:
@@ -685,8 +685,8 @@ vi: Vật phẩm đang mặc
 No items worn. Drag wearable items to your character to wear them.
 vi: Chưa mặc vật phẩm nào. Kéo vật phẩm có thể mặc vào nhân vật của bạn để mặc.
 
-(Click to remove)
-vi: (Nhấp để gỡ)
+Click to remove
+vi: Nhấp để gỡ
 
 Inventory items
 vi: Vật phẩm trong kho
@@ -1176,7 +1176,7 @@ Enter world URL
 vi: Nhập URL thế giới
 
 Marketplace
-vi: Chợ
+vi: Đi chợ
 
 Your balance
 vi: Số dư của bạn
@@ -1225,6 +1225,9 @@ vi: Bạn có chắc muốn xóa phương tiện này không?
 
 Print your location
 vi: In vị trí của bạn
+
+Send
+vi: Gửi
 
 Send VND
 vi: Gửi tiền

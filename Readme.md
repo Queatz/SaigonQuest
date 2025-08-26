@@ -12,9 +12,9 @@ Welcome!
 
 ## Build
 
-`./gradlew jsBrowserProductionWebpack`
+`./gradlew jsBrowserDistribution`
 
-Files are in `build/kotlin-webpack/js/productionExecutable`
+Files are in `build/dist/js/productionExecutable`
 
 ## Deploy
 

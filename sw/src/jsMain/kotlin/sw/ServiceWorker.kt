@@ -2,17 +2,23 @@
 
 package sw
 
-import js.objects.jso
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.promise
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import web.events.EventHandler
 import web.notifications.NotificationOptions
 import web.push.PushEvent
-import web.serviceworker.Client
 import web.serviceworker.ClientQueryOptions
-import web.serviceworker.ExtendableEvent
+import web.serviceworker.NotificationEvent
 import web.serviceworker.ServiceWorkerGlobalScope
+import web.serviceworker.WindowClient
+import web.serviceworker.focus
+import web.serviceworker.matchAll
+import web.serviceworker.openWindow
+import web.serviceworker.showNotification
 
 @Serializable
 data class WsMessage(val action: String? = null, val data: String = "")
@@ -38,15 +44,25 @@ external val self: ServiceWorkerGlobalScope
 
 // Message payload back to the app
 external interface OpenNotificationData { var worldUrl: String? }
+
 external interface OpenNotificationMessage {
     var type: String
     var data: OpenNotificationData
 }
 
+// Data stored in NotificationOptions.data for click handling
+external interface SwNotificationClickData {
+    var id: String?
+    var worldId: String?
+    var worldUrl: String?
+}
+
+private inline fun <T> jsObject(builder: T.() -> Unit = {}): T =
+    (js("({})") as T).apply(builder)
+
 fun main() {
     // Push event listener
-    self.addEventListener("push", { e ->
-        val event = e.unsafeCast<PushEvent>()
+    self.onpush = EventHandler { event: PushEvent ->
         try {
             val dataText: String? = event.data?.text()
             console.log("[SW] push event", dataText)
@@ -54,70 +70,67 @@ fun main() {
                 val ws = json.decodeFromString(WsMessage.serializer(), dataText)
                 val nd = json.decodeFromString(NotificationData.serializer(), ws.data)
 
-                val options = jso<NotificationOptions> {
+                val options = jsObject<NotificationOptions> {
                     body = nd.description
                     tag = "saigon-quest-notification"
-                    renotify = true
                     icon = "/favicon.png"
                     // store data we need on click
-                    asDynamic().data = jso<dynamic> {
+                    data = jsObject<SwNotificationClickData> {
                         id = nd.id
                         worldId = nd.worldId
+                        worldUrl = null
                     }
                 }
                 // Server may set worldUrl at top level; handle if present
                 try {
                     val root = Json.parseToJsonElement(dataText).jsonObject
                     val wu = root["worldUrl"]?.jsonPrimitive?.content
-                    if (wu != null && wu.isNotBlank()) options.asDynamic().data.worldUrl = wu
+                    if (wu != null && wu.isNotBlank()) {
+                        val d = options.data.unsafeCast<SwNotificationClickData>()
+                        d.worldUrl = wu
+                    }
                 } catch (_: Throwable) {}
 
-                event.waitUntil(self.registration.showNotification(nd.title, options))
+                event.waitUntil(
+                    GlobalScope.promise {
+                        self.registration.showNotification(nd.title, options)
+                    }.unsafeCast<js.promise.Promise<*>>()
+                )
             }
         } catch (e: Throwable) {
             console.error("[SW] Error handling push", e)
         }
-    })
+    }
 
     // Notification click handler
-    self.addEventListener("notificationclick", { e ->
-        val event = e.unsafeCast<ExtendableEvent>()
-        val notification = (e.asDynamic().notification)
+    self.onnotificationclick = EventHandler  { e: NotificationEvent ->
         try {
-            notification.close()
+            e.notification.close()
         } catch (_: Throwable) {}
 
-        val data = notification?.data
-        val worldUrl: String? = try { data?.worldUrl as String? } catch (_: Throwable) { null }
+        val clickData = try { e.notification.data.unsafeCast<SwNotificationClickData?>() } catch (_: Throwable) { null }
+        val worldUrl: String? = clickData?.worldUrl
 
-        val payload = jso<OpenNotificationMessage> {
+        val payload = jsObject<OpenNotificationMessage> {
             type = "OPEN_NOTIFICATION"
-            data = jso<OpenNotificationData> {
+            data = jsObject<OpenNotificationData> {
                 if (worldUrl != null && worldUrl.isNotBlank()) this.worldUrl = worldUrl
             }
         }
 
-        val opts = jso<ClientQueryOptions> {
-            includeUncontrolled = true
-            // type is a string union; assign directly
-            asDynamic().type = "window"
-        }
-
-        event.waitUntil(
-            self.clients.matchAll(opts).then { clientList ->
-                console.log("[SW] notificationclick clients", clientList)
-                val list = clientList.asDynamic()
-                if (list.length > 0) {
-                    val client = list[0].unsafeCast<Client>()
-                    client.focus()
-                    client.postMessage(payload)
+        e.waitUntil(
+            GlobalScope.promise {
+                val clientList = self.clients.matchAll<ClientQueryOptions>()
+                if (clientList.isNotEmpty()) {
+                    val client = clientList[0].unsafeCast<WindowClient>()
+                    val focused = try { client.focus() } catch (_: Throwable) { client }
+                    focused.postMessage(payload)
                     null
                 } else {
-                    val idPart: String = try { data?.id as? String ?: "" } catch (_: Throwable) { "" }
                     val openUrl = if (!worldUrl.isNullOrBlank()) "/$worldUrl" else "/"
                     self.clients.openWindow(openUrl)
                 }
-            }
+            }.unsafeCast<js.promise.Promise<*>>()
         )
-    })
+    }
 }

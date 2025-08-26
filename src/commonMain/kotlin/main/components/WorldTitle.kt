@@ -90,9 +90,8 @@ fun WorldTitle(
             attrs = {
                 style {
                     margin(0.px)
-                    color(Color.white)
+                    color(Color("#fffa"))
                     property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
-                    opacity(.5)
                 }
             }
         ) {
