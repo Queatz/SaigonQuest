@@ -11,6 +11,7 @@ import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.UserStatusBars
+import main.components.SendVndDialog
 import Translations.str
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.dom.Div
@@ -47,6 +48,7 @@ fun OtherPlayerDialog(
     // Load other user's status bars when possible
     val otherUserState = remember { mutableStateOf<models.User?>(null) }
     var showConfirmRemove by remember { mutableStateOf(false) }
+    var showSendVnd by remember { mutableStateOf(false) }
     if (otherUserId.isNotEmpty()) {
         LaunchedEffect(otherUserId) {
             try {
@@ -152,6 +154,19 @@ fun OtherPlayerDialog(
                             }
                         }
                         FriendshipStatus.FRIENDS -> {
+                            // Send VND button
+                            DialogButton(
+                                onClick = { if (!isLoading) showSendVnd = true },
+                                isPrimary = true
+                            ) {
+                                if (isLoading) {
+                                    Translated("Sending...")
+                                } else {
+                                    Translated("Send VND")
+                                }
+                            }
+
+                            // Remove friend button
                             DialogButton(
                                 onClick = { if (!isLoading) showConfirmRemove = true },
                                 isPrimary = false
@@ -191,4 +206,14 @@ fun OtherPlayerDialog(
             }
         }
     )
+
+    // Send VND dialog
+    if (showSendVnd && otherUserId.isNotEmpty()) {
+        SendVndDialog(
+            friendUserId = otherUserId,
+            friendUsername = username,
+            onClose = { showSendVnd = false },
+            onSent = { showSendVnd = false },
+        )
+    }
 }

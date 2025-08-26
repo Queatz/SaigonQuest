@@ -416,6 +416,7 @@ fun FriendListItem(
 ) {
     // State to control the visibility of the confirmation dialog
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showSendDialog by remember { mutableStateOf(false) }
     
     Div(
         attrs = {
@@ -544,6 +545,25 @@ fun FriendListItem(
                 Translated("Jump to Friend")
             }
             
+            // Send VND button
+            Button(
+                attrs = {
+                    style {
+                        padding(8.px, 12.px)
+                        backgroundColor(rgba(60, 200, 120, 0.8))
+                        color(rgba(255, 255, 255, 0.9))
+                        property("border", "none")
+                        borderRadius(4.px)
+                        property("cursor", "pointer")
+                    }
+                    onClick {
+                        showSendDialog = true
+                    }
+                }
+            ) {
+                Translated("Send VND")
+            }
+            
             // Remove friend button
             Button(
                 attrs = {
@@ -579,6 +599,16 @@ fun FriendListItem(
                     }
                 )
             }
+        }
+        
+        // Send VND dialog rendering
+        if (showSendDialog) {
+            SendVndDialog(
+                friendUserId = friend.friendId,
+                friendUsername = friend.friendUsername,
+                onClose = { showSendDialog = false },
+                onSent = { showSendDialog = false },
+            )
         }
     }
 }

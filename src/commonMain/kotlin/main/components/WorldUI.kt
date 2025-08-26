@@ -706,6 +706,7 @@ fun WorldUI(
         if (showPrintDialog) {
             PrintDialog(
                 imageUrl = printImageUrl,
+                worldTitle = currentWorld?.title ?: "Saigon.Quest",
                 onClose = { showPrintDialog = false }
             )
         }

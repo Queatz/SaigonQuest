@@ -50,6 +50,7 @@ import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.overflowY
+import org.jetbrains.compose.web.css.paddingTop
 import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
@@ -737,6 +738,7 @@ object Styles : StyleSheet() {
         property("flex-grow", "1")
         display(DisplayStyle.Flex)
         property("flex-direction", "column")
+        paddingTop(8.px)
         height(0.cssRem)
     }
     

@@ -28,6 +28,21 @@ object BalanceApi {
     }
 
     /**
+     * Send VND to a friend
+     */
+    suspend fun sendToFriend(toUserId: String, amount: Long, note: String? = null) {
+        ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/balance/send") {
+            ApiClient.addAuthHeader(this)
+            contentType(ContentType.Application.Json)
+            setBody(models.SendVndRequest(
+                toUserId = toUserId,
+                amount = amount,
+                note = note
+            ))
+        }
+    }
+
+    /**
      * Fetch recent balance history
      */
     suspend fun getRecent(limit: Int = 5): List<UserBalanceHistory> {

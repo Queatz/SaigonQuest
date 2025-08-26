@@ -7,21 +7,20 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
 import main.api.ContentApiConstants
-import main.api.ApiConstants
 import main.api.UserApi
+import main.api.MediaApi
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.UserMedia
+import models.MediaType
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
-import org.w3c.dom.DataTransfer
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLInputElement
-import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
 import org.w3c.files.File
 import utils.json
@@ -46,20 +45,7 @@ fun UploadMediaDialog(
             try {
                 // Ensure we have a valid user/token (visitor or player)
                 UserApi.getCurrentUser()
-                val token = UserApi.getToken()
-                val url = ApiConstants.API_BASE_URL + "/media"
-                val headers = js("new Headers()") as Headers
-                if (token != null && token.isNotBlank()) {
-                    headers.append("Authorization", "Bearer $token")
-                }
-                val init = js("({})").unsafeCast<RequestInit>().also {
-                    it.method = "GET"
-                    it.headers = headers
-                }
-                val res = window.fetch(url, init).await()
-                val text = res.text().await()
-                if (!res.ok) throw RuntimeException(text)
-                items = main.api.ApiClient.json.decodeFromString<List<UserMedia>>(text)
+                items = MediaApi.list()
             } catch (t: Throwable) {
                 error = t.message ?: "Failed to load media"
             } finally {
@@ -178,9 +164,9 @@ fun UploadMediaDialog(
                 }
             }) {
                 if (loading) {
-                    P { Text("Loading media...") }
+                    P { Translated("Loading media...") }
                 } else if (items.isEmpty()) {
-                    P { Text("No media yet. Upload an image above.") }
+                    P { Translated("No media yet. Upload an image above.") }
                 } else {
                     items.forEach { item ->
                         // Only show images for now

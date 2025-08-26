@@ -904,9 +904,6 @@ vi: Nạp tiền đang chờ
 Status
 vi: Trạng thái
 
-Received
-vi: Đã nhận
-
 Complete
 vi: Hoàn thành
 
@@ -1207,6 +1204,55 @@ vi: Đang tải lên...
 
 Upload or choose image
 vi: Tải lên hoặc chọn hình ảnh
+
+Media Library
+vi: Thư viện phương tiện
+
+Delete
+vi: Xóa
+
+Loading media...
+vi: Đang tải phương tiện...
+
+No media yet. Upload an image above.
+vi: Chưa có phương tiện. Hãy tải lên hình ảnh phía trên.
+
+Are you sure you want to delete this media?
+vi: Bạn có chắc muốn xóa phương tiện này không?
+
+Print your location
+vi: In vị trí của bạn
+
+Send VND
+vi: Gửi tiền
+
+Sending...
+vi: Đang gửi...
+
+Send VND to
+vi: Gửi tiền đến
+
+Note (optional)
+vi: Ghi chú (tùy chọn)
+
+Amount exceeds your balance
+vi: Số tiền vượt quá số dư của bạn
+
+Successfully sent VND
+vi: Gửi tiền thành công
+
+Okay
+vi: Đồng ý
+
+Sent
+vi: Đã gửi
+
+Received
+vi: Đã nhận
+
+Manage items
+vi: Quản lý vật phẩm
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

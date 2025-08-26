@@ -33,5 +33,20 @@ class UserMediaRepository {
         val cursor: ArangoCursor<UserMedia> = db.query(query, UserMedia::class.java, bindVars)
         return cursor.asListRemaining()
     }
+
+    fun deleteForUser(userId: String, key: String): Boolean {
+        val query = """
+            FOR m IN $collectionName
+            FILTER m.userId == @userId AND m._key == @key
+            REMOVE m IN $collectionName
+            RETURN 1
+        """.trimIndent()
+        val bindVars = mapOf(
+            "userId" to userId,
+            "key" to key,
+        )
+        val cursor: ArangoCursor<Int> = db.query(query, Int::class.java, bindVars)
+        return cursor.hasNext()
+    }
 }
 

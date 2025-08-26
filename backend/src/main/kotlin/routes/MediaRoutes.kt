@@ -1,9 +1,7 @@
 package routes
 
 import auth.JWTUtils
-import database.CollectionsConfig
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -53,6 +51,23 @@ fun Routing.configureMediaRoutes() {
                 )
             )
             call.respond(HttpStatusCode.Created, saved)
+        }
+
+        // Delete a media record owned by the authenticated user
+        delete("/media/{id}") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserId(principal)
+                ?: return@delete call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+
+            val id = call.parameters["id"]
+                ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing id")
+
+            val deleted = repo.deleteForUser(userId, id)
+            if (deleted) {
+                call.respond(HttpStatusCode.NoContent, "")
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Not found")
+            }
         }
     }
 }

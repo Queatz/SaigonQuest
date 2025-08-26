@@ -1,21 +1,24 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import kotlinx.browser.document
 import lib.BinaryUtils
 import lib.Qr
-import lib.Tools
 import lib.ScreenshotOptions
-import main.components.SceneManager
-import main.theme.Styles
-import main.components.Translated
-import main.components.translated
-import Translations.str
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
+import lib.Tools
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.Image
@@ -25,10 +28,10 @@ import kotlin.math.max
  * A dialog that displays the printed QR code with scene.
  */
 @Composable
-fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
+fun PrintDialog(imageUrl: String, worldTitle: String, onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
-        title = translated("Print Your Location"),
+        title = translated("Print your location"),
         maxWidth = "820px",
         content = {
             // Image container
@@ -62,7 +65,7 @@ fun PrintDialog(imageUrl: String, onClose: () -> Unit) {
                         // Create a temporary anchor element to trigger download
                         val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
                         link.href = imageUrl
-                        link.download = "saigon-quest-location.png"
+                        link.download = "saigon-quest-${worldTitle}.png"
                         document.body?.appendChild(link)
                         link.click()
                         document.body?.removeChild(link)

@@ -21,6 +21,7 @@ fun Routing.configureBalanceRoutes() {
     val history = UserBalanceHistoryRepository()
     val notifications = NotificationRepository()
     val users = UserRepository()
+    val friends = repository.FriendRepository()
 
     authenticate {
         route("/balance") {
@@ -116,6 +117,100 @@ fun Routing.configureBalanceRoutes() {
                     ?.mapNotNull { runCatching { UserBalanceChangeStatus.valueOf(it) }.getOrNull() }
                     ?.toSet()
                 call.respond(requests.listForUser(userId, statuses))
+            }
+
+            // Send VND to a friend
+            post("/send") {
+                val principal = call.principal<JWTPrincipal>()
+                val fromUserId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val body = try { call.receive<SendVndRequest>() } catch (_: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request body", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                if (body.amount <= 0) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Amount must be positive", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val toUserId = body.toUserId
+                if (toUserId.isBlank() || toUserId == fromUserId) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid recipient", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val fromUser = users.getById(fromUserId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, ErrorResponse("User not found", HttpStatusCode.NotFound.value))
+                val toUser = users.getById(toUserId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, ErrorResponse("Recipient not found", HttpStatusCode.NotFound.value))
+
+                val areFriends = try { friends.existsFriendship(fromUserId, toUserId) } catch (_: Throwable) { false }
+                if (!areFriends) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(message = "You can only send VND to friends", code = HttpStatusCode.Forbidden.value)
+                    )
+                }
+
+                val fromBefore = balances.getByUserId(fromUserId)?.balance ?: 0L
+                if (body.amount > fromBefore) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Insufficient funds", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+                val toBefore = balances.getByUserId(toUserId)?.balance ?: 0L
+
+                val fromAfter = fromBefore - body.amount
+                val toAfter = toBefore + body.amount
+
+                val savedFrom = balances.upsert(fromUserId) { it.balance = fromAfter }
+                val savedTo = balances.upsert(toUserId) { it.balance = toAfter }
+
+                // History entries
+                history.add(
+                    UserBalanceHistory(
+                        userId = fromUserId,
+                        eventType = UserBalanceHistoryEventType.Send,
+                        notes = body.note?.takeIf { it.isNotBlank() } ?: "To ${toUser.username}",
+                        changeAmount = -body.amount,
+                        startBalance = fromBefore,
+                        endBalance = savedFrom.balance
+                    )
+                )
+                history.add(
+                    UserBalanceHistory(
+                        userId = toUserId,
+                        eventType = UserBalanceHistoryEventType.Receive,
+                        notes = body.note?.takeIf { it.isNotBlank() } ?: "From ${fromUser.username}",
+                        changeAmount = body.amount,
+                        startBalance = toBefore,
+                        endBalance = savedTo.balance
+                    )
+                )
+
+                // Notify recipient
+                val title = "VND received"
+                val desc = "You received ${body.amount} VND from ${fromUser.username}"
+                notifications.create(
+                    Notification(
+                        userId = toUserId,
+                        title = title,
+                        description = desc,
+                        isRead = false,
+                        type = NotificationType.VND_RECEIVED,
+                        otherUserId = fromUserId
+                    )
+                )
+
+                call.respond(HttpStatusCode.OK, mapOf("balance" to savedFrom.balance))
             }
 
             post("/requests/{id}/cancel") {

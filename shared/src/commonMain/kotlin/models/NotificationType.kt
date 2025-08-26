@@ -46,4 +46,9 @@ enum class NotificationType {
      * New chat in a world since last visit
      */
     CHAT_NEW,
+
+    /**
+     * Money received from another user (VND transfer)
+     */
+    VND_RECEIVED,
 }

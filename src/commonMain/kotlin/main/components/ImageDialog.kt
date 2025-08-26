@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun ImageDialog(
@@ -35,7 +34,7 @@ fun ImageDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose) { Text("Close") }
+            DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
 }

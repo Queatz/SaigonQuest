@@ -67,6 +67,8 @@ fun PlayerDialog(
     val showCustomizationDialog = remember { mutableStateOf(false) }
     // State to control My Worlds dialog visibility
     val showMyWorldsDialog = remember { mutableStateOf(false) }
+    // State to control Media Library dialog visibility
+    val showMediaLibraryDialog = remember { mutableStateOf(false) }
     // State to control Settings dialog visibility
     val showSettingsDialog = remember { mutableStateOf(false) }
     // State to control Balance dialogs visibility
@@ -438,6 +440,17 @@ fun PlayerDialog(
                         Translated("My Worlds")
                     }
 
+                    // Media library button
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            style { marginTop(8.px) }
+                            onClick { showMediaLibraryDialog.value = true }
+                        }
+                    ) {
+                        Translated("Media Library")
+                    }
+
 
                     // Settings button
                     Button(
@@ -508,6 +521,13 @@ fun PlayerDialog(
                     router = router,
                     onClose = { showMyWorldsDialog.value = false },
                     onNavigate = { path -> router.navigate(path) }
+                )
+            }
+
+            // Render the Media Library dialog when visible
+            if (showMediaLibraryDialog.value) {
+                main.components.media.MediaLibraryDialog(
+                    onClose = { showMediaLibraryDialog.value = false }
                 )
             }
 

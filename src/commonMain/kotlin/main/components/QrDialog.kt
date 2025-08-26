@@ -54,7 +54,7 @@ fun QrDialog(
     onPrint: (String) -> Unit,
     playerPosition: Vector3? = null,
     worldTitle: String = translated("Saigon.Quest"),
-    worldSubtitle: String = translated("Virtual World"),
+    worldSubtitle: String = translated("Local Worlds"),
     worldDescription: String = ""
 ) {
     // Get the current URL and append player position if available

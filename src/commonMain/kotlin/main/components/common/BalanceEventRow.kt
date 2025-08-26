@@ -20,7 +20,8 @@ fun BalanceEventRow(item: UserBalanceHistory) {
             Translated(
                 when (item.eventType) {
                     UserBalanceHistoryEventType.Use -> "Use"
-                    UserBalanceHistoryEventType.Give -> "Give"
+                    UserBalanceHistoryEventType.Send -> "Sent"
+                    UserBalanceHistoryEventType.Receive -> "Received"
                     else -> if (isDeposit) "Deposit" else "Withdraw"
                 }
             )
