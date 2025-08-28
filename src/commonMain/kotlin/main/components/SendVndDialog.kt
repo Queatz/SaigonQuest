@@ -21,6 +21,9 @@ fun SendVndDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var sending by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
+    var attachments by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showUpload by remember { mutableStateOf(false) }
+    var imageToView by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
 
@@ -59,6 +62,25 @@ fun SendVndDialog(
             Label(attrs = { classes(Styles.formLabel) }) { Translated("Note (optional)") }
             TextArea(value = note, attrs = { classes(Styles.inputField); onInput { note = it.value } })
 
+            // Optional attachment
+            Div({ classes(Styles.formGroup) }) {
+                Label(attrs = { classes(Styles.formLabel) }) { Translated("Attachment (optional)") }
+                if (attachments.isNotEmpty()) {
+                    Div(attrs = { classes(Styles.imageThumbRow) }) {
+                        attachments.forEach { url ->
+                            Img(src = url, attrs = {
+                                classes(Styles.imageThumb)
+                                onClick { imageToView = url }
+                            })
+                        }
+                    }
+                }
+                DialogButton(onClick = { showUpload = true }, isPrimary = true) { Translated("Add image") }
+                if (attachments.isNotEmpty()) {
+                    DialogButtonDanger(onClick = { attachments = emptyList() }) { Translated("Remove image") }
+                }
+            }
+
             // Error message
             error?.let { e -> Div({ classes(Styles.formErrorMessage) }) { Text(e) } }
 
@@ -76,7 +98,12 @@ fun SendVndDialog(
                     error = null
                     scope.launch {
                         try {
-                            BalanceApi.sendToFriend(friendUserId, amountInput, note.ifBlank { null })
+                            BalanceApi.sendToFriend(
+                                toUserId = friendUserId,
+                                amount = amountInput,
+                                note = note.ifBlank { null },
+                                attachments = attachments.ifEmpty { null },
+                            )
                             // Show success dialog instead of closing immediately
                             showSuccess = true
                         } catch (t: Throwable) {
@@ -93,6 +120,17 @@ fun SendVndDialog(
             }
         }
     )
+
+    if (showUpload) {
+        main.components.media.UploadMediaDialog(
+            onClose = { showUpload = false },
+            onSelect = { url: String -> attachments = listOf(url); showUpload = false }
+        )
+    }
+
+    imageToView?.let { url ->
+        ImageDialog(imageUrl = url, onClose = { imageToView = null })
+    }
 
     if (showSuccess) {
         BasicAlertDialog(

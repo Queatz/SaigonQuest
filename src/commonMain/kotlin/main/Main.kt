@@ -15,6 +15,8 @@ import main.theme.NodeStyles
 import main.theme.NotificationStyles
 import main.theme.Styles
 import main.theme.AssetStyles
+import main.theme.OverlayStyles
+import main.theme.PanelStyles
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 
@@ -28,6 +30,8 @@ fun main() {
     try {
         renderComposableInBody {
             Style(Styles)
+            Style(OverlayStyles)
+            Style(PanelStyles)
             Style(NodeEditorStyles)
             Style(NodeStyles)
             Style(NotificationStyles)

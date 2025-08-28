@@ -215,4 +215,27 @@ object WorldApi {
             throw e
         }
     }
+
+    /**
+     * Deletes a world by ID (owner only)
+     */
+    suspend fun deleteWorld(id: String) {
+        try {
+            val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/world/$id") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error deleting world", e)
+            throw e
+        }
+    }
 }

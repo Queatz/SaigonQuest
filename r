@@ -1,1 +1,1 @@
-./gradlew :jsBrowserDevelopmentRun -t
+CONTENT_SERVER_URL=http://localhost:8090 API_SERVER_URL=http://localhost:8080 VAPID_PUBLIC_KEY=BJPZTE5rkRzMzVV4VFgJWX9VHPK4Kt4Z1ZL5mdI-9008VgUeDbMd-txnr_YGBpSUrPc_0PbV02RMFJzCW1ES_pU VAPID_PRIVATE_KEY=ichf_uaoL2Uj44j9rvM511dO3vbpLnN5OyPDqp0iEM8 ./gradlew :run -t

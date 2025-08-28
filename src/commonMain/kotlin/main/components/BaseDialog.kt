@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import kotlinx.browser.document
+import main.theme.OverlayStyles
 import main.theme.Styles
 import main.theme.Theme
 import org.jetbrains.compose.web.attributes.disabled
@@ -45,7 +46,7 @@ fun BaseDialog(
         // Dialog overlay
         Div(
             attrs = {
-                classes(Styles.overlayBase)
+                classes(OverlayStyles.overlayBase)
 
                 if (clickOutside) {
                     onClick { onClose() }

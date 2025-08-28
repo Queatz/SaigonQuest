@@ -1,6 +1,8 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.theme.OverlayStyles
+import main.theme.PanelStyles
 import main.theme.Styles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -25,7 +27,7 @@ fun ResponsivePanel(
         // Mobile: Dialog
         Div(
             attrs = {
-                classes(Styles.overlayBase)
+                classes(OverlayStyles.overlayBase)
                 onClick { onClose() }
             }
         ) {
@@ -38,24 +40,24 @@ fun ResponsivePanel(
                 // Dialog header
                 Div(
                     attrs = {
-                        classes(Styles.panelHeader)
+                        classes(PanelStyles.panelHeader)
                     }
                 ) {
                     H3(
                         attrs = {
-                            classes(Styles.panelTitle)
+                            classes(PanelStyles.panelTitle)
                         }
                     ) {
                         Text(title)
                     }
                     // Right side: hint + close
-                    Div(attrs = { classes(Styles.panelHeaderRight) }) {
+                    Div(attrs = { classes(PanelStyles.panelHeaderRight) }) {
                         if (headerRight != null) {
-                            Div(attrs = { classes(Styles.panelHeaderHint) }) { headerRight() }
+                            Div(attrs = { classes(PanelStyles.panelHeaderHint) }) { headerRight() }
                         }
                         Button(
                             attrs = {
-                                classes(Styles.closeButton)
+                                classes(PanelStyles.closeButton)
                                 onClick { onClose() }
                             }
                         ) {

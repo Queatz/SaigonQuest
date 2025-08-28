@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import Translations.str
+import org.jetbrains.compose.web.attributes.InputType
 
 @Composable
 fun AssetBrowserDialog(
@@ -97,7 +98,7 @@ fun AssetBrowserDialog(
                 Div(attrs = { classes(main.theme.AssetStyles.assetFiltersRow) }) {
                     // Title search
                     Label { Translated("Title") }
-                    Input(type = org.jetbrains.compose.web.attributes.InputType.Text, attrs = {
+                    Input(type = InputType.Text, attrs = {
                         classes(Styles.inputField)
                         placeholder(str("Search by title"))
                         value(titleQuery)

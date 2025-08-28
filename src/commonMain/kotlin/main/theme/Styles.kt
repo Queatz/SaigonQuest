@@ -56,6 +56,34 @@ import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
+    val characterRendererContainer by style {
+        display(DisplayStyle.Flex)
+        property("flex-direction", "column")
+        alignItems(AlignItems.Center)
+        marginBottom(20.px)
+        padding(16.px)
+        backgroundColor(Theme.colors.white20)
+        property("border-radius", "8px")
+
+        dark(self) {
+            backgroundColor(Theme.colors.black20)
+        }
+    }
+
+    val characterRenderer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        padding(8.px)
+        backgroundColor(Theme.colors.white20)
+        property("border-radius", "8px")
+        property("transition", "all 0.2s ease")
+        cursor("pointer")
+
+        dark(self) {
+            backgroundColor(Theme.colors.black20)
+        }
+    }
+
     val playerAttrStatusHeader by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
@@ -91,7 +119,7 @@ object Styles : StyleSheet() {
     val weightsPreviewCell by style {
         width(20.px)
         height(20.px)
-        border(1.px, LineStyle.Solid, rgba(255,255,255,0.12))
+        border(1.px, LineStyle.Solid, Theme.colors.white12)
         borderRadius(2.px)
     }
     val emoteButton by style {
@@ -106,111 +134,23 @@ object Styles : StyleSheet() {
         property("transition", "background-color 0.2s")
     }
 
-    // Fullscreen fade overlay for world transitions
-    val fadeOverlay by style {
-        position(Position.Fixed)
-        top(0.px)
-        left(0.px)
-        width(100.percent)
-        height(100.percent)
-        backgroundColor(Color.black)
-        // Start above most UI, below critical banners if needed
-        property("z-index", "2500")
-        // Block interactions while visible
-        property("pointer-events", "auto")
-        // Animate opacity and backdrop blur
-        property("transition", "opacity 250ms ease, backdrop-filter 250ms ease, -webkit-backdrop-filter 250ms ease")
-        // Default blur when shown; can be overridden inline
-        property("backdrop-filter", "blur(8px)")
-        property("-webkit-backdrop-filter", "blur(8px)")
-        // Fully opaque by default; can be overridden inline
-        opacity(1)
-    }
-    // Loading screen styles
-    val loadingScreenContainer by style {
-        position(Position.Absolute)
-        top(0.px)
-        left(0.px)
-        width(100.percent)
-        height(100.vh)
-        backgroundColor(Color.black)
-        color(Color.white)
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        justifyContent(JustifyContent.Center)
-        alignItems(AlignItems.Center)
-        // Ensure loading text appears above the fade overlay
-        property("z-index", "3000")
-        padding(16.px)
-        property("text-align", "center")
-        property("overflow", "hidden")
-        property("box-sizing", "border-box")
-    }
-    
-    val loadingScreenButtonContainer by style {
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Row)
-        justifyContent(JustifyContent.Center)
-        alignItems(AlignItems.Center)
-        property("gap", "16px")
-        property("margin-top", "24px")
-    }
-    
-    val loadingScreenPrimaryButton by style {
-        padding(12.px, 24.px)
-        backgroundColor(rgba(0, 120, 255, 0.7))
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-        cursor("pointer")
-        fontSize(16.px)
-    }
-    
-    val loadingScreenSecondaryButton by style {
-        padding(12.px, 24.px)
-        backgroundColor(rgba(255, 255, 255, 0.2))
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-        cursor("pointer")
-        fontSize(16.px)
-    }
-    
+    // moved to OverlayStyles.kt
+
     // Canvas styles
     val canvasBase by style {
         width(100.percent)
         height(100.vh)
         display(DisplayStyle.Block)
     }
-    
+
     val canvasLowGraphics by style {
         property("image-rendering", "pixelated")
         property("image-rendering", "-moz-crisp-edges")
         property("image-rendering", "crisp-edges")
     }
-    
-    // Common styles for panels and dialogs
-    val overlayBase by style {
-        position(Position.Fixed)
-        top(0.px)
-        left(0.px)
-        width(100.percent)
-        height(100.percent)
-        backgroundColor(rgba(0, 0, 0, 0.5))
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.Center)
-        alignItems(AlignItems.Center)
-        overflowY("auto")
-        boxSizing("border-box")
-        property("z-index", "1000")
-        property("pointer-events", "auto")
-        // Add background blur effect
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
-        property("isolation", "isolate") // Creates a new stacking context
-        property("contain", "layout paint size") // Improves performance and isolation
-    }
-    
+
+    // moved to OverlayStyles.kt
+
     // WorldUI styles
     val worldUIContainer by style {
         position(Position.Fixed)
@@ -221,31 +161,7 @@ object Styles : StyleSheet() {
         // Make the div non-interactive for mouse events to allow interaction with the 3D scene
         property("pointer-events", "none")
     }
-    
-    val worldNameContainer by style {
-        position(Position.Absolute)
-        top(20.px)
-        left(50.percent)
-        property("transform", "translateX(-50%)")
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        alignItems(AlignItems.Center)
-        // Make text elements interactive
-        property("pointer-events", "auto")
-    }
-    
-    val worldTitle by style {
-        margin(0.px)
-        color(Color.white)
-        property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
-    }
-    
-    val worldSubtitle by style {
-        margin(0.px)
-        color(Color.white)
-        property("text-shadow", "0px 0px 4px rgba(0, 0, 0, 0.5)")
-    }
-    
+
     val topRightContainer by style {
         position(Position.Fixed) // Changed from Absolute to Fixed for consistent positioning
         top(20.px)
@@ -260,15 +176,15 @@ object Styles : StyleSheet() {
         property("padding-bottom", "20px")
         // Style the scrollbar to be subtle and match the UI
         property("scrollbar-width", "thin")
-        property("scrollbar-color", "rgba(255, 255, 255, 0.3) transparent")
+        property("scrollbar-color", "${Theme.colors.white30} transparent")
         // Webkit scrollbar styling
         property("&::-webkit-scrollbar", "{ width: 6px; }")
         property("&::-webkit-scrollbar-track", "{ background: transparent; }")
-        property("&::-webkit-scrollbar-thumb", "{ background-color: rgba(255, 255, 255, 0.3); border-radius: 3px; }")
+        property("&::-webkit-scrollbar-thumb", "{ background-color: ${Theme.colors.white30}; border-radius: 3px; }")
         // Add z-index to ensure proper stacking
         property("z-index", "5")
     }
-    
+
     val bottomRightContainer by style {
         position(Position.Fixed) // Changed from Absolute to Fixed for guaranteed visibility
         bottom(20.px)
@@ -278,65 +194,26 @@ object Styles : StyleSheet() {
         // Add z-index to ensure these buttons are below dialog backdrops but above other elements
         property("z-index", "900") // Higher than top container but below dialogs (z-index: 1000)
     }
-    
-    // Combined container for right side buttons (merging top and bottom sections)
-    val rightButtonsContainer by style {
-        position(Position.Fixed)
-        top(20.px)
-        bottom(20.px) // Ensures container doesn't extend beyond screen
-        display(DisplayStyle.Flex)
-        // Use column-reverse to prioritize bottom buttons
-        flexDirection(FlexDirection.ColumnReverse)
-        property("gap", "10px")
-        // Make the container scrollable if needed
-        property("overflow-y", "auto")
-        // Use FlexStart with column-reverse to ensure bottom buttons are always visible
-        justifyContent(JustifyContent.FlexStart)
-        // Style the scrollbar to be subtle and match the UI
-        property("scrollbar-width", "thin")
-        property("scrollbar-color", "rgba(255, 255, 255, 0.3) transparent")
-        // Webkit scrollbar styling
-        property("&::-webkit-scrollbar", "{ width: 6px; }")
-        property("&::-webkit-scrollbar-track", "{ background: transparent; }")
-        property("&::-webkit-scrollbar-thumb", "{ background-color: rgba(255, 255, 255, 0.3); border-radius: 3px; }")
-        // Add z-index to ensure buttons are always visible but below dialogs
-        property("z-index", "10")
-    }
-    
-    // Spacer for pushing bottom buttons to the end of the container
-    val buttonSpacer by style {
-        // Create a flexible spacer that pushes bottom buttons to the end
-        property("flex-grow", "1")
-        // Minimum height to ensure some spacing even when there's not much vertical space
-        property("min-height", "2rem")
-    }
-    
-    val inventoryTray by style {
-        position(Position.Absolute)
-        bottom(20.px)
-        left(50.percent)
-        property("transform", "translateX(-50%)")
-        display(DisplayStyle.Flex)
-        property("gap", "4px")
-    }
-    
+
     val bottomText by style {
         position(Position.Absolute)
         bottom(4.px)
         left(4.px)
         fontSize(8.px)
-        color(Color.white)
-        property("text-shadow", "0px 0px 2px rgba(0, 0, 0, 0.7)")
+        color(Theme.colors.onBackground)
+        property("text-shadow", "0px 0px 2px ${Theme.colors.black70}")
         // Make text elements interactive
         property("pointer-events", "auto")
+
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
-    
+
     // CircleButton styles
     val circleButton by style {
         width(48.px)
         height(48.px)
         property("border-radius", "50%")
-        backgroundColor(Color.white)
+        backgroundColor(Theme.colors.controlBg)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
@@ -346,25 +223,26 @@ object Styles : StyleSheet() {
         property("flex-shrink", "0")
         // Make button interactive
         property("pointer-events", "auto")
+        color(Theme.colors.onBackground)
 
         dark(self) {
-            backgroundColor(Color.black)
-            color(Color.white)
+            backgroundColor(Theme.colors.controlBgDark)
+            color(Theme.colors.onBackgroundDark)
         }
     }
-    
+
     val badgeBase by style {
         position(Position.Absolute)
         top(0.px)
         right(0.px)
-        backgroundColor(Color.red)
-        color(Color.white)
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onBackgroundDark)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         property("font-weight", "bold")
     }
-    
+
     val normalBadge by style {
         property("min-width", "16px")
         height(16.px)
@@ -372,7 +250,7 @@ object Styles : StyleSheet() {
         property("border-radius", "8px")
         fontSize(10.px)
     }
-    
+
     val chatBadge by style {
         property("min-width", "20px")
         height(20.px)
@@ -380,7 +258,7 @@ object Styles : StyleSheet() {
         property("border-radius", "10px")
         fontSize(12.px)
     }
-    
+
     val redDotIndicator by style {
         position(Position.Absolute)
         top(4.px)
@@ -388,9 +266,9 @@ object Styles : StyleSheet() {
         width(8.px)
         height(8.px)
         property("border-radius", "50%")
-        backgroundColor(Color.red)
+        backgroundColor(Theme.colors.error)
     }
-    
+
     // Icon renderer styles
     val iconRenderer by style {
         width(32.px)
@@ -400,145 +278,87 @@ object Styles : StyleSheet() {
         property("image-rendering", "-moz-crisp-edges")
         property("image-rendering", "crisp-edges")
     }
-    
-    // Panel styles
-    val sidePanel by style {
-        position(Position.Absolute)
-        top(0.px)
-        right(0.px)
-        width(320.px)
-        height(100.vh)
-        backgroundColor(rgba(0, 0, 0, 0.7))
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        property("pointer-events", "auto")
-        // Add background blur effect
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
-    }
-    
-    val panelHeader by style {
-        padding(16.px)
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-    }
-    
-    val panelTitle by style {
-        margin(0.px)
-        color(Color.white)
-    }
-    
-    val closeButton by style {
-        backgroundColor(Color.transparent)
-        property("border", "0")
-        color(Color.white)
-        property("cursor", "pointer")
-        fontSize(20.px)
-    }
-    
-    // Header right container and hint
-    val panelHeaderRight by style {
-        display(DisplayStyle.Flex)
-        alignItems(AlignItems.Center)
-        gap(8.px)
-    }
-    
-    val panelHeaderHint by style {
-        color(Color.white)
-        opacity(0.65)
-        fontSize(12.px)
-    }
-    
+
+    // moved to PanelStyles.kt
+
     // Responsive panel styles
     val dialogContainer by style {
         width(90.percent)
         property("max-width", "400px")
         height(80.vh)
-        backgroundColor(rgba(30, 30, 30, 0.95))
+        backgroundColor(Theme.colors.surface)
+        color(Theme.colors.onSurface)
         property("border-radius", "8px")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        // Add background blur effect
         property("backdrop-filter", "blur(2px)")
         property("-webkit-backdrop-filter", "blur(2px)")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+            color(Theme.colors.onSurfaceDark)
+        }
     }
-    
+
     val panelContent by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("flex-grow", "1")
         property("overflow", "hidden")
     }
-    
-    // Dialog styles
-    val dialogContent by style {
-        width(320.px)
-        backgroundColor(Theme.colors.background)
-        property("border-radius", "8px")
-        padding(16.px)
-        property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.2)")
-    }
-    
-    val dialogHeader by style {
-        margin(0.px)
-        marginBottom(16.px)
-        color(Theme.colors.primary)
-        property("text-align", "center")
-    }
-    
+
     // Base dialog styles (for the new BaseDialog component)
     val baseDialogContainer by style {
-        backgroundColor(rgba(30, 30, 30, 0.95))
+        backgroundColor(Theme.colors.surface)
         property("border-radius", "8px")
-        property("box-shadow", "0 4px 16px rgba(0, 0, 0, 0.2)")
+        property("box-shadow", "0 4px 16px ${Theme.colors.shadowLight}")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflowY("auto")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+        }
     }
-    
+
     val baseDialogHeader by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         padding(16.px)
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
+        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
+
+        dark(self) { property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtleDark}") }
     }
-    
+
     val baseDialogTitle by style {
         margin(0.px)
-        color(Color.white)
     }
-    
+
     val baseDialogCloseButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
-        color(Color.white)
         cursor("pointer")
         fontSize(20.px)
     }
-    
+
     val baseDialogContent by style {
         padding(24.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflowY("auto")
         property("flex-grow", "1")
-        color(Theme.colors.onBackground)
-        dark(self) {
-            color(Theme.colors.onBackgroundDark)
-        }
     }
-    
+
     val baseDialogFooter by style {
         padding(16.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.FlexEnd)
         property("gap", "8px")
-        property("border-top", "1px solid rgba(255, 255, 255, 0.1)")
+        property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
+        dark(self) { property("border-top", "1px solid ${Theme.colors.panelBorderSubtleDark}") }
     }
-    
+
     val baseDialogButtonPrimary by style {
         padding(8.px, 16.px)
         backgroundColor(Theme.colors.primary)
@@ -551,7 +371,7 @@ object Styles : StyleSheet() {
             opacity(.25f)
         }
     }
-    
+
     val baseDialogButtonSecondary by style {
         padding(8.px, 16.px)
         backgroundColor(Color.transparent)
@@ -564,58 +384,65 @@ object Styles : StyleSheet() {
             opacity(.25f)
         }
     }
-    
+
     // Common style for input elements with box-sizing: border-box
     val inputField by style {
         width(100.percent)
         padding(8.px)
-        backgroundColor(rgba(255, 255, 255, 0.1))
-        color(Color.black)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurface)
+        property("border", "1px solid ${Theme.colors.outline}")
         property("border-radius", "4px")
         property("outline", "none")
         property("box-sizing", "border-box")
 
         dark(self) {
-            color(Color.white)
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceDark)
+            property("border", "1px solid ${Theme.colors.outlineDark}")
         }
     }
 
     val objectEditorDialogLogicPreview by style {
         width(100.percent)
         height(200.px)
-        backgroundColor(rgba(20, 20, 20, 0.5))
+        backgroundColor(Theme.colors.surfaceVariant)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.3)")
+        color(Theme.colors.onSurface)
+        property("border", "1px solid ${Theme.colors.outline}")
         property("border-radius", "4px")
         property("margin-top", "16px")
         cursor("pointer")
         property("transition", "background-color 0.2s, border-color 0.2s")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceDark)
+            property("border", "1px solid ${Theme.colors.outlineDark}")
+        }
     }
-    
+
     val objectEditorDialogLogicTitle by style {
         margin(0.px)
         marginBottom(8.px)
         fontSize(16.px)
         fontWeight("bold")
     }
-    
+
     val objectEditorDialogLogicDescription by style {
         fontSize(14.px)
-        color(rgba(255, 255, 255, 0.7))
+        color(Theme.colors.textMuted)
         property("text-align", "center")
         padding(0.px, 16.px)
+
+        dark(self) { color(Theme.colors.textMutedDark) }
     }
 
-    val objectEditorDialogErrorMessage by style {
-        color(Color.red)
-        margin(0.px)
-    }
-    
+    val objectEditorDialogErrorMessage by style { color(Theme.colors.error); margin(0.px) }
+
     // Toggle Switch styles
     val toggleSwitchContainer by style {
         display(DisplayStyle.InlineBlock)
@@ -624,7 +451,7 @@ object Styles : StyleSheet() {
         height(24.px)
         cursor("pointer")
     }
-    
+
     val toggleSwitchInput by style {
         // Hide the default checkbox but keep it accessible
         property("opacity", "0")
@@ -632,7 +459,7 @@ object Styles : StyleSheet() {
         height(0.px)
         position(Position.Absolute)
     }
-    
+
     val toggleSwitchTrack by style {
         position(Position.Absolute)
         cursor("pointer")
@@ -643,7 +470,7 @@ object Styles : StyleSheet() {
         property("border-radius", "12px")
         property("transition", "background-color 0.3s")
     }
-    
+
     val toggleSwitchKnob by style {
         position(Position.Absolute)
         property("content", "''")
@@ -654,7 +481,7 @@ object Styles : StyleSheet() {
         property("border-radius", "50%")
         property("transition", "left 0.3s")
     }
-    
+
     // Language Switcher styles
     val languageSwitcherContainer by style {
         display(DisplayStyle.Flex)
@@ -666,7 +493,7 @@ object Styles : StyleSheet() {
         property("overflow", "hidden")
         cursor("pointer")
     }
-    
+
     val languageSwitcherOption by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
@@ -676,29 +503,23 @@ object Styles : StyleSheet() {
         flexGrow(1)
         property("transition", "background-color 0.3s, color 0.3s")
     }
-    
+
     val languageSwitcherOptionActive by style {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
     }
-    
+
     val languageSwitcherOptionInactive by style {
         backgroundColor(Color.transparent)
         color(Theme.colors.onSurfaceVariant)
     }
-    
+
     // Chat Messages styles
     // Section header used for grouping (e.g., Pinned messages)
-    val chatSectionHeader by style {
-        color(rgba(255, 255, 255, 0.7))
-        fontWeight("bold")
-    }
+    val chatSectionHeader by style { color(Theme.colors.textMuted); fontWeight("bold"); dark(self) { color(Theme.colors.textMutedDark) } }
 
     // Generic chat message text (used in simple list items like pins)
-    val chatMessageText by style {
-        margin(0.px)
-        color(Color.white)
-    }
+    val chatMessageText by style { margin(0.px); color(Theme.colors.onBackground); dark(self) { color(Theme.colors.onBackgroundDark) } }
 
     // Sticky container for pinned messages at the top of the list
     val chatPinnedSection by style {
@@ -707,18 +528,18 @@ object Styles : StyleSheet() {
         // Keep above scrolling content
         property("z-index", "2")
         // Subtle separation from the rest of the messages
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
+        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
         // Optional: soften with a slight blur
         padding(16.px, 0.px)
     }
 
     // Clickable pin/unpin action style
     val chatPinButton by style {
-        padding(2.px, 8.px)
-        cursor("pointer")
-        color(rgba(180, 180, 180, 0.95))
-        property("border-radius", "4px")
-        property("margin-left", "8px")
+        padding(
+            2.px, 8.px
+        ); cursor("pointer"); color(Theme.colors.textSecondary); property("border-radius", "4px"); property(
+        "margin-left", "8px"
+    ); dark(self) { color(Theme.colors.textSecondaryDark) }
     }
 
     // Outer wrapper for chat area; holds pinned header and scroll area
@@ -741,7 +562,7 @@ object Styles : StyleSheet() {
         paddingTop(8.px)
         height(0.cssRem)
     }
-    
+
     val chatLoadingContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -750,33 +571,33 @@ object Styles : StyleSheet() {
         gap(16.px)
         width(100.percent)
     }
-    
+
     val chatLoadingSpinner by style {
         width(40.px)
         height(40.px)
-        property("border", "4px solid rgba(255, 255, 255, 0.1)")
-        property("border-top", "4px solid rgba(255, 255, 255, 0.8)")
+        property("border", "4px solid ${Theme.colors.white10}")
+        property("border-top", "4px solid ${Theme.colors.white80}")
         property("border-radius", "50%")
         property("animation", "spin 1s linear infinite")
         property("@keyframes spin", "{0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}")
     }
-    
+
     val chatLoadingText by style {
-        color(rgba(255, 255, 255, 0.5))
-        property("text-align", "center")
-        margin(0.px)
+        color(Theme.colors.textMuted); property("text-align", "center"); margin(0.px); dark(
+        self
+    ) { color(Theme.colors.textMutedDark) }
     }
-    
-    val chatErrorText by style {
-        color(rgba(255, 0, 0, 0.7))
-        property("text-align", "center")
-    }
-    
+
+    val chatErrorText by style { color(Theme.colors.error); property("text-align", "center") }
+
     val chatEmptyText by style {
-        color(rgba(255, 255, 255, 0.5))
-        property("text-align", "center")
+        color(Theme.colors.textMuted); property("text-align", "center"); dark(self) {
+        color(
+            Theme.colors.textMutedDark
+        )
     }
-    
+    }
+
     val chatMessageItem by style {
         marginBottom(12.px)
         padding(8.px)
@@ -784,33 +605,31 @@ object Styles : StyleSheet() {
         property("border-radius", "4px")
         property("word-break", "break-word")
     }
-    
-    val chatMessageItemCurrentUser by style {
-        backgroundColor(rgba(0, 100, 200, 0.1))
-    }
-    
+
+    val chatMessageItemCurrentUser by style { backgroundColor(Theme.colors.accentInfoSoft) }
+
     val chatMessageItemOtherUser by style {
-        backgroundColor(rgba(50, 50, 50, 0.2))
+        backgroundColor(Theme.colors.surfaceVariant); dark(self) {
+        backgroundColor(
+            Theme.colors.surfaceVariantDark
+        )
     }
-    
+    }
+
     val chatMessageHeader by style {
         display(DisplayStyle.Flex)
         property("justify-content", "space-between")
         marginBottom(4.px)
     }
-    
+
     val chatMessageUsername by style {
         fontWeight("bold")
     }
-    
-    val chatMessageUsernameCurrentUser by style {
-        color(rgba(100, 200, 255, 1.0))
-    }
-    
-    val chatMessageUsernameOtherUser by style {
-        color(rgba(200, 200, 200, 1.0))
-    }
-    
+
+    val chatMessageUsernameCurrentUser by style { color(Theme.colors.accentInfo) }
+
+    val chatMessageUsernameOtherUser by style { color(Theme.colors.textSecondary); dark(self) { color(Theme.colors.textSecondaryDark) } }
+
     val chatMessageTimestamp by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
@@ -824,25 +643,23 @@ object Styles : StyleSheet() {
     }
 
     val chatMessageEditedIndicator by style {
-        property("margin-right", "4px")
-        color(rgba(150, 150, 150, 0.8))
+        property(
+            "margin-right", "4px"
+        ); color(Theme.colors.textMuted); dark(self) { color(Theme.colors.textMutedDark) }
     }
-    
-    val chatMessageContent by style {
-        margin(0.px)
-        color(Color.white)
-    }
-    
+
+    val chatMessageContent by style { margin(0.px); color(Theme.colors.onBackground); dark(self) { color(Theme.colors.onBackgroundDark) } }
+
     val chatMessageContentDeleted by style {
         opacity(0.5)
         fontStyle("italic")
     }
-    
+
     // Dialog Form Styles
     val formFieldContainer by style {
         marginBottom(16.px)
     }
-    
+
     val formLabel by style {
         display(DisplayStyle.Block)
         marginBottom(4.px)
@@ -871,25 +688,25 @@ object Styles : StyleSheet() {
         dark(self) { color(Theme.colors.onBackgroundDark) }
         property("margin-top", "4px")
     }
-    
+
     val formErrorMessage by style {
-        color(Color.red)
+        color(Theme.colors.error)
         marginBottom(16.px)
         fontSize(14.px)
         property("text-align", "center")
     }
-    
+
     val formSuccessMessage by style {
         color(Theme.colors.success)
         marginBottom(16.px)
         fontSize(14.px)
         property("text-align", "center")
-        backgroundColor(rgba(76, 175, 80, 0.12))
-        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+        backgroundColor(Theme.colors.successSoftBg)
+        property("border", "1px solid ${Theme.colors.successSoftBorder}")
         padding(8.px, 12.px)
         property("border-radius", "6px")
     }
-    
+
     val formButtonsContainer by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.FlexEnd)
@@ -908,7 +725,7 @@ object Styles : StyleSheet() {
     val balanceListItem by style {
         padding(8.px)
         property("border-radius", "4px")
-        backgroundColor(rgba(255, 255, 255, 0.05))
+        backgroundColor(Theme.colors.white05)
         marginBottom(6.px)
     }
 
@@ -920,8 +737,8 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(16.px)
         property("border-radius", "8px")
-        backgroundColor(rgba(255, 255, 255, 0.06))
-        property("border", "1px solid rgba(255, 255, 255, 0.15)")
+        backgroundColor(Theme.colors.white06)
+        property("border", "1px solid ${Theme.colors.white15}")
         marginBottom(16.px)
         property("text-align", "center")
     }
@@ -949,7 +766,7 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Grid)
         property("grid-template-columns", "1fr 2fr")
         property("gap", "8px")
-        color(rgba(220, 220, 220, 0.9))
+        color(Theme.colors.white90)
         fontSize(12.px)
         marginBottom(8.px)
     }
@@ -960,7 +777,7 @@ object Styles : StyleSheet() {
         property("gap", "8px")
         alignItems(AlignItems.Center)
         padding(8.px)
-        property("border", "1px solid rgba(255,255,255,0.08)")
+        property("border", "1px solid ${Theme.colors.white08}")
         property("border-radius", "6px")
         marginBottom(6.px)
     }
@@ -986,7 +803,17 @@ object Styles : StyleSheet() {
         height(96.px)
         property("object-fit", "cover")
         property("border-radius", "4px")
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
+        property("border", "1px solid ${Theme.colors.white20}")
+        cursor("pointer")
+    }
+
+    // Smaller square image preview (used for proof image)
+    val imageThumbSmall by style {
+        width(48.px)
+        height(48.px)
+        property("object-fit", "cover")
+        property("border-radius", "4px")
+        property("border", "1px solid ${Theme.colors.white20}")
         cursor("pointer")
     }
 
@@ -996,8 +823,8 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.SpaceBetween)
         padding(10.px, 12.px)
         property("border-radius", "6px")
-        backgroundColor(rgba(255, 255, 255, 0.04))
-        property("border", "1px solid rgba(255, 255, 255, 0.08)")
+        backgroundColor(Theme.colors.white04)
+        property("border", "1px solid ${Theme.colors.white08}")
         marginBottom(8.px)
         property("gap", "12px")
         alignItems(alignItems = AlignItems.Center)
@@ -1012,15 +839,15 @@ object Styles : StyleSheet() {
     }
 
     val eventTypeDeposit by style {
-        backgroundColor(rgba(76, 175, 80, 0.15))
+        backgroundColor(Theme.colors.successSoftBg)
         color(Theme.colors.success)
-        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+        property("border", "1px solid ${Theme.colors.successSoftBorder}")
     }
 
     val eventTypeWithdraw by style {
-        backgroundColor(rgba(239, 83, 80, 0.15))
+        backgroundColor(Theme.colors.errorSoftBg)
         color(Theme.colors.error)
-        property("border", "1px solid rgba(239, 83, 80, 0.35)")
+        property("border", "1px solid ${Theme.colors.errorSoftBorder}")
     }
 
     val eventAmounts by style {
@@ -1042,6 +869,7 @@ object Styles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         flexGrow(1)
     }
+
     // Column container for timestamp and end balance on the right side of event row
     val eventMetaColumnEnd by style {
         display(DisplayStyle.Flex)
@@ -1066,8 +894,8 @@ object Styles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         padding(12.px)
         property("border-radius", "8px")
-        backgroundColor(rgba(255, 255, 255, 0.04))
-        property("border", "1px solid rgba(255, 255, 255, 0.08)")
+        backgroundColor(Theme.colors.white04)
+        property("border", "1px solid ${Theme.colors.white08}")
         marginBottom(10.px)
         property("gap", "8px")
     }
@@ -1094,21 +922,21 @@ object Styles : StyleSheet() {
     }
 
     val statusReceived by style {
-        backgroundColor(rgba(80, 160, 255, 0.15))
-        color(Color("#a6c8ff"))
-        property("border", "1px solid rgba(80, 160, 255, 0.35)")
+        backgroundColor(Theme.colors.accentInfoSoft); color(Theme.colors.accentInfo); property(
+        "border", "1px solid ${Theme.colors.accentInfoBorder}"
+    )
     }
 
     val statusApproved by style {
-        backgroundColor(rgba(76, 175, 80, 0.15))
-        color(Theme.colors.success)
-        property("border", "1px solid rgba(76, 175, 80, 0.35)")
+        backgroundColor(Theme.colors.successSoftBg); color(Theme.colors.success); property(
+        "border", "1px solid ${Theme.colors.successSoftBorder}"
+    )
     }
 
     val statusDenied by style {
-        backgroundColor(rgba(239, 83, 80, 0.15))
-        color(Theme.colors.error)
-        property("border", "1px solid rgba(239, 83, 80, 0.35)")
+        backgroundColor(Theme.colors.errorSoftBg); color(Theme.colors.error); property(
+        "border", "1px solid ${Theme.colors.errorSoftBorder}"
+    )
     }
 
     val requestActions by style {
@@ -1122,7 +950,7 @@ object Styles : StyleSheet() {
         color(Theme.colors.onSurfaceVariant)
         fontSize(12.px)
     }
-    
+
     val primaryButton by style {
         padding(8.px, 16.px)
         backgroundColor(Theme.colors.primary)
@@ -1131,7 +959,7 @@ object Styles : StyleSheet() {
         property("border-radius", "4px")
         property("cursor", "pointer")
     }
-    
+
     val secondaryButton by style {
         padding(8.px, 16.px)
         backgroundColor(Color.transparent)
@@ -1141,7 +969,7 @@ object Styles : StyleSheet() {
         borderRadius(8.px)
         property("border", "1px solid ${Theme.colors.primary}")
     }
-    
+
     val logoutButton by style {
         width(100.percent)
         padding(8.px, 16.px)
@@ -1152,29 +980,29 @@ object Styles : StyleSheet() {
         property("cursor", "pointer")
         property("margin-top", "16px")
     }
-    
+
     val radioGroupContainer by style {
         display(DisplayStyle.Flex)
         property("gap", "16px")
     }
-    
+
     val radioOptionContainer by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
     }
-    
+
     val radioOptionLabel by style {
         property("margin-left", "4px")
         fontSize(14.px)
         color(Theme.colors.onBackground)
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
-    
+
     val userInfoContainer by style {
         marginBottom(24.px)
         property("text-align", "center")
     }
-    
+
     val usernameText by style {
         fontSize(18.px)
         property("font-weight", "bold")
@@ -1182,13 +1010,13 @@ object Styles : StyleSheet() {
         dark(self) { color(Theme.colors.onBackgroundDark) }
         marginBottom(8.px)
     }
-    
+
     val userStatusText by style {
         fontSize(14.px)
         color(Theme.colors.onSurfaceVariant)
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
-    
+
     val settingsSectionContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -1198,47 +1026,47 @@ object Styles : StyleSheet() {
         marginBottom(16.px)
         property("border-radius", "4px")
     }
-    
+
     val settingsSectionLabel by style {
         padding(8.px)
         color(Theme.colors.onSurfaceVariant)
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
-    
+
     val settingsControlContainer by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         padding(8.px)
     }
-    
+
     // PlayerDialog two-column layout styles
     val playerDialogTwoColumnContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         width(100.percent)
-        
+
         // Use row layout on desktop
         desktop(self) {
             flexDirection(FlexDirection.Row)
             property("gap", "24px")
         }
     }
-    
+
     val playerDialogLeftColumn by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         width(100.percent)
-        
+
         desktop(self) {
             width(40.percent)
         }
     }
-    
+
     val playerDialogRightColumn by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         width(100.percent)
-        
+
         desktop(self) {
             width(60.percent)
         }
@@ -1253,7 +1081,7 @@ object Styles : StyleSheet() {
         minHeight(100.vh)
         gap(8.px)
     }
-    
+
     // Reconnecting banner across the top
     val reconnectingBanner by style {
         position(Position.Fixed)
@@ -1264,7 +1092,7 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         padding(12.px, 16.px)
         backgroundColor(Theme.colors.error)
-        color(Color.white)
+        color(Theme.colors.onPrimary)
         fontWeight("bold")
         property("z-index", "2000")
         // Blur the background slightly behind the banner
@@ -1275,7 +1103,7 @@ object Styles : StyleSheet() {
             backgroundColor(Theme.colors.errorDark)
         }
     }
-    
+
     // Transient toast message centered at the bottom of the viewport
     val toastMessage by style {
         position(Position.Fixed)
@@ -1283,7 +1111,7 @@ object Styles : StyleSheet() {
         left(50.percent)
         property("transform", "translateX(-50%) translateY(-10px)")
         padding(8.px, 12.px)
-        color(rgba(255, 255, 255, 0.95))
+        color(Theme.colors.white95)
         fontSize(14.px)
         property("border-radius", "4px")
         property("pointer-events", "none")
@@ -1292,13 +1120,13 @@ object Styles : StyleSheet() {
     }
 
     val toastSuccess by style {
-        backgroundColor(rgba(0, 150, 0, 0.7))
+        backgroundColor(Theme.colors.toastSuccessBg)
     }
 
     val toastError by style {
-        backgroundColor(rgba(255, 0, 0, 0.7))
+        backgroundColor(Theme.colors.toastErrorBg)
     }
-    
+
     init {
         "body" style {
             margin(0.cssRem)

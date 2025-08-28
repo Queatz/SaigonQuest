@@ -48,15 +48,23 @@ object NodeEditorStyles : StyleSheet() {
         position(Position.Absolute)
         width(180.px)
         padding(12.px)
-        color(Color.white)
+        color(Theme.colors.onBackground)
         property("border-radius", "6px")
-        property("box-shadow", "0 2px 10px rgba(0, 0, 0, 0.3)")
+        property("box-shadow", "0 2px 10px ${Theme.colors.shadowMedium}")
         property("user-select", "none") // Prevent text selection during drag
+
+        dark(self) {
+            color(Theme.colors.onBackgroundDark)
+        }
     }
     
     val nodeSelected by style {
-        property("border", "2px solid white")
+        property("border", "2px solid ${Theme.colors.accentInfoBlueStrong}")
         property("z-index", "10") // Bring to front when selected
+
+        dark(self) {
+            property("border", "2px solid ${Theme.colors.onBackgroundDark}")
+        }
     }
     
     val nodeUnselected by style {
@@ -75,25 +83,15 @@ object NodeEditorStyles : StyleSheet() {
     }
     
     // Node type colors
-    val eventNodeColor by style {
-        backgroundColor(rgba(70, 130, 180, 0.8)) // Steel blue
-    }
+    val eventNodeColor by style { backgroundColor(Theme.colors.nodeEvent) }
     
-    val dialogueNodeColor by style {
-        backgroundColor(rgba(60, 179, 113, 0.8)) // Medium sea green
-    }
+    val dialogueNodeColor by style { backgroundColor(Theme.colors.nodeDialogue) }
     
-    val actionNodeColor by style {
-        backgroundColor(rgba(178, 34, 34, 0.8)) // Firebrick
-    }
+    val actionNodeColor by style { backgroundColor(Theme.colors.nodeAction) }
     
-    val inputNodeColor by style {
-        backgroundColor(rgba(128, 0, 128, 0.8)) // Purple
-    }
+    val inputNodeColor by style { backgroundColor(Theme.colors.nodeInput) }
     
-    val defaultNodeColor by style {
-        backgroundColor(rgba(100, 100, 100, 0.8)) // Gray
-    }
+    val defaultNodeColor by style { backgroundColor(Theme.colors.nodeDefault) }
     
     // Node header
     val nodeHeader by style {
@@ -122,7 +120,7 @@ object NodeEditorStyles : StyleSheet() {
     // Node divider
     val nodeDivider by style {
         height(1.px)
-        backgroundColor(rgba(255, 255, 255, 0.2))
+        backgroundColor(Theme.colors.panelBorderSubtle)
         margin(8.px, 0.px)
     }
     
@@ -146,16 +144,16 @@ object NodeEditorStyles : StyleSheet() {
     val portConnector by style {
         width(16.px)
         height(16.px)
-        backgroundColor(rgba(255, 255, 255, 0.9))
+        backgroundColor(Theme.colors.white90)
         property("border-radius", "50%")
-        property("border", "2px solid rgba(0, 0, 0, 0.3)")
+        property("border", "2px solid ${Theme.colors.black30}")
         property("transition", "all 0.2s ease-in-out")
-        property("box-shadow", "0 0 0 rgba(255, 255, 255, 0)")
+        property("box-shadow", "0 0 0 ${Theme.colors.white04}")
     }
     
     val portConnectorHover by style {
         self + hover style {
-            property("box-shadow", "0 0 8px rgba(255, 255, 255, 0.8)")
+            property("box-shadow", "0 0 8px ${Theme.colors.white80}")
         }
     }
     
@@ -170,19 +168,26 @@ object NodeEditorStyles : StyleSheet() {
     }
     
     val portLabel by style {
-        color(Color.white)
+        color(Theme.colors.onBackground)
         fontSize(12.px)
+
+        dark(self) {
+            color(Theme.colors.onBackgroundDark)
+        }
     }
     
     // Canvas wrapper styles
     val nodeEditorCanvasWrapper by style {
         property("flex-grow", "1")
         property("width", "0") // Set width to 0 to prevent squishing side panels
-        backgroundColor(rgba(35, 35, 40, 0.85)) // Slightly different tint for the padded area
+        backgroundColor(Theme.colors.panelGlass) // Slightly different tint for the padded area
         padding(50.px) // Set consistent padding to 16px on all sides
         position(Position.Relative) // Important: This makes absolute positioning of children work
         property("overflow", "auto") // Enable scrollbars
-        // Grid background removed as requested
+
+        dark(self) {
+            backgroundColor(Theme.colors.panelGlassDark)
+        }
     }
 
     // Canvas styles
@@ -192,8 +197,7 @@ object NodeEditorStyles : StyleSheet() {
         position(Position.Relative) // Changed to relative positioning
         flex(1)
         property("overflow", "visible")
-        backgroundColor(rgba(40, 40, 40, 0.8)) // Original background color for the usable area
-        property("border", "2px dotted rgba(255, 255, 255, 0.3)") // Dotted border for usable area
+        property("border", "2px dotted ${Theme.colors.panelBorderSubtle}") // Dotted border for usable area
         // Ensure the canvas never gets smaller than the available space
         // Account for padding (16px on each side) and border (2px on each side)
         property("min-width", "calc(100% - 36px)") // 100% - (16px*2 + 2px*2)
@@ -208,61 +212,46 @@ object NodeEditorStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
-        color(Color.white)
+        color(Theme.colors.onBackgroundDark)
     }
     
     // Sidebar styles
     val sidebarContainer by style {
         width(250.px)
-        backgroundColor(rgba(20, 20, 20, 0.8))
+        backgroundColor(Theme.colors.surface)
+        color(Theme.colors.onSurface)
         padding(16.px)
         property("overflow-y", "auto")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("gap", "16px")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+            color(Theme.colors.onSurfaceDark)
+        }
     }
-    
-    val sidebarSection by style {
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        property("gap", "8px")
-        marginBottom(16.px)
-    }
-    
+
     val sectionHeader by style {
-        color(Color.white)
         margin(0.px)
         marginTop(16.px)
         marginBottom(8.px)
     }
-    
-    // Form styles
-    val formLabel by style {
-        color(Color.white)
-        fontSize(14.px)
-        display(DisplayStyle.Block)
-        marginBottom(4.px)
-    }
-    
-    val formInput by style {
-        width(100.percent)
-        padding(8.px)
-        backgroundColor(rgba(255, 255, 255, 0.1))
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
-        property("border-radius", "4px")
-        outline("none")
-    }
-    
+
     // Draggable item styles
     val draggableItem by style {
         padding(8.px, 12.px)
-        backgroundColor(rgba(60, 60, 60, 0.8))
-        color(Color.white)
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
         property("border-radius", "4px")
         cursor("grab")
         marginBottom(8.px)
         property("user-select", "none")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
     
     // Connection styles
@@ -288,71 +277,18 @@ object NodeEditorStyles : StyleSheet() {
     val connectionSelected by style {
         property("z-index", "3") // Bring selected connection to front
     }
-    
-    val connectionPathNormal by style {
-        property("stroke-width", "2")
-        property("stroke", "rgba(255, 255, 255, 0.7)")
-        property("transition", "stroke 0.2s, stroke-width 0.2s")
 
-        self + hover style {
-            property("stroke", "rgba(255, 255, 255, 0.9)")
-            property("stroke-width", "3")
-        }
-    }
-
-    val connectionPathSelected by style {
-        property("stroke-width", "3")
-        property("stroke", "rgba(100, 200, 255, 0.9)")
-        property("filter", "drop-shadow(0 0 3px rgba(100, 200, 255, 0.5))")
-    }
-    
     val connectionSourceIndicator by style {
         position(Position.Absolute)
         width(12.px)
         height(12.px)
         property("border-radius", "50%")
         property("z-index", "10") // Ensure it's above other elements
-        property("box-shadow", "0 0 8px rgba(100, 200, 255, 0.8)")
+        property("box-shadow", "0 0 8px ${Theme.colors.accentInfoBlueStrong}")
     }
-    
-    // Dialog styles
-    val dialogContent by style {
-        width(90.percent)
-        property("max-width", "1200px")
-        height(90.vh)
-        backgroundColor(rgba(30, 30, 30, 0.95))
-        property("border-radius", "8px")
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-    }
-    
-    val dialogContentFullscreen by style {
-        width(100.percent)
-        height(100.vh)
-        property("max-width", "100vw")
-        property("border-radius", "0")
-        backgroundColor(rgba(30, 30, 30, 0.95))
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-    }
-    
-    val dialogHeader by style {
-        padding(16.px)
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
-    }
-    
-    val dialogTitle by style {
-        margin(0.px)
-        color(Color.white)
-    }
-    
     val closeButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
-        color(Color.white)
         cursor("pointer")
         fontSize(20.px)
     }
@@ -363,65 +299,33 @@ object NodeEditorStyles : StyleSheet() {
         property("flex-grow", "1")
         property("overflow", "hidden")
     }
-    
-    val dialogFooter by style {
-        padding(16.px)
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        property("gap", "8px")
-        property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
-    }
-    
     val errorMessage by style {
-        color(Color.red)
+        color(Theme.colors.error)
         property("flex-grow", "1")
     }
-    
-    val cancelButton by style {
-        padding(8.px, 16.px)
-        backgroundColor(rgba(255, 255, 255, 0.1))
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
-        property("border-radius", "4px")
-        cursor("pointer")
-        marginRight(8.px)
-    }
-    
-    val saveButton by style {
-        padding(8.px, 16.px)
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-    }
-    
-    val saveButtonEnabled by style {
-        backgroundColor(rgba(0, 120, 255, 0.7))
-        cursor("pointer")
-    }
-    
-    val saveButtonDisabled by style {
-        backgroundColor(rgba(100, 100, 100, 0.5))
-        cursor("default")
-    }
-    
     // Property panel styles
     val propertyPanel by style {
         width(250.px)
-        backgroundColor(rgba(30, 30, 30, 0.9))
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
         padding(16.px)
-        property("border-left", "1px solid rgba(255, 255, 255, 0.2)")
+        property("border-left", "1px solid ${Theme.colors.panelBorderSubtle}")
         property("overflow-y", "auto")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("gap", "16px")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
     
     val propertyPanelHeader by style {
-        color(Color.white)
         margin(0.px)
         marginBottom(16.px)
         fontSize(16.px)
-        property("border-bottom", "1px solid rgba(255, 255, 255, 0.2)")
+        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
         padding(0.px, 0.px, 8.px, 0.px) // top, right, bottom, left
     }
     
@@ -433,43 +337,51 @@ object NodeEditorStyles : StyleSheet() {
     }
     
     val propertyLabel by style {
-        color(Color.white)
         fontSize(14.px)
         marginBottom(4.px)
     }
     
     val propertyValue by style {
-        color(rgba(255, 255, 255, 0.8))
+        color(Theme.colors.textSecondary)
         fontSize(14.px)
         padding(8.px)
-        backgroundColor(rgba(50, 50, 50, 0.5))
         property("border-radius", "4px")
     }
     
     val propertyInput by style {
         width(100.percent)
         padding(8.px)
-        backgroundColor(rgba(50, 50, 50, 0.5))
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
+        property("border", "1px solid ${Theme.colors.outlineDark}")
         property("border-radius", "4px")
         outline("none")
         fontSize(14.px)
         property("box-sizing", "border-box")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
     
     val propertyTextArea by style {
         width(100.percent)
         padding(8.px)
-        backgroundColor(rgba(50, 50, 50, 0.5))
-        color(Color.white)
-        property("border", "1px solid rgba(255, 255, 255, 0.2)")
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant )
+        property("border", "1px solid ${Theme.colors.outlineDark}")
         property("border-radius", "4px")
         outline("none")
         fontSize(14.px)
         property("resize", "vertical")
         property("min-height", "80px")
         property("box-sizing", "border-box")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
     
     // Button management styles
@@ -485,13 +397,11 @@ object NodeEditorStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.SpaceBetween)
         padding(8.px)
-        backgroundColor(rgba(0, 0, 0, 0.1))
+        backgroundColor(Theme.colors.surfaceVariantDark)
         borderRadius(4.px)
     }
 
-    val removeButton by style {
-        backgroundColor(rgba(255, 0, 0, 0.2))
-    }
+    val removeButton by style { backgroundColor(Theme.colors.error) }
 
     val addButtonContainer by style {
         display(DisplayStyle.Flex)
@@ -499,28 +409,7 @@ object NodeEditorStyles : StyleSheet() {
         marginTop(8.px)
     }
 
-    val addButton by style {
-        backgroundColor(rgba(0, 128, 0, 0.2))
-    }
-    
-    val propertyButton by style {
-        padding(8.px, 16.px)
-        backgroundColor(rgba(0, 120, 255, 0.7))
-        color(Color.white)
-        property("border", "0")
-        property("border-radius", "4px")
-        cursor("pointer")
-        marginTop(8.px)
-        property("align-self", "flex-end")
-
-        self + hover style {
-            backgroundColor(rgba(0, 140, 255, 0.8))
-        }
-
-        self + active style {
-            backgroundColor(rgba(0, 100, 255, 0.8))
-        }
-    }
+    val addButton by style { backgroundColor(Theme.colors.success) }
     
     // Connection preview styles
     val connectionPreviewCursor by style {

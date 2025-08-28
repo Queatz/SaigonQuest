@@ -1,17 +1,20 @@
 package main.components.common
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import main.components.Translated
 import main.components.translated
+import main.components.ImageDialog
 import main.theme.Styles
 import models.UserBalanceHistory
 import models.UserBalanceHistoryEventType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Img
 
 @Composable
 fun BalanceEventRow(item: UserBalanceHistory) {
+    var imageToView by remember { mutableStateOf<String?>(null) }
     Div({ classes(Styles.eventRow) }) {
         // Treat positive change as deposit, negative as withdraw
         val isDeposit = item.changeAmount >= 0
@@ -41,6 +44,16 @@ fun BalanceEventRow(item: UserBalanceHistory) {
             Div({ classes(Styles.eventNotes) }) {
                 Text(item.notes.ifBlank { "" })
             }
+            // Attachment preview (first)
+            if (item.attachments.isNotEmpty()) {
+                Div({ classes(Styles.imageThumbRow) }) {
+                    val url = item.attachments.first()
+                    Img(src = url, attrs = {
+                        classes(Styles.imageThumbSmall)
+                        onClick { imageToView = url }
+                    })
+                }
+            }
         }
 
         // Timestamp and end balance stacked vertically
@@ -57,5 +70,8 @@ fun BalanceEventRow(item: UserBalanceHistory) {
                 Text("${formatAmount(item.endBalance)} ${translated("VND")}")
             }
         }
+    }
+    imageToView?.let { url ->
+        ImageDialog(imageUrl = url, onClose = { imageToView = null })
     }
 }

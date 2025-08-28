@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.dom.clear
 import main.theme.NodeEditorStyles
+import main.theme.Theme
 import org.jetbrains.compose.web.css.CSSColorValue
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
@@ -35,7 +36,7 @@ fun BezierConnection(
     sourceY: Float,
     targetX: Float,
     targetY: Float,
-    color: CSSColorValue = rgba(255, 255, 255, 0.7),
+    color: CSSColorValue = Theme.colors.white70,
     thickness: Float = 3f,
     isSelected: Boolean = false,
     onClick: (() -> Unit)? = null,

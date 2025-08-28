@@ -11,7 +11,7 @@
 #   SSH_KEY             - SSH private key path (default: $HOME/.ssh/id_rsa)
 #   CONTENT_DEPLOY_DIR  - Remote directory containing app.jar (default: /root/saigonquest-content)
 #   JAVA_OPTS           - Extra Java options (e.g., "-Xms256m -Xmx512m")
-#   REMOTE_ENV          - Space-separated env vars to prefix the command (e.g., "PORT=8090 PROFILE=prod API_BACKEND_URL=https://api.saigon.quest")
+#   REMOTE_ENV          - Space-separated env vars to prefix the command (e.g., "PORT=8090 PROFILE=prod API_SERVER_URL=https://api.saigon.quest")
 #   LOG_DIR             - Remote log directory (default: $CONTENT_DEPLOY_DIR/logs)
 
 set -euo pipefail

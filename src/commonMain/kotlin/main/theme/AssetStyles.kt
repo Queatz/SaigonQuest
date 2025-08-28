@@ -65,6 +65,8 @@ object AssetStyles : StyleSheet() {
         textAlign("center")
         lineHeight(20.px)
         marginBottom(4.px)
-        color(Color.white)
+        color(Theme.colors.onBackground)
+
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
 }

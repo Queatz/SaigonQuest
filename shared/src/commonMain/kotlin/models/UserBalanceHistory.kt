@@ -15,5 +15,6 @@ data class UserBalanceHistory(
     /** VND */
     var startBalance: Long = 0L,
     /** VND */
-    var endBalance: Long = 0L
+    var endBalance: Long = 0L,
+    var attachments: List<String> = emptyList()
 ) : BaseModel()

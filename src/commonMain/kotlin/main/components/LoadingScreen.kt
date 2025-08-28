@@ -8,7 +8,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import app.softwork.routingcompose.Router
 import main.api.UserApi
-import main.theme.Styles
+import main.theme.OverlayStyles
 import main.components.Translated
 
 /**
@@ -39,7 +39,7 @@ fun LoadingScreen(
     if (!isLoaded && !showWorldEditPanel && !showLoginDialog) {
         Div(
             attrs = {
-                classes(Styles.loadingScreenContainer)
+                classes(OverlayStyles.loadingScreenContainer)
             }
         ) {
             if (loadingFailed) {
@@ -50,7 +50,7 @@ fun LoadingScreen(
                 
                 Div(
                     attrs = {
-                        classes(Styles.loadingScreenButtonContainer)
+                        classes(OverlayStyles.loadingScreenButtonContainer)
                     }
                 ) {
                     if (showClaimOption) {
@@ -59,7 +59,7 @@ fun LoadingScreen(
                         // Create this world or Login button
                         Button(
                             attrs = {
-                                classes(Styles.loadingScreenPrimaryButton)
+                                classes(OverlayStyles.loadingScreenPrimaryButton)
                                 onClick {
                                     // Only allow players to open the world editor
                                     if (isPlayer) {
@@ -82,7 +82,7 @@ fun LoadingScreen(
                         if (!isNoAccess) {
                             Button(
                                 attrs = {
-                                    classes(Styles.loadingScreenPrimaryButton)
+                                    classes(OverlayStyles.loadingScreenPrimaryButton)
                                     onClick {
                                         onRetry()
                                     }
@@ -96,7 +96,7 @@ fun LoadingScreen(
                     // Go back button
                     Button(
                         attrs = {
-                            classes(Styles.loadingScreenSecondaryButton)
+                            classes(OverlayStyles.loadingScreenSecondaryButton)
                             onClick { 
                                 onNavigateHome()
                             }

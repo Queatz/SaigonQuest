@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.theme.AssetStyles
 import main.theme.Styles
 import models.AssetSearchResult
 import models.AssetType
@@ -50,6 +51,6 @@ fun AssetRenderer(
     }
     // Simple caption
     P(attrs = {
-        classes(main.theme.AssetStyles.assetCaption)
+        classes(AssetStyles.assetCaption)
     }) { Text(result.title ?: result.asset!!.file) }
 }

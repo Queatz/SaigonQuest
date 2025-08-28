@@ -175,6 +175,7 @@ fun Routing.configureBalanceRoutes() {
                 val savedTo = balances.upsert(toUserId) { it.balance = toAfter }
 
                 // History entries
+                val sendAttachments = body.attachments ?: emptyList()
                 history.add(
                     UserBalanceHistory(
                         userId = fromUserId,
@@ -182,7 +183,8 @@ fun Routing.configureBalanceRoutes() {
                         notes = body.note?.takeIf { it.isNotBlank() } ?: "To ${toUser.username}",
                         changeAmount = -body.amount,
                         startBalance = fromBefore,
-                        endBalance = savedFrom.balance
+                        endBalance = savedFrom.balance,
+                        attachments = sendAttachments
                     )
                 )
                 history.add(
@@ -192,7 +194,8 @@ fun Routing.configureBalanceRoutes() {
                         notes = body.note?.takeIf { it.isNotBlank() } ?: "From ${fromUser.username}",
                         changeAmount = body.amount,
                         startBalance = toBefore,
-                        endBalance = savedTo.balance
+                        endBalance = savedTo.balance,
+                        attachments = sendAttachments
                     )
                 )
 
@@ -368,7 +371,8 @@ fun Routing.configureBalanceRoutes() {
                         notes = updated.notes,
                         changeAmount = if (updated.type == UserBalanceChangeType.Deposit) updated.amount else -updated.amount,
                         startBalance = before,
-                        endBalance = savedBalance.balance
+                        endBalance = savedBalance.balance,
+                        attachments = updated.attachments
                     )
                 )
 

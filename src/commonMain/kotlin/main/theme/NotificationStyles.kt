@@ -58,12 +58,17 @@ object NotificationStyles : StyleSheet() {
     }
     
     val markAllAsReadButton by style {
-        backgroundColor(rgba(60, 60, 60, 0.8))
-        color(Color.white)
+        backgroundColor(Theme.colors.panelGlass)
+        color(Theme.colors.onBackground)
         padding(8.px, 12.px)
         borderRadius(4.px)
         cursor("pointer")
         property("border", "none")
+
+        dark(self) {
+            backgroundColor(Theme.colors.panelGlassDark)
+            color(Theme.colors.onBackgroundDark)
+        }
     }
     
     val loadingContainer by style {
@@ -71,7 +76,9 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         padding(32.px)
-        color(rgba(255, 255, 255, 0.7))
+        color(Theme.colors.textMutedDark)
+
+        dark(self) { color(Theme.colors.textMuted) }
     }
     
     val errorContainer by style {
@@ -79,7 +86,7 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         padding(32.px)
-        color(rgba(255, 0, 0, 0.7))
+        color(Theme.colors.error)
     }
     
     val emptyContainer by style {
@@ -87,7 +94,9 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         padding(32.px)
-        color(rgba(255, 255, 255, 0.7))
+        color(Theme.colors.textMutedDark)
+
+        dark(self) { color(Theme.colors.textMuted) }
     }
     
     val notificationItem by style {
@@ -99,29 +108,25 @@ object NotificationStyles : StyleSheet() {
         cursor("pointer")
     }
     
-    val notificationItemRead by style {
-        backgroundColor(rgba(40, 40, 40, 0.6))
-    }
+    val notificationItemRead by style { backgroundColor(Theme.colors.notifReadBg) }
     
-    val notificationItemUnread by style {
-        backgroundColor(rgba(60, 60, 60, 0.8))
-    }
+    val notificationItemUnread by style { backgroundColor(Theme.colors.notifUnreadBg) }
 
     // System notification accent (e.g., subtle blue left border)
     val notificationItemSystem by style {
-        property("border-left", "4px solid rgba(80, 160, 255, 0.9)")
+        property("border-left", "4px solid ${Theme.colors.accentInfoStrong}")
         paddingLeft(10.px) // compensate for left border
     }
 
     // System notification accent (e.g., subtle blue left border)
     val notificationItemChatNew by style {
-        property("border-left", "4px solid rgba(255, 160, 80, 0.9)")
+        property("border-left", "4px solid ${Theme.colors.accentWarnStrong}")
         paddingLeft(10.px) // compensate for left border
     }
 
     // System notification accent (e.g., subtle blue left border)
     val notificationItemFriend by style {
-        property("border-left", "4px solid rgba(160, 255, 80, 0.9)")
+        property("border-left", "4px solid ${Theme.colors.accentSuccessStrong}")
         paddingLeft(10.px) // compensate for left border
     }
 
@@ -134,26 +139,32 @@ object NotificationStyles : StyleSheet() {
     
     val notificationTitle by style {
         margin(0.px)
-        color(Color.white)
+        color(Theme.colors.onBackgroundDark)
         fontSize(16.px)
+
+        dark(self) { color(Theme.colors.onBackground) }
     }
     
     val notificationTimestamp by style {
         margin(0.px)
-        color(rgba(255, 255, 255, 0.5))
+        color(Theme.colors.textMutedDark)
         fontSize(12.px)
+
+        dark(self) { color(Theme.colors.textMuted) }
     }
     
     val notificationDescription by style {
         margin(0.px)
-        color(rgba(255, 255, 255, 0.8))
+        color(Theme.colors.textSecondaryDark)
         fontSize(14.px)
+
+        dark(self) { color(Theme.colors.textSecondary) }
     }
 
     // Small badge for system notifications
     val systemBadge by style {
-        backgroundColor(rgba(80, 160, 255, 0.15))
-        color(Color("#a6c8ff"))
+        backgroundColor(Theme.colors.accentInfoSoft)
+        color(Theme.colors.accentInfo)
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
@@ -162,8 +173,8 @@ object NotificationStyles : StyleSheet() {
 
     // Small badge for system notifications
     val chatBadge by style {
-        backgroundColor(rgba(255, 160, 80, 0.15))
-        color(Color("#a6c8ff"))
+        backgroundColor(Theme.colors.accentWarnSoft)
+        color(Theme.colors.accentWarn)
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
@@ -172,8 +183,8 @@ object NotificationStyles : StyleSheet() {
 
     // Small badge for system notifications
     val friendBadge by style {
-        backgroundColor(rgba(160, 255, 80, 0.15))
-        color(Color("#a6c8ff"))
+        backgroundColor(Theme.colors.accentSuccessSoft)
+        color(Theme.colors.accentSuccess)
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
@@ -190,7 +201,9 @@ object NotificationStyles : StyleSheet() {
     
     val friendRequestStatus by style {
         fontSize(14.px)
-        color(rgba(255, 255, 255, 0.7))
+        color(Theme.colors.textMutedDark)
+
+        dark(self) { color(Theme.colors.textMuted) }
     }
     
     val friendRequestActions by style {
@@ -199,8 +212,8 @@ object NotificationStyles : StyleSheet() {
     }
     
     val acceptButton by style {
-        backgroundColor(rgba(0, 120, 0, 0.7))
-        color(Color.white)
+        backgroundColor(Theme.colors.success)
+        color(Theme.colors.onPrimary)
         padding(6.px, 12.px)
         borderRadius(4.px)
         cursor("pointer")
@@ -208,8 +221,8 @@ object NotificationStyles : StyleSheet() {
     }
     
     val rejectButton by style {
-        backgroundColor(rgba(120, 0, 0, 0.7))
-        color(Color.white)
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
         padding(6.px, 12.px)
         borderRadius(4.px)
         cursor("pointer")
@@ -227,9 +240,9 @@ object NotificationStyles : StyleSheet() {
     }
     
     val notificationCard by style {
-        backgroundColor(Color("#ffffff"))
+        backgroundColor(Theme.colors.surface)
         borderRadius(8.px)
-        property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.1)")
+        property("box-shadow", "0 4px 8px ${Theme.colors.shadowLight}")
         padding(16.px)
         maxWidth(400.px)
         width(100.percent)
@@ -242,8 +255,8 @@ object NotificationStyles : StyleSheet() {
         property("animation", "fadeIn 0.3s ease-in-out")
         
         dark(self) {
-            backgroundColor(Color("#333333"))
-            property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.3)")
+            backgroundColor(Theme.colors.surfaceDark)
+            property("box-shadow", "0 4px 8px ${Theme.colors.shadowMedium}")
         }
     }
     
@@ -258,19 +271,19 @@ object NotificationStyles : StyleSheet() {
         fontWeight("bold")
         fontSize(16.px)
         property("margin-bottom", "4px")
-        color(Color("#333333"))
+        color(Theme.colors.onSurface)
         
         dark(self) {
-            color(Color("#ffffff"))
+            color(Theme.colors.onSurfaceDark)
         }
     }
     
     val notificationCardDescription by style {
         fontSize(14.px)
-        color(Color("#666666"))
+        color(Theme.colors.onSurfaceVariant)
         
         dark(self) {
-            color(Color("#cccccc"))
+            color(Theme.colors.onSurfaceVariantDark)
         }
     }
     
@@ -281,14 +294,14 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems("center")
         borderRadius(50.percent)
-        backgroundColor(Color("#f0f0f0"))
+        backgroundColor(Theme.colors.surfaceVariant)
         cursor("pointer")
         fontSize(14.px)
-        color(Color("#666666"))
+        color(Theme.colors.onSurfaceVariant)
         
         dark(self) {
-            backgroundColor(Color("#555555"))
-            color(Color("#cccccc"))
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
         }
     }
 }

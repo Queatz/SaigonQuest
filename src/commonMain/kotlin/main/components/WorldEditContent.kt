@@ -501,7 +501,7 @@ fun WorldEditContent(
             P(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         backgroundColor(rgba(0, 0, 0, 0.3))
                         padding(8.px)
                         property("border-radius", "4px")
@@ -526,7 +526,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -569,7 +569,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -612,7 +612,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -656,7 +656,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -688,7 +688,7 @@ fun WorldEditContent(
         Label(
             attrs = {
                 style {
-                    color(Color.white)
+
                     fontSize(14.px)
                 }
             }
@@ -706,7 +706,7 @@ fun WorldEditContent(
             style {
                 padding(8.px, 12.px)
                 backgroundColor(rgba(0, 120, 255, 0.7))
-                color(Color.white)
+
                 property("border", "0")
                 property("border-radius", "4px")
                 cursor(if (fieldsEnabled) "pointer" else "not-allowed")
@@ -716,7 +716,7 @@ fun WorldEditContent(
         }
         P(attrs = {
             style {
-                color(Color.white)
+
                 margin(0.px)
                 fontSize(12.px)
             }
@@ -801,7 +801,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -836,7 +836,7 @@ fun WorldEditContent(
                 P(
                     attrs = {
                         style {
-                            color(Color.white)
+
                             margin(0.px)
                             fontSize(12.px)
                         }
@@ -858,7 +858,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -921,7 +921,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -944,7 +944,7 @@ fun WorldEditContent(
                         }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("All visitors") }
+                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("All visitors") }
             }
 
             // All players
@@ -963,7 +963,7 @@ fun WorldEditContent(
                         }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("All players") }
+                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("All players") }
             }
 
             // Friends of owners
@@ -975,7 +975,7 @@ fun WorldEditContent(
                         onChange { allowFriendsOfOwners = !allowFriendsOfOwners }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Friends of owners") }
+                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Friends of owners") }
             }
 
             // Holders of an item (access card)
@@ -990,7 +990,7 @@ fun WorldEditContent(
                         }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Holders of an item (access card)") }
+                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Holders of an item (access card)") }
             }
 
             if (allowHoldersOfItemId != null) {
@@ -1009,7 +1009,7 @@ fun WorldEditContent(
 
                     P(attrs = {
                         style {
-                            color(Color.white)
+
                             margin(0.px); fontSize(12.px)
                         }
                     }) {
@@ -1088,7 +1088,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -1103,7 +1103,7 @@ fun WorldEditContent(
                         onChange { chatLongevityEnabled = !chatLongevityEnabled }
                     }
                 )
-                P(attrs = { style { color(Color.white); margin(0.px); fontSize(12.px) } }) { Translated("Expire messages") }
+                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Expire messages") }
             }
 
             if (chatLongevityEnabled) {
@@ -1139,7 +1139,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -1194,7 +1194,7 @@ fun WorldEditContent(
                 Div(
                     attrs = {
                         style {
-                            color(Color.white)
+
                             fontSize(14.px)
                         }
                     }
@@ -1218,7 +1218,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -1266,7 +1266,7 @@ fun WorldEditContent(
                 Div(
                     attrs = {
                         style {
-                            color(Color.white)
+
                             fontSize(14.px)
                         }
                     }
@@ -1290,7 +1290,7 @@ fun WorldEditContent(
             Label(
                 attrs = {
                     style {
-                        color(Color.white)
+
                         fontSize(14.px)
                     }
                 }
@@ -1341,7 +1341,7 @@ fun WorldEditContent(
                 Div(
                     attrs = {
                         style {
-                            color(Color.white)
+
                             fontSize(14.px)
                             property("min-width", "40px")
                         }
@@ -1349,6 +1349,73 @@ fun WorldEditContent(
                 ) {
                     Text(fogDensity.toString())
                 }
+            }
+        }
+
+        // Delete world (owner only)
+        if (isEditing && isOwner) {
+            var showDeleteConfirm by remember { mutableStateOf(false) }
+            var isDeleting by remember { mutableStateOf(false) }
+            var deleteError by remember { mutableStateOf<String?>(null) }
+
+            Div(
+                attrs = {
+                    style {
+                        property("margin-top", "24px")
+                    }
+                }
+            ) {
+                Button(
+                    attrs = {
+                        classes(Styles.baseDialogButtonDangerPrimary)
+                        style {
+                            property("width", "100%")
+                        }
+                        onClick { showDeleteConfirm = true }
+                    }
+                ) { Translated("Delete world") }
+            }
+
+            if (showDeleteConfirm) {
+                BaseDialog(
+                    onClose = { if (!isDeleting) showDeleteConfirm = false },
+                    title = translated("Delete world"),
+                    clickOutside = !isDeleting,
+                    content = {
+                        P { Translated("Are you sure you want to delete this world? This cannot be undone.") }
+                        if (deleteError != null) {
+                            P(attrs = { style { color(Color.red) } }) { Text(deleteError!!) }
+                        }
+                    },
+                    actions = {
+                        DialogButton(
+                            onClick = { if (!isDeleting) showDeleteConfirm = false },
+                            isPrimary = false,
+                            isDisabled = isDeleting,
+                        ) { Translated("Cancel") }
+
+                        DialogButtonDanger(
+                            onClick = {
+                                if (isDeleting) return@DialogButtonDanger
+                                isDeleting = true
+                                deleteError = null
+                                coroutineScope.launch {
+                                    try {
+                                        WorldApi.deleteWorld(currentWorld!!.key)
+                                        isDeleting = false
+                                        showDeleteConfirm = false
+                                        didSave = true
+                                        router.navigate("/")
+                                        onClose()
+                                    } catch (t: Throwable) {
+                                        isDeleting = false
+                                        deleteError = t.message ?: str("An error occurred")
+                                    }
+                                }
+                            }
+                        ) { Translated("Delete") }
+                    }
+                )
             }
         }
     }
@@ -1371,7 +1438,7 @@ fun WorldEditContent(
                 style {
                     padding(8.px, 16.px)
                     backgroundColor(rgba(255, 255, 255, 0.1))
-                    color(Color.white)
+
                     property("border", "1px solid rgba(255, 255, 255, 0.2)")
                     property("border-radius", "4px")
                     cursor("pointer")
@@ -1398,7 +1465,7 @@ fun WorldEditContent(
                             else -> rgba(0, 120, 255, 0.7)
                         }
                     )
-                    color(Color.white)
+
                     property("border", "0")
                     property("border-radius", "4px")
                     cursor(

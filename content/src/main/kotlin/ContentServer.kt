@@ -73,8 +73,8 @@ fun Application.module() {
 
         // Upload endpoint
         post("/upload") {
-            val apiBase = System.getenv("API_BACKEND_URL")?.trimEnd('/')
-                ?: return@post call.respond(HttpStatusCode.InternalServerError, "Missing API_BACKEND_URL env var")
+            val apiBase = System.getenv("API_SERVER_URL")?.trimEnd('/')
+                ?: return@post call.respond(HttpStatusCode.InternalServerError, "Missing API_SERVER_URL env var")
 
             val multipart = call.receiveMultipart()
             var bearerToken: String? = null

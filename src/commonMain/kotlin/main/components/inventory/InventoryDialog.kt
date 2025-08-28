@@ -21,38 +21,23 @@ import main.components.Translated
 import main.components.attrs.onTouchDrop
 import main.components.player.CharacterRenderer
 import main.components.translated
+import main.theme.InventoryStyles
+import main.theme.Styles
 import main.utils.DataType
 import models.Inventory
 import models.Item
 import models.User
 import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.fontWeight
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.opacity
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
@@ -582,33 +567,17 @@ fun InventoryDialog(onClose: () -> Unit) {
         },
         content = {
             Div(
-                attrs = {
-                    style {
-                        padding(16.px)
-                        height(100.percent)
-                        property("overflow-y", "auto")
-                        property("position", "relative") // For positioning the feedback message
-                    }
-                }
-            ) {
+            attrs = {
+                classes(InventoryStyles.dialogContent)
+            }
+        ) {
                 // Render feedback message if present
                 feedbackMessage?.let { message ->
                     Div(
                         attrs = {
-                            style {
-                                position(Position.Absolute)
-                                top(0.px)
-                                left(50.percent)
-                                property("transform", "translateX(-50%)")
-                                padding(8.px, 12.px)
-                                backgroundColor(if (isErrorFeedback) rgba(255, 0, 0, 0.7) else rgba(0, 150, 0, 0.7))
-                                color(Color.white)
-                                fontSize(14.px)
-                                property("border-radius", "4px")
-                                property("z-index", "10")
-                                opacity(0.9)
-                            }
-                        }
+                        classes(InventoryStyles.feedbackBase)
+                        classes(if (isErrorFeedback) InventoryStyles.feedbackError else InventoryStyles.feedbackSuccess)
+                    }
                     ) {
                         Text(message)
                     }
@@ -617,7 +586,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                     P(
                         attrs = {
                             style {
-                                color(Color.white)
                                 textAlign("center")
                             }
                         }
@@ -627,10 +595,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 } else if (errorMessage.isNotEmpty()) {
                     P(
                         attrs = {
-                            style {
-                                color(rgba(255, 100, 100, 0.9))
-                                textAlign("center")
-                            }
+                            classes(InventoryStyles.errorText)
                         }
                     ) {
                         Text(translated("Error") + ": " + errorMessage)
@@ -639,22 +604,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                     // Character renderer section
                     Div(
                         attrs = {
-                            style {
-                                display(DisplayStyle.Flex)
-                                property("flex-direction", "column")
-                                alignItems(AlignItems.Center)
-                                marginBottom(20.px)
-                                padding(16.px)
-                                backgroundColor(rgba(40, 40, 40, 0.5))
-                                property("border-radius", "8px")
-                            }
+                            classes(Styles.characterRendererContainer)
                         }
                     ) {
                         // Title
                         H3(
                             attrs = {
                                 style {
-                                    color(Color.white)
                                     marginBottom(12.px)
                                     fontSize(18.px)
                                 }
@@ -668,23 +624,12 @@ fun InventoryDialog(onClose: () -> Unit) {
                         
                         Div(
                             attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    justifyContent(JustifyContent.Center)
-                                    padding(8.px)
-                                    backgroundColor(rgba(30, 30, 30, 0.5))
-                                    property("border-radius", "8px")
-                                    // Change border style based on whether an item is being dragged over
-                                    if (isDropTargetActive) {
-                                        property("border", "3px dashed rgba(100, 200, 255, 0.8)")
-                                        property("box-shadow", "0 0 10px rgba(100, 200, 255, 0.5)")
-                                        property("transition", "all 0.2s ease")
-                                    } else {
-                                        property("border", "2px dashed rgba(100, 100, 100, 0.5)")
-                                        property("transition", "all 0.2s ease")
-                                    }
-                                    cursor("pointer")
-                                }
+                                classes(Styles.characterRenderer)
+
+                                classes(
+                                    if (isDropTargetActive) InventoryStyles.characterDropZoneActive
+                                    else InventoryStyles.characterDropZoneInactive
+                                )
                                 // Make droppable
                                 onDragOver { event -> 
                                     handleDragOver(event.nativeEvent)
@@ -732,16 +677,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             if (isDropTargetActive) {
                                 Div(
                                     attrs = {
-                                        style {
-                                            position(Position.Absolute)
-                                            property("bottom", "8px")
-                                            backgroundColor(rgba(0, 0, 0, 0.7))
-                                            color(rgba(100, 200, 255, 0.9))
-                                            padding(4.px, 8.px)
-                                            property("border-radius", "4px")
-                                            fontSize(12.px)
-                                            textAlign("center")
-                                        }
+                                        classes(InventoryStyles.characterDropHint)
                                     }
                                 ) {
                                     Translated("Drop to wear item")
@@ -752,12 +688,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                         // Instruction text
                         P(
                             attrs = {
-                                style {
-                                    color(rgba(200, 200, 200, 0.8))
-                                    fontSize(14.px)
-                                    marginTop(8.px)
-                                    textAlign("center")
-                                }
+                                classes(InventoryStyles.instructionText)
                             }
                         ) {
                             Translated("Drag wearable items here to equip them")
@@ -766,17 +697,14 @@ fun InventoryDialog(onClose: () -> Unit) {
                     
                     // Worn items section
                     Div(
-                        attrs = {
-                            style {
-                                marginBottom(20.px)
+                            attrs = {
+                                classes(InventoryStyles.sectionContainer)
                             }
-                        }
-                    ) {
+                        ) {
                         // Section title
                         H3(
                             attrs = {
                                 style {
-                                    color(Color.white)
                                     marginBottom(12.px)
                                     fontSize(18.px)
                                 }
@@ -789,14 +717,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                         if (currentUser?.wornItems?.isEmpty() == true) {
                             P(
                                 attrs = {
-                                    style {
-                                        color(rgba(200, 200, 200, 0.8))
-                                        fontSize(14.px)
-                                        textAlign("center")
-                                        padding(12.px)
-                                        backgroundColor(rgba(40, 40, 40, 0.3))
-                                        property("border-radius", "4px")
-                                    }
+                                    classes(InventoryStyles.emptyWornMessage)
                                 }
                             ) {
                                 Translated("No items worn. Drag wearable items to your character to wear them.")
@@ -818,15 +739,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     if (item != null) {
                                         Div(
                                             attrs = {
-                                                style {
-                                                    display(DisplayStyle.Flex)
-                                                    property("flex-direction", "column")
-                                                    alignItems(AlignItems.Center)
-                                                    padding(8.px)
-                                                    backgroundColor(rgba(60, 60, 60, 0.5))
-                                                    property("border-radius", "4px")
-                                                    cursor("pointer")
-                                                }
+                                                classes(InventoryStyles.wornItemCard)
                                                 onClick { handleRemoveWornItem(itemId, isDirectItemId = true) }
                                             }
                                         ) {
@@ -842,7 +755,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             Div(
                                                 attrs = {
                                                     style {
-                                                        color(Color.white)
                                                         fontSize(12.px)
                                                         marginTop(4.px)
                                                         textAlign("center")
@@ -855,12 +767,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             // Remove text
                                             Div(
                                                 attrs = {
-                                                    style {
-                                                        color(rgba(255, 100, 100, 0.9))
-                                                        fontSize(10.px)
-                                                        marginTop(2.px)
-                                                    }
-                                                }
+                                                classes(InventoryStyles.removeTextSmall)
+                                            }
                                             ) {
                                                 Translated("Click to remove")
                                             }
@@ -875,7 +783,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                     H3(
                         attrs = {
                             style {
-                                color(Color.white)
                                 marginBottom(12.px)
                                 fontSize(18.px)
                             }
@@ -888,7 +795,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                         P(
                             attrs = {
                                 style {
-                                    color(Color.white)
                                     textAlign("center")
                                 }
                             }
@@ -902,15 +808,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             if (item != null) {
                                 Div(
                                     attrs = {
-                                        style {
-                                            display(DisplayStyle.Flex)
-                                            padding(12.px)
-                                            marginBottom(8.px)
-                                            backgroundColor(rgba(50, 50, 50, 0.5))
-                                            property("border-radius", "4px")
-                                            alignItems(AlignItems.Center)
-                                            cursor("grab")
-                                        }
+                                        classes(InventoryStyles.inventoryRow)
                                         // Make draggable
                                         attr("draggable", "true")
                                         onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
@@ -957,12 +855,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         ) {
                                             Div(
                                                 attrs = {
-                                                    style {
-                                                        color(Color.white)
-                                                        fontSize(16.px)
-                                                        fontWeight("bold")
-                                                    }
-                                                }
+                                                classes(InventoryStyles.itemTitle)
+                                            }
                                             ) {
                                                 Text(item.title)
                                             }
@@ -971,14 +865,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             if (item.wearable) {
                                                 Div(
                                                     attrs = {
-                                                        style {
-                                                            margin(8.px)
-                                                            padding(2.px, 6.px)
-                                                            backgroundColor(rgba(100, 200, 255, 0.2))
-                                                            color(rgba(100, 200, 255, 0.9))
-                                                            fontSize(10.px)
-                                                            property("border-radius", "4px")
-                                                        }
+                                                        classes(InventoryStyles.wearableChip)
                                                     }
                                                 ) {
                                                     Translated("Wearable")
@@ -989,11 +876,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         // Item description
                                         Div(
                                             attrs = {
-                                                style {
-                                                    color(rgba(200, 200, 200, 0.8))
-                                                    fontSize(14.px)
-                                                    marginTop(4.px)
-                                                }
+                                                classes(InventoryStyles.descriptionText)
                                             }
                                         ) {
                                             Text(item.description)

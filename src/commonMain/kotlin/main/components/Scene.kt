@@ -1066,7 +1066,7 @@ fun SceneComponent(url: String) {
         if (showFadeOverlay) {
             Div(
                 attrs = {
-                    classes(Styles.fadeOverlay)
+                    classes(main.theme.OverlayStyles.fadeOverlay)
                     style {
                         property("opacity", fadeOpacity.toString())
                         property("backdrop-filter", "blur(${fadeBlurPx}px)")

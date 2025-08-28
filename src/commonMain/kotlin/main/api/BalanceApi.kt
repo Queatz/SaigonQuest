@@ -30,14 +30,20 @@ object BalanceApi {
     /**
      * Send VND to a friend
      */
-    suspend fun sendToFriend(toUserId: String, amount: Long, note: String? = null) {
+    suspend fun sendToFriend(
+        toUserId: String,
+        amount: Long,
+        note: String? = null,
+        attachments: List<String>? = null,
+    ) {
         ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/balance/send") {
             ApiClient.addAuthHeader(this)
             contentType(ContentType.Application.Json)
             setBody(models.SendVndRequest(
                 toUserId = toUserId,
                 amount = amount,
-                note = note
+                note = note,
+                attachments = attachments,
             ))
         }
     }

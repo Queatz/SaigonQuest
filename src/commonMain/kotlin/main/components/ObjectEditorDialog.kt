@@ -312,7 +312,7 @@ fun ObjectEditorDialog(
                         }
                     ) {
                         if (isEditing) {
-                            if (objectModel?.data != null && objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
+                            if (objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
                                 // Show a preview of the logic data
                                 Text(
                                     "Object logic (${

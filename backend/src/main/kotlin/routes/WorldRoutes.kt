@@ -223,6 +223,42 @@ fun Routing.configureWorldRoutes() {
                     
                 call.respond(updatedWorld)
             }
+
+            // Delete world - requires authentication and ownership
+            delete("/{id}") {
+                val id = call.parameters["id"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing id parameter", code = HttpStatusCode.BadRequest.value)
+                )
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
+
+                val existingWorld = worldRepository.getById(id) ?: return@delete call.respond(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
+                )
+
+                if (existingWorld.userId != userId) {
+                    return@delete call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(
+                            message = "You don't have permission to delete this world",
+                            code = HttpStatusCode.Forbidden.value
+                        )
+                    )
+                }
+
+                val deleted = worldRepository.delete(id)
+                if (deleted) {
+                    call.respond(HttpStatusCode.NoContent)
+                } else {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Failed to delete world", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+            }
         }
     }
 }

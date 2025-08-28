@@ -123,7 +123,7 @@ class UserRepository {
     fun createVisitor(): User {
         val visitorId = UUID.randomUUID().toString()
         val user = User(
-            username = "visitor-${visitorId.substring(0, 8)}",
+            username = "visitor-${visitorId.take(8)}",
             isPlayer = false,
             visitorId = visitorId
         )

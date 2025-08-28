@@ -78,9 +78,7 @@ fun DraggableItem(node: LogicNode) {
                 attrs = {
                     style {
                         fontSize(11.px)
-                        color(rgba(200, 200, 200, 0.7))
                         marginTop(3.px)
-                        property("line-height", "1.3")
                     }
                 }
             ) {

@@ -10,8 +10,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import main.components.rememberDarkMode
+import main.theme.Theme
 import main.utils.ElementPositionTracker
 import main.utils.getBoundingClientRectSafe
+import main.utils.rememberElementPositionTracker
 import models.nodeeditor.Connection
 import models.nodeeditor.PortType
 import web.animations.awaitAnimationFrame
@@ -25,7 +28,7 @@ import web.animations.awaitAnimationFrame
  */
 @Composable
 fun ConnectionHandler(controller: NodeEditorController) {
-    val positionTracker = main.utils.rememberElementPositionTracker()
+    val positionTracker = rememberElementPositionTracker()
     // Render connections between nodes
     controller.connections.forEach { connection ->
         key(connection) {
@@ -50,7 +53,7 @@ fun RenderConnection(
     connection: Connection,
     positionTracker: ElementPositionTracker,
 ) {
-
+    val isDark = rememberDarkMode()
     var invalidate by remember { mutableStateOf(0) }
     var invalidateTrigger by remember { mutableStateOf(0) }
 
@@ -219,6 +222,7 @@ fun RenderConnection(
             isSelected = data.isSelected,
             onClick = { controller.selectConnection(connection) },
             connectionId = data.connectionId,
+            color = if (isDark) Theme.colors.white70 else Theme.colors.black30
         )
     }
 }

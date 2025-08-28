@@ -3,6 +3,9 @@ package main.components
 import androidx.compose.runtime.Composable
 import main.components.translated
 import Translations.str
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 
 /**
  * A responsive chat component that adapts between a dialog (mobile) and a side panel (desktop).
@@ -18,8 +21,8 @@ fun Chat(
     onClose: () -> Unit
 ) {
     // Fetch world to get chat longevity
-    val longevityState = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Double?>(null) }
-    androidx.compose.runtime.LaunchedEffect(worldId) {
+    val longevityState = remember { mutableStateOf<Double?>(null) }
+    LaunchedEffect(worldId) {
         try {
             val w = main.api.WorldApi.getWorld(worldId)
             longevityState.value = w.chatLongevity

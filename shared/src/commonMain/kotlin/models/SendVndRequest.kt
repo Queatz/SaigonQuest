@@ -8,4 +8,6 @@ data class SendVndRequest(
     /** VND */
     val amount: Long,
     val note: String? = null,
+    /** Optional image URLs (e.g., proof) */
+    val attachments: List<String>? = null,
 )

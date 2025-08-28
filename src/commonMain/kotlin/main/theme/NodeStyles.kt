@@ -7,7 +7,9 @@ import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
+import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.bottom
+import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.justifyContent
@@ -30,27 +32,29 @@ object NodeStyles : StyleSheet() {
         left(0.px)
         right(0.px)
         bottom(0.px)
-        property("background-color", "rgba(0, 0, 0, 0.5)")
+        backgroundColor(Theme.colors.overlayScrim)
         property("z-index", "1000")
         display(DisplayStyle.Flex)
         property("align-items", "center")
         justifyContent(JustifyContent.Center)
+
+        dark(self) { backgroundColor(Theme.colors.overlayScrimDark) }
     }
     
     val dialogueContainer by style {
         width(500.px)
         padding(20.px)
-        property("background-color", "#fff")
+        backgroundColor(Theme.colors.surface)
         property("border-radius", "8px")
-        property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.2)")
+        property("box-shadow", "0 4px 8px ${Theme.colors.shadowLight}")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("align-items", "center")
-        
+
         dark(self) {
-            property("background-color", "#333")
-            property("color", "#fff")
-            property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.5)")
+            backgroundColor(Theme.colors.surfaceDark)
+            color(Theme.colors.onSurfaceDark)
+            property("box-shadow", "0 4px 8px ${Theme.colors.shadowStrong}")
         }
     }
     
@@ -60,10 +64,9 @@ object NodeStyles : StyleSheet() {
         property("text-align", "center")
         property("font-size", "16px")
         property("line-height", "1.5")
+        color(Theme.colors.onSurface)
         
-        dark(self) {
-            property("color", "#fff")
-        }
+        dark(self) { color(Theme.colors.onSurfaceDark) }
     }
     
     val dialogueButtonContainer by style {
@@ -75,16 +78,16 @@ object NodeStyles : StyleSheet() {
     
     val dialogueButton by style {
         padding(10.px, 20.px)
-        property("background-color", "#4CAF50")
-        property("color", "white")
+        backgroundColor(Theme.colors.success)
+        color(Theme.colors.onPrimary)
         property("border", "none")
         property("border-radius", "4px")
         property("cursor", "pointer")
         property("font-size", "16px")
         
         dark(self) {
-            property("background-color", "#2E7D32")
-            property("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.3)")
+            backgroundColor(Theme.colors.successDark)
+            property("box-shadow", "0 2px 4px ${Theme.colors.shadowMedium}")
         }
     }
 }

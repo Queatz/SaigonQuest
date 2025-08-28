@@ -47,18 +47,24 @@ object EditorStyles : StyleSheet() {
     }
     
     val loadingMessage by style {
-        color(Color.white)
+        color(Theme.colors.onBackgroundDark)
         property("text-align", "center")
+
+        dark(self) { color(Theme.colors.onBackground) }
     }
     
     val errorMessage by style {
-        color(Color.red)
+        color(Theme.colors.error)
         property("text-align", "center")
+
+        dark(self) { color(Theme.colors.errorDark) }
     }
     
     val emptyMessage by style {
-        color(rgba(255, 255, 255, 0.7))
+        color(Theme.colors.textMutedDark)
         property("text-align", "center")
+
+        dark(self) { color(Theme.colors.textMuted) }
     }
     
     val objectsListContainer by style {
@@ -75,12 +81,17 @@ object EditorStyles : StyleSheet() {
         alignItems(AlignItems.FlexStart)
         gap(8.px)
         padding(8.px)
-        backgroundColor(rgba(255, 255, 255, 0.1))
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
         property("border-radius", "4px")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
     
     val objectTitle by style {
-        color(Color.white)
     }
     
     val actionButtonsContainer by style {
@@ -90,8 +101,8 @@ object EditorStyles : StyleSheet() {
     }
     
     val locateButton by style {
-        backgroundColor(rgba(0, 120, 255, 0.7))
-        color(Color.white)
+        backgroundColor(Theme.colors.primary)
+        color(Theme.colors.onPrimary)
         property("border", "0")
         property("border-radius", "4px")
         padding(4.px, 8.px)
@@ -100,8 +111,8 @@ object EditorStyles : StyleSheet() {
     }
     
     val editButton by style {
-        backgroundColor(rgba(0, 180, 0, 0.7))
-        color(Color.white)
+        backgroundColor(Theme.colors.success)
+        color(Theme.colors.onPrimary)
         property("border", "0")
         property("border-radius", "4px")
         padding(4.px, 8.px)
@@ -109,7 +120,5 @@ object EditorStyles : StyleSheet() {
         fontSize(12.px)
     }
     
-    val removeButton by style {
-        backgroundColor(rgba(255, 0, 0, 0.7))
-    }
+    val removeButton by style { backgroundColor(Theme.colors.error) }
 }

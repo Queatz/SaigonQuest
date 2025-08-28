@@ -76,4 +76,13 @@ class WorldRepository {
         
         return result.new
     }
+
+    fun delete(id: String): Boolean {
+        return try {
+            collection.deleteDocument(id)
+            true
+        } catch (e: Throwable) {
+            false
+        }
+    }
 }
