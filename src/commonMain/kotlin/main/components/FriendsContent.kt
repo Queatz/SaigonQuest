@@ -56,6 +56,8 @@ import org.jetbrains.compose.web.dom.Text
 import Translations.str
 import kotlinx.coroutines.delay
 import main.theme.Styles
+import main.theme.FriendsStyles
+import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.LineStyle
@@ -260,18 +262,12 @@ fun FriendsContent() {
         }
     }
     
+    Style(FriendsStyles)
+    
     // Friends content
     Div(
         attrs = {
-            style {
-                property("flex-grow", "1")
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                padding(16.px)
-                height(100.percent)
-                overflow("hidden")
-                position(org.jetbrains.compose.web.css.Position.Relative)
-            }
+            classes(main.theme.FriendsStyles.friendsContentRoot)
         }
     ) {
         // Toast feedback message (non-blocking)
@@ -296,12 +292,7 @@ fun FriendsContent() {
         if (isLoading) {
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        property("flex-grow", "1")
-                    }
+                    classes(FriendsStyles.centeredGrowContainer)
                 }
             ) {
                 Translated("Loading friends...")
@@ -311,13 +302,7 @@ fun FriendsContent() {
         else if (error != null) {
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        property("flex-grow", "1")
-                        color(rgba(255, 100, 100, 0.9))
-                    }
+                    classes(FriendsStyles.errorContainer)
                 }
             ) {
                 Text("${str("Error")}: $error")
@@ -327,20 +312,12 @@ fun FriendsContent() {
         else if (friends.isEmpty()) {
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        property("flex-grow", "1")
-                    }
+                    classes(FriendsStyles.centeredGrowContainer)
                 }
             ) {
                 P(
                     attrs = {
-                        style {
-                            color(rgba(255, 255, 255, 0.7))
-                            property("text-align", "center")
-                        }
+                        classes(FriendsStyles.emptyText)
                     }
                 ) {
                     Translated("You haven't made any friends yet!")
@@ -351,13 +328,7 @@ fun FriendsContent() {
         else {
             Div(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        gap(12.px)
-                        property("flex-grow", "1")
-                        overflowY("auto")
-                    }
+                    classes(FriendsStyles.friendsListContainer)
                 }
             ) {
                 friends.forEach { friend ->
@@ -420,50 +391,27 @@ fun FriendListItem(
     
     Div(
         attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                flexDirection(FlexDirection.Column)
-                padding(12.px)
-                backgroundColor(rgba(30, 30, 30, 0.6))
-                borderRadius(8.px)
-                property("border", "1px solid rgba(100, 100, 100, 0.3)")
-            }
+            classes(FriendsStyles.friendListItem)
         }
     ) {
         // Friend name
         Div(
             attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    justifyContent(JustifyContent.SpaceBetween)
-                    alignItems(AlignItems.Center)
-                    marginBottom(8.px)
-                }
+                classes(FriendsStyles.friendHeader)
             }
         ) {
             Span(
                 attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        alignItems(AlignItems.Center)
-                        fontSize(16.px)
-                        fontWeight("bold")
-                        color(rgba(255, 255, 255, 0.9))
-                        gap(8.px)
-                    }
+                    classes(FriendsStyles.friendName)
                 }
             ) {
                 // Online indicator dot
                 Span(
                     attrs = {
-                        style {
-                            width(10.px)
-                            height(10.px)
-                            borderRadius(50.percent)
-                            backgroundColor(
-                                if (isOnline) rgba(0, 200, 0, 0.9) else rgba(120, 120, 120, 0.8)
-                            )
-                        }
+                        classes(
+                            FriendsStyles.onlineDotBase,
+                            if (isOnline) FriendsStyles.onlineDotOnline else FriendsStyles.onlineDotOffline,
+                        )
                     }
                 ) {}
                 Text(friend.friendUsername)
@@ -472,10 +420,7 @@ fun FriendListItem(
             // Last active time
             Span(
                 attrs = {
-                    style {
-                        fontSize(12.px)
-                        color(rgba(200, 200, 200, 0.7))
-                    }
+                    classes(FriendsStyles.lastActiveText)
                 }
             ) {
                 Text(formatLastActive(friend.lastActive))
@@ -486,11 +431,7 @@ fun FriendListItem(
         if (isOnline && friend.lastWorldName.isNotEmpty()) {
             Div(
                 attrs = {
-                    style {
-                        fontSize(14.px)
-                        color(rgba(200, 255, 200, 0.85))
-                        marginBottom(8.px)
-                    }
+                    classes(FriendsStyles.currentWorldOnline)
                 }
             ) {
                 Text("${translated("Currently at")} ${friend.lastWorldName}")
@@ -501,11 +442,7 @@ fun FriendListItem(
         if (!isOnline && friend.lastWorldName.isNotEmpty()) {
             Div(
                 attrs = {
-                    style {
-                        fontSize(14.px)
-                        color(rgba(200, 200, 200, 0.8))
-                        marginBottom(12.px)
-                    }
+                    classes(FriendsStyles.lastWorldOffline)
                 }
             ) {
                 Text("${str("Last seen in:")} ${friend.lastWorldName}")
@@ -515,23 +452,13 @@ fun FriendListItem(
         // Buttons
         Div(
             attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    gap(8.px)
-                }
+                classes(FriendsStyles.buttonsRow)
             }
         ) {
             // Jump to friend button (only enabled if they have a world and position)
             Button(
                 attrs = {
-                    style {
-                        padding(8.px, 12.px)
-                        backgroundColor(rgba(60, 120, 200, 0.8))
-                        color(rgba(255, 255, 255, 0.9))
-                        property("border", "none")
-                        borderRadius(4.px)
-                        property("cursor", "pointer")
-                    }
+                    classes(FriendsStyles.buttonJump)
                     onClick {
                         if (friend.lastWorldId.isNotEmpty()) {
                             onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
@@ -548,14 +475,7 @@ fun FriendListItem(
             // Send VND button
             Button(
                 attrs = {
-                    style {
-                        padding(8.px, 12.px)
-                        backgroundColor(rgba(60, 200, 120, 0.8))
-                        color(rgba(255, 255, 255, 0.9))
-                        property("border", "none")
-                        borderRadius(4.px)
-                        property("cursor", "pointer")
-                    }
+                    classes(FriendsStyles.buttonSend)
                     onClick {
                         showSendDialog = true
                     }
@@ -567,14 +487,7 @@ fun FriendListItem(
             // Remove friend button
             Button(
                 attrs = {
-                    style {
-                        padding(8.px, 12.px)
-                        backgroundColor(Color.transparent)
-                        border(1.px, LineStyle.Solid, rgba(200, 60, 60, 0.8))
-                        color(rgba(200, 60, 60, 0.8))
-                        borderRadius(4.px)
-                        property("cursor", "pointer")
-                    }
+                    classes(FriendsStyles.buttonRemove)
                     onClick {
                         // Show confirmation dialog instead of immediately removing
                         showConfirmDialog = true

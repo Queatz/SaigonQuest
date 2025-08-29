@@ -468,7 +468,29 @@ object Styles : StyleSheet() {
         property("right", "0")
         property("bottom", "0")
         property("border-radius", "12px")
-        property("transition", "background-color 0.3s")
+        property("transition", "background-color 0.3s, border-color 0.3s")
+    }
+
+    // Track state: ON
+    val toggleSwitchTrackOn by style {
+        backgroundColor(Theme.colors.primary)
+        property("border", "1px solid ${Theme.colors.primary}")
+
+        dark(self) {
+            backgroundColor(Theme.colors.primaryDark)
+            property("border", "1px solid ${Theme.colors.primaryDark}")
+        }
+    }
+
+    // Track state: OFF
+    val toggleSwitchTrackOff by style {
+        backgroundColor(Theme.colors.surfaceVariant)
+        property("border", "1px solid ${Theme.colors.outline}")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            property("border", "1px solid ${Theme.colors.outlineDark}")
+        }
     }
 
     val toggleSwitchKnob by style {
@@ -482,6 +504,16 @@ object Styles : StyleSheet() {
         property("transition", "left 0.3s")
     }
 
+    // Knob position: OFF (left)
+    val toggleSwitchKnobOff by style {
+        left(0.px)
+    }
+
+    // Knob position: ON (right)
+    val toggleSwitchKnobOn by style {
+        left(20.px)
+    }
+
     // Language Switcher styles
     val languageSwitcherContainer by style {
         display(DisplayStyle.Flex)
@@ -492,6 +524,10 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.surfaceVariant)
         property("overflow", "hidden")
         cursor("pointer")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+        }
     }
 
     val languageSwitcherOption by style {
@@ -722,13 +758,6 @@ object Styles : StyleSheet() {
         property("font-weight", "bold")
     }
 
-    val balanceListItem by style {
-        padding(8.px)
-        property("border-radius", "4px")
-        backgroundColor(Theme.colors.white05)
-        marginBottom(6.px)
-    }
-
     // Balance summary box
     val balanceSummaryBox by style {
         display(DisplayStyle.Flex)
@@ -737,10 +766,16 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(16.px)
         property("border-radius", "8px")
-        backgroundColor(Theme.colors.white06)
+        backgroundColor(Theme.colors.white50)
         property("border", "1px solid ${Theme.colors.white15}")
         marginBottom(16.px)
         property("text-align", "center")
+
+        dark(self) {
+            backgroundColor(
+                Theme.colors.white06
+            )
+        }
     }
 
     val clickable by style {
@@ -1034,6 +1069,36 @@ object Styles : StyleSheet() {
     }
 
     val settingsControlContainer by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        padding(8.px)
+    }
+
+    // Graphics toggle styles
+    val graphicsToggleContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        padding(8.px)
+        marginBottom(16.px)
+        backgroundColor(Theme.colors.surfaceVariant)
+        borderRadius(4.px)
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+        }
+    }
+
+    val graphicsToggleLabel by style {
+        padding(8.px)
+        color(Theme.colors.onSurfaceVariant)
+
+        dark(self) {
+            color(Theme.colors.onSurfaceVariantDark)
+        }
+    }
+
+    val graphicsToggleControl by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         padding(8.px)

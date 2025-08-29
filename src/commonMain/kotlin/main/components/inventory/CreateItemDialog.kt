@@ -280,7 +280,7 @@ fun CreateItemDialog(
                         attrs = {
                             style {
                                 display(DisplayStyle.Block)
-                                color(Color.white)
+
                                 marginBottom(4.px)
                             }
                         }
@@ -326,7 +326,7 @@ fun CreateItemDialog(
                         attrs = {
                             style {
                                 display(DisplayStyle.Block)
-                                color(Color.white)
+
                                 marginBottom(4.px)
                             }
                         }
@@ -360,7 +360,7 @@ fun CreateItemDialog(
                         attrs = {
                             style {
                                 display(DisplayStyle.Block)
-                                color(Color.white)
+
                                 marginBottom(4.px)
                             }
                         }
@@ -397,7 +397,7 @@ fun CreateItemDialog(
                         attrs = {
                             style {
                                 display(DisplayStyle.Block)
-                                color(Color.white)
+
                                 marginBottom(4.px)
                             }
                         }
@@ -448,7 +448,7 @@ fun CreateItemDialog(
                         Label(
                             attrs = {
                                 style {
-                                    color(Color.white)
+
                                     marginBottom(4.px)
                                     marginTop(2.px)
                                     padding(0.px, 0.px, 0.px, 8.px)
@@ -474,7 +474,7 @@ fun CreateItemDialog(
                             attrs = {
                                 style {
                                     display(DisplayStyle.Block)
-                                    color(Color.white)
+
                                     marginBottom(4.px)
                                 }
                             }
@@ -545,7 +545,7 @@ fun CreateItemDialog(
                         Label(
                             attrs = {
                                 style {
-                                    color(Color.white)
+
                                     marginBottom(4.px)
                                     marginTop(2.px)
                                     padding(0.px, 0.px, 0.px, 8.px)
@@ -560,7 +560,7 @@ fun CreateItemDialog(
                             attrs = {
                                 style {
                                     display(DisplayStyle.Block)
-                                    color(Color.white)
+
                                     marginBottom(4.px)
                                 }
                             }

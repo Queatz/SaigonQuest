@@ -3,5 +3,6 @@
 /backend/build/
 /content/build/
 /shared/build/
+/sw/build/
 .kotlin/
 .idea/

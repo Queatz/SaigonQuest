@@ -1,9 +1,6 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import main.theme.Theme
 import main.theme.Styles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -27,37 +24,22 @@ fun GraphicsToggle(
     // Container for the toggle and label
     Div(
         attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.SpaceBetween)
-                alignItems(AlignItems.Center)
-                padding(8.px)
-                marginBottom(16.px)
-                backgroundColor(Theme.colors.surfaceVariant)
-                property("border-radius", "4px")
-            }
+            classes(Styles.graphicsToggleContainer)
         }
     ) {
         // Label
         Span(
             attrs = {
-                style {
-                    padding(8.px)
-                    color(Theme.colors.onSurfaceVariant)
-                }
+                classes(Styles.graphicsToggleLabel)
             }
         ) {
             Text(label)
         }
-        
-        // Toggle button
+
+        // Toggle button container
         Div(
             attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    alignItems(AlignItems.Center)
-                    padding(8.px)
-                }
+                classes(Styles.graphicsToggleControl)
             }
         ) {
             ToggleSwitch(

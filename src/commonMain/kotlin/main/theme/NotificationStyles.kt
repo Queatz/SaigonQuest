@@ -108,9 +108,21 @@ object NotificationStyles : StyleSheet() {
         cursor("pointer")
     }
     
-    val notificationItemRead by style { backgroundColor(Theme.colors.notifReadBg) }
+    val notificationItemRead by style {
+        backgroundColor(Theme.colors.notifReadBg)
+
+        dark(self) {
+            backgroundColor(Theme.colors.notifReadBgDark)
+        }
+    }
     
-    val notificationItemUnread by style { backgroundColor(Theme.colors.notifUnreadBg) }
+    val notificationItemUnread by style {
+        backgroundColor(Theme.colors.notifUnreadBg)
+
+        dark(self) {
+            backgroundColor(Theme.colors.notifUnreadBgDark)
+        }
+    }
 
     // System notification accent (e.g., subtle blue left border)
     val notificationItemSystem by style {
@@ -139,26 +151,26 @@ object NotificationStyles : StyleSheet() {
     
     val notificationTitle by style {
         margin(0.px)
-        color(Theme.colors.onBackgroundDark)
+        color(Theme.colors.onBackground)
         fontSize(16.px)
 
-        dark(self) { color(Theme.colors.onBackground) }
+        dark(self) { color(Theme.colors.onBackgroundDark) }
     }
     
     val notificationTimestamp by style {
         margin(0.px)
-        color(Theme.colors.textMutedDark)
+        color(Theme.colors.textMuted)
         fontSize(12.px)
 
-        dark(self) { color(Theme.colors.textMuted) }
+        dark(self) { color(Theme.colors.textMutedDark) }
     }
     
     val notificationDescription by style {
         margin(0.px)
-        color(Theme.colors.textSecondaryDark)
+        color(Theme.colors.textSecondary)
         fontSize(14.px)
 
-        dark(self) { color(Theme.colors.textSecondary) }
+        dark(self) { color(Theme.colors.textSecondaryDark) }
     }
 
     // Small badge for system notifications

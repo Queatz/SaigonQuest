@@ -25,6 +25,7 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import web.cssom.opacity
 import main.components.Translated
+import org.jetbrains.compose.web.css.textAlign
 
 /**
  * A component that displays the world title and subtitle at the center top of the UI.
@@ -61,6 +62,7 @@ fun WorldTitle(
                 flexDirection(FlexDirection.Column)
                 alignItems(AlignItems.Center)
                 property("pointer-events", "none")
+                textAlign("center")
             }
         }
     ) {

@@ -49,7 +49,7 @@ fun AdminItemsDialog(
         Button(attrs = {
             style {
                 backgroundColor(rgba(0, 120, 255, 0.7))
-                color(Color.white)
+
                 property("border", "0")
                 property("border-radius", "4px")
                 padding(4.px, 8.px)
@@ -63,7 +63,7 @@ fun AdminItemsDialog(
         Button(attrs = {
             style {
                 backgroundColor(rgba(90, 90, 90, 0.7))
-                color(Color.white)
+
                 property("border", "0")
                 property("border-radius", "4px")
                 padding(4.px, 8.px)
@@ -101,7 +101,6 @@ fun AdminItemsDialog(
                             display(DisplayStyle.Grid)
                             property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
                             property("gap", "8px")
-                            color(rgba(220, 220, 220, 0.9))
                             fontSize(12.px)
                             marginBottom(8.px)
                         }
@@ -146,7 +145,7 @@ fun AdminItemsDialog(
                                 Button(attrs = {
                                     style {
                                         backgroundColor(rgba(0, 120, 255, 0.7))
-                                        color(Color.white)
+
                                         property("border", "0")
                                         property("border-radius", "4px")
                                         padding(4.px, 8.px)

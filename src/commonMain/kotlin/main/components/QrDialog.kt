@@ -171,7 +171,6 @@ fun QrDialog(
                 P(
                     attrs = {
                         style {
-                            color(rgba(255, 255, 255, 0.7))
                             property("word-break", "break-all")
                             property("text-align", "center")
                             margin(0.px)

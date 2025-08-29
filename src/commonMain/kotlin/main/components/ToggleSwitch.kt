@@ -2,7 +2,6 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
-import main.theme.Theme
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -52,9 +51,10 @@ fun ToggleSwitch(
         Span(
             attrs = {
                 classes(Styles.toggleSwitchTrack)
-                style {
-                    backgroundColor(if (checked) Theme.colors.primary else Theme.colors.surfaceVariant)
-                    property("border", "1px solid ${if (checked) Theme.colors.primary else Theme.colors.outline}")
+                if (checked) {
+                    classes(Styles.toggleSwitchTrackOn)
+                } else {
+                    classes(Styles.toggleSwitchTrackOff)
                 }
             }
         )
@@ -63,8 +63,10 @@ fun ToggleSwitch(
         Span(
             attrs = {
                 classes(Styles.toggleSwitchKnob)
-                style {
-                    property("left", if (checked) "20px" else "0px")
+                if (checked) {
+                    classes(Styles.toggleSwitchKnobOn)
+                } else {
+                    classes(Styles.toggleSwitchKnobOff)
                 }
             }
         )

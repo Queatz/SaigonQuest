@@ -18,6 +18,7 @@ tasks.register("run") {
     group = "application"
     description = "Runs the Kotlin/JS webpack dev server"
     dependsOn("jsBrowserDevelopmentRun")
+    args("-t")
 }
 
 defaultTasks("run")

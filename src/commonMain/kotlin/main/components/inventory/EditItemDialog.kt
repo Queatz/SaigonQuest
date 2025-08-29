@@ -175,7 +175,7 @@ fun EditItemDialog(
 
                 // Title
                 Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Title") }
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Title") }
                     val titlePlaceholder = translated("Enter item title")
                     Input(type = InputType.Text, attrs = {
                         classes(Styles.inputField)
@@ -190,7 +190,7 @@ fun EditItemDialog(
 
                 // Description
                 Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Description") }
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Description") }
                     val descriptionPlaceholder = translated("Enter item description")
                     TextArea(attrs = {
                         classes(Styles.inputField)
@@ -203,7 +203,7 @@ fun EditItemDialog(
 
                 // Asset selection
                 Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Asset") }
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Asset") }
 
                     // Preview of selected asset (if any)
                     if (file.isNotBlank()) {
@@ -225,7 +225,7 @@ fun EditItemDialog(
 
                 // Cost
                 Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Cost (VND)") }
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Cost (VND)") }
                     NumberInput(value = cost, min = 0, attrs = {
                         classes(Styles.inputField)
                         onInput { cost = it.value?.toLong() ?: 0L }
@@ -240,14 +240,14 @@ fun EditItemDialog(
                             onChange { ev -> wearable = ev.target.checked }
                             style { marginTop(4.px) }
                         })
-                        Label(attrs = { style { color(Color.white); marginBottom(4.px); marginTop(2.px); padding(0.px, 0.px, 0.px, 8.px) } }) { Translated("Is this item wearable?") }
+                        Label(attrs = { style { ; marginBottom(4.px); marginTop(2.px); padding(0.px, 0.px, 0.px, 8.px) } }) { Translated("Is this item wearable?") }
                     }
                 }
 
                 if (wearable) {
                     // Wearable asset (preview + browser)
                     Div(attrs = { style { marginBottom(16.px) } }) {
-                        Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Wearable asset") }
+                        Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wearable asset") }
 
                         // Preview first 32x48 cell if set
                         if (wearableFile.isNotBlank()) {
@@ -298,11 +298,11 @@ fun EditItemDialog(
                             onChange { event -> customizeWeights = event.target.checked }
                             style { marginTop(4.px) }
                         })
-                        Label(attrs = { style { color(Color.white); marginBottom(4.px); marginTop(2.px); padding(0.px, 0.px, 0.px, 8.px) } }) { Translated("Customize wind weights") }
+                        Label(attrs = { style { ; marginBottom(4.px); marginTop(2.px); padding(0.px, 0.px, 0.px, 8.px) } }) { Translated("Customize wind weights") }
                     }
 
                     if (customizeWeights) {
-                        Label(attrs = { style { display(DisplayStyle.Block); color(Color.white); marginBottom(4.px) } }) { Translated("Wind weights (5x5)") }
+                        Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wind weights (5x5)") }
 
                         Div(attrs = { style { marginBottom(8.px) } }) {
                             DialogButton(onClick = {
