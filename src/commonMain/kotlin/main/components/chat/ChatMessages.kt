@@ -24,6 +24,9 @@ import main.theme.Styles
 import models.ChatMessage
 import models.ChatMessagePin
 import models.WebSocketAction
+import org.jetbrains.compose.web.css.marginLeft
+import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -308,8 +311,11 @@ fun ChatMessages(worldId: String) {
                             if (msg != null && !msg.deleted) Text(msg.message) else Text("(message)")
                         }
                         if (isOwner) {
-                            Span(attrs = {
+                            Div(attrs = {
                                 classes(Styles.chatPinButton)
+
+                                style { marginTop(8.px) }
+
                                 onClick {
                                     // Optimistic update
                                     pins = pins.filterNot { it.messageId == pin.messageId }
@@ -449,6 +455,11 @@ fun ChatMessageItem(
                 if (isOwner && onPinToggle != null) {
                     Span(attrs = {
                         classes(Styles.chatPinButton)
+
+                        style {
+                            marginLeft(8.px)
+                        }
+
                         onClick {
                             it.stopPropagation()
                             onPinToggle()

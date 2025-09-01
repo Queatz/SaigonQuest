@@ -74,7 +74,6 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         padding(8.px)
-        backgroundColor(Theme.colors.white20)
         property("border-radius", "8px")
         property("transition", "all 0.2s ease")
         cursor("pointer")
@@ -506,7 +505,7 @@ object Styles : StyleSheet() {
 
     // Knob position: OFF (left)
     val toggleSwitchKnobOff by style {
-        left(0.px)
+        left(3.px)
     }
 
     // Knob position: ON (right)
@@ -548,6 +547,10 @@ object Styles : StyleSheet() {
     val languageSwitcherOptionInactive by style {
         backgroundColor(Color.transparent)
         color(Theme.colors.onSurfaceVariant)
+
+        dark(self) {
+            color(Theme.colors.onSurfaceVariantDark)
+        }
     }
 
     // Chat Messages styles
@@ -571,11 +574,15 @@ object Styles : StyleSheet() {
 
     // Clickable pin/unpin action style
     val chatPinButton by style {
+        display(DisplayStyle.Flex)
         padding(
             2.px, 8.px
-        ); cursor("pointer"); color(Theme.colors.textSecondary); property("border-radius", "4px"); property(
-        "margin-left", "8px"
-    ); dark(self) { color(Theme.colors.textSecondaryDark) }
+        )
+        cursor("pointer")
+        color(Theme.colors.textSecondary)
+        property("border-radius", "4px")
+        border(1.px, LineStyle.Solid, Theme.colors.outline)
+        dark(self) { color(Theme.colors.textSecondaryDark) }
     }
 
     // Outer wrapper for chat area; holds pinned header and scroll area
@@ -801,7 +808,6 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Grid)
         property("grid-template-columns", "1fr 2fr")
         property("gap", "8px")
-        color(Theme.colors.white90)
         fontSize(12.px)
         marginBottom(8.px)
     }
@@ -1222,6 +1228,10 @@ object Styles : StyleSheet() {
 
         "textarea" {
             property("resize", "vertical")
+        }
+
+        "button" {
+            property("color", "inherit")
         }
     }
 }

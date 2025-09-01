@@ -85,7 +85,7 @@ class OcclusionManager(private val scene: Scene) {
         float distToPlayer = length(vPositionW.xz - playerWorld.xz);
         
         // Check if fragment is closer to camera than player for all coordinates
-        if (distToCamera < distFromPlayerToCamera && vPositionW.y > playerWorld.y && pow(distToCamera, 0.5) < distToPlayer) {
+        if (distToCamera < distFromPlayerToCamera && vPositionW.y > playerWorld.y && (pow(distToCamera, 0.5) * 0.5) < distToPlayer) {
             if (occlusionSoftness <= 0.0) {
                 discard;
             } else if (occlusionSoftness >= 1.0) {
@@ -182,6 +182,7 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.fogEnabled = originalMaterial.fogEnabled
             customMaterial.disableLighting = originalMaterial.disableLighting
             customMaterial.backFaceCulling = originalMaterial.backFaceCulling
+            customMaterial.needDepthPrePass = true
 
             // Copy textures if they exist
             if (originalMaterial.albedoTexture != null) {
@@ -216,7 +217,7 @@ class OcclusionManager(private val scene: Scene) {
 
             // Use Fragment_Custom_Alpha instead of Fragment_Before_FragColor since we're only modifying the alpha
             customMaterial.Fragment_Custom_Alpha(occlusionCallCode)
-            
+
             // Add a handler for the onBindObservable to set uniforms when the material is bound
             customMaterial.onBindObservable.add { _ ->
                 // Get the effect after the material is bound

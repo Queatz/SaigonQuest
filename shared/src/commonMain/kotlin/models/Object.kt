@@ -17,7 +17,13 @@ data class Object(
     var rotation: Rotation = Rotation(), // Rotation in the 3D world
     var scale: Scale = Scale(), // Scale in the 3D world
     var status: String = "", // Status text to display above the object
+    var kind: ObjectKind = ObjectKind.World,
 ) : BaseModel()
+
+enum class ObjectKind {
+    World,
+    Inventory,
+}
 
 /**
  * Represents a 3D position.

@@ -14,6 +14,7 @@ import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
 import Translations.str
+import main.api.InventoryApi
 import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -199,15 +200,15 @@ class InputHandler(
             
             // Check each object mesh for intersection
             for ((objectId, meshes) in objectMeshes) {
+                // Determine kind using the object manager (Object.kind-based)
+                val isInventoryObj = objectManager.isInventoryObject(objectId)
+
                 meshes.forEach { mesh ->
                     val hit = ray.intersectsMesh(mesh)
                     if (hit.pickedPoint != null) {
                         val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
                         
-                        // Check if this is an inventory item by checking if the parent node is an inventory root
-                        val isInventoryObject = mesh.parent?.name?.startsWith("inventory-root-") == true
-                        
-                        if (isInventoryObject) {
+                        if (isInventoryObj) {
                             console.log("[POINTER_DOWN] Found intersection with inventory item: $objectId at distance: $distance")
                             
                             // If this is closer than any previously found item, update the closest item
@@ -818,7 +819,7 @@ class InputHandler(
                 }
 
                 // Call the unified transfer API to pick up the item (default: all)
-                val result = main.api.InventoryApi.transferPickup(objectId)
+                val result = InventoryApi.transferPickup(objectId)
                 if (result.objectDeleted) {
                     console.log("[DEBUG_LOG] Successfully collected inventory item: $objectId (object deleted)")
                     // Remove the object locally to mirror server REMOVE_OBJECT

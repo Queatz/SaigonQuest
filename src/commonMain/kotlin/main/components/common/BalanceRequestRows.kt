@@ -1,6 +1,12 @@
 package main.components.common
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import main.components.BasicConfirmDialog
+import main.components.DialogButtonDanger
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -22,6 +28,7 @@ fun PendingRequestRow(
     onCancel: (() -> Unit)? = null,
 ) {
     val isDeposit = request.type == UserBalanceChangeType.Deposit
+    var showConfirmCancel by remember { mutableStateOf(false) }
     Div({ classes(Styles.requestRow) }) {
         // Header: type badge, amount, status chip
         Div({ classes(Styles.requestHeader) }) {
@@ -69,8 +76,20 @@ fun PendingRequestRow(
         // Actions (cancel)
         if (request.status == UserBalanceChangeStatus.Received && onCancel != null) {
             Div({ classes(Styles.requestActions) }) {
-                main.components.DialogButtonDanger(onClick = onCancel) { Translated("Cancel request") }
+                DialogButtonDanger(onClick = { showConfirmCancel = true }) { Translated("Cancel request") }
             }
+        }
+
+        if (showConfirmCancel) {
+            BasicConfirmDialog(
+                message = translated("Are you sure you want to cancel this request?"),
+                onConfirm = {
+                    showConfirmCancel = false
+                    onCancel?.invoke()
+                },
+                onCancel = { showConfirmCancel = false },
+                title = translated("Cancel request"),
+            )
         }
     }
 }

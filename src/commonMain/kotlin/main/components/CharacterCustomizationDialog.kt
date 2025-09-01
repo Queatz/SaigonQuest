@@ -173,18 +173,6 @@ fun CharacterCustomizationDialog(
                                 }
                             }
                         )
-                        
-                        Span(
-                            attrs = {
-                                style {
-                                    marginLeft(8.px)
-                                }
-                            }
-                        ) {
-                            // Format to 2 decimal places
-                            val formattedValue = (skinTone * 100).toInt() / 100.0
-                            Text("$formattedValue")
-                        }
                     }
                 }
 

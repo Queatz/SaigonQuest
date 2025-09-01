@@ -208,17 +208,6 @@ fun WorldEditContent(
         allowFriendsOfOwners = currentWorld?.allowFriendsOfOwners ?: false
         allowHoldersOfItemId = currentWorld?.allowHoldersOfItemId
 
-        try {
-            // Update scene preview to reflect new world values
-            val lat = latitude.toDoubleOrNull()
-            val lon = longitude.toDoubleOrNull()
-            val outdoorsRealtime = isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
-            if (!outdoorsRealtime) {
-                updateSceneBackgroundColor(backgroundColor)
-            }
-            updateSceneFogDensity(fogDensity)
-            WorldLoader.updateDirectionalLightColorHex(directionalLightColor)
-        } catch (_: Throwable) {}
     }
 
     LaunchedEffect(currentWorld?.key, assetId) {
@@ -272,26 +261,6 @@ fun WorldEditContent(
         }
     }
     
-    // Apply initial background color, fog, and light settings when component is mounted
-    LaunchedEffect(Unit) {
-        // Determine if realtime outdoors mode should control background
-        val lat = latitude.toDoubleOrNull()
-        val lon = longitude.toDoubleOrNull()
-        val outdoorsRealtime = isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
-
-        // Apply the initial background color only if not outdoors realtime
-        if (!outdoorsRealtime) {
-            updateSceneBackgroundColor(backgroundColor)
-        } else {
-            console.log("[INFO] Skipping background color apply because realtime outdoors mode is active")
-        }
-        
-        // Apply the initial fog density
-        updateSceneFogDensity(fogDensity)
-        
-        // Apply the initial directional light color
-        WorldLoader.updateDirectionalLightColorHex(directionalLightColor)
-    }
     
     // Determine if the current user is the owner of the world
     val isOwner = if (isEditing && currentUser != null) {
@@ -809,40 +778,15 @@ fun WorldEditContent(
                 Translated("Outdoors")
             }
 
-            // Checkbox control
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        property("gap", "8px")
-                        property("align-items", "center")
-                    }
-                }
-            ) {
-                CheckboxInput(
-                    checked = isOutdoors,
-                    attrs = {
-                        if (!fieldsEnabled) {
-                            disabled()
-                        }
-                        onChange {
-                            isOutdoors = !isOutdoors
-                            previewLightingFromForm()
-                        }
-                    }
-                )
-
-                // Hint text
-                P(
-                    attrs = {
-                        style {
-
-                            margin(0.px)
-                            fontSize(12.px)
-                        }
-                    }
-                ) { Text("Use real-time sun lighting based on latitude and longitude") }
-            }
+            LabeledCheckbox(
+                checked = isOutdoors,
+                enabled = fieldsEnabled,
+                label = "Use real-time sun lighting based on latitude and longitude",
+                onCheckedChange = { next ->
+                    isOutdoors = next
+                    previewLightingFromForm()
+                },
+            )
         }
 
         // Latitude / Longitude fields
@@ -928,70 +872,54 @@ fun WorldEditContent(
             ) { Translated("Access control") }
 
             // All visitors
-            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
-                CheckboxInput(
-                    checked = allowAllVisitors,
-                    attrs = {
-                        if (!fieldsEnabled) disabled()
-                        onChange {
-                            val newVal = !allowAllVisitors
-                            allowAllVisitors = newVal
-                            if (newVal) {
-                                if (!allowAllPlayers) allowAllPlayers = true
-                                if (!allowFriendsOfOwners) allowFriendsOfOwners = true
-                                if (allowHoldersOfItemId == null) allowHoldersOfItemId = ""
-                            }
-                        }
+            LabeledCheckbox(
+                checked = allowAllVisitors,
+                enabled = fieldsEnabled,
+                label = translated("All visitors"),
+                onCheckedChange = { next ->
+                    allowAllVisitors = next
+                    if (next) {
+                        if (!allowAllPlayers) allowAllPlayers = true
+                        if (!allowFriendsOfOwners) allowFriendsOfOwners = true
+                        if (allowHoldersOfItemId == null) allowHoldersOfItemId = ""
                     }
-                )
-                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("All visitors") }
-            }
+                },
+            )
 
             // All players
-            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
-                CheckboxInput(
-                    checked = allowAllPlayers,
-                    attrs = {
-                        if (!fieldsEnabled || allowAllVisitors) disabled()
-                        onChange {
-                            val newVal = !allowAllPlayers
-                            allowAllPlayers = newVal
-                            if (newVal && !allowAllVisitors) {
-                                if (!allowFriendsOfOwners) allowFriendsOfOwners = true
-                                if (allowHoldersOfItemId == null) allowHoldersOfItemId = ""
-                            }
-                        }
+            LabeledCheckbox(
+                checked = allowAllPlayers,
+                enabled = fieldsEnabled && !allowAllVisitors,
+                label = translated("All players"),
+                onCheckedChange = { next ->
+                    allowAllPlayers = next
+                    if (next && !allowAllVisitors) {
+                        if (!allowFriendsOfOwners) allowFriendsOfOwners = true
+                        if (allowHoldersOfItemId == null) allowHoldersOfItemId = ""
                     }
-                )
-                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("All players") }
-            }
+                },
+            )
 
             // Friends of owners
-            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
-                CheckboxInput(
-                    checked = allowFriendsOfOwners,
-                    attrs = {
-                        if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
-                        onChange { allowFriendsOfOwners = !allowFriendsOfOwners }
-                    }
-                )
-                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Friends of owners") }
-            }
+            LabeledCheckbox(
+                checked = allowFriendsOfOwners,
+                enabled = fieldsEnabled && !allowAllVisitors && !allowAllPlayers,
+                label = translated("Friends of owners"),
+                onCheckedChange = { next ->
+                    allowFriendsOfOwners = next
+                },
+            )
 
             // Holders of an item (access card)
-            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
-                CheckboxInput(
-                    checked = allowHoldersOfItemId != null,
-                    attrs = {
-                        if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
-                        onChange {
-                            allowHoldersOfItemId = if (allowHoldersOfItemId == null) "" else null
-                            accessItemError = null
-                        }
-                    }
-                )
-                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Holders of an item (access card)") }
-            }
+            LabeledCheckbox(
+                checked = allowHoldersOfItemId != null,
+                enabled = fieldsEnabled && !allowAllVisitors && !allowAllPlayers,
+                label = translated("Holders of an item (access card)"),
+                onCheckedChange = { next ->
+                    allowHoldersOfItemId = if (next) "" else null
+                    accessItemError = null
+                },
+            )
 
             if (allowHoldersOfItemId != null) {
                 Div(attrs = {
@@ -1095,16 +1023,12 @@ fun WorldEditContent(
             ) { Translated("Chat history") }
 
             // Enable expiration
-            Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px"); property("align-items", "center") } }) {
-                CheckboxInput(
-                    checked = chatLongevityEnabled,
-                    attrs = {
-                        if (!fieldsEnabled) disabled()
-                        onChange { chatLongevityEnabled = !chatLongevityEnabled }
-                    }
-                )
-                P(attrs = { style { ; margin(0.px); fontSize(12.px) } }) { Translated("Expire messages") }
-            }
+            LabeledCheckbox(
+                checked = chatLongevityEnabled,
+                enabled = fieldsEnabled,
+                label = translated("Expire messages"),
+                onCheckedChange = { next -> chatLongevityEnabled = next },
+            )
 
             if (chatLongevityEnabled) {
                 Div(
@@ -1435,15 +1359,12 @@ fun WorldEditContent(
         // Cancel button
         Button(
             attrs = {
-                style {
-                    padding(8.px, 16.px)
-                    backgroundColor(rgba(255, 255, 255, 0.1))
+                classes(Styles.baseDialogButtonSecondary)
 
-                    property("border", "1px solid rgba(255, 255, 255, 0.2)")
-                    property("border-radius", "4px")
-                    cursor("pointer")
+                style {
                     flexGrow(1)
                 }
+
                 onClick {
                     restoreOriginalState()
                     onClose()
@@ -1456,32 +1377,17 @@ fun WorldEditContent(
         // Save button
         Button(
             attrs = {
-                style {
-                    padding(8.px, 16.px)
-                    backgroundColor(
-                        when {
-                            isSubmitting -> rgba(100, 100, 100, 0.5)
-                            !fieldsEnabled -> rgba(100, 100, 100, 0.5)
-                            else -> rgba(0, 120, 255, 0.7)
-                        }
-                    )
+                classes(Styles.baseDialogButtonPrimary)
 
-                    property("border", "0")
-                    property("border-radius", "4px")
-                    cursor(
-                        when {
-                            isSubmitting -> "default"
-                            !fieldsEnabled -> "not-allowed"
-                            else -> "pointer"
-                        }
-                    )
+                style {
                     flexGrow(1)
                 }
+
                 // Only allow clicking if not submitting and fields are enabled
                 onClick { if (!isSubmitting && fieldsEnabled) handleSubmit() }
-                // Disable button if fields are disabled
-                if (!fieldsEnabled) {
-                    attr("disabled", "true")
+                // Disable button if fields are disabled or submitting
+                if (!fieldsEnabled || isSubmitting) {
+                    disabled()
                 }
             }
         ) {

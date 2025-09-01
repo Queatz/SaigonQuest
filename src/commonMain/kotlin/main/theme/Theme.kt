@@ -104,10 +104,10 @@ object Theme {
         val accentInfoBlueGlow = Color("rgba(100, 200, 255, 0.5)")
 
         // Notification backgrounds
-        val notifReadBg = Color("rgba(255, 255, 255, 0.6)")
-        val notifUnreadBg = Color("rgba(255, 255, 255, 0.8)")
-        val notifReadBgDark = Color("rgba(40, 40, 40, 0.6)")
-        val notifUnreadBgDark = Color("rgba(60, 60, 60, 0.8)")
+        val notifReadBg = Color("rgba(255, 255, 255, 0.4)")
+        val notifUnreadBg = Color("rgba(255, 255, 255, 0.9)")
+        val notifReadBgDark = Color("rgba(40, 40, 40, 0.4)")
+        val notifUnreadBgDark = Color("rgba(60, 60, 60, 0.9)")
 
         // Loading overlays
         val loadingPrimaryBg = Color("rgba(0, 120, 255, 0.7)")

@@ -33,6 +33,27 @@ fun PrintDialog(imageUrl: String, worldTitle: String, onClose: () -> Unit) {
         onClose = onClose,
         title = translated("Print your location"),
         maxWidth = "820px",
+        actions = {
+            DialogButton(
+                onClick = onClose,
+                isPrimary = false
+            ) { Translated("Close") }
+            // Download button
+            DialogButton(
+                onClick = {
+                    // Create a temporary anchor element to trigger download
+                    val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+                    link.href = imageUrl
+                    link.download = "saigon-quest-${worldTitle}.png"
+                    document.body?.appendChild(link)
+                    link.click()
+                    document.body?.removeChild(link)
+                },
+                isPrimary = true
+            ) {
+                Translated("📥 Download Image")
+            }
+        },
         content = {
             // Image container
             Div(
@@ -58,22 +79,6 @@ fun PrintDialog(imageUrl: String, worldTitle: String, onClose: () -> Unit) {
                         }
                     }
                 )
-                
-                // Download button
-                DialogButton(
-                    onClick = {
-                        // Create a temporary anchor element to trigger download
-                        val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-                        link.href = imageUrl
-                        link.download = "saigon-quest-${worldTitle}.png"
-                        document.body?.appendChild(link)
-                        link.click()
-                        document.body?.removeChild(link)
-                    },
-                    isPrimary = true
-                ) {
-                    Translated("📥 Download Image")
-                }
             }
         }
     )

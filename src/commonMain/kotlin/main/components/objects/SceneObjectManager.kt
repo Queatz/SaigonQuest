@@ -27,6 +27,7 @@ import main.components.world.WorldObjectManager
 import main.components.world.isSkybox
 import models.Item
 import models.Object
+import models.ObjectKind
 import models.Position
 import models.WebSocketAction
 
@@ -53,6 +54,9 @@ class SceneObjectManager(
     
     // Tracks last known (file, collection) used to render each object, to detect when re-creation is needed
     private val objectModelSources = mutableMapOf<String, Pair<String, String>>()
+
+    // Tracks object kinds for quick lookup (World vs Inventory)
+    private val objectKinds = mutableMapOf<String, ObjectKind>()
     
     // Currently dragging object
     private var draggingObjectId: String? = null
@@ -318,6 +322,10 @@ class SceneObjectManager(
             if (objectModelSources.remove(objectId) != null) {
                 console.log("[DEBUG_REMOVE] Removed model source tracking for object: $objectId")
             }
+            // Cleanup object kind tracking
+            if (objectKinds.remove(objectId) != null) {
+                console.log("[DEBUG_REMOVE] Removed kind tracking for object: $objectId")
+            }
         } catch (e: Throwable) {
             console.error("[DEBUG_REMOVE] Error removing object: $objectId", e)
         }
@@ -406,7 +414,8 @@ class SceneObjectManager(
                 worldId = worldId,
                 position = position,
                 collection = "",
-                file = ""
+                file = "",
+                kind = ObjectKind.Inventory
             )
             
 
@@ -479,6 +488,8 @@ class SceneObjectManager(
                 objectMeshes[obj.key] = node
                 // Track as inventory-based source to stabilize model-change checks
                 objectModelSources[obj.key] = Pair("", "")
+                // Track object kind
+                objectKinds[obj.key] = ObjectKind.Inventory
 
                 node.getChildMeshes().also { meshes ->
                     console.log("[DEBUG_ITEM] Adding shadows: ${meshes}")
@@ -656,13 +667,16 @@ class SceneObjectManager(
      * @param obj The object to create
      */
     private fun createObjectPreferInventory(obj: Object) {
-        // If object has explicit model info, render directly as a model
-        if (obj.file.isNotEmpty() && obj.collection.isNotEmpty()) {
+        // Track the kind for this object
+        objectKinds[obj.key] = obj.kind
+
+        if (obj.kind != ObjectKind.Inventory) {
+            // Render as a regular world object (file/collection or fallback sphere)
             createObjectInScene(obj)
             return
         }
 
-        // Otherwise, prefer inventory-based rendering and skip fallback if empty
+        // Inventory object: render from its inventory definition
         coroutineScope.launch {
             try {
                 val inv = InventoryApi.getObjectInventory(obj.key)
@@ -699,6 +713,8 @@ class SceneObjectManager(
 
             // Track model source used for this object (may be blank strings)
             objectModelSources[obj.key] = Pair(obj.file, obj.collection)
+            // Track kind as World for regular objects
+            objectKinds[obj.key] = ObjectKind.World
 
             // Handle status text
             handleObjectStatusText(obj.key, obj.status, fallbackSphere)
@@ -752,6 +768,8 @@ class SceneObjectManager(
                         
                         // Track model source used for this object
                         objectModelSources[obj.key] = Pair(obj.file, obj.collection)
+                        // Track kind as World for regular objects
+                        objectKinds[obj.key] = ObjectKind.World
                         
                         // Verify the mesh was added to the map
                         val storedMesh = objectMeshes[obj.key]
@@ -1062,11 +1080,13 @@ class SceneObjectManager(
                 // Check if we already have this object
                 val existingNode = objectMeshes[obj.key]
                 if (existingNode != null) {
+                    val prevKind = objectKinds[obj.key]
+                    val kindChanged = prevKind != obj.kind
                     val prev = objectModelSources[obj.key]
                     val incoming = Pair(obj.file, obj.collection)
                     val modelChanged = prev == null || prev.first != incoming.first || prev.second != incoming.second
-                    if (modelChanged) {
-                        console.log("Model source changed for ${obj.key}: prev=$prev new=$incoming, recreating")
+                    if (kindChanged || modelChanged) {
+                        console.log("Kind/model changed for ${obj.key}: prevKind=$prevKind newKind=${obj.kind} prevModel=$prev newModel=$incoming, recreating")
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     } else {
@@ -1076,6 +1096,8 @@ class SceneObjectManager(
                         existingNode.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
                         // Update status text as well
                         handleObjectStatusText(obj.key, obj.status, existingNode)
+                        // Update kind tracking just in case
+                        objectKinds[obj.key] = obj.kind
                         console.log("Updated existing object: ${obj.key}")
                     }
                 } else {
@@ -1118,15 +1140,17 @@ class SceneObjectManager(
                 // Find the object node
                 val node = objectMeshes[obj.key]
                 if (node != null) {
+                    val prevKind = objectKinds[obj.key]
+                    val kindChanged = prevKind != obj.kind
                     val prev = objectModelSources[obj.key]
                     val incoming = Pair(obj.file, obj.collection)
                     val modelChanged = prev == null || prev.first != incoming.first || prev.second != incoming.second
-                    if (modelChanged) {
-                        console.log("Model source changed for ${obj.key} via OBJECT_UPDATE: prev=$prev new=$incoming, recreating")
+                    if (kindChanged || modelChanged) {
+                        console.log("Kind/model changed for ${obj.key} via OBJECT_UPDATE: prevKind=$prevKind newKind=${obj.kind} prevModel=$prev newModel=$incoming, recreating")
                         removeObject(obj.key)
-                        createObjectInScene(obj)
+                        createObjectPreferInventory(obj)
                     } else {
-                        // Recreate from inventory to reflect potential inventory changes
+                        // Recreate to reflect potential inventory or status changes
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     }
@@ -1222,6 +1246,10 @@ class SceneObjectManager(
         }
         
         return result
+    }
+
+    fun isInventoryObject(objectId: String): Boolean {
+        return objectKinds[objectId] == ObjectKind.Inventory
     }
     
     /**

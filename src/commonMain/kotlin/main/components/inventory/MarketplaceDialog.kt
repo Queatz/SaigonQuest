@@ -15,6 +15,7 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 
@@ -65,7 +66,7 @@ fun MarketplaceDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = str("Marketplace"),
+        title = str("Market"),
         maxWidth = "900px",
         headerActions = {
             Div({
@@ -128,8 +129,16 @@ fun MarketplaceDialog(
                                 Div { ItemRenderer(item = item, size = 48) }
                                 // Details
                                 Div({ style { property("flex", "1") } }) {
-                                    H4 { Text(item.title) }
-                                    P { Text(item.description) }
+                                    H4(
+                                        attrs = {
+                                            style {
+                                                margin(0.px)
+                                            }
+                                        }
+                                    ) { Text(item.title) }
+                                    Div {
+                                        Text(item.description)
+                                    }
                                     P {
                                         B { Translated("Cost") }
                                         Text(": ")

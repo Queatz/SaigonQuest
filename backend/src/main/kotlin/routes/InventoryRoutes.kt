@@ -13,6 +13,7 @@ import models.ErrorResponse
 import models.Inventory
 import models.InventoryItem
 import models.Object
+import models.ObjectKind
 import models.Position
 import models.WebSocketAction
 import repository.InventoryRepository
@@ -242,6 +243,7 @@ fun Routing.configureInventoryRoutes() {
                         position = req.position,
                         collection = "",
                         file = "",
+                        kind = ObjectKind.Inventory,
                     )
 
                     val created = objectRepository.create(obj)
@@ -267,7 +269,7 @@ fun Routing.configureInventoryRoutes() {
 
                     // Broadcast ADD_OBJECT to all clients in the world (canonical key only)
                     try {
-                        val broadcastMessage = routes.WebSocketMessage(
+                        val broadcastMessage = WebSocketMessage(
                             action = WebSocketAction.ADD_OBJECT,
                             data = json.encodeToString(created),
                         )

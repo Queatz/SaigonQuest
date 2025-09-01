@@ -1127,6 +1127,9 @@ vi: Vui lòng nhập số ngày dương
 Kept forever
 vi: Giữ vĩnh viễn
 
+Forever
+vi: mãi mãi
+
 Kept for
 vi: Giữ trong
 
@@ -1175,7 +1178,10 @@ vi: Thế giới mới
 Enter world URL
 vi: Nhập URL thế giới
 
-Marketplace
+Market
+vi: Chợ
+
+Go to market
 vi: Đi chợ
 
 Your balance

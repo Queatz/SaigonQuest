@@ -39,11 +39,11 @@ fun Chat(
             val days = longevityState.value
             if (days != null) {
                 val text = if (days <= 0.0) {
-                    translated("Kept forever")
+                    translated("⏲ Forever")
                 } else {
                     val rounded = kotlin.math.round((days * 100.0)) / 100.0
                     val numberText = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
-                    "${translated("Kept for")} $numberText ${if (rounded == 1.0) translated("day") else translated("days")}"
+                    "${"⏲"} $numberText ${if (rounded == 1.0) translated("day") else translated("days")}"
                 }
                 org.jetbrains.compose.web.dom.Text(text)
             }

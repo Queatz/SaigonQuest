@@ -25,7 +25,7 @@ JAVA_OPTS="${JAVA_OPTS:-}"
 LOG_DIR="${LOG_DIR:-$DEST_DIR/logs}"
 PID_FILE="$DEST_DIR/app.pid"
 JAR="$DEST_DIR/app.jar"
-REMOTE_ENV="${REMOTE_ENV:-}"
+REMOTE_ENV="${REMOTE_ENV:-"API_SERVER_URL=https://api.saigon.quest"}"
 
 echo "Running content server on $SSH_USER@$HOST ..."
 

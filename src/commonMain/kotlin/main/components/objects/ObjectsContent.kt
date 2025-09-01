@@ -15,6 +15,7 @@ import main.api.ObjectApi
 import main.components.BasicConfirmDialog
 import main.components.translated
 import models.Object
+import models.ObjectKind
 import models.Position
 import models.World
 import org.jetbrains.compose.web.css.Color
@@ -88,7 +89,7 @@ fun ObjectsContent(
         try {
             // Load all objects in the world
             val objectList = ObjectApi.getObjectsByWorldId(currentWorldId ?: return@LaunchedEffect)
-            worldObjects = objectList
+            worldObjects = objectList.filter { it.kind != ObjectKind.Inventory }
             
             // Filter for owned objects (this is a placeholder - in a real app, you'd check ownership)
             // For now, we'll just assume the first half of objects are owned by the current user

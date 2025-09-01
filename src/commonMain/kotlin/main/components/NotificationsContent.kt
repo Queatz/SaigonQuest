@@ -176,7 +176,7 @@ private fun NotificationItem(
             }
             
             // Timestamp
-            P(attrs = { classes(NotificationStyles.notificationTimestamp) }) {
+            Div(attrs = { classes(NotificationStyles.notificationTimestamp) }) {
                 when (notification.type) {
                     NotificationType.SYSTEM -> {
                         Span(attrs = { classes(NotificationStyles.systemBadge) }) {

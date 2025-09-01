@@ -33,6 +33,7 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.transform
 import org.jetbrains.compose.web.css.vh
@@ -158,7 +159,12 @@ object NotificationStyles : StyleSheet() {
     }
     
     val notificationTimestamp by style {
-        margin(0.px)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.FlexEnd)
+        alignItems(AlignItems.FlexEnd)
+        textAlign("right")
+
         color(Theme.colors.textMuted)
         fontSize(12.px)
 
@@ -180,7 +186,6 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
-        marginRight(8.px)
     }
 
     // Small badge for system notifications
@@ -213,9 +218,9 @@ object NotificationStyles : StyleSheet() {
     
     val friendRequestStatus by style {
         fontSize(14.px)
-        color(Theme.colors.textMutedDark)
+        color(Theme.colors.textMuted)
 
-        dark(self) { color(Theme.colors.textMuted) }
+        dark(self) { color(Theme.colors.textMutedDark) }
     }
     
     val friendRequestActions by style {

@@ -19,6 +19,7 @@ import main.components.Translated
 import main.components.translated
 import main.components.IconRenderer
 import main.components.AssetBrowserDialog
+import main.components.LabeledCheckbox
 import Translations.str
 import main.theme.Styles
 import models.InventoryItem
@@ -424,40 +425,12 @@ fun CreateItemDialog(
                         }
                     }
                 ) {
-                    Div(
-                        attrs = {
-                            style {
-                                display(DisplayStyle.Flex)
-                                marginBottom(4.px)
-                            }
-                        }
-                    ) {
-                        Input(
-                            type = InputType.Checkbox,
-                            attrs = {
-                                checked(wearable)
-                                onChange { event -> 
-                                    wearable = event.target.checked
-                                }
-                                style {
-                                    marginTop(4.px)
-                                }
-                            }
-                        )
-                        
-                        Label(
-                            attrs = {
-                                style {
-
-                                    marginBottom(4.px)
-                                    marginTop(2.px)
-                                    padding(0.px, 0.px, 0.px, 8.px)
-                                }
-                            }
-                        ) {
-                            Translated("Is this item wearable?")
-                        }
-                    }
+                    LabeledCheckbox(
+                        checked = wearable,
+                        enabled = true,
+                        label = translated("Is this item wearable?"),
+                        onCheckedChange = { next: Boolean -> wearable = next },
+                    )
                 }
                 
                 // Conditional wearable fields

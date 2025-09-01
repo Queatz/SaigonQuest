@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -59,30 +60,30 @@ fun InventoryDialog(onClose: () -> Unit) {
     var showCreateItemDialog by remember { mutableStateOf(false) }
     var showMarketplaceDialog by remember { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<User?>(null) }
-    
+
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
     var isErrorFeedback by remember { mutableStateOf(false) }
-    
+
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Function to show feedback message with timeout
     fun showFeedback(message: String, error: Boolean = false) {
         feedbackMessage = message
         isErrorFeedback = error
-        
+
         coroutineScope.launch {
             delay(3000) // Show message for 3 seconds
             feedbackMessage = null
         }
     }
-    
+
     // Load inventory, items, and user when the dialog is opened
     LaunchedEffect(Unit) {
         isLoading = true
         errorMessage = ""
-        
+
         // Use the shared inventory state to load data
         InventoryState.loadInventory(
             coroutineScope = coroutineScope,
@@ -92,7 +93,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 items = InventoryState.items
                 currentUser = InventoryState.currentUser
                 isLoading = false
-                
+
                 // Add WebSocket listener for player updates
                 if (currentUser != null) {
                     WebSocketApi.addUpdatePlayerListener { updateData ->
@@ -122,9 +123,14 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
         )
     }
-    
+
     // Keep local state in sync with shared state
-    LaunchedEffect(InventoryState.inventory, InventoryState.items, InventoryState.currentUser, InventoryState.isLoading) {
+    LaunchedEffect(
+        InventoryState.inventory,
+        InventoryState.items,
+        InventoryState.currentUser,
+        InventoryState.isLoading
+    ) {
         inventory = InventoryState.inventory
         items = InventoryState.items
         currentUser = InventoryState.currentUser
@@ -133,14 +139,14 @@ fun InventoryDialog(onClose: () -> Unit) {
             errorMessage = InventoryState.lastError ?: ""
         }
     }
-    
+
     // Note: WebSocket listeners will be cleaned up when the application is closed
     // or when the user navigates away from the page
-    
+
     // Function to handle using an item
     fun handleUseItem(inventoryItemId: String) {
         console.log("[DEBUG_LOG] handleUseItem: Attempting to use item with inventory ID: $inventoryItemId")
-        
+
         // Get the actual Item using the InventoryState helper method
         val item = InventoryState.getItemForInventoryItemKey(inventoryItemId)
         if (item == null) {
@@ -150,29 +156,29 @@ fun InventoryDialog(onClose: () -> Unit) {
             showFeedback("Error: Item not found", true)
             return
         }
-        
+
         console.log("[DEBUG_LOG] handleUseItem: Item found: ${item.title}")
-        
+
         // Use the ItemUsageHandler to handle the item usage
         ItemUsageHandler.useItem(
             item = item,
             currentUser = currentUser,
             coroutineScope = coroutineScope,
-            onSuccess = { message -> 
+            onSuccess = { message ->
                 console.log("[DEBUG_LOG] handleUseItem: Successfully used item: ${item.title}")
-                showFeedback(message) 
+                showFeedback(message)
             },
-            onError = { message -> 
+            onError = { message ->
                 console.error("[DEBUG_LOG] handleUseItem: Error using item: ${item.title}, error: $message")
-                showFeedback(message, true) 
+                showFeedback(message, true)
             }
         )
     }
-    
+
     // Function to handle wearing an item
     fun handleWearItem(inventoryItemId: String) {
         console.log("[DEBUG_LOG] handleWearItem: Attempting to wear item with inventory ID: $inventoryItemId")
-        
+
         // Get the actual Item using the InventoryState helper method
         val item = InventoryState.getItemForInventoryItemKey(inventoryItemId)
         if (item == null) {
@@ -182,46 +188,46 @@ fun InventoryDialog(onClose: () -> Unit) {
             showFeedback("Error: Item not found", true)
             return
         }
-        
+
         console.log("[DEBUG_LOG] handleWearItem: Item found: ${item.title}, wearable=${item.wearable}")
-        
+
         // Check if the item is wearable
         if (!item.wearable) {
             console.log("[DEBUG_LOG] handleWearItem: Item is not wearable: ${item.title}")
             showFeedback("Item is not wearable: ${item.title}", true)
             return
         }
-        
+
         // Check if user is available
         if (currentUser == null) {
             console.error("[DEBUG_LOG] handleWearItem: Current user is null")
             showFeedback("Error: User data not available", true)
             return
         }
-        
+
         console.log("[DEBUG_LOG] handleWearItem: Using ItemUsageHandler to wear item: ${item.title}")
-        
+
         // Use the ItemUsageHandler to handle wearing the item
         ItemUsageHandler.useItem(
             item = item,
             currentUser = currentUser,
             coroutineScope = coroutineScope,
-            onSuccess = { message -> 
+            onSuccess = { message ->
                 console.log("[DEBUG_LOG] handleWearItem: Successfully wore item: ${item.title}")
-                showFeedback(message) 
+                showFeedback(message)
             },
-            onError = { message -> 
+            onError = { message ->
                 console.error("[DEBUG_LOG] handleWearItem: Error wearing item: ${item.title}, error: $message")
-                showFeedback(message, true) 
+                showFeedback(message, true)
             }
         )
     }
-    
+
     // Function to handle removing a worn item
     // This can be called with either an inventoryItemId or a direct itemId (when removing from worn items section)
     fun handleRemoveWornItem(id: String, isDirectItemId: Boolean = false) {
         console.log("[DEBUG_LOG] handleRemoveWornItem: Attempting to remove worn item with ID: $id, isDirectItemId=$isDirectItemId")
-        
+
         // Get the item - either directly or via the inventory item mapping
         val item = if (isDirectItemId) {
             // If this is a direct item ID (from worn items), look it up directly in the items map
@@ -234,7 +240,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 console.log("[DEBUG_LOG] handleRemoveWornItem: Looking up inventory item ID: $id")
             }
         }
-        
+
         if (item == null) {
             console.error("[DEBUG_LOG] handleRemoveWornItem: Item not found for ID: $id")
             console.log("[DEBUG_LOG] handleRemoveWornItem: Available inventory item mappings: ${InventoryState.inventoryItemToItemMap}")
@@ -242,63 +248,63 @@ fun InventoryDialog(onClose: () -> Unit) {
             showFeedback("Error: Item not found", true)
             return
         }
-        
+
         console.log("[DEBUG_LOG] handleRemoveWornItem: Item found: ${item.title}")
-        
+
         // Check if user is available
         if (currentUser == null) {
             console.error("[DEBUG_LOG] handleRemoveWornItem: Current user is null")
             showFeedback("Error: User data not available", true)
             return
         }
-        
+
         // Get the item key to check if it's worn
         val itemKey = if (isDirectItemId) id else InventoryState.inventoryItemToItemMap[id]
-        
+
         // Check if the item is actually worn
         if (itemKey == null || currentUser?.wornItems?.contains(itemKey) != true) {
             console.log("[DEBUG_LOG] handleRemoveWornItem: Item is not currently worn: ${item.title}")
             showFeedback("Item is not currently worn: ${item.title}", true)
             return
         }
-        
+
         console.log("[DEBUG_LOG] handleRemoveWornItem: Using ItemUsageHandler to remove worn item: ${item.title}")
-        
+
         // Use the ItemUsageHandler to handle removing the worn item
         ItemUsageHandler.useItem(
             item = item,
             currentUser = currentUser,
             coroutineScope = coroutineScope,
-            onSuccess = { message -> 
+            onSuccess = { message ->
                 console.log("[DEBUG_LOG] handleRemoveWornItem: Successfully removed worn item: ${item.title}")
-                showFeedback(message) 
+                showFeedback(message)
             },
-            onError = { message -> 
+            onError = { message ->
                 console.error("[DEBUG_LOG] handleRemoveWornItem: Error removing worn item: ${item.title}, error: $message")
-                showFeedback(message, true) 
+                showFeedback(message, true)
             }
         )
     }
-    
+
     // Function to handle drag start
     fun handleDragStart(event: dynamic, itemId: String) {
         try {
             console.log("[DEBUG_LOG] handleDragStart: Starting drag for itemId=$itemId")
-            
+
             // Store the dragged item ID in state
             draggedItemId = itemId
-            
+
             // Set the data in the dataTransfer object
             try {
                 event.dataTransfer.setData("text/plain", itemId)
                 console.log("[DEBUG_LOG] handleDragStart: Set data in dataTransfer: $itemId")
-                
+
                 // Set the drag effect
                 event.dataTransfer.effectAllowed = "move"
             } catch (e: Throwable) {
                 console.error("[DEBUG_LOG] handleDragStart: Error setting dataTransfer data", e)
             }
-            
+
             // Get the item to show its details in the log
             val item = items[itemId]
             if (item != null) {
@@ -306,7 +312,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             } else {
                 console.error("[DEBUG_LOG] handleDragStart: Item not found in items map for ID: $itemId")
             }
-            
+
             // Set a custom drag image (optional)
             try {
                 val dragImage = document.createElement("div") as HTMLElement
@@ -314,7 +320,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                 dragImage.style.height = "48px"
                 dragImage.style.backgroundColor = "rgba(255, 255, 255, 0.3)"
                 dragImage.style.borderRadius = "4px"
-                
+
                 // Add item title to drag image for better visibility
                 if (item != null) {
                     dragImage.style.color = "white"
@@ -325,13 +331,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                     dragImage.style.setProperty("overflow", "hidden")
                     dragImage.textContent = item.title
                 }
-                
+
                 document.body?.appendChild(dragImage)
                 event.dataTransfer.setDragImage(dragImage, 24, 24)
                 console.log("[DEBUG_LOG] handleDragStart: Custom drag image set")
-                
+
                 // Remove the drag image element after it's been used
-                window.setTimeout({ 
+                window.setTimeout({
                     try {
                         document.body?.removeChild(dragImage)
                     } catch (e: Throwable) {
@@ -347,20 +353,20 @@ fun InventoryDialog(onClose: () -> Unit) {
             draggedItemId = null
         }
     }
-    
+
     // Function to handle drag over
     fun handleDragOver(event: dynamic) {
         try {
             event.preventDefault()
-            
+
             // Get the dragged item ID to provide context in logs
             val itemId = draggedItemId
             console.log("[DEBUG_LOG] handleDragOver: Dragging over with itemId=$itemId")
-            
+
             try {
                 // Set the drop effect to indicate a move operation
                 event.dataTransfer.dropEffect = "move"
-                
+
                 // If we have a valid dragged item, check if it's wearable
                 if (itemId != null) {
                     val item = items[itemId]
@@ -386,13 +392,13 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
         }
     }
-    
+
     // Function to handle drop on character renderer
     fun handleDropOnCharacter(event: dynamic) {
         event.preventDefault()
-        
+
         console.log("[DEBUG_LOG] handleDropOnCharacter: event triggered")
-        
+
         try {
             val inventoryItemId = try {
                 val data = event.dataTransfer.getData("text/plain")
@@ -402,15 +408,15 @@ fun InventoryDialog(onClose: () -> Unit) {
                 console.error("[DEBUG_LOG] handleDropOnCharacter: Error getting data from dataTransfer", e)
                 null
             }
-            
+
             if (inventoryItemId == null) {
                 console.error("[DEBUG_LOG] handleDropOnCharacter: No item ID found in dataTransfer")
                 showFeedback("Error: Could not identify the dragged item", true)
                 return
             }
-            
+
             console.log("[DEBUG_LOG] handleDropOnCharacter: inventoryItemId=$inventoryItemId")
-            
+
             // Get the actual Item using the InventoryState helper method
             val item = InventoryState.getItemForInventoryItemKey(inventoryItemId)
             if (item == null) {
@@ -420,28 +426,28 @@ fun InventoryDialog(onClose: () -> Unit) {
                 showFeedback("Error: Item not found", true)
                 return
             }
-            
+
             console.log("[DEBUG_LOG] handleDropOnCharacter: Found item: ${item.title}, wearable=${item.wearable}")
-            
+
             // Check if the item is wearable
             if (!item.wearable) {
                 console.log("[DEBUG_LOG] handleDropOnCharacter: Item is not wearable: ${item.title}")
                 showFeedback("Item is not wearable: ${item.title}", true)
             } else {
                 console.log("[DEBUG_LOG] handleDropOnCharacter: Attempting to wear item: ${item.title}")
-                
+
                 // Use the ItemUsageHandler to handle wearing the item
                 ItemUsageHandler.useItem(
                     item = item,
                     currentUser = currentUser,
                     coroutineScope = coroutineScope,
-                    onSuccess = { message -> 
+                    onSuccess = { message ->
                         console.log("[DEBUG_LOG] handleDropOnCharacter: Successfully wore item: ${item.title}")
-                        showFeedback(message) 
+                        showFeedback(message)
                     },
-                    onError = { message -> 
+                    onError = { message ->
                         console.error("[DEBUG_LOG] handleDropOnCharacter: Error wearing item: ${item.title}, error: $message")
-                        showFeedback(message, true) 
+                        showFeedback(message, true)
                     }
                 )
             }
@@ -452,7 +458,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             draggedItemId = null
         }
     }
-    
+
     // Helper to reorder items using source and target IDs
     fun reorderItems(sourceItemId: String, targetItemId: String) {
         console.log("[DEBUG_LOG] reorderItems: sourceItemId=$sourceItemId, targetItemId=$targetItemId")
@@ -506,7 +512,7 @@ fun InventoryDialog(onClose: () -> Unit) {
         reorderItems(sourceItemId, targetItemId)
         draggedItemId = null
     }
-    
+
     // Show Create Item Dialog if needed
     if (showCreateItemDialog) {
         CreateItemDialog(
@@ -526,7 +532,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
         )
     }
-    
+
     // Marketplace dialog
     if (showMarketplaceDialog) {
         MarketplaceDialog(
@@ -540,7 +546,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
         )
     }
-    
+
     // Function to refresh inventory data
     fun refreshInventory() {
         // Use the shared inventory state to refresh data
@@ -558,26 +564,33 @@ fun InventoryDialog(onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
         title = translated("Inventory"),
-        headerActions = {
+        actions = {
+            DialogButton(
+                onClick = {
+                    onClose()
+                }
+            ) {
+                Translated("Close")
+            }
             DialogButton(
                 onClick = { showMarketplaceDialog = true },
                 isPrimary = true,
                 color = "rgb(53, 134, 36)"
-            ) { Text("🛍️ "); Translated("Marketplace") }
+            ) { Text("🛍️ "); Translated("Go to market") }
         },
         content = {
             Div(
-            attrs = {
-                classes(InventoryStyles.dialogContent)
-            }
-        ) {
+                attrs = {
+                    classes(InventoryStyles.dialogContent)
+                }
+            ) {
                 // Render feedback message if present
                 feedbackMessage?.let { message ->
                     Div(
                         attrs = {
-                        classes(InventoryStyles.feedbackBase)
-                        classes(if (isErrorFeedback) InventoryStyles.feedbackError else InventoryStyles.feedbackSuccess)
-                    }
+                            classes(InventoryStyles.feedbackBase)
+                            classes(if (isErrorFeedback) InventoryStyles.feedbackError else InventoryStyles.feedbackSuccess)
+                        }
                     ) {
                         Text(message)
                     }
@@ -618,10 +631,10 @@ fun InventoryDialog(onClose: () -> Unit) {
                         ) {
                             Translated("Your character")
                         }
-                        
+
                         // Character renderer with drop zone
                         var isDropTargetActive by remember { mutableStateOf(false) }
-                        
+
                         Div(
                             attrs = {
                                 classes(Styles.characterRenderer)
@@ -631,7 +644,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     else InventoryStyles.characterDropZoneInactive
                                 )
                                 // Make droppable
-                                onDragOver { event -> 
+                                onDragOver { event ->
                                     handleDragOver(event.nativeEvent)
                                     // Check if the dragged item is wearable before activating the drop target
                                     val itemId = draggedItemId
@@ -644,7 +657,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     console.log("[DEBUG_LOG] onDragLeave: Drag left character drop zone")
                                     isDropTargetActive = false
                                 }
-                                onDrop { event -> 
+                                onDrop { event ->
                                     handleDropOnCharacter(event.nativeEvent)
                                     isDropTargetActive = false
                                 }
@@ -654,7 +667,10 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
                                             handleWearItem(payload.inventoryItemKey)
                                         } catch (e: Throwable) {
-                                            console.error("[DEBUG_LOG] onTouchDrop character: error decoding payload", e)
+                                            console.error(
+                                                "[DEBUG_LOG] onTouchDrop character: error decoding payload",
+                                                e
+                                            )
                                             showFeedback("Error: Could not equip item", true)
                                         } finally {
                                             isDropTargetActive = false
@@ -672,7 +688,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     hairStyle = user.hairStyle
                                 )
                             }
-                            
+
                             // Show a hint message when a wearable item is being dragged over
                             if (isDropTargetActive) {
                                 Div(
@@ -684,7 +700,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 }
                             }
                         }
-                        
+
                         // Instruction text
                         P(
                             attrs = {
@@ -694,13 +710,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                             Translated("Drag wearable items here to equip them")
                         }
                     }
-                    
+
                     // Worn items section
                     Div(
-                            attrs = {
-                                classes(InventoryStyles.sectionContainer)
-                            }
-                        ) {
+                        attrs = {
+                            classes(InventoryStyles.sectionContainer)
+                        }
+                    ) {
                         // Section title
                         H3(
                             attrs = {
@@ -712,7 +728,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                         ) {
                             Translated("Worn items")
                         }
-                        
+
                         // Display worn items or a message if none
                         if (currentUser?.wornItems?.isEmpty() == true) {
                             P(
@@ -750,7 +766,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 isLoading = isLoading,
                                                 quantity = 1 // Worn items always have quantity 1
                                             )
-                                            
+
                                             // Item name
                                             Div(
                                                 attrs = {
@@ -763,12 +779,12 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             ) {
                                                 Text(item.title)
                                             }
-                                            
+
                                             // Remove text
                                             Div(
                                                 attrs = {
-                                                classes(InventoryStyles.removeTextSmall)
-                                            }
+                                                    classes(InventoryStyles.removeTextSmall)
+                                                }
                                             ) {
                                                 Translated("Click to remove")
                                             }
@@ -778,7 +794,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
                     }
-                    
+
                     // Inventory items section
                     H3(
                         attrs = {
@@ -790,7 +806,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     ) {
                         Translated("Inventory items")
                     }
-                    
+
                     if (inventory?.itemOrder?.isEmpty() == true) {
                         P(
                             attrs = {
@@ -817,10 +833,14 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         onTouchDrop { _, _, data, dataType ->
                                             if (dataType == DataType.INVENTORY_ITEM) {
                                                 try {
-                                                    val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                                    val payload =
+                                                        json.decodeFromString(InventoryDragPayload.serializer(), data)
                                                     reorderItems(payload.inventoryItemKey, itemId)
                                                 } catch (e: Throwable) {
-                                                    console.error("[DEBUG_LOG] onTouchDrop row: error decoding payload", e)
+                                                    console.error(
+                                                        "[DEBUG_LOG] onTouchDrop row: error decoding payload",
+                                                        e
+                                                    )
                                                 }
                                             }
                                         }
@@ -834,7 +854,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
                                         inventoryItemKey = itemId,
                                     )
-                                    
+
                                     // Item details
                                     Div(
                                         attrs = {
@@ -855,12 +875,12 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         ) {
                                             Div(
                                                 attrs = {
-                                                classes(InventoryStyles.itemTitle)
-                                            }
+                                                    classes(InventoryStyles.itemTitle)
+                                                }
                                             ) {
                                                 Text(item.title)
                                             }
-                                            
+
                                             // Wearable indicator
                                             if (item.wearable) {
                                                 Div(
@@ -872,7 +892,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 }
                                             }
                                         }
-                                        
+
                                         // Item description
                                         Div(
                                             attrs = {
@@ -882,7 +902,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                             Text(item.description)
                                         }
                                     }
-                                    
+
                                     // Action buttons
                                     Div(
                                         attrs = {

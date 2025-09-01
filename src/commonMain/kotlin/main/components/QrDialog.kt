@@ -121,7 +121,6 @@ fun QrDialog(
             }
         },
         content = {
-            
             // QR code container
             Div(
                 attrs = {

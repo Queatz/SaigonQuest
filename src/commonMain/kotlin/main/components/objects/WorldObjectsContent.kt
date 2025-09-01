@@ -81,68 +81,85 @@ fun WorldObjectsContent(
             ) {
                 // Display objects
                 objects.forEach { obj ->
-                    Div(
-                        attrs = {
-                            classes(EditorStyles.objectItem)
-                        }
-                    ) {
-                        // Object title
-                        Span(
-                            attrs = {
-                                classes(EditorStyles.objectTitle)
-                            }
-                        ) {
-                            Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
-                        }
-                        
-                        // Action buttons container
-                        Div(
-                            attrs = {
-                                classes(EditorStyles.actionButtonsContainer)
-                            }
-                        ) {
-                            // Locate button
-                            Button(
-                                attrs = {
-                                    classes(EditorStyles.locateButton)
-                                    onClick { onLocate(obj.key) }
-                                }
-                            ) {
-                                Text("Locate")
-                            }
-                            
-                            // Edit button
-                            Button(
-                                attrs = {
-                                    classes(EditorStyles.editButton)
-                                    onClick { onEdit(obj.key) }
-                                }
-                            ) {
-                                Text("Edit")
-                            }
-                            
-                            // Duplicate button
-                            Button(
-                                attrs = {
-                                    classes(EditorStyles.editButton)
-                                    onClick { onDuplicate(obj.key) }
-                                }
-                            ) {
-                                Text("Duplicate")
-                            }
-                            
-                            // Remove button
-                            Button(
-                                attrs = {
-                                    classes(EditorStyles.removeButton, Styles.primaryButton)
-                                    onClick { onRemove(obj.key) }
-                                }
-                            ) {
-                                Text("Remove")
-                            }
-                        }
-                    }
+                    ObjectItem(
+                        obj = obj,
+                        onRemove = onRemove,
+                        onLocate = onLocate,
+                        onEdit = onEdit,
+                        onDuplicate = onDuplicate
+                    )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ObjectItem(
+    obj: Object,
+    onRemove: (String) -> Unit,
+    onLocate: (String) -> Unit,
+    onEdit: (String) -> Unit,
+    onDuplicate: (String) -> Unit
+) {
+    Div(
+        attrs = {
+            classes(EditorStyles.objectItem)
+        }
+    ) {
+        // Object title
+        Span(
+            attrs = {
+                classes(EditorStyles.objectTitle)
+            }
+        ) {
+            Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
+        }
+
+        // Action buttons container
+        Div(
+            attrs = {
+                classes(EditorStyles.actionButtonsContainer)
+            }
+        ) {
+            // Locate button
+            Button(
+                attrs = {
+                    classes(EditorStyles.locateButton)
+                    onClick { onLocate(obj.key) }
+                }
+            ) {
+                Text("Locate")
+            }
+
+            // Edit button
+            Button(
+                attrs = {
+                    classes(EditorStyles.editButton)
+                    onClick { onEdit(obj.key) }
+                }
+            ) {
+                Text("Edit")
+            }
+
+            // Duplicate button
+            Button(
+                attrs = {
+                    classes(EditorStyles.editButton)
+                    onClick { onDuplicate(obj.key) }
+                }
+            ) {
+                Text("Duplicate")
+            }
+
+            // Remove button
+            Button(
+                attrs = {
+                    classes(EditorStyles.removeButton, Styles.primaryButton)
+                    onClick { onRemove(obj.key) }
+                }
+            ) {
+                Text("Remove")
             }
         }
     }

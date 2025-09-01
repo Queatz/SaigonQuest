@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.BalanceApi
 import main.components.common.formatAmount
+import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.UserBalance
 import org.jetbrains.compose.web.dom.*
@@ -122,7 +123,7 @@ fun SendVndDialog(
     )
 
     if (showUpload) {
-        main.components.media.UploadMediaDialog(
+        UploadMediaDialog(
             onClose = { showUpload = false },
             onSelect = { url: String -> attachments = listOf(url); showUpload = false }
         )
@@ -134,7 +135,8 @@ fun SendVndDialog(
 
     if (showSuccess) {
         BasicAlertDialog(
-            message = translated("Successfully sent VND"),
+            title = translated("Successfully sent VND"),
+            message = "${translated("Sent")} $amountInput ${translated("VND")} to ${friendUsername}",
             onConfirm = {
                 showSuccess = false
                 onSent?.invoke()
