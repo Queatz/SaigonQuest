@@ -10,6 +10,9 @@ import lib.PBRMaterial
 import lib.Scene
 import lib.Vector2
 import lib.Vector3
+import lib.ShaderMaterial
+import lib.IShaderMaterialOptions
+import lib.IShaderPath
 import main.components.SceneManager
 import kotlin.math.min
 
@@ -47,6 +50,13 @@ class OcclusionManager(private val scene: Scene) {
     private var player: lib.Mesh? = null
     private val occludedMeshes = mutableSetOf<AbstractMesh>()
     private val customMaterials = mutableMapOf<AbstractMesh, PBRCustomMaterial>()
+
+    // Depth renderer and shared white depth material
+    private val depthRenderer: lib.DepthRenderer by lazy {
+        scene.enableDepthRenderer(scene.activeCamera)
+    }
+    private var sharedWhiteDepthMaterial: lib.ShaderMaterial? = null
+    private val depthOverrideMeshes = mutableSetOf<AbstractMesh>()
     
     // Configurable parameters
     private var occlusionSoftness = 0.25f  // Default: medium softness (50% transition zone)
@@ -145,10 +155,63 @@ class OcclusionManager(private val scene: Scene) {
         return debugModeEnabled
     }
 
+    private fun getOrCreateSharedWhiteDepthMaterial(): ShaderMaterial {
+        val existing = sharedWhiteDepthMaterial
+        if (existing != null) return existing
+
+        val shaderPath = object : IShaderPath {
+            override var vertexSource: String? = """
+            precision highp float;
+            
+            attribute vec3 position;
+            
+            uniform vec2 depthValues;
+            uniform mat4 worldViewProjection;
+            
+            // Varyings
+            varying float vDepthMetric;
+            
+            void main (void) {
+                gl_Position = worldViewProjection * vec4(position, 1.0);
+                vDepthMetric = (gl_Position.z + 0.1) / (100.1); // TODO get these from depthValues uniform
+            }
+            """.trimIndent()
+            override var fragmentSource: String? = """
+            precision highp float;
+
+            varying float vDepthMetric;
+            
+            void main (void) {
+                gl_FragColor = vec4(vDepthMetric, 0.0, 0.0, 1.0);
+            }
+            """.trimIndent()
+        }
+        val options = object : IShaderMaterialOptions {
+            override var attributes: Array<String>? = arrayOf("position")
+            override var uniforms: Array<String>? = arrayOf("worldViewProjection", "depthValues")
+            override var samplers: Array<String>? = emptyArray()
+        }
+        val mat = ShaderMaterial("depthWhiteShared", scene, shaderPath, options).apply {
+            backFaceCulling = false // TODO based on real material
+            fogEnabled = false
+            disableLighting = true
+            transparencyMode = Material.MATERIAL_OPAQUE
+            alpha = 1.0f
+            needDepthPrePass = false
+            forceDepthWrite = true
+            disableColorWrite = false
+            //disableDepthWrite = false
+        }
+
+        println("[DEPTH] Created shared depth material '${mat.name}', isReady=${try { mat.isReady() } catch (_: Throwable) { null }}")
+        sharedWhiteDepthMaterial = mat
+        return mat
+    }
+
     /**
      * Registers a mesh to be considered for occlusion.
      * Creates a PBRCustomMaterial for the mesh with occlusion shader code.
-     * 
+     *
      * @param mesh The mesh to register
      */
     fun registerMesh(mesh: AbstractMesh) {
@@ -156,7 +219,7 @@ class OcclusionManager(private val scene: Scene) {
         if (!mesh.isVisible) {
             return
         }
-        
+
         // Ensure the material is a PBRMaterial
         val originalMaterial = mesh.material
         if (originalMaterial is PBRMaterial) {
@@ -167,10 +230,10 @@ class OcclusionManager(private val scene: Scene) {
                 override var gltf: Gltf? = mesh.metadata?.gltf
             }
             mesh.metadata = metadata
-            
+
             // Create a PBRCustomMaterial based on the original PBRMaterial
             val customMaterial = PBRCustomMaterial("${customShaderName}-${mesh.name}", scene)
-            
+
             // Copy properties from the original material
             customMaterial.albedoColor = originalMaterial.albedoColor
             customMaterial.metallic = originalMaterial.metallic
@@ -200,7 +263,7 @@ class OcclusionManager(private val scene: Scene) {
             if (originalMaterial.bumpTexture != null) {
                 customMaterial.bumpTexture = originalMaterial.bumpTexture
             }
-            
+
             // Register all required uniforms
             customMaterial.AddUniform("playerScreenPos", "vec3")
             customMaterial.AddUniform("screenSize", "vec2")
@@ -210,9 +273,9 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.AddUniform("occlusionSoftness", "float")
             customMaterial.AddUniform("debugMode", "float")
             customMaterial.AddUniform("time", "float")
-            
+
             customMaterial.Fragment_Begin(uniformDeclarations)
-            
+
             customMaterial.Fragment_Definitions(occlusionShaderCode)
 
             // Use Fragment_Custom_Alpha instead of Fragment_Before_FragColor since we're only modifying the alpha
@@ -226,21 +289,21 @@ class OcclusionManager(private val scene: Scene) {
                     console.log("[ERROR] Effect is null for material ${customMaterial.name} during binding! Cannot set uniforms.")
                     return@add
                 }
-                
+
                 try {
                     // Skip if no player or camera
                     val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return@add
                     val cam = camera ?: scene.activeCamera ?: return@add
-                    
+
                     // Get player's world position
-                    val playerWorldPos = playerMesh.position
-                    
+                    val playerWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+
                     // Get player's screen position (normalized [0,1] coordinates)
                     val playerScreenPos = Vector3.Project(
-                        playerWorldPos,
-                        Matrix.Identity(),
-                        scene.getTransformMatrix(),
-                        cam.viewport
+                        vector = playerWorldPos,
+                        world = Matrix.Identity(),
+                        transform = scene.getTransformMatrix(),
+                        viewport = cam.viewport
                     ).apply {
                         y = 1.0f - y  // Invert Y coordinate
                     }
@@ -249,34 +312,36 @@ class OcclusionManager(private val scene: Scene) {
                     val viewWidth = scene.getEngine().getRenderWidth()
                     val viewHeight = scene.getEngine().getRenderHeight()
                     val occlusionRadius = min(viewWidth, viewHeight) / 2.0f
-                    
+
                     // Create screenSize vector once and reuse it
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
-                    
+
                     // Get current time for animations
                     val currentTime = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()  // Convert to seconds
-                    
+
                     // Set player position uniforms
                     effect.setVector3("playerScreenPos", playerScreenPos)
                     effect.setVector3("playerWorld", playerWorldPos)
                     effect.setVector3("cameraWorld", camera?.globalPosition ?: Vector3(0f, 0f, 0f))
-                    
+
                     // Set occlusion parameters
                     effect.setFloat("occlusionRadius", occlusionRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
-                    
+
                     // Set screen size
                     effect.setVector2("screenSize", screenSize)
-                    
+
                     // Set debugMode uniform
                     effect.setFloat("debugMode", if (debugModeEnabled) 1.0f else 0.0f)
-                    
+
                     // Set time uniform for animations
                     effect.setFloat("time", currentTime)
                 } catch (e: Throwable) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
             }
+
+            customMaterial.needDepthPrePass = true
 
             // Assign the custom material to the mesh
             mesh.material = customMaterial
@@ -286,6 +351,17 @@ class OcclusionManager(private val scene: Scene) {
 
             // Store the custom material for later updates
             customMaterials[mesh] = customMaterial
+
+            // Ensure shared white depth material exists and register it for this mesh
+            try {
+                val depthMat = getOrCreateSharedWhiteDepthMaterial()
+                try { depthRenderer.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
+                depthRenderer.setMaterialForRendering(mesh, depthMat)
+                depthOverrideMeshes.add(mesh)
+                println("[DEBUG] Set shared custom depth material for depth pass on mesh='${mesh.name}', matReady=${try { depthMat.isReady() } catch (_: Throwable) { null }}")
+            } catch (e: Throwable) {
+                console.error("[ERROR] Failed to set custom depth material for ${mesh.name}", e)
+            }
             
             // Add to tracking set
             occludedMeshes.add(mesh)
@@ -321,7 +397,13 @@ class OcclusionManager(private val scene: Scene) {
             if (metadata?.originalMaterial != null) {
                 mesh.material = metadata.originalMaterial!!
             }
+            // Remove depth override
+            try { depthRenderer.setMaterialForRendering(mesh, null) } catch (_: Throwable) {}
         }
+        // Dispose shared depth material
+        try { sharedWhiteDepthMaterial?.dispose() } catch (_: Throwable) {}
+        sharedWhiteDepthMaterial = null
+        depthOverrideMeshes.clear()
         
         // Clear tracking sets
         occludedMeshes.clear()

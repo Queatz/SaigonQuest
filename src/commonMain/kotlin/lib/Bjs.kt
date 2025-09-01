@@ -231,7 +231,6 @@ external class Scene(engine: Engine? = definedExternally) {
     
     fun enableDepthRenderer(camera: Camera? = definedExternally): DepthRenderer
     fun disableDepthRenderer()
-    fun getDepthRenderer(): DepthRenderer?
     fun render()
     fun dispose()
     fun createPickingRay(x: Int, y: Int, world: Matrix, camera: Camera? = definedExternally): Ray
@@ -331,6 +330,11 @@ abstract external class Material {
     fun clone(name: String): Material
     fun dispose(forceDisposeEffect: Boolean = definedExternally)
     fun isReady(): Boolean
+
+    /**
+     * Observable triggered when the material is bound to a mesh
+     */
+    val onBindObservable: Observable<Material>
 
     companion object {
         val MATERIAL_ALPHATEST: Int
@@ -1018,6 +1022,14 @@ external class DepthRenderer(scene: Scene, type: Int = definedExternally) {
      * This texture contains the depth values of the scene from the camera's perspective.
      */
     fun getDepthMap(): Texture
+
+    /**
+     * Override the material used to render a given mesh in the depth pass.
+     * Pass null to remove the override.
+     */
+    fun setMaterialForRendering(mesh: AbstractMesh, material: Material?)
+
+    var forceDepthWriteTransparentMeshes: Boolean
     
     /**
      * Disposes the depth renderer and releases its resources.
@@ -1132,6 +1144,10 @@ external interface SSAOOptions {
     val maxZ: Float
 }
 
+open external class PostProcessRenderPipeline {
+    fun dispose(): Unit
+}
+
 /**
  * Render pipeline to produce SSAO (Screen Space Ambient Occlusion) effect.
  * Properties should be set after creating the instance.
@@ -1143,7 +1159,7 @@ external class SSAO2RenderingPipeline(
     cameras: Array<Camera> = definedExternally,
     forceGeometryBuffer: Boolean = definedExternally,
     textureType: Int = definedExternally
-) {
+): PostProcessRenderPipeline {
     /**
      * The radius around the analyzed pixel used by the SSAO post-process. Default value is 2.0
      */
@@ -1436,31 +1452,31 @@ external class GridMaterial(name: String, scene: Scene) : Material {
 /**
  * Interface for shader material options
  */
-external interface ShaderMaterialOptions {
-    /**
-     * Array of attribute names used in the shader
-     */
-    var attributes: Array<String>
-    
-    /**
-     * Array of uniform names used in the shader
-     */
-    var uniforms: Array<String>
-    
-    /**
-     * Array of sampler names used in the shader
-     */
-    var samplers: Array<String>
-    
-    /**
-     * The vertex shader code
-     */
-    val vertexSource: String? get() = definedExternally
-    
-    /**
-     * The fragment shader code
-     */
-    val fragmentSource: String? get() = definedExternally
+external interface IShaderMaterialOptions {
+    // Optional fields are nullable to satisfy Kotlin external interface requirements when providing default JS-backed accessors
+    var attributes: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var defines: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var externalTextures: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var extraInitializationsAsync: (() -> Promise<Unit>)? get() = definedExternally; set(value) = definedExternally
+    var needAlphaBlending: Boolean? get() = definedExternally; set(value) = definedExternally
+    var needAlphaTesting: Boolean? get() = definedExternally; set(value) = definedExternally
+    var samplerObjects: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var samplers: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var shaderLanguage: dynamic /* ShaderLanguage? */ get() = definedExternally; set(value) = definedExternally
+    var storageBuffers: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var uniformBuffers: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var uniforms: Array<String>? get() = definedExternally; set(value) = definedExternally
+    var useClipPlane: Boolean? get() = definedExternally; set(value) = definedExternally
+}
+
+external interface IShaderPath {
+    var fragment: String? get() = definedExternally; set(value) = definedExternally
+    var fragmentElement: String? get() = definedExternally; set(value) = definedExternally
+    var fragmentSource: String? get() = definedExternally; set(value) = definedExternally
+    var spectorName: String? get() = definedExternally; set(value) = definedExternally
+    var vertex: String? get() = definedExternally; set(value) = definedExternally
+    var vertexElement: String? get() = definedExternally; set(value) = definedExternally
+    var vertexSource: String? get() = definedExternally; set(value) = definedExternally
 }
 
 /**
@@ -1470,7 +1486,13 @@ external interface ShaderMaterialOptions {
 /**
  * ShaderMaterial is used to create custom shaders in BabylonJS
  */
-external class ShaderMaterial(name: String, scene: Scene, options: ShaderMaterialOptions) : Material {
+external class ShaderMaterial(
+    name: String,
+    scene: Scene,
+    shaderPath: dynamic /* String | IShaderPath */,
+    options: IShaderMaterialOptions? = definedExternally,
+    storeEffectOnSubMeshes: Boolean? = definedExternally
+) : Material {
     /**
      * Sets a float value on the shader
      * @param name The name of the uniform
@@ -1491,18 +1513,6 @@ external class ShaderMaterial(name: String, scene: Scene, options: ShaderMateria
      * @param value The Vector3 value
      */
     fun setVector3(name: String, value: Vector3)
-    
-    /**
-     * Sets the vertex shader code
-     * @param code The vertex shader code
-     */
-    fun setVertexShader(code: String)
-
-    /**
-     * Sets the fragment shader code
-     * @param code The fragment shader code
-     */
-    fun setFragmentShader(code: String)
 }
 
 open external class PBRMaterial(name: String, scene: Scene) : Material {
@@ -1533,12 +1543,7 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
     var enableSpecularAntiAliasing: Boolean
     var realTimeFiltering: Boolean
     var realTimeFilteringQuality: Int
-    
-    /**
-     * Observable triggered when the material is bound to a mesh
-     */
-    val onBindObservable: Observable<Material>
-    
+
     /**
      * Gets the current effect (shader)
      */

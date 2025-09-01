@@ -22,6 +22,10 @@ import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import main.components.common.formatAmount
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import main.components.SceneManager.getPlayerController
+import main.components.world.PlayerActivity
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.css.AlignItems
@@ -461,6 +465,28 @@ fun PlayerDialog(
                         }
                     ) {
                         Translated("Settings")
+                    }
+
+                    // Sit / Stand toggle
+
+                    var playerActivity by remember { mutableStateOf(getPlayerController()?.getPlayerActivity()) }
+
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            style { marginTop(8.px) }
+                            onClick {
+                                try {
+                                    getPlayerController()?.toggleSitting()
+                                    playerActivity = getPlayerController()?.getPlayerActivity()
+                                    console.log("PlayerDialog: Toggled sitting/standing from dialog")
+                                } catch (e: Throwable) {
+                                    console.error("PlayerDialog: Failed to toggle sitting/standing", e)
+                                }
+                            }
+                        }
+                    ) {
+                        Translated(if (playerActivity == PlayerActivity.Sit) "Stand" else "Sit")
                     }
 
                     // Logout button

@@ -287,7 +287,7 @@ class WorldLoader(private val scene: Scene) {
     private fun setupLighting() {
         println("[DEBUG] Setting up scene lighting")
         // Register this instance for edit notifications
-        WorldLoader.registerCurrentInstance(this)
+        registerCurrentInstance(this)
         
         // Add a hemispheric light for ambient lighting
         hemisphericLight = HemisphericLight(
@@ -898,9 +898,9 @@ class WorldLoader(private val scene: Scene) {
         directionalLight = null
         
         // Clear global references to lights
-        WorldLoader.clearCurrentLights()
+        clearCurrentLights()
         // Clear current instance reference
-        WorldLoader.registerCurrentInstance(null)
+        registerCurrentInstance(null)
         
         // Disconnect from WebSocket
         WebSocketApi.disconnect()

@@ -1267,6 +1267,12 @@ vi: Quản lý vật phẩm
 
 Are you sure you want to remove this object?
 vi: Bạn có chắc chắn muốn xóa đối tượng này không?
+
+Sit
+vi: Ngồi
+
+Stand
+vi: Đứng
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

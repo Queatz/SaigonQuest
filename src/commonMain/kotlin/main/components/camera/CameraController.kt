@@ -63,6 +63,8 @@ class CameraController(private val scene: Scene) {
 
         // Remove keyboard controls to avoid conflicts with player movement
         inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
+
+        scene.enableDepthRenderer(this)
     }
 
     // Camera target - separate from player to prevent player moving with camera during panning
@@ -430,6 +432,7 @@ class CameraController(private val scene: Scene) {
                 try {
                     // Just set to null to let garbage collection handle it
                     // The BabylonJS engine will clean up the pipeline resources
+                    ssaoPipeline?.dispose()
                     ssaoPipeline = null
                     println("[DEBUG] Cleaned up existing SSAO pipeline")
                 } catch (e: Throwable) {
