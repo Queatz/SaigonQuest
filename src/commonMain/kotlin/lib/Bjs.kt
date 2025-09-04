@@ -327,6 +327,8 @@ abstract external class Material {
     var fogEnabled: Boolean
     var disableLighting: Boolean
 
+    fun getEffect(): Effect?
+
     fun clone(name: String): Material
     fun dispose(forceDisposeEffect: Boolean = definedExternally)
     fun isReady(): Boolean
@@ -334,7 +336,7 @@ abstract external class Material {
     /**
      * Observable triggered when the material is bound to a mesh
      */
-    val onBindObservable: Observable<Material>
+    val onBindObservable: Observable<AbstractMesh>
 
     companion object {
         val MATERIAL_ALPHATEST: Int
@@ -1079,12 +1081,14 @@ external class Effect {
      */
     fun setTexture(name: String, texture: Texture)
 
+    val vertexShaderSource: String
+
     /**
      * Gets the fragment shader source code
      * @return The fragment shader source code as a string
      */
-    fun getFragmentShaderSource(): String
-    
+    val fragmentShaderSource: String
+
     fun isReady(): Boolean
 }
 
@@ -1544,11 +1548,6 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
     var realTimeFiltering: Boolean
     var realTimeFilteringQuality: Int
 
-    /**
-     * Gets the current effect (shader)
-     */
-    fun getEffect(): Effect?
-    
     /**
      * Custom shader name resolver
      * 

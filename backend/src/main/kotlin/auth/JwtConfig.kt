@@ -6,13 +6,14 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import java.util.*
+import kotlin.time.Clock
 
 object JwtConfig {
     // Secret should be stored in environment variables in production
     private const val SECRET = "saigon-quest-secret-key"
     private const val ISSUER = "saigon-quest"
     private const val AUDIENCE = "saigon-quest-users"
-    private const val VALIDITY_IN_MS = 36_000_00 * 24 * 7 // 24 hours * 7 days
+    private const val VALIDITY_IN_MS = 36_000_00 * 24 * 365
     
     private val algorithm = Algorithm.HMAC256(SECRET)
     
@@ -30,7 +31,7 @@ object JwtConfig {
         .withIssuer(ISSUER)
         .withAudience(AUDIENCE)
         .withClaim("userId", userId)
-        .withExpiresAt(Date(System.currentTimeMillis() + VALIDITY_IN_MS))
+        .withExpiresAt(Date(Clock.System.now().toEpochMilliseconds() + VALIDITY_IN_MS))
         .sign(algorithm)
     
     /**

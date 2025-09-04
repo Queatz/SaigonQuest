@@ -103,9 +103,9 @@ kotlin {
                 implementation("app.softwork:routing-compose:0.4.0")
                 implementation(npm("marked", "15.0.7"))
                 implementation(npm("@paulmillr/qr", "0.2.0"))
-                implementation(npm("@babylonjs/core", "8.18.0"))
-                implementation(npm("@babylonjs/materials", "8.18.0"))
-                implementation(npm("@babylonjs/loaders", "8.18.0"))
+                implementation(npm("@babylonjs/core", "8.25.0"))
+                implementation(npm("@babylonjs/materials", "8.25.0"))
+                implementation(npm("@babylonjs/loaders", "8.25.0"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.15")
 
