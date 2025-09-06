@@ -60,7 +60,7 @@ class OcclusionManager(private val scene: Scene) {
     private val depthOverrideMeshes = mutableSetOf<AbstractMesh>()
     
     // Configurable parameters
-    private var occlusionSoftness = 0.01f  // Default: medium softness (50% transition zone)
+    private var occlusionSoftness = 0.05f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
     
     // Debug mode flag - set to enable debug visualization
     private var debugModeEnabled = false
@@ -101,8 +101,9 @@ class OcclusionManager(private val scene: Scene) {
         float depthDiff = fragmentDepth - playerDepth;
 
         // Dithered evaluation for depth and height comparisons (soften hard thresholds)
-        float DEPTH_BAND = 0.01 * occlusionSoftness;   // small band around 0 depth difference
-        float HEIGHT_BAND = occlusionSoftness;   // small world-space band around player's Y
+        // Drive bands by occlusionSoftness ratio for uniform blur across resolutions
+        float DEPTH_BAND = occlusionSoftness * 0.001;
+        float HEIGHT_BAND = occlusionSoftness;
 
         bool depthCloser = (depthDiff < 0.0);
         if (!depthCloser) {
@@ -125,24 +126,18 @@ class OcclusionManager(private val scene: Scene) {
 
         // Proceed if both (dithered) conditions indicate occluder
         if (depthCloser && abovePlayer) {
-            if (occlusionSoftness <= 0.0) {
-                // Dithered hard edge within occlusion radius
+            float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
+            if (bandWidthPx <= 0.0) {
+                // Hard edge: discard everything within the occlusion radius
                 if (normalizedDistance < 1.0) {
-                    float coverage = clamp(normalizedDistance, 0.0, 1.0);
-                    float threshold = noise(gl_FragCoord.xy);
-                    if (coverage < threshold) {
-                        discard;
-                    }
-                    return alpha;
+                    discard;
                 }
-            } else if (occlusionSoftness >= 1.0) {
-                return alpha * smoothstep(0.0, ALPHA_THRESHOLD, normalizedDistance); // Smooth fade
             } else {
-                float innerRadius = occlusionRadius * (1.0 - occlusionSoftness);
+                float innerRadius = max(0.0, occlusionRadius - bandWidthPx);
                 if (distance < innerRadius) {
                     discard;
                 } else if (distance < occlusionRadius) {
-                    float gradientPos = (distance - innerRadius) / max(0.0001, (occlusionRadius - innerRadius));
+                    float gradientPos = (distance - innerRadius) / max(0.0001, bandWidthPx);
                     float coverage = clamp(gradientPos, 0.0, 1.0);
                     float threshold = noise(gl_FragCoord.xy);
                     if (coverage < threshold) {
@@ -167,14 +162,17 @@ class OcclusionManager(private val scene: Scene) {
     """
 
     /**
-     * Sets the occlusion softness parameter
-     * @param softness Value between 0 and 1:
-     *   - 0: Sharp edge (abrupt transition between visible and discarded fragments)
-     *   - 0.5: Medium softness (gradual transition zone of 50% width)
-     *   - 1: Full softness (gradual transition from center to edge)
+     * Sets the occlusion softness parameter.
+     * Interpreted as a ratio [0..1] of the occlusion radius used to compute the gradient band width.
+     * The actual pixel band width = occlusionSoftness * occlusionRadius, which keeps the visual width
+     * resolution independent and proportional to the overall occlusion size.
+     *
+     * @param softnessRatio Ratio in [0..1]:
+     *   - 0f: Sharp edge (no gradient)
+     *   - (0,1]: Dithered gradient with width proportional to occlusion radius
      */
-    fun setOcclusionSoftness(softness: Float) {
-        occlusionSoftness = softness.coerceIn(0f, 1f)
+    fun setOcclusionSoftness(softnessRatio: Float) {
+        occlusionSoftness = softnessRatio.coerceIn(0f, 1f)
     }
     
     /**

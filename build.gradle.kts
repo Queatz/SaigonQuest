@@ -64,7 +64,7 @@ tasks.register("devApp") {
 tasks.register("prodApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn("prepareProdServiceWorker")
+    dependsOn("prepareProdServiceWorker", ":jsBrowserDistribution")
 }
 
 kotlin {
