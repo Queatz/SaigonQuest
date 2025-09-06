@@ -1081,6 +1081,8 @@ external class Effect {
      */
     fun setTexture(name: String, texture: Texture)
 
+    fun setBool(name: String, bool: Boolean)
+
     val vertexShaderSource: String
 
     /**

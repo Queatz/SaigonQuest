@@ -61,10 +61,7 @@ class OcclusionManager(private val scene: Scene) {
     
     // Configurable parameters
     private var occlusionSoftness = 0.05f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
-    
-    // Debug mode flag - set to enable debug visualization
-    private var debugModeEnabled = false
-    
+
     // Custom shader name
     private val customShaderName = "occlusionFader"
     
@@ -134,7 +131,7 @@ class OcclusionManager(private val scene: Scene) {
                 }
             } else {
                 float innerRadius = max(0.0, occlusionRadius - bandWidthPx);
-                if (distance < innerRadius) {
+                if (!useRadius || distance < innerRadius) {
                     discard;
                 } else if (distance < occlusionRadius) {
                     float gradientPos = (distance - innerRadius) / max(0.0001, bandWidthPx);
@@ -174,26 +171,6 @@ class OcclusionManager(private val scene: Scene) {
     fun setOcclusionSoftness(softnessRatio: Float) {
         occlusionSoftness = softnessRatio.coerceIn(0f, 1f)
     }
-    
-    /**
-     * Enables or disables debug visualization mode.
-     * When enabled, fragments near the occlusion boundary will be shown in color
-     * to help verify that the occlusion effect is working correctly.
-     * 
-     * @param enabled Whether debug mode should be enabled
-     */
-    fun setDebugMode(enabled: Boolean) {
-        debugModeEnabled = enabled
-    }
-
-    /**
-     * Returns whether debug visualization mode is currently enabled.
-     *
-     * @return True if debug mode is enabled, false otherwise
-     */
-    fun isDebugModeEnabled(): Boolean {
-        return debugModeEnabled
-    }
 
     private fun getOrCreateSharedWhiteDepthMaterial(): ShaderMaterial {
         val existing = sharedWhiteDepthMaterial
@@ -207,107 +184,43 @@ class OcclusionManager(private val scene: Scene) {
             
             uniform vec2 depthValues;
             uniform mat4 viewProjection;
+            uniform mat4 world;
             
             // Varyings
-//            varying float vDepthMetric;
-//            varying vec3 vPositionW;
+            varying float vDepthMetric;
+            varying vec3 vPositionW;
 
             #include<instancesDeclaration>
             
             void main (void) {
                 #include<instancesVertex>
                 
-//                vec4 worldPos = finalWorld * vec4(position, 1.0);
-                //vPositionW = worldPos.xyz;
-                gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
-                //vDepthMetric = (gl_Position.z + 0.1) / (100.1); // TODO get these from depthValues uniform
+                vec4 worldPos = world * vec4(position, 1.0);
+                gl_Position = viewProjection * worldPos;
+                vPositionW = worldPos.xyz;
+                vDepthMetric = (gl_Position.z + 0.1) / (100.0 + 0.1);
             }
             """.trimIndent()
-            override var fragmentSource: String? = """precision highp float; void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }""".trimIndent()
 
-//            override var fragmentSource: String? = """
-//            precision highp float;
-//
-//            varying float vDepthMetric;
-//            varying vec3 vPositionW;
-//
-//            // Occlusion uniforms (matching main material)
-//            uniform vec3 playerScreenPos;
-//            uniform vec2 screenSize;
-//            uniform float occlusionRadius;
-//            uniform vec3 playerWorld;
-//            uniform vec3 cameraWorld;
-//            uniform float occlusionSoftness;
-//            uniform float debugMode;
-//            uniform float time;
-//
-//            // Stochastic dithering noise in [0,1)
-//            float noise(vec2 p) {
-//                return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453 + time);
-//            }
-//
-//            void main (void) {
-//
-//                // Reproduce applyOcclusion() behavior with soft edge via dithering in depth pass
-//                vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
-//                vec2 delta = gl_FragCoord.xy - playerScreenPixel;
-//                float distance = sqrt(dot(delta, delta));
-//
-//                float distToCamera = length(vPositionW.xz - cameraWorld.xz);
-//                float distFromPlayerToCamera = length(playerWorld.xz - cameraWorld.xz);
-//                float distToPlayer = length(vPositionW.xz - playerWorld.xz);
-//
-//                bool isOccluder = (distToCamera < distFromPlayerToCamera && vPositionW.y > playerWorld.y && (pow(distToCamera, 0.5) * 0.5) < distToPlayer);
-//
-//                bool discardNow = false;
-//                bool inGradient = false;
-//                float innerRadius = occlusionRadius * (1.0 - occlusionSoftness);
-//                if (isOccluder) {
-//                    if (occlusionSoftness <= 0.0) {
-//                        discardNow = true;
-//                    } else {
-//                        if (distance < innerRadius) {
-//                            discardNow = true;
-//                        } else if (distance < occlusionRadius) {
-//                            float gradientPos = (distance - innerRadius) / max(0.0001, (occlusionRadius - innerRadius));
-//                            float coverage = clamp(gradientPos, 0.0, 1.0);
-//                            float threshold = noise(gl_FragCoord.xy);
-//                            inGradient = true;
-//                            if (coverage < threshold) {
-//                                discardNow = true;
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                if (debugMode > 0.5) {
-//                    if (isOccluder) {
-//                        if (distance < innerRadius) {
-//                            gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0); // blue: inner hole region
-//                        } else if (distance < occlusionRadius) {
-//                            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // green: gradient band
-//                        } else {
-//                            gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0); // cyan: occluder but outside radius
-//                        }
-//                    } else {
-//                        gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); // magenta: not an occluder
-//                    }
-//                    return;
-//                }
-//
-//                if (discardNow) {
-//                    discard;
-//                }
-//
-//                gl_FragColor = vec4(vDepthMetric, 0.0, 0.0, 1.0);
-//            }
-//            """.trimIndent()
+            override var fragmentSource: String? = """
+                precision highp float;
+            
+                // Varyings
+                varying float vDepthMetric;
+                varying vec3 vPositionW;
+                
+                void main (void) {
+                    gl_FragColor = vec4(vDepthMetric, 0.0, 0.0, 1.0);
+                }
+            """.trimIndent()
+
         }
         val options = object : IShaderMaterialOptions {
             override var attributes: Array<String>? = arrayOf(
                 "position"
             )
             override var uniforms: Array<String>? = arrayOf(
+                "world",
                 "viewProjection",
                 "playerScreenPos",
                 "screenSize",
@@ -315,7 +228,6 @@ class OcclusionManager(private val scene: Scene) {
                 "playerWorld",
                 "cameraWorld",
                 "occlusionSoftness",
-                "debugMode",
                 "time"
             )
             override var samplers: Array<String>? = emptyArray()
@@ -332,45 +244,6 @@ class OcclusionManager(private val scene: Scene) {
             disableColorWrite = false
             disableDepthWrite = false
         }
-
-        // Bind uniforms per frame when material is used
-//        mat.onBindObservable.add { _ ->
-//            try {
-//                val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return@add
-//                val cam = camera ?: scene.activeCamera ?: return@add
-//
-//                val playerWorldPos = playerMesh.position.add(Vector3(0f, 0f, 0f))
-//
-//                val playerScreenPos = Vector3.Project(
-//                    vector = playerWorldPos,
-//                    world = Matrix.Identity(),
-//                    transform = scene.getTransformMatrix(),
-//                    viewport = cam.viewport
-//                ).apply {
-//                    y = 1.0f - y
-//                }
-//
-//                val viewWidth = scene.getEngine().getRenderWidth()
-//                val viewHeight = scene.getEngine().getRenderHeight()
-//                val occlusionRadius = min(viewWidth, viewHeight) / 2.0f
-//                val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
-//                val currentTime = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()  // Convert to seconds
-//
-//                mat.getEffect()?.apply {
-//                    setVector3("playerScreenPos", playerScreenPos)
-//                    setVector3("playerWorld", playerWorldPos)
-//                    setVector3("cameraWorld", cam.globalPosition)
-//                    setFloat("occlusionRadius", occlusionRadius)
-//                    setFloat("occlusionSoftness", occlusionSoftness)
-//                    setVector2("screenSize", screenSize)
-//                    setFloat("debugMode", if (debugModeEnabled) 1.0f else 0.0f)
-//                    setFloat("time", currentTime)
-//                }
-//            } catch (e: Throwable) {
-//                e.printStackTrace()
-//                // Avoid throwing during depth pass
-//            }
-//        }
 
         println("[DEPTH] Created shared depth material '${mat.name}', isReady=${try { mat.isReady() } catch (_: Throwable) { null }}")
         sharedWhiteDepthMaterial = mat
@@ -441,7 +314,7 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.AddUniform("playerWorld", "vec3")
             customMaterial.AddUniform("cameraWorld", "vec3")
             customMaterial.AddUniform("occlusionSoftness", "float")
-            customMaterial.AddUniform("debugMode", "float")
+            customMaterial.AddUniform("useRadius", "bool")
             customMaterial.AddUniform("time", "float")
 
             customMaterial.Fragment_Begin(uniformDeclarations)
@@ -501,8 +374,7 @@ class OcclusionManager(private val scene: Scene) {
                     // Set screen size
                     effect.setVector2("screenSize", screenSize)
 
-                    // Set debugMode uniform
-                    effect.setFloat("debugMode", if (debugModeEnabled) 1.0f else 0.0f)
+                    effect.setBool("useRadius", false)
 
                     // Set time uniform for animations
                     effect.setFloat("time", currentTime)
@@ -521,7 +393,8 @@ class OcclusionManager(private val scene: Scene) {
 
 //            val depthMat = getOrCreateSharedWhiteDepthMaterial()
 //            try { depthRenderer.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
-//            depthRenderer.setMaterialForRendering(mesh, customMaterial)
+//            depthRenderer.setMaterialForRendering(mesh, depthMat)
+//            mesh.material = depthMat
             depthOverrideMeshes.add(mesh)
             
             // Add to tracking set
