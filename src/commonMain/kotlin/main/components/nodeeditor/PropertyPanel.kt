@@ -460,7 +460,7 @@ fun PropertyPanel(
                             }
                             PropertyType.NUMBER -> {
                                 NumberInput(
-                                    value = propertyValues[propDef.key]?.toFloat() ?: 0.0f,
+                                    value = propertyValues[propDef.key]?.toFloatOrNull() ?: 0.0f,
                                     attrs = {
                                         classes(NodeEditorStyles.propertyInput)
                                         id("prop-${propDef.key.name.lowercase()}")

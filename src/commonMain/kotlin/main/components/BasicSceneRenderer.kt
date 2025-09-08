@@ -118,7 +118,7 @@ fun BasicSceneRenderer(
                         rootUrl = "/raw/data/",
                         sceneFilename = "$filename.glb",
                         scene = scene!!,
-                        onSuccess = { meshes, _, _, _ ->
+                        onSuccess = { meshes, _, _, _, _ ->
                             loadedMeshes = meshes
                             isLoading = false
                         },

@@ -782,7 +782,7 @@ fun SceneComponent(url: String) {
         coroutineScope.launch {
             try {
                 // Call the suspend function
-                val worldMeshes = worldLoader.loadWorld(url)
+                val (worldMeshes, nodes) = worldLoader.loadWorld(url)
                 
                 // Store the current world
                 currentWorld.value = worldLoader.getCurrentWorld()
@@ -809,6 +809,7 @@ fun SceneComponent(url: String) {
                 
                 // Set world meshes in controllers
                 playerController.setWorldMeshes(worldMeshes)
+                playerController.setStartNodes(nodes)
                 objectManager.setWorldMeshes(worldMeshes)
                 otherPlayersController.setWorldMeshes(worldMeshes)
                 

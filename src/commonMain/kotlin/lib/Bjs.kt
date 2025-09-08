@@ -11,31 +11,35 @@ import kotlin.js.Promise
 /**
  * Interface for a node in the scene graph
  */
-external interface Node {
+open external class Node {
     /**
      * The name of the node
      */
-    var name: String
+    open var name: String
     
     /**
      * The parent node
      */
-    var parent: Node?
+    open var parent: Node?
     
     /**
      * Position of the node in local space
      */
-    var position: Vector3
+    open var position: Vector3
     
     /**
      * Rotation of the node in local space
      */
-    var rotation: Vector3
+    open var rotation: Vector3
     
     /**
      * Scaling of the node in local space
      */
-    var scaling: Vector3
+    open var scaling: Vector3
+
+    open var metadata: MeshMetadata?
+
+    open fun getAbsolutePosition(): Vector3 = definedExternally
 
     /**
      * Gets all child meshes of this node
@@ -43,7 +47,7 @@ external interface Node {
      * @param directDescendantsOnly If true, only direct descendants will be returned
      * @return Array of child meshes
      */
-    fun getChildMeshes(directDescendantsOnly: Boolean? = definedExternally): Array<AbstractMesh>
+    open fun getChildMeshes(directDescendantsOnly: Boolean? = definedExternally): Array<AbstractMesh>
 }
 
 /**
@@ -57,6 +61,8 @@ external class TransformNode(name: String, scene: Scene? = definedExternally) : 
     override var rotation: Vector3
     override var scaling: Vector3
     var rotationQuaternion: Quaternion?
+
+    override var metadata: MeshMetadata?
     
     /**
      * Gets all child meshes of this node
@@ -106,7 +112,6 @@ abstract external class AbstractMesh : Node {
     var actionManager: ActionManager?
     override var name: String
     override var parent: Node?
-    var metadata: MeshMetadata?
     var infiniteDistance: Boolean
 
     /**
@@ -247,6 +252,8 @@ external class Mesh(name: String = definedExternally, scene: Scene = definedExte
 
     override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 
+    override var metadata: MeshMetadata?
+
     companion object {
         val BILLBOARDMODE_Y: Int
         val BILLBOARDMODE_ALL: Int
@@ -274,6 +281,8 @@ external class LinesMesh(name: String = definedExternally, scene: Scene = define
      * Update the vertex positions of the line mesh. Expects flat float array [x,y,z,...].
      */
     fun updateVerticesData(kind: String, data: Array<Float>, updateExtends: Boolean = definedExternally)
+
+    override var metadata: MeshMetadata?
 
     override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 
@@ -1665,7 +1674,7 @@ external class SceneLoader {
             rootUrl: String,
             sceneFilename: String,
             scene: Scene,
-            onSuccess: (Array<AbstractMesh>, Array<dynamic>, Array<dynamic>, Array<dynamic>) -> Unit = definedExternally,
+            onSuccess: (Array<AbstractMesh>, Array<dynamic>, Array<dynamic>, Array<dynamic>, transformNodes: Array<dynamic>) -> Unit = definedExternally,
             onProgress: ((event: dynamic) -> Unit)? = definedExternally,
             onError: ((scene: Scene, message: String, exception: dynamic) -> Unit)? = definedExternally,
             pluginExtension: String? = definedExternally

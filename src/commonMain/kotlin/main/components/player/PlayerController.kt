@@ -15,6 +15,7 @@ import lib.AbstractMesh
 import lib.Mesh
 import lib.Scene
 import lib.Vector3
+import lib.Node
 import main.api.ListenerToken
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -28,6 +29,7 @@ import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import main.components.world.calculateFacingFromVector
+import main.components.world.isStartPosition
 import models.Position
 import utils.throttleLatest
 import web.animations.awaitAnimationFrame
@@ -62,6 +64,8 @@ class PlayerController(private val scene: Scene) {
     
     // World meshes for collision detection
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
+
+    private var startNodes: Array<Node> = emptyArray()
     
     // Time tracking for framerate-independent movement
     private val movementDelta = FrameDeltaTracker()
@@ -170,6 +174,10 @@ class PlayerController(private val scene: Scene) {
         } catch (t: Throwable) {
             console.error("[PlayerController] Error snapping to ground after world meshes set", t)
         }
+    }
+
+    fun setStartNodes(nodes: Array<Node>) {
+        startNodes = nodes
     }
     
     fun getWorldMeshes(): Array<AbstractMesh> {
@@ -346,6 +354,43 @@ class PlayerController(private val scene: Scene) {
      * @return A valid starting position, or Vector3.Zero() if none found
      */
     fun findValidStartPosition(): Vector3 {
+        // 1) Prefer explicit start positions from world metadata
+        try {
+            val candidates = mutableListOf<Vector3>()
+            val seen = mutableSetOf<String>()
+
+            for (mesh in startNodes) {
+                var n: Node? = mesh
+                var startNode: Node? = null
+                while (n != null) {
+//                    if (n.name.contains("Empty")) {
+                        console.log("[START]", n)
+                        console.warn("[START]", n.metadata?.gltf)
+//                    }
+                    if (n.isStartPosition()) { startNode = n; break }
+                    n = n.parent
+                }
+                if (startNode != null) {
+                    val pos = startNode.getAbsolutePosition()
+                    val key = "${pos.x}|${pos.y}|${pos.z}"
+                    if (seen.add(key)) candidates.add(pos)
+                }
+            }
+
+            if (candidates.isNotEmpty()) {
+                // Try candidates in random order until one yields a valid ground-snapped position
+                for (base in candidates.shuffled()) {
+                    val snapped = findValidYPosition(base) ?: findValidYPosition(Vector3(base.x, 0f, base.z))
+                    if (snapped != null && isValidPosition(snapped)) {
+                        return snapped
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            console.error("[START_POS] Error while resolving metadata-based start position", t)
+        }
+
+        // 2) Fallback: previous spiral search from origin
         var startPosition = Vector3.Zero()
 
         // Starting from center (0,0), expanding outward

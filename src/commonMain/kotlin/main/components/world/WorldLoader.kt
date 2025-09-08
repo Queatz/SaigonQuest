@@ -22,6 +22,8 @@ import kotlin.coroutines.resumeWithException
 import kotlin.math.PI
 import kotlin.math.*
 import kotlinx.browser.window
+import lib.Node
+import lib.TransformNode
 import models.ErrorResponse
 
 /**
@@ -38,7 +40,7 @@ class WorldLoader(private val scene: Scene) {
         try {
             // Update current world reference and outdoors flag
             currentWorld = world
-            Companion.currentWorldIsOutdoors = world.isOutdoors
+            currentWorldIsOutdoors = world.isOutdoors
 
             // Dispose previous world meshes if any
             try {
@@ -53,6 +55,7 @@ class WorldLoader(private val scene: Scene) {
                 worldMeshes = createFallbackWorld()
                 // Propagate to controllers
                 SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+                SceneManager.getPlayerController()?.setStartNodes(emptyArray())
                 SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
                 SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
                 // Apply lighting state
@@ -67,12 +70,14 @@ class WorldLoader(private val scene: Scene) {
                 rootUrl = "/raw/data/",
                 sceneFilename = sceneFilename,
                 scene = scene,
-                onSuccess = { meshes, _, _, _ ->
+                onSuccess = { meshes, _, _, _, nodes ->
                     try {
                         worldMeshes = meshes
+                        transformNodes = nodes
                         applyMaterials(meshes)
                         // Propagate to controllers
                         SceneManager.getPlayerController()?.setWorldMeshes(meshes)
+                        SceneManager.getPlayerController()?.setStartNodes(nodes)
                         SceneManager.getObjectManager()?.setWorldMeshes(meshes)
                         SceneManager.getOtherPlayersController()?.setWorldMeshes(meshes)
                         // Apply edited lighting immediately
@@ -88,6 +93,7 @@ class WorldLoader(private val scene: Scene) {
                         // Attempt fallback world on error
                         worldMeshes = createFallbackWorld()
                         SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+                        SceneManager.getPlayerController()?.setStartNodes(emptyArray())
                         SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
                         SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
                         applyWorldEditLighting(world)
@@ -259,7 +265,8 @@ class WorldLoader(private val scene: Scene) {
     
     // World meshes for collision detection and interaction
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
-    
+    private var transformNodes: Array<Node> = emptyArray()
+
     // Current world data
     private var currentWorld: World? = null
     
@@ -328,9 +335,9 @@ class WorldLoader(private val scene: Scene) {
      * Loads a world by its URL.
      * 
      * @param url The URL of the world to load
-     * @return The loaded world meshes
+     * @return The loaded world meshes and start nodes
      */
-    suspend fun loadWorld(url: String): Array<AbstractMesh> {
+    suspend fun loadWorld(url: String): Pair<Array<AbstractMesh>, Array<Node>> {
         // Set up lighting for the scene
         setupLighting()
 
@@ -364,7 +371,7 @@ class WorldLoader(private val scene: Scene) {
             if (world.file.isEmpty()) {
                 // Create a fallback 10x10 plane
                 println("[INFO] No world file specified, creating fallback 10x10 plane")
-                return createFallbackWorld()
+                return createFallbackWorld() to emptyArray()
             }
 
             // Determine the file to load
@@ -377,15 +384,16 @@ class WorldLoader(private val scene: Scene) {
                     rootUrl = "/raw/data/",
                     sceneFilename = worldFile,
                     scene = scene,
-                    onSuccess = { meshes, _, _, _ ->
+                    onSuccess = { meshes, _, _, _, nodes ->
                         // Store world meshes for collision detection
                         worldMeshes = meshes
-                        
+                        transformNodes = nodes
+
                         // Apply PBR materials to all meshes
                         applyMaterials(meshes)
                         
-                        // Resume the coroutine with the loaded meshes
-                        continuation.resume(meshes)
+                        // Resume the coroutine with the loaded meshes and start nodes
+                        continuation.resume(meshes to nodes)
                         
                         // Execute the world loaded callback
                         executeWorldLoadedCallback()
@@ -415,7 +423,7 @@ class WorldLoader(private val scene: Scene) {
             // Only treat 404 as API fallback (claimable). Propagate others (e.g., 403 access denied).
             isApiErrorFallback = apiCode == 404
             return if (apiCode == 404) {
-                createFallbackWorld()
+                createFallbackWorld() to emptyArray()
             } else {
                 throw error
             }
@@ -465,6 +473,7 @@ class WorldLoader(private val scene: Scene) {
         // Propagate world meshes to controllers so they can react immediately (e.g., snap player to ground)
         try {
             SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
+            SceneManager.getPlayerController()?.setStartNodes(emptyArray())
             SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
             SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
         } catch (e: Throwable) {
@@ -579,18 +588,7 @@ class WorldLoader(private val scene: Scene) {
     fun getWorldMeshes(): Array<AbstractMesh> {
         return worldMeshes
     }
-    
-    /**
-     * Finds a valid starting position on the world ground.
-     * 
-     * @return A valid position Vector3, or null if none found
-     */
-    fun findValidStartPosition(): Vector3? {
-        // This is a placeholder - the actual implementation would use
-        // raycasting to find a valid position on the ground
-        return Vector3.Zero()
-    }
-    
+
     /**
      * Gets the shadow manager for global shadow handling.
      * 
@@ -907,4 +905,6 @@ class WorldLoader(private val scene: Scene) {
     }
 }
 
-fun AbstractMesh.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == true
+fun Node.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == true
+
+fun Node.isStartPosition(): Boolean = metadata?.gltf?.extras?.start as? Boolean == true
