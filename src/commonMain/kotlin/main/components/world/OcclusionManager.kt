@@ -195,10 +195,10 @@ class OcclusionManager(private val scene: Scene) {
             void main (void) {
                 #include<instancesVertex>
                 
-                vec4 worldPos = world * vec4(position, 1.0);
+                vec4 worldPos = finalWorld * vec4(position, 1.0);
                 gl_Position = viewProjection * worldPos;
                 vPositionW = worldPos.xyz;
-                vDepthMetric = (gl_Position.z + 0.1) / (100.0 + 0.1);
+                vDepthMetric = ((gl_Position.z / gl_Position.w) + depthValues[0]) / depthValues[1];
             }
             """.trimIndent()
 
@@ -222,6 +222,7 @@ class OcclusionManager(private val scene: Scene) {
             override var uniforms: Array<String>? = arrayOf(
                 "world",
                 "viewProjection",
+                "depthValues",
                 "playerScreenPos",
                 "screenSize",
                 "occlusionRadius",

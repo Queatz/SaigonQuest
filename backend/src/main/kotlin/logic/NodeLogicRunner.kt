@@ -197,7 +197,7 @@ class NodeLogicRunner(
 
             // For dialogue and language nodes, follow the connection that matches the button index
             // For HasItem nodes, follow the connection that matches the output property
-            if (node.nodeId in listOf(NodeId.Dialogue, NodeId.UserLanguage)) {
+            if (node.nodeId in listOf(NodeId.Dialogue, NodeId.UserLanguage, NodeId.UserSex)) {
                 // Get the button index from the event data (default to 0 if not present)
                 val buttonIndex = (eventData["buttonIndex"] as? Int) ?: 0
                 WebSocketDebug.logMessage(
@@ -206,9 +206,10 @@ class NodeLogicRunner(
                     context.session
                 )
 
-                // Simply use the button index to select a connection
-                // This ensures that the order of connections matches the order of buttons
-                val connection = connections.find { connection -> connection.fromPort.endsWith("_out_button_$buttonIndex") }
+                // Use the button index to select a connection
+                // Prefer dynamic dialogue outputs, but fall back to static outputs
+                val connection = connections.find { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
+                    ?: connections.find { c -> c.fromPort.endsWith("_out_$buttonIndex") }
 
                 if (connection != null) {
                     WebSocketDebug.logMessage(
@@ -239,7 +240,7 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems) {
+            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge) {
                 // For HasItem nodes, use the outputProperty to select the correct connection
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -397,6 +398,15 @@ class NodeLogicRunner(
                 LanguageNodeRunner(context)
             }
 
+            NodeId.UserSex -> {
+                WebSocketDebug.logMessage(
+                    "SEX_RUNNER_SELECTED",
+                    "Selected SexNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                SexNodeRunner(context)
+            }
+
             NodeId.HasItem -> {
                 WebSocketDebug.logMessage(
                     "HAS_ITEM_RUNNER_SELECTED",
@@ -455,6 +465,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 GiveItemsNodeRunner(context)
+            }
+            NodeId.UserAge -> {
+                WebSocketDebug.logMessage(
+                    "AGE_RUNNER_SELECTED",
+                    "Selected AgeNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                AgeNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

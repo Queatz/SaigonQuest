@@ -93,6 +93,28 @@ sealed interface LogicNode {
     ) : LogicNode
     
     /**
+     * UserSex node - directs logic based on the user's sex
+     */
+    @Serializable
+    data class UserSex(
+        override val id: NodeId = NodeId.UserSex,
+        override val label: String = "User sex",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Directs logic based on the user's sex"
+    ) : LogicNode
+    
+    /**
+     * UserAge node - directs logic based on the user's age
+     */
+    @Serializable
+    data class UserAge(
+        override val id: NodeId = NodeId.UserAge,
+        override val label: String = "User age",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Directs logic based on min/max age"
+    ) : LogicNode
+    
+    /**
      * HasItem node - checks if player has a specific item
      */
     @Serializable
@@ -180,6 +202,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.Teleport(),
         LogicNode.Dialogue(),
         LogicNode.UserLanguage(),
+        LogicNode.UserSex(),
+        LogicNode.UserAge(),
         LogicNode.HasItem(),
         LogicNode.OpenUrl(),
         LogicNode.ObjectNotification(),

@@ -9,6 +9,8 @@ enum class NodeId {
     PlayerInteract,
     Dialogue,
     UserLanguage,
+    UserSex,
+    UserAge,
     HasItem,
     OpenUrl,
     ObjectNotification,

@@ -88,6 +88,8 @@ object NodeEditorJsonUtil {
             NodeId.PlayerInteract -> LogicNode.PlayerInteract()
             NodeId.Dialogue -> LogicNode.Dialogue()
             NodeId.UserLanguage -> LogicNode.UserLanguage()
+            NodeId.UserSex -> LogicNode.UserSex()
+            NodeId.UserAge -> LogicNode.UserAge()
             NodeId.HasItem -> LogicNode.HasItem()
             NodeId.OpenUrl -> LogicNode.OpenUrl()
             NodeId.ObjectNotification -> LogicNode.ObjectNotification()

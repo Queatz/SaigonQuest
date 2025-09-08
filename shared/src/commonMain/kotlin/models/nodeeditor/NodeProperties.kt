@@ -46,7 +46,11 @@ enum class PropertyKey {
     URL,
 
     // Delay properties
-    DELAY_SECONDS
+    DELAY_SECONDS,
+
+    // UserAge properties
+    MIN_AGE,
+    MAX_AGE
 }
 
 /**
@@ -266,6 +270,64 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.NEXT,
                 name = "Tiếng Việt",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        
+        // UserSex node properties
+        is LogicNode.UserSex -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Boy",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Girl",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        
+        // UserAge node properties
+        is LogicNode.UserAge -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MIN_AGE,
+                name = "Min age",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MAX_AGE,
+                name = "Max age",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Yes",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "No",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )
