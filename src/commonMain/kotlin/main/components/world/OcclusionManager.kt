@@ -283,7 +283,7 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.roughness = originalMaterial.roughness
             customMaterial.emissiveColor = originalMaterial.emissiveColor
             customMaterial.emissiveIntensity = originalMaterial.emissiveIntensity
-            customMaterial.transparencyMode = Material.MATERIAL_ALPHATEST//ANDBLEND
+            customMaterial.transparencyMode = originalMaterial.transparencyMode//Material.MATERIAL_ALPHATEST//ANDBLEND
             customMaterial.alphaTestCutoff = originalMaterial.alphaTestCutoff
             customMaterial.alpha = originalMaterial.alpha
             customMaterial.fogEnabled = originalMaterial.fogEnabled

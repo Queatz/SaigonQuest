@@ -335,7 +335,9 @@ class CameraController(private val scene: Scene) {
      */
     fun updatePipelineSettings() {
         val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
-        
+
+        scene.imageProcessingConfiguration.exposure = if (isPrettyEnabled) .5f else 1f
+
         try {
             // First enable/disable features, then configure them
             // This ensures the components are created before we try to access their properties

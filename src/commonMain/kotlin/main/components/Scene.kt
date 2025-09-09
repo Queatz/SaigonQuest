@@ -658,7 +658,6 @@ fun SceneComponent(url: String) {
         val scene = Scene(engine).apply {
             imageProcessingConfiguration.isEnabled = true
             imageProcessingConfiguration.applyByPostProcess = true
-            imageProcessingConfiguration.gamma = 1.8f
         }
         
         // Register scene with SceneManager for global access
