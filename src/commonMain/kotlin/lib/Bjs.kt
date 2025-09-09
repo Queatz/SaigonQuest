@@ -750,6 +750,21 @@ external class Ray {
      * @return Information about the intersection point
      */
     fun intersectsMesh(mesh: AbstractMesh, fastCheck: Boolean = definedExternally): PickingInfo
+
+    /**
+     * Tests if the ray intersects a list of meshes
+     * @param meshes Array of meshes to test
+     * @param fastCheck Defines if the first intersection will be used (and not the closest)
+     * @param results Optional array to store the picking info results
+     * @return Array of picking info results
+     */
+    fun intersectsMeshes(
+        meshes: Array<AbstractMesh>,
+        fastCheck: Boolean = definedExternally,
+        results: Array<PickingInfo>? = definedExternally,
+    ): Array<PickingInfo>
+
+
 }
 
 external class PickingInfo {

@@ -95,7 +95,7 @@ class OcclusionManager(private val scene: Scene) {
         
         float fragmentDepth = gl_FragCoord.z;
         float playerDepth = playerScreenPos.z;
-        float depthDiff = fragmentDepth - playerDepth;
+        float depthDiff = fragmentDepth - playerDepth + 0.001;
 
         // Dithered evaluation for depth and height comparisons (soften hard thresholds)
         // Drive bands by occlusionSoftness ratio for uniform blur across resolutions
@@ -340,7 +340,7 @@ class OcclusionManager(private val scene: Scene) {
                     val cam = camera ?: scene.activeCamera ?: return@add
 
                     // Get player's world position
-                    val playerWorldPos = playerMesh.position.add(Vector3(0f, 0f, 0f))
+                    val playerWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
 
                     // Get player's screen position (normalized [0,1] coordinates)
                     val playerScreenPos = Vector3.Project(

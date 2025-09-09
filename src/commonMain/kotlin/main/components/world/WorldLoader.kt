@@ -906,5 +906,6 @@ class WorldLoader(private val scene: Scene) {
 }
 
 fun Node.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == true
+fun Node.isWater(): Boolean = metadata?.gltf?.extras?.water as? Boolean == true
 
 fun Node.isStartPosition(): Boolean = metadata?.gltf?.extras?.start as? Boolean == true
