@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import lib.AbstractMesh
 import lib.Mesh
 import lib.Node
+import lib.PBRMaterial
 import lib.Scene
 import lib.SceneLoader
 import lib.TransformNode
@@ -154,6 +155,14 @@ class ObjectAssetManager(private val scene: Scene) {
 
                     // First, try to find the requested node by name
                     var foundRequestedNode = false
+
+                    // Convert all materials to linear space
+                    assetContainer.meshes.map { it.material }.distinct().forEach { material ->
+                        (material as? PBRMaterial)?.apply {
+                            albedoColor = albedoColor.toLinearSpace()
+                            emissiveColor = emissiveColor.toLinearSpace()
+                        }
+                    }
 
                     // Try to find the node in rootNodes
                     val allNodes = assetContainer.getNodes()

@@ -55,6 +55,9 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
+import main.components.media.UploadMediaDialog
+import models.chat.ImageAttachment
+import main.api.ContentApi
 
 /**
  * Content for the chat panel/dialog.
@@ -66,10 +69,13 @@ import org.w3c.dom.HTMLInputElement
 fun ChatContent(worldId: String) {
     var messageText by remember { mutableStateOf("") }
     var isAuthenticated by remember { mutableStateOf(false) }
+    var isPlayer by remember { mutableStateOf(false) }
     var isWebSocketConnected by remember { mutableStateOf(false) }
     var lastError by remember { mutableStateOf<String?>(null) }
     var showEmotePopup by remember { mutableStateOf(false) }
     var isTyping by remember { mutableStateOf(false) }
+    var showUploadDialog by remember { mutableStateOf(false) }
+    var reloadKey by remember { mutableStateOf(0) }
     
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
@@ -114,6 +120,7 @@ fun ChatContent(worldId: String) {
         try {
             val user = UserApi.getCurrentUser()
             isAuthenticated = user.key.isNotEmpty()
+            isPlayer = user.isPlayer
         } catch (e: Throwable) {
             console.error("Error checking authentication status", e)
             isAuthenticated = false
@@ -190,7 +197,10 @@ fun ChatContent(worldId: String) {
         }
     ) {
         // Use the ChatMessages component to display messages
-        ChatMessages(worldId = worldId)
+        ChatMessages(
+            worldId = worldId,
+            reloadKey = reloadKey,
+        )
     }
     
     // Chat input area
@@ -309,6 +319,32 @@ fun ChatContent(worldId: String) {
                 }
             }
             
+            // Upload image button
+            if (isPlayer) {
+                Div(
+                    attrs = {
+                        style {
+                            width(40.px)
+                            height(40.px)
+                            backgroundColor(rgba(255, 255, 255, 0.1))
+                            property("border-radius", "4px")
+                            display(DisplayStyle.Flex)
+                            justifyContent(JustifyContent.Center)
+                            alignItems(AlignItems.Center)
+                            cursor(if (isAuthenticated) "pointer" else "not-allowed")
+                            opacity(if (isAuthenticated) 1.0 else 0.5)
+                        }
+                        onClick {
+                            if (isAuthenticated) {
+                                showUploadDialog = true
+                            }
+                        }
+                    }
+                ) {
+                    Text("🖼️")
+                }
+            }
+
             // Text input
             TextInput(
                 value = messageText,
@@ -374,6 +410,45 @@ fun ChatContent(worldId: String) {
                             }
                         }
                     }
+                    // Handle paste of image from clipboard
+                    onPaste { event ->
+                        try {
+                            val dt = event.clipboardData
+                            val files = dt?.files
+                            val length = files?.length ?: 0
+                            for (i in 0 until length) {
+                                val file = files?.item(i)
+                                if (file != null && file.type.startsWith("image/")) {
+                                    event.preventDefault()
+                                    if (isAuthenticated && isPlayer) {
+                                        scope.launch {
+                                            try {
+                                                val token = UserApi.getToken() ?: ""
+                                                val record = ContentApi.upload(file, token)
+                                                val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
+                                                val attachments = listOf(
+                                                    ImageAttachment(
+                                                        url = finalUrl,
+                                                    ),
+                                                )
+                                                ChatApi.createMessage(
+                                                    worldId = worldId,
+                                                    message = "",
+                                                    attachments = attachments,
+                                                )
+                                                reloadKey += 1
+                                            } catch (t: Throwable) {
+                                                console.error("Failed to send pasted image", t)
+                                            }
+                                        }
+                                    }
+                                    break
+                                }
+                            }
+                        } catch (t: Throwable) {
+                            console.error("Error handling paste event", t)
+                        }
+                    }
                     // Use ref for auto-focus
                     ref { element -> 
                         chatInputRef.value = element
@@ -430,6 +505,35 @@ fun ChatContent(worldId: String) {
                 }
             ) {
                 Translated("Send")
+            }
+
+            // Upload media dialog
+            if (showUploadDialog) {
+                UploadMediaDialog(
+                    onClose = { showUploadDialog = false },
+                    onSelect = { imageUrl ->
+                        scope.launch {
+                            try {
+                                val attachments = listOf(
+                                    ImageAttachment(
+                                        url = imageUrl,
+                                    ),
+                                )
+                                ChatApi.createMessage(
+                                    worldId = worldId,
+                                    message = "",
+                                    attachments = attachments,
+                                )
+                                // Force chat list reload to show the new image message
+                                reloadKey += 1
+                            } catch (t: Throwable) {
+                                console.error("Failed to send image message", t)
+                            } finally {
+                                showUploadDialog = false
+                            }
+                        }
+                    },
+                )
             }
         }
     }

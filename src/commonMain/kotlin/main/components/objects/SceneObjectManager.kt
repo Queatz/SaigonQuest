@@ -811,7 +811,7 @@ class SceneObjectManager(
      */
     private fun createFallbackSphere(name: String, position: Vector3, rotation: Vector3, scale: Vector3): Node {
         // Create a transform node that will act as our container
-        val container = lib.TransformNode("container_$name", scene)
+        val container = TransformNode("container_$name", scene)
         
         // Set the container's position, rotation, and scale
         container.position = position
@@ -822,8 +822,8 @@ class SceneObjectManager(
         val sphere = MeshBuilder.CreateSphere(
             name,
             object : CreateSphereOptions {
-                override val diameter = 1.0f
-                override val segments = 16
+                override val diameter = .5f
+                override val segments = 8
             },
             scene
         )
@@ -831,8 +831,10 @@ class SceneObjectManager(
         // Create a white material
         val material = PBRMaterial("material_$name", scene)
         material.albedoColor = Color3(1f, 1f, 1f)  // White color
-        material.metallic = 0.0f
-        material.roughness = 0.4f
+        material.metallic = 0.8f
+        material.roughness = 0.2f
+        material.alpha = .8f
+        material.emissiveColor = Color3.White().scale(.2f)
         
         // Apply the material to the sphere
         sphere.material = material

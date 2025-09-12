@@ -1,6 +1,12 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+On
+vi: Bật
+
+Off
+vi: Tắt
+
 Health
 vi: Sức khỏe
 
@@ -102,6 +108,9 @@ vi: Đồ họa đẹp
 
 Log Out
 vi: Đăng xuất
+
+Are you sure you want to log out?
+vi: Bạn có chắc chắn muốn đăng xuất không?
 
 My Profile
 vi: Trang cá nhân của tôi
@@ -579,9 +588,6 @@ vi: Tiêu đề đối tượng
 
 File (without .glb)
 vi: Tệp (không có .glb)
-
-e.g. world1
-vi: ví dụ: world1
 
 Collection
 vi: Bộ sưu tập
@@ -1273,6 +1279,15 @@ vi: Ngồi
 
 Stand
 vi: Đứng
+
+Are you sure you want to delete this world? This cannot be undone.
+vi: Bạn có chắc chắn muốn xóa thế giới này không? Điều này không thể hoàn tác.
+
+Delete world
+vi: Xóa thế giới
+
+Attachment (optional)
+vi: Tệp đính kèm (tùy chọn)
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

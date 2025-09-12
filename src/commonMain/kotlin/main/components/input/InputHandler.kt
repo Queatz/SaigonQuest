@@ -840,7 +840,7 @@ class InputHandler(
                 console.error("[DEBUG_LOG] Error collecting inventory item", e)
                 
                 // Show error message
-                onShowMessageDialog?.invoke(str("Error collecting item") + ": ${'$'}{e.message}")
+                onShowMessageDialog?.invoke(str("Error collecting item") + ": ${e.message}")
             }
         }
     }

@@ -17,6 +17,7 @@ import lib.Vector2
 import lib.Vector3
 import lib.VertexBuffer
 import lib.VertexData
+import main.components.SceneManager
 import main.components.world.effect.WindSystem
 import kotlin.js.asDynamic
 import kotlin.math.atan2
@@ -168,6 +169,8 @@ class Character(
         // Apply initial skin tone to the base mesh
         applySkinToneToBaseMesh()
 
+        additionalSpriteSheets.clear()//TODO
+
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
@@ -200,6 +203,7 @@ class Character(
 
         // Add all the new sprite sheets
         additionalSpriteSheets.addAll(spriteSheets)
+        additionalSpriteSheets.clear()//TODO
 
         // Set the flag to re-render on the next update
         needsRerender = true
@@ -695,7 +699,7 @@ class Character(
         // Use alpha test + blend to keep crisp sprite edges while allowing smooth alpha changes
         material.transparencyMode = Material.MATERIAL_ALPHATEST//ANDBLEND
         material.metallic = 0.0f       // Low metallic value for non-metallic appearance
-        material.roughness = 0.4f      // Medium roughness for slight diffusion of light
+        material.roughness = 1f      // Medium roughness for slight diffusion of light
         material.usePhysicalLightFalloff = true  // Enable physical light falloff
 
         // Create a plane with the correct aspect ratio (vertical billboard-friendly)
@@ -753,7 +757,7 @@ class Character(
                 val effect = material.getEffect() ?: return@add
                 try {
                     // Compute camera-local wind and velocity
-                    val camera = main.components.SceneManager.getCameraController()?.getCamera()
+                    val camera = SceneManager.getCameraController()?.getCamera()
                     val camDir = if (camera != null) {
                         val d = camera.target.subtract(camera.position).normalize()
                         Vector3(d.x, 0f, d.z).normalize()

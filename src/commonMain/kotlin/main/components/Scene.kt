@@ -658,6 +658,7 @@ fun SceneComponent(url: String) {
         val scene = Scene(engine).apply {
             imageProcessingConfiguration.isEnabled = true
             imageProcessingConfiguration.applyByPostProcess = true
+            imageProcessingConfiguration.toneMappingEnabled = true
         }
         
         // Register scene with SceneManager for global access
@@ -967,7 +968,7 @@ fun SceneComponent(url: String) {
             // Graphics auto-leveling: track FPS and adjust settings if needed
             if (graphicsAutoLevelingActive) {
                 val dtMs = scene.deltaTime.toDouble()
-                val fps = if (dtMs > 0.0) 1000.0 / dtMs else 0.0
+                val fps = if (dtMs > 0.0 && dtMs < 1_000.0) 1_000.0 / dtMs else 0.0
 
                 if (fps < 45.0) {
                     lowFpsAccumulatedMs += dtMs

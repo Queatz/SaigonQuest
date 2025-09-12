@@ -31,7 +31,9 @@ import main.components.world.isSkybox
  * - Smooth camera animations
  */
 class CameraController(private val scene: Scene) {
-    
+    // Initial FOV value when closest to target
+    private val baseFov = 0.5f
+
     // Create the main camera
     private val camera: ArcRotateCamera = ArcRotateCamera(
         name = "camera",
@@ -159,6 +161,15 @@ class CameraController(private val scene: Scene) {
     fun updateAnimation(): Boolean {
         updateDepthOfFieldFocus()
         updateVignetteWeight()
+
+        // Update FOV based on camera radius
+        if (GraphicsSettings.isWideAngleEnabled()) {
+            val radiusRange = camera.upperRadiusLimit - camera.lowerRadiusLimit
+            val radiusRatio = (camera.radius - camera.lowerRadiusLimit) / radiusRange
+            camera.fov = baseFov * (1f + 1f * radiusRatio) // Scale from 1x to 4x base FOV
+        } else {
+            camera.fov = baseFov
+        }
 
         if (!isAnimating || targetPosition == null || cameraTarget == null) {
             updateSkybox()
@@ -376,7 +387,7 @@ class CameraController(private val scene: Scene) {
                     // Enable/disable image processing
                     chromaticAberrationEnabled = isPrettyEnabled
                     if (isPrettyEnabled) {
-                        chromaticAberration.radialIntensity = 2f
+                        chromaticAberration.radialIntensity = 3f
                     }
                 } catch (e: Throwable) {
                     println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
@@ -443,7 +454,8 @@ class CameraController(private val scene: Scene) {
             }
             
             // Create new SSAO pipeline if pretty graphics are enabled
-            if (isPrettyEnabled) {
+            // Disabled due to issue with pre-pass depth map
+            if (isPrettyEnabled && false) {
                 try {
                     // Create SSAO pipeline with subtle settings
                     ssaoPipeline = SSAO2RenderingPipeline(

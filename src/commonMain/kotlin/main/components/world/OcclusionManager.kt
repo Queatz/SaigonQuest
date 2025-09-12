@@ -11,9 +11,7 @@ import lib.PBRMaterial
 import lib.Scene
 import lib.Vector2
 import lib.Vector3
-import lib.ShaderMaterial
-import lib.IShaderMaterialOptions
-import lib.IShaderPath
+import lib.CustomMaterial
 import main.components.SceneManager
 import kotlin.math.min
 
@@ -52,11 +50,16 @@ class OcclusionManager(private val scene: Scene) {
     private val occludedMeshes = mutableSetOf<AbstractMesh>()
     private val customMaterials = mutableMapOf<AbstractMesh, PBRCustomMaterial>()
 
+    // Single source of truth for current time (seconds), updated once per frame in update()
+    private var currentTimeSeconds: Float = 0f
+
     // Depth renderer and shared white depth material
     private val depthRenderer: DepthRenderer by lazy {
-        scene.enableDepthRenderer(scene.activeCamera)
+        scene.enableDepthRenderer(scene.activeCamera).apply {
+            forceDepthWriteTransparentMeshes = true
+        }
     }
-    private var sharedWhiteDepthMaterial: ShaderMaterial? = null
+    private var sharedWhiteDepthMaterial: CustomMaterial? = null
     private val depthOverrideMeshes = mutableSetOf<AbstractMesh>()
     
     // Configurable parameters
@@ -172,81 +175,97 @@ class OcclusionManager(private val scene: Scene) {
         occlusionSoftness = softnessRatio.coerceIn(0f, 1f)
     }
 
-    private fun getOrCreateSharedWhiteDepthMaterial(): ShaderMaterial {
-        val existing = sharedWhiteDepthMaterial
-        if (existing != null) return existing
+    private fun getOrCreateSharedWhiteDepthMaterial(): CustomMaterial {
+        val mat = sharedWhiteDepthMaterial ?: CustomMaterial("${customShaderName}-depth", scene).apply {
+            // Declare precision and uniforms for depth linearization
+            AddUniform("cameraNear", "float")
+            AddUniform("cameraFar", "float")
+            AddUniform("useReverseDepth", "bool")
 
-        val shaderPath = object : IShaderPath {
-            override var vertexSource: String? = """
-            precision highp float;
-            
-            attribute vec3 position;
-            
-            uniform vec2 depthValues;
-            uniform mat4 viewProjection;
-            uniform mat4 world;
-            
-            // Varyings
-            varying float vDepthMetric;
-            varying vec3 vPositionW;
+            // Occlusion uniforms (match those used in PBR occlusion shader)
+            AddUniform("playerScreenPos", "vec3")
+            AddUniform("screenSize", "vec2")
+            AddUniform("occlusionRadius", "float")
+            AddUniform("playerWorld", "vec3")
+            AddUniform("occlusionSoftness", "float")
+            AddUniform("useRadius", "bool")
+            AddUniform("time", "float")
 
-            #include<instancesDeclaration>
-            
-            void main (void) {
-                #include<instancesVertex>
+            // Depth linearization and any shared helpers
+            Fragment_Definitions(
+                """
+                $occlusionShaderCode
                 
-                vec4 worldPos = finalWorld * vec4(position, 1.0);
-                gl_Position = viewProjection * worldPos;
-                vPositionW = worldPos.xyz;
-                vDepthMetric = ((gl_Position.z / gl_Position.w) + depthValues[0]) / depthValues[1];
-            }
-            """.trimIndent()
-
-            override var fragmentSource: String? = """
-                precision highp float;
-            
-                // Varyings
-                varying float vDepthMetric;
-                varying vec3 vPositionW;
-                
-                void main (void) {
-                    gl_FragColor = vec4(vDepthMetric, 0.0, 0.0, 1.0);
+                float toLinearDepth(float depth01) {
+                    // Optionally handle reverse depth buffers
+                    float d = useReverseDepth ? (1.0 - depth01) : depth01;
+                    // Convert [0,1] depth to NDC [-1,1]
+                    float zNDC = d * 2.0 - 1.0;
+                    // Linearize using near/far
+                    float linear = (2.0 * cameraNear * cameraFar) / (cameraFar + cameraNear - zNDC * (cameraFar - cameraNear));
+                    // Normalize to [0,1] between near and far
+                    return clamp((linear - cameraNear) / max(1e-6, (cameraFar - cameraNear)), 0.0, 1.0);
                 }
-            """.trimIndent()
+                """.trimIndent()
+            )
 
-        }
-        val options = object : IShaderMaterialOptions {
-            override var attributes: Array<String>? = arrayOf(
-                "position"
+            // Overwrite the final color with normalized linear depth in red channel
+            // but first, apply occlusion discard via applyOcclusion (same logic as PBR material)
+            Fragment_MainEnd(
+                """
+                float depth01 = gl_FragCoord.z;
+                float normDepth = toLinearDepth(depth01);
+                
+                // Apply occlusion discards
+                applyOcclusion(alpha);
+                
+                gl_FragColor = vec4(normDepth, 0.0, 0.0, 1.0);
+                """.trimIndent()
             )
-            override var uniforms: Array<String>? = arrayOf(
-                "world",
-                "viewProjection",
-                "depthValues",
-                "playerScreenPos",
-                "screenSize",
-                "occlusionRadius",
-                "playerWorld",
-                "cameraWorld",
-                "occlusionSoftness",
-                "time"
-            )
-            override var samplers: Array<String>? = emptyArray()
-            override var defines: Array<String>? = emptyArray()
-        }
-        val mat = ShaderMaterial("depthWhiteShared", scene, shaderPath, options).apply {
-            backFaceCulling = true // TODO based on real material
-            fogEnabled = false
             disableLighting = true
-            transparencyMode = Material.MATERIAL_OPAQUE
+            fogEnabled = false
             alpha = 1.0f
-            needDepthPrePass = false
-            forceDepthWrite = true
-            disableColorWrite = false
-            disableDepthWrite = false
-        }
+            backFaceCulling = true
 
-        println("[DEPTH] Created shared depth material '${mat.name}', isReady=${try { mat.isReady() } catch (_: Throwable) { null }}")
+            // Bind camera near/far and occlusion uniforms each frame when material is bound
+            onBindObservable.add { _ ->
+                val effect = getEffect() ?: return@add
+                val cam = scene.activeCamera ?: return@add
+                try {
+                    // Depth uniforms
+                    effect.setFloat("cameraNear", cam.minZ)
+                    effect.setFloat("cameraFar", cam.maxZ)
+                    effect.setBool("useReverseDepth", false)
+
+                    // Skip occlusion binding if we don't have player/camera
+                    val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider()
+                    if (playerMesh != null) {
+                        val playerWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+                        val playerScreenPos = Vector3.Project(
+                            vector = playerWorldPos,
+                            world = Matrix.Identity(),
+                            transform = scene.getTransformMatrix(),
+                            viewport = cam.viewport,
+                        ).apply { y = 1.0f - y }
+
+                        val viewWidth = scene.getEngine().getRenderWidth()
+                        val viewHeight = scene.getEngine().getRenderHeight()
+                        val occRadius = min(viewWidth, viewHeight) / 2.0f
+                        val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
+
+                        effect.setVector3("playerScreenPos", playerScreenPos)
+                        effect.setVector3("playerWorld", playerWorldPos)
+                        effect.setFloat("occlusionRadius", occRadius)
+                        effect.setFloat("occlusionSoftness", occlusionSoftness)
+                        effect.setVector2("screenSize", screenSize)
+                        effect.setBool("useRadius", false)
+                        effect.setFloat("time", currentTimeSeconds)
+                    }
+                } catch (_: Throwable) {
+                    // avoid crashing if effect is not ready yet
+                }
+            }
+        }
         sharedWhiteDepthMaterial = mat
         return mat
     }
@@ -360,9 +379,6 @@ class OcclusionManager(private val scene: Scene) {
                     // Create screenSize vector once and reuse it
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
 
-                    // Get current time for animations
-                    val currentTime = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()  // Convert to seconds
-
                     // Set player position uniforms
                     effect.setVector3("playerScreenPos", playerScreenPos)
                     effect.setVector3("playerWorld", playerWorldPos)
@@ -378,7 +394,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setBool("useRadius", false)
 
                     // Set time uniform for animations
-                    effect.setFloat("time", currentTime)
+                    effect.setFloat("time", currentTimeSeconds)
                 } catch (e: Throwable) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
@@ -392,10 +408,8 @@ class OcclusionManager(private val scene: Scene) {
             // Store the custom material for later updates
             customMaterials[mesh] = customMaterial
 
-//            val depthMat = getOrCreateSharedWhiteDepthMaterial()
-//            try { depthRenderer.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
-//            depthRenderer.setMaterialForRendering(mesh, depthMat)
-//            mesh.material = depthMat
+            val depthMat = getOrCreateSharedWhiteDepthMaterial()
+            depthRenderer.setMaterialForRendering(mesh, depthMat)
             depthOverrideMeshes.add(mesh)
             
             // Add to tracking set
@@ -419,6 +433,9 @@ class OcclusionManager(private val scene: Scene) {
         // Refresh player and camera references
         camera = scene.activeCamera
         player = SceneManager.getPlayerController()?.getCollider()
+
+        // Update shared current time once per frame (seconds)
+        currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
     }
     
     /**
@@ -433,7 +450,7 @@ class OcclusionManager(private val scene: Scene) {
                 mesh.material = metadata.originalMaterial!!
             }
             // Remove depth override
-//            try { depthRenderer.setMaterialForRendering(mesh, null) } catch (_: Throwable) {}
+            try { depthRenderer.setMaterialForRendering(mesh, null) } catch (_: Throwable) {}
         }
         // Dispose shared depth material
         try { sharedWhiteDepthMaterial?.dispose() } catch (_: Throwable) {}

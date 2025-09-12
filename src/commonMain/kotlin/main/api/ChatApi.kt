@@ -3,10 +3,11 @@ package main.api
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.browser.window
 import models.ChatMessage
+import models.chat.Attachment
 import models.ChatReadMarker
 import models.ChatMessagePin
+import models.chat.CreateChatMessageRequest
 import kotlin.time.Clock
 
 import kotlin.time.Instant
@@ -18,6 +19,19 @@ import kotlin.time.Instant
  * It uses the shared ApiClient for HTTP requests and coroutines for asynchronous operations.
  */
 object ChatApi {
+
+    suspend fun createMessage(
+        worldId: String,
+        message: String,
+        attachments: List<Attachment> = emptyList(),
+    ): ChatMessage {
+        val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/chat/$worldId") {
+            ApiClient.addAuthHeader(this)
+            contentType(ContentType.Application.Json)
+            setBody(CreateChatMessageRequest(message = message, attachments = attachments))
+        }
+        return response.body()
+    }
     
     /**
      * Get chat messages for a world

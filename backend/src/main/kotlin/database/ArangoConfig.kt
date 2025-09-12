@@ -63,7 +63,10 @@ object ArangoConfig {
         .visibility(PropertyAccessor.SETTER, JsonAutoDetect.Visibility.NONE)
         .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
         .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
-        .build()
+        .build().also {
+            // Register polymorphic handling for chat attachments using discriminator "type"
+            it.addMixIn(models.chat.Attachment::class.java, serialization.AttachmentMixin::class.java)
+        }
 
     private val jacksonSerde = JacksonSerdeImpl(objectMapper)
 

@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
 import kotlin.time.Instant
+import models.chat.Attachment
 
 /**
  * Represents a chat message in a world.
@@ -26,5 +27,6 @@ data class ChatMessage(
     @Contextual
     var timestamp: Instant = Clock.System.now(),
     var edited: Boolean = false,
-    var deleted: Boolean = false
+    var deleted: Boolean = false,
+    var attachments: List<Attachment> = emptyList(),
 ) : BaseModel()

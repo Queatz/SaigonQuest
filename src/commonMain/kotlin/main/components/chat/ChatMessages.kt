@@ -20,6 +20,7 @@ import main.api.deleteChatMessage
 import main.api.updateChatMessage
 import main.components.common.Spinner
 import main.components.Translated
+import main.components.ImageDialog
 import main.theme.Styles
 import models.ChatMessage
 import models.ChatMessagePin
@@ -31,6 +32,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Img
+import models.chat.ImageAttachment
 import org.w3c.dom.HTMLDivElement
 import web.animations.awaitAnimationFrame
 import kotlin.js.Date
@@ -41,7 +44,10 @@ import kotlin.js.Date
  * @param worldId The ID of the world to get messages for
  */
 @Composable
-fun ChatMessages(worldId: String) {
+fun ChatMessages(
+    worldId: String,
+    reloadKey: Int = 0,
+) {
     // State for chat messages
     var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -54,6 +60,8 @@ fun ChatMessages(worldId: String) {
     
     // State for selected message (for editing/deleting)
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
+    // State for image dialog (selected image URL)
+    var imageDialogUrl by remember { mutableStateOf<String?>(null) }
     
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
@@ -102,7 +110,7 @@ fun ChatMessages(worldId: String) {
     }
     
     // Load historical messages on component initialization
-    LaunchedEffect(worldId) {
+    LaunchedEffect(worldId, reloadKey) {
         isLoading = true
         error = null
         
@@ -297,6 +305,14 @@ fun ChatMessages(worldId: String) {
             }
         )
     }
+
+    // Image preview dialog
+    imageDialogUrl?.let { url ->
+        ImageDialog(
+            imageUrl = url,
+            onClose = { imageDialogUrl = null }
+        )
+    }
     
     // Display messages
     Div(attrs = { classes(Styles.chatMessagesWrapper) }) {
@@ -310,6 +326,15 @@ fun ChatMessages(worldId: String) {
                         P(attrs = { classes(Styles.chatMessageText) }) {
                             if (msg != null && !msg.deleted) Text(msg.message) else Text("(message)")
                         }
+
+                        // Attachments
+                        if (msg != null && !msg.deleted && msg.attachments.isNotEmpty()) {
+                            MessageAttachments(
+                                attachments = msg.attachments,
+                                onImageClick = { url -> imageDialogUrl = url },
+                            )
+                        }
+
                         if (isOwner) {
                             Div(attrs = {
                                 classes(Styles.chatPinButton)
@@ -386,7 +411,8 @@ fun ChatMessages(worldId: String) {
                                 } catch (e: Throwable) { console.error("Pin failed", e) }
                             }
                         }
-                    }
+                    },
+                    onImageClick = { url -> imageDialogUrl = url },
                 )
             }
             }
@@ -408,6 +434,7 @@ fun ChatMessageItem(
     isCurrentUser: Boolean = false,
     isPinned: Boolean = false,
     onPinToggle: (() -> Unit)? = null,
+    onImageClick: (String) -> Unit = {},
 ) {
     Div(
         attrs = {
@@ -486,6 +513,14 @@ fun ChatMessageItem(
             } else {
                 Text(message.message)
             }
+        }
+
+        // Attachments
+        if (!message.deleted && message.attachments.isNotEmpty()) {
+            MessageAttachments(
+                attachments = message.attachments,
+                onImageClick = onImageClick,
+            )
         }
     }
 }

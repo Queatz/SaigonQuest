@@ -1,5 +1,6 @@
 package routes
 
+import Translations.str
 import auth.JwtConfig
 import com.auth0.jwt.exceptions.JWTVerificationException
 import debug.WebSocketDebug
@@ -252,7 +253,7 @@ fun Routing.configureWebSocketRoutes() {
             
             // Send user join notification to all clients in the world
             val isPlayer = connection.user.isPlayer
-            val username = if (isPlayer) connection.user.username else "Visitor"
+            val username = connection.user.username.ifBlank { str("Visitor") }
             
             val joinData = UserJoinData(
                 userId = connection.userId,

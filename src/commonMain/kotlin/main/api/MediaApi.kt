@@ -72,7 +72,7 @@ object MediaApi {
             ApiClient.addAuthHeader(this)
         }
         if (!response.status.isSuccess()) {
-            throw Error("Failed to delete media: ${'$'}{response.status}")
+            throw Error("Failed to delete media: ${response.status}")
         }
     }
 }

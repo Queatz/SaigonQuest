@@ -1395,7 +1395,8 @@ fun WorldEditContent(
                 when {
                     isSubmitting -> "Saving..."
                     isEditing && isOwner -> "Update"
-                    else -> "Save"
+                    isSubmitting -> "Creating..."
+                    else -> "Create"
                 }
             )
         }

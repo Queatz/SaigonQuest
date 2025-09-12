@@ -48,7 +48,7 @@ fun CharacterRenderer(
     bodyType: String = "Normal",
     skinTone: Float = 0.5f,
     eyeColor: String = "Brown",
-    hairStyle: String = "Short"
+    hairStyle: String? = "Short"
 ) {
     // Set up the canvas with CSS and ref instead of ID
     var canvasRef by remember { mutableStateOf<HTMLCanvasElement?>(null) }

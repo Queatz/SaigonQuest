@@ -2,7 +2,6 @@ package routes
 
 import auth.JWTUtils
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
@@ -15,12 +14,12 @@ import repository.ChatRepository
 import repository.WorldRepository
 import models.ChatMessagePin
 import models.WebSocketAction
-import routes.activeConnections
 import utils.json
 import repository.UserRepository
 import kotlin.time.Clock
 
 import kotlin.time.Instant
+import models.chat.Attachment
 
 /**
  * Configure routes for chat operations
@@ -150,10 +149,15 @@ fun Routing.configureChatRoutes() {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
-                // Get message text from request
-                val messageText = call.receiveText()
+                // Receive JSON body only (no receiveText)
+                val body = try { call.receive<models.chat.CreateChatMessageRequest>() } catch (t: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request body", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
                 
-                if (messageText.isBlank()) {
+                if (body.message.isBlank() && body.attachments.isEmpty()) {
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorResponse(message = "Message cannot be empty", code = HttpStatusCode.BadRequest.value)
@@ -171,8 +175,9 @@ fun Routing.configureChatRoutes() {
                     worldId = worldId,
                     userId = userId,
                     username = user.username,
-                    message = messageText,
-                    timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+                    message = body.message,
+                    timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
+                    attachments = body.attachments,
                 )
                 
                 // Save message

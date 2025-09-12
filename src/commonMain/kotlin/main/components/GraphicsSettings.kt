@@ -17,7 +17,8 @@ object GraphicsSettings {
      */
     private const val GRAPHICS_MODE_STORAGE_KEY = "saigon_quest_graphics_mode"
     private const val PRETTY_GRAPHICS_STORAGE_KEY = "saigon_quest_pretty_graphics"
-    
+    private const val WIDE_ANGLE_STORAGE_KEY = "saigon_quest_wide_angle"
+
     /**
      * State to track whether low graphics mode is enabled.
      * In low graphics mode, the world is rendered at 1/3 resolution.
@@ -29,6 +30,8 @@ object GraphicsSettings {
      * In pretty graphics mode, additional visual effects are enabled.
      */
     val _isPrettyGraphicsEnabled = mutableStateOf(loadPrettyGraphicsFromStorage())
+
+    val _isWideAngleEnabled = mutableStateOf(loadWideAngleFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -43,7 +46,11 @@ object GraphicsSettings {
     fun isLowGraphicsModeEnabled(): Boolean {
         return _isLowGraphicsModeEnabled.value
     }
-    
+
+    fun isWideAngleEnabled(): Boolean {
+        return _isWideAngleEnabled.value
+    }
+
     /**
      * Set the state of low graphics mode.
      * 
@@ -173,6 +180,19 @@ object GraphicsSettings {
             notifyObservers()
         }
     }
+
+    fun setWideAngle(enabled: Boolean) {
+        val oldValue = _isWideAngleEnabled.value
+        _isWideAngleEnabled.value = enabled
+
+        // Save to localStorage
+        saveWideAngleToStorage(enabled)
+
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
     
     /**
      * Toggle the state of pretty graphics mode.
@@ -206,7 +226,7 @@ object GraphicsSettings {
             false
         }
     }
-    
+
     /**
      * Save pretty graphics setting to localStorage.
      * 
@@ -217,6 +237,24 @@ object GraphicsSettings {
             localStorage.setItem(PRETTY_GRAPHICS_STORAGE_KEY, enabled.toString())
         } catch (e: Throwable) {
             console.error("Error saving pretty graphics mode to localStorage", e)
+        }
+    }
+
+    private fun loadWideAngleFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(WIDE_ANGLE_STORAGE_KEY)
+            storedValue == "true"
+        } catch (e: Throwable) {
+            console.error("Error loading wide angle mode from localStorage", e)
+            false
+        }
+    }
+
+    private fun saveWideAngleToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(WIDE_ANGLE_STORAGE_KEY, enabled.toString())
+        } catch (e: Throwable) {
+            console.error("Error saving wide angle mode to localStorage", e)
         }
     }
 }

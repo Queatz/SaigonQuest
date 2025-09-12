@@ -113,6 +113,7 @@ abstract external class AbstractMesh : Node {
     override var name: String
     override var parent: Node?
     var infiniteDistance: Boolean
+    var checkCollisions: Boolean
 
     /**
      * Tests if a ray intersects the mesh
@@ -355,7 +356,9 @@ abstract external class Material {
     }
 }
 
-external class StandardMaterial(name: String, scene: Scene) : Material {
+
+
+open external class StandardMaterial(name: String, scene: Scene) : Material {
     var diffuseTexture: Texture
     var emissiveTexture: Texture
     var opacityTexture: Texture

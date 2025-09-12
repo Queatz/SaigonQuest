@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import main.api.ContentApiConstants
 import main.api.UserApi
 import main.api.MediaApi
+import main.api.ContentApi
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.Translated
@@ -61,23 +62,12 @@ fun UploadMediaDialog(
             error = null
             try {
                 val token = UserApi.getToken() ?: ""
-                val form = org.w3c.xhr.FormData()
-                form.append("API_USER_BEARER_TOKEN", token)
-                form.append("file", file, file.name)
-
-                val url = ContentApiConstants.CONTENT_BASE_URL + "/upload"
-                val init = js("({})").unsafeCast<RequestInit>().also {
-                    it.method = "POST"
-                    it.body = form
-                }
-                val res = window.fetch(url, init).await()
-                val text = res.text().await()
-                if (!res.ok) throw RuntimeException(text)
-                val record = json.decodeFromString<models.ContentUpload>(text)
-                val finalUrl = imageUrlFor(record.uploadedFilePath)
+                val record = ContentApi.upload(file, token)
+                val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
                 onSelect(finalUrl)
                 onClose()
             } catch (t: Throwable) {
+                t.printStackTrace()
                 error = t.message ?: "Upload failed"
             } finally {
                 uploading = false
@@ -122,6 +112,31 @@ fun UploadMediaDialog(
                     val files = (event.nativeEvent as DragEvent).dataTransfer?.files
                     val first = files?.item(0)
                     if (first != null) uploadFile(first)
+                }
+                onPaste { event ->
+                    try {
+                        val dt = event.clipboardData
+                        val files = dt?.files
+                        val length = files?.length ?: 0
+                        for (i in 0 until length) {
+                            val f = files?.item(i)
+                            if (f != null && f.type.startsWith("image/")) {
+                                event.preventDefault()
+                                uploadFile(f)
+                                break
+                            }
+                        }
+                    } catch (t: Throwable) {
+                        t.printStackTrace()
+                    }
+                }
+
+                ref {
+                    it.focus()
+
+                    onDispose {
+
+                    }
                 }
             }) {
                 P { Translated(if (uploading) "Uploading..." else "Click or drop image to upload") }

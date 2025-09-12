@@ -83,3 +83,14 @@ external class PBRCustomMaterial(name: String, scene: Scene) : PBRMaterial {
      */
     fun AddUniform(name: String, kind: String, value: dynamic = definedExternally)
 }
+
+/**
+ * The CustomMaterial allows creating custom StandardMaterial-based materials by extending the StandardMaterial
+ * and providing custom shader code snippets (for non-PBR pipelines).
+ */
+external class CustomMaterial(name: String, scene: Scene) : StandardMaterial {
+    fun AddUniform(name: String, kind: String)
+    fun Fragment_Definitions(shaderCode: String)
+    fun Fragment_Begin(shaderCode: String)
+    fun Fragment_MainEnd(shaderCode: String)
+}

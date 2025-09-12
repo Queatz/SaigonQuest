@@ -28,7 +28,11 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.dom.RangeInput
+import web.cssom.HtmlAttributes.Companion.selected
+import web.cssom.HtmlAttributes.Companion.value
+import web.html.HtmlTagName.option
 
 /**
  * Dialog for customizing player character appearance
@@ -67,9 +71,9 @@ fun CharacterCustomizationDialog(
                 attrs = {
                     style {
                         marginBottom(16.px)
-                        display(DisplayStyle.Companion.Flex)
-                        alignItems(AlignItems.Companion.Center)
-                        justifyContent(JustifyContent.Companion.Center)
+                        display(DisplayStyle.Flex)
+                        alignItems(AlignItems.Center)
+                        justifyContent(JustifyContent.Center)
                     }
                 }
             ) {
@@ -241,12 +245,12 @@ fun CharacterCustomizationDialog(
                             }
                         }
                     ) {
-                        listOf("Short", "Medium", "Long").forEach { option ->
+                        listOf("None", "Short", "Medium", "Long").forEach { option ->
                             Option(
-                                value = option,
+                                value = if (option == "None") "" else option,
                                 attrs = {
                                     if (option == hairStyle) {
-                                        attr("selected", "true")
+                                        selected()
                                     }
                                 }
                             ) {

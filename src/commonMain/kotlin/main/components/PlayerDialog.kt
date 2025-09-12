@@ -24,6 +24,7 @@ import main.components.common.formatAmount
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import main.api.ApiConstants
 import main.components.SceneManager.getPlayerController
 import main.components.world.PlayerActivity
 import org.jetbrains.compose.web.attributes.placeholder
@@ -45,6 +46,7 @@ import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog for player users to logout
+ * nguyễn thị minh khai
  */
 @Composable
 fun PlayerDialog(
@@ -66,7 +68,7 @@ fun PlayerDialog(
     val healthState = remember { mutableStateOf(user.health.coerceIn(0, 10)) }
     val mindState = remember { mutableStateOf(user.mind.coerceIn(0, 10)) }
     val spiritState = remember { mutableStateOf(user.spirit.coerceIn(0, 10)) }
-    
+
     // State to control character customization dialog visibility
     val showCustomizationDialog = remember { mutableStateOf(false) }
     // State to control My Worlds dialog visibility
@@ -78,6 +80,7 @@ fun PlayerDialog(
     // State to control Balance dialogs visibility
     val showBalanceDialog = remember { mutableStateOf(false) }
     val showBalanceHistoryDialog = remember { mutableStateOf(false) }
+    val showLogoutDialog = remember { mutableStateOf(false) }
 
     // Current balance for summary button
     val balanceState = remember { mutableStateOf<UserBalance?>(null) }
@@ -88,10 +91,10 @@ fun PlayerDialog(
 
     // Load current balance for summary button
     LaunchedEffect(Unit) {
-        val token = main.api.UserApi.getToken()
+        val token = UserApi.getToken()
         if (!token.isNullOrEmpty()) {
             try {
-                val b: UserBalance = httpClient.get("${main.api.ApiConstants.API_BASE_URL}/balance") {
+                val b: UserBalance = httpClient.get("${ApiConstants.API_BASE_URL}/balance") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
                 balanceState.value = b
@@ -197,7 +200,7 @@ fun PlayerDialog(
                 // Left column: Character renderer, Customize button, Status
                 Div(
                     attrs = {
-                        classes(Styles.playerDialogLeftColumn)
+                        classes(Styles.playerDialogColumn)
                     }
                 ) {
                     // Character renderer
@@ -314,7 +317,7 @@ fun PlayerDialog(
                 // Right column: All remaining UI
                 Div(
                     attrs = {
-                        classes(Styles.playerDialogRightColumn)
+                        classes(Styles.playerDialogColumn)
                     }
                 ) {
                     // User info
@@ -493,7 +496,9 @@ fun PlayerDialog(
                     Button(
                         attrs = {
                             classes(Styles.logoutButton)
-                            onClick { onLogout() }
+                            onClick {
+                                showLogoutDialog.value = true
+                            }
                         }
                     ) {
                         Translated("Log Out")
@@ -580,6 +585,18 @@ fun PlayerDialog(
                     baseUrl = main.api.ApiConstants.API_BASE_URL,
                     bearerToken = main.api.UserApi.getToken() ?: "",
                     onClose = { showBalanceHistoryDialog.value = false }
+                )
+            }
+
+            if (showLogoutDialog.value) {
+                BasicConfirmDialog(
+                    title = translated("Log Out"),
+                    message = translated("Are you sure you want to log out?"),
+                    onCancel = { showLogoutDialog.value = false },
+                    onConfirm = {
+                        showLogoutDialog.value = false
+                        onLogout()
+                    }
                 )
             }
         },

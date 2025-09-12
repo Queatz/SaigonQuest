@@ -7,8 +7,8 @@ import lib.Vector3
  */
 object PlayerUi {
     // Vertical offsets relative to the base position of a character
-    const val USERNAME_Y_OFFSET: Float = 0.5f
-    const val HUD_Y_OFFSET: Float = 0.8f
+    const val USERNAME_Y_OFFSET: Float = 0.8f
+    const val HUD_Y_OFFSET: Float = 1.1f
 
     // Common font size used for billboards
     const val FONT_SIZE: Int = 18

@@ -13,6 +13,7 @@ import org.jetbrains.compose.web.css.media
 import org.jetbrains.compose.web.css.mediaMaxWidth
 import org.jetbrains.compose.web.css.mediaMinWidth
 import org.jetbrains.compose.web.css.minHeight
+import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.selectors.CSSSelector
 import org.jetbrains.compose.web.css.vh
@@ -49,9 +50,12 @@ import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.maxHeight
+import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.paddingTop
 import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.vw
 import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
 
@@ -570,19 +574,26 @@ object Styles : StyleSheet() {
         property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
         // Optional: soften with a slight blur
         padding(16.px, 0.px)
+        maxHeight(25.percent)
+        overflowY("auto")
     }
 
     // Clickable pin/unpin action style
     val chatPinButton by style {
         display(DisplayStyle.Flex)
-        padding(
-            2.px, 8.px
-        )
+        padding(2.px, 8.px)
+
         cursor("pointer")
+
         color(Theme.colors.textSecondary)
-        property("border-radius", "4px")
         border(1.px, LineStyle.Solid, Theme.colors.outline)
-        dark(self) { color(Theme.colors.textSecondaryDark) }
+
+        borderRadius(6.px)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+            border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
+        }
     }
 
     // Outer wrapper for chat area; holds pinned header and scroll area
@@ -645,7 +656,7 @@ object Styles : StyleSheet() {
         marginBottom(12.px)
         padding(8.px)
         cursor("pointer")
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("word-break", "break-word")
     }
 
@@ -691,11 +702,26 @@ object Styles : StyleSheet() {
         ); color(Theme.colors.textMuted); dark(self) { color(Theme.colors.textMutedDark) }
     }
 
-    val chatMessageContent by style { margin(0.px); color(Theme.colors.onBackground); dark(self) { color(Theme.colors.onBackgroundDark) } }
+    val chatMessageContent by style {
+        margin(0.px)
+        color(Theme.colors.onBackground)
+        dark(self) { color(Theme.colors.onBackgroundDark) }
+    }
 
     val chatMessageContentDeleted by style {
         opacity(0.5)
         fontStyle("italic")
+    }
+
+    // Image attachments inside chat messages
+    val chatImageAttachment by style {
+        display(DisplayStyle.Block)
+        maxWidth(360.px)
+        width(100.percent)
+        property("height", "auto")
+        borderRadius(6.px)
+        marginTop(6.px)
+        border(1.px, LineStyle.Solid, Theme.colors.white08)
     }
 
     // Dialog Form Styles
@@ -1123,24 +1149,9 @@ object Styles : StyleSheet() {
         }
     }
 
-    val playerDialogLeftColumn by style {
+    val playerDialogColumn by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        width(100.percent)
-
-        desktop(self) {
-            width(40.percent)
-        }
-    }
-
-    val playerDialogRightColumn by style {
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        width(100.percent)
-
-        desktop(self) {
-            width(60.percent)
-        }
     }
 
     // Bye page container: centers content both vertically and horizontally
@@ -1199,19 +1210,22 @@ object Styles : StyleSheet() {
     }
 
     init {
-        "body" style {
+        "body, html" style {
             margin(0.cssRem)
             padding(0.cssRem)
             property("font-family", "'Ysabeau Infant', sans-serif")
             property("-webkit-font-smoothing", "antialiased")
             property("-moz-osx-font-smoothing", "grayscale")
             minHeight(100.vh)
+            width(100.vw)
+            height(100.vh)
+            overflow("hidden")
             backgroundColor(Theme.colors.background)
             color(Theme.colors.onBackground)
         }
 
         media("(prefers-color-scheme: dark)") {
-            "body" style {
+            "body, html" style {
                 backgroundColor(Theme.colors.backgroundDark)
                 color(Theme.colors.onBackgroundDark)
             }

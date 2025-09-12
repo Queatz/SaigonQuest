@@ -503,6 +503,14 @@ class WorldLoader(private val scene: Scene) {
         // Count for logging
         var shadowCasterCount = 0
         var shadowReceiverCount = 0
+
+        // Convert all materials to linear space
+        meshes.map { it.material }.distinct().forEach { material ->
+            (material as? PBRMaterial)?.apply {
+                albedoColor = albedoColor.toLinearSpace()
+                emissiveColor = emissiveColor.toLinearSpace()
+            }
+        }
         
         meshes.forEach { mesh ->
             // Skip if mesh is not visible or is a helper object
