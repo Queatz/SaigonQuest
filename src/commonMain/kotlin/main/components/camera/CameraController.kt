@@ -65,8 +65,6 @@ class CameraController(private val scene: Scene) {
 
         // Remove keyboard controls to avoid conflicts with player movement
         inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
-
-        scene.enableDepthRenderer(this)
     }
 
     // Camera target - separate from player to prevent player moving with camera during panning

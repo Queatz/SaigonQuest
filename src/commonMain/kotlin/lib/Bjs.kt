@@ -3,6 +3,7 @@
 
 package lib
 
+import org.khronos.webgl.ArrayBufferView
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.KeyboardEvent
@@ -227,7 +228,11 @@ external class Scene(engine: Engine? = definedExternally) {
      * @return The transform matrix
      */
     fun getTransformMatrix(): Matrix
-    
+
+    fun getProjectionMatrix(): Matrix
+
+    fun getViewMatrix(): Matrix
+
     /**
      * Gets a node by name
      * @param name The name of the node to find
@@ -235,7 +240,11 @@ external class Scene(engine: Engine? = definedExternally) {
      */
     fun getNodeByName(name: String): Node?
     
-    fun enableDepthRenderer(camera: Camera? = definedExternally): DepthRenderer
+    fun enableDepthRenderer(
+        camera: Camera? = definedExternally,
+        storeNonLinearDepth: Boolean = definedExternally,
+        force32bitsFloat: Boolean = definedExternally,
+    ): DepthRenderer
     fun disableDepthRenderer()
     fun render()
     fun dispose()
@@ -394,6 +403,28 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
 
     fun clone(): Texture
     fun dispose()
+
+    /**
+     * Gets the size of the texture
+     * @return The size as an object with width and height
+     */
+    fun getSize(): TextureSize = definedExternally
+
+    /**
+    * Reads pixels from this texture if it is a render target (e.g., DepthRenderer's depth map).
+     * Returns a Promise that resolves to a typed array (Float32Array or Uint8Array).
+     */
+    fun readPixels(
+        faceIndex: Int? = definedExternally,
+        level: Int? = definedExternally,
+        buffer: ArrayBufferView? = definedExternally,
+        flushRenderer: Boolean? = definedExternally,
+        noDataConversion: Boolean? = definedExternally,
+        x: Int? = definedExternally,
+        y: Int? = definedExternally,
+        width: Int? = definedExternally,
+        height: Int? = definedExternally,
+    ): Promise<ArrayBufferView>?
 
     companion object {
         val NEAREST_SAMPLINGMODE: Int
@@ -573,7 +604,30 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
          * @param viewport The viewport
          * @return The projected vector
          */
-        fun Project(vector: Vector3, world: Matrix, transform: Matrix, viewport: Viewport): Vector3
+        fun Project(
+            vector: Vector3,
+            world: Matrix,
+            transform: Matrix,
+            viewport: Viewport,
+        ): Vector3
+        /**
+         * Unprojects a screen-space point (x,y in pixels, z in [0,1]) to world space.
+         * @param source The screen-space vector where x,y are pixels and z is depth in [0,1]
+         * @param viewportWidth Width of the viewport in pixels
+         * @param viewportHeight Height of the viewport in pixels
+         * @param world The world matrix (usually Matrix.Identity())
+         * @param view The view matrix
+         * @param projection The projection matrix
+         * @return The unprojected world space position
+         */
+        fun Unproject(
+            source: Vector3,
+            viewportWidth: Int,
+            viewportHeight: Int,
+            world: Matrix,
+            view: Matrix,
+            projection: Matrix,
+        ): Vector3
     }
 }
 
@@ -1359,6 +1413,11 @@ external interface CreateTubeOptions {
 external interface DynamicTextureOptions {
     val width: Int? get() = definedExternally
     val height: Int? get() = definedExternally
+}
+
+external interface TextureSize {
+    val width: Int
+    val height: Int
 }
 
 external class DynamicTexture(

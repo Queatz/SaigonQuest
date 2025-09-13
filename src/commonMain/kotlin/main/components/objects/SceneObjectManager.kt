@@ -402,26 +402,16 @@ class SceneObjectManager(
             val maxQuantity = if (payload.quantity > 0) payload.quantity else 1
             val dropQuantity = quantityOverride?.coerceIn(1, maxQuantity) ?: 1
             
-            // Calculate the 3D position from the 2D screen coordinates
-            console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
-            val position = calculatePositionFromScreenCoordinates(x, y)
-            console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
-            
-            // Create an Object model for the dropped item (server will persist)
-            val obj = Object(
-                title = payload.itemKey, // will be updated with item title after fetch
-                data = "", // no need to store full item in object data
-                worldId = worldId,
-                position = position,
-                collection = "",
-                file = "",
-                kind = ObjectKind.Inventory
-            )
             
 
             // Persist the object placement via unified transfer endpoint
             coroutineScope.launch {
                 try {
+                    // Calculate the 3D position from the 2D screen coordinates (depth-first)
+                    console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
+                    val position = calculatePositionFromScreenCoordinates(x, y)
+                    console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
+
                     // Fetch the item definition
                     val item = ItemApi.getItemById(payload.itemKey)
 
@@ -430,7 +420,7 @@ class SceneObjectManager(
                             itemKey = payload.itemKey,
                             quantity = dropQuantity,
                             worldId = worldId,
-                            position = obj.position,
+                            position = position,
                             title = item.title.ifBlank { null },
                         )
                     )
@@ -525,20 +515,21 @@ class SceneObjectManager(
             val obj = json.decodeFromString(Object.serializer(), data)
             console.log("[DEBUG_DROP] Parsed object data: title=${obj.title}, key=${obj.key}")
             
-            // Calculate the 3D position from the 2D screen coordinates
-            console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
-            val position = calculatePositionFromScreenCoordinates(x, y)
-            console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
-            
-            // Update the object with the new position and world ID
-            val updatedObj = obj.copy(
-                position = position,
-                worldId = worldId
-            )
-            console.log("[DEBUG_DROP] Updated object with new position: (${updatedObj.position.x}, ${updatedObj.position.y}, ${updatedObj.position.z})")
-            
             // Persist the object placement
             coroutineScope.launch {
+                // Calculate the 3D position from the 2D screen coordinates (depth-first)
+                console.log("[DEBUG_DROP] Calculating 3D position from screen coordinates ($x, $y)")
+                val position = calculatePositionFromScreenCoordinates(x, y)
+                console.log("[DEBUG_DROP] Calculated position: (${position.x}, ${position.y}, ${position.z})")
+
+                // Update the object with the new position and world ID
+                val updatedObj = obj.copy(
+                    position = position,
+                    worldId = worldId
+                )
+                console.log("[DEBUG_DROP] Updated object with new position: (${updatedObj.position.x}, ${updatedObj.position.y}, ${updatedObj.position.z})")
+                
+                // Persist the object placement
                 try {
                     // If the object has a key, update it; otherwise create a new one
                     val savedObj = if (obj.key.isNotEmpty()) {
@@ -578,87 +569,66 @@ class SceneObjectManager(
      * @param y The y coordinate on the screen
      * @return The calculated 3D position
      */
-    private fun calculatePositionFromScreenCoordinates(clientX: Int, clientY: Int): Position {
+    private suspend fun calculatePositionFromScreenCoordinates(clientX: Int, clientY: Int): Position {
         console.log("[DEBUG_POSITION] calculatePositionFromScreenCoordinates called with clientX=$clientX, clientY=$clientY")
-        
-        // Create a ray from the camera through the pointer position
-        val ray = scene.createPickingRay(
-            x = clientX,
-            y = clientY,
-            world = lib.Matrix.Identity(),
-            camera = cameraController.getCamera()
-        )
-        console.log("[DEBUG_POSITION] Created picking ray from camera through pointer position")
-        
-        var closestDistance = Float.MAX_VALUE
-        var closestPoint: Vector3? = null
-        
-        // Get world meshes for collision detection
-        val worldMeshes = getWorldMeshes()
-        console.log("[DEBUG_POSITION] Got ${worldMeshes.size} world meshes for collision detection")
 
-        // Skip player and move circle meshes if we have references to them
-        val playerController = main.components.SceneManager.getPlayerController()
-        val player = playerController?.getCollider()
-        val moveCircle = playerController?.getMoveCircle()
-        console.log("[DEBUG_POSITION] Player mesh: ${player?.name}, Move circle mesh: ${moveCircle?.name}")
-        
-        var intersectionCount = 0
-        for (mesh in worldMeshes) {
-            console.log("[DEBUG_POSITION] Checking mesh: ${mesh.name}")
-            
-            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) {
-                console.log("[DEBUG_POSITION] Skipping player or move circle mesh: ${mesh.name}")
-                continue
-            }
-            
-            val hit = ray.intersectsMesh(mesh)
-            if (hit.pickedPoint != null) {
-                intersectionCount++
-                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                console.log("[DEBUG_POSITION] Found intersection with mesh ${mesh.name} at distance $distance")
-                
-                if (distance < closestDistance) {
-                    closestDistance = distance
-                    closestPoint = hit.pickedPoint
-                    console.log("[DEBUG_POSITION] New closest point: (${closestPoint.x}, ${closestPoint.y}, ${closestPoint.z}) at distance $closestDistance")
-                }
-            } else {
-                console.log("[DEBUG_POSITION] No intersection with mesh ${mesh.name}")
-            }
-        }
-        
-        console.log("[DEBUG_POSITION] Found $intersectionCount intersections, closest point: $closestPoint")
-        
-        // If no collision with a mesh, fallback to using the player's position
-        if (closestPoint == null) {
-            console.log("[DEBUG_POSITION] No collision found, falling back to player position")
+        // Depth-first: try to get the visible world point at the drop pixel
+        val depthPoint = try {
+            main.components.world.DepthPicking.getVisibleWorldPointAt(
+                scene = scene,
+                x = clientX,
+                y = clientY,
+            )
+        } catch (_: Throwable) { null }
+
+        var basePoint: Vector3? = depthPoint
+
+        if (basePoint == null) {
+            // Fallback: original ray-based closest intersection with world meshes
+            val ray = scene.createPickingRay(
+                x = clientX,
+                y = clientY,
+                world = lib.Matrix.Identity(),
+                camera = cameraController.getCamera()
+            )
+            var closestDistance = Float.MAX_VALUE
+            var closestPoint: Vector3? = null
+
+            val worldMeshes = getWorldMeshes()
             val playerController = main.components.SceneManager.getPlayerController()
-            closestPoint = playerController?.getPlayerPosition()
-            console.log("[DEBUG_POSITION] Player position: $closestPoint")
-            
-            if (closestPoint == null) {
-                console.log("[DEBUG_POSITION] Player position is null, using Vector3.Zero()")
-                closestPoint = Vector3.Zero()
+            val player = playerController?.getCollider()
+            val moveCircle = playerController?.getMoveCircle()
+
+            for (mesh in worldMeshes) {
+                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                val hit = ray.intersectsMesh(mesh)
+                if (hit.pickedPoint != null) {
+                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                    if (distance < closestDistance) {
+                        closestDistance = distance
+                        closestPoint = hit.pickedPoint
+                    }
+                }
+            }
+
+            basePoint = closestPoint
+            if (basePoint == null) {
+                // Ultimate fallback: player's current position or zero
+                basePoint = playerController?.getPlayerPosition() ?: Vector3.Zero()
             }
         }
-        
-        // Add 0.5 on the Y-axis to make the item float above the ground
+
+        // Slight Y offset to avoid z-fighting with ground
         val finalPosition = Vector3(
-            closestPoint.x,
-            closestPoint.y + 0.125f,
-            closestPoint.z
+            basePoint.x,
+            basePoint.y + 0.125f,
+            basePoint.z
         )
-        console.log("[DEBUG_POSITION] Final position with Y offset: (${finalPosition.x}, ${finalPosition.y}, ${finalPosition.z})")
-        
-        // Convert to Position model
-        val result = Position(
+        return Position(
             x = finalPosition.x,
             y = finalPosition.y,
             z = finalPosition.z
         )
-        console.log("[DEBUG_POSITION] Returning Position: (${result.x}, ${result.y}, ${result.z})")
-        return result
     }
     
     /**

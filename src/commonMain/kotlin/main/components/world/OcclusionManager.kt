@@ -55,8 +55,13 @@ class OcclusionManager(private val scene: Scene) {
 
     // Depth renderer and shared white depth material
     private val depthRenderer: DepthRenderer by lazy {
-        scene.enableDepthRenderer(scene.activeCamera).apply {
+        scene.enableDepthRenderer(
+            camera = scene.activeCamera,
+            storeNonLinearDepth = false,
+            force32bitsFloat = true
+        ).apply {
             forceDepthWriteTransparentMeshes = true
+            DepthPicking.depthRenderer = this
         }
     }
     private var sharedWhiteDepthMaterial: CustomMaterial? = null
@@ -225,7 +230,7 @@ class OcclusionManager(private val scene: Scene) {
             disableLighting = true
             fogEnabled = false
             alpha = 1.0f
-            backFaceCulling = true
+            backFaceCulling = false // todo to follow the meshes
 
             // Bind camera near/far and occlusion uniforms each frame when material is bound
             onBindObservable.add { _ ->

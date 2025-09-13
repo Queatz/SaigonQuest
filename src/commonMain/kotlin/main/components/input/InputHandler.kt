@@ -24,6 +24,7 @@ import main.components.camera.CameraController
 import main.components.inventory.InventoryState
 import main.components.objects.SceneObjectManager
 import main.components.player.PlayerController
+import main.components.world.DepthPicking
 import main.components.world.isSkybox
 import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
@@ -416,58 +417,65 @@ class InputHandler(
                 // Calculate the click point for object dragging
                 val selectedObjectId = objectManager?.getSelectedObject()
                 if (selectedObjectId != null) {
-                    // Create a ray from the camera through the pointer position
-                    val ray = scene.createPickingRay(
-                        x = scene.pointerX,
-                        y = scene.pointerY,
-                        world = Matrix.Identity(),
-                        camera = cameraController.getCamera()
-                    )
-                    
-                    // Find intersection with world meshes
-                    val playerWorldMeshes = playerController.getWorldMeshes()
-                    val objectWorldMeshes = objectManager.getWorldMeshes()
-                    val player = playerController.getCollider()
-                    val moveCircle = playerController.getMoveCircle()
-                    
-                    // Find the closest intersection point
-                    var closestDistance = Float.MAX_VALUE
-                    var clickPoint: Vector3? = null
-                    
-                    // Check player world meshes first
-                    for (mesh in playerWorldMeshes) {
-                        // Skip player and move circle meshes
-                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-                        
-                        val hit = ray.intersectsMesh(mesh)
-                        if (hit.pickedPoint != null) {
-                            val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                            if (distance < closestDistance) {
-                                closestDistance = distance
-                                clickPoint = hit.pickedPoint
+                    // Compute click point depth-first to ignore occlusion, with ray fallback
+                    scope.launch {
+                        val depthPoint = try {
+                            DepthPicking.getVisibleWorldPointAt(
+                                scene = scene,
+                                x = scene.pointerX,
+                                y = scene.pointerY,
+                            )
+                        } catch (_: Throwable) { null }
+
+                        if (depthPoint != null) {
+                            console.log("Stored click point for dragging (depth): (${depthPoint.x}, ${depthPoint.y}, ${depthPoint.z})")
+                            objectClickPoint = depthPoint
+                            return@launch
+                        }
+
+                        // Fallback to ray-based closest hit among world meshes
+                        val ray = scene.createPickingRay(
+                            x = scene.pointerX,
+                            y = scene.pointerY,
+                            world = Matrix.Identity(),
+                            camera = cameraController.getCamera()
+                        )
+
+                        val playerWorldMeshes = playerController.getWorldMeshes()
+                        val objectWorldMeshes = objectManager.getWorldMeshes()
+                        val player = playerController.getCollider()
+                        val moveCircle = playerController.getMoveCircle()
+
+                        var closestDistance = Float.MAX_VALUE
+                        var clickPoint: Vector3? = null
+
+                        for (mesh in playerWorldMeshes) {
+                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                            val hit = ray.intersectsMesh(mesh)
+                            if (hit.pickedPoint != null) {
+                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                if (distance < closestDistance) {
+                                    closestDistance = distance
+                                    clickPoint = hit.pickedPoint
+                                }
                             }
                         }
-                    }
-                    
-                    // Then check object world meshes
-                    for (mesh in objectWorldMeshes) {
-                        // Skip player and move circle meshes
-                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-                        
-                        val hit = ray.intersectsMesh(mesh)
-                        if (hit.pickedPoint != null) {
-                            val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                            if (distance < closestDistance) {
-                                closestDistance = distance
-                                clickPoint = hit.pickedPoint
+                        for (mesh in objectWorldMeshes) {
+                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                            val hit = ray.intersectsMesh(mesh)
+                            if (hit.pickedPoint != null) {
+                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                if (distance < closestDistance) {
+                                    closestDistance = distance
+                                    clickPoint = hit.pickedPoint
+                                }
                             }
                         }
-                    }
-                    
-                    // Store the click point for use when starting dragging
-                    if (clickPoint != null) {
-                        console.log("Stored click point for dragging: (${clickPoint.x}, ${clickPoint.y}, ${clickPoint.z})")
-                        objectClickPoint = clickPoint
+
+                        if (clickPoint != null) {
+                            console.log("Stored click point for dragging (ray): (${clickPoint.x}, ${clickPoint.y}, ${clickPoint.z})")
+                            objectClickPoint = clickPoint
+                        }
                     }
                 }
             }
@@ -513,72 +521,70 @@ class InputHandler(
                         pendingSingleClickJob?.cancel()
                         pendingSingleClickJob = null
 
-                        // Calculate new position based on pointer movement
-                        // This is simplified - in a real implementation, we would use raycasting
-                        val ray = scene.createPickingRay(
-                            x = scene.pointerX,
-                            y = scene.pointerY,
-                            world = Matrix.Identity(),
-                            camera = cameraController.getCamera()
-                        )
-                        
-                        // Find intersection with world meshes
-                        // Get world meshes from both controllers to ensure we have all possible meshes
-                        val playerWorldMeshes = playerController.getWorldMeshes()
-                        val objectWorldMeshes = objectManager.getWorldMeshes()
-                        val player = playerController.getCollider()
-                        val moveCircle = playerController.getMoveCircle()
-                        
-                        console.log("Ray casting with ${playerWorldMeshes.size} player world meshes and ${objectWorldMeshes.size} object world meshes")
-                        
-                        // Find the closest intersection point
-                        var closestDistance = Float.MAX_VALUE
-                        var closestPoint: Vector3? = null
-                        var hitCount = 0
-                        
-                        // Check player world meshes first
-                        for (mesh in playerWorldMeshes) {
-                            // Skip player and move circle meshes
-                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-                            
-                            val hit = ray.intersectsMesh(mesh)
-                            if (hit.pickedPoint != null) {
-                                hitCount++
-                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                                if (distance < closestDistance) {
-                                    closestDistance = distance
-                                    closestPoint = hit.pickedPoint
+                        // Depth-first position for robust dragging under occlusion; fallback to ray
+                        scope.launch {
+                            val depthPoint = try {
+                                DepthPicking.getVisibleWorldPointAt(
+                                    scene = scene,
+                                    x = scene.pointerX,
+                                    y = scene.pointerY,
+                                )
+                            } catch (_: Throwable) { null }
+
+                            if (depthPoint != null) {
+                                val success = objectManager.updateDragging(depthPoint)
+                                if (!success) {
+                                    console.warn("Failed to update object position during drag (depth)")
+                                }
+                                return@launch
+                            }
+
+                            // Fallback to ray-based closest hit
+                            val ray = scene.createPickingRay(
+                                x = scene.pointerX,
+                                y = scene.pointerY,
+                                world = Matrix.Identity(),
+                                camera = cameraController.getCamera()
+                            )
+                            val playerWorldMeshes = playerController.getWorldMeshes()
+                            val objectWorldMeshes = objectManager.getWorldMeshes()
+                            val player = playerController.getCollider()
+                            val moveCircle = playerController.getMoveCircle()
+
+                            var closestDistance = Float.MAX_VALUE
+                            var closestPoint: Vector3? = null
+
+                            for (mesh in playerWorldMeshes) {
+                                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                                val hit = ray.intersectsMesh(mesh)
+                                if (hit.pickedPoint != null) {
+                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                    if (distance < closestDistance) {
+                                        closestDistance = distance
+                                        closestPoint = hit.pickedPoint
+                                    }
                                 }
                             }
-                        }
-                        
-                        // Then check object world meshes
-                        for (mesh in objectWorldMeshes) {
-                            // Skip player and move circle meshes (just in case they're included)
-                            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-                            
-                            val hit = ray.intersectsMesh(mesh)
-                            if (hit.pickedPoint != null) {
-                                hitCount++
-                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                                if (distance < closestDistance) {
-                                    closestDistance = distance
-                                    closestPoint = hit.pickedPoint
+                            for (mesh in objectWorldMeshes) {
+                                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                                val hit = ray.intersectsMesh(mesh)
+                                if (hit.pickedPoint != null) {
+                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                    if (distance < closestDistance) {
+                                        closestDistance = distance
+                                        closestPoint = hit.pickedPoint
+                                    }
                                 }
                             }
-                        }
-                        
-                        console.log("Found $hitCount ray cast hits")
-                        
-                        // If we found a valid point, update the object position
-                        if (closestPoint != null) {
-                            console.log("Dragging object to position: (${closestPoint.x}, ${closestPoint.y}, ${closestPoint.z})")
-                            val success = objectManager.updateDragging(closestPoint)
-                            if (!success) {
-                                console.warn("Failed to update object position during drag")
+
+                            if (closestPoint != null) {
+                                val success = objectManager.updateDragging(closestPoint)
+                                if (!success) {
+                                    console.warn("Failed to update object position during drag (ray)")
+                                }
+                            } else {
+                                console.warn("No intersection found for object dragging (fallback)")
                             }
-                        } else {
-                            console.warn("No intersection found for object dragging")
                         }
                     }
                 }
@@ -698,71 +704,72 @@ class InputHandler(
      * Handles click-to-move functionality.
      */
     private fun handleClickToMove() {
-        // Create a ray from the camera through the clicked point
+        // Create a ray from the camera through the clicked point (used for player-click detection and fallback)
         val ray = scene.createPickingRay(
-            scene.pointerX,
-            scene.pointerY,
-            Matrix.Identity(),
-            cameraController.getCamera()
+            x = scene.pointerX,
+            y = scene.pointerY,
+            world = Matrix.Identity(),
+            camera = cameraController.getCamera()
         )
-    
-        // Get the other players controller
+
+        // 1) Player-click detection stays the same: do not move if we clicked another player
         val otherPlayersController = SceneManager.getOtherPlayersController()
-    
-        // First check for intersection with other player meshes
         if (otherPlayersController != null) {
             val playerMeshes = otherPlayersController.getPlayerMeshes()
-        
             for (mesh in playerMeshes) {
                 val hit = ray.intersectsMesh(mesh)
                 if (hit.pickedPoint != null) {
-                    // We clicked on another player
                     val userId = otherPlayersController.getUserIdForMesh(mesh)
                     if (userId != null) {
-                        console.log("[DEBUG_LOG] Found userId for clicked mesh: $userId")
-                        // Get player data
                         val playerData = otherPlayersController.getPlayerData(userId)
                         if (playerData != null) {
-                            console.log("[DEBUG_LOG] Got playerData: username=${playerData.first}, isPlayer=${playerData.second}")
-                            // Show the dialog with player data
                             showOtherPlayerDialog(playerData.first, playerData.second)
                             return // Don't move the player
-                        } else {
-                            console.log("[DEBUG_LOG] No playerData found for userId: $userId")
                         }
-                    } else {
-                        console.log("[DEBUG_LOG] No userId found for clicked mesh")
                     }
                 }
             }
         }
-    
-        // If we didn't click on another player, proceed with normal click-to-move
-        var closestDistance = Float.MAX_VALUE
-        var closestPoint: Vector3? = null
-    
-        // Get world meshes for collision detection
-        val worldMeshes = playerController.getWorldMeshes()
-        val player = playerController.getCollider()
-        val moveCircle = playerController.getMoveCircle()
-    
-        for (mesh in worldMeshes) {
-            // Skip player and move circle meshes
-            if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-        
-            val hit = ray.intersectsMesh(mesh)
-            if (hit.pickedPoint != null) {
-                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                if (distance < closestDistance) {
-                    closestDistance = distance
-                    closestPoint = hit.pickedPoint
+
+        // 2) Depth-first targeting: if we can unproject a visible world point, use it directly
+        scope.launch {
+            try {
+                val depthPoint = DepthPicking.getVisibleWorldPointAt(
+                    scene = scene,
+                    x = scene.pointerX,
+                    y = scene.pointerY,
+                )
+                if (depthPoint != null) {
+                    playerController.setTargetPosition(depthPoint)
+                    return@launch
+                }
+            } catch (e: Throwable) {
+                console.warn("[ClickToMove] Depth-based targeting failed: ${e.message}")
+            }
+
+            // 3) Fallback: original ray-based closest intersection with world meshes
+            var closestDistance = Float.MAX_VALUE
+            var closestPoint: Vector3? = null
+
+            val worldMeshes = playerController.getWorldMeshes()
+            val player = playerController.getCollider()
+            val moveCircle = playerController.getMoveCircle()
+
+            for (mesh in worldMeshes) {
+                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+                val hit = ray.intersectsMesh(mesh)
+                if (hit.pickedPoint != null) {
+                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                    if (distance < closestDistance) {
+                        closestDistance = distance
+                        closestPoint = hit.pickedPoint
+                    }
                 }
             }
-        }
-    
-        // If we found a valid point, set it as the target
-        if (closestPoint != null) {
-            playerController.setTargetPosition(closestPoint)
+
+            if (closestPoint != null) {
+                playerController.setTargetPosition(closestPoint)
+            }
         }
     }
     
