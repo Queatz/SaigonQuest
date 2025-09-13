@@ -23,6 +23,7 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.Image
 import kotlin.math.max
+import kotlin.js.Date
 
 /**
  * A dialog that displays the printed QR code with scene.
@@ -41,10 +42,18 @@ fun PrintDialog(imageUrl: String, worldTitle: String, onClose: () -> Unit) {
             // Download button
             DialogButton(
                 onClick = {
-                    // Create a temporary anchor element to trigger download
+                    // Create a temporary anchor element to trigger download with world name and timestamp
+                    val date = Date()
+                    fun pad(n: Int): String = if (n < 10) "0$n" else "$n"
+                    val timestamp = "${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}"
+                    val safeWorldName = worldTitle
+                        .trim()
+                        .ifEmpty { "world" }
+                        .replace(Regex("[\\\\/:*?\"<>|]"), "")
+                        .replace(Regex("\\s+"), "-")
                     val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
                     link.href = imageUrl
-                    link.download = "saigon-quest-${worldTitle}.png"
+                    link.download = "saigon-quest-$safeWorldName-$timestamp.png"
                     document.body?.appendChild(link)
                     link.click()
                     document.body?.removeChild(link)
@@ -359,13 +368,6 @@ fun generatePrintImage(
                 options = options,
                 onSuccess = { data ->
                     drawQRCode(data)
-                    // Create a temporary anchor element to trigger download
-//                    val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-//                    link.href = data
-//                    link.download = "saigon-quest-screenshot.png"
-//                    document.body?.appendChild(link)
-//                    link.click()
-//                    document.body?.removeChild(link)
                 }
             )
         } catch (e: Throwable) {

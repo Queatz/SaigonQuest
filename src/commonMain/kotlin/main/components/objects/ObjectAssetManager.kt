@@ -11,6 +11,7 @@ import lib.Scene
 import lib.SceneLoader
 import lib.TransformNode
 import lib.Vector3
+import kotlin.time.Clock
 
 /**
  * Manages 3D model assets for objects in the scene.
@@ -66,7 +67,7 @@ class ObjectAssetManager(private val scene: Scene) {
                 val mesh = collections[collection]
                 if (mesh != null) {
                     // Create a parent mesh to hold the cloned mesh
-                    val parentMesh = mesh.clone("parent_${collection}_${js("Date.now()")}")
+                    val parentMesh = mesh.clone("parent_${collection}_${Clock.System.now().toEpochMilliseconds()}")
                     parentMesh.isVisible = false
                     
                     // Store the original position, rotation, and scaling before cloning
@@ -79,10 +80,10 @@ class ObjectAssetManager(private val scene: Scene) {
                     // Create a clone or instance of the mesh
                     val clonedMesh = if (mesh is Mesh) {
                         console.log("[ASSET_MANAGER] Creating instance of cached mesh: ${mesh.name}")
-                        mesh.createInstance("instance_${collection}_${js("Date.now()")}")
+                        mesh.createInstance("instance_${collection}_${Clock.System.now().toEpochMilliseconds()}")
                     } else {
                         console.log("[ASSET_MANAGER] Creating clone of cached mesh: ${mesh.name}")
-                        mesh.clone("clone_${collection}_${js("Date.now()")}")
+                        mesh.clone("clone_${collection}_${Clock.System.now().toEpochMilliseconds()}")
                     }
                     
                     // Make the cloned mesh a child of the parent mesh
@@ -161,6 +162,7 @@ class ObjectAssetManager(private val scene: Scene) {
                         (material as? PBRMaterial)?.apply {
                             albedoColor = albedoColor.toLinearSpace()
                             emissiveColor = emissiveColor.toLinearSpace()
+                            fogEnabled = true
                         }
                     }
 
@@ -177,18 +179,24 @@ class ObjectAssetManager(private val scene: Scene) {
 
                         // Check if the node is an AbstractMesh
                         if (requestedNode is AbstractMesh) {
-                            val meshNode = requestedNode
-
                             // Make the original mesh invisible
-                            meshNode.isVisible = false
+                            requestedNode.isVisible = false
 
                             // Create a clone or instance
-                            val clonedMesh = if (meshNode is Mesh) {
-                                console.log("[ASSET_MANAGER] Creating instance of mesh: ${meshNode.name}")
-                                meshNode.createInstance("instance_${requestedCollection}_${js("Date.now()")}")
+                            val clonedMesh = if (requestedNode is Mesh) {
+                                console.log("[ASSET_MANAGER] Creating instance of mesh: ${requestedNode.name}")
+                                requestedNode.createInstance(
+                                    "instance_${requestedCollection}_${
+                                        Clock.System.now().toEpochMilliseconds()
+                                    }"
+                                )
                             } else {
-                                console.log("[ASSET_MANAGER] Creating clone of mesh: ${meshNode.name}")
-                                meshNode.clone("clone_${requestedCollection}_${js("Date.now()")}")
+                                console.log("[ASSET_MANAGER] Creating clone of mesh: ${requestedNode.name}")
+                                requestedNode.clone(
+                                    "clone_${requestedCollection}_${
+                                        Clock.System.now().toEpochMilliseconds()
+                                    }"
+                                )
                             }
 
                             // Make sure the cloned mesh is visible
@@ -212,7 +220,7 @@ class ObjectAssetManager(private val scene: Scene) {
                                 val baseScaling = childMeshes[0].scaling.clone()
                                 
                                 // Create a parent mesh to hold all child meshes
-                                val node = TransformNode("parent_${requestedCollection}_${js("Date.now()")}", scene)
+                                val node = TransformNode("parent_${requestedCollection}_${Clock.System.now().toEpochMilliseconds()}", scene)
 
                                 // Process all child meshes, not just the first one
                                 childMeshes.forEach { childMesh ->
@@ -223,7 +231,7 @@ class ObjectAssetManager(private val scene: Scene) {
 
                                     // Create a clone or instance
                                     console.log("[ASSET_MANAGER] Creating clone of child mesh: ${childMesh.name}")
-                                    val clonedMesh = childMesh.clone("clone_${requestedCollection}_child_${js("Date.now()")}")
+                                    val clonedMesh = childMesh.clone("clone_${requestedCollection}_child_${Clock.System.now().toEpochMilliseconds()}")
                                     
                                     // Store the original position, rotation, and scaling before parenting
                                     val originalPosition = childMesh.position.clone()

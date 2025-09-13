@@ -63,13 +63,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private val spawnRetryMaxDelayMs = 2000
     private val spawnRetryTimeouts = mutableMapOf<String, Int>()
 
-    // Alpha flicker ranges between 0.5 and 1.0 (0.5 base + 0.0-0.5 random)
-    private fun computeFlickerAlpha(): Float {
-        val base = 0.25
-        val jitter = Random.nextDouble() * (1.0 - base)
-        return (base + jitter).coerceIn(0.0, 1.0).toFloat()
-    }
-
     fun setWorldObjectManager(manager: WorldObjectManager) {
         worldObjectManager = manager
     }
@@ -567,14 +560,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     val progress = (elapsed / joinLeaveDuration).coerceIn(0.0, 1.0)
                     val s = (initialJoinScale + (1f - initialJoinScale) * progress.toFloat()).coerceIn(0f, 1f)
                     handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
-                    // Apply random alpha flicker while joining
-                    val alpha = computeFlickerAlpha()
-                    handle.node.getChildMeshes().forEach { mesh ->
-                        try {
-                            mesh.material.alpha = alpha
-                        } catch (_: Throwable) {
-                        }
-                    }
                 } else {
                     handle.scale = Vector3(1f, 1f, 1f)
                     op.joinStartMs = null
@@ -594,14 +579,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     val progress = 1.0 - (elapsed / joinLeaveDuration)
                     val s = progress.toFloat().coerceIn(0f, 1f)
                     handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
-                    // Apply random alpha flicker while leaving
-                    val alpha = computeFlickerAlpha()
-                    handle.node.getChildMeshes().forEach { mesh ->
-                        try {
-                            mesh.material.alpha = alpha
-                        } catch (_: Throwable) {
-                        }
-                    }
                 } else {
                     handle.scale = Vector3(0.5f, 0.5f, 0.5f)
                     // Ensure fully transparent at the end of leave animation

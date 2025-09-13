@@ -693,14 +693,16 @@ class Character(
         })
         material.albedoColor = Color3(1f, 1f, 1f)
         material.albedoTexture = texture
+        material.emissiveTexture = texture
+        material.emissiveColor = Color3(1f, 1f, 1f)
+        material.emissiveIntensity = .5f
 
         // Enable transparency for the material
         material.backFaceCulling = false
         // Use alpha test + blend to keep crisp sprite edges while allowing smooth alpha changes
-        material.transparencyMode = Material.MATERIAL_ALPHATEST//ANDBLEND
-        material.metallic = 0.0f       // Low metallic value for non-metallic appearance
-        material.roughness = 1f      // Medium roughness for slight diffusion of light
-        material.usePhysicalLightFalloff = true  // Enable physical light falloff
+        material.transparencyMode = Material.MATERIAL_ALPHATEST
+        material.metallic = .5f       // Low metallic value for non-metallic appearance
+        material.roughness = .5f      // Medium roughness for slight diffusion of light
 
         // Create a plane with the correct aspect ratio (vertical billboard-friendly)
         val aspectRatio = spriteSheet.cellHeightPx.toFloat() / spriteSheet.cellWidthPx.toFloat()

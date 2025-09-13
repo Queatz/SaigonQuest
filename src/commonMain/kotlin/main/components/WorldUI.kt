@@ -50,6 +50,9 @@ import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
 import web.notifications.requestPermission
+import lib.ScreenshotOptions
+import lib.Tools
+import kotlin.js.Date
 
 
 /**
@@ -536,6 +539,52 @@ fun WorldUI(
                 )
             }
             
+            // Camera screenshot button (not part of the panel system)
+            CircleButton(
+                onClick = {
+                    val scene = SceneManager.getScene()
+                    if (scene != null) {
+                        try {
+                            val options = object : ScreenshotOptions {
+                                override val width: Int = scene.getEngine().getRenderWidth()
+                                override val height: Int = scene.getEngine().getRenderHeight()
+                            }
+                            Tools.CreateScreenshot(
+                                engine = scene.getEngine(),
+                                camera = scene.activeCamera,
+                                options = options,
+                                onSuccess = { data ->
+                                    // Build a safe filename with world name and local timestamp
+                                    val date = Date()
+                                    fun pad(n: Int): String = if (n < 10) "0$n" else "$n"
+                                    val timestamp = "${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}"
+                                    val worldNameRaw = currentWorld?.title ?: "world"
+                                    val safeWorldName = worldNameRaw
+                                        .trim()
+                                        .ifEmpty { "world" }
+                                        .replace(Regex("[\\\\/:*?\"<>|]"), "")
+                                        .replace(Regex("\\s+"), "-")
+
+                                    // Trigger download of the screenshot
+                                    val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+                                    link.href = data
+                                    link.download = "saigon-quest-$safeWorldName-$timestamp.png"
+                                    document.body?.appendChild(link)
+                                    link.click()
+                                    document.body?.removeChild(link)
+                                }
+                            )
+                        } catch (e: Throwable) {
+                            console.error("BabylonJS Tools.CreateScreenshot error: ${'$'}{e.message}")
+                        }
+                    } else {
+                        console.warn("Scene not available for screenshot")
+                    }
+                },
+                iconIndex = 19,
+                badgeCount = 0
+            )
+
             // QR code button (not part of the panel system)
             CircleButton(
                 onClick = { 
