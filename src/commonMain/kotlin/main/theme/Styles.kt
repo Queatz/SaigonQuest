@@ -168,12 +168,12 @@ object Styles : StyleSheet() {
     val topRightContainer by style {
         position(Position.Fixed) // Changed from Absolute to Fixed for consistent positioning
         top(20.px)
+        // Provide a minimal bottom inset so there is always some spacing if inline override isn't applied
+        bottom(20.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("gap", "10px")
-        // Make the container scrollable if there's not enough space
-        // Calculate max height to leave space for bottom buttons and prevent overlap
-        property("max-height", "calc(100vh - 280px)") // Increased space for bottom buttons
+        // Allow scrolling when constrained between top and bottom to avoid overlap with bottom buttons
         property("overflow-y", "auto")
         // Add padding at the bottom to create more space between top and bottom buttons
         property("padding-bottom", "20px")

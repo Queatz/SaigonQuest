@@ -44,6 +44,29 @@ import kotlin.math.min
  * @param scene The BabylonJS scene
  */
 class OcclusionManager(private val scene: Scene) {
+    private fun createDepthRenderer(): DepthRenderer {
+        return scene.enableDepthRenderer(
+            camera = scene.activeCamera,
+            storeNonLinearDepth = false,
+            force32bitsFloat = true
+        ).apply {
+            try { this.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
+            DepthPicking.depthRenderer = this
+        }
+    }
+
+    private fun recreateDepthRenderer() {
+        try { scene.disableDepthRenderer() } catch (_: Throwable) {}
+        val newRenderer = createDepthRenderer()
+        depthRenderer = newRenderer
+        // Reapply depth override materials for tracked meshes
+        val depthMat = sharedWhiteDepthMaterial ?: getOrCreateSharedWhiteDepthMaterial()
+        depthOverrideMeshes.forEach { m ->
+            try { depthRenderer.setMaterialForRendering(m, depthMat) } catch (t: Throwable) {
+                console.warn("[OcclusionManager] Failed to reapply depth material for ${'$'}{m.name}: ${'$'}{t.message}")
+            }
+        }
+    }
     // Don't initialize these at construction time, get them dynamically when needed
     private var camera: lib.Camera? = null
     private var player: lib.Mesh? = null
@@ -54,18 +77,13 @@ class OcclusionManager(private val scene: Scene) {
     private var currentTimeSeconds: Float = 0f
 
     // Depth renderer and shared white depth material
-    private val depthRenderer: DepthRenderer by lazy {
-        scene.enableDepthRenderer(
-            camera = scene.activeCamera,
-            storeNonLinearDepth = false,
-            force32bitsFloat = true
-        ).apply {
-            forceDepthWriteTransparentMeshes = true
-            DepthPicking.depthRenderer = this
-        }
-    }
+    private var depthRenderer: DepthRenderer = createDepthRenderer()
     private var sharedWhiteDepthMaterial: CustomMaterial? = null
     private val depthOverrideMeshes = mutableSetOf<AbstractMesh>()
+
+    // Track engine render size to detect size changes (window resize, zoom, graphics mode)
+    private var lastRenderWidth: Int = 0
+    private var lastRenderHeight: Int = 0
     
     // Configurable parameters
     private var occlusionSoftness = 0.05f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
@@ -441,6 +459,23 @@ class OcclusionManager(private val scene: Scene) {
 
         // Update shared current time once per frame (seconds)
         currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
+
+        // Detect engine render size changes and recreate depth renderer if needed
+        try {
+            val eng = scene.getEngine()
+            val w = eng.getRenderWidth()
+            val h = eng.getRenderHeight()
+            if (w != lastRenderWidth || h != lastRenderHeight) {
+                console.log("[OcclusionManager] Render size changed from ${'$'}lastRenderWidth x ${'$'}lastRenderHeight to ${'$'}w x ${'$'}h. Recreating DepthRenderer.")
+                recreateDepthRenderer()
+                lastRenderWidth = w
+                lastRenderHeight = h
+            }
+            if (lastRenderWidth == 0 || lastRenderHeight == 0) {
+                lastRenderWidth = w
+                lastRenderHeight = h
+            }
+        } catch (_: Throwable) { }
     }
     
     /**
@@ -465,5 +500,9 @@ class OcclusionManager(private val scene: Scene) {
         // Clear tracking sets
         occludedMeshes.clear()
         customMaterials.clear()
+        
+        // Disable and clear depth renderer
+        try { scene.disableDepthRenderer() } catch (_: Throwable) {}
+        try { DepthPicking.depthRenderer = null } catch (_: Throwable) {}
     }
 }

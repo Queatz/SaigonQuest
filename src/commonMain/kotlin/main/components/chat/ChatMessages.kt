@@ -46,17 +46,15 @@ import kotlin.js.Date
 @Composable
 fun ChatMessages(
     worldId: String,
-    reloadKey: Int = 0,
 ) {
-    // State for chat messages
-    var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    // Pins state
-    var pins by remember { mutableStateOf<List<ChatMessagePin>>(emptyList()) }
+    // Chat state from ChatStore
+    val chatState = ChatStore.getState(worldId)
+    val messages = chatState.messages
+    val pins = chatState.pins
+    val isLoading = chatState.isLoading.value
+    val error = chatState.error.value
+    val isOwner = chatState.isOwner.value
     val pinnedIds = remember(pins) { pins.map { it.messageId }.toSet() }
-    // Ownership state
-    var isOwner by remember { mutableStateOf(false) }
     
     // State for selected message (for editing/deleting)
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
@@ -109,142 +107,27 @@ fun ChatMessages(
         }
     }
     
-    // Load historical messages on component initialization
-    LaunchedEffect(worldId, reloadKey) {
-        isLoading = true
-        error = null
-        
-        try {
-            // Determine if current user is owner of this world
-            try {
-                val me = UserApi.getCurrentUser()
-                val world = WorldApi.getWorld(worldId)
-                isOwner = me.key == world.userId
-            } catch (e: Throwable) {
-                console.warn("Unable to determine ownership", e)
-                isOwner = false
-            }
-            val chatMessages = ChatApi.getChatMessages(worldId)
-            messages = chatMessages.toList().sortedBy { it.timestamp }
-            // Load pins
-            try {
-                pins = ChatApi.listPins(worldId).toList()
-            } catch (e: Throwable) {
-                console.error("Failed to load pins", e)
-            }
-            isLoading = false
-            
-            // Mark messages as read when chat is opened
-            scope.launch {
-                try {
-                    ChatApi.markMessagesAsRead(worldId)
-                } catch (e: Throwable) {
-                    console.error("Error marking messages as read", e)
-                }
-            }
-            
-            // Scroll to bottom after initial messages are loaded
+    // Scroll to bottom when messages finish initial loading
+    LaunchedEffect(isLoading) {
+        if (!isLoading) {
             awaitAnimationFrame()
             delay(500)
             scrollToBottom()
-        } catch (e: Throwable) {
-            console.error("Error loading chat messages", e)
-            error = "Failed to load messages"
-            isLoading = false
+        }
+    }
+
+    // Smooth scroll on new messages
+    var lastCount by remember { mutableStateOf(0) }
+    LaunchedEffect(messages.size) {
+        if (messages.size > lastCount) {
+            lastCount = messages.size
+            smoothScrollToBottom()
+        } else {
+            lastCount = messages.size
         }
     }
     
-    // Set up WebSocket listener for new messages
-    DisposableEffect(worldId) {
-        // Add listener for new chat messages
-        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
-            try {
-                // Check if the message is valid
-                if (message.isValid()) {
-                    val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                    messages = (messages + chatMessage).sortedBy { msg -> msg.timestamp }
-                    
-                    // Smooth scroll to bottom when a new message is received
-                    smoothScrollToBottom()
-                } else {
-                    console.error("Invalid chat message received: ${message.action}, ${message.data}")
-                }
-            } catch (e: Throwable) {
-                console.error("Error parsing chat message", e)
-            }
-        }
-        
-        // Add listener for updated chat messages
-        WebSocketApi.addListener(WebSocketAction.UPDATE_CHAT_MESSAGE) { message ->
-            try {
-                // Check if the message is valid
-                if (message.isValid()) {
-                    val updatedMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                    
-                    // Find and replace the message in the list
-                    messages = messages.map { msg ->
-                        if (msg.key == updatedMessage.key) updatedMessage else msg
-                    }
-                } else {
-                    console.error("Invalid chat message update received: ${message.action}, ${message.data}")
-                }
-            } catch (e: Throwable) {
-                console.error("Error parsing chat message update", e)
-            }
-        }
-        
-        // Add listener for deleted chat messages
-        WebSocketApi.addListener(WebSocketAction.DELETE_CHAT_MESSAGE) { message ->
-            try {
-                // Check if the message is valid
-                if (message.isValid()) {
-                    val deletedMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                    
-                    // Find and replace the message in the list
-                    messages = messages.map { msg ->
-                        if (msg.key == deletedMessage.key) deletedMessage else msg
-                    }
-                } else {
-                    console.error("Invalid chat message delete received: ${message.action}, ${message.data}")
-                }
-            } catch (e: Throwable) {
-                console.error("Error parsing chat message delete", e)
-            }
-        }
-        
-        // Add listeners for pin events
-        WebSocketApi.addListener(WebSocketAction.PIN_ADDED) { message ->
-            try {
-                if (message.isValid()) {
-                    val pin = ApiClient.json.decodeFromString<ChatMessagePin>(message.data)
-                    if (pin.worldId == worldId) {
-                        pins = (pins + pin).distinctBy { it.messageId }.sortedByDescending { it.pinnedAt }
-                    }
-                }
-            } catch (e: Throwable) {
-                console.error("Error handling PIN_ADDED", e)
-            }
-        }
-        WebSocketApi.addListener(WebSocketAction.PIN_REMOVED) { message ->
-            try {
-                if (message.isValid()) {
-                    val messageId = ApiClient.json.decodeFromString<String>(message.data)
-                    pins = pins.filterNot { it.messageId == messageId }
-                }
-            } catch (e: Throwable) {
-                console.error("Error handling PIN_REMOVED", e)
-            }
-        }
-
-        // Remove listeners when component is disposed
-        onDispose {
-            WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
-            WebSocketApi.removeAllListeners(WebSocketAction.UPDATE_CHAT_MESSAGE)
-            WebSocketApi.removeAllListeners(WebSocketAction.DELETE_CHAT_MESSAGE)
-            WebSocketApi.removeAllListeners(WebSocketAction.PIN_ADDED)
-            WebSocketApi.removeAllListeners(WebSocketAction.PIN_REMOVED)
-        }
-    }
+    // WebSocket listeners are handled globally by ChatStore
     
     // Show dialog for editing/deleting a message
     selectedMessage?.let { currentMessage ->
@@ -269,10 +152,8 @@ fun ChatMessages(
                         val updatedMessage = ChatApi.updateChatMessage(currentMessage, newText)
                         console.log("Message updated in database")
                         
-                        // Update the message in the UI with the server response
-                        messages = messages.map { msg ->
-                            if (msg.key == updatedMessage.key) updatedMessage else msg
-                        }
+                        // Update the message in the store with the server response
+                        ChatStore.replaceMessage(worldId, updatedMessage)
                     } catch (e: Throwable) {
                         console.error("Error updating message in database", e)
                     }
@@ -294,10 +175,8 @@ fun ChatMessages(
                         val deletedMessage = ChatApi.deleteChatMessage(currentMessage)
                         console.log("Message deleted in database")
                         
-                        // Update the message in the UI with the server response
-                        messages = messages.map { msg ->
-                            if (msg.key == deletedMessage.key) deletedMessage else msg
-                        }
+                        // Update the message in the store with the server response
+                        ChatStore.replaceMessage(worldId, deletedMessage)
                     } catch (e: Throwable) {
                         console.error("Error deleting message in database", e)
                     }
@@ -343,11 +222,11 @@ fun ChatMessages(
 
                                 onClick {
                                     // Optimistic update
-                                    pins = pins.filterNot { it.messageId == pin.messageId }
+                                    ChatStore.removePinByMessageId(pin.messageId)
                                     scope.launch {
                                         val ok = ChatApi.unpinMessage(worldId, pin.messageId)
                                         if (!ok) {
-                                            try { pins = ChatApi.listPins(worldId).toList() } catch (_: Throwable) {}
+                                            try { ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList()) } catch (_: Throwable) {}
                                         }
                                     }
                                 }
@@ -368,7 +247,7 @@ fun ChatMessages(
                 }
             }
         ) {
-            if (isLoading) {
+            if (isLoading && messages.isEmpty()) {
             // Use the reusable Spinner component
             Spinner(message = "Loading messages...")
             } else if (error != null) {
@@ -401,13 +280,13 @@ fun ChatMessages(
                     onPinToggle = {
                         scope.launch {
                             if (pinnedIds.contains(chatMessage.key)) {
-                                pins = pins.filterNot { it.messageId == chatMessage.key }
+                                ChatStore.removePinByMessageId(chatMessage.key)
                                 val ok = ChatApi.unpinMessage(worldId, chatMessage.key)
-                                if (!ok) { try { pins = ChatApi.listPins(worldId).toList() } catch (_: Throwable) {} }
+                                if (!ok) { try { ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList()) } catch (_: Throwable) {} }
                             } else {
                                 try {
                                     val pin = ChatApi.pinMessage(worldId, chatMessage.key)
-                                    pins = (pins + pin).distinctBy { it.messageId }.sortedByDescending { it.pinnedAt }
+                                    ChatStore.addPin(worldId, pin)
                                 } catch (e: Throwable) { console.error("Pin failed", e) }
                             }
                         }

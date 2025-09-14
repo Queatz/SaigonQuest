@@ -75,7 +75,6 @@ fun ChatContent(worldId: String) {
     var showEmotePopup by remember { mutableStateOf(false) }
     var isTyping by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
-    var reloadKey by remember { mutableStateOf(0) }
     
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
@@ -196,10 +195,18 @@ fun ChatContent(worldId: String) {
             }
         }
     ) {
+        // Mark messages as read when chat opens
+        LaunchedEffect(Unit) {
+            try {
+                ChatApi.markMessagesAsRead(worldId)
+            } catch (t: Throwable) {
+                console.error("Error marking messages as read on open", t)
+            }
+        }
+
         // Use the ChatMessages component to display messages
         ChatMessages(
             worldId = worldId,
-            reloadKey = reloadKey,
         )
     }
     
@@ -436,7 +443,6 @@ fun ChatContent(worldId: String) {
                                                     message = "",
                                                     attachments = attachments,
                                                 )
-                                                reloadKey += 1
                                             } catch (t: Throwable) {
                                                 console.error("Failed to send pasted image", t)
                                             }
@@ -524,8 +530,6 @@ fun ChatContent(worldId: String) {
                                     message = "",
                                     attachments = attachments,
                                 )
-                                // Force chat list reload to show the new image message
-                                reloadKey += 1
                             } catch (t: Throwable) {
                                 console.error("Failed to send image message", t)
                             } finally {

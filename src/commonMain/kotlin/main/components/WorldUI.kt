@@ -52,6 +52,7 @@ import web.notifications.granted
 import web.notifications.requestPermission
 import lib.ScreenshotOptions
 import lib.Tools
+import main.components.chat.ChatStore
 import kotlin.js.Date
 
 
@@ -103,6 +104,7 @@ fun WorldUI(
 
     // Map to store button refs for tutorial bubbles
     val buttonRefs = remember { mutableMapOf<String, HTMLElement>() }
+
 
     // State for current world
     var currentWorld by remember { mutableStateOf<World?>(null) }
@@ -309,6 +311,12 @@ fun WorldUI(
     // Fetch unread chat count when currentWorld changes
     LaunchedEffect(currentWorld) {
         fetchUnreadChatCount()
+        try {
+            val worldId = currentWorld?.key
+            if (worldId != null && worldId.isNotEmpty()) {
+                ChatStore.preload(worldId)
+            }
+        } catch (_: Throwable) {}
     }
     
     // Update isMobile state on window resize
@@ -387,7 +395,7 @@ fun WorldUI(
         } catch (_: Throwable) {}
 
         // Add listener for NOTIFICATION events
-        WebSocketApi.addListener(WebSocketAction.NOTIFICATION) { message ->
+        val notificationListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.NOTIFICATION) { message ->
             try {
                 // Parse the notification data from the message
                 val notificationData = ApiClient.json.decodeFromString<NotificationData>(message.data)
@@ -406,14 +414,14 @@ fun WorldUI(
         
         // Clean up listener on dispose
         onDispose {
-            WebSocketApi.removeAllListeners(WebSocketAction.NOTIFICATION)
+            WebSocketApi.removeListener(notificationListenerToken)
         }
     }
     
     // Set up WebSocket listener for chat messages to update unread count
     DisposableEffect(Unit) {
         // Add listener for RECEIVE_CHAT_MESSAGE events
-        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+        val chatListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
                 // Parse the chat message data from the message
                 val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
@@ -437,7 +445,7 @@ fun WorldUI(
         
         // Clean up listener on dispose
         onDispose {
-            WebSocketApi.removeAllListeners(WebSocketAction.RECEIVE_CHAT_MESSAGE)
+            WebSocketApi.removeListener(chatListenerToken)
         }
     }
     
@@ -455,6 +463,11 @@ fun WorldUI(
             isMobile = isMobile
         )
         
+        // Compute dynamic bottom-right container height to avoid overlap (48px buttons, 10px gap)
+        val bottomButtonsBase = 4 // screenshot, QR, chat, profile
+        val bottomButtonsCount = bottomButtonsBase + if (currentUser?.isAdmin == true) 1 else 0
+        val bottomRightHeight = bottomButtonsCount * 48 + (bottomButtonsCount - 1) * 10
+
         // Top right UI elements (notifications, fullscreen, and edit world)
         Div(
             attrs = {
@@ -470,6 +483,8 @@ fun WorldUI(
                     } else {
                         right(20.px)
                     }
+                    // Dynamically reserve space for the bottom-right container to prevent overlap
+                    property("bottom", "${20 + bottomRightHeight}px")
                 }
             }
         ) {

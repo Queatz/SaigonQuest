@@ -5,7 +5,6 @@ import lib.DepthRenderer
 import lib.Matrix
 import lib.Scene
 import lib.Vector3
-import main.components.GraphicsSettings
 import main.components.GraphicsSettings.getEngineScalingFactor
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.get
@@ -34,6 +33,8 @@ object DepthPicking {
             // so we must not rescale them here. We only need to flip Y to GL's origin.
             val yGL = depthMap.getSize().height - y - 1
             val xGL = x
+
+            console.error("[PICK] depthMap.getSize().height = ${depthMap.getSize().height}")
 
             // Read a single pixel at (xGL, yGL). Request raw values (no data conversion).
             val px: Float32Array = try {

@@ -127,12 +127,23 @@ fun InventoryTray(
     Div(
         attrs = {
             style {
+                // Compute dynamic horizontal shift to avoid overlapping the bottom-right CircleButtons
+                // Bottom-right column width ~48px, base right inset 20px; when a side panel is open on desktop,
+                // the bottom-right column is shifted to right(340px)
+                val rightOffsetPx = if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) 340 else 20
+                val bottomRightButtonWidthPx = 48
+                val extraPaddingPx = 10 // breathing room so they never touch
+                val reservedRightSpacePx = rightOffsetPx + bottomRightButtonWidthPx + extraPaddingPx
+                val shiftPx = reservedRightSpacePx / 2
+
                 // Adjust left position when any side panel is open on desktop
                 if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
-                    // Center in the remaining space (excluding the 320px side panel)
-                    property("left", "calc(50% - 160px)")
+                    // Center in the remaining space (excluding the 320px side panel), then shift by half of the
+                    // reserved right space to keep clear of the CircleButtons column
+                    property("left", "calc(50% - 160px - ${shiftPx}px)")
                 } else {
-                    left(50.percent)
+                    // Shift the overall center slightly left by half of the reserved right space
+                    property("left", "calc(50% - ${shiftPx}px)")
                 }
                 position(Position.Absolute)
                 bottom(20.px)
