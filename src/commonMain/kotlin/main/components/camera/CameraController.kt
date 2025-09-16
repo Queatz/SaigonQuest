@@ -117,6 +117,13 @@ class CameraController(private val scene: Scene) {
         // Initial setup of pipeline settings based on current settings
         // This will configure bloom, DOF, grain, image processing, tone mapping, and SSAO
         updatePipelineSettings()
+
+        colorCorrectionPostProcess = ColorCorrectionPostProcess(
+            name = "colorCorrection",
+            colorTableUrl = "/raw/data/lut.png",
+            ratio = 1.0f, // Full resolution
+            camera = camera
+        )
     }
     
     /**
@@ -362,23 +369,13 @@ class CameraController(private val scene: Scene) {
                 }
                 
                 try {
-                    // Enable/disable depth of field
-                    depthOfFieldEnabled = isPrettyEnabled
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to set depthOfFieldEnabled: ${e.message}")
-                }
-                
-                try {
                     // Enable/disable grain effect
                     grainEnabled = isPrettyEnabled
+                    if (isPrettyEnabled) {
+                        grain.intensity = .667f
+                    }
                 } catch (e: Throwable) {
                     println("[ERROR] Failed to set grainEnabled: ${e.message}")
-                }
-
-                try {
-                    imageProcessingEnabled = false
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
                 }
 
                 try {
@@ -402,7 +399,7 @@ class CameraController(private val scene: Scene) {
                             // Configure bloom settings
                             bloomThreshold = 0.5f
                             bloomWeight = 0.5f
-                            bloomKernel = 64f
+                            bloomKernel = 8f
                             println("[DEBUG] Bloom settings configured successfully")
                         }
                     } catch (e: Throwable) {
@@ -421,17 +418,6 @@ class CameraController(private val scene: Scene) {
                         }
                     } catch (e: Throwable) {
                         println("[ERROR] Failed to configure depth of field: ${e.message}")
-                    }
-                    
-                    try {
-                        // Check if grain is available before configuring
-                        if (grainEnabled) {
-                            // Configure grain effect settings
-                            grain.intensity = .667f
-                            println("[DEBUG] Grain settings configured successfully")
-                        }
-                    } catch (e: Throwable) {
-                        println("[ERROR] Failed to configure grain: ${e.message}")
                     }
                 }
             }
@@ -481,36 +467,17 @@ class CameraController(private val scene: Scene) {
                     ssaoPipeline = null
                 }
             }
-            
-            // Handle ColorCorrectionPostProcess
-            // First, clean up any existing ColorCorrectionPostProcess
-            if (colorCorrectionPostProcess != null) {
-                try {
-                    // Dispose the post process
-                    colorCorrectionPostProcess?.dispose()
-                    colorCorrectionPostProcess = null
-                    println("[DEBUG] Cleaned up existing ColorCorrectionPostProcess")
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to clean up ColorCorrectionPostProcess: ${e.message}")
+
+            // Force-refresh depth-dependent post-processes (like DOF) to rebind depth/pre-pass after renderer changes
+            try {
+                val shouldEnableDOF = isPrettyEnabled
+                // Toggle DOF off then back on to force internal resources to rebuild
+                if (pipeline.depthOfFieldEnabled) {
+                    pipeline.depthOfFieldEnabled = false
                 }
-            }
-            
-            // Create new ColorCorrectionPostProcess if pretty graphics are enabled
-            if (isPrettyEnabled) {
-                try {
-                    // Create ColorCorrectionPostProcess with the specified color table URL
-                    colorCorrectionPostProcess = ColorCorrectionPostProcess(
-                        name = "colorCorrection",
-                        colorTableUrl = "/raw/data/lut.png",
-                        ratio = 1.0f, // Full resolution
-                        camera = camera
-                    )
-                    println("[DEBUG] Created new ColorCorrectionPostProcess with colorTableUrl: /raw/lit.png")
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to create ColorCorrectionPostProcess: ${e.message}")
-                    // Ensure colorCorrectionPostProcess is null if creation failed
-                    colorCorrectionPostProcess = null
-                }
+                pipeline.depthOfFieldEnabled = shouldEnableDOF
+            } catch (e: Throwable) {
+                println("[ERROR] Failed to force-refresh DOF: ${e.message}")
             }
             
             println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")

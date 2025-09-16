@@ -40,7 +40,7 @@ object WorldCollisionUtils {
         yPadding: Float = 0.5f,
     ): Vector3? {
         val ray = Ray().also {
-            it.origin = Vector3(position.x, 5f, position.z)
+            it.origin = Vector3(position.x, position.y + 10f, position.z)
             it.direction = Vector3(0f, -1f, 0f)
         }
 

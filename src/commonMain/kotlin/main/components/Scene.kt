@@ -647,6 +647,7 @@ fun SceneComponent(url: String) {
         
         // Register the observer with GraphicsSettings
         GraphicsSettings.addObserver(graphicsModeObserver)
+        graphicsModeObserver()
         
         // Handle window resize
         val resizeHandler = { _: Event ->

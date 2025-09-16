@@ -66,6 +66,9 @@ class OcclusionManager(private val scene: Scene) {
                 console.warn("[OcclusionManager] Failed to reapply depth material for ${'$'}{m.name}: ${'$'}{t.message}")
             }
         }
+        // Force post-process pipeline to refresh its depth/pre-pass bindings,
+        // because disabling/enabling the scene's DepthRenderer can invalidate internal references.
+        try { main.components.SceneManager.getCameraController()?.updatePipelineSettings() } catch (_: Throwable) {}
     }
     // Don't initialize these at construction time, get them dynamically when needed
     private var camera: lib.Camera? = null
@@ -332,6 +335,7 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.disableLighting = originalMaterial.disableLighting
             customMaterial.backFaceCulling = originalMaterial.backFaceCulling
             customMaterial.needDepthPrePass = true
+            customMaterial.useAlphaFromAlbedoTexture = originalMaterial.useAlphaFromAlbedoTexture
 
             // Copy textures if they exist
             if (originalMaterial.albedoTexture != null) {
@@ -466,7 +470,7 @@ class OcclusionManager(private val scene: Scene) {
             val w = eng.getRenderWidth()
             val h = eng.getRenderHeight()
             if (w != lastRenderWidth || h != lastRenderHeight) {
-                console.log("[OcclusionManager] Render size changed from ${'$'}lastRenderWidth x ${'$'}lastRenderHeight to ${'$'}w x ${'$'}h. Recreating DepthRenderer.")
+                console.log("[OcclusionManager] Render size changed from $lastRenderWidth x $lastRenderHeight to $w x $h. Recreating DepthRenderer.")
                 recreateDepthRenderer()
                 lastRenderWidth = w
                 lastRenderHeight = h

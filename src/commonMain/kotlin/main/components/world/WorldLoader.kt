@@ -509,6 +509,8 @@ class WorldLoader(private val scene: Scene) {
             (material as? PBRMaterial)?.apply {
                 albedoColor = albedoColor.toLinearSpace()
                 emissiveColor = emissiveColor.toLinearSpace()
+                albedoTexture?.gammaSpace = true
+                useAlphaFromAlbedoTexture = true
             }
         }
         

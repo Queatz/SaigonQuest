@@ -117,7 +117,7 @@ fun BasicSceneRenderer(
                         meshNames = null,
                         rootUrl = "/raw/data/",
                         sceneFilename = "$filename.glb",
-                        scene = scene!!,
+                        scene = scene,
                         onSuccess = { meshes, _, _, _, _ ->
                             loadedMeshes = meshes
                             isLoading = false
@@ -131,7 +131,7 @@ fun BasicSceneRenderer(
                     )
                 } else {
                     // Objects preview: load a single collection via ObjectAssetManager
-                    val manager = ObjectAssetManager(scene!!)
+                    val manager = ObjectAssetManager(scene)
                     manager.getNode(
                         file = filename,
                         collection = collection,

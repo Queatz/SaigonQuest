@@ -1633,6 +1633,7 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
     var useRadianceOverAlpha: Boolean
     var useSpecularOverAlpha: Boolean
     var enableSpecularAntiAliasing: Boolean
+    var useAlphaFromAlbedoTexture: Boolean
     var realTimeFiltering: Boolean
     var realTimeFilteringQuality: Int
 
