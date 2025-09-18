@@ -93,7 +93,7 @@ fun LatLngPicker3D(
                 canvas = canvas,
                 antialias = true,
                 options = object : EngineOptions {
-                    override val alpha = true
+                    override var alpha: Boolean? = true
                 }
             )
             engine = eng

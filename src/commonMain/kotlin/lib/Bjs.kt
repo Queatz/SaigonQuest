@@ -463,7 +463,7 @@ external interface RenderTargetTexture {
 external class Engine(
     canvas: HTMLCanvasElement = definedExternally,
     antialias: Boolean = definedExternally,
-    options: dynamic = definedExternally,
+    options: EngineOptions = definedExternally,
     adaptToDeviceRatio: Boolean = definedExternally
 ) {
     fun runRenderLoop(callback: () -> Unit)
@@ -472,6 +472,8 @@ external class Engine(
     fun dispose()
     fun getRenderWidth(): Int
     fun getRenderHeight(): Int
+
+    var maxFPS: Int
 
     companion object {
         val TEXTUREFORMAT_ALPHA: Int
@@ -1943,8 +1945,26 @@ external class EffectWrapper {
 
 // Engine context options for creation (typed wrapper instead of dynamic)
 external interface EngineOptions {
-    val alpha: Boolean? get() = definedExternally
-    val preserveDrawingBuffer: Boolean? get() = definedExternally
-    val stencil: Boolean? get() = definedExternally
-    val disableWebGL2Support: Boolean? get() = definedExternally
+    var alpha: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var preserveDrawingBuffer: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var stencil: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var disableWebGL2Support: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    // Simulation/lockstep options
+    var deterministicLockstep: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var lockstepMaxSteps: Int?
+        get() = definedExternally
+        set(value) = definedExternally
+    var timeStep: Float?
+        get() = definedExternally
+        set(value) = definedExternally
 }

@@ -633,7 +633,11 @@ fun SceneComponent(url: String) {
         val canvas = document.getElementById(canvasId) as HTMLCanvasElement
 
         // Create the engine
-        val engine = Engine(canvas, true)
+        val engine = Engine(
+            canvas = canvas
+        )
+
+        engine.maxFPS = 30
         
         // Set hardware scaling level based on graphics mode
         engine.setHardwareScalingLevel(GraphicsSettings.getEngineScalingFactor())

@@ -421,8 +421,8 @@ class CameraController(private val scene: Scene) {
                             // Configure bloom settings
                             bloomThreshold = 0.5f
                             bloomWeight = 0.5f
-                            bloomKernel = 64f
-                            bloomScale = .25f
+                            bloomKernel = 48f
+                            bloomScale = .5f
                             println("[DEBUG] Bloom settings configured successfully")
                         }
                     } catch (e: Throwable) {
