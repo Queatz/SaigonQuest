@@ -13,6 +13,7 @@ import lib.PointerEventTypes
 import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
+import lib.AbstractMesh
 import Translations.str
 import main.api.InventoryApi
 import main.api.ObjectApi
@@ -505,6 +506,23 @@ class InputHandler(
                                 // Log and reset the click point after starting dragging
                                 if (isObjectDragging) {
                                     console.log("Started dragging with click point: $objectClickPoint")
+                                    // Create dedicated picking depth renderer (world-only) for the drag session
+                                    try {
+                                        val excludeList = mutableListOf<AbstractMesh>()
+                                        // Exclude all object meshes from the depth pass
+                                        val objMeshes = objectManager.getObjectMeshes()
+                                        for ((_, meshes) in objMeshes) {
+                                            excludeList.addAll(meshes)
+                                        }
+                                        // Exclude skybox if available (prevents far depth writes)
+                                        objectManager.getSkybox()?.let { excludeList.add(it) }
+                                        DepthPicking.beginPickingDepth(
+                                            scene = scene,
+                                            excludeMeshes = excludeList.toTypedArray(),
+                                        )
+                                    } catch (t: Throwable) {
+                                        console.warn("[InputHandler] Failed to create dedicated picking depth renderer: ${t.message}")
+                                    }
                                     // Reset click point to ensure consistent behavior between first and subsequent drags
                                     objectClickPoint = null
                                 }
@@ -593,6 +611,7 @@ class InputHandler(
             PointerEventTypes.POINTERUP -> {
                 // End dragging if we were dragging an object
                 if (isObjectDragging) {
+                    try { DepthPicking.endPickingDepth() } catch (_: Throwable) {}
                     objectManager!!.endDragging()
                     isObjectDragging = false
                     draggingObjectId = null

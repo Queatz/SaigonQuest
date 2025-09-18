@@ -296,6 +296,11 @@ class OcclusionManager(private val scene: Scene) {
         return mat
     }
 
+    /** Public accessor for the shared white depth material so other systems (e.g., DepthPicking) can reuse it. */
+    fun getSharedWhiteDepthMaterial(): CustomMaterial {
+        return getOrCreateSharedWhiteDepthMaterial()
+    }
+
     /**
      * Registers a mesh to be considered for occlusion.
      * Creates a PBRCustomMaterial for the mesh with occlusion shader code.

@@ -5,7 +5,12 @@ import lib.DepthRenderer
 import lib.Matrix
 import lib.Scene
 import lib.Vector3
+import lib.AbstractMesh
+import lib.StandardMaterial
+import lib.ArcRotateCamera
 import main.components.GraphicsSettings.getEngineScalingFactor
+import main.components.world.WorldLoader
+import main.components.world.isSkybox
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.get
 
@@ -18,7 +23,20 @@ import org.khronos.webgl.get
  */
 object DepthPicking {
 
+    // Shared depth renderer (from OcclusionManager or elsewhere)
     var depthRenderer: DepthRenderer? = null
+
+    // Temporary, dedicated depth renderer used during dragging only
+    private var pickingDepthRenderer: DepthRenderer? = null
+
+    // Temporary camera used solely for the picking depth renderer
+    private var pickingCamera: ArcRotateCamera? = null
+
+    // Depth-pass material that disables depth writes for excluded meshes
+    private var pickingExcludeDepthMaterial: lib.StandardMaterial? = null
+
+    // Track which meshes have override materials applied for the picking depth renderer
+    private val overriddenMeshesForPicking = mutableSetOf<lib.AbstractMesh>()
 
     /**
      * Reads normalized linear depth [0..1] from the depth map at the given screen pixel.
@@ -26,7 +44,8 @@ object DepthPicking {
      */
     suspend fun readLinearDepthAt(x: Int, y: Int): Float? {
         try {
-            val depthMap = depthRenderer?.getDepthMap() ?: return null
+            val renderer = pickingDepthRenderer ?: depthRenderer ?: return null
+            val depthMap = renderer.getDepthMap()
 
             // GPU readback origin is bottom-left; UI/pointer coordinates are top-left in render space
             // scene.pointerX/Y are already in render-space coordinates (respecting hardware scaling),
@@ -34,12 +53,10 @@ object DepthPicking {
             val yGL = depthMap.getSize().height - y - 1
             val xGL = x
 
-            console.error("[PICK] depthMap.getSize().height = ${depthMap.getSize().height}")
-
-            // Read a single pixel at (xGL, yGL). Request raw values (no data conversion).
+            // Read a single pixel at (xGL, yGL). Request raw float values (no data conversion)
             val px: Float32Array = try {
                 depthMap.readPixels(
-                    noDataConversion = false,
+                    noDataConversion = true,
                     x = xGL,
                     y = yGL,
                     width = 1,
@@ -121,5 +138,121 @@ object DepthPicking {
         )?.also {
             console.error("Visible world point at $x,$y: $it")
         }
+    }
+
+    /**
+     * Begins a dedicated, world-only depth renderer session for picking during object drag.
+     * The provided meshes will be excluded from writing to the picking depth map.
+     * Safe to call multiple times; subsequent calls while active are ignored.
+     */
+    fun beginPickingDepth(
+        scene: Scene,
+        excludeMeshes: Array<AbstractMesh>,
+    ) {
+        if (pickingDepthRenderer != null) return
+        try {
+            // Create a dedicated camera mirroring the main camera for the picking depth pass
+            val active = scene.activeCamera
+            val renderer = if (active is ArcRotateCamera) {
+                val depthCam = ArcRotateCamera(
+                    name = "DepthPickingCamera",
+                    alpha = active.alpha,
+                    beta = active.beta,
+                    radius = active.radius,
+                    target = active.target,
+                    scene = scene
+                )
+                // Mirror critical camera parameters so unprojection math remains valid
+                try { depthCam.minZ = active.minZ } catch (_: Throwable) {}
+                try { depthCam.maxZ = active.maxZ } catch (_: Throwable) {}
+                try { depthCam.fov = active.fov } catch (_: Throwable) {}
+                try { depthCam.viewport = active.viewport } catch (_: Throwable) {}
+                pickingCamera = depthCam
+
+                scene.enableDepthRenderer(
+                    camera = depthCam,
+                    storeNonLinearDepth = false,
+                    force32bitsFloat = true,
+                )
+            } else {
+                // Fallback: bind to whatever active camera exists
+                scene.enableDepthRenderer(
+                    camera = active,
+                    storeNonLinearDepth = false,
+                    force32bitsFloat = true,
+                )
+            }
+
+            try { renderer.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
+            pickingDepthRenderer = renderer
+
+            // Create a depth-pass material that disables depth writes (thus excluding meshes from depth map)
+            val excludeMat = StandardMaterial("PickingDepth_Exclude", scene).also { m ->
+                try { m.disableDepthWrite = true } catch (_: Throwable) {}
+                try { m.disableColorWrite = true } catch (_: Throwable) {}
+                try { m.alpha = 0f } catch (_: Throwable) {}
+            }
+            pickingExcludeDepthMaterial = excludeMat
+
+            // Try to get the same shared white depth material used by OcclusionManager
+            val sharedDepthMat = try {
+                WorldLoader.getCurrentOcclusionManager()?.getSharedWhiteDepthMaterial()
+            } catch (_: Throwable) { null }
+
+            // Build an exclusion set for quick lookup
+            val excludeSet = excludeMeshes.toSet()
+
+            // Apply overrides: exclude listed meshes and skybox; use shared depth material for others
+            scene.meshes.forEach { mesh ->
+                try {
+                    if (!mesh.isVisible) return@forEach
+                    if (excludeSet.contains(mesh) || mesh.isSkybox()) {
+                        renderer.setMaterialForRendering(mesh, excludeMat)
+                        overriddenMeshesForPicking.add(mesh)
+                    } else if (sharedDepthMat != null) {
+                        renderer.setMaterialForRendering(mesh, sharedDepthMat)
+                        overriddenMeshesForPicking.add(mesh)
+                    }
+                } catch (t: Throwable) {
+                    console.warn("[DepthPicking] Failed to set picking depth material for ${mesh.name}: ${t.message ?: ""}")
+                }
+            }
+
+            console.log("[DepthPicking] Picking depth renderer created. Overrides applied to " + overriddenMeshesForPicking.size + " meshes.")
+        } catch (t: Throwable) {
+            console.error("[DepthPicking] Failed to create picking depth renderer", t)
+            // Ensure cleanup on failure
+            endPickingDepth()
+        }
+    }
+
+    /**
+     * Ends the dedicated picking depth session and restores original state.
+     */
+    fun endPickingDepth() {
+        val renderer = pickingDepthRenderer
+        // Restore per-mesh depth materials
+        if (renderer != null) {
+            overriddenMeshesForPicking.forEach { mesh ->
+                try { renderer.setMaterialForRendering(mesh, null) } catch (_: Throwable) {}
+            }
+        }
+        overriddenMeshesForPicking.clear()
+
+        // Dispose temporary material
+        try { pickingExcludeDepthMaterial?.dispose() } catch (_: Throwable) {}
+        pickingExcludeDepthMaterial = null
+
+        // Dispose temporary renderer
+        try { renderer?.dispose() } catch (_: Throwable) {}
+        if (renderer == depthRenderer) {
+            // Do not null out the shared renderer reference unexpectedly
+        }
+        pickingDepthRenderer = null
+
+        // Release temporary camera reference (camera will be GC'd; not using it for rendering)
+        pickingCamera = null
+
+        console.log("[DepthPicking] Picking depth renderer disposed.")
     }
 }

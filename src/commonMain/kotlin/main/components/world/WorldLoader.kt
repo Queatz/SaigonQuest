@@ -156,6 +156,11 @@ class WorldLoader(private val scene: Scene) {
             currentInstance = loader
         }
 
+        /** Returns the current OcclusionManager if a world is active. */
+        fun getCurrentOcclusionManager(): OcclusionManager? {
+            return currentInstance?.getOcclusionManager()
+        }
+
         /** Reload the currently loaded world's asset file and propagate to controllers. */
         fun reloadWorldFile(world: World) {
             val loader = currentInstance

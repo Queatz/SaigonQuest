@@ -443,6 +443,23 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
     }
 }
 
+// Subset of RenderTargetTexture we need for depth picking render list control
+external interface RenderTargetTexture {
+    var renderList: Array<AbstractMesh>?
+    fun getSize(): TextureSize
+    fun readPixels(
+        faceIndex: Int? = definedExternally,
+        level: Int? = definedExternally,
+        buffer: ArrayBufferView? = definedExternally,
+        flushRenderer: Boolean? = definedExternally,
+        noDataConversion: Boolean? = definedExternally,
+        x: Int? = definedExternally,
+        y: Int? = definedExternally,
+        width: Int? = definedExternally,
+        height: Int? = definedExternally,
+    ): Promise<ArrayBufferView>?
+}
+
 external class Engine(
     canvas: HTMLCanvasElement = definedExternally,
     antialias: Boolean = definedExternally,
@@ -1108,7 +1125,7 @@ external class DepthRenderer(scene: Scene, type: Int = definedExternally) {
      * Gets the depth map texture from the renderer.
      * This texture contains the depth values of the scene from the camera's perspective.
      */
-    fun getDepthMap(): Texture
+    fun getDepthMap(): RenderTargetTexture
 
     /**
      * Override the material used to render a given mesh in the depth pass.
