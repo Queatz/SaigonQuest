@@ -61,12 +61,15 @@ object PlayerInitializer {
         collider.position = startPosition
         onSetCollider(collider)
 
-        // Initialize HUD username
-        hud.updateUsername(startPosition, "Player")
+        // Initialize HUD username using the live player position (not the potentially stale startPosition)
+        val initialPos = playerHandle?.position ?: collider.position
+        hud.updateUsername(initialPos, "Player")
         coroutineScope.launch {
             try {
                 val user = UserApi.getCurrentUser()
-                hud.updateUsername(startPosition, user.username)
+                // Use the current player position to place the username correctly even if we've snapped or moved
+                val currentPos = playerHandle?.position ?: collider.position
+                hud.updateUsername(currentPos, user.username)
             } catch (_: Throwable) {}
         }
 

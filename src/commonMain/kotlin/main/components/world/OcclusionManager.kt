@@ -63,7 +63,7 @@ class OcclusionManager(private val scene: Scene) {
         val depthMat = sharedWhiteDepthMaterial ?: getOrCreateSharedWhiteDepthMaterial()
         depthOverrideMeshes.forEach { m ->
             try { depthRenderer.setMaterialForRendering(m, depthMat) } catch (t: Throwable) {
-                console.warn("[OcclusionManager] Failed to reapply depth material for ${'$'}{m.name}: ${'$'}{t.message}")
+                console.warn("[OcclusionManager] Failed to reapply depth material for ${m.name}: ${t.message}")
             }
         }
         // Force post-process pipeline to refresh its depth/pre-pass bindings,

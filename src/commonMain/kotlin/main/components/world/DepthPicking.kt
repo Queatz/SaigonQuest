@@ -99,7 +99,11 @@ object DepthPicking {
     /**
      * Convenience: returns the visible world point at the given screen pixel, or null if none.
      */
-    suspend fun getVisibleWorldPointAt(scene: Scene, x: Int, y: Int): Vector3? {
+    suspend fun getVisibleWorldPointAt(
+        scene: Scene,
+        x: Int,
+        y: Int
+    ): Vector3? {
         val sx = x / getEngineScalingFactor()
         val sy = y / getEngineScalingFactor()
         val d = readLinearDepthAt(

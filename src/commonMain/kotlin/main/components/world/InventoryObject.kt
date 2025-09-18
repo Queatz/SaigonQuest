@@ -57,9 +57,9 @@ class InventoryObject(
         
         // Create texture with basic options
         val texture = Texture(
-            "/raw/data/spritesheets/${item.file}.png",
-            scene, 
-            object : TextureOptions {
+            url = "/raw/data/spritesheets/${item.file}.png",
+            scene = scene,
+            options = object : TextureOptions {
                 override val samplingMode = Texture.NEAREST_SAMPLINGMODE
                 override val hasAlpha = true
             }
@@ -70,7 +70,7 @@ class InventoryObject(
         texture.vScale = 0.1f
         texture.uOffset = (item.assetIndex % 10) * 0.1f
         texture.vOffset = (item.assetIndex / 10) * 0.1f
-        
+
         // Assign the texture to the material
         material.albedoColor = Color3(1f, 1f, 1f)
         material.albedoTexture = texture

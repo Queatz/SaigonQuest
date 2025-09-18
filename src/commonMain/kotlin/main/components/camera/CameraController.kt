@@ -90,30 +90,41 @@ class CameraController(private val scene: Scene) {
     private var targetPosition: Vector3? = null
     private var isAnimating: Boolean = false
     private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
-    
+
+    /**
+     * Observer for graphics settings changes.
+     */
+    private val graphicsSettingsObserver: () -> Unit = {
+        updatePipelineSettings()
+    }
+
     init {
-        // Create a separate ImageProcessingPostProcess for vignette effect
-        // This approach allows adding vignette without modifying the DefaultRenderingPipeline
-        vignettePostProcess = ImageProcessingPostProcess("vignette", 1.0f, camera).apply {
+        // Use the pipeline's built-in ImageProcessingPostProcess to ensure consistent gamma/tone mapping
+        try {
+            pipeline.imageProcessingEnabled = true
+        } catch (_: Throwable) {}
+        vignettePostProcess = pipeline.imageProcessing.apply {
             fromLinearSpace = true
         }
 
-        // Enable and configure the vignette effect directly on the post process
-        vignettePostProcess.vignetteEnabled = true
-        vignettePostProcess.vignetteStretch = 2.5f
-        vignettePostProcess.vignetteColor = Color4(0f, 0f, 0f, 0f)
-        
+        // Enable and configure the vignette effect directly on the image processing pass
+        try {
+            vignettePostProcess.vignetteEnabled = true
+            vignettePostProcess.vignetteStretch = 1.5f
+            vignettePostProcess.vignetteColor = Color4(0f, 0f, 0f, 0f)
+        } catch (_: Throwable) {}
+
         // Set initial vignette weight based on current radius
         updateVignetteWeight()
-        
-        println("[DEBUG] Vignette effect added using ImageProcessingPostProcess")
-        
+
+        println("[DEBUG] Vignette effect configured on pipeline imageProcessing")
+
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
-        
+
         // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
-        GraphicsSettings.addObserver { updatePipelineSettings() }
-        
+        GraphicsSettings.addObserver(graphicsSettingsObserver)
+
         // Initial setup of pipeline settings based on current settings
         // This will configure bloom, DOF, grain, image processing, tone mapping, and SSAO
         updatePipelineSettings()
@@ -352,9 +363,20 @@ class CameraController(private val scene: Scene) {
     fun updatePipelineSettings() {
         val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
 
-        scene.imageProcessingConfiguration.exposure = if (isPrettyEnabled) .5f else 1f
+        scene.imageProcessingConfiguration.exposure = 1.5f
 
         try {
+            // Ensure image processing is always active so gamma/tone mapping are applied in all modes
+            try {
+                if (pipeline.imageProcessingEnabled) {
+                    pipeline.imageProcessingEnabled = false
+                }
+                pipeline.imageProcessingEnabled = true
+                try { pipeline.imageProcessing.fromLinearSpace = true } catch (_: Throwable) {}
+            } catch (e: Throwable) {
+                println("[ERROR] Failed to toggle imageProcessingEnabled: ${e.message}")
+            }
+
             // First enable/disable features, then configure them
             // This ensures the components are created before we try to access their properties
             
@@ -399,7 +421,8 @@ class CameraController(private val scene: Scene) {
                             // Configure bloom settings
                             bloomThreshold = 0.5f
                             bloomWeight = 0.5f
-                            bloomKernel = 8f
+                            bloomKernel = 64f
+                            bloomScale = .25f
                             println("[DEBUG] Bloom settings configured successfully")
                         }
                     } catch (e: Throwable) {
@@ -484,13 +507,6 @@ class CameraController(private val scene: Scene) {
         } catch (e: Throwable) {
             println("[ERROR] Failed to update pipeline settings: ${e.message}")
         }
-    }
-    
-    /**
-     * Observer for graphics settings changes.
-     */
-    private val graphicsSettingsObserver: () -> Unit = {
-        updatePipelineSettings()
     }
     
     /**

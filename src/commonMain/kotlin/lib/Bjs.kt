@@ -942,7 +942,11 @@ external class ImageProcessingPostProcess {
      * The amount of color enhancement to apply
      */
     var colorAmount: Float
-    
+
+    var contrast: Float
+
+    var exposure: Float
+
     /**
      * Whether the vignette effect is enabled
      */

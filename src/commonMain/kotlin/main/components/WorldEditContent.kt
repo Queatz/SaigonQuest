@@ -14,6 +14,9 @@ import lib.Scene
 import main.components.world.WorldLoader
 import main.api.UserApi
 import main.api.WorldApi
+import main.api.CostsApi
+import main.api.BalanceApi
+import main.components.common.formatAmount
 import main.theme.Styles
 import models.User
 import models.World
@@ -79,25 +82,19 @@ fun WorldEditContent(
             
             if (scene != null) {
                 // Convert hex color string to Color3
-                val color3 = Color3.FromHexString(hexColor).toLinearSpace()
+                val color3 = Color3.FromHexString(hexColor)
                 
                 // Convert Color3 to Color4 with alpha=1 (fully opaque)
                 val color4 = color3.toColor4()
                 color4.a = 1.0f
                 
                 // Set the scene's clear color
-                scene.clearColor = color4
+                scene.clearColor = color4.toLinearSpace()
 
                 // Sync hemispheric light color to match background
                 WorldLoader.updateHemisphericLightColorHex(hexColor)
-                
-                // If fog is enabled (fogDensity > 0), update the fog color to match the background color
-                if (scene.fogDensity > 0.0f) {
-                    scene.fogColor = color3
-                    println("[DEBUG] Updated scene background color to $hexColor and synced fog color")
-                } else {
-                    println("[DEBUG] Updated scene background color to $hexColor")
-                }
+
+                scene.fogColor = color3
             } else {
                 println("[ERROR] Cannot update background color: Scene is null")
             }
@@ -127,11 +124,7 @@ fun WorldEditContent(
                     
                     // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
                     scene.fogDensity = density * 0.1f
-                    
-                    // Set fog color to match background color
-                    val clearColor = scene.clearColor
-                    scene.fogColor = Color3(clearColor.r, clearColor.g, clearColor.b)
-                    
+
                     // Enable fog in the rendering pipeline
                     pipeline?.fogEnabled = true
                     
@@ -241,9 +234,15 @@ fun WorldEditContent(
     var currentUser by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // Pricing and balance state
+    var worldBasePrice by remember { mutableStateOf<Long?>(null) }
+    var myBalance by remember { mutableStateOf<Long?>(null) }
+    var showConfirmPurchase by remember { mutableStateOf(false) }
+
     // Determine if we're editing or creating
     val isEditing = currentWorld != null
-    
+    val isCreating = !isEditing
+
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
     
@@ -258,6 +257,22 @@ fun WorldEditContent(
         } catch (error: Throwable) {
             console.error("Error fetching current user", error)
             isLoading = false
+        }
+    }
+
+    // Fetch costs and current balance
+    LaunchedEffect(Unit) {
+        try {
+            val c = CostsApi.getCosts()
+            worldBasePrice = c.worldBasePrice
+        } catch (t: Throwable) {
+            console.warn("[WARN] Failed to load costs: ${t.message}")
+        }
+        try {
+            val b = BalanceApi.getBalance()
+            myBalance = b.balance
+        } catch (t: Throwable) {
+            console.warn("[WARN] Failed to load balance: ${t.message}")
         }
     }
     
@@ -1343,6 +1358,44 @@ fun WorldEditContent(
             }
         }
     }
+
+    // Price and balance info above action buttons (create flow)
+    run {
+        if (isCreating) {
+            val price = worldBasePrice
+            if (price != null) {
+                Div(
+                    attrs = {
+                        style {
+                            padding(12.px)
+                            backgroundColor(rgba(255, 255, 255, 0.03))
+                            property("border-top", "1px solid rgba(255, 255, 255, 0.12)")
+                            property("border-bottom", "1px solid rgba(255, 255, 255, 0.12)")
+                        }
+                    }
+                ) {
+                    // World price
+                    P {
+                        Label { Translated("World price") }
+                        Text(": ${formatAmount(price)} ${translated("VND")}")
+                    }
+                    // Balance
+                    val bal = myBalance
+                    if (bal != null) {
+                        P {
+                            Label { Translated("Your balance") }
+                            Text(": ${formatAmount(bal)} ${translated("VND")}")
+                        }
+                    }
+                    // Insufficient funds warning
+                    val insufficient = bal != null && bal < price
+                    if (insufficient) {
+                        P(attrs = { classes(Styles.formErrorMessage) }) { Translated("Insufficient funds") }
+                    }
+                }
+            }
+        }
+    }
     
     // Footer with action buttons
     Div(
@@ -1384,10 +1437,23 @@ fun WorldEditContent(
                 }
 
                 // Only allow clicking if not submitting and fields are enabled
-                onClick { if (!isSubmitting && fieldsEnabled) handleSubmit() }
-                // Disable button if fields are disabled or submitting
-                if (!fieldsEnabled || isSubmitting) {
-                    disabled()
+                onClick {
+                    if (!isSubmitting && fieldsEnabled) {
+                        if (isCreating) {
+                            showConfirmPurchase = true
+                        } else {
+                            handleSubmit()
+                        }
+                    }
+                }
+                // Disable button if fields are disabled, submitting, or insufficient funds
+                run {
+                    val price = worldBasePrice
+                    val bal = myBalance
+                    val insufficient = isCreating && price != null && bal != null && bal < price
+                    if (!fieldsEnabled || isSubmitting || insufficient) {
+                        disabled()
+                    }
                 }
             }
         ) {
@@ -1400,5 +1466,19 @@ fun WorldEditContent(
                 }
             )
         }
+    }
+
+    // Confirm purchase dialog
+    if (showConfirmPurchase) {
+        val price = worldBasePrice ?: 0L
+        BasicConfirmDialog(
+            message = "${translated("You are about to purchase a world for")} ${formatAmount(price)} ${translated("VND")}. ${translated("Continue?")}",
+            onConfirm = {
+                showConfirmPurchase = false
+                handleSubmit()
+            },
+            onCancel = { showConfirmPurchase = false },
+            title = translated("Confirm purchase"),
+        )
     }
 }

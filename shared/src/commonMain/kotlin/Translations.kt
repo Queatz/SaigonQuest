@@ -683,7 +683,7 @@ Drop to wear item
 vi: Thả để mặc vật phẩm
 
 Drag wearable items here to equip them
-vi: Kéo vật phẩm có thể mặc vào đây để trang bị
+vi: Kéo vật phẩm có thể mặc vào đây để mặc
 
 Worn Items
 vi: Vật phẩm đang mặc
@@ -848,7 +848,7 @@ Attachment image is required
 vi: Cần có hình ảnh đính kèm
 
 Insufficient funds
-vi: Không đủ tiền
+vi: Bạn chưa có đủ tiền
 
 Balance
 vi: Số dư
@@ -1288,6 +1288,21 @@ vi: Xóa thế giới
 
 Attachment (optional)
 vi: Tệp đính kèm (tùy chọn)
+
+World price
+vi: Giá thế giới
+
+Confirm purchase
+vi: Xác nhận mua
+
+You are about to purchase a world for
+vi: Bạn sắp mua một thế giới với giá
+
+Continue?
+vi: Tiếp tục?
+
+Start your first world!
+vi: Bắt đầu thế giới đầu tiên của bạn!
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

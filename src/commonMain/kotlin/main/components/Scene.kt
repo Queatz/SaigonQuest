@@ -659,7 +659,6 @@ fun SceneComponent(url: String) {
         val scene = Scene(engine).apply {
             imageProcessingConfiguration.isEnabled = true
             imageProcessingConfiguration.applyByPostProcess = true
-            imageProcessingConfiguration.toneMappingEnabled = true
         }
         
         // Register scene with SceneManager for global access

@@ -507,9 +507,6 @@ class WorldLoader(private val scene: Scene) {
         // Convert all materials to linear space
         meshes.map { it.material }.distinct().forEach { material ->
             (material as? PBRMaterial)?.apply {
-                albedoColor = albedoColor.toLinearSpace()
-                emissiveColor = emissiveColor.toLinearSpace()
-                albedoTexture?.gammaSpace = true
                 useAlphaFromAlbedoTexture = true
             }
         }
@@ -634,25 +631,19 @@ class WorldLoader(private val scene: Scene) {
     private fun setSceneBackgroundColor(hexColor: String) {
         try {
             // Convert hex color string to Color3
-            val color3 = Color3.FromHexString(hexColor).toLinearSpace()
+            val color3 = Color3.FromHexString(hexColor)
             
             // Convert Color3 to Color4 with alpha=1 (fully opaque)
             val color4 = color3.toColor4()
             color4.a = 1.0f
             
             // Set the scene's clear color
-            scene.clearColor = color4
+            scene.clearColor = color4.toLinearSpace()
             
             // Sync hemispheric light color to match background
             updateHemisphericLightColor(color3)
-            
-            // If fog is enabled (fogDensity > 0), update the fog color to match the background color
-            if (scene.fogDensity > 0.0f) {
-                scene.fogColor = color3
-                println("[DEBUG] Set scene background color to $hexColor and synced fog color")
-            } else {
-                println("[DEBUG] Set scene background color to $hexColor")
-            }
+
+            scene.fogColor = color3
         } catch (e: Throwable) {
             println("[ERROR] Failed to set background color: ${e.message}")
         }
@@ -675,10 +666,6 @@ class WorldLoader(private val scene: Scene) {
                 
                 // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
                 scene.fogDensity = density * 0.1f
-                
-                // Set fog color to match background color
-                val clearColor = scene.clearColor
-                scene.fogColor = Color3(clearColor.r, clearColor.g, clearColor.b)
                 
                 // Enable fog in the rendering pipeline
                 pipeline?.fogEnabled = true
@@ -772,9 +759,7 @@ class WorldLoader(private val scene: Scene) {
         try {
             val color4 = skyColor.toColor4().also { it.a = 1.0f }
             scene.clearColor = color4.toLinearSpace()
-            if (scene.fogDensity > 0.0f) {
-                scene.fogColor = skyColor.toLinearSpace()
-            }
+            scene.fogColor = skyColor
         } catch (e: Throwable) {
             println("[ERROR] Failed to set outdoors background color: ${e.message}")
         }
@@ -782,7 +767,7 @@ class WorldLoader(private val scene: Scene) {
         // Update hemispheric light
         try {
             if (hemi != null) {
-                val hemiIntensity = if (isNight) 0.25f else 0.5f
+                val hemiIntensity = if (isNight) 4f else .5f
                 hemi.intensity = hemiIntensity
                 if (isNight) {
                     updateHemisphericLightColor(nightHemi)
@@ -808,7 +793,7 @@ class WorldLoader(private val scene: Scene) {
 
                     // Intensity scales with altitude
                     val intensity = (0.3f + 0.7f * t)
-                    dir.intensity = intensity
+                    dir.intensity = intensity * 2f
 
                     // Color transitions during sunrise/sunset
                     dir.diffuse = sunColor

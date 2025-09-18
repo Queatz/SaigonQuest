@@ -482,6 +482,7 @@ fun PlayerDialog(
                                 try {
                                     getPlayerController()?.toggleSitting()
                                     playerActivity = getPlayerController()?.getPlayerActivity()
+                                    onClose()
                                     console.log("PlayerDialog: Toggled sitting/standing from dialog")
                                 } catch (e: Throwable) {
                                     console.error("PlayerDialog: Failed to toggle sitting/standing", e)
@@ -549,7 +550,6 @@ fun PlayerDialog(
             // Render the My Worlds dialog when visible
             if (showMyWorldsDialog.value) {
                 MyWorldsDialog(
-                    router = router,
                     onClose = { showMyWorldsDialog.value = false },
                     onNavigate = { path -> router.navigate(path) }
                 )

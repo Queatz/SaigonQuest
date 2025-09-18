@@ -1,10 +1,15 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import main.theme.OverlayStyles
 import main.theme.Styles
-import main.theme.Theme
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -12,6 +17,72 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.dom.*
+import org.w3c.dom.events.Event
+
+// Centralized back/stack controller for all dialogs
+private object DialogBackController {
+    private const val SENTINEL_STATE = "DIALOG_SENTINEL"
+    private val stack = mutableListOf<() -> Unit>()
+    private var listening = false
+    private var sentinelActive = false
+    private var suppressNextPop = false
+
+    private val popHandler: (Event) -> Unit = {
+        // If the sentinel was on top, a back popped it
+        if (sentinelActive) {
+            sentinelActive = false
+        }
+        if (suppressNextPop) {
+            suppressNextPop = false
+        } else if (stack.isNotEmpty()) {
+            // User pressed back: keep the sentinel on top and close only the last dialog
+            pushSentinel()
+            val cb = stack.last()
+            cb()
+        }
+    }
+
+    private fun ensureListening() {
+        if (!listening) {
+            window.addEventListener("popstate", popHandler)
+            listening = true
+        }
+    }
+
+    private fun pushSentinel() {
+        if (!sentinelActive) {
+            window.history.pushState(data = SENTINEL_STATE, title = "", url = null)
+            sentinelActive = true
+        }
+    }
+
+    private fun removeSentinelIfNeeded() {
+        if (sentinelActive) {
+            // Only pop if the current top history entry is actually our sentinel.
+            val currentState = window.history.state
+            if (currentState is String && currentState == SENTINEL_STATE) {
+                suppressNextPop = true
+                window.history.back()
+            }
+            // Whether we popped or not, this controller no longer keeps a sentinel active.
+            sentinelActive = false
+        }
+    }
+
+    fun register(onBack: () -> Unit): () -> Unit {
+        stack.add(onBack)
+        ensureListening()
+        pushSentinel()
+        return { unregister(onBack) }
+    }
+
+    private fun unregister(onBack: () -> Unit) {
+        stack.remove(onBack)
+        if (stack.isEmpty()) {
+            removeSentinelIfNeeded()
+        }
+    }
+}
 
 /**
  * A reusable base dialog component that provides a consistent structure and styling for dialogs.
@@ -39,8 +110,17 @@ fun BaseDialog(
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
+    // Unique key per instance to keep portal reconciliation isolated
+    val token = remember { "dlg-${kotlin.random.Random.nextInt()}" }
+
+    // Register this dialog with the centralized back controller
+    DisposableEffect(onClose) {
+        val unregister = DialogBackController.register(onBack = onClose)
+        onDispose { unregister() }
+    }
+
     Portal(
-        key = "dialog-${title}-${maxWidth}-${isFullscreen}-${showCloseButton}",
+        key = "dialog-${token}-${title}-${maxWidth}-${isFullscreen}-${showCloseButton}",
         target = document.body!!
     ) {
         // Dialog overlay
@@ -49,7 +129,10 @@ fun BaseDialog(
                 classes(OverlayStyles.overlayBase)
 
                 if (clickOutside) {
-                    onClick { onClose() }
+                    onClick {
+                        it.stopPropagation()
+                        onClose()
+                    }
                 }
             }
         ) {

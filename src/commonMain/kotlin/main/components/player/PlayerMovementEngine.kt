@@ -79,15 +79,33 @@ class PlayerMovementEngine(
         } else if (isMoving && playerTargetPosition != null) {
             val currentPos = playerHandle.position
             val targetPos = playerTargetPosition!!
-            val direction = targetPos.subtract(currentPos)
-            val distance = direction.length()
-            if (distance < 0.1f) {
+            // Separate horizontal (XZ) and vertical (Y) components
+            val toTarget = targetPos.subtract(currentPos)
+            val toTargetXZ = Vector3(toTarget.x, 0f, toTarget.z)
+            val distanceXZ = toTargetXZ.length()
+            // Stop when close in XZ; Y will be adjusted via ground snap
+            if (distanceXZ < 0.1f) {
                 stopMovement()
             } else {
-                direction.normalize()
-                direction.scaleInPlace(kotlin.math.min(frameSpeed, distance))
-                finalMoveDirection = direction
-                onMoveDirection(direction)
+                // XZ movement at constant speed independent of Y
+                val moveXZ = if (distanceXZ > 0f) {
+                    val stepXZ = kotlin.math.min(frameSpeed, distanceXZ)
+                    val dirXZ = toTargetXZ.clone()
+                    dirXZ.normalize()
+                    dirXZ.scaleInPlace(stepXZ)
+                    dirXZ
+                } else {
+                    Vector3.Zero()
+                }
+                // Keep Y movement as before (based on full 3D direction)
+                val distance3D = toTarget.length()
+                val moveY = if (distance3D > 0f) {
+                    val step3D = kotlin.math.min(frameSpeed, distance3D)
+                    (toTarget.y / distance3D) * step3D
+                } else 0f
+                finalMoveDirection = Vector3(moveXZ.x, moveY, moveXZ.z)
+                // Use horizontal direction for facing
+                onMoveDirection(moveXZ)
                 isPlayerMoving = true
                 // Temporary wind boost while moving-to-target as well
                 WindSystem.triggerMovementBoost(finalMoveDirection)

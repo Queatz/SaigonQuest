@@ -211,6 +211,12 @@ fun BalanceDialog(
                     }
                 }
 
+                if (type == UserBalanceChangeType.Withdraw) {
+                    Div({ classes(Styles.formGroup) }) {
+                        Text("Withdrawal requests are subject to manual approval by the admin.")
+                    }
+                }
+
                 // Submit
                 Div({ classes(Styles.formButtonsContainer) }) {
                     DialogButton(onClick = { if (!submitting) submitNonce++ }, isPrimary = true) {

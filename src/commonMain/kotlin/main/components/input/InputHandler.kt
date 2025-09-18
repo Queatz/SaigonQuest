@@ -182,10 +182,10 @@ class InputHandler(
         if (info.type == PointerEventTypes.POINTERDOWN && objectManager != null) {
             // Use ray casting to find the object under the pointer
             val ray = scene.createPickingRay(
-                scene.pointerX,
-                scene.pointerY,
-                Matrix.Identity(),
-                cameraController.getCamera()
+                x = scene.pointerX,
+                y = scene.pointerY,
+                world = Matrix.Identity(),
+                camera = cameraController.getCamera()
             )
             
             // Check for intersection with object meshes

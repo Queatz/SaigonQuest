@@ -7,9 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.WorldApi
-import models.World
-import app.softwork.routingcompose.Router
 import main.theme.Styles
+import models.World
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -21,7 +20,6 @@ import org.jetbrains.compose.web.dom.Text
  */
 @Composable
 fun MyWorldsDialog(
-    router: Router,
     onClose: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
@@ -29,7 +27,6 @@ fun MyWorldsDialog(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showNewWorldPrompt by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(Unit) {
         try {
@@ -46,10 +43,12 @@ fun MyWorldsDialog(
         onClose = onClose,
         title = translated("My Worlds"),
         headerActions = {
-            DialogButton(
-                onClick = { showNewWorldPrompt = true },
-                isPrimary = true,
-            ) { Translated("New world") }
+            if (worlds.isNotEmpty()) {
+                DialogButton(
+                    onClick = { showNewWorldPrompt = true },
+                    isPrimary = true,
+                ) { Translated("New world") }
+            }
         },
         maxWidth = "560px",
         content = {
@@ -63,8 +62,21 @@ fun MyWorldsDialog(
                     Div(attrs = { classes(Styles.formErrorMessage) }) { Text(error!!) }
                 }
                 worlds.isEmpty() -> {
+                    // Exciting empty state encouraging the user to create their first world
                     Div(attrs = { classes(Styles.chatEmptyText) }) {
-                        Translated("You don't own any worlds yet")
+                        // Fun, celebratory emoji row
+                        P(attrs = { classes(Styles.objectEditorDialogLogicTitle) }) {
+                            Text("🚀✨")
+                        }
+                        // Headline
+                        P(attrs = { classes(Styles.objectEditorDialogLogicTitle) }) {
+                            Translated("Start your first world!")
+                        }
+                        // Primary call-to-action
+                        DialogButton(
+                            onClick = { showNewWorldPrompt = true },
+                            isPrimary = true,
+                        ) { Translated("New world") }
                     }
                 }
                 else -> {
@@ -107,7 +119,9 @@ fun MyWorldsDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose) { Translated("Close") }
+            DialogButton(onClick = onClose) {
+                Translated("Close")
+            }
         }
     )
 
@@ -122,7 +136,7 @@ fun MyWorldsDialog(
                 if (slug.isNotEmpty()) {
                     showNewWorldPrompt = false
                     onClose()
-                    router.navigate("/$slug")
+                    onNavigate("/$slug")
                 }
             },
             onCancel = { showNewWorldPrompt = false },

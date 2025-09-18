@@ -590,7 +590,7 @@ fun WorldUI(
                                 }
                             )
                         } catch (e: Throwable) {
-                            console.error("BabylonJS Tools.CreateScreenshot error: ${'$'}{e.message}")
+                            console.error("BabylonJS Tools.CreateScreenshot error: ${e.message}")
                         }
                     } else {
                         console.warn("Scene not available for screenshot")

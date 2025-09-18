@@ -22,7 +22,11 @@ import main.api.WebSocketApi
 import main.components.camera.CameraController
 import main.components.inventory.InventoryState
 import main.components.shadow.ShadowManager
+import main.components.world.CharacterDirection
+import main.components.world.DepthPicking
 import main.components.world.InventoryObject
+import main.components.world.PlayerActivity
+import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import main.components.world.isSkybox
 import models.Item
@@ -50,7 +54,7 @@ class SceneObjectManager(
     private val objectMeshes = mutableMapOf<String, Node>()
     
     // Map of object IDs to their status text handles
-    private val objectStatusTextHandles = mutableMapOf<String, main.components.world.WorldObjectHandle>()
+    private val objectStatusTextHandles = mutableMapOf<String, WorldObjectHandle>()
     
     // Tracks last known (file, collection) used to render each object, to detect when re-creation is needed
     private val objectModelSources = mutableMapOf<String, Pair<String, String>>()
@@ -574,7 +578,7 @@ class SceneObjectManager(
 
         // Depth-first: try to get the visible world point at the drop pixel
         val depthPoint = try {
-            main.components.world.DepthPicking.getVisibleWorldPointAt(
+            DepthPicking.getVisibleWorldPointAt(
                 scene = scene,
                 x = clientX,
                 y = clientY,
@@ -1277,16 +1281,16 @@ class SceneObjectManager(
                 }
             } else {
                 // Create a WorldObjectHandle for the node
-                val objectHandle = object : main.components.world.WorldObjectHandle {
+                val objectHandle = object : WorldObjectHandle {
                     override val id: String = objectId
                     override var node: Node = node
                     override fun remove() {
                         // No-op for now
                     }
-                    override fun updateDirection(direction: main.components.world.CharacterDirection) {
+                    override fun updateDirection(direction: CharacterDirection) {
                         // No-op for now
                     }
-                    override fun updateActivity(activity: main.components.world.PlayerActivity?) {
+                    override fun updateActivity(activity: PlayerActivity?) {
                         // No-op for now
                     }
                     override fun getMeshes(): Array<AbstractMesh> {

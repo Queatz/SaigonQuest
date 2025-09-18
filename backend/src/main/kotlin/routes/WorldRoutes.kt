@@ -10,6 +10,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.ErrorResponse
 import models.World
+import models.UserBalanceHistory
+import models.UserBalanceHistoryEventType
 import repository.WorldRepository
 import repository.UserRepository
 import repository.FriendRepository
@@ -20,6 +22,8 @@ fun Routing.configureWorldRoutes() {
     val userRepository = UserRepository()
     val friendRepository = FriendRepository()
     val inventoryRepository = InventoryRepository()
+    val balances = repository.UserBalanceRepository()
+    val balanceHistory = repository.UserBalanceHistoryRepository()
 
     fun checkAccess(call: ApplicationCall, world: World): ErrorResponse? {
         val principal = call.principal<JWTPrincipal>()
@@ -116,6 +120,37 @@ fun Routing.configureWorldRoutes() {
                 
                 // Set the user ID in the world object
                 world.userId = userId
+
+                // World base cost (VND) - centralized via CostsProvider
+                val cost = utils.CostsProvider.get().worldBasePrice
+                
+                // Ensure user has enough balance and deduct
+                val before = balances.getByUserId(userId)?.balance ?: 0L
+                if (before < cost) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Insufficient funds", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+                val after = before - cost
+                val savedBal = balances.upsert(userId) { it.balance = after }
+                
+                // Record balance history as a Use event
+                try {
+                    balanceHistory.add(
+                        UserBalanceHistory(
+                            userId = userId,
+                            eventType = UserBalanceHistoryEventType.Use,
+                            notes = "Bought world: ${world.title}".trim(),
+                            changeAmount = -cost,
+                            startBalance = before,
+                            endBalance = savedBal.balance,
+                            attachments = emptyList()
+                        )
+                    )
+                } catch (_: Throwable) {
+                    // Non-fatal: failure to record history shouldn't block world creation
+                }
                 
                 val createdWorld = worldRepository.create(world)
                 call.respond(HttpStatusCode.Created, createdWorld)
