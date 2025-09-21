@@ -41,7 +41,7 @@ import kotlin.math.abs
  * - Connecting inputs to player movement
  */
 
-private const val SLOP = 10
+private const val SLOP = 50
 
 class InputHandler(
     private val scene: Scene,

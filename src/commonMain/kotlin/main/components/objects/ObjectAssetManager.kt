@@ -11,6 +11,7 @@ import lib.Scene
 import lib.SceneLoader
 import lib.TransformNode
 import lib.Vector3
+import main.components.world.isBillboard
 import kotlin.time.Clock
 
 /**
@@ -93,11 +94,16 @@ class ObjectAssetManager(private val scene: Scene) {
                     clonedMesh.position = Vector3.Zero()
                     clonedMesh.rotation = Vector3.Zero()
                     clonedMesh.scaling = Vector3(1f, 1f, 1f)
+
+                    if (mesh.isBillboard()) {
+                        clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                    }
                     
                     console.log("[ASSET_MANAGER] Set cloned cached mesh position: (${clonedMesh.position.x}, ${clonedMesh.position.y}, ${clonedMesh.position.z})")
                     
                     // Make sure the cloned mesh is visible
                     clonedMesh.isVisible = true
+                    clonedMesh.isPickable = true
                     console.log("[ASSET_MANAGER] Created visible clone/instance for cached mesh: ${mesh.name}")
                     
                     // Log the properties of the cloned mesh
@@ -145,9 +151,9 @@ class ObjectAssetManager(private val scene: Scene) {
             try {
                 // Use LoadAssetContainerAsync instead of SceneLoader.Load
                 val assetContainerPromise = SceneLoader.LoadAssetContainerAsync(
-                    baseUrl,
-                    "$file.glb",
-                    scene
+                    rootUrl = baseUrl,
+                    sceneFilename = "$file.glb",
+                    scene = scene
                 )
                 
                 // Handle the Promise result
@@ -171,7 +177,9 @@ class ObjectAssetManager(private val scene: Scene) {
                     console.log("[ASSET_MANAGER] Found ${allNodes.size} root nodes in asset container")
 
                     // Look for the requested node by name
-                    val requestedNode = allNodes.find { node -> node.name == requestedCollection }
+                    val requestedNode = allNodes
+                        .sortedByDescending { it !is AbstractMesh } // Prefer collections
+                        .find { node -> node.name == requestedCollection }
 
                     if (requestedNode != null) {
                         console.log("[ASSET_MANAGER] Found node by name: ${requestedNode.name}")
@@ -201,7 +209,13 @@ class ObjectAssetManager(private val scene: Scene) {
 
                             // Make sure the cloned mesh is visible
                             clonedMesh.isVisible = true
+                            clonedMesh.isPickable = true
                             console.log("[ASSET_MANAGER] Created visible clone/instance for: $requestedCollection")
+
+                            // Handle flags
+                            if (requestedNode.isBillboard()) {
+                                clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                            }
 
                             // Return the cloned mesh
                             onSuccess(clonedMesh)
@@ -212,7 +226,7 @@ class ObjectAssetManager(private val scene: Scene) {
                             // Try to find child meshes
                             val childMeshes = requestedNode.getChildMeshes()
 
-                            if (childMeshes.size > 0) {
+                            if (childMeshes.isNotEmpty()) {
                                 console.log("[ASSET_MANAGER] Found ${childMeshes.size} child meshes for node: ${requestedNode.name}")
 
                                 val basePosition = childMeshes[0].position.clone()
@@ -228,6 +242,11 @@ class ObjectAssetManager(private val scene: Scene) {
 
                                     // Make the original mesh invisible
                                     childMesh.isVisible = false
+
+                                    // Handle flags
+                                    if (childMesh.isBillboard()) {
+                                        childMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                                    }
 
                                     // Create a clone or instance
                                     console.log("[ASSET_MANAGER] Creating clone of child mesh: ${childMesh.name}")
@@ -253,6 +272,10 @@ class ObjectAssetManager(private val scene: Scene) {
                                     // Make sure the cloned mesh is visible
                                     clonedMesh.isVisible = true
                                     console.log("[ASSET_MANAGER] Added cloned mesh to parent: ${childMesh.name}")
+
+                                    if (childMesh.isBillboard()) {
+                                        clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                                    }
                                 }
                                 
                                 console.log("[ASSET_MANAGER] Created parent node with ${childMeshes.size} child meshes")

@@ -61,10 +61,10 @@ object EditorStyles : StyleSheet() {
     }
     
     val emptyMessage by style {
-        color(Theme.colors.textMutedDark)
+        color(Theme.colors.textMuted)
         property("text-align", "center")
 
-        dark(self) { color(Theme.colors.textMuted) }
+        dark(self) { color(Theme.colors.textMutedDark) }
     }
     
     val objectsListContainer by style {

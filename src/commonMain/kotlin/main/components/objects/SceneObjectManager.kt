@@ -8,6 +8,7 @@ import lib.AbstractMesh
 import lib.Color3
 import lib.CreateSphereOptions
 import lib.HighlightLayer
+import lib.Mesh
 import lib.MeshBuilder
 import lib.Node
 import lib.PBRMaterial
@@ -28,6 +29,7 @@ import main.components.world.InventoryObject
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
+import main.components.world.isBillboard
 import main.components.world.isSkybox
 import models.Item
 import models.Object
@@ -695,7 +697,6 @@ class SceneObjectManager(
         }
 
         try {
-            
             // Check if the object has a file and collection specified
             if (obj.file.isNotEmpty() && obj.collection.isNotEmpty()) {
                 console.log("[DEBUG_OBJECT] Loading 3D model from file: ${obj.file}, collection: ${obj.collection}")
@@ -716,8 +717,6 @@ class SceneObjectManager(
 
                             // Configure all meshes to receive shadows
                             shadowManager?.configureShadowReceivers(meshes)
-                        }.forEach {
-                            it.isPickable = true
                         }
                         
                         // Ensure the node has no parent (position is global to scene)
@@ -1334,9 +1333,9 @@ class SceneObjectManager(
                 
                 // Position the status text 0.5 units above the highest point
                 val newPosition = Vector3(
-                    node.position.x,
-                    highestY + 0.5f,
-                    node.position.z
+                    x = node.position.x,
+                    y = highestY + 0.5f,
+                    z = node.position.z
                 )
                 
                 if (existingHandle != null) {

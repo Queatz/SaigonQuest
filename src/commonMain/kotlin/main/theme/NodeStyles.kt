@@ -75,6 +75,10 @@ object NodeStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         marginTop(16.px)
     }
+
+    val dialogueButtonContainerVertical by style {
+        flexDirection(FlexDirection.Column)
+    }
     
     val dialogueButton by style {
         padding(10.px, 20.px)

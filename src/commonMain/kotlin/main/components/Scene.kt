@@ -974,7 +974,7 @@ fun SceneComponent(url: String) {
                 val dtMs = scene.deltaTime.toDouble()
                 val fps = if (dtMs > 0.0 && dtMs < 1_000.0) 1_000.0 / dtMs else 0.0
 
-                if (fps < 45.0) {
+                if (fps < 20.0) {
                     lowFpsAccumulatedMs += dtMs
                 } else {
                     // Reset if performance recovers

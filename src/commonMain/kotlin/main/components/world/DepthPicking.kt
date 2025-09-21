@@ -11,6 +11,7 @@ import lib.ArcRotateCamera
 import main.components.GraphicsSettings.getEngineScalingFactor
 import main.components.world.WorldLoader
 import main.components.world.isSkybox
+import main.components.world.isWater
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.get
 
@@ -22,6 +23,19 @@ import org.khronos.webgl.get
  * that depth via the active camera.
  */
 object DepthPicking {
+
+    // Detects if a mesh belongs to a TextBillboard (player/object status, chat, typing, usernames)
+    // These meshes should not contribute to depth picking.
+    private fun isStatusBillboardMesh(mesh: AbstractMesh): Boolean {
+        return try {
+            val n = mesh.name
+            if (n.startsWith("text-plane-")) return true
+            val parentName = try { mesh.parent?.name } catch (_: Throwable) { null }
+            parentName?.startsWith("text_container_") == true
+        } catch (_: Throwable) {
+            false
+        }
+    }
 
     // Shared depth renderer (from OcclusionManager or elsewhere)
     var depthRenderer: DepthRenderer? = null
@@ -202,11 +216,13 @@ object DepthPicking {
             // Build an exclusion set for quick lookup
             val excludeSet = excludeMeshes.toSet()
 
-            // Apply overrides: exclude listed meshes and skybox; use shared depth material for others
+            // Apply overrides: exclude listed meshes, skybox, water, and status billboards;
+            // use shared depth material for others
             scene.meshes.forEach { mesh ->
                 try {
                     if (!mesh.isVisible) return@forEach
-                    if (excludeSet.contains(mesh) || mesh.isSkybox()) {
+                    val shouldExclude = excludeSet.contains(mesh) || mesh.isSkybox() || mesh.isWater() || isStatusBillboardMesh(mesh)
+                    if (shouldExclude) {
                         renderer.setMaterialForRendering(mesh, excludeMat)
                         overriddenMeshesForPicking.add(mesh)
                     } else if (sharedDepthMat != null) {

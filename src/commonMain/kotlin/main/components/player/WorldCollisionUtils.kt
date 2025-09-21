@@ -39,22 +39,35 @@ object WorldCollisionUtils {
         position: Vector3,
         yPadding: Float = 0.5f,
     ): Vector3? {
-        val ray = Ray().also {
+        // Prepare target meshes once (exclude collider, move circle, skybox, and water)
+        val targetMeshes = worldMeshes.filter {
+            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
+        }.toTypedArray()
+
+        // Ray 1: y + 10f
+        val rayFar = Ray().also {
             it.origin = Vector3(position.x, position.y + 10f, position.z)
             it.direction = Vector3(0f, -1f, 0f)
         }
-
-        val hit = ray.intersectsMeshes(
-            // todo cache this
-            meshes = worldMeshes.filter {
-                it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
-            }.toTypedArray()
-        ).maxByOrNull { info -> info.pickedPoint?.y ?: Float.MAX_VALUE } ?: return null
-
-        if (hit.pickedPoint != null) {
-            return Vector3(position.x, hit.pickedPoint.y + yPadding, position.z)
+        // Ray 2: y + 2.5f
+        val rayNear = Ray().also {
+            it.origin = Vector3(position.x, position.y + 2.5f, position.z)
+            it.direction = Vector3(0f, -1f, 0f)
         }
 
-        return null
+        val hitsFar = rayFar.intersectsMeshes(meshes = targetMeshes)
+        val hitsNear = rayNear.intersectsMeshes(meshes = targetMeshes)
+
+        // Combine hits and choose the point closest to the input position.y
+        val bestHit = (hitsFar + hitsNear)
+            .filter { it.pickedPoint != null }
+            .minByOrNull { info -> kotlin.math.abs((info.pickedPoint!!.y) - position.y) }
+            ?: return null
+
+        return Vector3(
+            position.x,
+            bestHit.pickedPoint!!.y + yPadding,
+            position.z,
+        )
     }
 }

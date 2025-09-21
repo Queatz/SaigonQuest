@@ -75,6 +75,10 @@ fun DialogueBox() {
                 // Button container
                 Div({
                     classes(NodeStyles.dialogueButtonContainer)
+
+                    if (dialogue.buttons.size > 2) {
+                        classes(NodeStyles.dialogueButtonContainerVertical)
+                    }
                 }) {
                     // Render each button
                     dialogue.buttons.forEachIndexed { index, buttonText ->
