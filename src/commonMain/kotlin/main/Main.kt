@@ -11,7 +11,6 @@ import main.components.SceneComponent
 import main.theme.EditorStyles
 import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
-import main.theme.NodeStyles
 import main.theme.NotificationStyles
 import main.theme.Styles
 import main.theme.AssetStyles
@@ -33,7 +32,6 @@ fun main() {
             Style(OverlayStyles)
             Style(PanelStyles)
             Style(NodeEditorStyles)
-            Style(NodeStyles)
             Style(NotificationStyles)
             Style(EditorStyles)
             Style(InventoryStyles)

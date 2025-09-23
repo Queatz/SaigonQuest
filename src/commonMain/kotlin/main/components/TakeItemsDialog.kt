@@ -13,7 +13,7 @@ import main.api.WebSocketApi
 import main.api.addTakeItemsListener
 import main.api.sendTakeItemsConfirmation
 import main.components.inventory.ItemRenderer
-import main.theme.NodeStyles
+import main.theme.Styles
 import models.Item
 import models.TakeItemsPrompt
 import org.jetbrains.compose.web.css.*
@@ -34,14 +34,13 @@ fun TakeItemsDialog() {
 
     val current = prompt ?: return
 
-    Div({ classes(NodeStyles.dialogueOverlay) }) {
-        Div({ classes(NodeStyles.dialogueContainer) }) {
-            P({ classes(NodeStyles.dialogueText) }) {
-                Translated(
-                    if (current.isReceiving) "Take these items?" else "Give these items?"
-                )
-            }
-
+    BaseDialog(
+        onClose = { prompt = null },
+        title = if (current.isReceiving) translated("Take these items?") else translated("Give these items?"),
+        showCloseButton = true,
+        isFullscreen = false,
+        clickOutside = false,
+        content = {
             // Items list
             Div({
                 style {
@@ -71,33 +70,31 @@ fun TakeItemsDialog() {
                     }
                 }
             }
+        },
+        actions = {
+            DialogButton(onClick = {
+                val scope = MainScope()
+                scope.launch {
+                    val user = UserApi.getCurrentUser()
+                    WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, false)
+                    prompt = null
+                }
+            }, isPrimary = false) { Translated("Decline") }
 
-            // Buttons
-            Div({ classes(NodeStyles.dialogueButtonContainer) }) {
-                Button({ classes(NodeStyles.dialogueButton); onClick {
-                    val scope = MainScope()
-                    scope.launch {
-                        val user = UserApi.getCurrentUser()
-                        WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, false)
-                        prompt = null
-                    }
-                } }) { Translated("Decline") }
-
-                Button({ classes(NodeStyles.dialogueButton); onClick {
-                    val scope = MainScope()
-                    scope.launch {
-                        val user = UserApi.getCurrentUser()
-                        WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, true)
-                        prompt = null
-                    }
-                } }) {
-                    if (current.isReceiving) {
-                        Translated("Take items")
-                    } else {
-                        Translated("Give items")
-                    }
+            DialogButton(onClick = {
+                val scope = MainScope()
+                scope.launch {
+                    val user = UserApi.getCurrentUser()
+                    WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, true)
+                    prompt = null
+                }
+            }, isPrimary = true) {
+                if (current.isReceiving) {
+                    Translated("Take items")
+                } else {
+                    Translated("Give items")
                 }
             }
         }
-    }
+    )
 }

@@ -18,6 +18,7 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.events.Event
+import kotlin.random.Random
 
 // Centralized back/stack controller for all dialogs
 private object DialogBackController {
@@ -111,7 +112,7 @@ fun BaseDialog(
     actions: (@Composable () -> Unit)? = null
 ) {
     // Unique key per instance to keep portal reconciliation isolated
-    val token = remember { "dlg-${kotlin.random.Random.nextInt()}" }
+    val token = remember { "dlg-${Random.nextInt()}" }
 
     // Register this dialog with the centralized back controller
     DisposableEffect(onClose) {

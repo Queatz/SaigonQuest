@@ -363,7 +363,7 @@ class CameraController(private val scene: Scene) {
     fun updatePipelineSettings() {
         val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
 
-        scene.imageProcessingConfiguration.exposure = 1.5f
+        scene.imageProcessingConfiguration.exposure = 2f
 
         try {
             // Ensure image processing is always active so gamma/tone mapping are applied in all modes
@@ -519,10 +519,6 @@ class CameraController(private val scene: Scene) {
         camera.attachControl(true)
         
         try {
-            // Add keyboard input
-            val keyboardInput = ArcRotateCameraKeyboardMoveInput()
-            camera.inputs.add(keyboardInput)
-            
             // Add mouse wheel input
             val mouseWheelInput = ArcRotateCameraMouseWheelInput()
             camera.inputs.add(mouseWheelInput)
@@ -549,7 +545,6 @@ class CameraController(private val scene: Scene) {
         camera.detachControl()
         
         // Also disable specific input types to ensure no camera movement during dragging
-        camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
         camera.inputs.removeByType("ArcRotateCameraMouseWheelInput")
         camera.inputs.removeByType("ArcRotateCameraPointersInput")
         

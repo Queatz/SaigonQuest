@@ -51,6 +51,7 @@ import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.fontStyle
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.maxHeight
+import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.paddingTop
@@ -144,6 +145,7 @@ object Styles : StyleSheet() {
         width(100.percent)
         height(100.vh)
         display(DisplayStyle.Block)
+        outline("none")
     }
 
     val canvasLowGraphics by style {
@@ -847,6 +849,42 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.white08}")
         property("border-radius", "6px")
         marginBottom(6.px)
+    }
+
+    // Admin Items dialog styles
+    val adminItemsContent by style {
+        padding(16.px)
+        height(100.percent)
+        overflowY("auto")
+    }
+
+    val adminItemsErrorText by style {
+        color(Theme.colors.error)
+    }
+
+    val adminItemsGridHeader by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
+        property("gap", "8px")
+        fontSize(12.px)
+        marginBottom(8.px)
+    }
+
+    val adminItemsGridRow by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
+        property("gap", "8px")
+        alignItems(AlignItems.Center)
+        padding(8.px)
+        property("border", "1px solid ${Theme.colors.white08}")
+        property("border-radius", "6px")
+        marginBottom(6.px)
+    }
+
+    val adminItemsRowActions by style {
+        display(DisplayStyle.Flex)
+        property("gap", "8px")
+        justifyContent(JustifyContent.FlexEnd)
     }
 
     // Form grouping

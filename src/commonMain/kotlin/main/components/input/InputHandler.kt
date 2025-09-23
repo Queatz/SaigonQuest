@@ -4,8 +4,9 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import lib.KeyboardEventTypes
 import lib.KeyboardInfo
 import lib.Matrix
@@ -13,6 +14,7 @@ import lib.PointerEventTypes
 import lib.PointerInfo
 import lib.Scene
 import lib.Vector3
+import lib.Ray
 import lib.AbstractMesh
 import Translations.str
 import main.api.InventoryApi
@@ -40,6 +42,62 @@ import kotlin.math.abs
  * - Pointer input processing (click-to-move)
  * - Connecting inputs to player movement
  */
+
+// Unified pick result for pointer interactions
+private data class PointerPickResult(
+    val objectId: String?,
+    val inventoryItemId: String?,
+    val ray: Ray,
+)
+
+// Computes the closest picked object or inventory item under the current pointer
+// Returns both candidates and the ray used so callers can reuse it for world checks
+private fun pickUnderPointer(
+    scene: Scene,
+    cameraController: CameraController,
+    objectManager: SceneObjectManager,
+): PointerPickResult {
+    val ray = scene.createPickingRay(
+        x = scene.pointerX,
+        y = scene.pointerY,
+        world = Matrix.Identity(),
+        camera = cameraController.getCamera(),
+    )
+
+    var closestDistance = Float.MAX_VALUE
+    var closestObjectId: String? = null
+    var closestInventoryItemId: String? = null
+    var isInventoryItem = false
+
+    val objectMeshes = objectManager.getObjectMeshes()
+
+    for ((objectId, meshes) in objectMeshes) {
+        val isInventoryObj = objectManager.isInventoryObject(objectId)
+
+        meshes.forEach { mesh ->
+            val hit = ray.intersectsMesh(mesh)
+            if (hit.pickedPoint != null) {
+                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                if (isInventoryObj) {
+                    if (distance < closestDistance) {
+                        closestDistance = distance
+                        closestInventoryItemId = objectId
+                        isInventoryItem = true
+                    }
+                } else if (!isInventoryItem && distance < closestDistance) {
+                    closestDistance = distance
+                    closestObjectId = objectId
+                }
+            }
+        }
+    }
+
+    return PointerPickResult(
+        objectId = closestObjectId,
+        inventoryItemId = closestInventoryItemId,
+        ray = ray,
+    )
+}
 
 private const val SLOP = 50
 
@@ -90,13 +148,9 @@ class InputHandler(
     private var pointerStartY = 0
     private var isDragging = false
     
-    // Double-click detection
-    private var lastClickTime = 0.0
-    private var lastClickedObjectId: String? = null
-    private val doubleClickThreshold = 300.0 // milliseconds
-    
-    // Pending single-click action
-    private var pendingSingleClickJob: kotlinx.coroutines.Job? = null
+    // Double-tap handled by engine; delay single-tap to allow double-tap to preempt
+    private val tapDoubleClickThreshold = 300L
+    private var pendingTapSingleJob: Job? = null
     
     // Store the click point for object dragging
     private var objectClickPoint: Vector3? = null
@@ -174,150 +228,196 @@ class InputHandler(
 
         console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
         
+        // Handle Babylon tap/double-tap events explicitly (touch & click)
+        if (info.type == PointerEventTypes.POINTERDOUBLETAP && objectManager != null) {
+            // Double-tap cancels any pending single-tap action
+            pendingTapSingleJob?.cancel()
+            pendingTapSingleJob = null
+            // First, check if we double-tapped a player: show dialog
+            run {
+                val otherPlayersController = SceneManager.getOtherPlayersController()
+                if (otherPlayersController != null) {
+                    val ray = scene.createPickingRay(
+                        x = scene.pointerX,
+                        y = scene.pointerY,
+                        world = Matrix.Identity(),
+                        camera = cameraController.getCamera(),
+                    )
+                    val meshes = otherPlayersController.getPlayerMeshes()
+                    for (m in meshes) {
+                        val hit = ray.intersectsMesh(m)
+                        if (hit.pickedPoint != null) {
+                            val userId = otherPlayersController.getUserIdForMesh(m)
+                            if (userId != null) {
+                                val data = otherPlayersController.getPlayerData(userId)
+                                if (data != null) {
+                                    showOtherPlayerDialog(data.first, data.second)
+                                    return
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Otherwise, double-tap on object: trigger edit if owner
+            val pick = pickUnderPointer(
+                scene = scene,
+                cameraController = cameraController,
+                objectManager = objectManager,
+            )
+            pick.objectId?.let { objectId ->
+                scope.launch {
+                    if (isWorldOwner()) {
+                        val doubleClickEvent = createObjectDoubleClickEvent(objectId)
+                        window.dispatchEvent(doubleClickEvent)
+                    }
+                }
+                return
+            }
+        }
+
+        if (info.type == PointerEventTypes.POINTERTAP && objectManager != null) {
+            // First, check if we tapped a player: show dialog and do not move
+            run {
+                val otherPlayersController = SceneManager.getOtherPlayersController()
+                if (otherPlayersController != null) {
+                    val ray = scene.createPickingRay(
+                        x = scene.pointerX,
+                        y = scene.pointerY,
+                        world = Matrix.Identity(),
+                        camera = cameraController.getCamera(),
+                    )
+                    val meshes = otherPlayersController.getPlayerMeshes()
+                    for (m in meshes) {
+                        val hit = ray.intersectsMesh(m)
+                        if (hit.pickedPoint != null) {
+                            val userId = otherPlayersController.getUserIdForMesh(m)
+                            if (userId != null) {
+                                val data = otherPlayersController.getPlayerData(userId)
+                                if (data != null) {
+                                    // Any explicit player interaction should cancel pending single-object tap
+                                    pendingTapSingleJob?.cancel()
+                                    pendingTapSingleJob = null
+                                    showOtherPlayerDialog(data.first, data.second)
+                                    return
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val pick = pickUnderPointer(
+                scene = scene,
+                cameraController = cameraController,
+                objectManager = objectManager,
+            )
+
+            // Inventory item tap
+            pick.inventoryItemId?.let {
+                console.log("[POINTER_TAP] Collecting inventory item: $it")
+                // Cancel any pending object tap interaction
+                pendingTapSingleJob?.cancel()
+                pendingTapSingleJob = null
+                collectInventoryItem(it)
+                return
+            }
+
+            // Object tap: schedule single-tap interaction, allow double-tap to preempt
+            pick.objectId?.let { objectId ->
+                console.log("[POINTER_TAP] Schedule interact after threshold for object: $objectId")
+                pendingTapSingleJob?.cancel()
+                pendingTapSingleJob = scope.launch {
+                    delay(tapDoubleClickThreshold)
+                    objectManager.selectObject(objectId)
+                    val isPlayer = UserApi.getToken() != null
+                    WebSocketApi.playerInteract(objectId, isPlayer)
+                    pendingTapSingleJob = null
+                }
+                return
+            }
+        }
+
         // Always handle object hovering for pointer move events to highlight objects
         if (info.type == PointerEventTypes.POINTERMOVE) {
+            // Check if dragging (pointer is down and has moved more than a threshold)
+            if (isPointerDown) {
+                val deltaX = abs(scene.pointerX - pointerStartX)
+                val deltaY = abs(scene.pointerY - pointerStartY)
+
+                // Consider it a drag if moved more than SLOP pixels in any direction
+                if (deltaX > SLOP || deltaY > SLOP) {
+                    isDragging = true
+
+                    // If dragging, cancel any pending single-tap and movement
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = null
+                    playerController.stopMovement()
+                }
+            }
             handleObjectHovering()
         }
         
         // Handle object selection on pointer down
         if (info.type == PointerEventTypes.POINTERDOWN && objectManager != null) {
-            // Use ray casting to find the object under the pointer
-            val ray = scene.createPickingRay(
-                x = scene.pointerX,
-                y = scene.pointerY,
-                world = Matrix.Identity(),
-                camera = cameraController.getCamera()
-            )
-            
-            // Check for intersection with object meshes
-            var closestDistance = Float.MAX_VALUE
-            var closestObjectId: String? = null
-            
-            // Get the object meshes
-            val objectMeshes = objectManager.getObjectMeshes()
-            
-            // Variables to track inventory items
-            var closestInventoryItemId: String? = null
-            var isInventoryItem = false
-            
-            // Check each object mesh for intersection
-            for ((objectId, meshes) in objectMeshes) {
-                // Determine kind using the object manager (Object.kind-based)
-                val isInventoryObj = objectManager.isInventoryObject(objectId)
+            // Track pointer down state and position
+            isPointerDown = true
+            pointerStartX = scene.pointerX
+            pointerStartY = scene.pointerY
+            isDragging = false
 
-                meshes.forEach { mesh ->
-                    val hit = ray.intersectsMesh(mesh)
-                    if (hit.pickedPoint != null) {
-                        val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                        
-                        if (isInventoryObj) {
-                            console.log("[POINTER_DOWN] Found intersection with inventory item: $objectId at distance: $distance")
-                            
-                            // If this is closer than any previously found item, update the closest item
-                            if (distance < closestDistance) {
-                                closestDistance = distance
-                                closestInventoryItemId = objectId
-                                isInventoryItem = true
-                            }
-                        } else if (!isInventoryItem && distance < closestDistance) {
-                            // Only update regular objects if we haven't found an inventory item
-                            // or if this regular object is closer than any previously found inventory item
-                            closestDistance = distance
-                            closestObjectId = objectId
-                            console.log("[POINTER_DOWN] Found intersection with object: $objectId at distance: $distance")
-                        }
-                    }
-                }
-            }
-            
-            // If we found an inventory item, handle it
-            if (isInventoryItem && closestInventoryItemId != null) {
-                console.log("[POINTER_DOWN] Collecting inventory item: $closestInventoryItemId")
-                collectInventoryItem(closestInventoryItemId)
-                return
-            }
-            
+            // Starting a new pointer interaction: cancel any pending single-tap
+            pendingTapSingleJob?.cancel()
+            pendingTapSingleJob = null
+
+            val pick = pickUnderPointer(
+                scene = scene,
+                cameraController = cameraController,
+                objectManager = objectManager,
+            )
+
             // If we found an object, select it
-            if (closestObjectId != null) {
+            pick.objectId?.let { closestObjectId ->
                 console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
                 objectManager.selectObject(closestObjectId)
-                
-                // Cancel any pending single-click job
-                pendingSingleClickJob?.cancel()
-                pendingSingleClickJob = null
-                
-                val currentTime = window.performance.now()
-                
-                // Check for double-click
-                if (closestObjectId == lastClickedObjectId && 
-                    (currentTime - lastClickTime) < doubleClickThreshold) {
-                    // This is a double-click on the same object
-                    console.log("[POINTER_DOWN] Double-click detected on object: $closestObjectId")
-                    
-                    // Check if the current user is the owner of the world before allowing object editing
-                    scope.launch {
-                        if (isWorldOwner()) {
-                            // Create and dispatch a custom event for object double-click
-                            val doubleClickEvent = createObjectDoubleClickEvent(closestObjectId)
-                            window.dispatchEvent(doubleClickEvent)
-                        } else {
-                            console.log("[POINTER_DOWN] Double-click ignored - user is not the world owner")
-                        }
-                    }
-                } else {
-                    // This might be a single-click, but we need to wait to confirm it's not a double-click
-                    // Schedule a delayed action to handle the single-click after the double-click threshold
-                    val clickedObjectId = closestObjectId // Capture the current object ID
-                    pendingSingleClickJob = scope.launch {
-                        // Wait for the double-click threshold
-                        delay(doubleClickThreshold.toLong())
-                        
-                        // If this job wasn't cancelled, it means no double-click was detected
-                        // So we can proceed with the single-click action
-                        console.log("[POINTER_DOWN] Confirmed single-click on object: $clickedObjectId")
-                        
-                        // Send USER_INTERACT event to the backend
-                        // Determine if the user is a player (authenticated) or visitor
-                        val isPlayer = UserApi.getToken() != null
-                        WebSocketApi.playerInteract(clickedObjectId, isPlayer)
-                        
-                        // Clear the pending job reference
-                        pendingSingleClickJob = null
-                    }
-                }
-                
-                // Update last click info for future double-click detection
-                lastClickTime = currentTime
-                lastClickedObjectId = closestObjectId
-            } else {
-                // If we didn't click on an object, check if we clicked on a world mesh
-                // and deselect any selected object
-                val worldMeshes = playerController.getWorldMeshes()
-                val player = playerController.getCollider()
-                val moveCircle = playerController.getMoveCircle()
-                
-                // Cancel any pending single-click job since the user is now interacting elsewhere
-                pendingSingleClickJob?.cancel()
-                pendingSingleClickJob = null
-                
-                var clickedOnWorldMesh = false
-                
-                for (mesh in worldMeshes) {
-                    // Skip player and move circle meshes
-                    if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-                    
-                    val hit = ray.intersectsMesh(mesh)
-                    if (hit.pickedPoint != null) {
-                        clickedOnWorldMesh = true
-                        break
-                    }
-                }
-                
-                if (clickedOnWorldMesh) {
-                    // If we clicked on a world mesh, deselect any selected object
-                    objectManager.deselectCurrentObject()
+                return
+            }
+
+            // If we didn't click on an object, check if we clicked on a world mesh
+            // and deselect any selected object
+            val worldMeshes = playerController.getWorldMeshes()
+            val player = playerController.getCollider()
+            val moveCircle = playerController.getMoveCircle()
+
+            var clickedOnWorldMesh = false
+
+            for (mesh in worldMeshes) {
+                // Skip player and move circle meshes
+                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
+
+                val hit = pick.ray.intersectsMesh(mesh)
+                if (hit.pickedPoint != null) {
+                    clickedOnWorldMesh = true
+                    break
                 }
             }
+
+            if (clickedOnWorldMesh) {
+                // If we clicked on a world mesh, deselect any selected object
+                objectManager.deselectCurrentObject()
+            }
+        }
+
+        if (info.type == PointerEventTypes.POINTERUP) {
+            // If it was a click (not a drag) and no object is selected, handle movement
+            if (!isDragging && !isObjectSelected) {
+                handleClickToMove()
+            }
+
+            // Reset pointer state
+            isPointerDown = false
+            isDragging = false
         }
         
         // If an object is selected or being dragged, handle object manipulation
@@ -338,48 +438,6 @@ class InputHandler(
                 cameraInputsEnabled = true
                 console.log("Camera inputs re-enabled after object manipulation")
             }
-        }
-        
-        // Normal player/camera movement handling
-        when (info.type) {
-            PointerEventTypes.POINTERDOWN -> {
-                // Track pointer down state and position
-                isPointerDown = true
-                pointerStartX = scene.pointerX
-                pointerStartY = scene.pointerY
-                isDragging = false
-            }
-            
-            PointerEventTypes.POINTERMOVE -> {
-                // Check if dragging (pointer is down and has moved more than a threshold)
-                if (isPointerDown) {
-                    val deltaX = abs(scene.pointerX - pointerStartX)
-                    val deltaY = abs(scene.pointerY - pointerStartY)
-                    
-                    // Consider it a drag if moved more than SLOP pixels in any direction
-                    if (deltaX > SLOP || deltaY > SLOP) {
-                        isDragging = true
-                        pendingSingleClickJob?.cancel()
-                        pendingSingleClickJob = null
-                        
-                        // If dragging, cancel any movement
-                        playerController.stopMovement()
-                    }
-                }
-            }
-            
-            PointerEventTypes.POINTERUP -> {
-                // If it was a click (not a drag) and no object is selected, handle movement
-                if (!isDragging && !isObjectSelected) {
-                    handleClickToMove()
-                }
-                
-                // Reset pointer state
-                isPointerDown = false
-                isDragging = false
-            }
-            
-            else -> { /* Ignore other pointer events */ }
         }
     }
 
@@ -488,57 +546,60 @@ class InputHandler(
 
                     val selectedObjectId = objectManager.getSelectedObject()
                     
-                    // If we have a selected object and we're not already dragging
+                    // If we have a selected object and we're not already dragging, only start dragging
+                    // after the pointer has moved beyond the SLOP threshold to allow taps on touch devices
                     if (selectedObjectId != null && !isObjectDragging) {
-                        // Check if the current user is the owner of the world before allowing object dragging
-                        scope.launch {
-                            if (isWorldOwner()) {
-                                // Disable camera inputs before starting drag
-                                if (cameraInputsEnabled) {
-                                    disableCameraInputs()
-                                    cameraInputsEnabled = false
-                                }
-                                
-                                // Start dragging the object, passing the click point
-                                isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
-                                draggingObjectId = selectedObjectId
-                                
-                                // Log and reset the click point after starting dragging
-                                if (isObjectDragging) {
-                                    console.log("Started dragging with click point: $objectClickPoint")
-                                    // Create dedicated picking depth renderer (world-only) for the drag session
-                                    try {
-                                        val excludeList = mutableListOf<AbstractMesh>()
-                                        // Exclude all object meshes from the depth pass
-                                        val objMeshes = objectManager.getObjectMeshes()
-                                        for ((_, meshes) in objMeshes) {
-                                            excludeList.addAll(meshes)
-                                        }
-                                        // Exclude skybox if available (prevents far depth writes)
-                                        objectManager.getSkybox()?.let { excludeList.add(it) }
-                                        DepthPicking.beginPickingDepth(
-                                            scene = scene,
-                                            excludeMeshes = excludeList.toTypedArray(),
-                                        )
-                                    } catch (t: Throwable) {
-                                        console.warn("[InputHandler] Failed to create dedicated picking depth renderer: ${t.message}")
+                        val dx = abs(scene.pointerX - pointerStartX)
+                        val dy = abs(scene.pointerY - pointerStartY)
+                        val movedBeyondSlop = dx > SLOP || dy > SLOP
+                        if (movedBeyondSlop) {
+                            // Check if the current user is the owner of the world before allowing object dragging
+                            scope.launch {
+                                if (isWorldOwner()) {
+                                    // Disable camera inputs before starting drag
+                                    if (cameraInputsEnabled) {
+                                        disableCameraInputs()
+                                        cameraInputsEnabled = false
                                     }
-                                    // Reset click point to ensure consistent behavior between first and subsequent drags
-                                    objectClickPoint = null
+                                    
+                                    // Start dragging the object, passing the click point
+                                    isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
+                                    draggingObjectId = selectedObjectId
+                                    
+                                    // Log and reset the click point after starting dragging
+                                    if (isObjectDragging) {
+                                        console.log("Started dragging with click point: $objectClickPoint")
+                                        // Create dedicated picking depth renderer (world-only) for the drag session
+                                        try {
+                                            val excludeList = mutableListOf<AbstractMesh>()
+                                            // Exclude all object meshes from the depth pass
+                                            val objMeshes = objectManager.getObjectMeshes()
+                                            for ((_, meshes) in objMeshes) {
+                                                excludeList.addAll(meshes)
+                                            }
+                                            // Exclude skybox if available (prevents far depth writes)
+                                            objectManager.getSkybox()?.let { excludeList.add(it) }
+                                            DepthPicking.beginPickingDepth(
+                                                scene = scene,
+                                                excludeMeshes = excludeList.toTypedArray(),
+                                            )
+                                        } catch (t: Throwable) {
+                                            console.warn("[InputHandler] Failed to create dedicated picking depth renderer: ${t.message}")
+                                        }
+                                        // Reset click point to ensure consistent behavior between first and subsequent drags
+                                        objectClickPoint = null
+                                    }
+                                } else {
+                                    console.log("Object dragging ignored - user is not the world owner")
+                                    // Deselect the object if the user is not the owner
+                                    objectManager.deselectCurrentObject()
                                 }
-                            } else {
-                                console.log("Object dragging ignored - user is not the world owner")
-                                // Deselect the object if the user is not the owner
-                                objectManager.deselectCurrentObject()
                             }
                         }
                     }
                     
                     // If we're dragging an object, update its position
                     if (isObjectDragging && draggingObjectId != null) {
-                        pendingSingleClickJob?.cancel()
-                        pendingSingleClickJob = null
-
                         // Depth-first position for robust dragging under occlusion; fallback to ray
                         scope.launch {
                             val depthPoint = try {
@@ -648,10 +709,10 @@ class InputHandler(
         
         // Create a ray from the camera through the pointer position
         val ray = scene.createPickingRay(
-            scene.pointerX,
-            scene.pointerY,
-            Matrix.Identity(),
-            cameraController.getCamera()
+            x = scene.pointerX,
+            y = scene.pointerY,
+            world = Matrix.Identity(),
+            camera = cameraController.getCamera()
         )
         
         // First check for intersection with player meshes
@@ -941,10 +1002,9 @@ class InputHandler(
      * This should be called when the InputHandler is no longer needed.
      */
     fun dispose() {
-        // Cancel any pending single-click job
-        pendingSingleClickJob?.cancel()
-        pendingSingleClickJob = null
-        
+        // Cancel pending single-tap and clear other state
+        pendingTapSingleJob?.cancel()
+        pendingTapSingleJob = null
         // Clear other state
         pressedKeys.clear()
     }

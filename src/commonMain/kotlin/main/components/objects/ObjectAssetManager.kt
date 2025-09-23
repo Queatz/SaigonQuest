@@ -70,6 +70,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     // Create a parent mesh to hold the cloned mesh
                     val parentMesh = mesh.clone("parent_${collection}_${Clock.System.now().toEpochMilliseconds()}")
                     parentMesh.isVisible = false
+                    parentMesh.material.fogEnabled = true
                     
                     // Store the original position, rotation, and scaling before cloning
                     val originalPosition = mesh.position.clone()
@@ -104,6 +105,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     // Make sure the cloned mesh is visible
                     clonedMesh.isVisible = true
                     clonedMesh.isPickable = true
+                    clonedMesh.material.fogEnabled = true
                     console.log("[ASSET_MANAGER] Created visible clone/instance for cached mesh: ${mesh.name}")
                     
                     // Log the properties of the cloned mesh
@@ -217,6 +219,9 @@ class ObjectAssetManager(private val scene: Scene) {
                                 clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
                             }
 
+
+                            clonedMesh.material.fogEnabled = true
+
                             // Return the cloned mesh
                             onSuccess(clonedMesh)
                             foundRequestedNode = true
@@ -248,6 +253,8 @@ class ObjectAssetManager(private val scene: Scene) {
                                         childMesh.billboardMode = Mesh.BILLBOARDMODE_Y
                                     }
 
+                                    childMesh.material.fogEnabled = true
+
                                     // Create a clone or instance
                                     console.log("[ASSET_MANAGER] Creating clone of child mesh: ${childMesh.name}")
                                     val clonedMesh = childMesh.clone("clone_${requestedCollection}_child_${Clock.System.now().toEpochMilliseconds()}")
@@ -269,8 +276,10 @@ class ObjectAssetManager(private val scene: Scene) {
                                     
                                     console.log("[ASSET_MANAGER] Set cloned mesh position: (${clonedMesh.position.x}, ${clonedMesh.position.y}, ${clonedMesh.position.z})")
 
-                                    // Make sure the cloned mesh is visible
+                                    // Make sure the cloned mesh is visible and affected by fog
                                     clonedMesh.isVisible = true
+                                    clonedMesh.isPickable = true
+                                    clonedMesh.material.fogEnabled = true
                                     console.log("[ASSET_MANAGER] Added cloned mesh to parent: ${childMesh.name}")
 
                                     if (childMesh.isBillboard()) {

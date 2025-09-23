@@ -7,11 +7,11 @@ import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
+import main.theme.Styles
 import models.Item
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -47,29 +47,12 @@ fun AdminItemsDialog(
 
     val headerActions: @Composable () -> Unit = {
         Button(attrs = {
-            style {
-                backgroundColor(rgba(0, 120, 255, 0.7))
-
-                property("border", "0")
-                property("border-radius", "4px")
-                padding(4.px, 8.px)
-                marginRight(8.px)
-                cursor("pointer")
-                fontSize(14.px)
-            }
+            classes(Styles.primaryButton)
             onClick { showCreateItemDialog = true }
         }) { Text("+ " + translated("New")) }
 
         Button(attrs = {
-            style {
-                backgroundColor(rgba(90, 90, 90, 0.7))
-
-                property("border", "0")
-                property("border-radius", "4px")
-                padding(4.px, 8.px)
-                cursor("pointer")
-                fontSize(14.px)
-            }
+            classes(Styles.secondaryButton)
             onClick { loadItems() }
         }) { Translated("Refresh") }
     }
@@ -80,15 +63,9 @@ fun AdminItemsDialog(
         headerActions = headerActions,
         maxWidth = "720px",
         content = {
-            Div(attrs = {
-                style {
-                    padding(16.px)
-                    height(100.percent)
-                    property("overflow-y", "auto")
-                }
-            }) {
+            Div(attrs = { classes(Styles.adminItemsContent) }) {
                 if (errorMessage != null) {
-                    P(attrs = { style { color(rgba(255, 100, 100, 0.9)) } }) { Text(errorMessage!!) }
+                    P(attrs = { classes(Styles.adminItemsErrorText) }) { Text(errorMessage!!) }
                 }
                 if (isLoading) {
                     P { Translated("Loading...") }
@@ -96,37 +73,18 @@ fun AdminItemsDialog(
                     P { Translated("No items found") }
                 } else {
                     // Header row
-                    Div(attrs = {
-                        style {
-                            display(DisplayStyle.Grid)
-                            property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
-                            property("gap", "8px")
-                            fontSize(12.px)
-                            marginBottom(8.px)
-                        }
-                    }) {
+                    Div(attrs = { classes(Styles.adminItemsGridHeader) }) {
                         Span { /* image column header left blank intentionally */ }
                         Span { Translated("Title") }
                         Span { Translated("Cost") }
                         Span { Translated("Asset index") }
                         Span { Translated("Wearable") }
-                        Span {} // actions
+                        Span {}
                     }
 
                     // List rows
                     for (item in items) {
-                        Div(attrs = {
-                            style {
-                                display(DisplayStyle.Grid)
-                                property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
-                                property("gap", "8px")
-                                alignItems(AlignItems.Center)
-                                padding(8.px)
-                                property("border", "1px solid rgba(255,255,255,0.08)")
-                                property("border-radius", "6px")
-                                marginBottom(6.px)
-                            }
-                        }) {
+                        Div(attrs = { classes(Styles.adminItemsGridRow) }) {
                             // image
                             Div {
                                 ItemRenderer(item = item, size = 32)
@@ -135,23 +93,9 @@ fun AdminItemsDialog(
                             Span { Text(item.cost.toString()) }
                             Span { Text(item.assetIndex.toString()) }
                             Span { Text(if (item.wearable) translated("Yes") else translated("No")) }
-                            Div(attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    property("gap", "8px")
-                                    justifyContent(JustifyContent.FlexEnd)
-                                }
-                            }) {
+                            Div(attrs = { classes(Styles.adminItemsRowActions) }) {
                                 Button(attrs = {
-                                    style {
-                                        backgroundColor(rgba(0, 120, 255, 0.7))
-
-                                        property("border", "0")
-                                        property("border-radius", "4px")
-                                        padding(4.px, 8.px)
-                                        cursor("pointer")
-                                        fontSize(12.px)
-                                    }
+                                    classes(Styles.primaryButton)
                                     onClick { editingItem = item }
                                 }) { Translated("Edit") }
                             }
@@ -171,7 +115,7 @@ fun AdminItemsDialog(
             onItemCreated = {
                 showCreateItemDialog = false
                 loadItems()
-            }
+            },
         )
     }
 
@@ -183,7 +127,7 @@ fun AdminItemsDialog(
                 editingItem = null
                 // update in list without full reload
                 items = items.map { if (it.key == updated.key) updated else it }
-            }
+            },
         )
     }
 }

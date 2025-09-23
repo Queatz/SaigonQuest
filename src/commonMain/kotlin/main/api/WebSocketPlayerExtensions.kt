@@ -10,6 +10,7 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import utils.json
 
 /**
  * Extension functions for WebSocketApi related to player operations
@@ -59,14 +60,9 @@ suspend fun WebSocketApi.updatePlayerPosition(position: Position, isPlayer: Bool
  */
 fun WebSocketApi.playerInteract(objectId: String, isPlayer: Boolean): Boolean {
     var success = false
-    
+
     apiScope.launch {
         try {
-            if (!isConnected()) {
-                console.warn("Cannot send player interaction: WebSocket not connected")
-                return@launch
-            }
-            
             val user = UserApi.getCurrentUser()
             val interactData = PlayerInteractData(
                 objectId = objectId,
@@ -74,7 +70,7 @@ fun WebSocketApi.playerInteract(objectId: String, isPlayer: Boolean): Boolean {
                 userId = user.key
             )
             
-            val message = WebSocketMessage.fromEnum(WebSocketAction.USER_INTERACT, ApiClient.json.encodeToString(interactData))
+            val message = WebSocketMessage.fromEnum(WebSocketAction.USER_INTERACT, json.encodeToString(interactData))
             success = sendMessage(message)
         } catch (e: Throwable) {
             console.error("Error sending player interaction", e)

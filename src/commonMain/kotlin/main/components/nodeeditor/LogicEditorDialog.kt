@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.IconRenderer
 import main.components.Translated
 import main.components.translated
 import main.theme.NodeEditorStyles
@@ -151,7 +152,11 @@ fun LogicEditorDialog(
                     onClick { toggleFullscreen() }
                 }
             ) {
-                Text(if (isFullscreen) "⤓" else "⤢")
+                IconRenderer(
+                    url = "raw/data/ui/ui.png",
+                    index = if (isFullscreen) 1 else 0,
+                    size = 24
+                )
             }
         },
         // Main content

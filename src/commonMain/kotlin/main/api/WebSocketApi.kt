@@ -7,6 +7,7 @@ import main.api.ApiConstants.API_BASE_URL
 import main.api.UserApi.getVisitorId
 import models.WebSocketAction
 import org.w3c.dom.WebSocket
+import utils.json
 
 // Token for managing WebSocket listeners safely
 data class ListenerToken(
@@ -474,7 +475,7 @@ object WebSocketApi {
         }
         
         try {
-            val messageString = ApiClient.json.encodeToString(message)
+            val messageString = json.encodeToString(message)
             socket?.send(messageString)
             return true
         } catch (e: Throwable) {

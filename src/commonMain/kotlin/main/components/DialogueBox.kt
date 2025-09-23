@@ -6,23 +6,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.addDialogueListener
 import main.api.sendDialogueConfirmation
-import main.theme.NodeStyles
 import models.DialogueData
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.dom.*
 
 /**
  * DialogueBox component
@@ -31,10 +24,18 @@ import org.jetbrains.compose.web.dom.Text
  * It's used to show dialogue messages from NPCs or objects.
  */
 @Composable
-fun DialogueBox() {
+fun DialogueBox(
+    onClose: () -> Unit,
+) {
     // State to track the current dialogue
     var currentDialogue by remember { mutableStateOf<DialogueData?>(null) }
-    
+
+    LaunchedEffect(currentDialogue) {
+        if (currentDialogue == null) {
+            onClose()
+        }
+    }
+
     // Add a listener for dialogue events
     LaunchedEffect(Unit) {
         WebSocketApi.addDialogueListener { dialogueData ->
@@ -42,77 +43,75 @@ fun DialogueBox() {
             currentDialogue = dialogueData
         }
     }
-    
-    // Only show the dialogue box if there's a dialogue to show
-    currentDialogue?.let { dialogue ->
-        // Overlay to darken the background
-        Div({
-            classes(NodeStyles.dialogueOverlay)
-        }) {
-            // Dialogue box
-            Div({
-                classes(NodeStyles.dialogueContainer)
-            }) {
-                // Optional image above the text
-                if (!dialogue.imageUrl.isNullOrBlank()) {
-                    Img(
-                        src = dialogue.imageUrl!!,
-                        attrs = {
-                            style {
-                                width(100.percent)
-                                borderRadius(8.px)
-                            }
-                        }
-                    )
-                }
-                // Dialogue text
-                P({
-                    classes(NodeStyles.dialogueText)
-                }) {
-                    Text(dialogue.text)
-                }
-                
-                // Button container
-                Div({
-                    classes(NodeStyles.dialogueButtonContainer)
 
-                    if (dialogue.buttons.size > 2) {
-                        classes(NodeStyles.dialogueButtonContainerVertical)
+    // Only show the dialogue box if there's a dialogue to show
+    val dialogue = currentDialogue ?: return
+
+    BaseDialog(
+        onClose = { currentDialogue = null },
+        title = null,
+        showCloseButton = false,
+        isFullscreen = false,
+        clickOutside = false,
+        content = {
+            // Optional image above the text
+            if (!dialogue.imageUrl.isNullOrBlank()) {
+                Img(
+                    src = dialogue.imageUrl!!,
+                    attrs = {
+                        style {
+                            width(100.percent)
+                            borderRadius(8.px)
+                            marginBottom(12.px)
+                        }
                     }
-                }) {
-                    // Render each button
-                    dialogue.buttons.forEachIndexed { index, buttonText ->
-                        Button({
-                            classes(NodeStyles.dialogueButton)
-                            onClick {
-                                // Create a coroutine scope
-                                val scope = MainScope()
-                                
-                                // Launch a coroutine to get the user ID and send confirmation
-                                scope.launch {
-                                    try {
-                                        // Get the current user ID
-                                        val user = UserApi.getCurrentUser()
-                                        val userId = user.key
-                                        
-                                        // Send confirmation with button index
-                                        WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index)
-                                        
-                                        // Clear the dialogue
-                                        currentDialogue = null
-                                    } catch (e: Throwable) {
-                                        console.error("Error sending dialogue confirmation", e)
-                                        // Still clear the dialogue to avoid blocking the UI
-                                        currentDialogue = null
-                                    }
+                )
+            }
+
+            // Dialogue text
+            P({
+                style {
+                    margin(0.px)
+                    padding(10.px)
+                    textAlign("center")
+                    fontSize(16.px)
+                    lineHeight("1.5")
+                }
+            }) {
+                Text(dialogue.text)
+            }
+        },
+        actions = {
+            // Container to allow wrapping when many buttons
+            Div({
+                style {
+                    display(DisplayStyle.Flex)
+                    flexWrap(FlexWrap.Wrap)
+                    gap(8.px)
+                    justifyContent(JustifyContent.Center)
+                    width(100.percent)
+                }
+            }) {
+                dialogue.buttons.forEachIndexed { index, buttonText ->
+                    DialogButton(
+                        onClick = {
+                            val scope = MainScope()
+                            scope.launch {
+                                try {
+                                    val user = UserApi.getCurrentUser()
+                                    val userId = user.key
+                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index)
+                                } catch (e: Throwable) {
+                                    console.error("Error sending dialogue confirmation", e)
+                                } finally {
+                                    currentDialogue = null
                                 }
                             }
-                        }) {
-                            Text(buttonText)
-                        }
-                    }
+                        },
+                        isPrimary = index == 0
+                    ) { Text(buttonText) }
                 }
             }
         }
-    }
+    )
 }
