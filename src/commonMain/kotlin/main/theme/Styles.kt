@@ -146,6 +146,8 @@ object Styles : StyleSheet() {
         height(100.vh)
         display(DisplayStyle.Block)
         outline("none")
+        property("touch-action", "none")
+        property("user-select", "none")
     }
 
     val canvasLowGraphics by style {

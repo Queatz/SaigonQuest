@@ -1,0 +1,1437 @@
+2025-09-11 11:34:20.371 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #113] ===
+2025-09-11 11:34:20.498 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: ATTEMPT
+2025-09-11 11:34:20.499 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.499 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: unknown
+2025-09-11 11:34:20.499 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #113] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #114] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: WORLD_ID
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #114] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #115] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: TOKEN
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #115] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #116] ===
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: TOKEN_VALIDATION
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.500 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #116] ===
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #117] ===
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: TOKEN_VALID
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.501 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #117] ===
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #118] ===
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: LANGUAGE
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #118] ===
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #119] ===
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: CREATED
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.504 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #119] ===
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #120] ===
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: CONNECT
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.505 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #120] ===
+2025-09-11 11:34:20.516 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #121] ===
+2025-09-11 11:34:20.516 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #121] ===
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #122] ===
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: ACTIVE_CONNECTIONS
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.517 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #122] ===
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1976] ===
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: BROADCAST
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1976] ===
+2025-09-11 11:34:20.518 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1618] ===
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1618] ===
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1619] ===
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1619] ===
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1620] ===
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.519 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1620] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1621] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1621] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1622] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1622] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #123] ===
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: USER_JOINED
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:20.520 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #123] ===
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1977] ===
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: SENDING_EXISTING_USERS
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: 
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1977] ===
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1978] ===
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: EXISTING_CONNECTIONS
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: count: 1
+2025-09-11 11:34:20.525 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1978] ===
+2025-09-11 11:34:21.598 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1979] ===
+2025-09-11 11:34:21.598 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 11:34:21.598 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.598 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 11:34:21.598 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1979] ===
+2025-09-11 11:34:21.599 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1980] ===
+2025-09-11 11:34:21.599 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 11:34:21.599 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.599 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=200
+2025-09-11 11:34:21.599 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1980] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1981] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1981] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1982] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1982] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1623] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1623] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1983] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}"
+}
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1983] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1984] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=276
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1984] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1985] ===
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: USER_JOIN
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.600 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1985] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1986] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_JOIN
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1986] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1624] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1624] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1625] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186,\n        \"y\": 0.3054653,\n        \"z\": -0.72408295\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1625] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1626] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1626] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1627] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1627] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1628] ===
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 11:34:21.601 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1628] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1629] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1629] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1630] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_LEAVE",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1630] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1631] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1631] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - === WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - Error: Error sending message to client ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.558 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - Exception: java.util.concurrent.CancellationException
+2025-09-11 11:34:34.559 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - Message: Channel was cancelled
+2025-09-11 11:34:34.559 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - Stack Trace:
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancelImpl$kotlinx_coroutines_core(BufferedChannel.kt:1798)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancel(BufferedChannel.kt:1795)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.ReceiveChannel$DefaultImpls.cancel$default(Channel.kt:695)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   io.ktor.websocket.DefaultWebSocketSessionImpl$runOutgoingProcessor$1.invokeSuspend(DefaultWebSocketSession.kt:272)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.EventLoop.processUnconfinedEvent(EventLoop.common.kt:65)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.resumeUnconfined(DispatchedTask.kt:243)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.dispatch(DispatchedTask.kt:147)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug -   kotlinx.coroutines.CancellableContinuationImpl.dispatchResume(CancellableContinuationImpl.kt:470)
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] ERROR debug.WebSocketDebug - === END WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1632] ===
+2025-09-11 11:34:34.560 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Details: Success: 0/1 clients
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1632] ===
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #124] ===
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: USER_LEFT
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:34.561 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #124] ===
+2025-09-11 11:34:34.562 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #125] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: REMOVING_CONNECTION
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #125] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #126] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: CONNECTION_REMOVED
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #126] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #127] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: REMOVING_WORLD
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #127] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #128] ===
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS_AFTER_REMOVAL
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@36c4964c
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 11:34:34.563 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #128] ===
+2025-09-11 12:00:51.579 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #129] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: ATTEMPT
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: unknown
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #129] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #130] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: WORLD_ID
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #130] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #131] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: TOKEN
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #131] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #132] ===
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: TOKEN_VALIDATION
+2025-09-11 12:00:51.580 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #132] ===
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #133] ===
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: TOKEN_VALID
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.581 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #133] ===
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #134] ===
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: LANGUAGE
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #134] ===
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #135] ===
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: CREATED
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.582 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #135] ===
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #136] ===
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: CONNECT
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.583 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #136] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #137] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #137] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #138] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: ACTIVE_CONNECTIONS
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #138] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1987] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: BROADCAST
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1987] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1633] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1633] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1634] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1634] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1635] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1635] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1636] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1636] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1637] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1637] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #139] ===
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: USER_JOINED
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:00:51.585 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #139] ===
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1988] ===
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: SENDING_EXISTING_USERS
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: 
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1988] ===
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1989] ===
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: EXISTING_CONNECTIONS
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: count: 1
+2025-09-11 12:00:51.587 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1989] ===
+2025-09-11 12:00:52.812 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1990] ===
+2025-09-11 12:00:52.812 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1990] ===
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1991] ===
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=200
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1991] ===
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1992] ===
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.813 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1992] ===
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1993] ===
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1993] ===
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1638] ===
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:52.814 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1638] ===
+2025-09-11 12:00:52.815 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1994] ===
+2025-09-11 12:00:52.815 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 12:00:52.815 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.815 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}"
+}
+2025-09-11 12:00:52.815 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1994] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1995] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=276
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1995] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1996] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: USER_JOIN
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1996] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1997] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_JOIN
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1997] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1639] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1639] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1640] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186,\n        \"y\": 0.3054653,\n        \"z\": -0.72408295\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1640] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1641] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1641] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1642] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1642] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1643] ===
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 12:00:52.816 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1643] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1644] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1644] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1645] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: {
+    "action": "PIN_ADDED",
+    "data": "{\n    \"key\": \"11891250\",\n    \"createdAt\": \"2025-09-11T05:00:57.176551018Z\",\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\",\n    \"messageId\": \"e7fd2d2a335747f79af476396bbcc22d\",\n    \"pinnedByUserId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"pinnedAt\": \"2025-09-11T05:00:57.174Z\"\n}",
+    "worldUrl": null
+}
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1645] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1646] ===
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:57.179 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1646] ===
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1647] ===
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1647] ===
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1648] ===
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 12:00:57.180 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1648] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1649] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1649] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1650] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: {
+    "action": "PIN_REMOVED",
+    "data": "\"e7fd2d2a335747f79af476396bbcc22d\"",
+    "worldUrl": null
+}
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1650] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1651] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1651] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1652] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1652] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1653] ===
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 12:00:59.642 [eventLoopGroupProxy-4-20] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1653] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1654] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1654] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1655] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_LEAVE",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1655] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1656] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1656] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - === WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - Error: Error sending message to client ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - Exception: java.util.concurrent.CancellationException
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - Message: Channel was cancelled
+2025-09-11 12:01:05.656 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - Stack Trace:
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancelImpl$kotlinx_coroutines_core(BufferedChannel.kt:1798)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancel(BufferedChannel.kt:1795)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.ReceiveChannel$DefaultImpls.cancel$default(Channel.kt:695)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   io.ktor.websocket.DefaultWebSocketSessionImpl$runOutgoingProcessor$1.invokeSuspend(DefaultWebSocketSession.kt:272)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.EventLoop.processUnconfinedEvent(EventLoop.common.kt:65)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.resumeUnconfined(DispatchedTask.kt:243)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.dispatch(DispatchedTask.kt:147)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug -   kotlinx.coroutines.CancellableContinuationImpl.dispatchResume(CancellableContinuationImpl.kt:470)
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] ERROR debug.WebSocketDebug - === END WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1657] ===
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: Success: 0/1 clients
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1657] ===
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #140] ===
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: USER_LEFT
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:01:05.657 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #140] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #141] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: REMOVING_CONNECTION
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #141] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #142] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: CONNECTION_REMOVED
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #142] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #143] ===
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: REMOVING_WORLD
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:01:05.658 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #143] ===
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #144] ===
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS_AFTER_REMOVAL
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@3401d1b2
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 12:01:05.659 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #144] ===
+2025-09-11 19:09:45.772 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #145] ===
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: ATTEMPT
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: unknown
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.783 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #145] ===
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #146] ===
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: WORLD_ID
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #146] ===
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #147] ===
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: TOKEN
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #147] ===
+2025-09-11 19:09:45.784 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #148] ===
+2025-09-11 19:09:45.786 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: TOKEN_VALIDATION
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: unknown
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.787 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #148] ===
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #149] ===
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: TOKEN_VALID
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.788 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #149] ===
+2025-09-11 19:09:45.789 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #150] ===
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: LANGUAGE
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #150] ===
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #151] ===
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: CREATED
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.790 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #151] ===
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #152] ===
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: CONNECT
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.791 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #152] ===
+2025-09-11 19:09:45.806 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #153] ===
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #153] ===
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #154] ===
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: ACTIVE_CONNECTIONS
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.807 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #154] ===
+2025-09-11 19:09:45.808 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1998] ===
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: BROADCAST
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1998] ===
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1658] ===
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.809 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1658] ===
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1659] ===
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.0,\n        \"y\": 0.0,\n        \"z\": 0.0\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1659] ===
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1660] ===
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.810 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1660] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1661] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1661] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1662] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1662] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #155] ===
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: USER_JOINED
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:09:45.811 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #155] ===
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #1999] ===
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: SENDING_EXISTING_USERS
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: 
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #1999] ===
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2000] ===
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: EXISTING_CONNECTIONS
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: count: 1
+2025-09-11 19:09:45.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2000] ===
+2025-09-11 19:09:47.818 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2001] ===
+2025-09-11 19:09:47.818 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:09:47.818 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.818 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 19:09:47.818 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2001] ===
+2025-09-11 19:09:47.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2002] ===
+2025-09-11 19:09:47.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:09:47.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=200
+2025-09-11 19:09:47.820 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2002] ===
+2025-09-11 19:09:47.821 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2003] ===
+2025-09-11 19:09:47.821 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 19:09:47.821 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.821 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2003] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2004] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2004] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1663] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1663] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2005] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186141967773,\n        \"y\": 0.30546531081199735,\n        \"z\": -0.7240829467773438\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}"
+}
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2005] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2006] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=276
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2006] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2007] ===
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: USER_JOIN
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.822 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2007] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2008] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_JOIN
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2008] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1664] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1664] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1665] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_JOIN",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"username\": \"jacob\",\n    \"isPlayer\": true,\n    \"position\": {\n        \"x\": 0.23241186,\n        \"y\": 0.3054653,\n        \"z\": -0.72408295\n    },\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1665] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1666] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1666] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1667] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1667] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1668] ===
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:09:47.823 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1668] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2009] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592616688}"
+}
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2009] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2010] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2010] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2011] ===
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:16.690 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2011] ===
+2025-09-11 19:10:30.422 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2012] ===
+2025-09-11 19:10:30.422 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:30.422 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.422 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}"
+}
+2025-09-11 19:10:30.422 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2012] ===
+2025-09-11 19:10:30.424 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2013] ===
+2025-09-11 19:10:30.424 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:30.424 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER, data length=141
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2013] ===
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2014] ===
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: PLAYER_UPDATE
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.425 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2014] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2015] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_PLAYER_UPDATE
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, name: jacob, isPlayer: true, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2015] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1669] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1669] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1670] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}",
+    "worldUrl": null
+}
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1670] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1671] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1671] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1672] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1672] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1673] ===
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:10:30.426 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1673] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2016] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": -0.035114506994012355,\n        \"y\": 0.30546531081199646,\n        \"z\": 0.8006247767563778\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2016] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2017] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=201
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2017] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2018] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2018] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2019] ===
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 19:10:30.887 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2019] ===
+2025-09-11 19:10:30.888 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1674] ===
+2025-09-11 19:10:30.888 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 19:10:30.888 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.888 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:30.888 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1674] ===
+2025-09-11 19:10:30.984 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2020] ===
+2025-09-11 19:10:30.984 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:30.984 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.984 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": null,\n    \"status\": null\n}"
+}
+2025-09-11 19:10:30.984 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2020] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2021] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER, data length=137
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2021] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2022] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: PLAYER_UPDATE
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2022] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2023] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_PLAYER_UPDATE
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, name: jacob, isPlayer: true, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2023] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1675] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1675] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1676] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": null,\n    \"status\": null\n}",
+    "worldUrl": null
+}
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1676] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1677] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1677] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1678] ===
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:10:30.985 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1678] ===
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1679] ===
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:10:30.986 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1679] ===
+2025-09-11 19:10:31.210 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2024] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}"
+}
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2024] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2025] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER, data length=141
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2025] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2026] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PLAYER_UPDATE
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2026] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2027] ===
+2025-09-11 19:10:31.211 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_PLAYER_UPDATE
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, name: jacob, isPlayer: true, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2027] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1680] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1680] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1681] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}",
+    "worldUrl": null
+}
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1681] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1682] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1682] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1683] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1683] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1684] ===
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:10:31.212 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.213 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:10:31.213 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1684] ===
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2028] ===
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": 0.06028249259536551,\n        \"y\": 0.30546531081199646,\n        \"z\": 0.2569305497598568\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2028] ===
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2029] ===
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=199
+2025-09-11 19:10:31.403 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2029] ===
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2030] ===
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2030] ===
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2031] ===
+2025-09-11 19:10:31.404 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2031] ===
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1685] ===
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.414 [eventLoopGroupProxy-3-10] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1685] ===
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2032] ===
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": null,\n    \"status\": null\n}"
+}
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2032] ===
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2033] ===
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER, data length=137
+2025-09-11 19:10:31.434 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2033] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2034] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: PLAYER_UPDATE
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2034] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2035] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_PLAYER_UPDATE
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, name: jacob, isPlayer: true, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2035] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1686] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1686] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1687] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": null,\n    \"status\": null\n}",
+    "worldUrl": null
+}
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1687] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1688] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1688] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1689] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1689] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1690] ===
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:10:31.435 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1690] ===
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2036] ===
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER_POSITION",
+    "data": "{\n    \"position\": {\n        \"x\": 0.06857788386400707,\n        \"y\": 0.30546531081199646,\n        \"z\": 0.20965279089059413\n    },\n    \"isPlayer\": true,\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\"\n}"
+}
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2036] ===
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2037] ===
+2025-09-11 19:10:31.920 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER_POSITION, data length=200
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2037] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2038] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: POSITION_UPDATE
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2038] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2039] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_POSITION
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84 (excluding sender ccfcc97c51e24c28aea93c0ed1fa38d1)
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2039] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1691] ===
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Event: NO_RECIPIENTS
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Details: No recipients after excluding ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:31.953 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1691] ===
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2040] ===
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592646687}"
+}
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2040] ===
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2041] ===
+2025-09-11 19:10:46.701 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2041] ===
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2042] ===
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:10:46.702 [eventLoopGroupProxy-3-5] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2042] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2043] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592676688}"
+}
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2043] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2044] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2044] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2045] ===
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:16.690 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:11:16.691 [eventLoopGroupProxy-3-11] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2045] ===
+2025-09-11 19:11:47.346 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2046] ===
+2025-09-11 19:11:47.346 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592707345}"
+}
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2046] ===
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2047] ===
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2047] ===
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2048] ===
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:11:47.347 [eventLoopGroupProxy-3-6] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2048] ===
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2049] ===
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592737349}"
+}
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2049] ===
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2050] ===
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:12:17.373 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2050] ===
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2051] ===
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:12:17.374 [eventLoopGroupProxy-3-1] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2051] ===
+2025-09-11 19:12:47.353 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2052] ===
+2025-09-11 19:12:47.353 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:12:47.353 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592767353}"
+}
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2052] ===
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2053] ===
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2053] ===
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2054] ===
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:12:47.368 [eventLoopGroupProxy-3-7] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2054] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2055] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592797355}"
+}
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2055] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2056] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2056] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2057] ===
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:13:17.370 [eventLoopGroupProxy-3-2] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2057] ===
+2025-09-11 19:13:47.359 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2058] ===
+2025-09-11 19:13:47.359 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:13:47.359 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "USER_JOIN",
+    "data": "{\"ping\": 1757592827358}"
+}
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2058] ===
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2059] ===
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Raw Message: action=USER_JOIN, data length=23
+2025-09-11 19:13:47.373 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2059] ===
+2025-09-11 19:13:47.374 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2060] ===
+2025-09-11 19:13:47.374 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Direction: HEARTBEAT_PING
+2025-09-11 19:13:47.374 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:13:47.374 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:13:47.374 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2060] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2061] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: RECEIVED
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}"
+}
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2061] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2062] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: PARSED
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: action=UPDATE_PLAYER, data length=141
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2062] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2063] ===
+2025-09-11 19:14:16.806 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: PLAYER_UPDATE
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: from: ccfcc97c51e24c28aea93c0ed1fa38d1, for: ccfcc97c51e24c28aea93c0ed1fa38d1, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2063] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Message #2064] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Direction: BROADCASTING_PLAYER_UPDATE
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Raw Message: user: ccfcc97c51e24c28aea93c0ed1fa38d1, name: jacob, isPlayer: true, world: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Message #2064] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1692] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1692] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1693] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: {
+    "action": "UPDATE_PLAYER",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"name\": \"jacob\",\n    \"isPlayer\": true,\n    \"activity\": \"Moving\",\n    \"status\": null\n}",
+    "worldUrl": null
+}
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1693] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1694] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1694] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1695] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: SENT_SUCCESS
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: To user: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1695] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1696] ===
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - Details: Success: 1/1 clients
+2025-09-11 19:14:16.807 [eventLoopGroupProxy-3-3] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1696] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1697] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: BROADCASTING
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Details: To 1 clients
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1697] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1698] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: MESSAGE_CONTENT
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Details: {
+    "action": "USER_LEAVE",
+    "data": "{\n    \"userId\": \"ccfcc97c51e24c28aea93c0ed1fa38d1\",\n    \"worldId\": \"371effe8eb754286a2c2af8ebad65b84\"\n}",
+    "worldUrl": null
+}
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1698] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1699] ===
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: SENDING_TO
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Details: User: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:17.018 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1699] ===
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - === WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - Error: Error sending message to client ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - Exception: java.util.concurrent.CancellationException
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - Message: Channel was cancelled
+2025-09-11 19:14:17.019 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - Stack Trace:
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancelImpl$kotlinx_coroutines_core(BufferedChannel.kt:1798)
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.BufferedChannel.cancel(BufferedChannel.kt:1795)
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.channels.ReceiveChannel$DefaultImpls.cancel$default(Channel.kt:695)
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   io.ktor.websocket.DefaultWebSocketSessionImpl$runOutgoingProcessor$1.invokeSuspend(DefaultWebSocketSession.kt:272)
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+2025-09-11 19:14:17.023 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.EventLoop.processUnconfinedEvent(EventLoop.common.kt:65)
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.resumeUnconfined(DispatchedTask.kt:243)
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.DispatchedTaskKt.dispatch(DispatchedTask.kt:147)
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug -   kotlinx.coroutines.CancellableContinuationImpl.dispatchResume(CancellableContinuationImpl.kt:470)
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] ERROR debug.WebSocketDebug - === END WEBSOCKET DEBUG [ERROR] ===
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Broadcast #1700] ===
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: BROADCAST_COMPLETE
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Details: Success: 0/1 clients
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Broadcast #1700] ===
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #156] ===
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: USER_LEFT
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:14:17.024 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #156] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #157] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: REMOVING_CONNECTION
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #157] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #158] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: CONNECTION_REMOVED
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User ID: ccfcc97c51e24c28aea93c0ed1fa38d1
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #158] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #159] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: REMOVING_WORLD
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: 371effe8eb754286a2c2af8ebad65b84
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #159] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === WEBSOCKET DEBUG [Connection #160] ===
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Event: ACTIVE_WORLDS_AFTER_REMOVAL
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Session: io.ktor.server.websocket.DelegatedDefaultWebSocketServerSession@72bd4a7b
+2025-09-11 19:14:17.026 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - World ID: all
+2025-09-11 19:14:17.027 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User ID: system
+2025-09-11 19:14:17.027 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - Remote Address: 127.0.0.1
+2025-09-11 19:14:17.027 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - User Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0
+2025-09-11 19:14:17.027 [eventLoopGroupProxy-3-8] DEBUG debug.WebSocketDebug - === END WEBSOCKET DEBUG [Connection #160] ===

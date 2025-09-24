@@ -1,0 +1,327 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Saigon.Quest WorldGen wrapper
+#
+# Usage:
+#   Create glb with prompt: ./worldgen -p "<prompt>" [-o output.glb]
+#   Create glb with 360 image: ./worldgen -i "<image path>" [-o output.glb]
+#
+# Notes:
+# - Requires Docker. WorldGen needs Python 3.11 which is provided by the container.
+# - On first run this will build a cached image with all dependencies. Subsequent runs reuse it.
+# - We also create a persistent Docker volume for model/cache data to avoid re-downloading.
+#
+
+export HF_TOKEN=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
+
+IMAGE_TAG="saigonquest/worldgen:latest"
+# Resolve paths relative to this script's directory so it works from any CWD
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+DOCKERFILE_PATH="$SCRIPT_DIR/docker/worldgen.Dockerfile"
+DOCKER_CTX_DIR="$SCRIPT_DIR/docker"
+CACHE_VOL="saigonquest-worldgen-cache"
+CONTAINER_NAME="saigonquest-worldgen-run"
+
+usage() {
+  cat <<EOF
+Usage:
+  $0 -p "<prompt>" [-o output.glb]
+  $0 -i "<image_path>" [-o output.glb]
+
+Options:
+  -p    Text prompt to generate a 3D world (.glb)
+  -i    Path to a 360° image to generate a 3D world (.glb)
+  -o    Output filename for the .glb (default: worldgen_YYYYmmdd_HHMMSS.glb)
+  -h    Show this help
+
+Hugging Face authentication (for gated models):
+  This wrapper supports Hugging Face tokens automatically.
+  Choose one of the following:
+    1) Set an environment variable before running:
+       Linux/macOS (bash/zsh):
+         export HUGGINGFACE_HUB_TOKEN=hf_xxx
+         # or
+         export HF_TOKEN=hf_xxx
+       Windows (PowerShell):
+         $Env:HUGGINGFACE_HUB_TOKEN = "hf_xxx"
+         # or
+         $Env:HF_TOKEN = "hf_xxx"
+
+    2) Log in on the host with the CLI (creates a token file we auto-mount):
+       huggingface-cli login
+
+  Notes:
+    - Ensure your Hugging Face account has accepted the model's terms (e.g. FLUX.1-dev).
+    - We mount token file if found at:
+        ~/.cache/huggingface/token (preferred) or ~/.huggingface/token or ~/.config/huggingface/token
+    - We also pass through HUGGINGFACE_HUB_TOKEN/HF_TOKEN to the container.
+    - Cache is persisted via a Docker volume + your local HF cache, so downloads are reused.
+EOF
+}
+
+PROMPT=""
+IMAGE_PATH=""
+OUT_FILE=""
+
+while getopts ":p:i:o:h" opt; do
+  case ${opt} in
+    p) PROMPT=${OPTARG} ;;
+    i) IMAGE_PATH=${OPTARG} ;;
+    o) OUT_FILE=${OPTARG} ;;
+    h) usage; exit 0 ;;
+    :) echo "Error: Option -$OPTARG requires an argument" >&2; usage; exit 2 ;;
+    \?) echo "Error: Invalid option -$OPTARG" >&2; usage; exit 2 ;;
+  esac
+done
+
+if [[ -z "$PROMPT" && -z "$IMAGE_PATH" ]]; then
+  echo "Error: either -p or -i is required" >&2
+  usage
+  exit 2
+fi
+
+if [[ -n "$PROMPT" && -n "$IMAGE_PATH" ]]; then
+  echo "Error: -p and -i are mutually exclusive" >&2
+  usage
+  exit 2
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: Docker is required but not found on PATH." >&2
+  exit 1
+fi
+
+# Default output filename
+if [[ -z "$OUT_FILE" ]]; then
+  ts=$(date +%Y%m%d_%H%M%S)
+  OUT_FILE="worldgen_${ts}.glb"
+fi
+
+# Ensure image exists; build if missing
+if ! docker image inspect "$IMAGE_TAG" >/dev/null 2>&1; then
+  echo "[worldgen] Building Docker image $IMAGE_TAG (this may take a while on first run) ..."
+  docker build \
+    -t "$IMAGE_TAG" \
+    -f "$DOCKERFILE_PATH" \
+    "$DOCKER_CTX_DIR"
+else
+  # Validate that PyTorch3D is present OR our shim exists; rebuild if missing
+  NEED_REBUILD=0
+  if ! docker run --rm -e PYTHONPATH=/opt/pytorch3d_shim --entrypoint python "$IMAGE_TAG" -c "import pytorch3d, torch; print(torch.__version__)" >/dev/null 2>&1; then
+    NEED_REBUILD=1
+  fi
+  if ! docker run --rm --entrypoint sh "$IMAGE_TAG" -c 'test -d /opt/pytorch3d_shim' >/dev/null 2>&1; then
+    NEED_REBUILD=1
+  fi
+  # Ensure Open3D is available for mesh export
+  if ! docker run --rm --entrypoint python "$IMAGE_TAG" -c "import open3d as o3d" >/dev/null 2>&1; then
+    NEED_REBUILD=1
+  fi
+  # Ensure Torch build has CUDA support; if not, rebuild to get cu121 wheels
+  if ! docker run --rm --entrypoint python "$IMAGE_TAG" -c "import torch,sys; sys.exit(0 if torch.version.cuda else 1)" >/dev/null 2>&1; then
+    NEED_REBUILD=1
+  fi
+  # Also compare shim version to pick up shim fixes
+  LOCAL_SHIM_VERSION=$(cat docker/pytorch3d_shim/VERSION 2>/dev/null || echo "0")
+  CONT_SHIM_VERSION=$(docker run --rm --entrypoint sh "$IMAGE_TAG" -c 'cat /opt/pytorch3d_shim/VERSION 2>/dev/null || echo 0' 2>/dev/null || echo "0")
+  if [ "$LOCAL_SHIM_VERSION" != "$CONT_SHIM_VERSION" ]; then
+    NEED_REBUILD=1
+  fi
+  if [ "$NEED_REBUILD" -eq 1 ]; then
+    echo "[worldgen] Detected an older image missing pytorch3d or with outdated shim/CUDA Torch. Rebuilding $IMAGE_TAG ..."
+    docker build \
+      -t "$IMAGE_TAG" \
+      -f "$DOCKERFILE_PATH" \
+      "$DOCKER_CTX_DIR"
+  fi
+fi
+
+# Ensure cache volume exists
+if ! docker volume inspect "$CACHE_VOL" >/dev/null 2>&1; then
+  docker volume create "$CACHE_VOL" >/dev/null
+fi
+
+# Resolve absolute paths
+abspath() {
+  case "$1" in
+    /*) printf "%s\n" "$1" ;;
+    *) printf "%s/%s\n" "$(pwd)" "$1" ;;
+  esac
+}
+PROJECT_ROOT=$(pwd)
+if [[ -n "$IMAGE_PATH" ]]; then
+  if [[ ! -f "$IMAGE_PATH" ]]; then
+    echo "Error: image not found: $IMAGE_PATH" >&2
+    exit 2
+  fi
+  IMAGE_ABS=$(abspath "$IMAGE_PATH")
+else
+  IMAGE_ABS=""
+fi
+OUT_ABS=$(abspath "$OUT_FILE")
+
+# Detect GPU availability for Docker (support both --gpus and legacy --runtime=nvidia)
+# Detect GPU availability for Docker
+GPU_ARGS=""
+FORCE_CPU=0
+
+GPU_ARGS="--runtime=nvidia --gpus all"
+
+# Preflight check with proper array handling
+if [[ -n "$GPU_ARGS" ]]; then
+  PREFLIGHT_CMD=(docker run --rm)
+  read -ra GPU_ARG_ARRAY <<< "$GPU_ARGS"
+  PREFLIGHT_CMD+=("${GPU_ARG_ARRAY[@]}")
+  PREFLIGHT_CMD+=(--entrypoint python "$IMAGE_TAG" -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)")
+
+  if ! "${PREFLIGHT_CMD[@]}" >/dev/null 2>&1; then
+    echo "[worldgen] GPU preflight failed: Torch cannot access CUDA in the container. Falling back to CPU." >&2
+    GPU_ARGS=""
+    FORCE_CPU=1
+  else
+    # Diagnostic with same safe execution
+    DIAG_CMD=("${PREFLIGHT_CMD[@]}")
+    DIAG_CMD[-1]="import torch; print('[worldgen] CUDA available:', torch.cuda.is_available(), 'torch.version.cuda:', torch.version.cuda); print('[worldgen] Device:', (torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'n/a'))"
+    "${DIAG_CMD[@]}" 1>&2 || true
+  fi
+else
+  FORCE_CPU=1
+fi
+
+# Run WorldGen inside container
+# Build docker run args
+RUN_ARGS=( run --rm )
+
+# Add GPU args if any
+if [[ -n "$GPU_ARGS" ]]; then
+  read -ra GPU_ARG_ARRAY <<< "$GPU_ARGS"
+  RUN_ARGS+=("${GPU_ARG_ARRAY[@]}")
+fi
+
+# Mount persistent cache volume and workspace
+RUN_ARGS+=( -v "$CACHE_VOL:/root/.cache" )
+RUN_ARGS+=( -v "$PROJECT_ROOT:/workspace" )
+# Always mount the latest runner from host to ensure preview-fix logic is up-to-date
+RUN_ARGS+=( -v "$SCRIPT_DIR/docker/worldgen_runner.py:/opt/worldgen_runner.py:ro" )
+
+# HuggingFace cache/env
+RUN_ARGS+=( -e "HUGGINGFACE_HUB_CACHE=/root/.cache/huggingface" )
+RUN_ARGS+=( -e "HF_HOME=/root/.cache/huggingface" )
+# Encourage upstream to return mesh and disable any preview/server
+RUN_ARGS+=( -e "WORLDGEN_RETURN_MESH=1" )
+RUN_ARGS+=( -e "RETURN_MESH=1" )
+RUN_ARGS+=( -e "VISER_DISABLE_SERVER=1" )
+RUN_ARGS+=( -e "NO_SERVER=1" )
+RUN_ARGS+=( -e "NO_BROWSER=1" )
+
+# If CPU was forced, propagate to container
+if [[ $FORCE_CPU -eq 1 ]]; then
+  RUN_ARGS+=( -e "WORLDGEN_FORCE_CPU=1" )
+fi
+
+# Pass through Hugging Face access tokens if provided in the environment
+if [[ -n "${HUGGINGFACE_HUB_TOKEN:-}" ]]; then
+  RUN_ARGS+=( -e "HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}" )
+  echo "[worldgen] Using HUGGINGFACE_HUB_TOKEN from environment"
+fi
+if [[ -n "${HF_TOKEN:-}" ]]; then
+  RUN_ARGS+=( -e "HF_TOKEN=${HF_TOKEN}" )
+  # Also mirror to HUGGINGFACE_HUB_TOKEN for libs that expect that name
+  RUN_ARGS+=( -e "HUGGINGFACE_HUB_TOKEN=${HF_TOKEN}" )
+  echo "[worldgen] Using HF_TOKEN from environment"
+fi
+
+# If a local Hugging Face token file exists, mount it read-only inside the container
+HF_TOKEN_FILE=""
+for CAND in \
+  "$HOME/.cache/huggingface/token" \
+  "$HOME/.huggingface/token" \
+  "$HOME/.config/huggingface/token"
+do
+  if [[ -f "$CAND" ]]; then
+    HF_TOKEN_FILE="$CAND"
+    break
+  fi
+done
+if [[ -n "$HF_TOKEN_FILE" ]]; then
+  RUN_ARGS+=( -v "$HF_TOKEN_FILE:/root/.cache/huggingface/token:ro" )
+  echo "[worldgen] Mounted Hugging Face token file from host"
+else
+  if [[ -z "${HUGGINGFACE_HUB_TOKEN:-}" && -z "${HF_TOKEN:-}" ]]; then
+    echo "[worldgen] Tip: To access gated Hugging Face models, set HUGGINGFACE_HUB_TOKEN (or HF_TOKEN) in your environment or run 'huggingface-cli login' on the host." >&2
+  fi
+fi
+
+# Determine output path inside container (preserving subdirectories under project root)
+REL_OUT=$(
+python3 - "$PROJECT_ROOT" "$OUT_ABS" <<'PY'
+import os, sys
+ws = sys.argv[1]
+p = sys.argv[2]
+try:
+    rel = os.path.relpath(p, ws)
+    # If OUT_ABS is outside workspace, signal empty
+    if rel.startswith('..'):
+        print('')
+    else:
+        print(rel)
+except Exception:
+    print('')
+PY
+)
+if [[ -n "$REL_OUT" ]]; then
+  OUT_IN_CONT="/workspace/$REL_OUT"
+else
+  OUT_IN_CONT="/workspace/$(basename "$OUT_ABS")"
+  echo "[worldgen] Note: Output path is outside the project. Saving to repo root instead: $(basename "$OUT_ABS")" >&2
+fi
+
+if [[ -n "$PROMPT" ]]; then
+  echo "[worldgen] Generating GLB from prompt..."
+  docker "${RUN_ARGS[@]}" "$IMAGE_TAG" -p "$PROMPT" -o "$OUT_IN_CONT"
+else
+  echo "[worldgen] Generating GLB from 360 image..."
+  REL_TO_WS=$(
+python3 - "$PROJECT_ROOT" "$IMAGE_ABS" <<'PY'
+import os,sys
+ws=sys.argv[1]
+p=sys.argv[2]
+print(os.path.relpath(p, ws))
+PY
+)
+  docker "${RUN_ARGS[@]}" "$IMAGE_TAG" -i "/workspace/$REL_TO_WS" -o "$OUT_IN_CONT"
+fi
+
+# Final message and ensure file ends up at OUT_ABS (with PLY fallback)
+if [[ ! -f "$OUT_ABS" ]]; then
+  CAND="$PROJECT_ROOT/$(basename "$OUT_ABS")"
+  if [[ -f "$CAND" ]]; then
+    mkdir -p "$(dirname "$OUT_ABS")" || true
+    mv "$CAND" "$OUT_ABS" || true
+  fi
+fi
+
+# Try PLY fallback if GLB is missing
+ALT_OUT_PLY="${OUT_ABS%.*}.ply"
+ALT_CAND_PLY="$PROJECT_ROOT/$(basename "${ALT_OUT_PLY}")"
+FOUND_PATH=""
+if [[ -f "$OUT_ABS" ]]; then
+  FOUND_PATH="$OUT_ABS"
+elif [[ -f "$ALT_OUT_PLY" ]]; then
+  FOUND_PATH="$ALT_OUT_PLY"
+elif [[ -f "$ALT_CAND_PLY" ]]; then
+  mkdir -p "$(dirname "$OUT_ABS")" || true
+  DEST_PLY="$(dirname "$OUT_ABS")/$(basename "$ALT_OUT_PLY")"
+  mv "$ALT_CAND_PLY" "$DEST_PLY" || true
+  FOUND_PATH="$DEST_PLY"
+fi
+
+if [[ -n "$FOUND_PATH" ]]; then
+  echo "[worldgen] Done: $(basename "$FOUND_PATH")"
+  if [[ "$FOUND_PATH" != "$OUT_ABS" && "${OUT_ABS##*.}" = "glb" ]]; then
+    echo "[worldgen] Note: Saved as PLY due to export limitations: $(basename \"$FOUND_PATH\")" >&2
+  fi
+else
+  echo "[worldgen] Finished. If output is not found, check container logs above for details."
+fi

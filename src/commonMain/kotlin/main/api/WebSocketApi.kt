@@ -8,6 +8,7 @@ import main.api.UserApi.getVisitorId
 import models.WebSocketAction
 import org.w3c.dom.WebSocket
 import utils.json
+import web.html.HtmlTagName.base
 
 // Token for managing WebSocket listeners safely
 data class ListenerToken(
@@ -194,7 +195,8 @@ object WebSocketApi {
         logDebug("Using token for WebSocket connection: ${if (token.isNotEmpty()) "Yes" else "No"}")
 
         // Create a new WebSocket connection
-        val url = "$API_BASE_URL/ws?worldId=$worldId&token=$token&visitorId=${if (token.isNotBlank()) "" else getVisitorId()}"
+        val base = API_BASE_URL.replace("https://", "wss://").replace("http://", "ws://")
+        val url = "$base/ws?worldId=$worldId&token=$token&visitorId=${if (token.isNotBlank()) "" else getVisitorId()}"
         logDebug("WebSocket URL: $url")
         socket = WebSocket(url)
 

@@ -1,0 +1,153 @@
+    // Set up BabylonJS scene
+    DisposableEffect(canvasId) {
+        // Create a coroutine scope for async operations
+        val coroutineScope = CoroutineScope(Dispatchers.Main)
+        
+        // Get the canvas element
+        val canvas = document.getElementById(canvasId) as HTMLCanvasElement
+
+        // Create the engine
+        val engine = Engine(canvas, true)
+
+        // Handle window resize
+        val resizeHandler = { _: Event ->
+            engine.resize()
+        }
+        window.addEventListener("resize", resizeHandler)
+
+        // Create the scene
+        val scene = Scene(engine)
+        
+        // Initialize BabylonJS loaders before loading the 3D model
+        initializeBabylonJSLoaders()
+        
+        // Create controllers
+        val cameraController = CameraController(scene)
+        // Register camera controller with SceneManager for global access
+        SceneManager.setCameraController(cameraController)
+        
+        val playerController = PlayerController(scene)
+        val inputHandler = InputHandler(scene, playerController, cameraController)
+        val worldLoader = WorldLoader(scene)
+        val objectManager = ObjectManager(scene, cameraController)
+        
+        // Set up object drop handler
+        val objectDropHandler: (Event) -> Unit = { event ->
+            val detail = event.asDynamic().detail
+            val x = detail.x as Int
+            val y = detail.y as Int
+            val data = detail.data as String
+            
+            // Use the object manager to handle the drop
+            objectManager.handleObjectDrop(x, y, data, currentWorld.value?.key ?: url)
+        }
+        
+        // Add event listener for object drop
+        window.addEventListener("objectDrop", objectDropHandler)
+        
+        // Load the world using coroutines
+        coroutineScope.launch {
+            try {
+                // Call the suspend function
+                val worldMeshes = worldLoader.loadWorld(url)
+                
+                // Store the current world
+                currentWorld.value = worldLoader.getCurrentWorld()
+                
+                // Set world meshes in controllers
+                playerController.setWorldMeshes(worldMeshes)
+                objectManager.setWorldMeshes(worldMeshes)
+                
+                // Find a valid starting position for the player
+                val startPosition = playerController.findValidStartPosition()
+                
+                // Create the player
+                playerController.createPlayer(startPosition)
+                
+                // Register player mesh as shadow caster and receiver
+                playerController.getPlayer()?.let { playerMesh ->
+                    worldLoader.getShadowManager()?.let { shadowManager ->
+                        shadowManager.addShadowCaster(playerMesh)
+                        shadowManager.configureShadowReceiver(playerMesh)
+                        println("[DEBUG] Player mesh registered as shadow caster and receiver")
+                    }
+                }
+                
+                // Set player mesh in object manager to exclude from collision detection
+                objectManager.setPlayerMesh(playerController.getPlayer())
+                objectManager.setMoveCircleMesh(playerController.getMoveCircle())
+                
+                // Set initial camera target position
+                cameraController.setInitialTargetPosition(startPosition)
+                
+                // Set up input handling
+                inputHandler.setupKeyboardHandling()
+                inputHandler.setupPointerHandling()
+                
+                // Set up WebSocket listeners for objects
+                objectManager.setupWebSocketListeners()
+                
+                // Mark as loaded to hide loading screen
+                isLoaded.value = true
+            } catch (error: Throwable) {
+                console.error("Error loading world: ${error.message}")
+                loadingFailed.value = true
+                
+                // Set specific error message based on the error
+                if (error.message?.contains("World not found") == true) {
+                    errorMessage.value = "No world found at saigon.quest/${if (url.isNotEmpty()) url else ""}"
+                } else if (error.message?.contains("Failed to fetch") == true || 
+                           error.message?.contains("NetworkError") == true) {
+                    errorMessage.value = "Network error: Unable to connect to the server. Please check your internet connection."
+                } else if (error.message?.contains("500") == true) {
+                    errorMessage.value = "Server error: Something went wrong on our end. Please try again later."
+                } else {
+                    errorMessage.value = "Error loading world: ${error.message ?: "Unknown error"}"
+                }
+            }
+        }
+        
+        // Set up the render loop
+        scene.registerBeforeRender {
+            // Calculate movement direction from input
+            val moveDirection = inputHandler.calculateMovementDirection()
+            
+            // Update player position
+            val newPosition = playerController.updatePlayerPosition(moveDirection)
+            
+            // Update camera target if player moved
+            if (newPosition != null) {
+                cameraController.updateCameraTarget(newPosition)
+            }
+            
+            // Update camera animation
+            cameraController.updateAnimation()
+        }
+        
+        // Start the render loop
+        engine.runRenderLoop {
+            scene.render()
+        }
+
+        // Clean up when the component is disposed
+        onDispose {
+            // Cancel the coroutine scope
+            coroutineScope.cancel()
+            
+            window.removeEventListener("resize", resizeHandler)
+            window.removeEventListener("objectDrop", objectDropHandler)
+            
+            // Dispose controllers
+            cameraController.dispose()
+            playerController.dispose()
+            objectManager.dispose()
+            worldLoader.dispose()
+            
+            // Clear SceneManager references
+            SceneManager.clear()
+            
+            // Dispose scene and engine
+            scene.dispose()
+            engine.dispose()
+        }
+    }
