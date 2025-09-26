@@ -335,7 +335,7 @@ fun ChatContent(worldId: String) {
                             width(40.px)
                             height(40.px)
                             backgroundColor(rgba(255, 255, 255, 0.1))
-                            borderRadius(4.px)
+                            borderRadius(8.px)
                             display(DisplayStyle.Flex)
                             justifyContent(JustifyContent.Center)
                             alignItems(AlignItems.Center)

@@ -1166,7 +1166,7 @@ object Styles : StyleSheet() {
         padding(8.px)
         marginBottom(16.px)
         backgroundColor(Theme.colors.surfaceVariant)
-        borderRadius(4.px)
+        borderRadius(16.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)

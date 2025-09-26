@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.BasicConfirmDialog
+import main.components.DialogButton
 import main.components.DialogButtonDanger
 import main.components.Translated
 import main.components.translated
@@ -177,8 +178,8 @@ fun AdminRequestRow(
 
         // Actions
         Div({ classes(Styles.requestActions) }) {
-            main.components.DialogButton(onClick = onApprove, isPrimary = true) { Translated("Approve") }
-            main.components.DialogButtonDanger(onClick = onDeny) { Translated("Deny") }
+            DialogButtonDanger(onClick = onDeny) { Translated("Deny") }
+            DialogButton(onClick = onApprove, isPrimary = true) { Translated("Approve") }
         }
     }
 }

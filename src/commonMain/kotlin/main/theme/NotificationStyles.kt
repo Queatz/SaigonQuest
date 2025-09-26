@@ -258,7 +258,7 @@ object NotificationStyles : StyleSheet() {
     
     val notificationCard by style {
         backgroundColor(Theme.colors.surface)
-        borderRadius(8.px)
+        borderRadius(16.px)
         property("box-shadow", "0 4px 8px ${Theme.colors.shadowLight}")
         padding(16.px)
         maxWidth(400.px)
