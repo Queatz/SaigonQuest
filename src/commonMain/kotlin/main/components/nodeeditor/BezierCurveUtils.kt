@@ -48,7 +48,7 @@ object BezierCurveUtils {
         val controlPoint2Y: Float
         
         // Check if points are vertically aligned (or nearly so)
-        if (horizontalDistance < 10f) {
+        if (false && horizontalDistance < 10f) {
             // Add some horizontal curve for vertical connections
             val sideOffset = 50f
             val direction = if (targetY > sourceY) 1 else -1 // Determine if target is below or above source
@@ -60,7 +60,7 @@ object BezierCurveUtils {
             controlPoint2Y = targetY - verticalDistance * 0.25f
         } 
         // Check if points are horizontally aligned (or nearly so)
-        else if (verticalDistance < 10f) {
+        else if (false && verticalDistance < 10f) {
             // Add some vertical curve for horizontal connections
             val vertOffset = 50f
             val direction = if (targetX > sourceX) 1 else -1 // Determine if target is to the right or left of source

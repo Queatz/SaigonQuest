@@ -153,7 +153,7 @@ object FriendsStyles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "none")
-        borderRadius(4.px)
+        borderRadius(16.px)
         property("cursor", "pointer")
         dark(self) { backgroundColor(Theme.colors.primaryDark) }
     }
@@ -163,7 +163,7 @@ object FriendsStyles : StyleSheet() {
         backgroundColor(Theme.colors.success)
         color(Theme.colors.onPrimary)
         property("border", "none")
-        borderRadius(4.px)
+        borderRadius(16.px)
         property("cursor", "pointer")
         dark(self) { backgroundColor(Theme.colors.successDark) }
     }
@@ -173,7 +173,7 @@ object FriendsStyles : StyleSheet() {
         backgroundColor(Color.transparent)
         border(1.px, LineStyle.Solid, Theme.colors.error)
         color(Theme.colors.error)
-        borderRadius(4.px)
+        borderRadius(16.px)
         property("cursor", "pointer")
         dark(self) { border(1.px, LineStyle.Solid, Theme.colors.errorDark); color(Theme.colors.errorDark) }
     }

@@ -39,6 +39,7 @@ import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.css.boxSizing
 
 @Composable
 fun AdminEditAssetDialog(
@@ -146,7 +147,7 @@ fun AdminEditAssetDialog(
                                         style {
                                             width(32.px)
                                             height(32.px)
-                                            property("box-sizing", "border-box")
+                                            boxSizing("border-box")
                                             property("border", "1px solid rgba(255,255,255,0.08)")
                                             property("background", when {
                                                 isSel -> "#4468"

@@ -55,6 +55,10 @@ class NodeEditorController(
         private set
     var selectedConnection by mutableStateOf<Connection?>(null)
         private set
+
+    // UI interaction state
+    var isDraggingNode by mutableStateOf(false)
+        private set
     
     // Element references
     var canvasElement: HTMLElement? = canvasElement
@@ -81,6 +85,20 @@ class NodeEditorController(
     
     // Connection manager for handling connection operations
     private val connectionManager = ConnectionManager(history, this)
+    
+    /**
+     * Signals start of a node drag gesture.
+     */
+    fun beginNodeDrag() {
+        isDraggingNode = true
+    }
+
+    /**
+     * Signals end of a node drag gesture.
+     */
+    fun endNodeDrag() {
+        isDraggingNode = false
+    }
     
     /**
      * Sets the canvas element reference.

@@ -31,6 +31,10 @@ fun NodeEditorPanel(
         attrs = {
             classes(NodeEditorStyles.nodeEditorCanvasWrapper)
             attr("data-wrapper", "node-editor-canvas-wrapper")
+            // Prevent native scroll gestures while dragging a connection or a node (mobile)
+            if (controller.isDraggingConnection || controller.isDraggingNode) {
+                classes(NodeEditorStyles.disableTouchScroll)
+            }
             // Register wrapper element immediately via ref
             ref { element ->
                 controller.setWrapperElement(element)

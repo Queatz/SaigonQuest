@@ -65,7 +65,7 @@ object OverlayStyles : StyleSheet() {
         padding(16.px)
         property("text-align", "center")
         property("overflow", "hidden")
-        property("box-sizing", "border-box")
+        boxSizing("border-box")
     }
 
     val loadingScreenButtonContainer by style {

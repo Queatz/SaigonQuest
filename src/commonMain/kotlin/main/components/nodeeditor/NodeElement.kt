@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import main.theme.NodeEditorStyles
 import models.NodeCategory
 import models.nodeeditor.NodeData
@@ -19,6 +20,8 @@ import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.Touch
+import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
@@ -52,27 +55,36 @@ fun NodeElement(
 ) {
     // Use the NodeData properties
     val type = node.type
-    val x = node.x
-    val y = node.y
     val label = node.label
     val inputs = node.inputs
     val outputs = node.outputs
+
+    // Track the latest node position in state so event listeners always see current values
+    var currentX by remember(id) { mutableStateOf(node.x) }
+    var currentY by remember(id) { mutableStateOf(node.y) }
+    // Keep in sync with incoming node updates
+    androidx.compose.runtime.LaunchedEffect(node.x, node.y) {
+        currentX = node.x
+        currentY = node.y
+    }
     
     // State for tracking drag operation
     var isDragging by remember { mutableStateOf(false) }
-    var dragStartX by remember { mutableStateOf(0f) }
-    var dragStartY by remember { mutableStateOf(0f) }
-    var nodeStartX by remember { mutableStateOf(x) }
-    var nodeStartY by remember { mutableStateOf(y) }
+    // Pointer offset inside the node captured at drag start (in canvas coordinates)
+    var pointerOffsetX by remember { mutableStateOf(0f) }
+    var pointerOffsetY by remember { mutableStateOf(0f) }
     
     // Global event handlers for mouse move and mouse up
     val handleGlobalMouseMove = remember {
         { event: Event ->
             if (isDragging && event is MouseEvent) {
-                // Calculate delta (no zoom adjustment needed)
-                val deltaX = event.clientX.toFloat() - dragStartX
-                val deltaY = event.clientY.toFloat() - dragStartY
-                onDrag(id, nodeStartX + deltaX, nodeStartY + deltaY)
+                val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                    event.clientX.toFloat(),
+                    event.clientY.toFloat(),
+                )
+                val newX = canvasX - pointerOffsetX
+                val newY = canvasY - pointerOffsetY
+                onDrag(id, newX, newY)
                 event.stopPropagation()
                 event.preventDefault()
             }
@@ -83,6 +95,7 @@ fun NodeElement(
         { event: Event ->
             if (isDragging && event is MouseEvent) {
                 isDragging = false
+                controller.endNodeDrag()
                 event.stopPropagation()
                 event.preventDefault()
             }
@@ -141,8 +154,8 @@ fun NodeElement(
             classes(if (isDragging) NodeEditorStyles.nodeDragging else NodeEditorStyles.nodeStatic)
             
             style {
-                left(x.px)
-                top(y.px)
+                left(currentX.px)
+                top(currentY.px)
             }
             
             onClick { event ->
@@ -154,14 +167,18 @@ fun NodeElement(
             onMouseDown { event ->
                 if (event.button.toInt() == 0) { // Left mouse button
                     isDragging = true
-                    dragStartX = event.clientX.toFloat()
-                    dragStartY = event.clientY.toFloat()
-                    nodeStartX = x
-                    nodeStartY = y
+                    val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                        event.clientX.toFloat(),
+                        event.clientY.toFloat(),
+                    )
+                    pointerOffsetX = canvasX - currentX
+                    pointerOffsetY = canvasY - currentY
+                    controller.beginNodeDrag()
                     event.stopPropagation()
+                    event.preventDefault()
                 }
             }
-            
+
             // Note: We no longer need onMouseMove and onMouseUp handlers on the node element
             // as we now have global event listeners that handle these events at the document level.
             // This allows the drag operation to continue even when the mouse leaves the node element.
@@ -173,7 +190,124 @@ fun NodeElement(
             ref { ref ->
                 nodeElementRef = ref
 
+                // Touch interactions: distinguish tap to select vs drag to move
+                var onWindowTouchMove: ((Event) -> Unit)? = null
+                var onWindowTouchEnd: ((Event) -> Unit)? = null
+
+                // Gesture state
+                var touchStartX = 0f
+                var touchStartY = 0f
+                var dragStarted = false
+                val dragThreshold = 8f // pixels
+
+                val touchStartHandler: (Event) -> Unit = { ev ->
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                    val te = ev as? TouchEvent
+                    if (te != null && te.touches.length == 1) {
+                        val t: Touch = te.touches.item(0)!!
+                        dragStarted = false
+                        isDragging = false
+                        touchStartX = t.clientX.toFloat()
+                        touchStartY = t.clientY.toFloat()
+
+                        val move: (Event) -> Unit = { mev ->
+                            mev.stopPropagation()
+                            mev.preventDefault()
+                            val mte = mev as TouchEvent
+                            val touch = mte.touches.item(0)
+                            if (touch != null) {
+                                val dx = touch.clientX.toFloat() - touchStartX
+                                val dy = touch.clientY.toFloat() - touchStartY
+                                val dist2 = dx * dx + dy * dy
+                                if (!dragStarted && dist2 > dragThreshold * dragThreshold) {
+                                    // Start drag
+                                    dragStarted = true
+                                    isDragging = true
+                                    controller.beginNodeDrag()
+
+                                    val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                                        touch.clientX.toFloat(),
+                                        touch.clientY.toFloat(),
+                                    )
+                                    pointerOffsetX = canvasX - currentX
+                                    pointerOffsetY = canvasY - currentY
+
+                                    // Prevent native gestures while dragging the node
+                                    ref.style.setProperty("touch-action", "none")
+                                    ref.style.setProperty("user-select", "none")
+                                    // Also prevent the canvas wrapper from scrolling during drag
+                                    controller.wrapperElement?.style?.setProperty("touch-action", "none")
+                                    controller.wrapperElement?.style?.setProperty("overscroll-behavior", "contain")
+                                    controller.canvasElement?.style?.setProperty("touch-action", "none")
+                                }
+
+                                if (dragStarted) {
+                                    val (cX, cY) = controller.screenToCanvasCoordinates(
+                                        touch.clientX.toFloat(),
+                                        touch.clientY.toFloat(),
+                                    )
+                                    val newX = cX - pointerOffsetX
+                                    val newY = cY - pointerOffsetY
+                                    onDrag(id, newX, newY)
+                                    mev.preventDefault()
+                                    mev.stopPropagation()
+                                }
+                            }
+                        }
+                        val ender: (Event) -> Unit = { e2 ->
+                            e2.stopPropagation()
+                            e2.preventDefault()
+                            // If we never started a drag, treat as a tap selection
+                            if (!dragStarted) {
+                                onSelect()
+                            }
+                            // End any drag state and cleanup
+                            isDragging = false
+                            if (dragStarted) controller.endNodeDrag()
+                            ref.style.removeProperty("touch-action")
+                            ref.style.removeProperty("user-select")
+                            controller.wrapperElement?.style?.removeProperty("touch-action")
+                            controller.wrapperElement?.style?.removeProperty("overscroll-behavior")
+                            controller.canvasElement?.style?.removeProperty("touch-action")
+                            onWindowTouchMove?.let { window.removeEventListener("touchmove", it, false) }
+                            onWindowTouchEnd?.let {
+                                window.removeEventListener("touchend", it, false)
+                                window.removeEventListener("touchcancel", it, false)
+                            }
+                            onWindowTouchMove = null
+                            onWindowTouchEnd = null
+                            e2.preventDefault()
+                            e2.stopPropagation()
+                        }
+
+                        onWindowTouchMove = move
+                        onWindowTouchEnd = ender
+                        window.addEventListener("touchmove", move, false)
+                        window.addEventListener("touchend", ender, false)
+                        window.addEventListener("touchcancel", ender, false)
+                        // Do not preventDefault here to allow taps to work naturally; we handle it on end
+                    }
+                }
+
+                ref.addEventListener("touchstart", touchStartHandler, false)
+
                 onDispose {
+                    ref.removeEventListener("touchstart", touchStartHandler, false)
+                    onWindowTouchMove?.let { window.removeEventListener("touchmove", it, false) }
+                    onWindowTouchEnd?.let {
+                        window.removeEventListener("touchend", it, false)
+                        window.removeEventListener("touchcancel", it, false)
+                    }
+                    onWindowTouchMove = null
+                    onWindowTouchEnd = null
+                    // Restore styles just in case
+                    ref.style.removeProperty("touch-action")
+                    ref.style.removeProperty("user-select")
+                    controller.wrapperElement?.style?.removeProperty("touch-action")
+                    controller.wrapperElement?.style?.removeProperty("overscroll-behavior")
+                    controller.canvasElement?.style?.removeProperty("touch-action")
+                    if (isDragging) controller.endNodeDrag()
                     nodeElementRef = null
                 }
             }

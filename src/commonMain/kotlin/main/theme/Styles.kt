@@ -413,7 +413,7 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.outline}")
         borderRadius(8.px)
         property("outline", "none")
-        property("box-sizing", "border-box")
+        boxSizing("border-box")
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
@@ -1077,6 +1077,11 @@ object Styles : StyleSheet() {
         property("border", "0")
         borderRadius(16.px)
         property("cursor", "pointer")
+
+        self + disabled style {
+            opacity(0.5)
+            cursor("not-allowed")
+        }
     }
 
     val secondaryButton by style {
@@ -1087,6 +1092,11 @@ object Styles : StyleSheet() {
         property("cursor", "pointer")
         borderRadius(16.px)
         property("border", "1px solid ${Theme.colors.primary}")
+
+        self + disabled style {
+            opacity(0.5)
+            cursor("not-allowed")
+        }
     }
 
     val logoutButton by style {

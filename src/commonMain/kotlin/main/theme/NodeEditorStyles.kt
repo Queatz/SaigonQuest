@@ -56,6 +56,10 @@ object NodeEditorStyles : StyleSheet() {
         dark(self) {
             color(Theme.colors.onBackgroundDark)
         }
+
+        mobile(self) {
+            width(120.px)
+        }
     }
     
     val nodeSelected by style {
@@ -149,6 +153,11 @@ object NodeEditorStyles : StyleSheet() {
         property("border", "2px solid ${Theme.colors.black30}")
         property("transition", "all 0.2s ease-in-out")
         property("box-shadow", "0 0 0 ${Theme.colors.white04}")
+
+        mobile(self) {
+            width(24.px)
+            height(24.px)
+        }
     }
     
     val portConnectorHover by style {
@@ -181,12 +190,18 @@ object NodeEditorStyles : StyleSheet() {
         property("flex-grow", "1")
         property("width", "0") // Set width to 0 to prevent squishing side panels
         backgroundColor(Theme.colors.panelGlass) // Slightly different tint for the padded area
-        padding(50.px) // Set consistent padding to 16px on all sides
+        padding(16.px) // Reduce padding for better use of space
         position(Position.Relative) // Important: This makes absolute positioning of children work
         property("overflow", "auto") // Enable scrollbars
+        borderRadius(12.px)
 
         dark(self) {
             backgroundColor(Theme.colors.panelGlassDark)
+        }
+        mobile(self) {
+            // On mobile, let it size naturally in a column layout and use tighter padding
+            property("width", "auto")
+            padding(8.px)
         }
     }
 
@@ -225,10 +240,17 @@ object NodeEditorStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("gap", "16px")
+        boxSizing("border-box")
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceDark)
             color(Theme.colors.onSurfaceDark)
+        }
+        mobile(self) {
+            width(100.percent)
+            padding(12.px)
+            property("max-height", "40vh")
+            property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
         }
     }
 
@@ -298,7 +320,15 @@ object NodeEditorStyles : StyleSheet() {
         flexDirection(FlexDirection.Row)
         property("flex-grow", "1")
         property("overflow", "hidden")
+        property("gap", "16px")
+
+        mobile(self) {
+            flexDirection(FlexDirection.Column)
+            property("gap", "8px")
+            property("overflow", "auto")
+        }
     }
+
     val errorMessage by style {
         color(Theme.colors.error)
         property("flex-grow", "1")
@@ -314,10 +344,19 @@ object NodeEditorStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("gap", "16px")
+        boxSizing("border-box")
+        borderRadius(12.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
             color(Theme.colors.onSurfaceVariantDark)
+        }
+        mobile(self) {
+            width(100.percent)
+            padding(12.px)
+            property("border-left", "none")
+            property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
+            property("max-height", "45vh")
         }
     }
     
@@ -357,7 +396,8 @@ object NodeEditorStyles : StyleSheet() {
         borderRadius(4.px)
         outline("none")
         fontSize(14.px)
-        property("box-sizing", "border-box")
+        boxSizing("border-box")
+        borderRadius(8.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
@@ -376,7 +416,8 @@ object NodeEditorStyles : StyleSheet() {
         fontSize(14.px)
         property("resize", "vertical")
         property("min-height", "80px")
-        property("box-sizing", "border-box")
+        boxSizing("border-box")
+        borderRadius(8.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
@@ -425,5 +466,11 @@ object NodeEditorStyles : StyleSheet() {
     
     val connectionPreviewPulse by style {
         property("animation", "pulse 1.5s infinite")
+    }
+
+    // Utility class to disable native touch scrolling and scroll chaining during drags
+    val disableTouchScroll by style {
+        property("touch-action", "none")
+        property("overscroll-behavior", "contain")
     }
 }

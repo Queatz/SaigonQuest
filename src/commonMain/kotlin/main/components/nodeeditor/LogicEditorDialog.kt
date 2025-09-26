@@ -14,10 +14,13 @@ import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.IconRenderer
 import main.components.Translated
+import main.components.rememberIsMobile
 import main.components.translated
 import main.theme.NodeEditorStyles
+import main.theme.Styles
 import main.utils.toggleFullscreen
 import models.Object
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
@@ -30,7 +33,7 @@ import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
 
 /**
  * A dialog for editing object logic.
- * 
+ *
  * @param objectModel The object being edited
  * @param onClose Callback when the dialog is closed
  * @param onSave Callback when an object is saved
@@ -39,64 +42,71 @@ import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
 fun LogicEditorDialog(
     objectModel: Object,
     onClose: () -> Unit,
-    onSave: (Object) -> Unit
+    onSave: (Object) -> Unit,
 ) {
     // State for form fields
     var title by remember { mutableStateOf(objectModel.title) }
 
     // State for fullscreen mode
     var isFullscreen by remember { mutableStateOf(false) }
-    
+
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    
+
     // Set dialog title
-    val dialogTitle = "${translated("Edit")} ${objectModel.title.ifBlank { translated("Object") }} ${translated("Logic")}"
-    
+    val dialogTitle =
+        "${translated("Edit")} ${objectModel.title.ifBlank { translated("Object") }} ${translated("Logic")}"
+
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Initialize the NodeEditorController with initial nodes and connections
-    val controller = remember { 
+    val controller = remember {
         NodeEditorController(
             initialNodes = parseNodes(objectModel.data),
             initialConnections = parseConnections(objectModel.data),
         )
     }
 
+    // Mobile detection and panel visibility state
+    val isMobileState = rememberIsMobile()
+    val isMobile = isMobileState.value
+    var showSidebar by remember(isMobile) { mutableStateOf(!isMobile) }
+    var showProperties by remember(isMobile) { mutableStateOf(!isMobile) }
+
     // Update fullscreen state when fullscreen changes
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
             isFullscreen = document.fullscreenElement != null
         }
-        
+
         document.addEventListener("fullscreenchange", fullscreenChangeListener)
-        
+
         onDispose {
             document.removeEventListener("fullscreenchange", fullscreenChangeListener)
         }
     }
-    
+
     // Function to handle form submission
     val handleSubmit = {
         isSubmitting = true
         errorMessage = ""
-        
+
         // Serialize node editor data to JSON
         val nodeData = controller.serializeToJson()
-        
+
         // Update existing object
         val newObject = objectModel.copy(
             title = title,
             data = nodeData
         )
-        
+
         coroutineScope.launch {
             try {
                 // Update the object
                 val savedObject = ObjectApi.updateObject(objectModel.key, newObject)
-                
+
                 isSubmitting = false
                 onSave(savedObject)
                 onClose()
@@ -106,7 +116,7 @@ fun LogicEditorDialog(
             }
         }
     }
-    
+
     // Keyboard event handler for the node editor
     val handleKeyDown = { event: SyntheticKeyboardEvent ->
         // Check if delete key is pressed
@@ -128,13 +138,14 @@ fun LogicEditorDialog(
             event.preventDefault()
         }
         // Check for redo (Ctrl+Y or Ctrl+Shift+Z)
-        else if ((event.key.lowercase() == "y" && event.ctrlKey) || 
-                 (event.key.lowercase() == "z" && event.ctrlKey && event.shiftKey)) {
+        else if ((event.key.lowercase() == "y" && event.ctrlKey) ||
+            (event.key.lowercase() == "z" && event.ctrlKey && event.shiftKey)
+        ) {
             controller.redo()
             event.preventDefault()
         }
     }
-    
+
     // Use BaseDialog with isFullscreen parameter
     BaseDialog(
         onClose = onClose,
@@ -167,9 +178,52 @@ fun LogicEditorDialog(
                     classes(NodeEditorStyles.mainContentArea)
                 }
             ) {
-                // Left panel with draggable items
-                NodeSidebar()
-                
+                // Toolbar and panel toggles (especially for mobile)
+                if (isMobile) {
+                    Div(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                gap(8.px)
+                            }
+                        }
+                    ) {
+                        Button(
+                            attrs = {
+                                classes(Styles.primaryButton)
+                                onClick { showSidebar = !showSidebar }
+                            }
+                        ) { Translated(if (showSidebar) "Hide nodes" else "Nodes") }
+
+                        Button(
+                            attrs = {
+                                classes(Styles.primaryButton)
+                                if (controller.selectedNode == null) disabled()
+                                onClick { showProperties = !showProperties }
+                            }
+                        ) { Translated(if (showProperties) "Hide properties" else "Properties") }
+
+                        // Delete button available on both desktop and mobile
+                        Button(
+                            attrs = {
+                                classes(Styles.primaryButton)
+                                if (controller.selectedNode == null && controller.selectedConnection == null) disabled()
+                                onClick {
+                                    when {
+                                        controller.selectedNode != null -> controller.deleteNode(controller.selectedNode!!)
+                                        controller.selectedConnection != null -> controller.deleteConnection(controller.selectedConnection!!)
+                                    }
+                                }
+                            }
+                        ) { Translated("Delete") }
+                    }
+                }
+
+                // Left panel with draggable items (conditionally shown on mobile)
+                if (!isMobile || showSidebar) {
+                    NodeSidebar()
+                }
+
                 // Node editor panel
                 NodeEditorPanel(
                     controller = controller,
@@ -178,22 +232,22 @@ fun LogicEditorDialog(
                         controller.addNode(type, id, label, x, y)
                     }
                 )
-                
+
                 // Property panel (shown when a node is selected)
-                if (controller.selectedNode != null) {
+                if ((!isMobile || showProperties) && controller.selectedNode != null) {
                     val node = controller.nodes[controller.selectedNode]
                     if (node != null) {
                         PropertyPanel(
                             nodeId = controller.selectedNode!!,
                             node = node,
-                            onNodeUpdate = { nodeId, updatedNode -> 
+                            onNodeUpdate = { nodeId, updatedNode ->
                                 controller.updateNode(nodeId, updatedNode)
                             }
                         )
                     }
                 }
             }
-            
+
             // Show error message if present
             if (errorMessage.isNotEmpty()) {
                 Span(
@@ -221,7 +275,7 @@ fun LogicEditorDialog(
                 ) {
                     Translated("Cancel")
                 }
-                
+
                 // Save button
                 DialogButton(
                     onClick = { if (!isSubmitting) handleSubmit() },
