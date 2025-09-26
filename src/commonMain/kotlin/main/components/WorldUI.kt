@@ -94,7 +94,7 @@ fun WorldUI(
     var currentEditingObject by remember { mutableStateOf<Object?>(null) }
 
     // State to track if we're on mobile
-    val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
+    val isMobile = rememberIsMobile()
 
     // State for current user
     var currentUser by remember { mutableStateOf<User?>(null) }
@@ -319,13 +319,8 @@ fun WorldUI(
         } catch (_: Throwable) {}
     }
     
-    // Update isMobile state on window resize
+    // Handle object double-click events
     DisposableEffect(Unit) {
-        val resizeListener: (dynamic) -> Unit = {
-            isMobile.value = window.innerWidth <= 960
-        }
-        
-        // Handle object double-click events
         val objectDoubleClickListener: (dynamic) -> Unit = { event ->
             // Get the object ID from the event detail
             val objectId = event.detail.objectId as String
@@ -348,11 +343,9 @@ fun WorldUI(
             }
         }
         
-        window.addEventListener("resize", resizeListener)
         window.addEventListener("objectDoubleClick", objectDoubleClickListener)
 
         onDispose {
-            window.removeEventListener("resize", resizeListener)
             window.removeEventListener("objectDoubleClick", objectDoubleClickListener)
         }
     }

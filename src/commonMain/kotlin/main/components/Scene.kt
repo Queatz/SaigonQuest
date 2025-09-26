@@ -110,7 +110,7 @@ fun SceneComponent(url: String) {
     val isNoAccess = remember { mutableStateOf(false) }
 
     // State to track if we're on mobile
-    val isMobile = remember { mutableStateOf(window.innerWidth <= 960) }
+    val isMobile = rememberIsMobile()
 
     // Fade overlay state (start black with blur)
     var showFadeOverlay by remember { mutableStateOf(true) }
@@ -153,18 +153,6 @@ fun SceneComponent(url: String) {
     // Get the router for navigation
     val router = Router.current
 
-    // Update isMobile state on window resize
-    DisposableEffect(Unit) {
-        val resizeListener: (dynamic) -> Unit = {
-            isMobile.value = window.innerWidth <= 960
-        }
-
-        window.addEventListener("resize", resizeListener)
-
-        onDispose {
-            window.removeEventListener("resize", resizeListener)
-        }
-    }
 
     // todo: Why doesn't 'focusin' work
     LaunchedEffect(canvasRef) {
@@ -258,7 +246,10 @@ fun SceneComponent(url: String) {
             }
 
             onMouseDown {
-                (it.relatedTarget as? HTMLCanvasElement)?.focus()
+                // Always focus the canvas itself on interaction
+                // Using relatedTarget here could re-focus the prior element (e.g., a dialog button)
+                // which can swallow the first drag after a dialog closes.
+                canvasRef?.focus()
             }
 
             onMouseLeave {

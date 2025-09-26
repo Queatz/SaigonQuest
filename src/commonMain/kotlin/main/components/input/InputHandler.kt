@@ -223,7 +223,7 @@ class InputHandler(
      */
     private fun handlePointerEvent(info: PointerInfo) {
         // Check if an object is selected or being dragged
-        val isObjectSelected = objectManager?.getSelectedObject() != null
+        var isObjectSelected = objectManager?.getSelectedObject() != null
         val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
 
         console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
@@ -407,6 +407,9 @@ class InputHandler(
                 // If we clicked on a world mesh, deselect any selected object
                 objectManager.deselectCurrentObject()
             }
+
+            // We may have changed selection state above; recompute before deciding camera handling below
+            isObjectSelected = objectManager.getSelectedObject() != null
         }
 
         if (info.type == PointerEventTypes.POINTERUP) {

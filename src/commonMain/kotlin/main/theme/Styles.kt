@@ -61,6 +61,18 @@ import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
+    val dialogueButtons by style {
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(8.px)
+        justifyContent(JustifyContent.Center)
+        width(100.percent)
+
+        mobile(self) {
+            flexDirection(FlexDirection.Column)
+        }
+    }
+
     val characterRendererContainer by style {
         display(DisplayStyle.Flex)
         property("flex-direction", "column")
@@ -1299,7 +1311,7 @@ fun <TBuilder> GenericStyleSheetBuilder<TBuilder>.dark(self: CSSSelector, block:
 }
 
 fun <TBuilder> GenericStyleSheetBuilder<TBuilder>.mobile(self: CSSSelector, block: TBuilder.() -> Unit) {
-    media(mediaMaxWidth(640.px)) {
+    media(mediaMaxWidth(960.px)) {
         self style {
             block()
         }
@@ -1307,7 +1319,7 @@ fun <TBuilder> GenericStyleSheetBuilder<TBuilder>.mobile(self: CSSSelector, bloc
 }
 
 fun <TBuilder> GenericStyleSheetBuilder<TBuilder>.desktop(self: CSSSelector, block: TBuilder.() -> Unit) {
-    media(mediaMinWidth(641.px)) {
+    media(mediaMinWidth(961.px)) {
         self style {
             block()
         }

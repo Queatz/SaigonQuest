@@ -108,6 +108,7 @@ fun BaseDialog(
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,
     isFullWidth: Boolean = false,
+    anchorToBottom: Boolean = false,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -128,6 +129,11 @@ fun BaseDialog(
         Div(
             attrs = {
                 classes(OverlayStyles.overlayBase)
+                style {
+                    if (anchorToBottom && !isFullscreen) {
+                        alignItems(AlignItems.FlexEnd)
+                    }
+                }
 
                 if (clickOutside) {
                     onClick {
@@ -157,6 +163,13 @@ fun BaseDialog(
                             }
                             if (isFullWidth) {
                                 property("width", "calc(100vw - 64px)")
+                            }
+                            if (anchorToBottom) {
+                                // Bottom sheet style tweaks
+                                property("width", "100%")
+                                property("max-width", "100vw")
+                                property("border-radius", "12px 12px 0 0")
+                                property("margin-bottom", "env(safe-area-inset-bottom)")
                             }
                         }
                     }
@@ -236,6 +249,12 @@ fun BaseDialog(
                     Div(
                         attrs = {
                             classes(Styles.baseDialogFooter)
+                            style {
+                                if (anchorToBottom) {
+                                    // Ensure comfortable tap area above device safe-area on mobile
+                                    property("padding-bottom", "calc(16px + env(safe-area-inset-bottom))")
+                                }
+                            }
                         }
                     ) {
                         actions()

@@ -13,6 +13,7 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.addDialogueListener
 import main.api.sendDialogueConfirmation
+import main.theme.Styles
 import models.DialogueData
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -29,6 +30,9 @@ fun DialogueBox(
 ) {
     // State to track the current dialogue
     var currentDialogue by remember { mutableStateOf<DialogueData?>(null) }
+
+    // Responsive helper
+    val isMobile = rememberIsMobile()
 
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
@@ -53,6 +57,7 @@ fun DialogueBox(
         showCloseButton = false,
         isFullscreen = false,
         clickOutside = false,
+        anchorToBottom = isMobile.value,
         content = {
             // Optional image above the text
             if (!dialogue.imageUrl.isNullOrBlank()) {
@@ -84,13 +89,7 @@ fun DialogueBox(
         actions = {
             // Container to allow wrapping when many buttons
             Div({
-                style {
-                    display(DisplayStyle.Flex)
-                    flexWrap(FlexWrap.Wrap)
-                    gap(8.px)
-                    justifyContent(JustifyContent.Center)
-                    width(100.percent)
-                }
+                classes(Styles.dialogueButtons)
             }) {
                 dialogue.buttons.forEachIndexed { index, buttonText ->
                     DialogButton(
