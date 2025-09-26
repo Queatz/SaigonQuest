@@ -99,7 +99,8 @@ data class DialogueData(
     val text: String,
     val nodeId: String,
     val buttons: List<String> = listOf("OK"), // Default to a single "OK" button
-    val imageUrl: String? = null // Optional image URL to display above text
+    val imageUrl: String? = null, // Optional image URL to display above text
+    val objectTitle: String? = null, // Optional title of the object that initiated the dialogue
 )
 
 /**

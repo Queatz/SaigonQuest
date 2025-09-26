@@ -10,6 +10,7 @@ import models.WebSocketAction
 import models.nodeeditor.NodeDataModel
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
+import repository.ObjectRepository
 import routes.WebSocketMessage
 import utils.json
 import org.slf4j.LoggerFactory
@@ -76,6 +77,13 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         val buttonsList = buttons.ifEmpty { listOf("OK") }
         
+        // Resolve object title if we have an objectId
+        val objectTitle = try {
+            if (context.objectId.isNotBlank()) ObjectRepository().getById(context.objectId)?.title?.takeIf { it.isNotBlank() } else null
+        } catch (e: Throwable) {
+            null
+        }
+        
         // Generate a unique dialogue ID
         val dialogueId = UUID.randomUUID().toString()
         
@@ -91,7 +99,8 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             text = text,
             nodeId = node.id,
             buttons = buttonsList,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            objectTitle = objectTitle,
         )
         
         val dialogueMessage = WebSocketMessage(

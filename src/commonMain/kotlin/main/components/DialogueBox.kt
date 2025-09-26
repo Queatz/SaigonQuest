@@ -73,6 +73,22 @@ fun DialogueBox(
                 )
             }
 
+            // Object title (optional)
+            if (!dialogue.objectTitle.isNullOrBlank()) {
+                P({
+                    style {
+                        margin(0.px)
+                        padding(0.px)
+                        textAlign("center")
+                        fontSize(18.px)
+                        fontWeight("bold")
+                        marginBottom(6.px)
+                    }
+                }) {
+                    Text(dialogue.objectTitle!!)
+                }
+            }
+
             // Dialogue text
             P({
                 style {
