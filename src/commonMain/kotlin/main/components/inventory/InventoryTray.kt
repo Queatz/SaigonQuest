@@ -18,6 +18,7 @@ import main.components.isLayoutAdjustmentNeeded
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
@@ -114,7 +115,7 @@ fun InventoryTray(
                     backgroundColor(if (isError) rgba(255, 0, 0, 0.7) else rgba(0, 150, 0, 0.7))
                     color(Color.white)
                     fontSize(14.px)
-                    property("border-radius", "4px")
+                    borderRadius(4.px)
                     property("pointer-events", "none")
                     opacity(0.9)
                 }

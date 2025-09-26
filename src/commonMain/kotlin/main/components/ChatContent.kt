@@ -58,6 +58,7 @@ import org.w3c.dom.HTMLInputElement
 import main.components.media.UploadMediaDialog
 import models.chat.ImageAttachment
 import main.api.ContentApi
+import org.jetbrains.compose.web.css.borderRadius
 
 /**
  * Content for the chat panel/dialog.
@@ -230,7 +231,7 @@ fun ChatContent(worldId: String) {
                         backgroundColor(rgba(255, 0, 0, 0.2))
                         color(rgb(255, 255, 255))
                         fontSize(14.px)
-                        property("border-radius", "4px")
+                        borderRadius(8.px)
                         width(100.percent)
                         display(DisplayStyle.Flex)
                         justifyContent(JustifyContent.Center)
@@ -257,7 +258,7 @@ fun ChatContent(worldId: String) {
                             width(40.px)
                             height(40.px)
                             backgroundColor(rgba(255, 255, 255, 0.1))
-                            property("border-radius", "4px")
+                            borderRadius(8.px)
                             display(DisplayStyle.Flex)
                             justifyContent(JustifyContent.Center)
                             alignItems(AlignItems.Center)
@@ -334,7 +335,7 @@ fun ChatContent(worldId: String) {
                             width(40.px)
                             height(40.px)
                             backgroundColor(rgba(255, 255, 255, 0.1))
-                            property("border-radius", "4px")
+                            borderRadius(4.px)
                             display(DisplayStyle.Flex)
                             justifyContent(JustifyContent.Center)
                             alignItems(AlignItems.Center)
@@ -473,7 +474,7 @@ fun ChatContent(worldId: String) {
                         backgroundColor(Theme.colors.primary)
                         color(Theme.colors.onPrimary)
                         property("border", "0")
-                        property("border-radius", "4px")
+                        borderRadius(8.px)
                         cursor(if (isAuthenticated && messageText.isNotEmpty()) "pointer" else "not-allowed")
                         opacity(if (isAuthenticated && messageText.isNotEmpty()) 1.0 else 0.5)
                     }

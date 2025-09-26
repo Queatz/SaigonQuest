@@ -9,6 +9,7 @@ import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
@@ -38,7 +39,7 @@ object EditorStyles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         padding(8.px, 16.px)
         marginRight(8.px)
         cursor("pointer")
@@ -83,7 +84,7 @@ object EditorStyles : StyleSheet() {
         padding(8.px)
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurfaceVariant)
-        property("border-radius", "4px")
+        borderRadius(16.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
@@ -104,7 +105,7 @@ object EditorStyles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         padding(4.px, 8.px)
         cursor("pointer")
         fontSize(12.px)
@@ -114,11 +115,19 @@ object EditorStyles : StyleSheet() {
         backgroundColor(Theme.colors.success)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         padding(4.px, 8.px)
         cursor("pointer")
         fontSize(12.px)
     }
-    
-    val removeButton by style { backgroundColor(Theme.colors.error) }
+
+    val removeButton by style {
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        borderRadius(16.px)
+        padding(4.px, 8.px)
+        cursor("pointer")
+        fontSize(12.px)
+    }
 }

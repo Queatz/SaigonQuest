@@ -146,7 +146,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         fontSize(32.px)
         cursor("pointer")
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("transition", "background-color 0.2s")
     }
 
@@ -383,7 +383,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        property("border-radius", "16px")
         property("cursor", "pointer")
 
         self + disabled style {
@@ -396,7 +396,7 @@ object Styles : StyleSheet() {
         backgroundColor(Color.transparent)
         color(Theme.colors.primary)
         property("border", "1px solid ${Theme.colors.primary}")
-        property("border-radius", "4px")
+        property("border-radius", "16px")
         property("cursor", "pointer")
 
         self + disabled style {
@@ -411,7 +411,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurface)
         property("border", "1px solid ${Theme.colors.outline}")
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("outline", "none")
         property("box-sizing", "border-box")
 
@@ -432,7 +432,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         color(Theme.colors.onSurface)
         property("border", "1px solid ${Theme.colors.outline}")
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("margin-top", "16px")
         cursor("pointer")
         property("transition", "background-color 0.2s, border-color 0.2s")
@@ -921,7 +921,7 @@ object Styles : StyleSheet() {
         width(96.px)
         height(96.px)
         property("object-fit", "cover")
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("border", "1px solid ${Theme.colors.white20}")
         cursor("pointer")
     }
@@ -931,7 +931,7 @@ object Styles : StyleSheet() {
         width(48.px)
         height(48.px)
         property("object-fit", "cover")
-        property("border-radius", "4px")
+        borderRadius(4.px)
         property("border", "1px solid ${Theme.colors.white20}")
         cursor("pointer")
     }
@@ -1003,7 +1003,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.error)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         property("cursor", "pointer")
     }
 
@@ -1075,7 +1075,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         property("cursor", "pointer")
     }
 
@@ -1085,7 +1085,7 @@ object Styles : StyleSheet() {
         color(Theme.colors.primary)
         property("border", "0")
         property("cursor", "pointer")
-        borderRadius(8.px)
+        borderRadius(16.px)
         property("border", "1px solid ${Theme.colors.primary}")
     }
 
@@ -1095,7 +1095,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.secondary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(16.px)
         property("cursor", "pointer")
         property("margin-top", "16px")
     }
@@ -1143,7 +1143,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(8.px)
         marginBottom(16.px)
-        property("border-radius", "4px")
+        borderRadius(4.px)
     }
 
     val settingsSectionLabel by style {
@@ -1247,7 +1247,7 @@ object Styles : StyleSheet() {
         padding(8.px, 12.px)
         color(Theme.colors.white95)
         fontSize(14.px)
-        property("border-radius", "4px")
+        borderRadius(8.px)
         property("pointer-events", "none")
         // Ensure above general UI, below dialogs if needed
         property("z-index", "1500")

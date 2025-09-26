@@ -155,7 +155,7 @@ fun ObjectItem(
             // Remove button
             Button(
                 attrs = {
-                    classes(EditorStyles.removeButton, Styles.primaryButton)
+                    classes(EditorStyles.removeButton)
                     onClick { onRemove(obj.key) }
                 }
             ) {

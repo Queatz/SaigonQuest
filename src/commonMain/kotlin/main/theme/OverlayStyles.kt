@@ -9,6 +9,7 @@ import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
@@ -81,7 +82,7 @@ object OverlayStyles : StyleSheet() {
         backgroundColor(Theme.colors.loadingPrimaryBg)
         color(Theme.colors.onBackgroundDark)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(4.px)
         cursor("pointer")
         fontSize(16.px)
     }
@@ -91,7 +92,7 @@ object OverlayStyles : StyleSheet() {
         backgroundColor(Theme.colors.loadingSecondaryBg)
         color(Theme.colors.onBackgroundDark)
         property("border", "0")
-        property("border-radius", "4px")
+        borderRadius(4.px)
         cursor("pointer")
         fontSize(16.px)
     }

@@ -199,7 +199,7 @@ fun UploadMediaDialog(
                                     width(100.percent)
                                     height(100.percent)
                                     property("object-fit", "cover")
-                                    property("border-radius", "4px")
+                                    borderRadius(8.px)
                                 }
                                 onClick { onSelect(src); onClose() }
                             })

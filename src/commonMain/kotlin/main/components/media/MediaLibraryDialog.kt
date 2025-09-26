@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.fontSize
@@ -207,7 +208,7 @@ fun MediaLibraryDialog(
                                     width(100.percent)
                                     height(100.px)
                                     property("object-fit", "cover")
-                                    property("border-radius", "4px")
+                                    borderRadius(8.px)
                                     marginBottom(6.px)
                                     property("cursor", "pointer")
                                 }

@@ -62,7 +62,7 @@ object InventoryStyles : StyleSheet() {
         backgroundColor(Theme.colors.overlayScrim)
         color(Theme.colors.accentInfoStrong)
         padding(4.px, 8.px)
-        property("border-radius", "4px")
+        borderRadius(4.px)
         fontSize(12.px)
         property("text-align", "center")
 
@@ -91,7 +91,7 @@ object InventoryStyles : StyleSheet() {
         property("text-align", "center")
         padding(12.px)
         backgroundColor(Theme.colors.white06)
-        property("border-radius", "4px")
+        borderRadius(4.px)
 
         dark(self) {
             color(Theme.colors.onSurfaceDark)
@@ -107,7 +107,7 @@ object InventoryStyles : StyleSheet() {
         property("transform", "translateX(-50%)")
         padding(8.px, 12.px)
         fontSize(14.px)
-        property("border-radius", "4px")
+        borderRadius(4.px)
         property("z-index", "10")
         opacity(0.9)
     }
@@ -137,7 +137,7 @@ object InventoryStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(8.px)
         backgroundColor(Theme.colors.white08)
-        property("border-radius", "4px")
+        borderRadius(4.px)
         cursor("pointer")
 
         dark(self) {
@@ -151,7 +151,7 @@ object InventoryStyles : StyleSheet() {
         padding(12.px)
         property("margin-bottom", "8px")
         backgroundColor(Theme.colors.white06)
-        property("border-radius", "4px")
+        borderRadius(4.px)
         alignItems(AlignItems.Center)
         cursor("grab")
 
@@ -167,7 +167,7 @@ object InventoryStyles : StyleSheet() {
         backgroundColor(Theme.colors.accentInfoSoft)
         color(Theme.colors.accentInfoStrong)
         fontSize(10.px)
-        property("border-radius", "4px")
+        borderRadius(4.px)
     }
 
     // Item title
@@ -259,7 +259,7 @@ object InventoryStyles : StyleSheet() {
         height(48.px)
         backgroundColor(Theme.colors.surfaceVariant)
         border(1.px, LineStyle.Solid, Theme.colors.outline)
-        property("border-radius", "4px")
+        borderRadius(4.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)

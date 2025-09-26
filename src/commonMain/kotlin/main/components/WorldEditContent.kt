@@ -56,6 +56,7 @@ import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
 import Translations.str
 import models.Item
+import org.jetbrains.compose.web.css.borderRadius
 
 /**
  * Content component for the world edit form.
@@ -488,7 +489,7 @@ fun WorldEditContent(
 
                         backgroundColor(rgba(0, 0, 0, 0.3))
                         padding(8.px)
-                        property("border-radius", "4px")
+                        borderRadius(8.px)
                         margin(0.px)
                     }
                 }
@@ -692,7 +693,7 @@ fun WorldEditContent(
                 backgroundColor(rgba(0, 120, 255, 0.7))
 
                 property("border", "0")
-                property("border-radius", "4px")
+                borderRadius(8.px)
                 cursor(if (fieldsEnabled) "pointer" else "not-allowed")
             }
         }) {
