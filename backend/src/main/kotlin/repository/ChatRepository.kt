@@ -86,7 +86,7 @@ class ChatRepository {
             FOR m IN @@collection
             FILTER m.worldId == @worldId 
                AND m.timestamp > @lastReadTimestamp
-               AND m.userId != @userId
+               AND NOT (m.senderType == "USER" AND m.senderId == @userId)
             COLLECT WITH COUNT INTO count
             RETURN count
         """.trimIndent()
@@ -186,19 +186,35 @@ class ChatRepository {
      * @param updatedMessage The updated message data
      * @return The updated chat message, or null if the update failed
      */
-    fun updateMessage(messageKey: String, updatedMessage: ChatMessage): ChatMessage? {
+    fun updateMessage(messageKey: String, updatedMessage: ChatMessage, requesterId: String): ChatMessage? {
         try {
-            // Ensure the message exists and belongs to the user trying to update it
+            // Load the existing message
             val existingMessage = collection.getDocument(messageKey, ChatMessage::class.java)
-            
-            // Only update if the user IDs match
-            if (existingMessage.userId != updatedMessage.userId) {
-                return null
+
+            // Permission checks
+            val isAuthor = (existingMessage.senderType == models.ChatSenderType.USER && existingMessage.senderId == requesterId)
+            val isWorldOwner = try {
+                val world = worldsCollection.getDocument(existingMessage.worldId, World::class.java)
+                world.userId == requesterId
+            } catch (_: Throwable) { false }
+
+            val canEdit = when (existingMessage.senderType) {
+                models.ChatSenderType.USER -> isAuthor || isWorldOwner
+                models.ChatSenderType.OBJECT, models.ChatSenderType.SYSTEM -> isWorldOwner
             }
-            
+            if (!canEdit) return null
+
+            // Prevent changing sender identity/world
+            val toSave = updatedMessage.copy(
+                senderType = existingMessage.senderType,
+                senderId = existingMessage.senderId,
+                senderName = existingMessage.senderName,
+                worldId = existingMessage.worldId,
+            )
+
             // Update the message
-            collection.updateDocument(messageKey, updatedMessage)
-            
+            collection.updateDocument(messageKey, toSave)
+
             // Return the updated message
             return collection.getDocument(messageKey, ChatMessage::class.java)
         } catch (e: Throwable) {
@@ -213,22 +229,23 @@ class ChatRepository {
      * @param userId The ID of the user trying to delete the message
      * @return The updated (deleted) chat message, or null if the deletion failed
      */
-    fun deleteMessage(messageKey: String, userId: String): ChatMessage? {
+    fun deleteMessage(messageKey: String, requesterId: String): ChatMessage? {
         try {
             // Load the message
             val existingMessage = collection.getDocument(messageKey, ChatMessage::class.java)
 
-            // Allow deletion if the requester is either the author or the world owner
-            val isAuthor = existingMessage.userId == userId
+            // Allow deletion if the requester is permitted
+            val isAuthor = (existingMessage.senderType == models.ChatSenderType.USER && existingMessage.senderId == requesterId)
             val isWorldOwner = try {
                 val world = worldsCollection.getDocument(existingMessage.worldId, World::class.java)
-                world.userId == userId
-            } catch (_: Throwable) {
-                false
+                world.userId == requesterId
+            } catch (_: Throwable) { false }
+
+            val canDelete = when (existingMessage.senderType) {
+                models.ChatSenderType.USER -> isAuthor || isWorldOwner
+                models.ChatSenderType.OBJECT, models.ChatSenderType.SYSTEM -> isWorldOwner
             }
-            if (!isAuthor && !isWorldOwner) {
-                return null
-            }
+            if (!canDelete) return null
 
             // Mark as deleted and clear message content
             val deletedMessage = existingMessage.copy(

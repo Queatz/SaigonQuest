@@ -425,7 +425,7 @@ fun WorldUI(
                 // - The message is not from the current user
                 val worldMatches = chatMessage.worldId == currentWorld?.key
                 val isChatOpen = currentPanel == SidePanelState.Chat
-                val fromSelf = chatMessage.userId == currentUser?.key
+                val fromSelf = (chatMessage.senderType == models.ChatSenderType.USER && chatMessage.senderId == currentUser?.key)
                 
                 if (worldMatches && !isChatOpen && !fromSelf) {
                     unreadChatCount++
@@ -435,7 +435,7 @@ fun WorldUI(
                 console.error("Error processing chat message for unread count", e)
             }
         }
-        
+
         // Clean up listener on dispose
         onDispose {
             WebSocketApi.removeListener(chatListenerToken)

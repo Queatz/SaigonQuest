@@ -30,12 +30,16 @@ class UpdateChatMessageHandler(private val chatRepository: ChatRepository) : Web
         try {
             // Parse chat message
             val chatMessage = json.decodeFromString<ChatMessage>(message.data)
-            WebSocketDebug.logMessage("UPDATE_CHAT_MESSAGE", "key=${chatMessage.key}, userId=${chatMessage.userId}, message=${chatMessage.message}", session)
+            WebSocketDebug.logMessage(
+                direction = "UPDATE_CHAT_MESSAGE",
+                rawMessage = "key=${chatMessage.key}, senderId=${chatMessage.senderId}, message=${chatMessage.message}",
+                session = session
+            )
             
             // Update message in database
             WebSocketDebug.logMessage("UPDATING", "Updating chat message in database", session)
             try {
-                val updatedMessage = chatRepository.updateMessage(chatMessage.key, chatMessage)
+                val updatedMessage = chatRepository.updateMessage(chatMessage.key, chatMessage, connection.user.key)
                 
                 if (updatedMessage != null) {
                     WebSocketDebug.logMessage("UPDATED", "Message updated with ID: ${updatedMessage.key}", session)

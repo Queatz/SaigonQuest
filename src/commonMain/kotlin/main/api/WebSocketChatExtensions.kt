@@ -2,6 +2,7 @@ package main.api
 
 import kotlinx.coroutines.launch
 import models.ChatMessage
+import models.ChatSenderType
 import models.WebSocketAction
 import kotlin.time.Clock
 
@@ -94,8 +95,9 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
             // Create chat message
             val chatMessage = ChatMessage(
                 worldId = worldId,
-                userId = user.key,
-                username = user.username,
+                senderType = ChatSenderType.USER,
+                senderId = user.key,
+                senderName = user.username,
                 message = messageText,
                 timestamp = Clock.System.now()
             )

@@ -24,11 +24,18 @@ object ChatApi {
         worldId: String,
         message: String,
         attachments: List<Attachment> = emptyList(),
+        senderType: models.ChatSenderType = models.ChatSenderType.USER,
+        senderId: String = "",
     ): ChatMessage {
         val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/chat/$worldId") {
             ApiClient.addAuthHeader(this)
             contentType(ContentType.Application.Json)
-            setBody(CreateChatMessageRequest(message = message, attachments = attachments))
+            setBody(CreateChatMessageRequest(
+                message = message,
+                attachments = attachments,
+                senderType = senderType,
+                senderId = senderId,
+            ))
         }
         return response.body()
     }

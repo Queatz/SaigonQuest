@@ -120,7 +120,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             try {
                 if (message.isValid()) {
                     val chat = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                    hud.showChatMessage(chat.userId, chat.message)
+                    val bubbleUserId = if (chat.senderType == models.ChatSenderType.USER) chat.senderId else ""
+                    hud.showChatMessage(bubbleUserId, chat.message)
                 }
             } catch (_: Throwable) {
             }

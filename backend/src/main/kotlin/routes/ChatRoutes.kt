@@ -10,9 +10,13 @@ import io.ktor.server.routing.*
 import models.ChatMessage
 import models.ChatReadMarker
 import models.ErrorResponse
+import models.ChatSenderType
 import repository.ChatRepository
 import repository.WorldRepository
+import repository.ObjectRepository
 import models.ChatMessagePin
+import models.Notification
+import models.NotificationType
 import models.WebSocketAction
 import utils.json
 import repository.UserRepository
@@ -28,6 +32,7 @@ fun Routing.configureChatRoutes() {
     val chatRepository = ChatRepository()
     val userRepository = UserRepository()
     val worldRepository = WorldRepository()
+    val objectRepository = ObjectRepository()
     
     route("/chat") {
         // Get chat messages for a world - no authentication required for reading
@@ -170,15 +175,69 @@ fun Routing.configureChatRoutes() {
                     ErrorResponse(message = "User not found", code = HttpStatusCode.NotFound.value)
                 )
                 
-                // Create chat message
-                val chatMessage = ChatMessage(
-                    worldId = worldId,
-                    userId = userId,
-                    username = user.username,
-                    message = body.message,
-                    timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
-                    attachments = body.attachments,
-                )
+                // Create chat message based on sender type
+                val chatMessage = when (body.senderType) {
+                    null, ChatSenderType.USER -> ChatMessage(
+                        worldId = worldId,
+                        senderType = ChatSenderType.USER,
+                        senderId = userId,
+                        senderName = user.username,
+                        message = body.message,
+                        timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
+                        attachments = body.attachments,
+                    )
+                    ChatSenderType.OBJECT -> {
+                        val objectId = body.senderId.ifBlank {
+                            return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(message = "Missing objectId (senderId) for OBJECT message", code = HttpStatusCode.BadRequest.value)
+                            )
+                        }
+                        // Validate object and fetch display name
+                        val obj = objectRepository.getById(objectId) ?: return@post call.respond(
+                            HttpStatusCode.NotFound,
+                            ErrorResponse(message = "Object not found", code = HttpStatusCode.NotFound.value)
+                        )
+                        if (obj.worldId != worldId) {
+                            return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(message = "Object does not belong to this world", code = HttpStatusCode.BadRequest.value)
+                            )
+                        }
+                        val objectName = if (obj.title.isNotBlank()) obj.title else "Object"
+                        ChatMessage(
+                            worldId = worldId,
+                            senderType = ChatSenderType.OBJECT,
+                            senderId = objectId,
+                            senderName = objectName,
+                            message = body.message,
+                            timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
+                            attachments = body.attachments,
+                        )
+                    }
+                    ChatSenderType.SYSTEM -> {
+                        // Only world owner can send system messages
+                        val world = worldRepository.getById(worldId) ?: return@post call.respond(
+                            HttpStatusCode.NotFound,
+                            ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
+                        )
+                        if (world.userId != userId) {
+                            return@post call.respond(
+                                HttpStatusCode.Forbidden,
+                                ErrorResponse(message = "Only owner can send system messages", code = HttpStatusCode.Forbidden.value)
+                            )
+                        }
+                        ChatMessage(
+                            worldId = worldId,
+                            senderType = ChatSenderType.SYSTEM,
+                            senderId = "",
+                            senderName = "System",
+                            message = body.message,
+                            timestamp = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
+                            attachments = body.attachments,
+                        )
+                    }
+                }
                 
                 // Save message
                 val savedMessage = chatRepository.saveMessage(chatMessage)
@@ -197,8 +256,8 @@ fun Routing.configureChatRoutes() {
                     val notificationRepo = repository.NotificationRepository()
                     markers.forEach { marker ->
                         try {
-                            // Skip sender
-                            if (marker.userId == savedMessage.userId) return@forEach
+                            // Skip notifying the sender for USER-authored messages
+                            if (savedMessage.senderType == ChatSenderType.USER && marker.userId == savedMessage.senderId) return@forEach
                             // Already notified since last visit
                             if (marker.notificationSent) return@forEach
                             // If their last read is at/after this message timestamp, skip
@@ -207,17 +266,17 @@ fun Routing.configureChatRoutes() {
                             val currentWorldForUser = worldByUser[marker.userId]
                             if (currentWorldForUser == worldId) return@forEach
 
-                            val title = "New chat from \"${savedMessage.username}\" in \"${world?.title ?: "World"}\""
+                            val title = "New chat from \"${savedMessage.senderName}\" in \"${world?.title ?: "World"}\""
                             val description = savedMessage.message
-                            val notification = models.Notification(
+                            val notification = Notification(
                                 userId = marker.userId,
                                 title = title,
                                 description = description,
                                 isRead = false,
-                                type = models.NotificationType.CHAT_NEW,
+                                type = NotificationType.CHAT_NEW,
                                 worldId = worldId,
-                                objectId = "",
-                                otherUserId = savedMessage.userId,
+                                objectId = if (savedMessage.senderType == ChatSenderType.OBJECT) savedMessage.senderId else "",
+                                otherUserId = if (savedMessage.senderType == ChatSenderType.USER) savedMessage.senderId else "",
                                 timestamp = savedMessage.timestamp,
                             )
                             notificationRepo.create(notification)
@@ -251,7 +310,7 @@ fun Routing.configureChatRoutes() {
                     chatRepository.deleteMessage(messageId, userId)
                 } else {
                     // Update message
-                    chatRepository.updateMessage(messageId, updatedMessage)
+                    chatRepository.updateMessage(messageId, updatedMessage, userId)
                 }
                 
                 if (result != null) {

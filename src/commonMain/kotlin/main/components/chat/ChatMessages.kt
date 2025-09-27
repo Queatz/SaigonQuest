@@ -134,7 +134,7 @@ fun ChatMessages(
         ChatMessageDialog(
             message = currentMessage,
             isOwner = isOwner,
-            isCurrentUser = currentMessage.userId == currentUserId.value,
+            isCurrentUser = (currentMessage.senderType == models.ChatSenderType.USER && currentMessage.senderId == currentUserId.value),
             onClose = { selectedMessage = null },
             onEdit = { newText ->
                 // Update the message using WebSocketApi
@@ -275,7 +275,7 @@ fun ChatMessages(
                     message = chatMessage,
                     onMessageClick = { message -> selectedMessage = message },
                     isOwner = isOwner,
-                    isCurrentUser = currentUserId.value == chatMessage.userId,
+                    isCurrentUser = (chatMessage.senderType == models.ChatSenderType.USER && currentUserId.value == chatMessage.senderId),
                     isPinned = pinnedIds.contains(chatMessage.key),
                     onPinToggle = {
                         scope.launch {
@@ -319,6 +319,8 @@ fun ChatMessageItem(
         attrs = {
             classes(Styles.chatMessageItem)
             classes(if (isCurrentUser) Styles.chatMessageItemCurrentUser else Styles.chatMessageItemOtherUser)
+            if (message.senderType == models.ChatSenderType.OBJECT) classes(Styles.chatMessageItemObject)
+            if (message.senderType == models.ChatSenderType.SYSTEM) classes(Styles.chatMessageItemSystem)
             
             onClick { onMessageClick(message) }
         }
@@ -336,7 +338,7 @@ fun ChatMessageItem(
                     classes(if (isCurrentUser) Styles.chatMessageUsernameCurrentUser else Styles.chatMessageUsernameOtherUser)
                 }
             ) {
-                Text(message.username)
+                Text(message.senderName)
             }
             
             // Timestamp with edited indicator

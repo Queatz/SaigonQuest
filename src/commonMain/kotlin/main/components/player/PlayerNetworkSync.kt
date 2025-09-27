@@ -30,7 +30,7 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
                     scope.launch {
                         try {
                             val user = UserApi.getCurrentUser()
-                            if (chatMessage.userId == user.key) {
+                            if (chatMessage.senderType == models.ChatSenderType.USER && chatMessage.senderId == user.key) {
                                 onSelfChat(chatMessage.message)
                             }
                         } catch (t: Throwable) {

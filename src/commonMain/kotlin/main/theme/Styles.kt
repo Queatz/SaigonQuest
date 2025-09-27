@@ -686,6 +686,19 @@ object Styles : StyleSheet() {
     }
     }
 
+    // Stylistic variations for non-user messages
+    val chatMessageItemObject by style {
+        // Subtle left accent to denote object-originated message
+        property("border-left", "4px solid ${Theme.colors.outline}")
+        dark(self) { property("border-left", "4px solid ${Theme.colors.outlineDark}") }
+    }
+
+    val chatMessageItemSystem by style {
+        // Dashed border to denote system message
+        border(1.px, LineStyle.Dashed, Theme.colors.outline)
+        dark(self) { border(1.px, LineStyle.Dashed, Theme.colors.outlineDark) }
+    }
+
     val chatMessageHeader by style {
         display(DisplayStyle.Flex)
         property("justify-content", "space-between")

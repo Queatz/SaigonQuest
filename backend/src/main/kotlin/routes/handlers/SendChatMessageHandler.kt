@@ -4,6 +4,7 @@ import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import kotlinx.serialization.json.Json
 import models.ChatMessage
+import models.ChatSenderType
 import models.Notification
 import models.NotificationType
 import models.WebSocketAction
@@ -33,13 +34,31 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
         
         try {
             // Parse chat message
-            val chatMessage = json.decodeFromString<ChatMessage>(message.data)
-            WebSocketDebug.logMessage("CHAT_MESSAGE", "worldId=${chatMessage.worldId}, userId=${chatMessage.userId}, message=${chatMessage.message}", session)
+            val incoming = json.decodeFromString<ChatMessage>(message.data)
+            WebSocketDebug.logMessage("CHAT_MESSAGE", "worldId=${incoming.worldId}, senderType=${incoming.senderType}, senderId=${incoming.senderId}, message=${incoming.message}", session)
+
+            // Sanitize/override sender identity based on connection and requested type
+            val sanitized: ChatMessage = when (incoming.senderType) {
+                null, ChatSenderType.USER -> incoming.copy(
+                    senderType = ChatSenderType.USER,
+                    senderId = connection.user.key,
+                    senderName = connection.user.username,
+                )
+                ChatSenderType.OBJECT -> incoming.copy(
+                    senderType = ChatSenderType.OBJECT,
+                    senderName = incoming.senderName.ifBlank { "Object" },
+                )
+                ChatSenderType.SYSTEM -> incoming.copy(
+                    senderType = ChatSenderType.SYSTEM,
+                    senderId = "",
+                    senderName = incoming.senderName.ifBlank { "System" },
+                )
+            }
             
             // Save message to database
             WebSocketDebug.logMessage("SAVING", "Saving chat message to database", session)
             try {
-                val savedMessage = chatRepository.saveMessage(chatMessage)
+                val savedMessage = chatRepository.saveMessage(sanitized)
                 WebSocketDebug.logMessage("SAVED", "Message saved with ID: ${savedMessage.key}", session)
                 
                 // Broadcast message to all clients in the same world
@@ -69,8 +88,8 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
 
                     markers.forEach { marker ->
                         try {
-                            // Skip sender
-                            if (marker.userId == savedMessage.userId) return@forEach
+                            // Skip notifying the sender for USER-authored messages
+                            if (savedMessage.senderType == ChatSenderType.USER && marker.userId == savedMessage.senderId) return@forEach
                             // Already notified since last visit
                             if (marker.notificationSent) return@forEach
                             // If their last read is at/after this message timestamp, skip
@@ -79,7 +98,7 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                             val currentWorldForUser = worldByUser[marker.userId]
                             if (currentWorldForUser == worldId) return@forEach
 
-                            val title = "New chat from \"${savedMessage.username}\" in \"${world?.title ?: "World"}\""
+                            val title = "New chat from \"${savedMessage.senderName}\" in \"${world?.title ?: "World"}\""
                             val description = savedMessage.message
                             val notification = Notification(
                                 userId = marker.userId,
@@ -88,8 +107,8 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                                 isRead = false,
                                 type = NotificationType.CHAT_NEW,
                                 worldId = worldId,
-                                objectId = "",
-                                otherUserId = savedMessage.userId,
+                                objectId = if (savedMessage.senderType == ChatSenderType.OBJECT) savedMessage.senderId else "",
+                                otherUserId = if (savedMessage.senderType == ChatSenderType.USER) savedMessage.senderId else "",
                                 timestamp = savedMessage.timestamp,
                             )
                             notificationRepo.create(notification)
