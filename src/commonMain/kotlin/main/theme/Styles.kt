@@ -329,7 +329,7 @@ object Styles : StyleSheet() {
     // Base dialog styles (for the new BaseDialog component)
     val baseDialogContainer by style {
         backgroundColor(Theme.colors.surface)
-        property("border-radius", "8px")
+        borderRadius(16.px)
         property("box-shadow", "0 4px 16px ${Theme.colors.shadowLight}")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)

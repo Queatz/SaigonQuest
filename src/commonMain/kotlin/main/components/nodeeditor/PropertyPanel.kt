@@ -551,14 +551,6 @@ fun PropertyPanel(
                     classes(NodeEditorStyles.propertyGroup)
                 }
             ) {
-                Label(
-                    attrs = {
-                        classes(NodeEditorStyles.propertyLabel)
-                    }
-                ) {
-                    Text(translated("Buttons"))
-                }
-                
                 // List of current buttons
                 Div(
                     attrs = {

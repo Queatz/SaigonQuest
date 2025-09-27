@@ -49,7 +49,7 @@ object NodeEditorStyles : StyleSheet() {
         width(180.px)
         padding(12.px)
         color(Theme.colors.onBackground)
-        property("border-radius", "6px")
+        borderRadius(12.px)
         property("box-shadow", "0 2px 10px ${Theme.colors.shadowMedium}")
         property("user-select", "none") // Prevent text selection during drag
 

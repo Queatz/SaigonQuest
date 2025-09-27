@@ -168,7 +168,7 @@ fun BaseDialog(
                                 // Bottom sheet style tweaks
                                 property("width", "100%")
                                 property("max-width", "100vw")
-                                property("border-radius", "12px 12px 0 0")
+                                property("border-radius", "16px 16px 0 0")
                                 property("margin-bottom", "env(safe-area-inset-bottom)")
                             }
                         }

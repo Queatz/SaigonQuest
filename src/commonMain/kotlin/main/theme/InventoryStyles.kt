@@ -259,7 +259,7 @@ object InventoryStyles : StyleSheet() {
         height(48.px)
         backgroundColor(Theme.colors.surfaceVariant)
         border(1.px, LineStyle.Solid, Theme.colors.outline)
-        borderRadius(4.px)
+        borderRadius(8.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
