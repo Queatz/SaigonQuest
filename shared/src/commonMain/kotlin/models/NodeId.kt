@@ -17,5 +17,6 @@ enum class NodeId {
     ObjectOwnerNotification,
     Delay,
     TakeItems,
-    GiveItems
+    GiveItems,
+    SendChat,
 }

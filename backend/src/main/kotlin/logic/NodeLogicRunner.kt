@@ -474,6 +474,14 @@ class NodeLogicRunner(
                 )
                 AgeNodeRunner(context)
             }
+            NodeId.SendChat -> {
+                WebSocketDebug.logMessage(
+                    "SEND_CHAT_RUNNER_SELECTED",
+                    "Selected SendChatNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                SendChatNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

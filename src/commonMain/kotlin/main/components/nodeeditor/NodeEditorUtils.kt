@@ -202,6 +202,7 @@ fun createNode(
         NodeId.Delay -> LogicNode.Delay()
         NodeId.TakeItems -> LogicNode.TakeItems()
         NodeId.GiveItems -> LogicNode.GiveItems()
+        NodeId.SendChat -> LogicNode.SendChat()
     }
     
     // Create ports based on node type and data

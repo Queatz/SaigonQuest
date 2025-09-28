@@ -475,6 +475,23 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 description = "World owner does not have enough of item"
             )
         )
+
+        // SendChat node properties
+        is LogicNode.SendChat -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Message",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            )
+        )
     }
 }
 

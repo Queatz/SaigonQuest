@@ -33,6 +33,7 @@ enum class WebSocketAction {
     SHOW_TAKE_ITEMS,
     TAKE_ITEMS_CONFIRM,
     INVENTORY_CHANGED,
+    OPEN_CHAT,
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,

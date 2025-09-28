@@ -265,7 +265,7 @@ object NodeEditorStyles : StyleSheet() {
         padding(8.px, 12.px)
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurfaceVariant)
-        borderRadius(4.px)
+        borderRadius(12.px)
         cursor("grab")
         marginBottom(8.px)
         property("user-select", "none")

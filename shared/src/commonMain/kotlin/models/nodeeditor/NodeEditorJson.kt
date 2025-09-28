@@ -97,6 +97,7 @@ object NodeEditorJsonUtil {
             NodeId.Delay -> LogicNode.Delay()
             NodeId.TakeItems -> LogicNode.TakeItems()
             NodeId.GiveItems -> LogicNode.GiveItems()
+            NodeId.SendChat -> LogicNode.SendChat()
         }
 
         return NodeData(

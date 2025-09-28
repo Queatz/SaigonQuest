@@ -190,6 +190,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Prompt user to receive selected items from the world owner"
     ) : LogicNode
+
+    /**
+     * SendChat node - sends a chat message to the world's chat as this object
+     */
+    @Serializable
+    data class SendChat(
+        override val id: NodeId = NodeId.SendChat,
+        override val label: String = "Send chat",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Send a chat message to the world as this object"
+    ) : LogicNode
 }
 
 /**
@@ -210,7 +221,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.ObjectOwnerNotification(),
         LogicNode.Delay(),
         LogicNode.TakeItems(),
-        LogicNode.GiveItems()
+        LogicNode.GiveItems(),
+        LogicNode.SendChat(),
     )
 }
 

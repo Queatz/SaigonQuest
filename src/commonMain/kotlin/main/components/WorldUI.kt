@@ -442,6 +442,16 @@ fun WorldUI(
         }
     }
     
+    // Listen for OPEN_CHAT to open chat panel
+    DisposableEffect(Unit) {
+        val openChatToken = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_CHAT) {
+            updatePanelState(SidePanelState.Chat)
+        }
+        onDispose {
+            WebSocketApi.removeListener(openChatToken)
+        }
+    }
+    
     // Main UI overlay container
     WorldUIContainer {
         // Reconnecting banner at the very top (fixed)
