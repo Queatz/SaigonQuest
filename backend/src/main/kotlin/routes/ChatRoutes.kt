@@ -33,7 +33,7 @@ fun Routing.configureChatRoutes() {
     val userRepository = UserRepository()
     val worldRepository = WorldRepository()
     val objectRepository = ObjectRepository()
-    
+
     route("/chat") {
         // Get chat messages for a world - no authentication required for reading
         get("/{worldId}") {
@@ -204,7 +204,7 @@ fun Routing.configureChatRoutes() {
                                 ErrorResponse(message = "Object does not belong to this world", code = HttpStatusCode.BadRequest.value)
                             )
                         }
-                        val objectName = if (obj.title.isNotBlank()) obj.title else "Object"
+                        val objectName = obj.title.ifBlank { "Object" }
                         ChatMessage(
                             worldId = worldId,
                             senderType = ChatSenderType.OBJECT,
@@ -241,6 +241,16 @@ fun Routing.configureChatRoutes() {
                 
                 // Save message
                 val savedMessage = chatRepository.saveMessage(chatMessage)
+
+                // Broadcast the new message to all clients in the world (including sender)
+                try {
+                    val wsMessage = routes.WebSocketMessage(
+                        action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
+                        data = json.encodeToString(ChatMessage.serializer(), savedMessage),
+                    )
+                    val payload = json.encodeToString(wsMessage)
+                    routes.handlers.broadcastToWorldNoSession(worldId, payload, activeConnections)
+                } catch (_: Throwable) { /* keep REST path resilient */ }
 
                 // After saving, send one-time "new chat" notifications to eligible users
                 try {

@@ -22,8 +22,10 @@ import main.components.common.Spinner
 import main.components.Translated
 import main.components.ImageDialog
 import main.theme.Styles
+import main.utils.TimeUtils.formatTimestamp
 import models.ChatMessage
 import models.ChatMessagePin
+import models.ChatSenderType
 import models.WebSocketAction
 import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginTop
@@ -332,13 +334,15 @@ fun ChatMessageItem(
             }
         ) {
             // Username
-            Span(
-                attrs = {
-                    classes(Styles.chatMessageUsername)
-                    classes(if (isCurrentUser) Styles.chatMessageUsernameCurrentUser else Styles.chatMessageUsernameOtherUser)
+            if (message.senderType != models.ChatSenderType.SYSTEM) {
+                Span(
+                    attrs = {
+                        classes(Styles.chatMessageUsername)
+                        classes(if (isCurrentUser) Styles.chatMessageUsernameCurrentUser else Styles.chatMessageUsernameOtherUser)
+                    }
+                ) {
+                    Text(message.senderName)
                 }
-            ) {
-                Text(message.senderName)
             }
             
             // Timestamp with edited indicator
@@ -360,7 +364,7 @@ fun ChatMessageItem(
                 Text(formatTimestamp(message.timestamp.toEpochMilliseconds()))
 
                 // Owner-only pin/unpin control
-                if (isOwner && onPinToggle != null) {
+                if (isOwner && onPinToggle != null && message.senderType != models.ChatSenderType.SYSTEM) {
                     Span(attrs = {
                         classes(Styles.chatPinButton)
 
@@ -387,10 +391,13 @@ fun ChatMessageItem(
                 if (message.deleted) {
                     classes(Styles.chatMessageContentDeleted)
                 }
+                if (message.senderType == ChatSenderType.SYSTEM) {
+                    classes(Styles.chatMessageContentSystem)
+                }
             }
         ) {
             if (message.deleted) {
-                Text("Deleted")
+                Translated("Deleted")
             } else {
                 Text(message.message)
             }

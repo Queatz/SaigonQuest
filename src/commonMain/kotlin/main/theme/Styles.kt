@@ -23,6 +23,7 @@ import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.AlignSelf
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.right
@@ -39,6 +40,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.LineStyle
+import org.jetbrains.compose.web.css.alignSelf
 import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.bottom
@@ -606,6 +608,8 @@ object Styles : StyleSheet() {
 
         borderRadius(6.px)
 
+        alignSelf(AlignSelf.FlexStart)
+
         dark(self) {
             color(Theme.colors.textSecondaryDark)
             border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
@@ -674,29 +678,35 @@ object Styles : StyleSheet() {
         cursor("pointer")
         borderRadius(8.px)
         property("word-break", "break-word")
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
     }
 
     val chatMessageItemCurrentUser by style { backgroundColor(Theme.colors.accentInfoSoft) }
 
     val chatMessageItemOtherUser by style {
-        backgroundColor(Theme.colors.surfaceVariant); dark(self) {
-        backgroundColor(
-            Theme.colors.surfaceVariantDark
-        )
-    }
+        backgroundColor(Theme.colors.surfaceVariant)
+        dark(self) {
+            backgroundColor(
+                Theme.colors.surfaceVariantDark
+            )
+        }
     }
 
     // Stylistic variations for non-user messages
     val chatMessageItemObject by style {
-        // Subtle left accent to denote object-originated message
-        property("border-left", "4px solid ${Theme.colors.outline}")
-        dark(self) { property("border-left", "4px solid ${Theme.colors.outlineDark}") }
+        backgroundColor(Theme.colors.surfaceVariant)
+        property("border", "3px solid ${Theme.colors.primary}")
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            property("border", "3px solid ${Theme.colors.primaryDark}")
+        }
     }
 
     val chatMessageItemSystem by style {
         // Dashed border to denote system message
-        border(1.px, LineStyle.Dashed, Theme.colors.outline)
-        dark(self) { border(1.px, LineStyle.Dashed, Theme.colors.outlineDark) }
+        property("border", "none")
+        property("background", "none")
     }
 
     val chatMessageHeader by style {
@@ -718,6 +728,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         fontSize(14.px)
         textAlign("right")
+        opacity(.5f)
     }
 
     val endAmount by style {
@@ -739,6 +750,11 @@ object Styles : StyleSheet() {
 
     val chatMessageContentDeleted by style {
         opacity(0.5)
+        fontStyle("italic")
+    }
+
+    val chatMessageContentSystem by style {
+        opacity(0.75)
         fontStyle("italic")
     }
 

@@ -273,6 +273,27 @@ fun Routing.configureWebSocketRoutes() {
             broadcastToWorld(worldId, messageString, activeConnections)
             WebSocketDebug.logConnection("USER_JOINED", this, worldId, connection.userId)
 
+            // Send system chat message announcing the join
+            try {
+                val systemChat = models.ChatMessage(
+                    worldId = worldId,
+                    senderType = models.ChatSenderType.SYSTEM,
+                    senderId = "",
+                    senderName = "System",
+                    message = "$username joined",
+                )
+                val savedSystemChat = chatRepository.saveMessage(systemChat)
+                val chatBroadcast = WebSocketMessage(
+                    action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
+                    data = json.encodeToString(models.ChatMessage.serializer(), savedSystemChat)
+                )
+                val chatBroadcastString = json.encodeToString(WebSocketMessage.serializer(), chatBroadcast)
+                WebSocketDebug.logMessage("BROADCAST_SYSTEM_CHAT_JOIN", chatBroadcastString, this)
+                broadcastToWorld(worldId, chatBroadcastString, activeConnections)
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Error sending system join chat", e, this)
+            }
+
             // Notify friends globally about this user's online status/world
             try {
                 val worldName = worldRepository.getById(worldId)?.title
@@ -378,6 +399,28 @@ fun Routing.configureWebSocketRoutes() {
             
             broadcastToWorld(worldId, json.encodeToString(leaveMessage), activeConnections)
             WebSocketDebug.logConnection("USER_LEFT", this, worldId, connection.userId)
+
+            // Send system chat message announcing the leave
+            try {
+                val username = connection.user.username.ifBlank { str("Visitor") }
+                val systemChat = models.ChatMessage(
+                    worldId = worldId,
+                    senderType = models.ChatSenderType.SYSTEM,
+                    senderId = "",
+                    senderName = "System",
+                    message = "$username left",
+                )
+                val savedSystemChat = chatRepository.saveMessage(systemChat)
+                val chatBroadcast = WebSocketMessage(
+                    action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
+                    data = json.encodeToString(models.ChatMessage.serializer(), savedSystemChat)
+                )
+                val chatBroadcastString = json.encodeToString(WebSocketMessage.serializer(), chatBroadcast)
+                WebSocketDebug.logMessage("BROADCAST_SYSTEM_CHAT_LEAVE", chatBroadcastString, this)
+                broadcastToWorld(worldId, chatBroadcastString, activeConnections)
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Error sending system leave chat", e, this)
+            }
 
             // Notify friends that this user went offline (world left)
             try {

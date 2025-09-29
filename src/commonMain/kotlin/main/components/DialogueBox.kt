@@ -56,7 +56,7 @@ fun DialogueBox(
         title = null,
         showCloseButton = false,
         isFullscreen = false,
-        clickOutside = false,
+        clickOutside = true,
         anchorToBottom = isMobile.value,
         content = {
             // Optional image above the text

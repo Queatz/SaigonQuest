@@ -8,7 +8,7 @@ import org.jetbrains.compose.web.dom.Img
 @Composable
 fun ImageDialog(
     imageUrl: String,
-    onClose: () -> Unit
+    onClose: () -> Unit,
 ) {
     BaseDialog(
         onClose = onClose,
@@ -23,14 +23,21 @@ fun ImageDialog(
                     property("gap", "12px")
                 }
             }) {
-                Img(src = imageUrl, attrs = {
-                    style {
-                        width(100.percent)
-                        property("max-width", "860px")
-                        property("object-fit", "contain")
-                        property("border-radius", "8px")
+                Img(
+                    src = imageUrl,
+                    attrs = {
+                        style {
+                            width(100.percent)
+                            property("max-width", "860px")
+                            property("object-fit", "contain")
+                            property("border-radius", "8px")
+                        }
+
+                        onClick {
+                            onClose()
+                        }
                     }
-                })
+                )
             }
         },
         actions = {
@@ -38,4 +45,3 @@ fun ImageDialog(
         }
     )
 }
-
