@@ -471,198 +471,230 @@ fun WorldUI(
         val bottomButtonsCount = bottomButtonsBase + if (currentUser?.isAdmin == true) 1 else 0
         val bottomRightHeight = bottomButtonsCount * 48 + (bottomButtonsCount - 1) * 10
 
-        // Top right UI elements (notifications, fullscreen, and edit world)
-        Div(
-            attrs = {
-                classes(Styles.topRightContainer)
-                style {
-                    // Adjust right position when any side panel is open on desktop
-                    if ((currentPanel == SidePanelState.Chat || 
-                         currentPanel == SidePanelState.WorldEdit || 
-                         currentPanel == SidePanelState.Notifications || 
-                         currentPanel == SidePanelState.ObjectsPanel ||
-                         currentPanel == SidePanelState.Friends) && !isMobile.value) {
-                        right(340.px) // 20px original padding + 320px panel width
-                    } else {
-                        right(20.px)
-                    }
-                    // Dynamically reserve space for the bottom-right container to prevent overlap
-                    property("bottom", "${20 + bottomRightHeight}px")
-                }
-            }
-        ) {
-            // Fullscreen button
-            CircleButton(
-                onClick = { toggleFullscreen() },
-                iconIndex = if (isFullscreen) 1 else 0, // 0: enter fullscreen, 1: exit fullscreen
-                badgeCount = 0
-            )
+        var showUI by remember { mutableStateOf(true) }
 
-            if (currentUser?.isPlayer == true) {
-                // Notifications button
-                CircleButton(
-                    onClick = { togglePanel(SidePanelState.Notifications) },
-                    iconIndex = 2, // 2: notifications
-                    badgeCount = unreadNotificationCount
-                )
-
-                // Friends button
-                CircleButton(
-                    onClick = { togglePanel(SidePanelState.Friends) },
-                    iconIndex = 3, // 3: friends
-                    badgeCount = 0
-                )
-            }
-
-            // Edit world button - only visible if the current user is the owner of the world
-            if (currentUser?.key == currentWorld?.userId) {
-                CircleButton(
-                    onClick = { togglePanel(SidePanelState.WorldEdit) },
-                    iconIndex = 4, // 4: edit world
-                    badgeCount = 0
-                )
-                
-                // Objects button - only visible if the current user is the owner of the world
-                CircleButton(
-                    onClick = { togglePanel(SidePanelState.ObjectsPanel) },
-                    iconIndex = 5, // 5: edit objects
-                    badgeCount = 0
-                )
-            }
-        }
-        
-        // Bottom right UI elements (profile and chat)
-        Div(
-            attrs = {
-                classes(Styles.bottomRightContainer)
-                style {
-                    // Adjust right position when any side panel is open on desktop
-                    if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
-                        right(340.px) // 20px original padding + 320px panel width
-                    } else {
-                        right(20.px)
-                    }
-                }
-            }
-        ) {
-            // Admin button (only visible for admins)
-            if (currentUser?.isAdmin == true) {
-                CircleButton(
-                    onClick = { 
-                        isAdminDialogOpen = true
-                    },
-                    iconIndex = 9, // Using a different icon index for admin
-                    badgeCount = 0,
-                    id = "adminButton"
-                )
-            }
-            
-            // Camera screenshot button (not part of the panel system)
-            CircleButton(
-                onClick = {
-                    val scene = SceneManager.getScene()
-                    if (scene != null) {
-                        try {
-                            val options = object : ScreenshotOptions {
-                                override val width: Int = scene.getEngine().getRenderWidth()
-                                override val height: Int = scene.getEngine().getRenderHeight()
-                            }
-                            Tools.CreateScreenshot(
-                                engine = scene.getEngine(),
-                                camera = scene.activeCamera,
-                                options = options,
-                                onSuccess = { data ->
-                                    // Build a safe filename with world name and local timestamp
-                                    val date = Date()
-                                    fun pad(n: Int): String = if (n < 10) "0$n" else "$n"
-                                    val timestamp = "${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}"
-                                    val worldNameRaw = currentWorld?.title ?: "world"
-                                    val safeWorldName = worldNameRaw
-                                        .trim()
-                                        .ifEmpty { "world" }
-                                        .replace(Regex("[\\\\/:*?\"<>|]"), "")
-                                        .replace(Regex("\\s+"), "-")
-
-                                    // Trigger download of the screenshot
-                                    val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-                                    link.href = data
-                                    link.download = "saigon-quest-$safeWorldName-$timestamp.png"
-                                    document.body?.appendChild(link)
-                                    link.click()
-                                    document.body?.removeChild(link)
-                                }
-                            )
-                        } catch (e: Throwable) {
-                            console.error("BabylonJS Tools.CreateScreenshot error: ${e.message}")
+        if (showUI) {
+            // Top right UI elements (notifications, fullscreen, and edit world)
+            Div(
+                attrs = {
+                    classes(Styles.topRightContainer)
+                    style {
+                        // Adjust right position when any side panel is open on desktop
+                        if ((currentPanel == SidePanelState.Chat ||
+                                    currentPanel == SidePanelState.WorldEdit ||
+                                    currentPanel == SidePanelState.Notifications ||
+                                    currentPanel == SidePanelState.ObjectsPanel ||
+                                    currentPanel == SidePanelState.Friends) && !isMobile.value
+                        ) {
+                            right(340.px) // 20px original padding + 320px panel width
+                        } else {
+                            right(20.px)
                         }
-                    } else {
-                        console.warn("Scene not available for screenshot")
+                        // Dynamically reserve space for the bottom-right container to prevent overlap
+                        property("bottom", "${20 + bottomRightHeight}px")
                     }
-                },
-                iconIndex = 19,
-                badgeCount = 0
-            )
+                }
+            ) {
+                // Fullscreen button
+                CircleButton(
+                    onClick = { toggleFullscreen() },
+                    iconIndex = if (isFullscreen) 1 else 0, // 0: enter fullscreen, 1: exit fullscreen
+                    badgeCount = 0
+                )
 
-            // QR code button (not part of the panel system)
-            CircleButton(
-                onClick = { 
-                    isQrDialogOpen = true
-                    // If this is the current tutorial step, advance to the next step
-                    if (tutorialManager.currentStep is TutorialStep.ShareWorld) {
-                        tutorialManager.advanceToNextStep()
-                    }
-                },
-                iconIndex = 6, // 6: share / qr code
-                badgeCount = 0,
-                id = "qrButton",
-                elementRef = { element -> buttonRefs["qrButton"] = element }
-            )
+                if (currentUser?.isPlayer == true) {
+                    // Notifications button
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.Notifications) },
+                        iconIndex = 2, // 2: notifications
+                        badgeCount = unreadNotificationCount
+                    )
 
-            // World Chat button
-            CircleButton(
-                onClick = { 
-                    togglePanel(SidePanelState.Chat)
-                    // Reset unread count when opening chat
-                    if (currentPanel != SidePanelState.Chat) {
-                        unreadChatCount = 0
+                    // Friends button
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.Friends) },
+                        iconIndex = 3, // 3: friends
+                        badgeCount = 0
+                    )
+                }
+
+                // Edit world button - only visible if the current user is the owner of the world
+                if (currentUser?.key == currentWorld?.userId) {
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.WorldEdit) },
+                        iconIndex = 4, // 4: edit world
+                        badgeCount = 0
+                    )
+
+                    // Objects button - only visible if the current user is the owner of the world
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.ObjectsPanel) },
+                        iconIndex = 5, // 5: edit objects
+                        badgeCount = 0
+                    )
+                }
+            }
+
+            // Bottom right UI elements (profile and chat)
+            Div(
+                attrs = {
+                    classes(Styles.bottomRightContainer)
+                    style {
+                        // Adjust right position when any side panel is open on desktop
+                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
+                            right(340.px) // 20px original padding + 320px panel width
+                        } else {
+                            right(20.px)
+                        }
                     }
-                    // If this is the current tutorial step, advance to the next step
-                    if (tutorialManager.currentStep is TutorialStep.OpenChat) {
-                        tutorialManager.advanceToNextStep()
+                }
+            ) {
+                // Admin button (only visible for admins)
+                if (currentUser?.isAdmin == true) {
+                    CircleButton(
+                        onClick = {
+                            isAdminDialogOpen = true
+                        },
+                        iconIndex = 9, // Using a different icon index for admin
+                        badgeCount = 0,
+                        id = "adminButton"
+                    )
+                }
+
+                // Camera screenshot button (not part of the panel system)
+                CircleButton(
+                    onClick = {
+                        val scene = SceneManager.getScene()
+                        if (scene != null) {
+                            try {
+                                val options = object : ScreenshotOptions {
+                                    override val width: Int = scene.getEngine().getRenderWidth()
+                                    override val height: Int = scene.getEngine().getRenderHeight()
+                                }
+                                Tools.CreateScreenshot(
+                                    engine = scene.getEngine(),
+                                    camera = scene.activeCamera,
+                                    options = options,
+                                    onSuccess = { data ->
+                                        // Build a safe filename with world name and local timestamp
+                                        val date = Date()
+                                        fun pad(n: Int): String = if (n < 10) "0$n" else "$n"
+                                        val timestamp =
+                                            "${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${
+                                                pad(date.getHours())
+                                            }-${pad(date.getMinutes())}-${pad(date.getSeconds())}"
+                                        val worldNameRaw = currentWorld?.title ?: "world"
+                                        val safeWorldName = worldNameRaw
+                                            .trim()
+                                            .ifEmpty { "world" }
+                                            .replace(Regex("[\\\\/:*?\"<>|]"), "")
+                                            .replace(Regex("\\s+"), "-")
+
+                                        // Trigger download of the screenshot
+                                        val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+                                        link.href = data
+                                        link.download = "saigon-quest-$safeWorldName-$timestamp.png"
+                                        document.body?.appendChild(link)
+                                        link.click()
+                                        document.body?.removeChild(link)
+                                    }
+                                )
+                            } catch (e: Throwable) {
+                                console.error("BabylonJS Tools.CreateScreenshot error: ${e.message}")
+                            }
+                        } else {
+                            console.warn("Scene not available for screenshot")
+                        }
+                    },
+                    iconIndex = 19,
+                    badgeCount = 0
+                )
+
+                // QR code button (not part of the panel system)
+                CircleButton(
+                    onClick = {
+                        isQrDialogOpen = true
+                        // If this is the current tutorial step, advance to the next step
+                        if (tutorialManager.currentStep is TutorialStep.ShareWorld) {
+                            tutorialManager.advanceToNextStep()
+                        }
+                    },
+                    iconIndex = 6, // 6: share / qr code
+                    badgeCount = 0,
+                    id = "qrButton",
+                    elementRef = { element -> buttonRefs["qrButton"] = element }
+                )
+
+                // World Chat button
+                CircleButton(
+                    onClick = {
+                        togglePanel(SidePanelState.Chat)
+                        // Reset unread count when opening chat
+                        if (currentPanel != SidePanelState.Chat) {
+                            unreadChatCount = 0
+                        }
+                        // If this is the current tutorial step, advance to the next step
+                        if (tutorialManager.currentStep is TutorialStep.OpenChat) {
+                            tutorialManager.advanceToNextStep()
+                        }
+                    },
+                    iconIndex = 7, // 7: chat
+                    badgeCount = unreadChatCount,
+                    isChat = true,
+                    id = "chatButton",
+                    elementRef = { element -> buttonRefs["chatButton"] = element }
+                )
+
+                // My profile button
+                CircleButton(
+                    onClick = {
+                        // If this is the current tutorial step, advance to the next step
+                        if (tutorialManager.currentStep is TutorialStep.CreatePlayer) {
+                            tutorialManager.advanceToNextStep()
+                        }
+                        togglePanel(SidePanelState.Profile)
+                    },
+                    iconIndex = 8, // 8: my profile
+                    badgeCount = 0,
+                    id = "profileButton",
+                    elementRef = { element -> buttonRefs["profileButton"] = element }
+                )
+            }
+
+            // Inventory tray (center bottom)
+            if (currentUser?.isPlayer == true) {
+                InventoryTray(
+                    onOpenInventory = {
+                        updatePanelState(SidePanelState.Inventory)
+                    },
+                    currentPanel = currentPanel,
+                    isMobile = isMobile
+                )
+            }
+        } else {
+            Div(
+                attrs = {
+                    classes(Styles.bottomRightContainer)
+                    style {
+                        // Adjust right position when any side panel is open on desktop
+                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
+                            right(340.px) // 20px original padding + 320px panel width
+                        } else {
+                            right(20.px)
+                        }
                     }
-                },
-                iconIndex = 7, // 7: chat
-                badgeCount = unreadChatCount,
-                isChat = true,
-                id = "chatButton",
-                elementRef = { element -> buttonRefs["chatButton"] = element }
-            )
-            
-            // My profile button
-            CircleButton(
-                onClick = { 
-                    // If this is the current tutorial step, advance to the next step
-                    if (tutorialManager.currentStep is TutorialStep.CreatePlayer) {
-                        tutorialManager.advanceToNextStep()
-                    }
-                    togglePanel(SidePanelState.Profile) 
-                },
-                iconIndex = 8, // 8: my profile
-                badgeCount = 0,
-                id = "profileButton",
-                elementRef = { element -> buttonRefs["profileButton"] = element }
-            )
-        }
-        
-        // Inventory tray (center bottom)
-        if (currentUser?.isPlayer == true) {
-            InventoryTray(
-                onOpenInventory = {
-                    updatePanelState(SidePanelState.Inventory)
-                },
-                currentPanel = currentPanel,
-                isMobile = isMobile
-            )
+                }
+            ) {
+                CircleButton(
+                    onClick = {
+                        showUI = true
+                    },
+                    badgeCount = 0,
+                    opacity = .25,
+                    icon = "👁️",
+                    id = "eyeButton"
+                )
+            }
         }
         
         // Side Panel
@@ -785,6 +817,10 @@ fun WorldUI(
                 PlayerDialog(
                     user = currentUser!!,
                     onClose = { updatePanelState(SidePanelState.None) },
+                    showUI = showUI,
+                    onShowUI = {
+                        showUI = it
+                    },
                     onLogout = {
                         scope.launch {
                             // Unsubscribe push for this endpoint if present

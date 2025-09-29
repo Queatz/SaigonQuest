@@ -51,6 +51,8 @@ import org.jetbrains.compose.web.dom.TextInput
 @Composable
 fun PlayerDialog(
     user: User,
+    showUI: Boolean,
+    onShowUI: (showUI: Boolean) -> Unit,
     onClose: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -565,6 +567,8 @@ fun PlayerDialog(
             // Render the Settings dialog when visible
             if (showSettingsDialog.value) {
                 SettingsDialog(
+                    showUI = showUI,
+                    onShowUI = onShowUI,
                     onClose = { showSettingsDialog.value = false }
                 )
             }

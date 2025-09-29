@@ -1303,6 +1303,30 @@ vi: Tiếp tục?
 
 Start your first world!
 vi: Bắt đầu thế giới đầu tiên của bạn!
+
+Saigon.Quest is created by Jacob Ferrero
+vi: Saigon.Quest được tạo bởi Jacob Ferrero
+
+Saigon.Quest allows anyone to create mini worlds that can be virtual versions of real locations, or simply extra virtual rooms for your house or coffeeshop.
+vi: Saigon.Quest cho phép mọi người tạo các thế giới nhỏ có thể là phiên bản ảo của những địa điểm thực, hoặc đơn giản là những phòng ảo bổ sung cho ngôi nhà hoặc quán cà phê của bạn.
+
+Creating your own world
+vi: Tạo thế giới của riêng bạn
+
+Hosted worlds: Simply navigate to the URL of your choice
+vi: Thế giới được lưu trữ: Chỉ cần truy cập URL bạn muốn
+
+Self-hosted worlds: Please contact Zalo 0708739214
+vi: Tự lưu trữ thế giới: Vui lòng liên hệ Zalo 0708739214
+
+About
+vi: Giới thiệu
+
+Credits
+vi: Tác giả
+
+Hide UI
+vi: Ẩn UI
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

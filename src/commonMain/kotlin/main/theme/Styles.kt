@@ -220,13 +220,65 @@ object Styles : StyleSheet() {
         position(Position.Absolute)
         bottom(4.px)
         left(4.px)
-        fontSize(8.px)
+        fontSize(11.px)
+        fontWeight(500)
         color(Theme.colors.onBackground)
+        property("letter-spacing", "0.2px")
         property("text-shadow", "0px 0px 2px ${Theme.colors.black70}")
+        property("opacity", "0.9")
+        property("transition", "opacity 160ms ease, text-shadow 160ms ease, color 160ms ease")
         // Make text elements interactive
         property("pointer-events", "auto")
+        cursor("pointer")
+        // Hover affordance
+        property("&:hover", "{ opacity: 1; text-decoration: underline; }")
 
         dark(self) { color(Theme.colors.onBackgroundDark) }
+    }
+
+    // About dialog typography and layout
+    val aboutDialogContent by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(8.px)
+        property("line-height", "1.6")
+    }
+
+    val aboutHeading by style {
+        fontSize(18.px)
+        fontWeight(600)
+        marginTop(8.px)
+        marginBottom(4.px)
+        color(Theme.colors.onSurface)
+
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
+    }
+
+    val aboutParagraph by style {
+        fontSize(14.px)
+        color(Theme.colors.textSecondary)
+        margin(0.px)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
+    }
+
+    val aboutList by style {
+        marginTop(4.px)
+        property("padding-left", "18px")
+        property("list-style", "disc")
+    }
+
+    val aboutListItem by style {
+        marginBottom(6.px)
+        color(Theme.colors.textSecondary)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
     }
 
     // CircleButton styles

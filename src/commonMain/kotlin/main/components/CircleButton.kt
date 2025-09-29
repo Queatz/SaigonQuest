@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
+import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
@@ -24,6 +25,7 @@ fun CircleButton(
     icon: String = "",
     iconIndex: Int? = null,
     badgeCount: Int? = -1,
+    opacity: Double = 1.0,
     isChat: Boolean = false,
     id: String? = null,
     elementRef: ((HTMLElement) -> Unit)? = null
@@ -32,6 +34,7 @@ fun CircleButton(
         attrs = {
             classes(Styles.circleButton)
             onClick { onClick() }
+            style { opacity(opacity) }
             id?.let { id(it) }
             if (elementRef != null) {
                 ref { element -> 

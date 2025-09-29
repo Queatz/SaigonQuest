@@ -10,6 +10,8 @@ import org.jetbrains.compose.web.dom.Button
 
 @Composable
 fun SettingsDialog(
+    showUI: Boolean,
+    onShowUI: (showUI: Boolean) -> Unit,
     onClose: () -> Unit
 ) {
     val showChangePassword = remember { mutableStateOf(false) }
@@ -19,10 +21,27 @@ fun SettingsDialog(
         onClose = onClose,
         title = translated("Settings"),
         content = {
+            // Hide UI button
+
+            Button(
+                attrs = {
+                    classes(Styles.secondaryButton)
+                    onClick {
+                        onShowUI(!showUI)
+                        onClose()
+                    }
+                }
+            ) {
+                if (!showUI) Translated("Show UI") else Translated("Hide UI")
+            }
+
             // Wide Angle
             Button(
                 attrs = {
-                    classes(Styles.primaryButton)
+                    classes(Styles.secondaryButton)
+                    style {
+                        marginTop(16.px)
+                    }
                     onClick {
                         wideAngle.value = !wideAngle.value
                         GraphicsSettings.setWideAngle(wideAngle.value)
