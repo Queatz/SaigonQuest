@@ -37,57 +37,7 @@ object FriendApi {
             return emptyArray()
         }
     }
-    
-    /**
-     * Send a friend request to another user
-     *
-     * @param friendId The ID of the user to send the request to
-     * @return The created notification, or null if the request failed
-     */
-    suspend fun sendFriendRequest(friendId: String): Notification? {
-        try {
-            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend/request") {
-                ApiClient.addAuthHeader(this)
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("friendId" to friendId))
-            }
-            
-            if (response.status.isSuccess()) {
-                return response.body<Notification>()
-            }
-            
-            return null
-        } catch (e: Throwable) {
-            console.error("Error sending friend request", e)
-            return null
-        }
-    }
-    
-    /**
-     * Accept a friend request
-     *
-     * @param friendId The ID of the user who sent the request
-     * @return The created friendship, or null if the request failed
-     */
-    suspend fun acceptFriendRequest(friendId: String): Friend? {
-        try {
-            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend/accept") {
-                ApiClient.addAuthHeader(this)
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("friendId" to friendId))
-            }
-            
-            if (response.status.isSuccess()) {
-                return response.body<Friend>()
-            }
-            
-            return null
-        } catch (e: Throwable) {
-            console.error("Error accepting friend request", e)
-            return null
-        }
-    }
-    
+
     /**
      * Remove a friend
      *

@@ -83,42 +83,6 @@ class FriendRequestRepository {
         return ArangoConfig.db.query(query, FriendRequest::class.java, bind).toList().firstOrNull()
     }
 
-    fun getPendingBetween(a: String, b: String): FriendRequest? {
-        val query = """
-            FOR r IN @@collection
-            FILTER r.status == @pending AND ((r.requesterId == @a AND r.addresseeId == @b) OR (r.requesterId == @b AND r.addresseeId == @a))
-            LIMIT 1
-            RETURN r
-        """.trimIndent()
-        val bind = mapOf(
-            "@collection" to CollectionsConfig.FRIEND_REQUESTS_COLLECTION,
-            "pending" to FriendRequestStatus.Pending,
-            "a" to a,
-            "b" to b,
-        )
-        return ArangoConfig.db.query(query, FriendRequest::class.java, bind).toList().firstOrNull()
-    }
-
-    fun acceptByParticipants(requesterId: String, addresseeId: String): FriendRequest? {
-        val query = """
-            FOR r IN @@collection
-            FILTER r.requesterId == @requesterId
-              AND r.addresseeId == @addresseeId
-              AND r.status == @pending
-            UPDATE r WITH { status: @accepted, decidedAt: @now } IN @@collection
-            RETURN NEW
-        """.trimIndent()
-        val bind = mapOf(
-            "@collection" to CollectionsConfig.FRIEND_REQUESTS_COLLECTION,
-            "requesterId" to requesterId,
-            "addresseeId" to addresseeId,
-            "pending" to FriendRequestStatus.Pending,
-            "accepted" to FriendRequestStatus.Accepted,
-            "now" to Clock.System.now(),
-        )
-        return ArangoConfig.db.query(query, FriendRequest::class.java, bind).toList().firstOrNull()
-    }
-
     fun getIncoming(userId: String): List<FriendRequest> {
         val query = """
             FOR r IN @@collection
@@ -165,22 +129,25 @@ class FriendRequestRepository {
                 RETURN r
             )
             FILTER req != null
-            UPDATE req WITH { status: @accepted, decidedAt: @now } IN @@requests
-            LET f1 = FIRST(
-              UPSERT { userId: @addresseeId, friendId: @requesterId }
-              INSERT { userId: @addresseeId, friendId: @requesterId, friendUsername: @requesterUsername, lastActive: @now, lastWorldId: "", lastWorldName: "", createdAt: @now }
-              UPDATE { friendUsername: @requesterUsername, lastActive: @now }
-              IN @@friends
+            LET _upd = FIRST(
+              UPDATE req WITH { status: @accepted, decidedAt: @now } IN @@requests
               RETURN NEW
             )
-            LET f2 = FIRST(
-              UPSERT { userId: @requesterId, friendId: @addresseeId }
-              INSERT { userId: @requesterId, friendId: @addresseeId, friendUsername: @addresseeUsername, lastActive: @now, lastWorldId: "", lastWorldName: "", createdAt: @now }
-              UPDATE { friendUsername: @addresseeUsername, lastActive: @now }
-              IN @@friends
-              RETURN NEW
+            LET friends = (
+              FOR f IN [
+                { userId: @addresseeId, friendId: @requesterId, friendUsername: @requesterUsername },
+                { userId: @requesterId, friendId: @addresseeId, friendUsername: @addresseeUsername }
+              ]
+                LET up = FIRST(
+                  UPSERT { userId: f.userId, friendId: f.friendId }
+                    INSERT { userId: f.userId, friendId: f.friendId, friendUsername: f.friendUsername, lastActive: @now, lastWorldId: "", lastWorldName: "", createdAt: @now }
+                    UPDATE { friendUsername: f.friendUsername, lastActive: @now }
+                    IN @@friends
+                    RETURN NEW
+                )
+                RETURN up
             )
-            RETURN f1
+            RETURN FIRST(friends)
         """.trimIndent()
         val bind = mapOf(
             "@requests" to CollectionsConfig.FRIEND_REQUESTS_COLLECTION,

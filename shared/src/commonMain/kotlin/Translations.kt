@@ -1327,6 +1327,10 @@ vi: Tác giả
 
 Hide UI
 vi: Ẩn UI
+
+Show UI
+vi: Hiển thị UI
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

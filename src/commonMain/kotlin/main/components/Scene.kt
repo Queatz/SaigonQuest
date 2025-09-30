@@ -422,9 +422,9 @@ fun SceneComponent(url: String) {
         val coroutineScope = CoroutineScope(Dispatchers.Main)
         coroutineScope.launch {
             try {
-                val notification = FriendApi.sendFriendRequest(otherPlayerId.value)
+                val request = FriendApi.sendFriendRequestNew(otherPlayerId.value)
 
-                if (notification != null) {
+                if (request != null) {
                     otherPlayerFriendshipStatus.value = FriendshipStatus.REQUEST_SENT
                 } else {
                     otherPlayerErrorMessage.value = "Failed to send friend request"

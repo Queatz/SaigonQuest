@@ -66,7 +66,7 @@ fun WorldUI(
     onRequestCanvasFocus: () -> Unit = {},
 ) {
     // State for UI elements
-    var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.None) }
+    var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.Chat) }
     
     // State for UI elements that are not part of the panel system
     var isFullscreen by remember { mutableStateOf(false) }

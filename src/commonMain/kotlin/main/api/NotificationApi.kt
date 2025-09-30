@@ -145,13 +145,20 @@ object NotificationApi {
             console.error("Not a friend request notification")
             return null
         }
-        
         try {
-            // Mark the notification as read
-            markAsRead(notification.key)
-            
-            // Accept the friend request
-            return FriendApi.acceptFriendRequest(notification.otherUserId)
+            // Find the concrete request id via server-driven status
+            val dto = FriendApi.getFriendshipStatusDto(notification.otherUserId)
+            val requestId = dto?.requestId
+            if (dto == null || requestId == null) {
+                console.error("No pending friend request found for notification")
+                return null
+            }
+            val friend = FriendApi.acceptRequest(requestId)
+            if (friend != null) {
+                // Mark the notification as read only after successful accept
+                markAsRead(notification.key)
+            }
+            return friend
         } catch (e: Throwable) {
             console.error("Error accepting friend request", e)
             return null
@@ -169,10 +176,18 @@ object NotificationApi {
             console.error("Not a friend request notification")
             return false
         }
-        
         try {
-            // Just mark the notification as read to reject it
-            return markAsRead(notification.key)
+            val dto = FriendApi.getFriendshipStatusDto(notification.otherUserId)
+            val requestId = dto?.requestId
+            if (dto == null || requestId == null) {
+                console.error("No pending friend request found for notification")
+                return false
+            }
+            val ok = FriendApi.declineRequest(requestId)
+            if (ok) {
+                markAsRead(notification.key)
+            }
+            return ok
         } catch (e: Throwable) {
             console.error("Error rejecting friend request", e)
             return false
