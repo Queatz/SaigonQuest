@@ -129,7 +129,7 @@ class ChatRepository {
         return try {
             val query = """
                 UPSERT { userId: @userId, worldId: @worldId }
-                INSERT { userId: @userId, worldId: @worldId, lastReadTimestamp: @timestamp, notificationSent: false }
+                INSERT { userId: @userId, worldId: @worldId, lastReadTimestamp: @timestamp, notificationSent: false, subscribed: true }
                 UPDATE { lastReadTimestamp: @timestamp, notificationSent: false }
                 IN @@collection
                 RETURN NEW
@@ -394,5 +394,48 @@ class ChatRepository {
         )
         val results = ArangoConfig.db.query(query, Map::class.java, bindVars).toList()
         return results.isNotEmpty()
+    }
+
+    /**
+     * Set subscription status for a user in a world. Creates marker if missing.
+     */
+    fun setSubscription(userId: String, worldId: String, subscribed: Boolean): Boolean {
+        return try {
+            val query = """
+                UPSERT { userId: @userId, worldId: @worldId }
+                INSERT { userId: @userId, worldId: @worldId, lastReadTimestamp: DATE_ISO8601(DATE_NOW()), notificationSent: false, subscribed: @subscribed }
+                UPDATE { subscribed: @subscribed } IN @@collection
+                RETURN NEW
+            """.trimIndent()
+            val bindVars = mapOf(
+                "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+                "userId" to userId,
+                "worldId" to worldId,
+                "subscribed" to subscribed,
+            )
+            val results = ArangoConfig.db.query(query, Map::class.java, bindVars).toList()
+            results.isNotEmpty()
+        } catch (_: Throwable) { false }
+    }
+
+    /**
+     * Get subscription status for a user in a world. Defaults to true if no marker exists.
+     */
+    fun getSubscription(userId: String, worldId: String): Boolean {
+        return try {
+            val query = """
+                FOR m IN @@collection
+                FILTER m.userId == @userId AND m.worldId == @worldId
+                LIMIT 1
+                RETURN m.subscribed
+            """.trimIndent()
+            val bindVars = mapOf(
+                "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+                "userId" to userId,
+                "worldId" to worldId,
+            )
+            val result = ArangoConfig.db.query(query, Boolean::class.java, bindVars).toList().firstOrNull()
+            result ?: true
+        } catch (_: Throwable) { true }
     }
 }

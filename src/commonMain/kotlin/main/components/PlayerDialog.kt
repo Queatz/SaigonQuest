@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.WorldApi
 import main.api.updatePlayer
 import main.api.updatePlayerStatus
 import main.components.player.CharacterRenderer
@@ -87,6 +88,9 @@ fun PlayerDialog(
     // Current balance for summary button
     val balanceState = remember { mutableStateOf<UserBalance?>(null) }
 
+    // Track number of worlds owned by the user (null while loading)
+    val myWorldsCountState = remember { mutableStateOf<Int?>(null) }
+
     // Coroutine scope for async operations that persists beyond dialog closure
     val coroutineScope = remember { MainScope() }
     val router = Router.current
@@ -103,6 +107,18 @@ fun PlayerDialog(
             } catch (t: Throwable) {
                 console.error("[DEBUG_LOG] PlayerDialog: Failed to load balance: ${t.message}")
             }
+        }
+    }
+
+    // Load count of user's worlds for CTA logic
+    LaunchedEffect(Unit) {
+        try {
+            val worlds = WorldApi.getWorlds()
+            myWorldsCountState.value = worlds.size
+        } catch (t: Throwable) {
+            console.error("[DEBUG_LOG] PlayerDialog: Failed to load worlds: ${t.message}")
+            // Assume zero on failure to avoid blocking CTA
+            myWorldsCountState.value = 0
         }
     }
 
@@ -439,14 +455,31 @@ fun PlayerDialog(
                         id = "prettyGraphicsToggle"
                     )
 
-                    // My worlds button
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            onClick { showMyWorldsDialog.value = true }
+                    // My worlds button or first-world CTA
+                    run {
+                        val hasWorlds = myWorldsCountState.value?.let { it > 0 } ?: true
+                        if (!hasWorlds) {
+                            Button(
+                                attrs = {
+                                    classes(Styles.primaryButton)
+                                    onClick { showMyWorldsDialog.value = true }
+                                }
+                            ) {
+                                Translated("My Worlds")
+                            }
+                        } else {
+                            Button(
+                                attrs = {
+                                    classes(Styles.primaryButton)
+                                    style { marginTop(8.px) }
+                                    onClick { showMyWorldsDialog.value = true }
+                                }
+                            ) {
+                                Text("🎉 ")
+                                Translated("Claim your first world!")
+                                Text(" 🎉")
+                            }
                         }
-                    ) {
-                        Translated("My Worlds")
                     }
 
                     // Media library button

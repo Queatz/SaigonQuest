@@ -1331,6 +1331,27 @@ vi: Ẩn UI
 Show UI
 vi: Hiển thị UI
 
+Subscribe
+vi: Đăng ký
+
+Unsubscribe
+vi: Hủy đăng ký
+
+Subscribed
+vi: Đã đăng ký
+
+Not subscribed
+vi: Chưa đăng ký
+
+Subscribe to this world?
+vi: Đăng ký nhận thông báo cho thế giới này?
+
+Unsubscribe from this world?
+vi: Hủy đăng ký nhận thông báo cho thế giới này?
+
+Claim your first world!
+vi: Nhận thế giới đầu tiên của bạn!
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
@@ -1360,3 +1381,4 @@ object Translations {
         key
     }
 }
+

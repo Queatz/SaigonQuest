@@ -266,6 +266,8 @@ fun Routing.configureChatRoutes() {
                     val notificationRepo = repository.NotificationRepository()
                     markers.forEach { marker ->
                         try {
+                            // Respect subscription: only notify subscribed users
+                            if (!marker.subscribed) return@forEach
                             // Skip notifying the sender for USER-authored messages
                             if (savedMessage.senderType == ChatSenderType.USER && marker.userId == savedMessage.senderId) return@forEach
                             // Already notified since last visit
@@ -331,6 +333,42 @@ fun Routing.configureChatRoutes() {
                         ErrorResponse(message = "Message not found or you don't have permission to modify it", code = HttpStatusCode.NotFound.value)
                     )
                 }
+            }
+        }
+
+        // Subscription management
+        authenticate {
+            get("/{worldId}/subscription") {
+                val worldId = call.parameters["worldId"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                val subscribed = try { chatRepository.getSubscription(userId, worldId) } catch (_: Throwable) { true }
+                call.respond(mapOf("subscribed" to subscribed))
+            }
+            post("/{worldId}/subscribe") {
+                val worldId = call.parameters["worldId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                val ok = chatRepository.setSubscription(userId, worldId, true)
+                if (ok) call.respond(HttpStatusCode.OK) else call.respond(HttpStatusCode.InternalServerError,
+                    ErrorResponse(message = "Failed to subscribe", code = HttpStatusCode.InternalServerError.value))
+            }
+            delete("/{worldId}/subscribe") {
+                val worldId = call.parameters["worldId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
+                val ok = chatRepository.setSubscription(userId, worldId, false)
+                if (ok) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.InternalServerError,
+                    ErrorResponse(message = "Failed to unsubscribe", code = HttpStatusCode.InternalServerError.value))
             }
         }
 

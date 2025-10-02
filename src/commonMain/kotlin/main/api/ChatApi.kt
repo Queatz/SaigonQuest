@@ -20,6 +20,43 @@ import kotlin.time.Instant
  */
 object ChatApi {
 
+    suspend fun getSubscription(worldId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/chat/$worldId/subscription") {
+                ApiClient.addAuthHeader(this)
+            }
+            val map = response.body<Map<String, Boolean>>()
+            map["subscribed"] ?: true
+        } catch (e: Throwable) {
+            console.error("Error fetching chat subscription", e)
+            true
+        }
+    }
+
+    suspend fun subscribe(worldId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/chat/$worldId/subscribe") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error subscribing to world chat", e)
+            false
+        }
+    }
+
+    suspend fun unsubscribe(worldId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/chat/$worldId/subscribe") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error unsubscribing from world chat", e)
+            false
+        }
+    }
+
     suspend fun createMessage(
         worldId: String,
         message: String,

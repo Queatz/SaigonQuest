@@ -13,6 +13,7 @@ import kotlin.time.Instant
  * @property worldId The ID of the world
  * @property lastReadTimestamp The time when the user last read messages in the world
  * @property notificationSent Whether a "new chat" notification has been sent since the last visit
+ * @property subscribed Whether the user is currently subscribed to the world
  */
 
 @Serializable
@@ -22,4 +23,5 @@ import kotlin.time.Instant
     @Contextual
     var lastReadTimestamp: Instant = Clock.System.now(),
     var notificationSent: Boolean = false,
+    var subscribed: Boolean = true,
 ) : BaseModel()
