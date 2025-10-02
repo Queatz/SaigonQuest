@@ -361,6 +361,16 @@ fun ChatMessageItem(
                         Text("•")
                     }
                 }
+                // Show shout indicator if the message was shouted
+                if (message.shouted) {
+                    Span(
+                        attrs = {
+                            classes(Styles.chatMessageEditedIndicator)
+                        }
+                    ) {
+                        Text("📣")
+                    }
+                }
                 Text(formatTimestamp(message.timestamp.toEpochMilliseconds()))
 
                 // Owner-only pin/unpin control

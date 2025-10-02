@@ -29,6 +29,7 @@ import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.inventory.InventoryTray
 import main.theme.Styles
+import main.theme.OverlayStyles
 import main.utils.PathUtils
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
@@ -42,6 +43,7 @@ import models.World
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
 import web.console.console
 import web.encoding.atob
@@ -82,6 +84,10 @@ fun WorldUI(
     
     // State for unread chat count
     var unreadChatCount by remember { mutableStateOf(0) }
+
+    // State for active shout overlay
+    var activeShout by remember { mutableStateOf<ChatMessage?>(null) }
+    var shoutOpacity by remember { mutableStateOf(0.0) }
     
     // State for current notification popup
     var currentNotification by remember { mutableStateOf<NotificationData?>(null) }
@@ -442,6 +448,37 @@ fun WorldUI(
         }
     }
     
+    // Shout overlay listener for live shouted chat messages
+    DisposableEffect(currentWorld?.key) {
+        val shoutListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
+                val worldMatches = chatMessage.worldId == currentWorld?.key
+                if (worldMatches && chatMessage.shouted) {
+                    activeShout = chatMessage
+                    shoutOpacity = 1.0
+                    scope.launch {
+                        try {
+                            delay(5000)
+                            // start fade out
+                            shoutOpacity = 0.0
+                            delay(350)
+                        } catch (_: Throwable) { /* ignore */ }
+                        // clear when faded
+                        if (activeShout?.key == chatMessage.key) {
+                            activeShout = null
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                console.error("Error processing shouted chat message", e)
+            }
+        }
+        onDispose {
+            WebSocketApi.removeListener(shoutListenerToken)
+        }
+    }
+    
     // Listen for OPEN_CHAT to open chat panel
     DisposableEffect(Unit) {
         val openChatToken = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_CHAT) {
@@ -465,6 +502,22 @@ fun WorldUI(
             currentPanel = currentPanel,
             isMobile = isMobile
         )
+        
+        // Shout overlay UI (shows only for live shouted messages)
+        if (activeShout != null) {
+            Div(
+                attrs = {
+                    classes(OverlayStyles.shoutOverlay)
+                    style {
+                        property("opacity", shoutOpacity.toString())
+                    }
+                }
+            ) {
+                Div(attrs = { classes(OverlayStyles.shoutMessageBox) }) {
+                    Text(activeShout?.message ?: "")
+                }
+            }
+        }
         
         // Compute dynamic bottom-right container height to avoid overlap (48px buttons, 10px gap)
         val bottomButtonsBase = 4 // screenshot, QR, chat, profile

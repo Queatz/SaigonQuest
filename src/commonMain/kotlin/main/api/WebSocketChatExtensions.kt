@@ -54,6 +54,16 @@ private fun WebSocketApi.sendChatMessageData(action: WebSocketAction, data: Chat
  */
 
 fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback: (Boolean) -> Unit) {
+    // Backward-compatible overload that defaults to non-shouted
+    sendChatMessage(worldId, messageText, shouted = false, callback = callback)
+}
+
+fun WebSocketApi.sendChatMessage(
+    worldId: String,
+    messageText: String,
+    shouted: Boolean,
+    callback: (Boolean) -> Unit,
+) {
     // Validate input parameters
     if (worldId.isEmpty()) {
         console.error("Cannot send chat message: worldId is empty")
@@ -99,13 +109,16 @@ fun WebSocketApi.sendChatMessage(worldId: String, messageText: String, callback:
                 senderId = user.key,
                 senderName = user.username,
                 message = messageText,
-                timestamp = Clock.System.now()
+                timestamp = Clock.System.now(),
+                shouted = shouted,
             )
 
             // Send message
             console.log("Sending chat message: $messageText")
-            val success = sendChatMessageData(WebSocketAction.
-            SEND_CHAT_MESSAGE, chatMessage)
+            val success = sendChatMessageData(
+                action = WebSocketAction.SEND_CHAT_MESSAGE,
+                data = chatMessage
+            )
 
             if (!success) {
                 console.error("Failed to send chat message")

@@ -2,7 +2,6 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.json.Json
 import models.ChatMessage
 import models.ChatSenderType
 import models.Notification

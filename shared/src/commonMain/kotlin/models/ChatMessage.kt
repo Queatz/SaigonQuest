@@ -28,4 +28,5 @@ data class ChatMessage(
     var edited: Boolean = false,
     var deleted: Boolean = false,
     var attachments: List<Attachment> = emptyList(),
+    var shouted: Boolean = false,
 ) : BaseModel()

@@ -76,6 +76,7 @@ fun ChatContent(worldId: String) {
     var showEmotePopup by remember { mutableStateOf(false) }
     var isTyping by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
+    var shoutNext by remember { mutableStateOf(false) }
     // Subscription state
     var isSubscribed by remember { mutableStateOf(true) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
@@ -364,9 +365,10 @@ fun ChatContent(worldId: String) {
                                     classes(Styles.emoteButton)
                                     onClick { e ->
                                         e.stopPropagation()
-                                        WebSocketApi.sendChatMessage(worldId, emote) { success ->
+                                        WebSocketApi.sendChatMessage(worldId, emote, shouted = shoutNext) { success ->
                                             if (success) {
                                                 console.log("Emote sent successfully")
+                                                shoutNext = false
                                             } else {
                                                 console.error("Failed to send emote: ${WebSocketApi.getLastError()}")
                                             }
@@ -408,6 +410,31 @@ fun ChatContent(worldId: String) {
                 }
             }
 
+            // Shout toggle button
+            Div(
+                attrs = {
+                    title(str("Shout"))
+                    style {
+                        width(40.px)
+                        height(40.px)
+                        backgroundColor(if (shoutNext) rgba(255, 255, 255, 0.25) else rgba(255, 255, 255, 0.1))
+                        borderRadius(8.px)
+                        display(DisplayStyle.Flex)
+                        justifyContent(JustifyContent.Center)
+                        alignItems(AlignItems.Center)
+                        cursor(if (isAuthenticated) "pointer" else "not-allowed")
+                        opacity(if (isAuthenticated) 1.0 else 0.5)
+                    }
+                    onClick {
+                        if (isAuthenticated) {
+                            shoutNext = !shoutNext
+                        }
+                    }
+                }
+            ) {
+                Text("📣")
+            }
+            
             // Text input
             TextInput(
                 value = messageText,
@@ -449,10 +476,11 @@ fun ChatContent(worldId: String) {
                                 // Send message using WebSocketApi
                                 console.log("Sending message via Enter key: $messageText")
                                 val currentMessage = messageText // Capture current message text
-                                WebSocketApi.sendChatMessage(worldId, currentMessage) { success ->
+                                WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
                                     if (success) {
                                         console.log("Message sent successfully via Enter key")
                                         messageText = ""
+                                        shoutNext = false
                                         
                                         // Set typing status to false when message is sent
                                         console.log("[TYPING] Message sent via Enter key, setting typing status to false")
@@ -541,10 +569,11 @@ fun ChatContent(worldId: String) {
                             // Send message using WebSocketApi
                             console.log("Attempting to send chat message: $messageText to world: $worldId")
                             val currentMessage = messageText // Capture current message text
-                            WebSocketApi.sendChatMessage(worldId, currentMessage) { success ->
+                            WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
                                 if (success) {
                                     console.log("Message sent successfully")
                                     messageText = ""
+                                    shoutNext = false
                                     
                                     // Set typing status to false when message is sent
                                     console.log("[TYPING] Message sent via Send button, setting typing status to false")

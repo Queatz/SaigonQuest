@@ -1238,6 +1238,9 @@ vi: Bạn có chắc muốn xóa phương tiện này không?
 Print your location
 vi: In vị trí của bạn
 
+Shout
+vi: Hét
+
 Send
 vi: Gửi
 

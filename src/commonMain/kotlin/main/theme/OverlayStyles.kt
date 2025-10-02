@@ -30,8 +30,73 @@ import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.animation
+import org.jetbrains.compose.web.css.ms
+import org.jetbrains.compose.web.css.AnimationTimingFunction
+import org.jetbrains.compose.web.css.delay
+import org.jetbrains.compose.web.css.duration
+import org.jetbrains.compose.web.css.timingFunction
 
 object OverlayStyles : StyleSheet() {
+    // Keyframes for shout jiggle animation
+    val shoutJiggle by keyframes {
+        0.percent { property("transform", "scale(0.92) rotate(0deg)") }
+        25.percent { property("transform", "scale(1.06) rotate(1deg)") }
+        50.percent { property("transform", "scale(0.98) rotate(-1deg)") }
+        75.percent { property("transform", "scale(1.03) rotate(0.5deg)") }
+        100.percent { property("transform", "scale(1.0) rotate(0deg)") }
+    }
+
+    // Simple scale+fade in animation used at start
+    val shoutIn by keyframes {
+        0.percent {
+            opacity(0)
+            property("transform", "scale(0.9)")
+        }
+        100.percent {
+            opacity(1)
+            property("transform", "scale(1)")
+        }
+    }
+
+    val shoutOverlay by style {
+        property("transition", "opacity 300ms ease")
+        position(Position.Fixed)
+        top(0.px)
+        left(0.px)
+        width(100.percent)
+        height(100.percent)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        property("z-index", "4000")
+        property("pointer-events", "none")
+    }
+
+    val shoutMessageBox by style {
+        backgroundColor(Theme.colors.background)
+        color(Theme.colors.onBackground)
+        padding(24.px)
+        borderRadius(24.px)
+        fontSize(48.px)
+        textAlign("center")
+        property("box-shadow", "0 8px 24px ${Theme.colors.shadowMedium}")
+        animation(shoutIn) {
+            duration(120.ms)
+            timingFunction(AnimationTimingFunction.EaseOut)
+        }
+        animation(shoutJiggle) {
+            duration(420.ms)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+            delay(120.ms)
+        }
+
+        dark(self) {
+            backgroundColor(Theme.colors.backgroundDark)
+            color(Theme.colors.onBackgroundDark)
+        }
+    }
+
     // Fullscreen fade overlay for world transitions
     val fadeOverlay by style {
         position(Position.Fixed)
