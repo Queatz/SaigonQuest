@@ -16,6 +16,7 @@ fun SettingsDialog(
 ) {
     val showChangePassword = remember { mutableStateOf(false) }
     val wideAngle = remember { mutableStateOf(GraphicsSettings.isWideAngleEnabled()) }
+    val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
 
     BaseDialog(
         onClose = onClose,
@@ -49,6 +50,22 @@ fun SettingsDialog(
                 }
             ) {
                 Translated("Wide angle: ${if (wideAngle.value) translated("On") else translated("Off")}")
+            }
+
+            // Observer Mode
+            Button(
+                attrs = {
+                    classes(Styles.secondaryButton)
+                    style {
+                        marginTop(16.px)
+                    }
+                    onClick {
+                        observerMode.value = !observerMode.value
+                        GraphicsSettings.setObserverMode(observerMode.value)
+                    }
+                }
+            ) {
+                Translated("Observer mode: ${if (observerMode.value) translated("On") else translated("Off")}")
             }
 
             // Change Password

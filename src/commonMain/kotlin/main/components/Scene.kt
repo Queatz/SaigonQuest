@@ -938,8 +938,8 @@ fun SceneComponent(url: String) {
                 SceneManager.setPlayerVelocity(lib.Vector3(0f, 0f, 0f))
             }
 
-            // Update camera target if player moved
-            if (newPosition != null) {
+            // Update camera target if player moved and Observer Mode is OFF
+            if (newPosition != null && !GraphicsSettings.isObserverModeEnabled()) {
                 cameraController.updateCameraTarget(newPosition)
             }
 

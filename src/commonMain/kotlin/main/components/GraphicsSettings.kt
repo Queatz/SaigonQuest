@@ -18,6 +18,7 @@ object GraphicsSettings {
     private const val GRAPHICS_MODE_STORAGE_KEY = "saigon_quest_graphics_mode"
     private const val PRETTY_GRAPHICS_STORAGE_KEY = "saigon_quest_pretty_graphics"
     private const val WIDE_ANGLE_STORAGE_KEY = "saigon_quest_wide_angle"
+    private const val OBSERVER_MODE_STORAGE_KEY = "saigon_quest_observer_mode"
 
     /**
      * State to track whether low graphics mode is enabled.
@@ -32,6 +33,7 @@ object GraphicsSettings {
     val _isPrettyGraphicsEnabled = mutableStateOf(loadPrettyGraphicsFromStorage())
 
     val _isWideAngleEnabled = mutableStateOf(loadWideAngleFromStorage())
+    val _isObserverModeEnabled = mutableStateOf(loadObserverModeFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -49,6 +51,10 @@ object GraphicsSettings {
 
     fun isWideAngleEnabled(): Boolean {
         return _isWideAngleEnabled.value
+    }
+
+    fun isObserverModeEnabled(): Boolean {
+        return _isObserverModeEnabled.value
     }
 
     /**
@@ -255,6 +261,37 @@ object GraphicsSettings {
             localStorage.setItem(WIDE_ANGLE_STORAGE_KEY, enabled.toString())
         } catch (e: Throwable) {
             console.error("Error saving wide angle mode to localStorage", e)
+        }
+    }
+
+    fun setObserverMode(enabled: Boolean) {
+        val oldValue = _isObserverModeEnabled.value
+        _isObserverModeEnabled.value = enabled
+
+        // Save to localStorage
+        saveObserverModeToStorage(enabled)
+
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
+
+    private fun loadObserverModeFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(OBSERVER_MODE_STORAGE_KEY)
+            storedValue == "true"
+        } catch (e: Throwable) {
+            console.error("Error loading observer mode from localStorage", e)
+            false
+        }
+    }
+
+    private fun saveObserverModeToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(OBSERVER_MODE_STORAGE_KEY, enabled.toString())
+        } catch (e: Throwable) {
+            console.error("Error saving observer mode to localStorage", e)
         }
     }
 }
