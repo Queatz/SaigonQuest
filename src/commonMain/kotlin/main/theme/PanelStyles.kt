@@ -10,6 +10,7 @@ import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
@@ -83,5 +84,6 @@ object PanelStyles : StyleSheet() {
 
     val panelHeaderHint by style {
         opacity(0.65)
+        cursor("pointer")
     }
 }

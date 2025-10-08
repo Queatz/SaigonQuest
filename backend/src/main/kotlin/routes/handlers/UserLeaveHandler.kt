@@ -2,9 +2,12 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.json.Json
+import models.ChatMessage
+import models.ChatSenderType
 import models.UserLeaveData
 import models.WebSocketAction
+import repository.ChatRepository
+import repository.UserRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
 import state.WorldStateStore
@@ -14,9 +17,13 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Handler for USER_LEAVE WebSocket messages
  *
- * This handler processes user leave messages and broadcasts them to all clients in the same world.
+ * This handler processes user leave messages and broadcasts them to all clients in the same world,
+ * and also sends a system chat message announcing the leave.
  */
-class UserLeaveHandler : WebSocketHandler {
+class UserLeaveHandler(
+    private val chatRepository: ChatRepository,
+    private val userRepository: UserRepository,
+) : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
         connection: WebSocketConnection,
@@ -48,6 +55,43 @@ class UserLeaveHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_LEAVE", "user: ${correctedLeaveData.userId}, world: $worldId", session)
             WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
+
+            // Also broadcast a system chat message announcing the leave, if not already sent
+            if (!connection.hasAnnouncedLeave) {
+                try {
+                    val username = (
+                        try {
+                            // Prefer lookup by leaveData.userId to be robust
+                            userRepository.getById(correctedLeaveData.userId)?.username
+                        } catch (_: Throwable) {
+                            null
+                        } ?: connection.user.username
+                    ).ifBlank { "Visitor" }
+
+                    val systemChat = ChatMessage(
+                        worldId = worldId,
+                        senderType = ChatSenderType.SYSTEM,
+                        senderId = "",
+                        senderName = "System",
+                        message = "$username left",
+                    )
+                    val savedSystemChat = chatRepository.saveMessage(systemChat)
+                    val chatBroadcast = WebSocketMessage(
+                        action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
+                        data = json.encodeToString(ChatMessage.serializer(), savedSystemChat)
+                    )
+                    val chatBroadcastString = json.encodeToString(WebSocketMessage.serializer(), chatBroadcast)
+                    WebSocketDebug.logMessage("BROADCAST_SYSTEM_CHAT_LEAVE", chatBroadcastString, session)
+                    try {
+                        WebSocketUtils.broadcastToWorld(worldId, chatBroadcastString, activeConnections, session)
+                    } catch (e: Throwable) {
+                        WebSocketDebug.logError("Error broadcasting system leave chat", e, session)
+                    }
+                    connection.hasAnnouncedLeave = true
+                } catch (e: Throwable) {
+                    WebSocketDebug.logError("Error sending system leave chat", e, session)
+                }
+            }
         } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing USER_LEAVE message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)

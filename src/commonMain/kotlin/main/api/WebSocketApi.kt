@@ -9,6 +9,7 @@ import models.WebSocketAction
 import org.w3c.dom.WebSocket
 import utils.json
 import web.html.HtmlTagName.base
+import kotlin.js.Date
 
 // Token for managing WebSocket listeners safely
 data class ListenerToken(
@@ -338,9 +339,9 @@ object WebSocketApi {
                 try {
                     // Send a simple ping message
                     // We use a custom ping format since WebSocket.send() doesn't support the WebSocket ping frame directly in all browsers
-                    val timestamp = js("Date.now()")
+                    val timestamp = Date.now()
                     val pingMessage = WebSocketMessage.fromEnum(
-                        WebSocketAction.USER_JOIN, // Reuse an existing action as a ping
+                        WebSocketAction.HEARTBEAT,
                         "{\"ping\": $timestamp}"
                     )
                     val messageString = ApiClient.json.encodeToString(pingMessage)

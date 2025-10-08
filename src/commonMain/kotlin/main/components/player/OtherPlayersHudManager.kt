@@ -108,6 +108,7 @@ class OtherPlayersHudManager(
 
     fun showChatMessage(userId: String, message: String) {
         if (userId == myUserIdProvider()) return
+        if (message.isBlank()) return
         val hud = getHud(userId)
         val truncated = PlayerUi.truncateChat(message)
         chatMessageTimeouts[userId]?.let { window.clearTimeout(it) }

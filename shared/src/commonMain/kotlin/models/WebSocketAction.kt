@@ -43,4 +43,7 @@ enum class WebSocketAction {
     FRIEND_REQUEST_ACCEPTED,
     FRIEND_REQUEST_DECLINED,
     FRIEND_REQUEST_CANCELLED,
+
+    // Connection health
+    HEARTBEAT,
 }

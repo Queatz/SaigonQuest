@@ -479,5 +479,26 @@ fun Routing.configureChatRoutes() {
                 call.respond(HttpStatusCode.NoContent)
             }
         }
+
+        // Visited worlds management
+        authenticate {
+            get("/visited") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                val items = chatRepository.listVisitedWorlds(userId)
+                call.respond(items)
+            }
+            delete("/visited/{worldId}") {
+                val worldId = call.parameters["worldId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing worldId parameter", code = HttpStatusCode.BadRequest.value)
+                )
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@delete
+                val ok = chatRepository.deleteReadMarker(userId, worldId)
+                if (ok) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound,
+                    ErrorResponse(message = "Visited world not found", code = HttpStatusCode.NotFound.value))
+            }
+        }
     }
 }

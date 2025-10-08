@@ -29,7 +29,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.DELETE_CHAT_MESSAGE -> DeleteChatMessageHandler(chatRepository)
             WebSocketAction.UPDATE_PLAYER_POSITION -> UpdatePlayerPositionHandler()
             WebSocketAction.USER_JOIN -> UserJoinHandler()
-            WebSocketAction.USER_LEAVE -> UserLeaveHandler()
+            WebSocketAction.USER_LEAVE -> UserLeaveHandler(chatRepository, userRepository)
             WebSocketAction.ADD_OBJECT -> NullHandler()
             WebSocketAction.REMOVE_OBJECT -> NullHandler()
             WebSocketAction.OBJECT_UPDATE -> NullHandler()
@@ -55,6 +55,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.FRIEND_REQUEST_ACCEPTED -> NullHandler() // Server -> clients only
             WebSocketAction.FRIEND_REQUEST_DECLINED -> NullHandler() // Server -> clients only
             WebSocketAction.FRIEND_REQUEST_CANCELLED -> NullHandler() // Server -> clients only
+            WebSocketAction.HEARTBEAT -> NullHandler() // Ping/pong no-op
             null -> NullHandler()
         }
     }

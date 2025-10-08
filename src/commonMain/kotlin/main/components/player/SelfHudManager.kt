@@ -48,6 +48,8 @@ class SelfHudManager {
     }
 
     fun showChat(basePosition: Vector3, message: String) {
+        if (message.isBlank()) return
+
         // remove existing chat and temporarily hide status
         clearChat()
         clearStatus()

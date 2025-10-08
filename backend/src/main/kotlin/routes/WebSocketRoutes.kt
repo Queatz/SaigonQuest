@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class WebSocketConnection(
     val session: DefaultWebSocketServerSession,
     val user: User,
+    var hasAnnouncedLeave: Boolean = false,
 ) {
     val userId: String
         get() = user.key
@@ -362,7 +363,7 @@ fun Routing.configureWebSocketRoutes() {
                         
                         // Get the appropriate handler for this action
                         val handler = handlerFactory.getHandler(message.action)
-                        
+
                         // Handle the message
                         handler.handle(message, connection, worldId, activeConnections, this)
                     } catch (e: Throwable) {
@@ -399,27 +400,35 @@ fun Routing.configureWebSocketRoutes() {
             
             broadcastToWorld(worldId, json.encodeToString(leaveMessage), activeConnections)
             WebSocketDebug.logConnection("USER_LEFT", this, worldId, connection.userId)
+            WebSocketDebug.logMessage("USER_LEFT", "connection.hasAnnouncedLeave = ${connection.hasAnnouncedLeave}", this)
 
-            // Send system chat message announcing the leave
-            try {
-                val username = connection.user.username.ifBlank { str("Visitor") }
-                val systemChat = models.ChatMessage(
-                    worldId = worldId,
-                    senderType = models.ChatSenderType.SYSTEM,
-                    senderId = "",
-                    senderName = "System",
-                    message = "$username left",
-                )
-                val savedSystemChat = chatRepository.saveMessage(systemChat)
-                val chatBroadcast = WebSocketMessage(
-                    action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
-                    data = json.encodeToString(models.ChatMessage.serializer(), savedSystemChat)
-                )
-                val chatBroadcastString = json.encodeToString(WebSocketMessage.serializer(), chatBroadcast)
-                WebSocketDebug.logMessage("BROADCAST_SYSTEM_CHAT_LEAVE", chatBroadcastString, this)
-                broadcastToWorld(worldId, chatBroadcastString, activeConnections)
-            } catch (e: Throwable) {
-                WebSocketDebug.logError("Error sending system leave chat", e, this)
+            // Send system chat message announcing the leave (avoid duplicate if already sent via USER_LEAVE handler)
+            if (!connection.hasAnnouncedLeave) {
+                try {
+                    val username = connection.user.username.ifBlank { str("Visitor") }
+                    val systemChat = models.ChatMessage(
+                        worldId = worldId,
+                        senderType = models.ChatSenderType.SYSTEM,
+                        senderId = "",
+                        senderName = "System",
+                        message = "$username left",
+                    )
+                    val savedSystemChat = chatRepository.saveMessage(systemChat)
+                    val chatBroadcast = WebSocketMessage(
+                        action = WebSocketAction.RECEIVE_CHAT_MESSAGE,
+                        data = json.encodeToString(models.ChatMessage.serializer(), savedSystemChat)
+                    )
+                    val chatBroadcastString = json.encodeToString(WebSocketMessage.serializer(), chatBroadcast)
+                    WebSocketDebug.logMessage("BROADCAST_SYSTEM_CHAT_LEAVE", chatBroadcastString, this)
+                    try {
+                        broadcastToWorld(worldId, chatBroadcastString, activeConnections)
+                    } catch (e: Throwable) {
+                        WebSocketDebug.logError("Error broadcasting system leave chat", e, this)
+                    }
+                    connection.hasAnnouncedLeave = true
+                } catch (e: Throwable) {
+                    WebSocketDebug.logError("Error sending system leave chat", e, this)
+                }
             }
 
             // Notify friends that this user went offline (world left)

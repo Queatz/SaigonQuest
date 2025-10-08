@@ -8,6 +8,7 @@ import models.chat.Attachment
 import models.ChatReadMarker
 import models.ChatMessagePin
 import models.chat.CreateChatMessageRequest
+import models.VisitedWorld
 import kotlin.time.Clock
 
 import kotlin.time.Instant
@@ -252,6 +253,36 @@ object ChatApi {
             response.status.isSuccess()
         } catch (e: Throwable) {
             console.error("Error unpinning message", e)
+            false
+        }
+    }
+
+    /**
+     * List visited worlds for the current user
+     */
+    suspend fun listVisitedWorlds(): Array<VisitedWorld> {
+        return try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/chat/visited") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.body<Array<VisitedWorld>>()
+        } catch (e: Throwable) {
+            console.error("Error fetching visited worlds", e)
+            emptyArray()
+        }
+    }
+
+    /**
+     * Delete the visited record (read marker) for a world
+     */
+    suspend fun deleteVisitedWorld(worldId: String): Boolean {
+        return try {
+            val response = ApiClient.httpClient.delete("${ApiConstants.API_BASE_URL}/chat/visited/$worldId") {
+                ApiClient.addAuthHeader(this)
+            }
+            response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error deleting visited world", e)
             false
         }
     }

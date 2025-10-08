@@ -32,7 +32,7 @@ The project uses Gradle for building. The main build tasks are:
 ./gradlew clean
 
 # Build the project
-./gradlew build
+./gradlew assemble
 ```
 
 ### Project Structure

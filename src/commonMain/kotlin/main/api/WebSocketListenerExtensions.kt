@@ -140,6 +140,13 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
                                 console.log("WebSocketApi: Teleport requested to current world ($current); skipping navigation")
                             } else {
                                 console.log("WebSocketApi: Teleporting with fade to world URL: $target")
+                                // Proactively disconnect WS from the current world so the server can announce leave immediately
+                                try {
+                                    WebSocketConnectionManager.disconnect()
+                                    console.log("WebSocketApi: Disconnected WebSocket before teleport navigation")
+                                } catch (e: Throwable) {
+                                    console.warn("WebSocketApi: Failed to disconnect before teleport", e)
+                                }
                                 // Dispatch a global event so Scene can fade out and navigate
                                 val detail: dynamic = object {}
                                 detail.path = "/$target"

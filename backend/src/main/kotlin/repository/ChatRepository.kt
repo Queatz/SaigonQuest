@@ -9,6 +9,7 @@ import models.ChatMessage
 import models.ChatMessagePin
 import models.ChatReadMarker
 import models.World
+import models.VisitedWorld
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -437,5 +438,48 @@ class ChatRepository {
             val result = ArangoConfig.db.query(query, Boolean::class.java, bindVars).toList().firstOrNull()
             result ?: true
         } catch (_: Throwable) { true }
+    }
+
+    /**
+     * List visited worlds for a user, newest first
+     */
+    fun listVisitedWorlds(userId: String): List<VisitedWorld> {
+        val query = """
+            FOR m IN @@markers
+            FILTER m.userId == @userId
+            LET w = DOCUMENT(@@worlds, m.worldId)
+            FILTER w != null
+            SORT m.lastReadTimestamp DESC
+            RETURN {
+                world: w,
+                lastVisited: m.lastReadTimestamp,
+                subscribed: m.subscribed
+            }
+        """.trimIndent()
+        val bindVars = mapOf(
+            "@markers" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+            "@worlds" to CollectionsConfig.WORLDS_COLLECTION,
+            "userId" to userId,
+        )
+        return ArangoConfig.db.query(query, VisitedWorld::class.java, bindVars).toList()
+    }
+
+    /**
+     * Delete a read marker for a user/world (remove visited record)
+     */
+    fun deleteReadMarker(userId: String, worldId: String): Boolean {
+        val query = """
+            FOR m IN @@collection
+            FILTER m.userId == @userId AND m.worldId == @worldId
+            REMOVE m IN @@collection
+            RETURN 1
+        """.trimIndent()
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.CHAT_READ_MARKERS_COLLECTION,
+            "userId" to userId,
+            "worldId" to worldId,
+        )
+        val results = ArangoConfig.db.query(query, Int::class.java, bindVars).toList()
+        return results.isNotEmpty()
     }
 }

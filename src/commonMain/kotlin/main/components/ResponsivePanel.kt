@@ -21,6 +21,7 @@ fun ResponsivePanel(
     isMobile: Boolean,
     onClose: () -> Unit,
     headerRight: (@Composable () -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     if (isMobile) {
@@ -53,7 +54,12 @@ fun ResponsivePanel(
                     // Right side: hint + close
                     Div(attrs = { classes(PanelStyles.panelHeaderRight) }) {
                         if (headerRight != null) {
-                            Div(attrs = { classes(PanelStyles.panelHeaderHint) }) { headerRight() }
+                            Div(attrs = {
+                                classes(PanelStyles.panelHeaderHint)
+                                if (onTitleClick != null) {
+                                    onClick { onTitleClick() }
+                                }
+                            }) { headerRight() }
                         }
                         Button(
                             attrs = {
@@ -82,6 +88,7 @@ fun ResponsivePanel(
             title = title,
             onClose = onClose,
             headerRight = headerRight,
+            onTitleClick = onTitleClick,
             content = content
         )
     }

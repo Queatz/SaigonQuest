@@ -6,6 +6,9 @@ import Translations.str
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import org.jetbrains.compose.web.dom.Text
 
 /**
  * A responsive chat component that adapts between a dialog (mobile) and a side panel (desktop).
@@ -22,6 +25,8 @@ fun Chat(
 ) {
     // Fetch world to get chat longevity
     val longevityState = remember { mutableStateOf<Double?>(null) }
+    var showInfoDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(worldId) {
         try {
             val w = main.api.WorldApi.getWorld(worldId)
@@ -31,24 +36,41 @@ fun Chat(
         }
     }
 
+    val retentionText: String? = run {
+        val days = longevityState.value
+        if (days != null) {
+            if (days <= 0.0) {
+                translated("⏲ Forever")
+            } else {
+                val rounded = kotlin.math.round((days * 100.0)) / 100.0
+                val numberText = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+                "${"⏲"} $numberText ${if (rounded == 1.0) translated("day") else translated("days")}"
+            }
+        } else null
+    }
+
     ResponsivePanel(
-        title = translated("World Chat"),
+        title = translated("World chat"),
         isMobile = isMobile,
         onClose = onClose,
         headerRight = {
-            val days = longevityState.value
-            if (days != null) {
-                val text = if (days <= 0.0) {
-                    translated("⏲ Forever")
-                } else {
-                    val rounded = kotlin.math.round((days * 100.0)) / 100.0
-                    val numberText = if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
-                    "${"⏲"} $numberText ${if (rounded == 1.0) translated("day") else translated("days")}"
-                }
-                org.jetbrains.compose.web.dom.Text(text)
+            val text = retentionText
+            if (text != null) {
+                Text(text)
             }
-        }
+        },
+        onTitleClick = {
+            showInfoDialog = true
+        },
     ) {
         ChatContent(worldId = worldId)
+    }
+
+    if (showInfoDialog) {
+        BasicAlertDialog(
+            title = translated("World chat"),
+            message = "${translated("Messages are kept for")} $retentionText",
+            onClose = { showInfoDialog = false },
+        )
     }
 }

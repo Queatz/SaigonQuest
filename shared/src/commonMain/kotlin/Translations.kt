@@ -118,7 +118,7 @@ vi: Trang cá nhân của tôi
 Set your status
 vi: Đặt trạng thái của bạn
 
-World Chat
+World chat
 vi: Trò chuyện thế giới
 
 Pinned messages
@@ -1355,6 +1355,26 @@ vi: Hủy đăng ký nhận thông báo cho thế giới này?
 Claim your first world!
 vi: Nhận thế giới đầu tiên của bạn!
 
+Messages are kept for
+vi: Tin nhắn được lưu trữ
+
+Visited Worlds
+vi: Thế giới đã ghé thăm
+
+Visited worlds
+vi: Thế giới đã ghé thăm
+
+No visited worlds yet
+vi: Chưa có thế giới đã ghé thăm
+
+Last visited
+vi: Lần cuối ghé thăm
+
+Remove visited world
+vi: Xóa thế giới đã ghé thăm
+
+Are you sure you want to remove this visited world?
+vi: Bạn có chắc chắn muốn xóa thế giới đã ghé thăm này không?
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

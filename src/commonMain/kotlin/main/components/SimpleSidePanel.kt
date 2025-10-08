@@ -19,6 +19,7 @@ fun SimpleSidePanel(
     title: String,
     onClose: () -> Unit,
     headerRight: (@Composable () -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Div(
@@ -42,7 +43,12 @@ fun SimpleSidePanel(
             // Right side: hint + close
             Div(attrs = { classes(PanelStyles.panelHeaderRight) }) {
                 if (headerRight != null) {
-                    Div(attrs = { classes(PanelStyles.panelHeaderHint) }) { headerRight() }
+                    Div(attrs = {
+                        classes(PanelStyles.panelHeaderHint)
+                        if (onTitleClick != null) {
+                            onClick { onTitleClick() }
+                        }
+                    }) { headerRight() }
                 }
                 Button(
                     attrs = {

@@ -1,41 +1,38 @@
 package main.theme
 
 import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.AnimationTimingFunction
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.animation
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
+import org.jetbrains.compose.web.css.delay
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.duration
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
+import org.jetbrains.compose.web.css.ms
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.timingFunction
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.css.animation
-import org.jetbrains.compose.web.css.ms
-import org.jetbrains.compose.web.css.AnimationTimingFunction
-import org.jetbrains.compose.web.css.delay
-import org.jetbrains.compose.web.css.duration
-import org.jetbrains.compose.web.css.timingFunction
 
 object OverlayStyles : StyleSheet() {
     // Keyframes for shout jiggle animation
@@ -60,7 +57,7 @@ object OverlayStyles : StyleSheet() {
     }
 
     val shoutOverlay by style {
-        property("transition", "opacity 300ms ease")
+        property("transition", "opacity 300ms ${AnimationTimingFunction.EaseOut}, scale 300ms ${AnimationTimingFunction.EaseOut}")
         position(Position.Fixed)
         top(0.px)
         left(0.px)
@@ -78,7 +75,7 @@ object OverlayStyles : StyleSheet() {
         color(Theme.colors.onBackground)
         padding(24.px)
         borderRadius(24.px)
-        fontSize(48.px)
+        fontSize(84.px)
         textAlign("center")
         property("box-shadow", "0 8px 24px ${Theme.colors.shadowMedium}")
         animation(shoutIn) {

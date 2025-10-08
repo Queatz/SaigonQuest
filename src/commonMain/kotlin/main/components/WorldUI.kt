@@ -459,7 +459,7 @@ fun WorldUI(
                     shoutOpacity = 1.0
                     scope.launch {
                         try {
-                            delay(5000)
+                            delay(3000)
                             // start fade out
                             shoutOpacity = 0.0
                             delay(350)
@@ -510,6 +510,7 @@ fun WorldUI(
                     classes(OverlayStyles.shoutOverlay)
                     style {
                         property("opacity", shoutOpacity.toString())
+                        property("scale", shoutOpacity.toString())
                     }
                 }
             ) {

@@ -76,6 +76,8 @@ fun PlayerDialog(
     val showCustomizationDialog = remember { mutableStateOf(false) }
     // State to control My Worlds dialog visibility
     val showMyWorldsDialog = remember { mutableStateOf(false) }
+    // State to control Visited Worlds dialog visibility
+    val showVisitedWorldsDialog = remember { mutableStateOf(false) }
     // State to control Media Library dialog visibility
     val showMediaLibraryDialog = remember { mutableStateOf(false) }
     // State to control Settings dialog visibility
@@ -458,7 +460,7 @@ fun PlayerDialog(
                     // My worlds button or first-world CTA
                     run {
                         val hasWorlds = myWorldsCountState.value?.let { it > 0 } ?: true
-                        if (!hasWorlds) {
+                        if (hasWorlds) {
                             Button(
                                 attrs = {
                                     classes(Styles.primaryButton)
@@ -480,6 +482,17 @@ fun PlayerDialog(
                                 Text(" 🎉")
                             }
                         }
+                    }
+
+                    // Visited worlds button
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            style { marginTop(8.px) }
+                            onClick { showVisitedWorldsDialog.value = true }
+                        }
+                    ) {
+                        Translated("Visited Worlds")
                     }
 
                     // Media library button
@@ -586,6 +599,14 @@ fun PlayerDialog(
             if (showMyWorldsDialog.value) {
                 MyWorldsDialog(
                     onClose = { showMyWorldsDialog.value = false },
+                    onNavigate = { path -> router.navigate(path) }
+                )
+            }
+
+            // Render the Visited Worlds dialog when visible
+            if (showVisitedWorldsDialog.value) {
+                VisitedWorldsDialog(
+                    onClose = { showVisitedWorldsDialog.value = false },
                     onNavigate = { path -> router.navigate(path) }
                 )
             }
