@@ -48,6 +48,8 @@ import models.StatusBarsUpdateRequest
 /**
  * API client for user operations
  */
+class UnauthorizedHttpError(message: String = "Unauthorized") : Throwable(message)
+
 object UserApi {
     private const val TOKEN_STORAGE_KEY = "auth_token"
     private const val VISITOR_ID_STORAGE_KEY = "visitor_id"
@@ -79,12 +81,17 @@ object UserApi {
             try {
                 fetchCurrentUser()
             } catch (e: Throwable) {
-                // If fetching current user fails, fall back to visitor
-                val visitorId = getVisitorId()
-                if (visitorId != null) {
-                    createOrGetVisitor(visitorId)
+                // Only fall back to visitor if we are explicitly unauthorized
+                if (e is UnauthorizedHttpError) {
+                    val visitorId = getVisitorId()
+                    if (visitorId != null) {
+                        createOrGetVisitor(visitorId)
+                    } else {
+                        createOrGetVisitor("")
+                    }
                 } else {
-                    createOrGetVisitor("")
+                    // Keep the user logged in: return cached user if available, otherwise rethrow
+                    user ?: throw e
                 }
             }
         } else {
@@ -232,14 +239,17 @@ object UserApi {
             if (response.status.isSuccess()) {
                 return response.body<User>()
             } else {
-                // Token is invalid, clear it
-                clearToken()
-                throw Error("Invalid token")
+                // Only clear token when the server definitively says it's unauthorized
+                if (response.status.value == 401) {
+                    clearToken()
+                    throw UnauthorizedHttpError()
+                }
+                // For other errors (e.g., during server restarts or 5xx), keep token and propagate
+                throw Error("Failed to fetch current user: ${response.status.value}")
             }
         } catch (e: Throwable) {
             println("Error fetching current user: ${e.message}")
-            // Clear token on error
-            clearToken()
+            // Do not clear token on transient errors (e.g., network/server restart)
             throw e
         }
     }

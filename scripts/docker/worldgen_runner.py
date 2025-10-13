@@ -121,7 +121,14 @@ def main():
                 eprint(f"[worldgen] ERROR: Image not found: {img_path}")
                 return 2
             image = Image.open(str(img_path))
-            mesh = worldgen.generate_world(image=image, return_mesh=True)
+            # Treat -i input as an equirectangular pano and avoid generate_pano to save VRAM
+            try:
+                eprint("[worldgen] Using generate_world(pano_image=...) for panoramic input")
+                mesh = worldgen._generate_world(pano_image=image, return_mesh=True)
+            except TypeError as te:
+                # Older API might not accept pano_image; fall back (may be heavier)
+                eprint(f"[worldgen] WARN: pano bypass API not supported ({te}); falling back to image path")
+                mesh = worldgen.generate_world(image=image, return_mesh=True)
     except Exception as ex:
         eprint('[worldgen] ERROR: World generation failed:', ex)
         traceback.print_exc()

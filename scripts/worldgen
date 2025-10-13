@@ -214,6 +214,8 @@ RUN_ARGS+=( -e "RETURN_MESH=1" )
 RUN_ARGS+=( -e "VISER_DISABLE_SERVER=1" )
 RUN_ARGS+=( -e "NO_SERVER=1" )
 RUN_ARGS+=( -e "NO_BROWSER=1" )
+# Mitigate CUDA memory fragmentation (helps avoid OOM)
+RUN_ARGS+=( -e "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True" )
 
 # If CPU was forced, propagate to container
 if [[ $FORCE_CPU -eq 1 ]]; then

@@ -89,13 +89,7 @@ fun ChatMessageDialog(
         content = {
             if (isEditing) {
                 // Edit message form
-                Div(
-                    attrs = {
-                        style {
-                            padding(8.px)
-                        }
-                    }
-                ) {
+                Div {
                     val editPlaceholder = translated("Edit your message")
                     Input(
                         type = InputType.Text,
