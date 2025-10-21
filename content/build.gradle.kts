@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "2.2.0"
-    id("io.ktor.plugin") version "3.2.2"
+    kotlin("plugin.serialization") version "2.2.20"
+    id("io.ktor.plugin") version "3.3.1"
     application
 }
 
@@ -25,19 +25,19 @@ dependencies {
     implementation(project(":shared"))
 
     // Ktor server
-    implementation("io.ktor:ktor-server-core:3.2.2")
-    implementation("io.ktor:ktor-server-netty:3.2.2")
-    implementation("io.ktor:ktor-server-content-negotiation:3.2.2")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
-    implementation("io.ktor:ktor-server-cors:3.2.2")
-    implementation("io.ktor:ktor-server-compression:3.2.2")
-    implementation("io.ktor:ktor-server-caching-headers:3.2.2")
+    implementation("io.ktor:ktor-server-core:3.3.1")
+    implementation("io.ktor:ktor-server-netty:3.3.1")
+    implementation("io.ktor:ktor-server-content-negotiation:3.3.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
+    implementation("io.ktor:ktor-server-cors:3.3.1")
+    implementation("io.ktor:ktor-server-compression:3.3.1")
+    implementation("io.ktor:ktor-server-caching-headers:3.3.1")
 
     // Ktor client for calling API backend
-    implementation("io.ktor:ktor-client-core:3.2.2")
-    implementation("io.ktor:ktor-client-cio:3.2.2")
-    implementation("io.ktor:ktor-client-content-negotiation:3.2.2")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
+    implementation("io.ktor:ktor-client-core:3.3.1")
+    implementation("io.ktor:ktor-client-cio:3.3.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
 
     // ArangoDB
     implementation("com.arangodb:arangodb-java-driver:7.17.0")
@@ -51,7 +51,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.13")
+    implementation("ch.qos.logback:logback-classic:1.5.20")
 }
 
 kotlin {

@@ -1352,6 +1352,75 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.toastErrorBg)
     }
 
+    // QR code styles
+    val qrContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        gap(16.px)
+        padding(0.px, 16.px)
+    }
+
+    // Generic white rounded panel for QR and labels
+    val qrPanel by style {
+        backgroundColor(Color.white)
+        padding(16.px)
+        borderRadius(12.px)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+    }
+
+    // Square area to hold only the QR image
+    val qrSquare by style {
+        width(160.px)
+        property("aspect-ratio", "1/1")
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        backgroundColor(Color.white)
+        borderRadius(8.px)
+    }
+
+    // Pixelated QR image style
+    val qrImage by style {
+        width(100.percent)
+        height(100.percent)
+        property("object-fit", "contain")
+        property("image-rendering", "pixelated")
+        property("image-rendering", "-moz-crisp-edges")
+        property("image-rendering", "crisp-edges")
+    }
+
+    // URL text under the QR in dialogs
+    val qrUrlText by style {
+        property("word-break", "break-all")
+        textAlign("center")
+        margin(0.px)
+    }
+
+    // Always-show QR overlay container positioned above BottomText (bottom-left)
+    val alwaysShowQrContainer by style {
+        position(Position.Absolute)
+        left(16.px)
+        bottom(32.px) // leave space above BottomText
+        property("z-index", "850")
+        // Do not intercept pointer events by default (canvas interactions pass through)
+        property("pointer-events", "none")
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.FlexStart)
+        gap(8.px)
+    }
+
+    // Title inside the white QR panel
+    val qrPanelTitle by style {
+        margin(0.px)
+        textAlign("center")
+        color(Theme.colors.onBackground)
+    }
+
     init {
         "body, html" style {
             margin(0.cssRem)

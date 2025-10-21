@@ -29,21 +29,6 @@ object ApiClient {
         install(ContentNegotiation) {
             json(json)
         }
-        
-        // We'll use a different approach since DefaultRequest plugin might not be available
-        // or has a different implementation in Ktor 3.2.2
-    }
-    
-    /**
-     * Creates a new HttpClient with the same configuration as the shared instance
-     * This is useful when you need a client with different default settings
-     */
-    fun createHttpClient(): HttpClient {
-        return HttpClient {
-            install(ContentNegotiation) {
-                json(json)
-            }
-        }
     }
     
     /**

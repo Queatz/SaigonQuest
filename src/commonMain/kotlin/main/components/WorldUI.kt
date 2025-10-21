@@ -44,10 +44,10 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.P
 import org.w3c.dom.HTMLElement
 import web.console.console
 import web.encoding.atob
-import web.navigator.navigator
 import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
@@ -55,6 +55,8 @@ import web.notifications.requestPermission
 import lib.ScreenshotOptions
 import lib.Tools
 import main.components.chat.ChatStore
+import web.navigator.navigator
+import web.push.PushManager
 import kotlin.js.Date
 
 
@@ -62,6 +64,7 @@ import kotlin.js.Date
  * A component that renders a responsive UI overlay for the 3D world scene.
  * Includes UI elements for both mobile (<=960px) and desktop views.
  */
+@OptIn(ExperimentalWasmJsInterop::class)
 @Composable
 fun WorldUI(
     requestPanel: Flow<SidePanelState>,
@@ -234,7 +237,7 @@ fun WorldUI(
             val regPromise = nav.serviceWorker.registerAsync(swUrl)
             val reg = regPromise.await()
             console.log("[PUSH] Service worker registered", reg)
-            val subExisting = (reg.pushManager.getSubscriptionAsync()).await()
+            val subExisting = ((reg.asDynamic().pushManager as PushManager).getSubscriptionAsync()).await()
             console.log("[PUSH] Existing subscription", subExisting)
             val subscription = if (subExisting == null) {
                 val vapidKey = PushApi.getPublicKey()
@@ -242,7 +245,7 @@ fun WorldUI(
                 val options: dynamic = object {}
                 options.userVisibleOnly = true
                 options.applicationServerKey = urlBase64ToUint8Array(vapidKey)
-                val newSub = (reg.pushManager.subscribeAsync(options)).await()
+                val newSub = ((reg.asDynamic().pushManager as PushManager).subscribeAsync(options)).await()
                 console.log("[PUSH] Created new subscription", newSub)
                 newSub
             } else subExisting
@@ -881,7 +884,7 @@ fun WorldUI(
                             try {
                                 val nav = navigator
                                 val reg = nav.serviceWorker.getRegistrationAsync().await()
-                                val sub = reg?.pushManager?.getSubscriptionAsync()?.await()
+                                val sub = (reg?.asDynamic()?.pushManager as? PushManager)?.getSubscriptionAsync()?.await()
                                 if (sub != null) {
                                     val endpoint = sub.endpoint
                                     try { PushApi.unsubscribe(endpoint) } catch (_: Throwable) {}
@@ -920,6 +923,34 @@ fun WorldUI(
             }
         }
         
+        // Always-show QR code banner above BottomText
+        if (GraphicsSettings.isAlwaysShowQrEnabled()) {
+            val playerPosition = SceneManager.getPlayerController()?.getPlayerPosition()
+            val currentUrl = remember(playerPosition) {
+                val baseUrl = window.location.href
+                if (playerPosition != null) {
+                    val x = (playerPosition.x * 100).toInt() / 100.0
+                    val y = (playerPosition.y * 100).toInt() / 100.0
+                    val z = (playerPosition.z * 100).toInt() / 100.0
+                    "$baseUrl?at=$x,$y,$z"
+                } else baseUrl
+            }
+            val qrDataUrl = remember(currentUrl) {
+                val qrData = lib.Qr.createQR(currentUrl, "gif")
+                lib.BinaryUtils.uint8ArrayToDataUrl(qrData, "image/gif")
+            }
+
+            Div(attrs = { classes(Styles.alwaysShowQrContainer) }) {
+                Div(attrs = { classes(Styles.qrPanel) }) {
+                    // Title above QR inside the same white panel
+                    P(attrs = { classes(Styles.qrPanelTitle) }) { Translated("Scan to join!") }
+                    Div(attrs = { classes(Styles.qrSquare) }) {
+                        QrImage(src = qrDataUrl)
+                    }
+                }
+            }
+        }
+
         // Bottom text with copyright information
         BottomText()
         

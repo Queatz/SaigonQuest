@@ -331,82 +331,88 @@ fun ChatContent(worldId: String) {
                 ) {
                     Text("😀")
                 }
-                
-                // Emote popup
-                if (showEmotePopup && isAuthenticated) {
-                    Div(
-                        attrs = {
-                            style {
-                                position(Position.Absolute)
-                                bottom(45.px)
-                                left(0.px)
-                                width(250.px)
-                                padding(8.px)
-                                backgroundColor(rgba(40, 40, 40, 0.95))
-                                property("border-radius", "8px")
-                                property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.3)")
-                                display(DisplayStyle.Flex)
-                                flexWrap(FlexWrap.Wrap)
-                                property("gap", "8px")
-                                property("z-index", "10")
-                                maxHeight(200.px)
-                                property("overflow-y", "auto")
-                            }
-                            // Close popup when clicking outside
-                            onClick { e ->
-                                e.stopPropagation()
-                            }
-                        }
-                    ) {
-                        // Emote grid
-                        defaultEmotes.forEach { emote ->
-                            Div(
-                                attrs = {
-                                    classes(Styles.emoteButton)
-                                    onClick { e ->
-                                        e.stopPropagation()
-                                        WebSocketApi.sendChatMessage(worldId, emote, shouted = shoutNext) { success ->
-                                            if (success) {
-                                                console.log("Emote sent successfully")
-                                                shoutNext = false
-                                            } else {
-                                                console.error("Failed to send emote: ${WebSocketApi.getLastError()}")
-                                            }
-                                        }
-                                        showEmotePopup = false
-                                    }
+
+                if (messageText.isBlank()) {
+                    // Emote popup
+                    if (showEmotePopup && isAuthenticated) {
+                        Div(
+                            attrs = {
+                                style {
+                                    position(Position.Absolute)
+                                    bottom(45.px)
+                                    left(0.px)
+                                    width(250.px)
+                                    padding(8.px)
+                                    backgroundColor(rgba(40, 40, 40, 0.95))
+                                    property("border-radius", "8px")
+                                    property("box-shadow", "0 4px 8px rgba(0, 0, 0, 0.3)")
+                                    display(DisplayStyle.Flex)
+                                    flexWrap(FlexWrap.Wrap)
+                                    property("gap", "8px")
+                                    property("z-index", "10")
+                                    maxHeight(200.px)
+                                    property("overflow-y", "auto")
                                 }
-                            ) {
-                                Text(emote)
+                                // Close popup when clicking outside
+                                onClick { e ->
+                                    e.stopPropagation()
+                                }
+                            }
+                        ) {
+                            // Emote grid
+                            defaultEmotes.forEach { emote ->
+                                Div(
+                                    attrs = {
+                                        classes(Styles.emoteButton)
+                                        onClick { e ->
+                                            e.stopPropagation()
+                                            WebSocketApi.sendChatMessage(
+                                                worldId,
+                                                emote,
+                                                shouted = shoutNext
+                                            ) { success ->
+                                                if (success) {
+                                                    console.log("Emote sent successfully")
+                                                    shoutNext = false
+                                                } else {
+                                                    console.error("Failed to send emote: ${WebSocketApi.getLastError()}")
+                                                }
+                                            }
+                                            showEmotePopup = false
+                                        }
+                                    }
+                                ) {
+                                    Text(emote)
+                                }
                             }
                         }
                     }
                 }
-            }
-            
-            // Upload image button
-            if (isPlayer) {
-                Div(
-                    attrs = {
-                        style {
-                            width(40.px)
-                            height(40.px)
-                            backgroundColor(rgba(255, 255, 255, 0.1))
-                            borderRadius(8.px)
-                            display(DisplayStyle.Flex)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                            cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                            opacity(if (isAuthenticated) 1.0 else 0.5)
-                        }
-                        onClick {
-                            if (isAuthenticated) {
-                                showUploadDialog = true
+
+                // Upload image button
+                if (isPlayer) {
+                    Div(
+                        attrs = {
+                            style {
+                                width(40.px)
+                                height(40.px)
+                                backgroundColor(rgba(255, 255, 255, 0.1))
+                                borderRadius(8.px)
+                                display(DisplayStyle.Flex)
+                                justifyContent(JustifyContent.Center)
+                                alignItems(AlignItems.Center)
+                                cursor(if (isAuthenticated) "pointer" else "not-allowed")
+                                opacity(if (isAuthenticated) 1.0 else 0.5)
+                            }
+                            onClick {
+                                if (isAuthenticated) {
+                                    showUploadDialog = true
+                                }
                             }
                         }
+                    ) {
+                        Text("🖼️")
                     }
-                ) {
-                    Text("🖼️")
                 }
             }
 

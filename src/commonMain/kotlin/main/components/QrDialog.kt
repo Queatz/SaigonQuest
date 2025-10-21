@@ -121,63 +121,18 @@ fun QrDialog(
             }
         },
         content = {
-            // QR code container
             Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        alignItems(AlignItems.Center)
-                        property("gap", "16px")
-                        padding(0.px, 16.px)
-                    }
-                }
+                attrs = { classes(Styles.qrContainer) }
             ) {
-                // QR code container
                 Div(
-                    attrs = {
-                        style {
-                            backgroundColor(Color.white)
-                            padding(16.px)
-                            property("border-radius", "8px")
-                            width(100.percent)
-                            property("max-width", "300px")
-                            property("aspect-ratio", "1/1")
-                            display(DisplayStyle.Flex)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                        }
-                    }
+                    attrs = { classes(Styles.qrSquare) }
                 ) {
-                    // Display QR code as image with pixelated rendering
-                    Img(
-                        src = qrDataUrl,
-                        attrs = {
-                            style {
-                                width(100.percent)
-                                height(100.percent)
-                                property("object-fit", "contain")
-                                // Add pixelated image rendering (linear interpolation disabled)
-                                property("image-rendering", "pixelated")
-                                property("image-rendering", "-moz-crisp-edges")
-                                property("image-rendering", "crisp-edges")
-                            }
-                        }
-                    )
+                    QrImage(src = qrDataUrl)
                 }
-                
-                // URL text
+
                 P(
-                    attrs = {
-                        style {
-                            property("word-break", "break-all")
-                            property("text-align", "center")
-                            margin(0.px)
-                        }
-                    }
-                ) {
-                    Text(currentUrl)
-                }
+                    attrs = { classes(Styles.qrUrlText) }
+                ) { Text(currentUrl) }
             }
         },
         actions = {

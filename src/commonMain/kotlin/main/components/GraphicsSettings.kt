@@ -19,6 +19,7 @@ object GraphicsSettings {
     private const val PRETTY_GRAPHICS_STORAGE_KEY = "saigon_quest_pretty_graphics"
     private const val WIDE_ANGLE_STORAGE_KEY = "saigon_quest_wide_angle"
     private const val OBSERVER_MODE_STORAGE_KEY = "saigon_quest_observer_mode"
+    private const val ALWAYS_SHOW_QR_STORAGE_KEY = "saigon_quest_always_show_qr"
 
     /**
      * State to track whether low graphics mode is enabled.
@@ -34,6 +35,7 @@ object GraphicsSettings {
 
     val _isWideAngleEnabled = mutableStateOf(loadWideAngleFromStorage())
     val _isObserverModeEnabled = mutableStateOf(loadObserverModeFromStorage())
+    val _isAlwaysShowQrEnabled = mutableStateOf(loadAlwaysShowQrFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -292,6 +294,40 @@ object GraphicsSettings {
             localStorage.setItem(OBSERVER_MODE_STORAGE_KEY, enabled.toString())
         } catch (e: Throwable) {
             console.error("Error saving observer mode to localStorage", e)
+        }
+    }
+
+    // Always-show QR flag
+    fun isAlwaysShowQrEnabled(): Boolean {
+        return _isAlwaysShowQrEnabled.value
+    }
+
+    fun setAlwaysShowQr(enabled: Boolean) {
+        val oldValue = _isAlwaysShowQrEnabled.value
+        _isAlwaysShowQrEnabled.value = enabled
+        // Save to localStorage
+        saveAlwaysShowQrToStorage(enabled)
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
+
+    private fun loadAlwaysShowQrFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(ALWAYS_SHOW_QR_STORAGE_KEY)
+            storedValue == "true"
+        } catch (e: Throwable) {
+            console.error("Error loading always-show-QR setting from localStorage", e)
+            false
+        }
+    }
+
+    private fun saveAlwaysShowQrToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(ALWAYS_SHOW_QR_STORAGE_KEY, enabled.toString())
+        } catch (e: Throwable) {
+            console.error("Error saving always-show-QR setting to localStorage", e)
         }
     }
 }

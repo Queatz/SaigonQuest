@@ -61,6 +61,12 @@ vi: Đóng
 Settings
 vi: Cài đặt
 
+Always show QR code
+vi: Luôn hiển thị mã QR
+
+Scan to join!
+vi: Quét để tham gia!
+
 Change Password
 vi: Đổi mật khẩu
 

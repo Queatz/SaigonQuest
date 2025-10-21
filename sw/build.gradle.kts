@@ -27,7 +27,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 // Typed web API wrappers (ServiceWorker, Notifications, Push)
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.13")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.10.10")
             }
         }
     }

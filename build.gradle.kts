@@ -2,8 +2,8 @@ import org.codehaus.groovy.ast.tools.GeneralUtils.args
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.2.0"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.2.0"
+    kotlin("plugin.serialization") version "2.2.20"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
     id("org.jetbrains.compose")
 }
 
@@ -25,7 +25,7 @@ defaultTasks("run")
 
 // Prepare service-worker.js from ':sw' for frontend: copies to the correct folder for dev or prod
 tasks.register<Copy>("prepareDevServiceWorker") {
-    dependsOn(":sw:jsBrowserDevelopmentWebpack")
+    dependsOn(":sw:jsBrowserDevelopmentExecutableDistribution")
     // Compute dev/prod at execution time; avoid capturing other Project instances
     val variant = "developmentExecutable"
     val swFile = rootProject.layout.projectDirectory
@@ -57,7 +57,7 @@ tasks.register<Copy>("prepareProdServiceWorker") {
 tasks.register("devApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn("prepareDevServiceWorker", "jsBrowserDevelopmentRun")
+    dependsOn("prepareDevServiceWorker", ":jsBrowserDevelopmentRun")
 }
 
 // Convenience task: build SW and start frontend dev server
@@ -72,7 +72,7 @@ kotlin {
         browser {
             runTask {
                 args("-t")
-                devServer = devServer.copy(port = 4080, open = true)
+                devServerProperty.set(devServerProperty.get().copy(port = 4080, open = true))
             }
             commonWebpackConfig {
                 outputFileName = "saigon-quest.js"
@@ -100,19 +100,19 @@ kotlin {
                 implementation(compose.ui)
                 // Removed compose.components.resources as it's causing runtime errors and not directly used
 
-                implementation("app.softwork:routing-compose:0.4.0")
-                implementation(npm("marked", "15.0.7"))
-                implementation(npm("@paulmillr/qr", "0.2.0"))
-                implementation(npm("@babylonjs/core", "8.27.0"))
-                implementation(npm("@babylonjs/materials", "8.27.0"))
-                implementation(npm("@babylonjs/loaders", "8.27.0"))
+                implementation("app.softwork:routing-compose:0.5.0")
+                implementation(npm("marked", "16.4.1"))
+                implementation(npm("qr", "0.5.2"))
+                implementation(npm("@babylonjs/core", "8.32.2"))
+                implementation(npm("@babylonjs/materials", "8.32.2"))
+                implementation(npm("@babylonjs/loaders", "8.32.2"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.7.15")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.10.10")
 
                 // Ktor client
-                implementation("io.ktor:ktor-client-core:3.2.2")
-                implementation("io.ktor:ktor-client-content-negotiation:3.2.2")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.2")
+                implementation("io.ktor:ktor-client-core:3.3.1")
+                implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
@@ -126,4 +126,16 @@ kotlin {
 
         val jsMain by getting
     }
+}
+
+// Ensure correct task order between service worker preparation and JS compile sync tasks
+// This fixes Gradle's implicit dependency validation by making the compile sync task
+// depend on the task that provides files in build/processedResources/js/main.
+tasks.named("jsDevelopmentExecutableCompileSync") {
+    dependsOn("prepareDevServiceWorker")
+}
+
+// Also wire the production variant for consistency
+tasks.named("jsProductionExecutableCompileSync") {
+    dependsOn("prepareProdServiceWorker")
 }

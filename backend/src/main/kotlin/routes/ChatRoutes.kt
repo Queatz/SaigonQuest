@@ -68,7 +68,11 @@ fun Routing.configureChatRoutes() {
 
             // Update last read
             if (userId != null) {
-                chatRepository.updateLastReadTimestamp(userId, worldId, Clock.System.now())
+                chatRepository.updateLastReadTimestamp(
+                    userId = userId,
+                    worldId = worldId,
+                    timestamp = Clock.System.now()
+                )
             }
             
             // Return messages
@@ -118,14 +122,11 @@ fun Routing.configureChatRoutes() {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
                 
-                // Get timestamp from request or use current time
-                val timestamp = call.request.queryParameters["timestamp"]?.toLongOrNull() ?: System.currentTimeMillis()
-                
                 // Create a ChatReadMarker object
                 val readMarker = ChatReadMarker(
                     userId = userId,
                     worldId = worldId,
-                    lastReadTimestamp = Instant.fromEpochMilliseconds(timestamp)
+                    lastReadTimestamp = Clock.System.now()
                 )
                 
                 // Update last read timestamp using the ChatReadMarker object

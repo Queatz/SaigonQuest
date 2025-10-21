@@ -17,6 +17,7 @@ fun SettingsDialog(
     val showChangePassword = remember { mutableStateOf(false) }
     val wideAngle = remember { mutableStateOf(GraphicsSettings.isWideAngleEnabled()) }
     val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
+    val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
 
     BaseDialog(
         onClose = onClose,
@@ -68,6 +69,20 @@ fun SettingsDialog(
                 Translated("Observer mode: ${if (observerMode.value) translated("On") else translated("Off")}")
             }
 
+            // Always show QR code
+            Button(
+                attrs = {
+                    classes(Styles.secondaryButton)
+                    style { marginTop(16.px) }
+                    onClick {
+                        alwaysShowQr.value = !alwaysShowQr.value
+                        GraphicsSettings.setAlwaysShowQr(alwaysShowQr.value)
+                    }
+                }
+            ) {
+                Translated("Always show QR code: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
+            }
+
             // Change Password
             Button(
                 attrs = {
@@ -94,4 +109,3 @@ fun SettingsDialog(
         }
     )
 }
-
