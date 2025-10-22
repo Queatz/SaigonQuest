@@ -1,5 +1,6 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,9 +18,14 @@ import models.Rotation
 import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -160,7 +166,14 @@ fun ObjectEditorDialog(
         maxWidth = "500px",
         content = {
             // Form content
-            Div {
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        flexDirection(FlexDirection.Column)
+                    }
+                }
+            ) {
                 // Error message
                 if (errorMessage.isNotEmpty()) {
                     P(
@@ -189,13 +202,20 @@ fun ObjectEditorDialog(
                 }
                 
                 // Asset field
-                Div {
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                        }
+                    }
+                ) {
                     P {
-                        Text("Asset")
+                        Translated("Asset")
                     }
                     Div {
                         Button(attrs = {
-                            classes(Styles.baseDialogButtonSecondary)
+                            classes(Styles.baseDialogButtonPrimary)
 
                             style {
                                 marginBottom(8.px)
@@ -203,7 +223,7 @@ fun ObjectEditorDialog(
 
                             onClick { showCollectionBrowser = true }
                         }) {
-                            Text("Browse")
+                            Translated("Browse")
                         }
                     }
                 }

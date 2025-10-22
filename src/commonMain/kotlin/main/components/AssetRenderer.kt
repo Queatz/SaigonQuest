@@ -50,7 +50,9 @@ fun AssetRenderer(
         }
     }
     // Simple caption
-    P(attrs = {
+    Div(attrs = {
         classes(AssetStyles.assetCaption)
-    }) { Text(result.title ?: result.asset!!.file) }
+    }) {
+        Text(result.title ?: result.asset!!.file)
+    }
 }

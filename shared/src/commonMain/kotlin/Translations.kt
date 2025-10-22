@@ -373,6 +373,9 @@ vi: khỏi danh sách bạn bè không?
 Message
 vi: Tin nhắn
 
+Message
+vi: Tin nhắn
+
 Message was deleted
 vi: Tin nhắn đã bị xóa
 

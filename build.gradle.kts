@@ -1,4 +1,3 @@
-import org.codehaus.groovy.ast.tools.GeneralUtils.args
 
 plugins {
     kotlin("multiplatform")
@@ -18,7 +17,6 @@ tasks.register("run") {
     group = "application"
     description = "Runs the Kotlin/JS webpack dev server"
     dependsOn("jsBrowserDevelopmentRun")
-    args("-t")
 }
 
 defaultTasks("run")
@@ -26,19 +24,29 @@ defaultTasks("run")
 // Prepare service-worker.js from ':sw' for frontend: copies to the correct folder for dev or prod
 tasks.register<Copy>("prepareDevServiceWorker") {
     dependsOn(":sw:jsBrowserDevelopmentExecutableDistribution")
-    // Compute dev/prod at execution time; avoid capturing other Project instances
+
     val variant = "developmentExecutable"
     val swFile = rootProject.layout.projectDirectory
         .file("sw/build/dist/js/$variant/service-worker.js")
-        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
 
     val destDir = layout.buildDirectory.dir("dist/js/$variant")
-    from(swFile)
-    into(destDir)
     val destDir2 = layout.buildDirectory.dir("processedResources/js/main")
+
+    // Defer existence check to execution time so the dependsOn task can produce it first
+    doFirst {
+        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
+    }
+
+    // Copy to both destinations
+    into(destDir)
     from(swFile)
+
     into(destDir2)
-    println("Copied service-worker.js to $destDir and $destDir2 (mode=dev)")
+    from(swFile)
+
+    doLast {
+        println("Copied service-worker.js to $destDir and $destDir2 (mode=dev)")
+    }
 }
 
 tasks.register<Copy>("prepareProdServiceWorker") {
@@ -46,11 +54,20 @@ tasks.register<Copy>("prepareProdServiceWorker") {
     val variant = "productionExecutable"
     val swFile = rootProject.layout.projectDirectory
         .file("sw/build/dist/js/$variant/service-worker.js")
-        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
+
     val destDir = layout.buildDirectory.dir("dist/js/$variant")
-    from(swFile)
+
+    // Defer existence check to execution time so the dependsOn task can produce it first
+    doFirst {
+        if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
+    }
+
     into(destDir)
-    println("Copied service-worker.js to $destDir (mode=prod)")
+    from(swFile)
+
+    doLast {
+        println("Copied service-worker.js to $destDir (mode=prod)")
+    }
 }
 
 // Convenience task: build SW and start frontend dev server
@@ -71,7 +88,6 @@ kotlin {
     js(IR) {
         browser {
             runTask {
-                args("-t")
                 devServerProperty.set(devServerProperty.get().copy(port = 4080, open = true))
             }
             commonWebpackConfig {

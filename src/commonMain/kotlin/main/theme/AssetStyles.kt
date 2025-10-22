@@ -21,6 +21,7 @@ import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.flexWrap
+import org.jetbrains.compose.web.css.marginTop
 
 /**
  * Styles dedicated to asset/admin related UI pieces such as the asset browser and renderer.
@@ -64,6 +65,7 @@ object AssetStyles : StyleSheet() {
     val assetCaption by style {
         textAlign("center")
         lineHeight(20.px)
+        marginTop(0.px)
         marginBottom(4.px)
         color(Theme.colors.onBackground)
 

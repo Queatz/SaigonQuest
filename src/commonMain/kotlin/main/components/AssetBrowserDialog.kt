@@ -23,6 +23,10 @@ import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import Translations.str
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
 
 @Composable
 fun AssetBrowserDialog(
@@ -137,7 +141,14 @@ fun AssetBrowserDialog(
                             classes(main.theme.AssetStyles.assetGrid)
                         }) {
                             for (r in results) {
-                                Div {
+                                Div(
+                                    attrs = {
+                                        style {
+                                            display(DisplayStyle.Flex)
+                                            flexDirection(FlexDirection.Column)
+                                        }
+                                    }
+                                ) {
                                     AssetRenderer(result = r)
                                     Button(attrs = {
                                         classes(Styles.baseDialogButtonPrimary)

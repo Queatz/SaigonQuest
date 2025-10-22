@@ -63,7 +63,7 @@ import org.jetbrains.compose.web.css.borderRadius
 /**
  * Content for the chat panel/dialog.
  * This component contains the shared UI elements for both mobile and desktop views.
- * 
+ *
  * @param worldId The ID of the world to get messages for
  */
 @Composable
@@ -81,21 +81,21 @@ fun ChatContent(worldId: String) {
     var isSubscribed by remember { mutableStateOf(true) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
     var willSubscribe by remember { mutableStateOf<Boolean?>(null) }
-    
+
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
-    
+
     // Reference to the chat input element for auto-focus
     val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
-    
+
     // Function to handle typing status changes
     val updateTypingStatus = { newIsTyping: Boolean ->
         console.log("[TYPING] updateTypingStatus called with newIsTyping=$newIsTyping, current isTyping=$isTyping")
-        
+
         if (isTyping != newIsTyping) {
             console.log("[TYPING] Typing status changing from $isTyping to $newIsTyping")
             isTyping = newIsTyping
-            
+
             // Send typing status update
             if (isAuthenticated && isWebSocketConnected) {
                 console.log("[TYPING] User is authenticated and WebSocket is connected, sending typing status")
@@ -110,7 +110,7 @@ fun ChatContent(worldId: String) {
             console.log("[TYPING] Typing status unchanged: $isTyping")
         }
     }
-    
+
     // Default emotes
     val defaultEmotes = remember {
         listOf(
@@ -119,7 +119,7 @@ fun ChatContent(worldId: String) {
             "👍", "👎", "👏", "🙌", "🤝", "👋", "🤘", "✌️", "🤞", "🤟"
         )
     }
-    
+
     // Check if user is authenticated
     LaunchedEffect(Unit) {
         try {
@@ -131,7 +131,7 @@ fun ChatContent(worldId: String) {
             isAuthenticated = false
         }
     }
-    
+
     // Fetch subscription status when authenticated
     LaunchedEffect(isAuthenticated, worldId) {
         if (isAuthenticated && worldId.isNotEmpty()) {
@@ -147,20 +147,22 @@ fun ChatContent(worldId: String) {
     // Check WebSocket connection status periodically using ConnectionManager
     LaunchedEffect(Unit) {
         while (true) {
-            isWebSocketConnected = WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED
+            isWebSocketConnected =
+                WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED
             lastError = WebSocketApi.getLastError()
-            
+
             // If not connected and we have a worldId, try to connect using ConnectionManager
-            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.DISCONNECTED && 
-                worldId.isNotEmpty()) {
+            if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.DISCONNECTED &&
+                worldId.isNotEmpty()
+            ) {
                 console.log("WebSocket not connected, attempting to connect to world: $worldId")
                 WebSocketConnectionManager.connectToWorld(worldId)
             }
-            
+
             delay(10000) // Check every 10 seconds
         }
     }
-    
+
     // Typing timeout coroutine
     LaunchedEffect(isTyping) {
         if (isTyping) {
@@ -172,14 +174,14 @@ fun ChatContent(worldId: String) {
             console.log("[TYPING] Typing timeout coroutine not started (isTyping=false)")
         }
     }
-    
+
     // Clean up typing status on dispose
     DisposableEffect(Unit) {
         console.log("[TYPING] Setting up DisposableEffect for cleanup")
-        
+
         onDispose {
             console.log("[TYPING] DisposableEffect onDispose triggered")
-            
+
             // Send typing stop if currently typing
             if (isTyping) {
                 console.log("[TYPING] User was typing when component disposed, sending typing=false")
@@ -192,7 +194,7 @@ fun ChatContent(worldId: String) {
             }
         }
     }
-    
+
     LaunchedEffect(chatInputRef) {
         try {
             delay(100)
@@ -201,7 +203,7 @@ fun ChatContent(worldId: String) {
             console.error("Error focusing chat input", e)
         }
     }
-    
+
     // Subscription bell header
     Div(
         attrs = {
@@ -266,7 +268,7 @@ fun ChatContent(worldId: String) {
             worldId = worldId,
         )
     }
-    
+
     // Chat input area
     Div(
         attrs = {
@@ -298,41 +300,41 @@ fun ChatContent(worldId: String) {
                 Text(lastError ?: str("Connecting to chat server..."))
             }
         } else {
-            // Emote button with popup
-            Div(
-                attrs = {
-                    style {
-                        position(Position.Relative)
-                        property("flex-shrink", "0")
-                    }
-                }
-            ) {
-                // Emote button
+            if (messageText.isBlank()) {
+                // Emote button with popup
                 Div(
                     attrs = {
                         style {
-                            width(40.px)
-                            height(40.px)
-                            backgroundColor(rgba(255, 255, 255, 0.1))
-                            borderRadius(8.px)
-                            display(DisplayStyle.Flex)
-                            justifyContent(JustifyContent.Center)
-                            alignItems(AlignItems.Center)
-                            cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                            opacity(if (isAuthenticated) 1.0 else 0.5)
-                        }
-                        onClick {
-                            if (isAuthenticated) {
-                                // Toggle emote popup
-                                showEmotePopup = !showEmotePopup
-                            }
+                            position(Position.Relative)
+                            property("flex-shrink", "0")
                         }
                     }
                 ) {
-                    Text("😀")
-                }
+                    // Emote button
+                    Div(
+                        attrs = {
+                            style {
+                                width(40.px)
+                                height(40.px)
+                                backgroundColor(rgba(255, 255, 255, 0.1))
+                                borderRadius(8.px)
+                                display(DisplayStyle.Flex)
+                                justifyContent(JustifyContent.Center)
+                                alignItems(AlignItems.Center)
+                                cursor(if (isAuthenticated) "pointer" else "not-allowed")
+                                opacity(if (isAuthenticated) 1.0 else 0.5)
+                            }
+                            onClick {
+                                if (isAuthenticated) {
+                                    // Toggle emote popup
+                                    showEmotePopup = !showEmotePopup
+                                }
+                            }
+                        }
+                    ) {
+                        Text("😀")
+                    }
 
-                if (messageText.isBlank()) {
                     // Emote popup
                     if (showEmotePopup && isAuthenticated) {
                         Div(
@@ -440,7 +442,7 @@ fun ChatContent(worldId: String) {
             ) {
                 Text("📣")
             }
-            
+
             // Text input
             TextInput(
                 value = messageText,
@@ -452,12 +454,12 @@ fun ChatContent(worldId: String) {
                         property("border", "0")
                         opacity(if (isAuthenticated) 1.0 else 0.7)
                     }
-                    placeholder(if (isAuthenticated) str("Type a message...") else str("Sign in to chat"))
-                    onInput { 
+                    placeholder(if (isAuthenticated) str("Message") else str("Sign in to chat"))
+                    onInput {
                         val newValue = it.value
                         console.log("[TYPING] Input changed: '${messageText}' -> '${newValue}'")
                         messageText = newValue
-                        
+
                         // Update typing status when input changes
                         if (isAuthenticated && newValue.isNotEmpty()) {
                             console.log("[TYPING] Input not empty and user authenticated, setting typing status to true")
@@ -487,11 +489,11 @@ fun ChatContent(worldId: String) {
                                         console.log("Message sent successfully via Enter key")
                                         messageText = ""
                                         shoutNext = false
-                                        
+
                                         // Set typing status to false when message is sent
                                         console.log("[TYPING] Message sent via Enter key, setting typing status to false")
                                         updateTypingStatus(false)
-                                        
+
                                         // Mark messages as read when sending a message
                                         scope.launch {
                                             try {
@@ -546,7 +548,7 @@ fun ChatContent(worldId: String) {
                         }
                     }
                     // Use ref for auto-focus
-                    ref { element -> 
+                    ref { element ->
                         chatInputRef.value = element
                         onDispose {
                             chatInputRef.value = null
@@ -554,7 +556,7 @@ fun ChatContent(worldId: String) {
                     }
                 }
             )
-            
+
             // Send button
             Button(
                 attrs = {
@@ -580,11 +582,11 @@ fun ChatContent(worldId: String) {
                                     console.log("Message sent successfully")
                                     messageText = ""
                                     shoutNext = false
-                                    
+
                                     // Set typing status to false when message is sent
                                     console.log("[TYPING] Message sent via Send button, setting typing status to false")
                                     updateTypingStatus(false)
-                                    
+
                                     // Mark messages as read when sending a message
                                     scope.launch {
                                         try {
