@@ -674,7 +674,7 @@ object Styles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         property("flex-grow", "1")
         // Only side/bottom padding so no content scrolls under top padding
-        property("padding", "0 16px 16px")
+        property("padding", "0 16px 0")
         // Prevent outer from scrolling; only inner container scrolls
         property("overflow", "hidden")
     }
@@ -798,6 +798,10 @@ object Styles : StyleSheet() {
         margin(0.px)
         color(Theme.colors.onBackground)
         dark(self) { color(Theme.colors.onBackgroundDark) }
+
+        desc(self, selector("p")) style {
+            margin(0.px)
+        }
     }
 
     val chatMessageContentDeleted by style {

@@ -21,6 +21,7 @@ import main.api.updateChatMessage
 import main.components.common.Spinner
 import main.components.Translated
 import main.components.ImageDialog
+import main.components.Md
 import main.theme.Styles
 import main.utils.TimeUtils.formatTimestamp
 import models.ChatMessage
@@ -409,7 +410,7 @@ fun ChatMessageItem(
             if (message.deleted) {
                 Translated("Deleted")
             } else {
-                Text(message.message)
+                Md(message.message)
             }
         }
 

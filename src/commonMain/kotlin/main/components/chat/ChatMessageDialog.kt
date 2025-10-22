@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.Md
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -123,7 +124,7 @@ fun ChatMessageDialog(
                         }
                     }
                 ) {
-                    Text(message.message)
+                    Md(message.message)
                 }
             }
         },

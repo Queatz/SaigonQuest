@@ -13,6 +13,7 @@ fun ImageDialog(
     BaseDialog(
         onClose = onClose,
         title = null,
+        showCloseButton = false,
         maxWidth = "900px",
         content = {
             Div({
