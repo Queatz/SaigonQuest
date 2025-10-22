@@ -45,13 +45,9 @@ fun NotificationLayout(
             classes(NotificationStyles.notificationLayoutContainer)
             
             // Adjust position when side panel is open on desktop
-            if (!isMobile && (currentPanel == SidePanelState.Chat || 
-                             currentPanel == SidePanelState.WorldEdit || 
-                             currentPanel == SidePanelState.Notifications || 
-                             currentPanel == SidePanelState.ObjectsPanel ||
-                             currentPanel == SidePanelState.Friends)) {
+            if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
                 style {
-                    property("transform", "translateX(-160px)") // Half of the panel width (320px)
+                    property("transform", "translateX(-180px)") // Half of the panel width (360px)
                 }
             }
         }

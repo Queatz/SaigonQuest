@@ -121,12 +121,12 @@ class Character(
     private fun computeSkinColor(tone: Float): Color3 {
         val t = tone.coerceIn(0f, 1f)
         // Define light and dark skin anchor colors (RGB, linear-ish)
-        val lightR = 1.00f;
-        val lightG = 0.86f;
-        val lightB = 0.75f
-        val darkR = 0.36f;
-        val darkG = 0.24f;
-        val darkB = 0.17f
+        val lightR = 1.00f //1.00f
+        val lightG = 1.00f //0.86f
+        val lightB = 1.00f //0.75f
+        val darkR = 0.36f / 10f
+        val darkG = 0.24f / 10f
+        val darkB = 0.17f / 10f
         val r = lightR + (darkR - lightR) * t
         val g = lightG + (darkG - lightG) * t
         val b = lightB + (darkB - lightB) * t
@@ -138,9 +138,10 @@ class Character(
         val mesh = characterMesh ?: return
         val material = mesh.material as? PBRMaterial ?: return
         material.albedoColor = computeSkinColor(skinTone)
+        material.emissiveColor = computeSkinColor(skinTone)
     }
 
-    override fun render(scene: Scene): Node? {
+    override fun render(scene: Scene): Node {
         // Store the scene reference for re-rendering
         currentScene = scene
 

@@ -51,9 +51,9 @@ fun WorldTitle(
                 position(Position.Absolute)
                 top(20.px)
                 // Adjust left position when any side panel is open on desktop
-                if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
-                    // Center in the remaining space (excluding the 320px side panel)
-                    property("left", "calc(50% - 160px)")
+                if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
+                    // Center in the remaining space (excluding the 360px side panel)
+                    property("left", "calc(50% - 180px)")
                 } else {
                     left(50.percent)
                 }

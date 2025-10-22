@@ -9,7 +9,10 @@ import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
@@ -31,10 +34,11 @@ object PanelStyles : StyleSheet() {
     // Panel styles
     val sidePanel by style {
         position(Position.Absolute)
-        top(0.px)
-        right(0.px)
+        top(1.cssRem)
+        bottom(1.cssRem)
+        right(1.cssRem)
         width(320.px)
-        height(100.vh)
+        borderRadius(1.cssRem)
         backgroundColor(Theme.colors.panelGlass)
         color(Theme.colors.onBackground)
         display(DisplayStyle.Flex)

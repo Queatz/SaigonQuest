@@ -967,6 +967,9 @@ vi: Yêu cầu số dư đang chờ
 Send system notification
 vi: Gửi thông báo hệ thống
 
+System
+vi: Hệ thống
+
 Assets
 vi: Tài nguyên
 
@@ -1129,6 +1132,9 @@ vi: Số lượng
 
 Chat history
 vi: Lịch sử trò chuyện
+
+Chat
+vi: Trò chuyện
 
 Expire messages
 vi: Hết hạn tin nhắn
@@ -1384,6 +1390,12 @@ vi: Xóa thế giới đã ghé thăm
 
 Are you sure you want to remove this visited world?
 vi: Bạn có chắc chắn muốn xóa thế giới đã ghé thăm này không?
+
+Observer mode
+vi: Chế độ quan sát
+
+Wide angle
+vi: Chế độ rộng
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

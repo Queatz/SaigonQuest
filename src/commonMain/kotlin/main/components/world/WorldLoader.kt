@@ -307,8 +307,7 @@ class WorldLoader(private val scene: Scene) {
             direction = Vector3(0f, 1f, 0f),
             scene = scene
         ).apply {
-            this.intensity = 0.5f  // Further reduced intensity to make directional light shadows more visible
-            this.groundColor = Color3(0.1f, 0.1f, 0.15f)  // Slightly blue ground color for better contrast
+            this.intensity = 1f  // Further reduced intensity to make directional light shadows more visible
             println("[DEBUG] Created hemispheric light with intensity ${this.intensity}")
         }
 
@@ -772,7 +771,7 @@ class WorldLoader(private val scene: Scene) {
         // Update hemispheric light
         try {
             if (hemi != null) {
-                val hemiIntensity = if (isNight) 4f else .5f
+                val hemiIntensity = if (isNight) 2f else 1f
                 hemi.intensity = hemiIntensity
                 if (isNight) {
                     updateHemisphericLightColor(nightHemi)
@@ -798,7 +797,7 @@ class WorldLoader(private val scene: Scene) {
 
                     // Intensity scales with altitude
                     val intensity = (0.3f + 0.7f * t)
-                    dir.intensity = intensity * 2f
+                    dir.intensity = intensity
 
                     // Color transitions during sunrise/sunset
                     dir.diffuse = sunColor

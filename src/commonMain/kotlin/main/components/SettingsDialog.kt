@@ -7,6 +7,7 @@ import main.theme.Styles
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun SettingsDialog(
@@ -50,7 +51,7 @@ fun SettingsDialog(
                     }
                 }
             ) {
-                Translated("Wide angle: ${if (wideAngle.value) translated("On") else translated("Off")}")
+                Text("${translated("Wide angle")}: ${if (wideAngle.value) translated("On") else translated("Off")}")
             }
 
             // Observer Mode
@@ -66,7 +67,7 @@ fun SettingsDialog(
                     }
                 }
             ) {
-                Translated("Observer mode: ${if (observerMode.value) translated("On") else translated("Off")}")
+                Text("${translated("Observer mode")}: ${if (observerMode.value) translated("On") else translated("Off")}")
             }
 
             // Always show QR code
@@ -80,7 +81,7 @@ fun SettingsDialog(
                     }
                 }
             ) {
-                Translated("Always show QR code: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
+                Text("${translated("Always show QR code")}: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
             }
 
             // Change Password

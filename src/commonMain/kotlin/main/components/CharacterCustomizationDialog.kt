@@ -151,8 +151,8 @@ fun CharacterCustomizationDialog(
                     Div(
                         attrs = {
                             style {
-                                display(DisplayStyle.Companion.Flex)
-                                alignItems(AlignItems.Companion.Center)
+                                display(DisplayStyle.Flex)
+                                alignItems(AlignItems.Center)
                                 marginTop(8.px)
                             }
                         }

@@ -21,6 +21,6 @@ val SidePanelState.isLayoutAffectingPanel: Boolean
  * @param isMobile State boolean indicating if the device is mobile
  * @return True if a layout-affecting panel is open and the device is not mobile
  */
-fun isLayoutAdjustmentNeeded(currentPanel: SidePanelState, isMobile: State<Boolean>): Boolean {
-    return currentPanel.isLayoutAffectingPanel && !isMobile.value
+fun isLayoutAdjustmentNeeded(currentPanel: SidePanelState, isMobile: Boolean): Boolean {
+    return currentPanel.isLayoutAffectingPanel && !isMobile
 }

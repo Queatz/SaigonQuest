@@ -129,12 +129,12 @@ class CameraController(private val scene: Scene) {
         // This will configure bloom, DOF, grain, image processing, tone mapping, and SSAO
         updatePipelineSettings()
 
-        colorCorrectionPostProcess = ColorCorrectionPostProcess(
-            name = "colorCorrection",
-            colorTableUrl = "/raw/data/lut.png",
-            ratio = 1.0f, // Full resolution
-            camera = camera
-        )
+//        colorCorrectionPostProcess = ColorCorrectionPostProcess(
+//            name = "colorCorrection",
+//            colorTableUrl = "/raw/data/lut.png",
+//            ratio = 1.0f, // Full resolution
+//            camera = camera
+//        )
     }
     
     /**

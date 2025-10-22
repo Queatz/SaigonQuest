@@ -537,13 +537,8 @@ fun WorldUI(
                     classes(Styles.topRightContainer)
                     style {
                         // Adjust right position when any side panel is open on desktop
-                        if ((currentPanel == SidePanelState.Chat ||
-                                    currentPanel == SidePanelState.WorldEdit ||
-                                    currentPanel == SidePanelState.Notifications ||
-                                    currentPanel == SidePanelState.ObjectsPanel ||
-                                    currentPanel == SidePanelState.Friends) && !isMobile.value
-                        ) {
-                            right(340.px) // 20px original padding + 320px panel width
+                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
+                            right(360.px) // 20px original padding + 320px panel width
                         } else {
                             right(20.px)
                         }
@@ -598,8 +593,8 @@ fun WorldUI(
                     classes(Styles.bottomRightContainer)
                     style {
                         // Adjust right position when any side panel is open on desktop
-                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
-                            right(340.px) // 20px original padding + 320px panel width
+                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
+                            right(360.px) // 20px original padding + 320px panel width
                         } else {
                             right(20.px)
                         }
@@ -734,8 +729,8 @@ fun WorldUI(
                     classes(Styles.bottomRightContainer)
                     style {
                         // Adjust right position when any side panel is open on desktop
-                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
-                            right(340.px) // 20px original padding + 320px panel width
+                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
+                            right(360.px) // 20px original padding + 320px panel width
                         } else {
                             right(20.px)
                         }
