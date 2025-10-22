@@ -69,6 +69,28 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Event,
         override val description: String = "Triggers when the player interacts with this object"
     ) : LogicNode
+
+    /**
+     * PlayerJoined node - triggers when a player joins the world
+     */
+    @Serializable
+    data class PlayerJoined(
+        override val id: NodeId = NodeId.PlayerJoined,
+        override val label: String = "Player joined",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when a player joins the world"
+    ) : LogicNode
+
+    /**
+     * VisitorJoined node - triggers when a visitor joins the world
+     */
+    @Serializable
+    data class VisitorJoined(
+        override val id: NodeId = NodeId.VisitorJoined,
+        override val label: String = "Visitor joined",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when a visitor joins the world"
+    ) : LogicNode
     
     /**
      * Dialogue node - displays text message to the player
@@ -210,6 +232,8 @@ fun getAllNodeTypes(): List<LogicNode> {
     return listOf(
         LogicNode.PlayerInteract(),
         LogicNode.VisitorInteract(),
+        LogicNode.PlayerJoined(),
+        LogicNode.VisitorJoined(),
         LogicNode.Teleport(),
         LogicNode.Dialogue(),
         LogicNode.UserLanguage(),

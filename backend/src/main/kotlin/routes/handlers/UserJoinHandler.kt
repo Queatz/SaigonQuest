@@ -2,9 +2,11 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.launch
+import models.LogicNode
 import models.UserJoinData
 import models.WebSocketAction
+import repository.ObjectRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
 import state.WorldStateStore
@@ -15,9 +17,11 @@ import java.util.concurrent.ConcurrentHashMap
  * Handler for USER_JOIN WebSocket messages
  *
  * This handler processes user join messages and broadcasts them to all clients in the same world.
- * It also handles heartbeat ping messages.
+ * It also triggers PlayerJoined/VisitorJoined logic nodes on objects in the world.
  */
-class UserJoinHandler : WebSocketHandler {
+class UserJoinHandler(
+    private val objectRepository: ObjectRepository
+) : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
         connection: WebSocketConnection,
@@ -62,6 +66,49 @@ class UserJoinHandler : WebSocketHandler {
             
             WebSocketDebug.logMessage("BROADCASTING_JOIN", "user: ${correctedJoinData.userId}, world: $worldId", session)
             WebSocketUtils.broadcastToWorld(worldId, json.encodeToString(WebSocketMessage.serializer(), broadcastMessage), activeConnections, session)
+
+            // Trigger logic nodes for joins
+            val objects = objectRepository.getByWorldId(worldId)
+            val baseEventData = mapOf(
+                "userId" to correctedJoinData.userId,
+                "username" to correctedJoinData.username,
+                "isPlayer" to correctedJoinData.isPlayer,
+                "position" to correctedJoinData.position,
+                "worldId" to worldId,
+            )
+
+            if (correctedJoinData.isPlayer) {
+                WebSocketDebug.logMessage("PLAYER_JOIN_EVENT", "Triggering PlayerJoined logic for world: $worldId", session)
+            } else {
+                WebSocketDebug.logMessage("VISITOR_JOIN_EVENT", "Triggering VisitorJoined logic for world: $worldId", session)
+            }
+
+            for (obj in objects) {
+                val context = logic.NodeRunnerContext(
+                    connection = connection,
+                    worldId = worldId,
+                    objectId = obj.key,
+                    activeConnections = activeConnections,
+                    session = session,
+                )
+
+                val runner = logic.NodeLogicRunner(
+                    objectData = obj,
+                    context = context,
+                )
+
+                session.launch {
+                    try {
+                        if (correctedJoinData.isPlayer) {
+                            runner.processNodes(LogicNode.PlayerJoined(), baseEventData)
+                        } else {
+                            runner.processNodes(LogicNode.VisitorJoined(), baseEventData)
+                        }
+                    } catch (e: Throwable) {
+                        debug.WebSocketDebug.logError("Error in async join processing", e, session)
+                    }
+                }
+            }
         } catch (e: Throwable) {
             WebSocketDebug.logError("Error processing USER_JOIN message", e, session)
             WebSocketDebug.logMessage("MALFORMED_DATA", message.data, session)

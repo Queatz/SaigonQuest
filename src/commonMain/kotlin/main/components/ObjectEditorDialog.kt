@@ -234,7 +234,8 @@ fun ObjectEditorDialog(
                     }) {
                         BasicSceneRenderer(
                             filename = file,
-                            collection = collection
+                            collection = collection,
+                            transparentBackground = true
                         )
                     }
                 }

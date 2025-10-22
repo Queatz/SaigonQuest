@@ -116,6 +116,8 @@ class NodeLogicRunner(
             val matches = when (startNodeType) {
                 is LogicNode.PlayerInteract -> node.nodeId == NodeId.PlayerInteract
                 is LogicNode.VisitorInteract -> node.nodeId == NodeId.VisitorInteract
+                is LogicNode.PlayerJoined -> node.nodeId == NodeId.PlayerJoined
+                is LogicNode.VisitorJoined -> node.nodeId == NodeId.VisitorJoined
                 else -> false
             }
             if (matches) {

@@ -371,11 +371,9 @@ object Styles : StyleSheet() {
         height(80.vh)
         backgroundColor(Theme.colors.surface)
         color(Theme.colors.onSurface)
-        property("border-radius", "8px")
+        borderRadius(8.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceDark)
@@ -1329,9 +1327,6 @@ object Styles : StyleSheet() {
         color(Theme.colors.onPrimary)
         fontWeight("bold")
         property("z-index", "2000")
-        // Blur the background slightly behind the banner
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
 
         dark(self) {
             backgroundColor(Theme.colors.errorDark)

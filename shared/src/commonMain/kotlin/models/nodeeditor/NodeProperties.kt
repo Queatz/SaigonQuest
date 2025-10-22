@@ -215,6 +215,26 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             )
         )
 
+        // PlayerJoined node properties
+        is LogicNode.PlayerJoined -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // VisitorJoined node properties
+        is LogicNode.VisitorJoined -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
         // Dialogue node properties
         is LogicNode.Dialogue -> listOf(
             NodePropertyDefinition(

@@ -44,8 +44,8 @@ object PanelStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("pointer-events", "auto")
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
+        property("backdrop-filter", "blur(8px)")
+        property("-webkit-backdrop-filter", "blur(8px)")
 
         dark(self) {
             backgroundColor(Theme.colors.panelGlassDark)

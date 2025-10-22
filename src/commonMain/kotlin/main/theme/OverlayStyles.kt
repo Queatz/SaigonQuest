@@ -1,6 +1,7 @@
 package main.theme
 
 import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.AnimationFillMode
 import org.jetbrains.compose.web.css.AnimationTimingFunction
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -17,6 +18,7 @@ import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.delay
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.duration
+import org.jetbrains.compose.web.css.fillMode
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
@@ -28,6 +30,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.s
 import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.timingFunction
 import org.jetbrains.compose.web.css.top
@@ -159,6 +162,18 @@ object OverlayStyles : StyleSheet() {
         fontSize(16.px)
     }
 
+    // Add the fadeBlur keyframes animation
+    val fadeBlur by keyframes {
+        0.percent {
+            property("backdrop-filter", "blur(0px)")
+            property("-webkit-backdrop-filter", "blur(0px)")
+        }
+        100.percent {
+            property("backdrop-filter", "blur(8px)")
+            property("-webkit-backdrop-filter", "blur(8px)")
+        }
+    }
+
     // Common styles for panels and dialogs overlay
     val overlayBase by style {
         position(Position.Fixed)
@@ -174,13 +189,16 @@ object OverlayStyles : StyleSheet() {
         boxSizing("border-box")
         property("z-index", "1000")
         property("pointer-events", "auto")
-        property("backdrop-filter", "blur(2px)")
-        property("-webkit-backdrop-filter", "blur(2px)")
+
+        property("backdrop-filter", "blur(0px)")  // Initial state
+        property("-webkit-backdrop-filter", "blur(0px)")  // Initial state
         property("isolation", "isolate")
         property("contain", "layout paint size")
 
-        dark(self) {
-            backgroundColor(Theme.colors.overlayScrimDark)
+        animation(fadeBlur) {
+            duration(1.8f.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+            fillMode(AnimationFillMode.Forwards)
         }
     }
 }

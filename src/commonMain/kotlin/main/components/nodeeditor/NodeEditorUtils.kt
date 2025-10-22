@@ -191,6 +191,8 @@ fun createNode(
         NodeId.Teleport -> LogicNode.Teleport()
         NodeId.VisitorInteract -> LogicNode.VisitorInteract()
         NodeId.PlayerInteract -> LogicNode.PlayerInteract()
+        NodeId.PlayerJoined -> LogicNode.PlayerJoined()
+        NodeId.VisitorJoined -> LogicNode.VisitorJoined()
         NodeId.Dialogue -> LogicNode.Dialogue()
         NodeId.UserLanguage -> LogicNode.UserLanguage()
         NodeId.UserSex -> LogicNode.UserSex()

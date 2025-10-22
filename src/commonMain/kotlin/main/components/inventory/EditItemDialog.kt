@@ -8,18 +8,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ItemApi
+import main.components.AssetBrowserDialog
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.IconRenderer
+import main.components.LabeledCheckbox
 import main.components.Translated
 import main.components.translated
-import main.components.IconRenderer
-import main.components.AssetBrowserDialog
-import main.components.LabeledCheckbox
-import models.Item
+import main.theme.Styles
 import models.AssetType
+import models.Item
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.color
@@ -35,11 +35,9 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.NumberInput
-import main.theme.Styles
+import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.TextArea
 
 @Composable
 fun EditItemDialog(

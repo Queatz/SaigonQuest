@@ -28,7 +28,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.UPDATE_CHAT_MESSAGE -> UpdateChatMessageHandler(chatRepository)
             WebSocketAction.DELETE_CHAT_MESSAGE -> DeleteChatMessageHandler(chatRepository)
             WebSocketAction.UPDATE_PLAYER_POSITION -> UpdatePlayerPositionHandler()
-            WebSocketAction.USER_JOIN -> UserJoinHandler()
+            WebSocketAction.USER_JOIN -> UserJoinHandler(objectRepository)
             WebSocketAction.USER_LEAVE -> UserLeaveHandler(chatRepository, userRepository)
             WebSocketAction.ADD_OBJECT -> NullHandler()
             WebSocketAction.REMOVE_OBJECT -> NullHandler()
