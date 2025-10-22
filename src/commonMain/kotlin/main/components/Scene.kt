@@ -560,7 +560,7 @@ fun SceneComponent(url: String) {
             canvas = canvas
         )
 
-        engine.maxFPS = 30
+        engine.maxFPS = 60
 
         // Set hardware scaling level based on graphics mode
         engine.setHardwareScalingLevel(GraphicsSettings.getEngineScalingFactor())
@@ -897,7 +897,7 @@ fun SceneComponent(url: String) {
                 val dtMs = scene.deltaTime.toDouble()
                 val fps = if (dtMs > 0.0 && dtMs < 1_000.0) 1_000.0 / dtMs else 0.0
 
-                if (fps < 20.0) {
+                if (fps > 0.0 && fps < engine.maxFPS / 2f) {
                     lowFpsAccumulatedMs += dtMs
                 } else {
                     // Reset if performance recovers
