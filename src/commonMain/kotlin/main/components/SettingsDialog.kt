@@ -13,12 +13,14 @@ import org.jetbrains.compose.web.dom.Text
 fun SettingsDialog(
     showUI: Boolean,
     onShowUI: (showUI: Boolean) -> Unit,
-    onClose: () -> Unit
+    onLogout: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val showChangePassword = remember { mutableStateOf(false) }
     val wideAngle = remember { mutableStateOf(GraphicsSettings.isWideAngleEnabled()) }
     val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
     val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
+    val showLogoutDialog = remember { mutableStateOf(false) }
 
     BaseDialog(
         onClose = onClose,
@@ -97,9 +99,33 @@ fun SettingsDialog(
                 Translated("Change Password")
             }
 
+            // Logout button
+            Button(
+                attrs = {
+                    classes(Styles.logoutButton)
+                    onClick {
+                        showLogoutDialog.value = true
+                    }
+                }
+            ) {
+                Translated("Log Out")
+            }
+
             if (showChangePassword.value) {
                 ChangePasswordDialog(
                     onClose = { showChangePassword.value = false }
+                )
+            }
+
+            if (showLogoutDialog.value) {
+                BasicConfirmDialog(
+                    title = translated("Log Out"),
+                    message = translated("Are you sure you want to log out?"),
+                    onCancel = { showLogoutDialog.value = false },
+                    onConfirm = {
+                        showLogoutDialog.value = false
+                        onLogout()
+                    }
                 )
             }
         },

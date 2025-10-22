@@ -63,6 +63,16 @@ import org.jetbrains.compose.web.css.whiteSpace
 import web.cssom.BorderStyle
 
 object Styles : StyleSheet() {
+    val md by style {
+        desc(self, selector("p") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("p") + lastChild) style {
+            marginBottom(0.px)
+        }
+    }
+
     val dialogueButtons by style {
         display(DisplayStyle.Flex)
         flexWrap(FlexWrap.Wrap)
@@ -419,7 +429,6 @@ object Styles : StyleSheet() {
         padding(24.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        overflowY("auto")
         property("flex-grow", "1")
     }
 
@@ -798,10 +807,6 @@ object Styles : StyleSheet() {
         margin(0.px)
         color(Theme.colors.onBackground)
         dark(self) { color(Theme.colors.onBackgroundDark) }
-
-        desc(self, selector("p")) style {
-            margin(0.px)
-        }
     }
 
     val chatMessageContentDeleted by style {
@@ -1026,7 +1031,7 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         padding(10.px, 12.px)
-        property("border-radius", "6px")
+        borderRadius(8.px)
         backgroundColor(Theme.colors.white04)
         property("border", "1px solid ${Theme.colors.white08}")
         marginBottom(8.px)
@@ -1038,7 +1043,7 @@ object Styles : StyleSheet() {
         fontSize(12.px)
         fontWeight("bold")
         padding(4.px, 8.px)
-        property("border-radius", "100px")
+        borderRadius(96.px)
         flexShrink(0)
     }
 

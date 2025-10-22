@@ -26,6 +26,7 @@ import org.w3c.dom.HTMLCanvasElement
 fun BasicSceneRenderer(
     filename: String,
     collection: String? = null,
+    transparentBackground: Boolean = false,
 ) {
     var canvas by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -40,7 +41,11 @@ fun BasicSceneRenderer(
             marginBottom(8.px)
             border(1.px, LineStyle.Solid, Color.gray)
             borderRadius(12.px)
-            backgroundColor(rgb(20, 22, 24))
+            if (transparentBackground) {
+                backgroundColor(Color.transparent)
+            } else {
+                backgroundColor(rgb(20, 22, 24))
+            }
             property("overflow", "hidden")
         }
     }) {
@@ -71,7 +76,11 @@ fun BasicSceneRenderer(
                     display(DisplayStyle.Flex)
                     property("align-items", "center")
                     property("justify-content", "center")
-                    property("background", "rgba(0,0,0,0.25)")
+                    if (transparentBackground) {
+                        property("background", "rgba(0,0,0,0)")
+                    } else {
+                        property("background", "rgba(0,0,0,0.25)")
+                    }
                     color(Color.white)
                 }
             }) {
@@ -92,7 +101,11 @@ fun BasicSceneRenderer(
         val c = canvas
         if (c != null) {
             engine = Engine(c, true)
-            scene = Scene(engine!!)
+            scene = Scene(engine)
+
+            if (transparentBackground) {
+                scene.clearColor = Color4(0f, 0f, 0f, 0f)
+            }
 
             val camera = ArcRotateCamera(
                 name = "camera",
@@ -100,11 +113,11 @@ fun BasicSceneRenderer(
                 beta = 1.1f,
                 radius = if (collection == null) 12f else 3.5f,
                 target = Vector3(0f, 0f, 0f),
-                scene = scene!!,
+                scene = scene,
             )
             camera.attachControl(true)
 
-            HemisphericLight("hemi", Vector3(0f, 1f, 0f), scene!!)
+            HemisphericLight("hemi", Vector3(0f, 1f, 0f), scene)
 
             // Ensure Babylon loaders are available for GLB/GLTF
             try { initializeBabylonJSLoaders() } catch (_: Throwable) { }
@@ -159,17 +172,17 @@ fun BasicSceneRenderer(
                 console.error("[BasicSceneRenderer] Failed to load asset preview", t)
             }
 
-            engine!!.runRenderLoop {
-                scene!!.render()
+            engine.runRenderLoop {
+                scene.render()
             }
 
-            resizeListener = { engine?.resize() }
-            window.addEventListener("resize", resizeListener!!)
+            resizeListener = { engine.resize() }
+            window.addEventListener("resize", resizeListener)
         }
 
         onDispose {
             if (resizeListener != null) {
-                window.removeEventListener("resize", resizeListener!!)
+                window.removeEventListener("resize", resizeListener)
             }
             try {
                 // Dispose any loaded nodes/meshes explicitly

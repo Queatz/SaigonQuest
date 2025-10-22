@@ -6,6 +6,8 @@ import main.theme.Styles
 import models.AssetSearchResult
 import models.AssetType
 import org.jetbrains.compose.web.css.backgroundImage
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -33,6 +35,7 @@ fun AssetRenderer(
                 classes(Styles.iconRenderer)
                 classes(main.theme.AssetStyles.assetSpriteSheetIcon)
                 style {
+                    backgroundColor(Color.transparent)
                     backgroundImage("url(\"/raw/data/spritesheets/${result.asset!!.file}.png\")")
                 }
             }) {}
@@ -40,12 +43,14 @@ fun AssetRenderer(
         AssetType.World -> {
             BasicSceneRenderer(
                 filename = result.asset!!.file,
+                transparentBackground = true,
             )
         }
         AssetType.Objects -> {
             BasicSceneRenderer(
                 filename = result.asset!!.file,
                 collection = result.collection,
+                transparentBackground = true,
             )
         }
     }

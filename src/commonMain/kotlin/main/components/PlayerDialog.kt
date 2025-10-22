@@ -85,7 +85,6 @@ fun PlayerDialog(
     // State to control Balance dialogs visibility
     val showBalanceDialog = remember { mutableStateOf(false) }
     val showBalanceHistoryDialog = remember { mutableStateOf(false) }
-    val showLogoutDialog = remember { mutableStateOf(false) }
 
     // Current balance for summary button
     val balanceState = remember { mutableStateOf<UserBalance?>(null) }
@@ -540,18 +539,6 @@ fun PlayerDialog(
                     ) {
                         Translated(if (playerActivity == PlayerActivity.Sit) "Stand" else "Sit")
                     }
-
-                    // Logout button
-                    Button(
-                        attrs = {
-                            classes(Styles.logoutButton)
-                            onClick {
-                                showLogoutDialog.value = true
-                            }
-                        }
-                    ) {
-                        Translated("Log Out")
-                    }
                 }
             }
             
@@ -623,6 +610,7 @@ fun PlayerDialog(
                 SettingsDialog(
                     showUI = showUI,
                     onShowUI = onShowUI,
+                    onLogout = onLogout,
                     onClose = { showSettingsDialog.value = false }
                 )
             }
@@ -643,18 +631,6 @@ fun PlayerDialog(
                     baseUrl = main.api.ApiConstants.API_BASE_URL,
                     bearerToken = main.api.UserApi.getToken() ?: "",
                     onClose = { showBalanceHistoryDialog.value = false }
-                )
-            }
-
-            if (showLogoutDialog.value) {
-                BasicConfirmDialog(
-                    title = translated("Log Out"),
-                    message = translated("Are you sure you want to log out?"),
-                    onCancel = { showLogoutDialog.value = false },
-                    onConfirm = {
-                        showLogoutDialog.value = false
-                        onLogout()
-                    }
                 )
             }
         },

@@ -18,13 +18,12 @@ import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
+import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginRight
-import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.css.overflow
@@ -32,12 +31,9 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.top
-import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
-import web.cssom.AtRules.Companion.property
 
 /**
  * Styles for the Node Editor components
@@ -428,7 +424,7 @@ object NodeEditorStyles : StyleSheet() {
     val buttonList by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        property("gap", "8px")
+        gap(8.px)
         marginBottom(8.px)
     }
 
@@ -437,8 +433,12 @@ object NodeEditorStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.SpaceBetween)
         padding(8.px)
-        backgroundColor(Theme.colors.surfaceVariantDark)
+        backgroundColor(Theme.colors.surfaceVariant)
         borderRadius(4.px)
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+        }
     }
 
     val removeButton by style { backgroundColor(Theme.colors.error) }

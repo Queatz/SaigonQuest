@@ -9,11 +9,17 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import lib.marked
 import lib.marked.parse
+import main.theme.Styles
+import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLSpanElement
 
 @Composable
-fun Md(content: String) {
+fun Md(
+    content: String,
+    attrs: AttrBuilderContext<HTMLSpanElement>? = null,
+) {
     val html = remember(content) {
         val renderer = marked.Renderer()
         val originalLinkRenderer: dynamic = renderer.link
@@ -52,6 +58,9 @@ fun Md(content: String) {
 
     Span(
         attrs = {
+            classes(Styles.md)
+            attrs?.invoke(this)
+
             ref {
                 element = it
 

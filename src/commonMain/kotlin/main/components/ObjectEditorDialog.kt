@@ -59,7 +59,7 @@ fun ObjectEditorDialog(
     var status by remember { mutableStateOf(objectModel?.status ?: "") }
     var rotationYDeg by remember {
         mutableStateOf(
-            ((objectModel?.rotation?.z ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
+            ((objectModel?.rotation?.y ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
                 // normalize to [0, 359]
                 val n = ((deg % 360f) + 360f) % 360f
                 n

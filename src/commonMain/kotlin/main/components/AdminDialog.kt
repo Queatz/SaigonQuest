@@ -93,7 +93,7 @@ fun AdminDialog(
                 Div(attrs = { style { marginBottom(8.px) } }) {
                     Text(
                         // todo: translate
-                        pendingCount?.let { "You have $it pending requests" } ?: "Unable to load pending requests"
+                        pendingCount?.let { "There are $it pending requests" } ?: "Failed to load"
                     )
                 }
                 DialogButton(
@@ -118,7 +118,6 @@ fun AdminDialog(
         actions = {
             DialogButton(
                 onClick = onClose,
-                isPrimary = false,
             ) {
                 Translated("Close")
             }

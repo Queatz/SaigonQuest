@@ -103,7 +103,7 @@ fun BaseDialog(
     title: String? = null,
     showCloseButton: Boolean = true,
     headerActions: (@Composable () -> Unit)? = null,
-    maxWidth: String = "100vw",
+    maxWidth: String = "calc(-2rem + 100vw)",
     isFullscreen: Boolean = false,
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,
@@ -152,12 +152,9 @@ fun BaseDialog(
                             // Apply fullscreen styling
                             property("width", "100%")
                             property("height", "100vh")
-                            property("max-width", "100vw")
                             property("border-radius", "0")
                         } else {
                             // Apply regular styling
-                            property("max-width", maxWidth)
-                            maxHeight("calc(100vh - 64px)")
                             if (isFullHeight) {
                                 property("height", "calc(100vh - 64px)")
                             }
@@ -166,10 +163,14 @@ fun BaseDialog(
                             }
                             if (anchorToBottom) {
                                 // Bottom sheet style tweaks
+                                maxHeight("calc(100vh - 64px)")
                                 property("width", "100%")
                                 property("max-width", "100vw")
                                 property("border-radius", "16px 16px 0 0")
                                 property("margin-bottom", "env(safe-area-inset-bottom)")
+                            } else {
+                                property("max-width", maxWidth)
+                                maxHeight("calc(100vh - 2rem)")
                             }
                         }
                     }

@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import main.api.UserApi
@@ -15,8 +14,20 @@ import main.api.addDialogueListener
 import main.api.sendDialogueConfirmation
 import main.theme.Styles
 import models.DialogueData
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.*
+import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.fontWeight
+import org.jetbrains.compose.web.css.margin
+import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Img
+import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Text
 
 /**
  * DialogueBox component
@@ -90,16 +101,12 @@ fun DialogueBox(
             }
 
             // Dialogue text
-            P({
-                style {
-                    margin(0.px)
-                    padding(10.px)
-                    textAlign("center")
-                    fontSize(16.px)
-                    lineHeight("1.5")
+            Md(dialogue.text) {
+                if (!dialogue.text.trim().contains("\n")) {
+                    style {
+                        textAlign("center")
+                    }
                 }
-            }) {
-                Text(dialogue.text)
             }
         },
         actions = {
