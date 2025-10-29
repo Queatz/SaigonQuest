@@ -54,12 +54,18 @@ object WorldCollisionUtils {
             it.origin = Vector3(position.x, position.y + 2.5f, position.z)
             it.direction = Vector3(0f, -1f, 0f)
         }
+        // Ray 3: y + 1f
+        val ray3 = Ray().also {
+            it.origin = Vector3(position.x, position.y + 1f, position.z)
+            it.direction = Vector3(0f, -1f, 0f)
+        }
 
         val hitsFar = rayFar.intersectsMeshes(meshes = targetMeshes)
         val hitsNear = rayNear.intersectsMeshes(meshes = targetMeshes)
+        val hits3 = ray3.intersectsMeshes(meshes = targetMeshes)
 
         // Combine hits and choose the point closest to the input position.y
-        val bestHit = (hitsFar + hitsNear)
+        val bestHit = (hitsFar + hitsNear + hits3)
             .filter { it.pickedPoint != null }
             .minByOrNull { info -> kotlin.math.abs((info.pickedPoint!!.y) - position.y) }
             ?: return null

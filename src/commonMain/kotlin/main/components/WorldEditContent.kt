@@ -683,18 +683,14 @@ fun WorldEditContent(
         
         // File field
         Button(attrs = {
+            classes(Styles.primaryButton)
             onClick {
                 if (fieldsEnabled) {
                     showWorldAssetBrowser = true
                 }
             }
-            style {
-                padding(8.px, 12.px)
-                backgroundColor(rgba(0, 120, 255, 0.7))
-
-                property("border", "0")
-                borderRadius(8.px)
-                cursor(if (fieldsEnabled) "pointer" else "not-allowed")
+            if (!fieldsEnabled) {
+                disabled()
             }
         }) {
             Translated("Browse asset")

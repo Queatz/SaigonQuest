@@ -1017,26 +1017,6 @@ class SceneObjectManager(
     fun getSkybox(): AbstractMesh? = skybox
 
     /**
-     * Sets the player mesh to exclude from collision detection
-     * 
-     * @param playerMesh The player mesh
-     */
-    fun setPlayerMesh(playerMesh: dynamic) {
-        // Implementation for setting player mesh
-        console.log("Setting player mesh for collision exclusion")
-    }
-    
-    /**
-     * Sets the move circle mesh to exclude from collision detection
-     * 
-     * @param moveCircleMesh The move circle mesh
-     */
-    fun setMoveCircleMesh(moveCircleMesh: dynamic) {
-        // Implementation for setting move circle mesh
-        console.log("Setting move circle mesh for collision exclusion")
-    }
-    
-    /**
      * Sets up WebSocket listeners for object updates and loads existing objects
      */
     fun setupWebSocketListeners(currentWorldId: String) {

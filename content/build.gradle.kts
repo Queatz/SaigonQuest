@@ -40,7 +40,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
 
     // ArangoDB
-    implementation("com.arangodb:arangodb-java-driver:7.17.0")
+    implementation("com.arangodb:arangodb-java-driver:7.22.1")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
     implementation("org.glassfish:jakarta.json:2.0.1")

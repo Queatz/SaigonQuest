@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lib.AbstractMesh
+import lib.Material
 import lib.Mesh
 import lib.Node
 import lib.PBRMaterial
@@ -67,10 +68,11 @@ class ObjectAssetManager(private val scene: Scene) {
                 // Return a clone of the mesh
                 val mesh = collections[collection]
                 if (mesh != null) {
+                    mesh.material.fogEnabled = true
+                    mesh.material.transparencyMode = Material.MATERIAL_ALPHATEST
                     // Create a parent mesh to hold the cloned mesh
                     val parentMesh = mesh.clone("parent_${collection}_${Clock.System.now().toEpochMilliseconds()}")
                     parentMesh.isVisible = false
-                    parentMesh.material.fogEnabled = true
                     
                     // Store the original position, rotation, and scaling before cloning
                     val originalPosition = mesh.position.clone()
@@ -106,6 +108,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     clonedMesh.isVisible = true
                     clonedMesh.isPickable = true
                     clonedMesh.material.fogEnabled = true
+                    clonedMesh.material.transparencyMode = Material.MATERIAL_ALPHATEST
                     console.log("[ASSET_MANAGER] Created visible clone/instance for cached mesh: ${mesh.name}")
                     
                     // Log the properties of the cloned mesh

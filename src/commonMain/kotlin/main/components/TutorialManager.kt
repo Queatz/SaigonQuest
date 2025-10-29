@@ -58,7 +58,7 @@ sealed class TutorialStep {
                 )
                 is OpenChat -> TutorialStepInfo(
                     id = "open_chat",
-                    text = "Open world chat",
+                    text = "Open chat",
                     targetButtonId = "chatButton",
                     order = 2
                 )

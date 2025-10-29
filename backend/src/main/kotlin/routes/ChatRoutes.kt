@@ -23,7 +23,6 @@ import repository.UserRepository
 import kotlin.time.Clock
 
 import kotlin.time.Instant
-import models.chat.Attachment
 
 /**
  * Configure routes for chat operations

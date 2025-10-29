@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Deploy the UI to the remote server via SSH.
-# Usage: ./deploy-ui.sh [-b]
+# Usage: ./deploy-ui.sh [-b] [-n]
 #   -b  Run the UI build task before deploying
+#   -n  Skip uploading resources (assets) — only deploy code artifacts
 
 set -euo pipefail
 
@@ -14,14 +15,20 @@ GRADLE_TASK=":prodApp"
 LOCAL_BUILD_DIR="build/dist/js/productionExecutable"
 
 print_usage() {
-  echo "Usage: $0 [-b]"
+  echo "Usage: $0 [-b] [-n]"
+  echo "  -b  Run the UI build task before deploying"
+  echo "  -n  Skip uploading resources (assets) — only deploy code artifacts"
 }
 
 BUILD_FIRST=false
-while getopts ":b" opt; do
+SKIP_RESOURCES=false
+while getopts ":bn" opt; do
   case "$opt" in
     b)
       BUILD_FIRST=true
+      ;;
+    n)
+      SKIP_RESOURCES=true
       ;;
     ?)
       print_usage
@@ -57,7 +64,14 @@ fi
 echo "Ensuring remote directory exists: $DEST_DIR"
 ssh -o BatchMode=yes -i "$SSH_KEY" "$SSH_USER@$HOST" "mkdir -p '$DEST_DIR'"
 
-echo "Syncing UI files to remote host..."
-rsync -az --delete -e "ssh -i $SSH_KEY -o BatchMode=yes" "$LOCAL_BUILD_DIR/" "$SSH_USER@$HOST:$DEST_DIR/"
+if $SKIP_RESOURCES; then
+  echo "Syncing UI code only (skipping resources directories)..."
+  rsync -az --delete -e "ssh -i $SSH_KEY -o BatchMode=yes" \
+    --exclude 'raw/' --exclude 'raw/**' \
+    "$LOCAL_BUILD_DIR/" "$SSH_USER@$HOST:$DEST_DIR/"
+else
+  echo "Syncing UI files to remote host..."
+  rsync -az --delete -e "ssh -i $SSH_KEY -o BatchMode=yes" "$LOCAL_BUILD_DIR/" "$SSH_USER@$HOST:$DEST_DIR/"
+fi
 
 success

@@ -195,7 +195,6 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
-        marginRight(8.px)
     }
 
     // Small badge for system notifications
@@ -205,7 +204,6 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
-        marginRight(8.px)
     }
 
     // Friend request notification specific styles

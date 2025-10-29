@@ -664,6 +664,9 @@ vi: Tạo người chơi của bạn
 Open world chat
 vi: Mở trò chuyện thế giới
 
+Open chat
+vi: Mở trò chuyện
+
 Inventory
 vi: Kho đồ
 

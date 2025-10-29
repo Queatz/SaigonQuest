@@ -777,10 +777,6 @@ fun SceneComponent(url: String) {
                     }
                 }
 
-                // Set player mesh in object manager to exclude from collision detection
-                objectManager.setPlayerMesh(playerController.getCollider())
-                objectManager.setMoveCircleMesh(playerController.getMoveCircle())
-
                 // Set initial camera target position
                 cameraController.setInitialTargetPosition(startPosition)
 

@@ -50,7 +50,7 @@ fun Chat(
     }
 
     ResponsivePanel(
-        title = translated("World chat"),
+        title = translated("Chat"),
         isMobile = isMobile,
         onClose = onClose,
         headerRight = {
@@ -68,7 +68,7 @@ fun Chat(
 
     if (showInfoDialog) {
         BasicAlertDialog(
-            title = translated("World chat"),
+            title = translated("Chat"),
             message = "${translated("Messages are kept for")} $retentionText",
             onClose = { showInfoDialog = false },
         )

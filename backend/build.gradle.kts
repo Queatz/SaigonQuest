@@ -40,7 +40,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.4.0")
     
     // ArangoDB - Latest version as required
-    implementation("com.arangodb:arangodb-java-driver:7.17.0")
+    implementation("com.arangodb:arangodb-java-driver:7.22.1")
     
     // Jackson modules for date/time handling
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")

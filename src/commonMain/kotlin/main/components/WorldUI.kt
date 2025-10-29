@@ -554,22 +554,6 @@ fun WorldUI(
                     badgeCount = 0
                 )
 
-                if (currentUser?.isPlayer == true) {
-                    // Notifications button
-                    CircleButton(
-                        onClick = { togglePanel(SidePanelState.Notifications) },
-                        iconIndex = 2, // 2: notifications
-                        badgeCount = unreadNotificationCount
-                    )
-
-                    // Friends button
-                    CircleButton(
-                        onClick = { togglePanel(SidePanelState.Friends) },
-                        iconIndex = 3, // 3: friends
-                        badgeCount = 0
-                    )
-                }
-
                 // Edit world button - only visible if the current user is the owner of the world
                 if (currentUser?.key == currentWorld?.userId) {
                     CircleButton(
@@ -677,7 +661,16 @@ fun WorldUI(
                     elementRef = { element -> buttonRefs["qrButton"] = element }
                 )
 
-                // World Chat button
+                if (currentUser?.isPlayer == true) {
+                    // Friends button
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.Friends) },
+                        iconIndex = 3, // 3: friends
+                        badgeCount = 0
+                    )
+                }
+
+                // Chat button
                 CircleButton(
                     onClick = {
                         togglePanel(SidePanelState.Chat)
@@ -696,6 +689,16 @@ fun WorldUI(
                     id = "chatButton",
                     elementRef = { element -> buttonRefs["chatButton"] = element }
                 )
+
+
+                if (currentUser?.isPlayer == true) {
+                    // Notifications button
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.Notifications) },
+                        iconIndex = 2, // 2: notifications
+                        badgeCount = unreadNotificationCount
+                    )
+                }
 
                 // My profile button
                 CircleButton(
