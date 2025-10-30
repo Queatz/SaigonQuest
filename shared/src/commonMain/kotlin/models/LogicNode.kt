@@ -234,7 +234,7 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Prompt player with a title, text field and confirm button"
     ) : LogicNode
-
+    
     /**
      * StringTemplate node - formats a template string with inputs
      */
@@ -244,6 +244,17 @@ sealed interface LogicNode {
         override val label: String = "String template",
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Format a template string like 'Hi, {name}!' using inputs"
+    ) : LogicNode
+
+    /**
+     * PlayerName node - outputs the current player name
+     */
+    @Serializable
+    data class PlayerName(
+        override val id: NodeId = NodeId.PlayerName,
+        override val label: String = "Player name",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Outputs the current player name"
     ) : LogicNode
 }
 
@@ -271,6 +282,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.SendChat(),
         LogicNode.PlayerInput(),
         LogicNode.StringTemplate(),
+        LogicNode.PlayerName(),
     )
 }
 

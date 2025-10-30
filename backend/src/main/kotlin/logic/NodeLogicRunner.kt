@@ -12,6 +12,7 @@ import models.nodeeditor.NodeEditorJsonUtil
 import models.nodeeditor.PropertyKey
 import models.nodeeditor.PropertyType
 import models.nodeeditor.getOutputPropertyDefinitions
+import models.nodeeditor.getPropertyDefinitions
 
 /**
  * Manages the execution of logic nodes for objects
@@ -183,6 +184,7 @@ class NodeLogicRunner(
                 NodeId.SendChat -> models.LogicNode.SendChat()
                 NodeId.PlayerInput -> models.LogicNode.PlayerInput()
                 NodeId.StringTemplate -> models.LogicNode.StringTemplate()
+                NodeId.PlayerName -> models.LogicNode.PlayerName()
             }
         }
         fun getOutputPropertyTypes(node: NodeDataModel): List<models.nodeeditor.PropertyType> {
@@ -214,6 +216,54 @@ class NodeLogicRunner(
             "Processing node: ${node.nodeCategory}/${node.id} with data: ${node.data}",
             context.session
         )
+
+        // On-demand evaluation: ensure inputs provided by pure value nodes are available before executing this node
+        fun isPureValueNode(ln: models.LogicNode): Boolean =
+            ln.getPropertyDefinitions().none { it.type == PropertyType.TRIGGER }
+
+        suspend fun ensureInputValuesFor(target: NodeDataModel, resolving: MutableSet<String>) {
+            if (resolving.contains(target.id)) return // prevent cycles
+            resolving.add(target.id)
+
+            val incoming = nodeConfig?.connections?.filter { it.to == target.id } ?: emptyList()
+            for (conn in incoming) {
+                // Skip if target already has a value for this input
+                if (eventData[conn.toPort] != null) continue
+
+                val srcNode = nodeConfig?.nodes?.find { it.id == conn.from } ?: continue
+                val srcLogicNode = reconstructLogicNode(srcNode)
+                if (!isPureValueNode(srcLogicNode)) continue
+
+                // Recursively ensure inputs for the source node before executing it
+                ensureInputValuesFor(srcNode, resolving)
+
+                // Execute the source value node on demand
+                val srcRunner = getNodeRunner(srcNode)
+                WebSocketDebug.logMessage(
+                    "ON_DEMAND_EXEC",
+                    "Executing value node ${srcNode.nodeId} for target ${target.id}",
+                    context.session
+                )
+                val ok = srcRunner.execute(srcNode, eventData)
+                if (ok) {
+                    val v = eventData[conn.fromPort]
+                    if (v != null) {
+                        WebSocketDebug.logMessage(
+                            "ON_DEMAND_PROPAGATE",
+                            "Propagating value from ${conn.fromPort} to ${conn.toPort}",
+                            context.session
+                        )
+                        eventData[conn.toPort] = v
+                    }
+                }
+            }
+
+            resolving.remove(target.id)
+        }
+
+        // Fill inputs from connected pure value sources
+        val resolving = mutableSetOf<String>()
+        ensureInputValuesFor(node, resolving)
 
         // Get the node runner for this node type
         val nodeRunner = getNodeRunner(node)
@@ -576,6 +626,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 StringTemplateNodeRunner(context)
+            }
+            NodeId.PlayerName -> {
+                WebSocketDebug.logMessage(
+                    "PLAYER_NAME_RUNNER_SELECTED",
+                    "Selected PlayerNameNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlayerNameNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

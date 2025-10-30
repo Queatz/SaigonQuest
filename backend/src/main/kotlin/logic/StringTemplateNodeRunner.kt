@@ -57,9 +57,9 @@ class StringTemplateNodeRunner(private val context: NodeRunnerContext) : NodeRun
             candidates[key] ?: match.value
         }
 
-        // Emit to the first string output (TEXT)
-        val outPortId = "${node.id}_out_1" // because _out_0 is trigger "Next", _out_1 is string "Text"
-        eventData[outPortId] = result
+        // Emit to string output (TEXT at out_0; StringTemplate is a pure value node)
+        eventData["${node.id}_out_0"] = result
+        // Convenience alias
         eventData["${node.id}_text"] = result
 
         return true

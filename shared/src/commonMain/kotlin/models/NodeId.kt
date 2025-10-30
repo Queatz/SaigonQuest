@@ -23,4 +23,5 @@ enum class NodeId {
     SendChat,
     PlayerInput,
     StringTemplate,
+    PlayerName,
 }

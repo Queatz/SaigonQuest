@@ -580,28 +580,25 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
         // StringTemplate node properties
         is LogicNode.StringTemplate -> listOf(
             NodePropertyDefinition(
-                key = PropertyKey.TRIGGER,
-                name = "Trigger",
-                type = PropertyType.TRIGGER,
-                direction = PropertyDirection.INPUT
-            ),
-            NodePropertyDefinition(
                 key = PropertyKey.TEMPLATE,
                 name = "Template",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = "Hi, {name}! How are you today?"
             ),
-            // Dynamic inputs for placeholders are generated in the editor based on the TEMPLATE value.
-            NodePropertyDefinition(
-                key = PropertyKey.NEXT,
-                name = "Next",
-                type = PropertyType.TRIGGER,
-                direction = PropertyDirection.OUTPUT
-            ),
             NodePropertyDefinition(
                 key = PropertyKey.TEXT,
                 name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+        )
+
+        // PlayerName node properties
+        is LogicNode.PlayerName -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.NAME,
+                name = "Name",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             ),

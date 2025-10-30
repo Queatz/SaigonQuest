@@ -230,6 +230,7 @@ fun createNode(
         NodeId.SendChat -> LogicNode.SendChat()
         NodeId.PlayerInput -> LogicNode.PlayerInput()
         NodeId.StringTemplate -> LogicNode.StringTemplate()
+        NodeId.PlayerName -> LogicNode.PlayerName()
     }
     
     // Create ports based on node type and data

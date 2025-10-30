@@ -102,6 +102,7 @@ object NodeEditorJsonUtil {
             NodeId.SendChat -> LogicNode.SendChat()
             NodeId.PlayerInput -> LogicNode.PlayerInput()
             NodeId.StringTemplate -> LogicNode.StringTemplate()
+            NodeId.PlayerName -> LogicNode.PlayerName()
         }
 
         return NodeData(
