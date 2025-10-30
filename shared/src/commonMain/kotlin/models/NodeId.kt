@@ -24,4 +24,5 @@ enum class NodeId {
     PlayerInput,
     StringTemplate,
     PlayerName,
+    Ai,
 }

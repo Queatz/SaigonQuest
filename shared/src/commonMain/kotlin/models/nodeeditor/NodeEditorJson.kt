@@ -103,6 +103,7 @@ object NodeEditorJsonUtil {
             NodeId.PlayerInput -> LogicNode.PlayerInput()
             NodeId.StringTemplate -> LogicNode.StringTemplate()
             NodeId.PlayerName -> LogicNode.PlayerName()
+            NodeId.Ai -> LogicNode.Ai()
         }
 
         return NodeData(

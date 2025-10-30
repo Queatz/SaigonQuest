@@ -256,6 +256,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Outputs the current player name"
     ) : LogicNode
+
+    /**
+     * Ai node - calls DeepSeek to generate text from prompts
+     */
+    @Serializable
+    data class Ai(
+        override val id: NodeId = NodeId.Ai,
+        override val label: String = "AI",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Generate text using DeepSeek from system and user prompts"
+    ) : LogicNode
 }
 
 /**
@@ -283,6 +294,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.PlayerInput(),
         LogicNode.StringTemplate(),
         LogicNode.PlayerName(),
+        LogicNode.Ai(),
     )
 }
 

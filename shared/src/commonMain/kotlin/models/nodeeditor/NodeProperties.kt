@@ -58,6 +58,10 @@ enum class PropertyKey {
 
     // StringTemplate properties
     TEMPLATE,
+
+    // AI properties
+    USER_PROMPT,
+    SYSTEM_PROMPT,
 }
 
 /**
@@ -599,6 +603,30 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.NAME,
                 name = "Name",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+        )
+
+        // AI node properties (pure value, no triggers)
+        is LogicNode.Ai -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.SYSTEM_PROMPT,
+                name = "System prompt",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.USER_PROMPT,
+                name = "User prompt",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Text",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             ),

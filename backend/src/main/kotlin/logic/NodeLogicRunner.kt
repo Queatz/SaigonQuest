@@ -13,6 +13,7 @@ import models.nodeeditor.PropertyKey
 import models.nodeeditor.PropertyType
 import models.nodeeditor.getOutputPropertyDefinitions
 import models.nodeeditor.getPropertyDefinitions
+import models.nodeeditor.PropertyDirection
 
 /**
  * Manages the execution of logic nodes for objects
@@ -170,6 +171,7 @@ class NodeLogicRunner(
                 NodeId.PlayerInteract -> models.LogicNode.PlayerInteract()
                 NodeId.PlayerJoined -> models.LogicNode.PlayerJoined()
                 NodeId.VisitorJoined -> models.LogicNode.VisitorJoined()
+                NodeId.Ai -> models.LogicNode.Ai()
                 NodeId.Dialogue -> models.LogicNode.Dialogue()
                 NodeId.UserLanguage -> models.LogicNode.UserLanguage()
                 NodeId.UserSex -> models.LogicNode.UserSex()
@@ -232,29 +234,49 @@ class NodeLogicRunner(
 
                 val srcNode = nodeConfig?.nodes?.find { it.id == conn.from } ?: continue
                 val srcLogicNode = reconstructLogicNode(srcNode)
-                if (!isPureValueNode(srcLogicNode)) continue
 
-                // Recursively ensure inputs for the source node before executing it
-                ensureInputValuesFor(srcNode, resolving)
+                // 1) If the source already produced a value (regardless of being pure/non‑pure), propagate it
+                eventData[conn.fromPort]?.let { existing ->
+                    WebSocketDebug.logMessage(
+                        "VALUE_PROPAGATION",
+                        "Propagating existing value from ${conn.fromPort} to ${conn.toPort}",
+                        context.session
+                    )
+                    eventData[conn.toPort] = existing
+                    continue
+                }
 
-                // Execute the source value node on demand
-                val srcRunner = getNodeRunner(srcNode)
-                WebSocketDebug.logMessage(
-                    "ON_DEMAND_EXEC",
-                    "Executing value node ${srcNode.nodeId} for target ${target.id}",
-                    context.session
-                )
-                val ok = srcRunner.execute(srcNode, eventData)
-                if (ok) {
-                    val v = eventData[conn.fromPort]
-                    if (v != null) {
-                        WebSocketDebug.logMessage(
-                            "ON_DEMAND_PROPAGATE",
-                            "Propagating value from ${conn.fromPort} to ${conn.toPort}",
-                            context.session
-                        )
-                        eventData[conn.toPort] = v
+                // 2) If the source is a pure value node, we can execute it on demand
+                if (isPureValueNode(srcLogicNode)) {
+                    // Recursively ensure inputs for the source node before executing it
+                    ensureInputValuesFor(srcNode, resolving)
+
+                    // Execute the source value node on demand
+                    val srcRunner = getNodeRunner(srcNode)
+                    WebSocketDebug.logMessage(
+                        "ON_DEMAND_EXEC",
+                        "Executing value node ${srcNode.nodeId} for target ${target.id}",
+                        context.session
+                    )
+                    val ok = srcRunner.execute(srcNode, eventData)
+                    if (ok) {
+                        val v = eventData[conn.fromPort]
+                        if (v != null) {
+                            WebSocketDebug.logMessage(
+                                "ON_DEMAND_PROPAGATE",
+                                "Propagating value from ${conn.fromPort} to ${conn.toPort}",
+                                context.session
+                            )
+                            eventData[conn.toPort] = v
+                        }
                     }
+                } else {
+                    // 3) Non‑pure source without a ready value: cannot auto‑execute; leave unset
+                    WebSocketDebug.logMessage(
+                        "INPUT_VALUE_MISSING",
+                        "Input ${conn.toPort} expects value from ${conn.fromPort}, but source is non‑pure and has no value yet",
+                        context.session
+                    )
                 }
             }
 
@@ -264,6 +286,30 @@ class NodeLogicRunner(
         // Fill inputs from connected pure value sources
         val resolving = mutableSetOf<String>()
         ensureInputValuesFor(node, resolving)
+
+        // If any connected value inputs remain unresolved (null), block execution to avoid using defaults
+        run {
+            val incoming = nodeConfig?.connections?.filter { it.to == node.id } ?: emptyList()
+            if (incoming.isNotEmpty()) {
+                val logicNode = reconstructLogicNode(node)
+                val inputDefs = logicNode.getPropertyDefinitions().filter { it.direction == PropertyDirection.INPUT && it.type != PropertyType.TRIGGER }
+                for (conn in incoming) {
+                    // Only consider ports shaped like "<nodeId>_in_<prop>"
+                    val prefix = "${node.id}_in_"
+                    if (!conn.toPort.startsWith(prefix)) continue
+                    val propSuffix = conn.toPort.removePrefix(prefix)
+                    val isValueInput = inputDefs.any { it.key.name.equals(propSuffix.replace('-', '_').uppercase()) }
+                    if (isValueInput && eventData[conn.toPort] == null) {
+                        WebSocketDebug.logMessage(
+                            "BLOCKED_INPUT_UNRESOLVED",
+                            "Node ${node.id} has unresolved connected value input ${conn.toPort}; skipping execution",
+                            context.session
+                        )
+                        return
+                    }
+                }
+            }
+        }
 
         // Get the node runner for this node type
         val nodeRunner = getNodeRunner(node)
@@ -634,6 +680,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 PlayerNameNodeRunner(context)
+            }
+            NodeId.Ai -> {
+                WebSocketDebug.logMessage(
+                    "AI_RUNNER_SELECTED",
+                    "Selected AiNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                AiNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

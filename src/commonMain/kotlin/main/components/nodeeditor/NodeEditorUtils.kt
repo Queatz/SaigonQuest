@@ -231,6 +231,7 @@ fun createNode(
         NodeId.PlayerInput -> LogicNode.PlayerInput()
         NodeId.StringTemplate -> LogicNode.StringTemplate()
         NodeId.PlayerName -> LogicNode.PlayerName()
+        NodeId.Ai -> LogicNode.Ai()
     }
     
     // Create ports based on node type and data

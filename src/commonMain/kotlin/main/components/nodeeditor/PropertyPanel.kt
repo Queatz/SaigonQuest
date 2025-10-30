@@ -39,7 +39,7 @@ import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * A panel for editing node properties.
- * 
+ *
  * @param nodeId The ID of the selected node
  * @param node The selected node data
  * @param onNodeUpdate Callback when the node is updated
@@ -48,20 +48,20 @@ import org.jetbrains.compose.web.dom.TextInput
 fun PropertyPanel(
     nodeId: String,
     node: NodeData,
-    onNodeUpdate: (String, NodeData) -> Unit
+    onNodeUpdate: (String, NodeData) -> Unit,
 ) {
     // State for node properties
     var label by remember(nodeId) { mutableStateOf(node.label) }
-    
+
     // Parse node data
     val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
-    
+
     // Get property definitions for this node type
     val propertyDefinitions = remember(nodeId) { node.type.getPropertyDefinitions() }
-    
+
     // Create a map to store property values
     var propertyValues by remember(nodeId) { mutableStateOf(mapOf<PropertyKey, String>()) }
-    
+
     // Initialize property values from node data
     LaunchedEffect(nodeId, propertyDefinitions) {
         propertyDefinitions.forEach { propDef ->
@@ -97,7 +97,7 @@ fun PropertyPanel(
         // Call the update callback
         onNodeUpdate(nodeId, updatedNode)
     }
-    
+
     // Property panel UI
     Div(
         attrs = {
@@ -112,7 +112,7 @@ fun PropertyPanel(
         ) {
             Text(translated("Node properties"))
         }
-        
+
         // Node type
         Div(
             attrs = {
@@ -126,25 +126,25 @@ fun PropertyPanel(
             ) {
                 Text(translated("Type"))
             }
-            
+
             Div(
                 attrs = {
                     classes(NodeEditorStyles.propertyValue)
                 }
             ) {
                 // Convert category to string and capitalize
-                val typeString = when(node.type.category) {
+                val typeString = when (node.type.category) {
                     NodeCategory.Action -> translated("Action")
                     NodeCategory.Event -> translated("Event")
                     NodeCategory.Dialogue -> translated("Dialogue")
                     NodeCategory.Input -> translated("Input")
                 }
                 Text(typeString)
-                Text(" • " )
+                Text(" • ")
                 Text(node.type.label)
             }
         }
-        
+
         // Node label
         Div(
             attrs = {
@@ -159,7 +159,7 @@ fun PropertyPanel(
             ) {
                 Translated("Label")
             }
-            
+
             TextInput(
                 value = label,
                 attrs = {
@@ -169,7 +169,7 @@ fun PropertyPanel(
                 }
             )
         }
-        
+
         // Render editable properties (excluding trigger properties which are handled by ports)
         propertyDefinitions
             .filter { it.type != PropertyType.TRIGGER }
@@ -190,10 +190,17 @@ fun PropertyPanel(
                         ) {
                             Text(propDef.name)
                         }
-                        
+
                         when (propDef.type) {
                             PropertyType.STRING -> {
-                                if (propDef.key == PropertyKey.TEXT_CONTENT) {
+                                if (
+                                    propDef.key in listOf(
+                                        PropertyKey.TEXT_CONTENT,
+                                        PropertyKey.SYSTEM_PROMPT,
+                                        PropertyKey.USER_PROMPT,
+                                        PropertyKey.TEMPLATE,
+                                    )
+                                ) {
                                     // Use TextArea for text content
                                     TextArea(
                                         value = propertyValues[propDef.key] ?: "",
@@ -241,7 +248,8 @@ fun PropertyPanel(
                                             Button(attrs = {
                                                 classes(NodeEditorStyles.removeButton, Styles.primaryButton)
                                                 onClick {
-                                                    propertyValues = propertyValues.edit { it[PropertyKey.IMAGE_URL] = "" }
+                                                    propertyValues =
+                                                        propertyValues.edit { it[PropertyKey.IMAGE_URL] = "" }
                                                 }
                                             }) { Translated("Remove image") }
                                         }
@@ -251,7 +259,8 @@ fun PropertyPanel(
                                         UploadMediaDialog(
                                             onClose = { showDialog = false },
                                             onSelect = { selectedUrl ->
-                                                propertyValues = propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
+                                                propertyValues =
+                                                    propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
                                             }
                                         )
                                     }
@@ -324,7 +333,10 @@ fun PropertyPanel(
 
                                     if (showSelect) {
                                         SelectItemDialog(
-                                            initial = if (selectedItem != null) listOf(selectedItem!! to (propertyValues[PropertyKey.QUANTITY]?.toIntOrNull() ?: 1)) else emptyList(),
+                                            initial = if (selectedItem != null) listOf(
+                                                selectedItem!! to (propertyValues[PropertyKey.QUANTITY]?.toIntOrNull()
+                                                    ?: 1)
+                                            ) else emptyList(),
                                             multiple = false,
                                             useQuantities = true,
                                             onConfirm = { list ->
@@ -342,7 +354,11 @@ fun PropertyPanel(
                                 } else if (propDef.key == PropertyKey.ITEMS) {
                                     val itemsCsv = propertyValues[PropertyKey.ITEMS] ?: ""
                                     val quantitiesCsv = propertyValues[PropertyKey.QUANTITIES] ?: ""
-                                    var previewPairs by remember(nodeId) { mutableStateOf<List<Pair<models.Item, Int>>>(emptyList()) }
+                                    var previewPairs by remember(nodeId) {
+                                        mutableStateOf<List<Pair<models.Item, Int>>>(
+                                            emptyList()
+                                        )
+                                    }
                                     var loadingList by remember(nodeId) { mutableStateOf(false) }
                                     var showSelect by remember(nodeId) { mutableStateOf(false) }
 
@@ -458,6 +474,7 @@ fun PropertyPanel(
                                     )
                                 }
                             }
+
                             PropertyType.NUMBER -> {
                                 NumberInput(
                                     value = propertyValues[propDef.key]?.toFloatOrNull() ?: 0.0f,
@@ -472,6 +489,7 @@ fun PropertyPanel(
                                     }
                                 )
                             }
+
                             PropertyType.BOOLEAN -> {
                                 CheckboxInput(
                                     checked = (propertyValues[propDef.key] ?: "false") == "true",
@@ -487,6 +505,7 @@ fun PropertyPanel(
                                     }
                                 )
                             }
+
                             PropertyType.VECTOR3 -> {
                                 TextInput(
                                     value = propertyValues[propDef.key] ?: "0,0,0",
@@ -502,6 +521,7 @@ fun PropertyPanel(
                                     }
                                 )
                             }
+
                             PropertyType.COLOR -> {
                                 Input(
                                     type = InputType.Color,
@@ -517,6 +537,7 @@ fun PropertyPanel(
                                     }
                                 )
                             }
+
                             else -> {
                                 // Default to text input for other types
                                 TextInput(
@@ -536,16 +557,16 @@ fun PropertyPanel(
                     }
                 }
             }
-            
+
         // For dialogue nodes, add button management UI
         if (node.type.id == models.NodeId.Dialogue) {
             // Get current buttons or default to "OK"
             val buttonsValue = propertyValues[PropertyKey.BUTTONS] ?: str("Ok")
             val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            
+
             // State for new button text
             var newButtonText by remember(nodeId) { mutableStateOf("") }
-            
+
             Div(
                 attrs = {
                     classes(NodeEditorStyles.propertyGroup)
@@ -564,7 +585,7 @@ fun PropertyPanel(
                             }
                         ) {
                             Text(buttonText)
-                            
+
                             // Only show remove button if there's more than one button
                             if (buttons.size > 1) {
                                 Button(
@@ -586,7 +607,7 @@ fun PropertyPanel(
                         }
                     }
                 }
-                
+
                 // Add new button UI
                 Div(
                     attrs = {
@@ -603,7 +624,7 @@ fun PropertyPanel(
                             }
                         }
                     )
-                    
+
                     Button(
                         attrs = {
                             classes(NodeEditorStyles.addButton, Styles.primaryButton)

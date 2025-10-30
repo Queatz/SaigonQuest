@@ -32,6 +32,12 @@ dependencies {
     implementation("io.ktor:ktor-server-cors:3.3.1")
     implementation("io.ktor:ktor-server-websockets:3.3.1")
     
+    // Ktor client (for external HTTP calls e.g., DeepSeek)
+    implementation("io.ktor:ktor-client-core:3.3.1")
+    implementation("io.ktor:ktor-client-cio:3.3.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
+    
     // Ktor JWT Authentication
     implementation("io.ktor:ktor-server-auth:3.3.1")
     implementation("io.ktor:ktor-server-auth-jwt:3.3.1")
