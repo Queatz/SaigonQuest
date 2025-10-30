@@ -538,6 +538,7 @@ fun PlayerDialog(
                         }
                     ) {
                         Translated(if (playerActivity == PlayerActivity.Sit) "Stand" else "Sit")
+                        Text(" (Z)")
                     }
                 }
             }

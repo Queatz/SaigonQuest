@@ -324,10 +324,11 @@ class Character(
         // Calculate the dot product of the two vectors
         // For unit vectors, dot product = cos(angle)
         val dotProduct = Vector3.Dot(cameraDirectionXZ, playerDirectionXZ)
+        val clampedDot = dotProduct.coerceIn(-1f, 1f)
 
         // Calculate the angle in radians using the dot product
         // acos(dot product) gives us the angle between the vectors
-        val angle = kotlin.math.acos(dotProduct.toDouble()).toFloat()
+        val angle = kotlin.math.acos(clampedDot.toDouble()).toFloat()
 
         // Convert angle to degrees for easier mapping to directions
         val angleDegrees = angle * (180f / kotlin.math.PI.toFloat())
@@ -344,15 +345,25 @@ class Character(
         // Map the angle to one of the 8 directions
         // The sprite sheet has directions in this order: S, SE, E, NE, N, NW, W, SW
         // We divide the 360 degrees into 8 sectors of 45 degrees each
+        // Small epsilon widens S/N buckets slightly to avoid misclassifying near-boundary angles (e.g., 22.8°, -157.2°)
+        val eps = 7.5f
         displayDirection = when {
-            signedAngleDegrees >= -22.5f && signedAngleDegrees < 22.5f -> CharacterDirection.S
-            signedAngleDegrees >= 22.5f && signedAngleDegrees < 67.5f -> CharacterDirection.SE
+            // S (front-facing): widen by eps
+            signedAngleDegrees >= (-22.5f - eps) && signedAngleDegrees < (22.5f + eps) -> CharacterDirection.S
+            // SE
+            signedAngleDegrees >= (22.5f + eps) && signedAngleDegrees < 67.5f -> CharacterDirection.SE
+            // E
             signedAngleDegrees >= 67.5f && signedAngleDegrees < 112.5f -> CharacterDirection.E
-            signedAngleDegrees >= 112.5f && signedAngleDegrees < 157.5f -> CharacterDirection.NE
-            signedAngleDegrees >= 157.5f || signedAngleDegrees < -157.5f -> CharacterDirection.N
-            signedAngleDegrees >= -157.5f && signedAngleDegrees < -112.5f -> CharacterDirection.NW
+            // NE
+            signedAngleDegrees >= 112.5f && signedAngleDegrees < (157.5f - eps) -> CharacterDirection.NE
+            // N (back-facing): widen by eps
+            signedAngleDegrees >= (157.5f - eps) || signedAngleDegrees < (-157.5f + eps) -> CharacterDirection.N
+            // NW
+            signedAngleDegrees >= (-157.5f + eps) && signedAngleDegrees < -112.5f -> CharacterDirection.NW
+            // W
             signedAngleDegrees >= -112.5f && signedAngleDegrees < -67.5f -> CharacterDirection.W
-            signedAngleDegrees >= -67.5f && signedAngleDegrees < -22.5f -> CharacterDirection.SW
+            // SW
+            signedAngleDegrees >= -67.5f && signedAngleDegrees < (-22.5f - eps) -> CharacterDirection.SW
             else -> CharacterDirection.S // Default to South if something goes wrong
         }
     }

@@ -15,10 +15,14 @@ enum class PropertyKey {
 
     // Text properties
     TEXT_CONTENT,
+    TEXT,
 
     // Dialogue properties
     BUTTONS,
     IMAGE_URL,
+    TITLE,
+    PLACEHOLDER,
+    CONFIRM_LABEL,
 
     // Teleport properties
     TARGET_WORLD_ID,
@@ -50,7 +54,10 @@ enum class PropertyKey {
 
     // UserAge properties
     MIN_AGE,
-    MAX_AGE
+    MAX_AGE,
+
+    // StringTemplate properties
+    TEMPLATE,
 }
 
 /**
@@ -242,6 +249,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 name = "Trigger",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TEXT_CONTENT,
@@ -511,6 +525,86 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
             )
+        )
+
+        // PlayerInput node properties
+        is LogicNode.PlayerInput -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.PLACEHOLDER,
+                name = "Placeholder",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.CONFIRM_LABEL,
+                name = "Confirm label",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "OK"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+        )
+
+        // StringTemplate node properties
+        is LogicNode.StringTemplate -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEMPLATE,
+                name = "Template",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Hi, {name}! How are you today?"
+            ),
+            // Dynamic inputs for placeholders are generated in the editor based on the TEMPLATE value.
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
         )
     }
 }

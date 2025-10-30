@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import lib.*
+import lib.configureBabylonDracoDecoder
 import main.components.objects.ObjectAssetManager
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Canvas
@@ -120,7 +121,13 @@ fun BasicSceneRenderer(
             HemisphericLight("hemi", Vector3(0f, 1f, 0f), scene)
 
             // Ensure Babylon loaders are available for GLB/GLTF
-            try { initializeBabylonJSLoaders() } catch (_: Throwable) { }
+            try { initializeBabylonJSLoaders() } catch (t: Throwable) {
+                console.warn("[BasicSceneRenderer] Failed to initialize Babylon loaders", t)
+            }
+            // Force local Draco decoder assets (avoid Babylon CDN) AFTER initializing loaders
+            try { configureBabylonDracoDecoder("/babylon/Draco") } catch (t: Throwable) {
+                console.warn("[BasicSceneRenderer] Failed to configure Babylon Draco decoder, falling back to default CDN URLs", t)
+            }
 
             // Load content
             try {

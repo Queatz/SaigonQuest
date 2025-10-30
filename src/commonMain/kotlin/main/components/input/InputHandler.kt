@@ -151,11 +151,22 @@ class InputHandler(
     // Double-tap handled by engine; delay single-tap to allow double-tap to preempt
     private val tapDoubleClickThreshold = 300L
     private var pendingTapSingleJob: Job? = null
+
+    // Multi-touch tracking and suppression to avoid accidental moves after camera gestures
+    private var activePointers: Int = 0
+    private var multiTouchActive: Boolean = false
+    private var preventClickToMoveUntil: Double = 0.0 // performance.now() in ms
+    private val gestureSuppressionMs: Double = 500.0 // half a second after multi-touch ends
     
     // Store the click point for object dragging
     private var objectClickPoint: Vector3? = null
 
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    // Returns true when we should ignore taps/click-to-move (e.g., right after multi-touch)
+    private fun isClickToMoveSuppressed(): Boolean {
+        return window.performance.now() < preventClickToMoveUntil
+    }
     
     /**
      * Sets up keyboard input handling.
@@ -228,8 +239,50 @@ class InputHandler(
 
         console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
         
+        // Track multi-touch pointer counts to suppress accidental moves after pinch/zoom
+        run {
+            val now = window.performance.now()
+            when (info.type) {
+                PointerEventTypes.POINTERDOWN -> {
+                    val prev = activePointers
+                    activePointers = (activePointers + 1).coerceAtLeast(1)
+                    if (prev < 2 && activePointers >= 2) {
+                        // Multi-touch just started
+                        multiTouchActive = true
+                        // Cancel any pending tap actions and movement
+                        pendingTapSingleJob?.cancel()
+                        pendingTapSingleJob = null
+                        playerController.stopMovement()
+                        console.log("[POINTER] Multi-touch started; suppressing tap/move until gesture ends")
+                    }
+                }
+                PointerEventTypes.POINTERUP -> {
+                    val prev = activePointers
+                    activePointers = (activePointers - 1).coerceAtLeast(0)
+                    if (prev >= 2 && activePointers < 2) {
+                        // Multi-touch just ended
+                        multiTouchActive = false
+                        preventClickToMoveUntil = now + gestureSuppressionMs
+                        // Cancel any pending tap actions
+                        pendingTapSingleJob?.cancel()
+                        pendingTapSingleJob = null
+                        console.log("[POINTER] Multi-touch ended; suppressing taps/move for ${gestureSuppressionMs}ms")
+                    }
+                    // If all pointers lifted, reset basic dragging flag
+                    if (activePointers == 0) {
+                        isPointerDown = false
+                    }
+                }
+            }
+        }
+        
         // Handle Babylon tap/double-tap events explicitly (touch & click)
         if (info.type == PointerEventTypes.POINTERDOUBLETAP && objectManager != null) {
+            // Ignore double-tap actions right after a multi-touch camera gesture
+            if (isClickToMoveSuppressed()) {
+                console.log("[POINTER] Double-tap suppressed due to recent multi-touch gesture")
+                return
+            }
             // Double-tap cancels any pending single-tap action
             pendingTapSingleJob?.cancel()
             pendingTapSingleJob = null
@@ -278,6 +331,14 @@ class InputHandler(
         }
 
         if (info.type == PointerEventTypes.POINTERTAP && objectManager != null) {
+            // Ignore tap actions right after a multi-touch camera gesture
+            if (isClickToMoveSuppressed()) {
+                console.log("[POINTER] Tap suppressed due to recent multi-touch gesture")
+                // Cancel any pending single-tap
+                pendingTapSingleJob?.cancel()
+                pendingTapSingleJob = null
+                return
+            }
             // First, check if we tapped a player: show dialog and do not move
             run {
                 val otherPlayersController = SceneManager.getOtherPlayersController()
@@ -415,12 +476,19 @@ class InputHandler(
         if (info.type == PointerEventTypes.POINTERUP) {
             // If it was a click (not a drag) and no object is selected, handle movement
             if (!isDragging && !isObjectSelected) {
-                handleClickToMove()
+                // Suppress click-to-move if a multi-touch gesture just occurred or is ongoing
+                if (isClickToMoveSuppressed() || multiTouchActive || activePointers > 0) {
+                    console.log("[POINTER] Click-to-move suppressed on POINTERUP due to multi-touch context")
+                } else {
+                    handleClickToMove()
+                }
             }
 
-            // Reset pointer state
-            isPointerDown = false
-            isDragging = false
+            // Reset pointer state if no pointers remain
+            if (activePointers == 0) {
+                isPointerDown = false
+                isDragging = false
+            }
         }
         
         // If an object is selected or being dragged, handle object manipulation
@@ -1010,5 +1078,11 @@ class InputHandler(
         pendingTapSingleJob = null
         // Clear other state
         pressedKeys.clear()
+        // Reset multi-touch suppression state
+        activePointers = 0
+        multiTouchActive = false
+        preventClickToMoveUntil = 0.0
+        isPointerDown = false
+        isDragging = false
     }
 }

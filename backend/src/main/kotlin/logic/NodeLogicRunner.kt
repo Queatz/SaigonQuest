@@ -10,6 +10,8 @@ import models.nodeeditor.NodeConnection
 import models.nodeeditor.NodeDataModel
 import models.nodeeditor.NodeEditorJsonUtil
 import models.nodeeditor.PropertyKey
+import models.nodeeditor.PropertyType
+import models.nodeeditor.getOutputPropertyDefinitions
 
 /**
  * Manages the execution of logic nodes for objects
@@ -160,6 +162,53 @@ class NodeLogicRunner(
      * @param eventData Additional data related to the event (mutable)
      */
     private suspend fun processNode(node: NodeDataModel, eventData: MutableMap<String, Any>) {
+        fun reconstructLogicNode(node: NodeDataModel): models.LogicNode {
+            return when (node.nodeId) {
+                NodeId.Teleport -> models.LogicNode.Teleport()
+                NodeId.VisitorInteract -> models.LogicNode.VisitorInteract()
+                NodeId.PlayerInteract -> models.LogicNode.PlayerInteract()
+                NodeId.PlayerJoined -> models.LogicNode.PlayerJoined()
+                NodeId.VisitorJoined -> models.LogicNode.VisitorJoined()
+                NodeId.Dialogue -> models.LogicNode.Dialogue()
+                NodeId.UserLanguage -> models.LogicNode.UserLanguage()
+                NodeId.UserSex -> models.LogicNode.UserSex()
+                NodeId.UserAge -> models.LogicNode.UserAge()
+                NodeId.HasItem -> models.LogicNode.HasItem()
+                NodeId.OpenUrl -> models.LogicNode.OpenUrl()
+                NodeId.ObjectNotification -> models.LogicNode.ObjectNotification()
+                NodeId.ObjectOwnerNotification -> models.LogicNode.ObjectOwnerNotification()
+                NodeId.Delay -> models.LogicNode.Delay()
+                NodeId.TakeItems -> models.LogicNode.TakeItems()
+                NodeId.GiveItems -> models.LogicNode.GiveItems()
+                NodeId.SendChat -> models.LogicNode.SendChat()
+                NodeId.PlayerInput -> models.LogicNode.PlayerInput()
+                NodeId.StringTemplate -> models.LogicNode.StringTemplate()
+            }
+        }
+        fun getOutputPropertyTypes(node: NodeDataModel): List<models.nodeeditor.PropertyType> {
+            val logicNode = reconstructLogicNode(node)
+            return logicNode.getOutputPropertyDefinitions().map { it.type }
+        }
+        fun isTriggerConnection(node: NodeDataModel, fromPort: String): Boolean {
+            // Dynamic dialogue button outputs are always triggers
+            if (fromPort.contains("_out_button_")) return true
+            val match = Regex("_out_(\\d+)$").find(fromPort) ?: return false
+            val index = match.groupValues[1].toIntOrNull() ?: return false
+            val types = getOutputPropertyTypes(node)
+            val t = types.getOrNull(index)
+            return t == models.nodeeditor.PropertyType.TRIGGER
+        }
+        fun propagateValue(fromPort: String, toPort: String) {
+            val value = eventData[fromPort]
+            if (value != null) {
+                WebSocketDebug.logMessage(
+                    "VALUE_PROPAGATION",
+                    "Propagating value from $fromPort to $toPort",
+                    context.session
+                )
+                eventData[toPort] = value
+            }
+        }
         WebSocketDebug.logMessage(
             "PROCESSING_NODE",
             "Processing node: ${node.nodeCategory}/${node.id} with data: ${node.data}",
@@ -220,6 +269,9 @@ class NodeLogicRunner(
                         context.session
                     )
 
+                    // Always propagate any value carried on this connection
+                    propagateValue(connection.fromPort, connection.toPort)
+
                     val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
                     if (targetNode != null) {
                         WebSocketDebug.logMessage(
@@ -227,7 +279,10 @@ class NodeLogicRunner(
                             "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
                             context.session
                         )
-                        processNode(targetNode, eventData)
+                        // Only traverse if this is a trigger connection
+                        if (isTriggerConnection(node, connection.fromPort)) {
+                            processNode(targetNode, eventData)
+                        }
                     } else {
                         WebSocketDebug.logError(
                             "Target node not found for connection: ${connection.from} -> ${connection.to}",
@@ -303,6 +358,9 @@ class NodeLogicRunner(
                         context.session
                     )
 
+                    // Propagate any value carried on this connection
+                    propagateValue(connection.fromPort, connection.toPort)
+
                     val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
                     if (targetNode != null) {
                         WebSocketDebug.logMessage(
@@ -310,7 +368,9 @@ class NodeLogicRunner(
                             "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
                             context.session
                         )
-                        processNode(targetNode, eventData)
+                        if (isTriggerConnection(node, connection.fromPort)) {
+                            processNode(targetNode, eventData)
+                        }
                     } else {
                         WebSocketDebug.logError(
                             "Target node not found for connection: ${connection.from} -> ${connection.to}",
@@ -326,13 +386,22 @@ class NodeLogicRunner(
                     )
                 }
             } else {
-                // For other node types, follow all connections
+                // For other node types, do a two-pass approach:
+                // 1) Propagate ALL values across connections first
+                // 2) Then traverse ONLY trigger connections
+                // This ensures targets receive value inputs before they are processed via a trigger.
+                // Pass 1: propagate values
+                for (connection in connections) {
+                    propagateValue(connection.fromPort, connection.toPort)
+                }
+                // Pass 2: traverse triggers
                 for (connection in connections) {
                     WebSocketDebug.logMessage(
                         "FOLLOWING_CONNECTION",
                         "Following connection from ${connection.from} to ${connection.to}",
                         context.session
                     )
+
                     val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
                     if (targetNode != null) {
                         WebSocketDebug.logMessage(
@@ -340,7 +409,15 @@ class NodeLogicRunner(
                             "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
                             context.session
                         )
-                        processNode(targetNode, eventData)
+                        if (isTriggerConnection(node, connection.fromPort)) {
+                            processNode(targetNode, eventData)
+                        } else {
+                            WebSocketDebug.logMessage(
+                                "SKIP_NON_TRIGGER_CONNECTION",
+                                "Skipping non-trigger connection fromPort=${connection.fromPort} toPort=${connection.toPort} for node=${node.id}",
+                                context.session
+                            )
+                        }
                     } else {
                         WebSocketDebug.logError(
                             "Target node not found for connection: ${connection.from} -> ${connection.to}",
@@ -483,6 +560,22 @@ class NodeLogicRunner(
                     context.session
                 )
                 SendChatNodeRunner(context)
+            }
+            NodeId.PlayerInput -> {
+                WebSocketDebug.logMessage(
+                    "PLAYER_INPUT_RUNNER_SELECTED",
+                    "Selected PlayerInputNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlayerInputNodeRunner(context)
+            }
+            NodeId.StringTemplate -> {
+                WebSocketDebug.logMessage(
+                    "STRING_TEMPLATE_RUNNER_SELECTED",
+                    "Selected StringTemplateNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                StringTemplateNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

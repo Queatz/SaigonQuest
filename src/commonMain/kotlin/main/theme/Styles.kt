@@ -1426,6 +1426,56 @@ object Styles : StyleSheet() {
         color(Theme.colors.onBackground)
     }
 
+    // Emote popup & related UI
+    val emoteTriggerWrapper by style {
+        position(Position.Relative)
+        property("flex-shrink", "0")
+    }
+
+    val emoteTriggerButton by style {
+        width(40.px)
+        height(40.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        borderRadius(8.px)
+        cursor("pointer")
+        backgroundColor(Theme.colors.white10)
+        property("transition", "background-color 0.2s, opacity 0.2s")
+        property("flex-shrink", "0")
+
+        dark(self) {
+            backgroundColor(Theme.colors.black20)
+        }
+    }
+
+    val emotePopupContainer by style {
+        position(Position.Absolute)
+        bottom(45.px)
+        left(0.px)
+        width(250.px)
+        padding(8.px)
+        backgroundColor(Theme.colors.surface)
+        borderRadius(8.px)
+        property("box-shadow", "0 4px 8px ${Theme.colors.shadowLight}")
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(8.px)
+        property("z-index", "10")
+        maxHeight(200.px)
+        overflowY("auto")
+
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+        }
+    }
+
+    // Generic helper to mark non-interactive actions
+    val disabledAction by style {
+        cursor("not-allowed")
+        opacity(0.5)
+    }
+
     init {
         "body, html" style {
             margin(0.cssRem)

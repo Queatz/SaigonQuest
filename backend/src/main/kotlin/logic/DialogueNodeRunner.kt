@@ -66,14 +66,24 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             return false
         }
         
-        // Extract text content
-        val text = nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value ?: return false
+        fun inKey(name: String) = "${node.id}_in_${name}"
+        fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+            val eventVal = eventData[inKey(nameLower)] as? String
+            if (!eventVal.isNullOrBlank()) return eventVal
+            return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+        }
+
+        // Extract text content (allow override from connected input)
+        val text = fromEventOrNode("text_content", PropertyKey.TEXT_CONTENT) ?: return false
+        
+        // Optional title override
+        val title = fromEventOrNode("title", PropertyKey.TITLE)
         
         // Extract optional image URL
-        val imageUrl = nodeData.properties.find { it.key == PropertyKey.IMAGE_URL }?.value?.takeIf { it.isNotBlank() }
+        val imageUrl = fromEventOrNode("image_url", PropertyKey.IMAGE_URL)
 
-        // Extract buttons (default to "OK" if none specified)
-        val buttonsValue = nodeData.properties.find { it.key == PropertyKey.BUTTONS }?.value ?: "OK"
+        // Extract buttons (default to "OK" if none specified), allow override from input
+        val buttonsValue = fromEventOrNode("buttons", PropertyKey.BUTTONS) ?: "OK"
         val buttons = buttonsValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         val buttonsList = buttons.ifEmpty { listOf("OK") }
         
@@ -101,6 +111,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             buttons = buttonsList,
             imageUrl = imageUrl,
             objectTitle = objectTitle,
+            title = title,  // Optional custom title
         )
         
         val dialogueMessage = WebSocketMessage(

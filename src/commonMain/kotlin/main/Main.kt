@@ -8,7 +8,9 @@ import main.components.ByePage
 import main.components.LanguageSettings
 import main.components.PausedPage
 import main.components.SceneComponent
+import main.components.DialogueBox
 import main.theme.EditorStyles
+import lib.configureBabylonDracoDecoder
 import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
 import main.theme.NotificationStyles
@@ -20,6 +22,14 @@ import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 
 fun main() {
+    // Configure BabylonJS Draco decoder very early to ensure local asset URLs are used
+    try {
+        configureBabylonDracoDecoder("/babylon/Draco")
+        console.log("[DracoConfig][startup] configured")
+    } catch (t: Throwable) {
+        console.warn("[Main] Failed to configure Babylon Draco decoder at startup, falling back to default CDN URLs", t)
+    }
+
     WebSocketConnectionManager.initialize()
     console.log("WebSocketConnectionManager initialized")
 
@@ -36,6 +46,11 @@ fun main() {
             Style(EditorStyles)
             Style(InventoryStyles)
             Style(AssetStyles)
+
+            // Global dialogue host: listens for SHOW_DIALOGUE and renders dialogs (including Player input)
+            DialogueBox(
+                onClose = {}
+            )
 
             BrowserRouter(
                 initPath = "/"

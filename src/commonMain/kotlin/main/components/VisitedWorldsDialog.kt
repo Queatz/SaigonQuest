@@ -79,6 +79,15 @@ fun VisitedWorldsDialog(
                                         onNavigate(path)
                                     }
                                 }) {
+                                    // Thumbnail
+                                    val thumb = vw.world.screenshot
+                                    if (!thumb.isNullOrBlank()) {
+                                        org.jetbrains.compose.web.dom.Img(
+                                            src = thumb,
+                                            attrs = { classes(Styles.imageThumbSmall) }
+                                        )
+                                    }
+
                                     // Title
                                     Span(attrs = { classes(Styles.objectEditorDialogLogicTitle) }) {
                                         Text(vw.world.title.ifEmpty { translated("Untitled World") })

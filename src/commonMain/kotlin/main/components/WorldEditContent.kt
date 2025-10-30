@@ -158,6 +158,8 @@ fun WorldEditContent(
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#ffffff") }
     var directionalLightColor by remember { mutableStateOf(currentWorld?.directionalLightColor ?: "#ffffff") }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
+    var screenshot by remember { mutableStateOf(currentWorld?.screenshot) }
+    var isUploadingScreenshot by remember { mutableStateOf(false) }
     // Chat history
     var chatLongevityEnabled by remember { mutableStateOf((currentWorld?.chatLongevity ?: 0.0) > 0.0) }
     var chatLongevityDays by remember { mutableStateOf(
@@ -370,6 +372,7 @@ fun WorldEditContent(
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
+                screenshot = screenshot,
                 // Access control
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
@@ -396,6 +399,7 @@ fun WorldEditContent(
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
+                screenshot = screenshot,
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
                 allowFriendsOfOwners = allowFriendsOfOwners,
@@ -707,6 +711,53 @@ fun WorldEditContent(
                 Translated("No asset selected")
             } else {
                 Text(name)
+            }
+        }
+
+        // Screenshot section
+        Div(attrs = { classes(Styles.formGroup) }) {
+            Label(attrs = { }) { Translated("World screenshot") }
+
+            if (!screenshot.isNullOrBlank()) {
+                org.jetbrains.compose.web.dom.Img(
+                    src = screenshot!!,
+                    attrs = {
+                        classes(Styles.imageThumb)
+                    }
+                )
+            }
+
+            Div(attrs = { classes(Styles.requestActions) }) {
+                Button(
+                    attrs = {
+                        classes(Styles.primaryButton)
+                        if (!fieldsEnabled || isUploadingScreenshot) disabled()
+                        onClick {
+                            if (!fieldsEnabled || isUploadingScreenshot) return@onClick
+                            coroutineScope.launch {
+                                isUploadingScreenshot = true
+                                try {
+                                    val url = main.utils.ScreenshotUtils.captureAndUploadWorldScreenshot(title)
+                                    screenshot = url
+                                } catch (t: Throwable) {
+                                    console.error("Failed to capture/upload screenshot", t)
+                                } finally {
+                                    isUploadingScreenshot = false
+                                }
+                            }
+                        }
+                    }
+                ) { Translated(if (screenshot.isNullOrBlank()) "Set screenshot from scene" else if (isUploadingScreenshot) "Uploading..." else "Change screenshot") }
+
+                if (!screenshot.isNullOrBlank()) {
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            if (!fieldsEnabled) disabled()
+                            onClick { if (fieldsEnabled) screenshot = null }
+                        }
+                    ) { Translated("Remove") }
+                }
             }
         }
 

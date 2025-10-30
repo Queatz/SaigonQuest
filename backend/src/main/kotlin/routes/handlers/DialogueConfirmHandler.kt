@@ -5,6 +5,7 @@ import io.ktor.server.websocket.DefaultWebSocketServerSession
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import logic.DialogueNodeRunner
+import logic.PlayerInputNodeRunner
 import models.DialogueConfirmation
 import models.WebSocketAction
 import routes.WebSocketConnection
@@ -40,7 +41,9 @@ class DialogueConfirmHandler : WebSocketHandler {
             }
             
             // Process the confirmation
-            val processed = DialogueNodeRunner.processConfirmation(confirmation)
+            val processedDialogue = DialogueNodeRunner.processConfirmation(confirmation)
+            val processedInput = if (!processedDialogue) PlayerInputNodeRunner.processConfirmation(confirmation) else false
+            val processed = processedDialogue || processedInput
             
             if (processed) {
                 WebSocketDebug.logMessage("DIALOGUE_CONFIRM_PROCESSED", "dialogueId=${confirmation.dialogueId} buttonIndex=${confirmation.buttonIndex}", session)

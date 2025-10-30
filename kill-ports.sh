@@ -23,5 +23,18 @@ else
     echo "No process found on port 8090"
 fi
 
+
+
+echo ""
+echo "Checking for processes on port 4080..."
+PID_4080=$(lsof -ti :4080)
+if [ -n "$PID_4080" ]; then
+    echo "Killing process(es) on port 4080: $PID_4080"
+    kill -9 $PID_4080
+    echo "Port 4080 freed"
+else
+    echo "No process found on port 4080"
+fi
+
 echo ""
 echo "Done!"

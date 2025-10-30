@@ -21,4 +21,6 @@ enum class NodeId {
     TakeItems,
     GiveItems,
     SendChat,
+    PlayerInput,
+    StringTemplate,
 }

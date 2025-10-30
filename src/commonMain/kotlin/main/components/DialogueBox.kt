@@ -28,6 +28,14 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.dom.Br
+import org.jetbrains.compose.web.dom.TextInput
+import web.cssom.HtmlAttributes.Companion.value
+import kotlin.invoke
 
 /**
  * DialogueBox component
@@ -44,6 +52,7 @@ fun DialogueBox(
 
     // Responsive helper
     val isMobile = rememberIsMobile()
+    var textInput by remember { mutableStateOf("") }
 
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
@@ -64,7 +73,7 @@ fun DialogueBox(
 
     BaseDialog(
         onClose = { currentDialogue = null },
-        title = null,
+        title = dialogue.title,
         showCloseButton = false,
         isFullscreen = false,
         clickOutside = true,
@@ -108,6 +117,41 @@ fun DialogueBox(
                     }
                 }
             }
+
+            if (dialogue.requiresInput) {
+                Br()
+                TextInput(textInput) {
+                    if (!dialogue.placeholder.isNullOrBlank()) {
+                        placeholder(dialogue.placeholder!!)
+                    }
+                    classes(Styles.inputField)
+                    autoFocus()
+                    onInput { ev -> textInput = ev.value }
+                    onKeyDown { ev ->
+                        if (ev.key == "Enter") {
+                            val scope = MainScope()
+                            scope.launch {
+                                try {
+                                    val user = UserApi.getCurrentUser()
+                                    val userId = user.key
+                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
+                                } catch (e: Throwable) {
+                                    console.error("Error sending dialogue confirmation via Enter", e)
+                                } finally {
+                                    textInput = ""
+                                    currentDialogue = null
+                                }
+                            }
+                        }
+                    }
+
+                    ref {
+                        it.focus()
+
+                        onDispose {  }
+                    }
+                }
+            }
         },
         actions = {
             // Container to allow wrapping when many buttons
@@ -122,10 +166,13 @@ fun DialogueBox(
                                 try {
                                     val user = UserApi.getCurrentUser()
                                     val userId = user.key
-                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index)
+                                    val inputText = if (dialogue.requiresInput) textInput else null
+                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index, inputText)
                                 } catch (e: Throwable) {
                                     console.error("Error sending dialogue confirmation", e)
                                 } finally {
+                                    // Reset
+                                    textInput = ""
                                     currentDialogue = null
                                 }
                             }

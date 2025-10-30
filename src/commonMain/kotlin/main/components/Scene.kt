@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
 import lib.initializeBabylonJSLoaders
+import lib.configureBabylonDracoDecoder
 import main.api.ApiClient
 import main.api.FriendApi
 import main.api.UserApi
@@ -50,6 +51,10 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import utils.json
 import web.animations.awaitAnimationFrame
+import web.navigator.navigator
+import web.wakelock.request
+import web.wakelock.WakeLockSentinel
+import web.wakelock.release
 import kotlin.random.Random
 
 /**
@@ -116,6 +121,7 @@ fun SceneComponent(url: String) {
     var showFadeOverlay by remember { mutableStateOf(true) }
     var fadeOpacity by remember { mutableStateOf(1.0) }
     var fadeBlurPx by remember { mutableStateOf(8) }
+
 
     // State for other player dialog
     val showOtherPlayerDialog = remember { mutableStateOf(false) }
@@ -374,6 +380,37 @@ fun SceneComponent(url: String) {
         canvas.focus()
     }
 
+    // Keep the screen awake while the 3D canvas exists
+    DisposableEffect(canvasRef) {
+        var sentinel: WakeLockSentinel? = null
+
+        val acquireJob = scope.launch {
+            try {
+                if (canvasRef != null) {
+                    val wl = navigator.wakeLock
+                    sentinel = wl.request()
+                    console.log("[WakeLock] acquired")
+                }
+            } catch (t: Throwable) {
+                console.warn("[WakeLock] acquire failed: ${t.message}")
+            }
+        }
+
+        onDispose {
+            acquireJob.cancel()
+            scope.launch {
+                try {
+                    sentinel?.release()
+                    console.log("[WakeLock] released (dispose)")
+                } catch (t: Throwable) {
+                    console.warn("[WakeLock] release failed: ${t.message}")
+                } finally {
+                    sentinel = null
+                }
+            }
+        }
+    }
+
     // Friendship-related functions
 
     /**
@@ -593,6 +630,12 @@ fun SceneComponent(url: String) {
 
         // Initialize BabylonJS loaders before loading the 3D model
         initializeBabylonJSLoaders()
+        // Configure Draco after initializing loaders to ensure configuration objects are available
+        try {
+            configureBabylonDracoDecoder("/babylon/Draco")
+        } catch (t: Throwable) {
+            console.warn("[Scene] Failed to configure Babylon Draco decoder, falling back to default CDN URLs", t)
+        }
 
         // Create controllers
         val cameraController = CameraController(scene)
@@ -985,13 +1028,6 @@ fun SceneComponent(url: String) {
         }
     }
 
-    // Add DialogueBox component for displaying dialogue messages
-    DialogueBox {
-        scope.launch {
-            awaitAnimationFrame()
-            canvasRef?.focus()
-        }
-    }
 
     // Add TakeItems dialog for item transfer prompts
     TakeItemsDialog()

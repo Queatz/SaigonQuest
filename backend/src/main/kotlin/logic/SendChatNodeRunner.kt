@@ -32,7 +32,13 @@ class SendChatNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             return false
         }
 
-        val messageText = nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value?.trim().orEmpty()
+        fun inKey(key: PropertyKey) = "${node.id}_in_${key.name.lowercase()}"
+        val overrideFromInput = (eventData[inKey(PropertyKey.TEXT_CONTENT)] as? String)?.trim().orEmpty()
+        val messageText = if (overrideFromInput.isNotBlank()) {
+            overrideFromInput
+        } else {
+            nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value?.trim().orEmpty()
+        }
         if (messageText.isBlank()) {
             WebSocketDebug.logError("SendChat: TEXT_CONTENT is missing or blank", null, context.session)
             return false

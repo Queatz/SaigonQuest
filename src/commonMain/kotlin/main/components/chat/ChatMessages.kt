@@ -113,8 +113,8 @@ fun ChatMessages(
     // Scroll to bottom when messages finish initial loading
     LaunchedEffect(isLoading) {
         if (!isLoading) {
+            scrollToBottom()
             awaitAnimationFrame()
-            delay(500)
             scrollToBottom()
         }
     }
@@ -122,7 +122,7 @@ fun ChatMessages(
     // Smooth scroll on new messages
     var lastCount by remember { mutableStateOf(0) }
     LaunchedEffect(messages.size) {
-        if (messages.size > lastCount) {
+        if (lastCount != 0 && messages.size > lastCount) {
             lastCount = messages.size
             smoothScrollToBottom()
         } else {

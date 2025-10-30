@@ -159,6 +159,29 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String, nodeData: Strin
             )
         }
     }
+
+    // Special handling: for StringTemplate, add dynamic string inputs for each placeholder in TEMPLATE
+    if (logicNode is LogicNode.StringTemplate) {
+        // Parse current template
+        val parsedNodeData = NodeDataParser.parseNodeData(logicNode, nodeData)
+        val template = NodeDataParser.getPropertyValue(parsedNodeData, PropertyKey.TEMPLATE)
+        // Find unique placeholders like {name}
+        val regex = "\\{([a-zA-Z0-9_]+)\\}".toRegex()
+        val placeholders = regex.findAll(template).map { it.groupValues[1] }.toSet()
+        placeholders.forEach { raw ->
+            val key = raw.lowercase()
+            // Create a human-friendly label (Sentence case)
+            val label = key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            inputs.add(
+                PortData(
+                    id = "${nodeId}_in_${key}",
+                    name = label,
+                    type = PortType.INPUT,
+                    dataType = PropertyType.STRING,
+                )
+            )
+        }
+    }
     
     return Pair(inputs, outputs)
 }
@@ -205,6 +228,8 @@ fun createNode(
         NodeId.TakeItems -> LogicNode.TakeItems()
         NodeId.GiveItems -> LogicNode.GiveItems()
         NodeId.SendChat -> LogicNode.SendChat()
+        NodeId.PlayerInput -> LogicNode.PlayerInput()
+        NodeId.StringTemplate -> LogicNode.StringTemplate()
     }
     
     // Create ports based on node type and data
@@ -241,6 +266,16 @@ fun updateNodeOutputs(node: NodeData, nodeId: String, data: String): NodeData {
         
         // Return updated node with new outputs
         return node.copy(
+            outputs = outputs,
+            data = data
+        )
+    }
+
+    // For StringTemplate nodes, recreate BOTH inputs (placeholders) and outputs
+    if (node.type.id == NodeId.StringTemplate) {
+        val (inputs, outputs) = createPortsForNodeType(node.type, nodeId, data)
+        return node.copy(
+            inputs = inputs,
             outputs = outputs,
             data = data
         )

@@ -18,12 +18,19 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import kotlin.random.Random
 
 // Centralized back/stack controller for all dialogs
 private object DialogBackController {
     private const val SENTINEL_STATE = "DIALOG_SENTINEL"
-    private val stack = mutableListOf<() -> Unit>()
+
+    private data class Entry(
+        val onBack: () -> Unit,
+        val escEnabled: Boolean,
+    )
+
+    private val stack = mutableListOf<Entry>()
     private var listening = false
     private var sentinelActive = false
     private var suppressNextPop = false
@@ -38,14 +45,29 @@ private object DialogBackController {
         } else if (stack.isNotEmpty()) {
             // User pressed back: keep the sentinel on top and close only the last dialog
             pushSentinel()
-            val cb = stack.last()
-            cb()
+            val top = stack.last()
+            top.onBack()
+        }
+    }
+
+    private val keydownHandler: (Event) -> Unit = keydownHandler@ { e ->
+        val ke = e as? KeyboardEvent ?: return@keydownHandler
+        val key = ke.key
+        if (key == "Escape" || key == "Esc") {
+            if (stack.isNotEmpty()) {
+                val top = stack.last()
+                if (top.escEnabled) {
+                    ke.preventDefault()
+                    top.onBack()
+                }
+            }
         }
     }
 
     private fun ensureListening() {
         if (!listening) {
             window.addEventListener("popstate", popHandler)
+            window.addEventListener("keydown", keydownHandler)
             listening = true
         }
     }
@@ -70,15 +92,16 @@ private object DialogBackController {
         }
     }
 
-    fun register(onBack: () -> Unit): () -> Unit {
-        stack.add(onBack)
+    fun register(onBack: () -> Unit, escEnabled: Boolean): () -> Unit {
+        val entry = Entry(onBack = onBack, escEnabled = escEnabled)
+        stack.add(entry)
         ensureListening()
         pushSentinel()
-        return { unregister(onBack) }
+        return { unregister(entry) }
     }
 
-    private fun unregister(onBack: () -> Unit) {
-        stack.remove(onBack)
+    private fun unregister(entry: Entry) {
+        stack.remove(entry)
         if (stack.isEmpty()) {
             removeSentinelIfNeeded()
         }
@@ -116,8 +139,8 @@ fun BaseDialog(
     val token = remember { "dlg-${Random.nextInt()}" }
 
     // Register this dialog with the centralized back controller
-    DisposableEffect(onClose) {
-        val unregister = DialogBackController.register(onBack = onClose)
+    DisposableEffect(onClose, clickOutside) {
+        val unregister = DialogBackController.register(onBack = onClose, escEnabled = clickOutside)
         onDispose { unregister() }
     }
 

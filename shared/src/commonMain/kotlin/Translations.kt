@@ -1399,6 +1399,15 @@ vi: Chế độ quan sát
 
 Wide angle
 vi: Chế độ rộng
+
+World screenshot
+vi: Ảnh chụp thế giới
+
+Set screenshot from scene
+vi: Đặt ảnh chụp từ cảnh hiện tại
+
+Change screenshot
+vi: Thay đổi ảnh chụp
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

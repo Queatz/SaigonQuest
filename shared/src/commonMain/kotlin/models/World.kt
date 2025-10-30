@@ -16,6 +16,7 @@ data class World(
     var backgroundColor: String = "#ffffff", // background color in hex format
     var directionalLightColor: String = "#ffffff", // directional light color in hex format
     var fogDensity: Float = 0.0f, // fog density (0.0 to 1.0), 0.0 means no fog
+    var screenshot: String? = null, // URL (PNG) thumbnail of the world scene
     // Access control
     var allowAllVisitors: Boolean = true,
     var allowAllPlayers: Boolean = false,

@@ -55,6 +55,7 @@ import web.notifications.requestPermission
 import lib.ScreenshotOptions
 import lib.Tools
 import main.components.chat.ChatStore
+import org.w3c.dom.HTMLAnchorElement
 import web.navigator.navigator
 import web.push.PushManager
 import kotlin.js.Date
@@ -600,46 +601,14 @@ fun WorldUI(
                 // Camera screenshot button (not part of the panel system)
                 CircleButton(
                     onClick = {
-                        val scene = SceneManager.getScene()
-                        if (scene != null) {
+                        scope.launch {
                             try {
-                                val options = object : ScreenshotOptions {
-                                    override val width: Int = scene.getEngine().getRenderWidth()
-                                    override val height: Int = scene.getEngine().getRenderHeight()
-                                }
-                                Tools.CreateScreenshot(
-                                    engine = scene.getEngine(),
-                                    camera = scene.activeCamera,
-                                    options = options,
-                                    onSuccess = { data ->
-                                        // Build a safe filename with world name and local timestamp
-                                        val date = Date()
-                                        fun pad(n: Int): String = if (n < 10) "0$n" else "$n"
-                                        val timestamp =
-                                            "${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${
-                                                pad(date.getHours())
-                                            }-${pad(date.getMinutes())}-${pad(date.getSeconds())}"
-                                        val worldNameRaw = currentWorld?.title ?: "world"
-                                        val safeWorldName = worldNameRaw
-                                            .trim()
-                                            .ifEmpty { "world" }
-                                            .replace(Regex("[\\\\/:*?\"<>|]"), "")
-                                            .replace(Regex("\\s+"), "-")
-
-                                        // Trigger download of the screenshot
-                                        val link = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
-                                        link.href = data
-                                        link.download = "saigon-quest-$safeWorldName-$timestamp.png"
-                                        document.body?.appendChild(link)
-                                        link.click()
-                                        document.body?.removeChild(link)
-                                    }
-                                )
+                                val data = main.utils.ScreenshotUtils.captureCurrentScenePng()
+                                val filename = main.utils.ScreenshotUtils.buildScreenshotFilename(currentWorld?.title)
+                                main.utils.ScreenshotUtils.downloadDataUrlAsFile(data, filename)
                             } catch (e: Throwable) {
-                                console.error("BabylonJS Tools.CreateScreenshot error: ${e.message}")
+                                console.error("Screenshot capture error: ${e.message}")
                             }
-                        } else {
-                            console.warn("Scene not available for screenshot")
                         }
                     },
                     iconIndex = 19,
@@ -923,16 +892,7 @@ fun WorldUI(
         
         // Always-show QR code banner above BottomText
         if (GraphicsSettings.isAlwaysShowQrEnabled()) {
-            val playerPosition = SceneManager.getPlayerController()?.getPlayerPosition()
-            val currentUrl = remember(playerPosition) {
-                val baseUrl = window.location.href
-                if (playerPosition != null) {
-                    val x = (playerPosition.x * 100).toInt() / 100.0
-                    val y = (playerPosition.y * 100).toInt() / 100.0
-                    val z = (playerPosition.z * 100).toInt() / 100.0
-                    "$baseUrl?at=$x,$y,$z"
-                } else baseUrl
-            }
+            val currentUrl = window.location.href
             val qrDataUrl = remember(currentUrl) {
                 val qrData = lib.Qr.createQR(currentUrl, "gif")
                 lib.BinaryUtils.uint8ArrayToDataUrl(qrData, "image/gif")

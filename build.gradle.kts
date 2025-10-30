@@ -70,6 +70,46 @@ tasks.register<Copy>("prepareProdServiceWorker") {
     }
 }
 
+// Copy Babylon Draco decoder assets (configuration-cache safe)
+// 1) Copy into processed resources so webpack/dev server can serve at /babylon/Draco/*
+tasks.register<Copy>("prepareDracoAssetsResources") {
+    dependsOn("kotlinNpmInstall")
+    from(layout.buildDirectory.dir("js/node_modules/@babylonjs/core/assets/Draco")) {
+        include(
+            "draco_wasm_wrapper_gltf.js",
+            "draco_decoder_gltf.wasm",
+            "draco_decoder_gltf.js",
+        )
+    }
+    into(layout.buildDirectory.dir("processedResources/js/main/babylon/Draco"))
+}
+
+// 2) Copy to dev dist so the dev server can serve them directly
+tasks.register<Copy>("prepareDracoAssetsDevDist") {
+    dependsOn("kotlinNpmInstall")
+    from(layout.buildDirectory.dir("js/node_modules/@babylonjs/core/assets/Draco")) {
+        include(
+            "draco_wasm_wrapper_gltf.js",
+            "draco_decoder_gltf.wasm",
+            "draco_decoder_gltf.js",
+        )
+    }
+    into(layout.buildDirectory.dir("dist/js/developmentExecutable/babylon/Draco"))
+}
+
+// 3) Copy to prod dist for production bundle
+tasks.register<Copy>("prepareDracoAssetsProdDist") {
+    dependsOn("kotlinNpmInstall")
+    from(layout.buildDirectory.dir("js/node_modules/@babylonjs/core/assets/Draco")) {
+        include(
+            "draco_wasm_wrapper_gltf.js",
+            "draco_decoder_gltf.wasm",
+            "draco_decoder_gltf.js",
+        )
+    }
+    into(layout.buildDirectory.dir("dist/js/productionExecutable/babylon/Draco"))
+}
+
 // Convenience task: build SW and start frontend dev server
 tasks.register("devApp") {
     group = "application"
@@ -148,10 +188,24 @@ kotlin {
 // This fixes Gradle's implicit dependency validation by making the compile sync task
 // depend on the task that provides files in build/processedResources/js/main.
 tasks.named("jsDevelopmentExecutableCompileSync") {
-    dependsOn("prepareDevServiceWorker")
+    dependsOn(
+        "prepareDevServiceWorker",
+        "prepareDracoAssetsResources",
+        "prepareDracoAssetsDevDist",
+    )
 }
 
 // Also wire the production variant for consistency
 tasks.named("jsProductionExecutableCompileSync") {
-    dependsOn("prepareProdServiceWorker")
+    dependsOn(
+        "prepareProdServiceWorker",
+        "prepareDracoAssetsResources",
+        "prepareDracoAssetsProdDist",
+    )
+}
+
+
+// Ensure Draco assets are prepared before packaging JS jar
+tasks.named("jsJar") {
+    dependsOn("prepareDracoAssetsResources")
 }

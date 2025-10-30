@@ -294,7 +294,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val op = ensurePlayer(pos.userId, pos.position)
         op.isPlayer = pos.isPlayer
         op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
-        attemptSpawnWithUser(op,)
+        // Only attempt to spawn if we don't already have a handle. Avoid re-applying appearance on every movement update,
+        // which can cause visible flashing as textures/materials are repeatedly reset.
+        if (op.handle == null) {
+            attemptSpawnWithUser(op)
+        }
     }
 
     private fun onUpdatePlayer(update: UpdatePlayerData) {
@@ -308,6 +312,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 update.status?.let { s -> op.status = s; hud.setDesiredStatus(update.userId, s) }
                 // Track explicit activity if server provides it
                 op.activity = update.activity
+                // Apply activity immediately to reflect sit/stand for other players
+                op.handle?.updateActivity(update.activity)
                 // If username changed, refresh username billboard
                 refreshUsernameBillboard(op)
                 // If appearance-related changes exist server-side, we can bump revision and re-assemble
@@ -351,6 +357,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         op.handle = handle
         op.lastPos = startPos
         op.joinStartMs = window.performance.now()
+        // Apply any pending activity (e.g., Sit) immediately on spawn
+        op.activity?.let { pending ->
+            try { handle.updateActivity(pending) } catch (_: Throwable) {}
+        }
 
         // Success: clear retry state
         clearSpawnRetry(op.userId)

@@ -53,12 +53,6 @@ class PlayerController(private val scene: Scene) {
     // Current player activity (null means standing)
     private var playerActivity: PlayerActivity? = null
     
-    // Time since last movement in seconds
-    private var timeSinceLastMovement = 0.0
-    
-    // Auto-sit timeout in seconds (5 minutes)
-    private val autoSitTimeout = 300.0 // 5 minutes = 300 seconds
-    
     // Visual indicator for move target
     private var moveCircle: Mesh? = null
     
@@ -68,7 +62,6 @@ class PlayerController(private val scene: Scene) {
     private var startNodes: Array<Node> = emptyArray()
     
     // Time tracking for framerate-independent movement
-    private val movementDelta = FrameDeltaTracker()
     private var lastPosition: Vector3? = null
 
     // Movement engine encapsulating movement state

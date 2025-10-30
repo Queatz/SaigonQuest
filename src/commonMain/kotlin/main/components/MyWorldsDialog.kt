@@ -96,6 +96,15 @@ fun MyWorldsDialog(
                                     }
                                 }
                             ) {
+                                // Thumbnail
+                                val thumb = world.screenshot
+                                if (!thumb.isNullOrBlank()) {
+                                    org.jetbrains.compose.web.dom.Img(
+                                        src = thumb,
+                                        attrs = { classes(Styles.imageThumbSmall) }
+                                    )
+                                }
+
                                 // Title
                                 Span(attrs = { classes(Styles.objectEditorDialogLogicTitle) }) {
                                     Text(world.title.ifEmpty { translated("Untitled World") })
