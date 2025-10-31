@@ -162,18 +162,6 @@ object OverlayStyles : StyleSheet() {
         fontSize(16.px)
     }
 
-    // Add the fadeBlur keyframes animation
-    val fadeBlur by keyframes {
-        0.percent {
-            property("backdrop-filter", "blur(0px)")
-            property("-webkit-backdrop-filter", "blur(0px)")
-        }
-        100.percent {
-            property("backdrop-filter", "blur(8px)")
-            property("-webkit-backdrop-filter", "blur(8px)")
-        }
-    }
-
     // Common styles for panels and dialogs overlay
     val overlayBase by style {
         position(Position.Fixed)
@@ -190,15 +178,9 @@ object OverlayStyles : StyleSheet() {
         property("z-index", "1000")
         property("pointer-events", "auto")
 
-        property("backdrop-filter", "blur(0px)")  // Initial state
-        property("-webkit-backdrop-filter", "blur(0px)")  // Initial state
+        property("backdrop-filter", "blur(16px)")  // Initial state
+        property("-webkit-backdrop-filter", "blur(16px)")  // Initial state
         property("isolation", "isolate")
         property("contain", "layout paint size")
-
-        animation(fadeBlur) {
-            duration(1.8f.s)
-            timingFunction(AnimationTimingFunction.EaseInOut)
-            fillMode(AnimationFillMode.Forwards)
-        }
     }
 }

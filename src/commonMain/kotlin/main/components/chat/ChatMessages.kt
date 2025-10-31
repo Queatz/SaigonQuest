@@ -214,6 +214,7 @@ fun ChatMessages(
                             MessageAttachments(
                                 attachments = msg.attachments,
                                 onImageClick = { url -> imageDialogUrl = url },
+                                onImageLoaded = { smoothScrollToBottom() },
                             )
                         }
 
@@ -295,6 +296,7 @@ fun ChatMessages(
                         }
                     },
                     onImageClick = { url -> imageDialogUrl = url },
+                    onImageLoaded = { smoothScrollToBottom() },
                 )
             }
             }
@@ -317,6 +319,7 @@ fun ChatMessageItem(
     isPinned: Boolean = false,
     onPinToggle: (() -> Unit)? = null,
     onImageClick: (String) -> Unit = {},
+    onImageLoaded: () -> Unit = {},
 ) {
     Div(
         attrs = {
@@ -419,6 +422,7 @@ fun ChatMessageItem(
             MessageAttachments(
                 attachments = message.attachments,
                 onImageClick = onImageClick,
+                onImageLoaded = onImageLoaded,
             )
         }
     }

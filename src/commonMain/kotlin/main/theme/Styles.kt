@@ -1394,6 +1394,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         backgroundColor(Color.white)
         borderRadius(8.px)
+        overflow("hidden")
     }
 
     // Pixelated QR image style

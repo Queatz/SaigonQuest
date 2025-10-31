@@ -15,6 +15,7 @@ import org.jetbrains.compose.web.dom.Img
 fun MessageAttachments(
     attachments: List<Attachment>,
     onImageClick: (String) -> Unit = {},
+    onImageLoaded: () -> Unit = {}
 ) {
     attachments.forEach { att ->
         when (att) {
@@ -27,6 +28,19 @@ fun MessageAttachments(
                         onClick {
                             it.stopPropagation()
                             onImageClick(att.url)
+                        }
+                        ref { img ->
+                            var remove: (() -> Unit)? = null
+                            if (img.complete && img.naturalHeight > 0) {
+                                onImageLoaded()
+                            } else {
+                                val listener: (org.w3c.dom.events.Event) -> Unit = { onImageLoaded() }
+                                img.addEventListener("load", listener)
+                                remove = { img.removeEventListener("load", listener) }
+                            }
+                            onDispose {
+                                remove?.invoke()
+                            }
                         }
                     }
                 )
