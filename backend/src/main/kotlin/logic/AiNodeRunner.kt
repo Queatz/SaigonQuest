@@ -1,9 +1,13 @@
 package logic
 
 import debug.WebSocketDebug
+import models.WebSocketAction
+import models.ObjectTypingData
 import models.nodeeditor.NodeDataModel
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
+import routes.WebSocketMessage
+import routes.handlers.WebSocketUtils
 import services.DeepSeekClient
 import utils.json
 
@@ -40,7 +44,39 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             context.session
         )
 
-        val text = DeepSeekClient.promptText(systemPrompt, userPrompt, context.session)
+        // Broadcast OBJECT_TYPING true (start) if we have an objectId
+        if (context.objectId.isNotBlank()) {
+            try {
+                val startMsg = WebSocketMessage(
+                    action = WebSocketAction.OBJECT_TYPING,
+                    data = json.encodeToString(ObjectTypingData.serializer(), ObjectTypingData(context.objectId, true))
+                )
+                val startStr = json.encodeToString(WebSocketMessage.serializer(), startMsg)
+                WebSocketUtils.broadcastToWorld(context.worldId, startStr, context.activeConnections, context.session)
+                WebSocketDebug.logMessage("OBJECT_TYPING_START", "objectId=${context.objectId}", context.session)
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Failed to broadcast OBJECT_TYPING start", e, context.session)
+            }
+        }
+
+        val text = try {
+            DeepSeekClient.promptText(systemPrompt, userPrompt, context.session)
+        } finally {
+            // Always broadcast OBJECT_TYPING false (stop)
+            if (context.objectId.isNotBlank()) {
+                try {
+                    val stopMsg = WebSocketMessage(
+                        action = WebSocketAction.OBJECT_TYPING,
+                        data = json.encodeToString(ObjectTypingData.serializer(), ObjectTypingData(context.objectId, false))
+                    )
+                    val stopStr = json.encodeToString(WebSocketMessage.serializer(), stopMsg)
+                    WebSocketUtils.broadcastToWorld(context.worldId, stopStr, context.activeConnections, context.session)
+                    WebSocketDebug.logMessage("OBJECT_TYPING_STOP", "objectId=${context.objectId}", context.session)
+                } catch (e: Throwable) {
+                    WebSocketDebug.logError("Failed to broadcast OBJECT_TYPING stop", e, context.session)
+                }
+            }
+        }
         return if (!text.isNullOrBlank()) {
             // Emit to string output (TEXT at out_0)
             eventData["${node.id}_out_0"] = text

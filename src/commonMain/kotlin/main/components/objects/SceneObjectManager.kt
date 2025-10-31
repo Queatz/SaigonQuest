@@ -1,6 +1,7 @@
 package main.components.objects
 
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import models.Object
 import models.ObjectKind
 import models.Position
 import models.WebSocketAction
+import models.ObjectTypingData
 
 /**
  * Implementation of the ObjectManager interface for managing objects in the 3D scene
@@ -57,6 +59,13 @@ class SceneObjectManager(
     
     // Map of object IDs to their status text handles
     private val objectStatusTextHandles = mutableMapOf<String, WorldObjectHandle>()
+
+    // Cache last known status text to restore after typing ends
+    private val objectStatusTexts = mutableMapOf<String, String>()
+
+    // Typing indicator HUD per object ("💬" bubble) and its safety timeouts
+    private val objectTypingHandles = mutableMapOf<String, WorldObjectHandle>()
+    private val objectTypingTimeouts = mutableMapOf<String, Int>()
     
     // Tracks last known (file, collection) used to render each object, to detect when re-creation is needed
     private val objectModelSources = mutableMapOf<String, Pair<String, String>>()
@@ -310,8 +319,13 @@ class SceneObjectManager(
                 console.log("[DEBUG_REMOVE] Removing status text for object: $objectId")
                 statusTextHandle.remove()
                 objectStatusTextHandles.remove(objectId)
+                objectStatusTexts.remove(objectId)
                 console.log("[DEBUG_REMOVE] Successfully removed status text for object: $objectId")
             }
+
+            // Remove typing indicator if present
+            objectTypingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+            objectTypingHandles.remove(objectId)?.remove()
             
             // Find and remove the object from the scene
             val node = objectMeshes[objectId]
@@ -1118,6 +1132,85 @@ class SceneObjectManager(
                 console.error("Error processing object position update", error)
             }
         }
+
+        // Typing indicator (server → clients only)
+        fun setObjectTypingLocal(objectId: String, isTyping: Boolean) {
+            if (!isTyping) {
+                objectTypingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+                objectTypingHandles.remove(objectId)?.remove()
+                // Restore status text if we have one cached
+                val node = objectMeshes[objectId]
+                if (node != null) {
+                    val status = objectStatusTexts[objectId]?.trim().orEmpty()
+                    if (status.isNotBlank()) {
+                        handleObjectStatusText(objectId, status, node)
+                    }
+                }
+                return
+            }
+            // While typing is active, hide any existing status text immediately
+            objectStatusTextHandles.remove(objectId)?.remove()
+            val node = objectMeshes[objectId]
+            if (node == null) {
+                // Retry shortly if the object/node is not ready yet
+                window.setTimeout({ setObjectTypingLocal(objectId, isTyping) }, 50)
+                return
+            }
+            // Find the highest Y among child meshes to place bubble above the object
+            val childMeshes = node.getChildMeshes(false)
+            var highestY = node.position.y
+            if (childMeshes.isNotEmpty()) {
+                try {
+                    var maxY = childMeshes[0].getBoundingInfo().maximum.y + childMeshes[0].position.y + node.position.y
+                    for (i in 1 until childMeshes.size) {
+                        val m = childMeshes[i]
+                        val my = m.getBoundingInfo().maximum.y + m.position.y + node.position.y
+                        if (my > maxY) maxY = my
+                    }
+                    highestY = maxY
+                } catch (_: Throwable) {
+                    highestY = node.position.y
+                }
+            }
+            val offsetY = (highestY + 0.5f) - node.position.y
+
+            val existing = objectTypingHandles[objectId]
+            if (existing != null) {
+                // Parent if not already
+                try { if (existing.node.parent != node) existing.node.parent = node } catch (_: Throwable) {}
+                existing.position = Vector3(0f, offsetY, 0f)
+            } else {
+                val handle = worldObjectManager.createTextBillboard(
+                    text = "\uD83D\uDCAC",
+                    position = Vector3(node.position.x, node.position.y + offsetY, node.position.z),
+                    fontSize = 18,
+                    textColor = "white",
+                    backgroundColor = "#00000080",
+                )
+                if (handle != null) {
+                    // Parent to object so it moves with it automatically
+                    try { handle.node.parent = node } catch (_: Throwable) {}
+                    handle.position = Vector3(0f, offsetY, 0f)
+                    objectTypingHandles[objectId] = handle
+                }
+            }
+
+            // Safety timeout to auto-clear after 30s
+            objectTypingTimeouts[objectId]?.let { window.clearTimeout(it) }
+            objectTypingTimeouts[objectId] = window.setTimeout({
+                objectTypingHandles.remove(objectId)?.remove()
+                objectTypingTimeouts.remove(objectId)
+            }, 30000)
+        }
+
+        WebSocketApi.addListener(WebSocketAction.OBJECT_TYPING) { message ->
+            try {
+                val data = json.decodeFromString(ObjectTypingData.serializer(), message.data)
+                setObjectTypingLocal(data.objectId, data.isTyping)
+            } catch (e: Throwable) {
+                console.error("Error processing OBJECT_TYPING", e)
+            }
+        }
     }
     
     /**
@@ -1247,6 +1340,16 @@ class SceneObjectManager(
             // Check if the object already has a status text handle
             val existingHandle = objectStatusTextHandles[objectId]
             console.log("[DEBUG_STATUS] Existing handle: ${existingHandle != null}")
+
+            // Cache last known status text for restoration after typing
+            objectStatusTexts[objectId] = status
+
+            // If typing indicator is active, hide status text (typing has precedence)
+            if (objectTypingHandles.containsKey(objectId)) {
+                existingHandle?.remove()
+                objectStatusTextHandles.remove(objectId)
+                return
+            }
             
             if (status.isBlank()) {
                 // If status is blank, remove any existing status text

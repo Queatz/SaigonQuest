@@ -25,6 +25,7 @@ enum class WebSocketAction {
     SHOW_DIALOGUE,
     DIALOGUE_CONFIRM,
     PLAYER_TYPING,
+    OBJECT_TYPING,
     OPEN_URL,
     NOTIFICATION,
     PAUSE,

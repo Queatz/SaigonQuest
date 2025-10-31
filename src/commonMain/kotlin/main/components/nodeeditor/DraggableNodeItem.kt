@@ -5,11 +5,9 @@ import main.components.attrs.touchDraggable
 import main.theme.NodeEditorStyles
 import main.utils.DataType
 import models.LogicNode
-import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -19,7 +17,7 @@ import org.jetbrains.compose.web.dom.Text
  * @param node The LogicNode that this item represents
  */
 @Composable
-fun DraggableItem(node: LogicNode) {
+fun DraggableNodeItem(node: LogicNode) {
     val label = node.label
     val id = node.id
     val description = node.description

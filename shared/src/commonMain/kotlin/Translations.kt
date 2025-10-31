@@ -1408,6 +1408,9 @@ vi: Đặt ảnh chụp từ cảnh hiện tại
 
 Change screenshot
 vi: Thay đổi ảnh chụp
+
+Search nodes
+vi: Tìm kiếm node
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

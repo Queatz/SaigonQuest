@@ -19,6 +19,17 @@ data class PlayerTypingData(
 )
 
 /**
+ * Object typing data model
+ *
+ * This model is sent when an object (via AI processing) starts or stops "typing".
+ */
+@Serializable
+data class ObjectTypingData(
+    val objectId: String,
+    val isTyping: Boolean,
+)
+
+/**
  * Player position data model
  */
 @Serializable

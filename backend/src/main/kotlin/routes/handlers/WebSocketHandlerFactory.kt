@@ -38,6 +38,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.UPDATE_PLAYER -> UpdatePlayerHandler()
             WebSocketAction.DIALOGUE_CONFIRM -> DialogueConfirmHandler()
             WebSocketAction.PLAYER_TYPING -> PlayerTypingHandler()
+            WebSocketAction.OBJECT_TYPING -> NullHandler() // Server -> clients only
             WebSocketAction.TELEPORT_PLAYER -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.SHOW_DIALOGUE -> NullHandler() // This is only sent by the server, not received
             WebSocketAction.RECEIVE_CHAT_MESSAGE -> NullHandler() // This is only sent by the server, not received

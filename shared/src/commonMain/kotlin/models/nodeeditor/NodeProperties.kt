@@ -588,7 +588,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 name = "Template",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
-                defaultValue = "Hi, {name}! How are you today?"
+                defaultValue = ""
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TEXT,

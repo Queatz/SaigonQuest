@@ -2,7 +2,6 @@ package logic
 
 import debug.WebSocketDebug
 import models.LogicNode
-import models.NodeCategory
 import models.NodeId
 import models.Object
 import models.nodeeditor.NodeConfig
@@ -142,12 +141,13 @@ class NodeLogicRunner(
 
         // Process each starting node
         for (startNode in startNodes) {
+            val executedNodes = mutableSetOf<String>()
             WebSocketDebug.logMessage(
                 "PROCESSING_START_NODE",
                 "Processing start node: ${startNode.nodeCategory}/${startNode.id}",
                 context.session
             )
-            processNode(startNode, mutableEventData)
+            processNode(startNode, mutableEventData, executedNodes)
         }
 
         WebSocketDebug.logMessage(
@@ -163,7 +163,7 @@ class NodeLogicRunner(
      * @param node The node to process
      * @param eventData Additional data related to the event (mutable)
      */
-    private suspend fun processNode(node: NodeDataModel, eventData: MutableMap<String, Any>) {
+    private suspend fun processNode(node: NodeDataModel, eventData: MutableMap<String, Any>, executedNodes: MutableSet<String>) {
         fun reconstructLogicNode(node: NodeDataModel): models.LogicNode {
             return when (node.nodeId) {
                 NodeId.Teleport -> models.LogicNode.Teleport()
@@ -218,6 +218,62 @@ class NodeLogicRunner(
             "Processing node: ${node.nodeCategory}/${node.id} with data: ${node.data}",
             context.session
         )
+
+        // If we are looping back to a node that already ran in this traversal, clear its input values
+        // and invalidate upstream pure value outputs so they are re-evaluated (e.g., AI nodes).
+        fun clearUpstreamOutputsFor(target: NodeDataModel, visited: MutableSet<String>) {
+            if (visited.contains(target.id)) return
+            visited.add(target.id)
+
+            val incoming = nodeConfig?.connections?.filter { it.to == target.id } ?: emptyList()
+            for (conn in incoming) {
+                // Clear the target input port value
+                if (eventData.remove(conn.toPort) != null) {
+                    WebSocketDebug.logMessage(
+                        "CLEAR_INPUT",
+                        "Cleared input ${conn.toPort} for target ${target.id}",
+                        context.session
+                    )
+                }
+
+                val srcNode = nodeConfig?.nodes?.find { it.id == conn.from }
+                if (srcNode != null) {
+                    val srcLogicNode = reconstructLogicNode(srcNode)
+                    if (srcLogicNode.getPropertyDefinitions().none { it.type == PropertyType.TRIGGER }) {
+                        // Invalidate the specific output from the pure value source
+                        if (eventData.remove(conn.fromPort) != null) {
+                            WebSocketDebug.logMessage(
+                                "INVALIDATE_UPSTREAM_OUTPUT",
+                                "Invalidated upstream pure output ${conn.fromPort} from ${srcNode.id}",
+                                context.session
+                            )
+                        }
+                        // Special handling for AI node additional alias outputs
+                        if (srcNode.nodeId == NodeId.Ai) {
+                            val aiTextKey = "${srcNode.id}_text"
+                            if (eventData.remove(aiTextKey) != null) {
+                                WebSocketDebug.logMessage(
+                                    "INVALIDATE_AI_TEXT",
+                                    "Invalidated AI text alias $aiTextKey",
+                                    context.session
+                                )
+                            }
+                        }
+                        // Recurse further upstream
+                        clearUpstreamOutputsFor(srcNode, visited)
+                    }
+                }
+            }
+        }
+
+        if (executedNodes.contains(node.id)) {
+            WebSocketDebug.logMessage(
+                "REENTER_NODE_CLEARING",
+                "Re-entering node ${node.id}; clearing inputs and upstream pure outputs",
+                context.session
+            )
+            clearUpstreamOutputsFor(node, mutableSetOf())
+        }
 
         // On-demand evaluation: ensure inputs provided by pure value nodes are available before executing this node
         fun isPureValueNode(ln: models.LogicNode): Boolean =
@@ -334,6 +390,8 @@ class NodeLogicRunner(
 
         // If the node execution was successful, follow its connections
         if (result) {
+            // Mark this node as executed in this traversal so re-entry can clear inputs
+            executedNodes.add(node.id)
             // Find connections from this node
             val connections = nodeConfig?.connections?.filter { it.from == node.id } ?: emptyList()
             WebSocketDebug.logMessage(
@@ -377,7 +435,7 @@ class NodeLogicRunner(
                         )
                         // Only traverse if this is a trigger connection
                         if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData)
+                            processNode(targetNode, eventData, executedNodes)
                         }
                     } else {
                         WebSocketDebug.logError(
@@ -465,7 +523,7 @@ class NodeLogicRunner(
                             context.session
                         )
                         if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData)
+                            processNode(targetNode, eventData, executedNodes)
                         }
                     } else {
                         WebSocketDebug.logError(
@@ -506,7 +564,7 @@ class NodeLogicRunner(
                             context.session
                         )
                         if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData)
+                            processNode(targetNode, eventData, executedNodes)
                         } else {
                             WebSocketDebug.logMessage(
                                 "SKIP_NON_TRIGGER_CONNECTION",

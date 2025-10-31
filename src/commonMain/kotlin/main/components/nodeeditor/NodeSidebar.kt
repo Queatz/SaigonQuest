@@ -10,12 +10,16 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.translated
+import Translations.str
 import main.theme.NodeEditorStyles
+import main.theme.Styles
 import models.LogicNode
 import models.NodeCategory
+import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Sidebar component for the node editor that contains draggable node items.
@@ -28,6 +32,8 @@ fun NodeSidebar() {
     var nodeTypesByCategory by remember { mutableStateOf<Map<NodeCategory, List<LogicNode>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    // Query for filtering nodes
+    var searchQuery by remember { mutableStateOf("") }
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -64,8 +70,33 @@ fun NodeSidebar() {
                 Text("${translated("Error loading node types")}: $error")
             }
         } else {
+            // Search input
+            Div {
+                TextInput(
+                    value = searchQuery,
+                    attrs = {
+                        classes(Styles.inputField)
+                        placeholder(str("Search nodes"))
+                        onInput { ev -> searchQuery = ev.value }
+                    },
+                )
+            }
+            
+            // Compute filtered nodes by category
+            val filteredByCategory: Map<NodeCategory, List<LogicNode>> =
+                if (searchQuery.isBlank()) nodeTypesByCategory
+                else nodeTypesByCategory
+                    .mapValues { (_, nodes) ->
+                        val q = searchQuery.trim()
+                        nodes.filter { n ->
+                            n.label.contains(q, ignoreCase = true) ||
+                            n.description.contains(q, ignoreCase = true)
+                        }
+                    }
+                    .filterValues { it.isNotEmpty() }
+            
             // Render node types grouped by category
-            nodeTypesByCategory.forEach { (category, nodes) ->
+            filteredByCategory.forEach { (category, nodes) ->
                 // Skip empty categories
                 if (nodes.isEmpty()) return@forEach
                 
@@ -73,21 +104,21 @@ fun NodeSidebar() {
                 H4(
                     attrs = {
                         classes(NodeEditorStyles.sectionHeader)
-                    }
+                    },
                 ) {
                     Text(
-                        when(category) {
+                        when (category) {
                             NodeCategory.Action -> translated("Actions")
                             NodeCategory.Dialogue -> translated("Dialogues")
                             NodeCategory.Event -> translated("Events")
                             NodeCategory.Input -> translated("Inputs")
-                        }
+                        },
                     )
                 }
                 
                 // List of draggable items for this category
                 nodes.forEach { node ->
-                    DraggableItem(node)
+                    DraggableNodeItem(node)
                 }
             }
         }

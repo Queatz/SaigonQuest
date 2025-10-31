@@ -10,12 +10,16 @@ import main.api.WebSocketApi
 import main.components.shadow.ShadowManager
 import models.User
 import models.WebSocketAction
+import models.ObjectTypingData
 
 /**
  * Manages world objects in a scene
  */
 class WorldObjectManager(private val scene: Scene) {
     private val objects = mutableMapOf<String, WorldObject>()
+    private val objectNodes = mutableMapOf<String, Node>()
+    private val typingHudHandles = mutableMapOf<String, WorldObjectHandle>()
+    private val typingTimeouts = mutableMapOf<String, Int>()
     
     // Shadow manager reference for adding shadow support to objects
     private var shadowManager: ShadowManager? = null
@@ -37,8 +41,9 @@ class WorldObjectManager(private val scene: Scene) {
         // Initialize object's visual state (UVs, direction, etc.) immediately so it's visible on first frame
         try { obj.update(0f) } catch (_: Throwable) {}
         
-        // Store the object
+        // Store the object and node
         objects[obj.id] = obj
+        objectNodes[obj.id] = node
         
         // Create a handle to the object
         val handle = createObjectHandle(obj, node)
@@ -77,8 +82,15 @@ class WorldObjectManager(private val scene: Scene) {
         // Dispose the object's resources
         obj.dispose()
         
+        // Remove typing HUD if present
+        typingHudHandles.remove(objectId)?.remove()
+        
+        // Clear any timeouts
+        typingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+        
         // Remove from our tracking
         objects.remove(objectId)
+        objectNodes.remove(objectId)
     }
     
     /**
@@ -88,8 +100,15 @@ class WorldObjectManager(private val scene: Scene) {
         // Dispose all objects
         objects.values.forEach { it.dispose() }
         
-        // Clear the map
+        // Remove typing HUDs
+        typingHudHandles.values.forEach { it.remove() }
+        typingHudHandles.clear()
+        typingTimeouts.values.forEach { window.clearTimeout(it) }
+        typingTimeouts.clear()
+        
+        // Clear the maps
         objects.clear()
+        objectNodes.clear()
     }
     
     /**
@@ -99,6 +118,12 @@ class WorldObjectManager(private val scene: Scene) {
      */
     fun update(deltaTime: Float) {
         objects.values.forEach { it.update(deltaTime) }
+        // Keep typing HUD billboards positioned above their objects
+        typingHudHandles.forEach { (objectId, handle) ->
+            val node = objectNodes[objectId] ?: return@forEach
+            val p = node.position
+            handle.position = Vector3(p.x, p.y + 0.5f, p.z)
+        }
     }
     
     /**
@@ -265,6 +290,46 @@ class WorldObjectManager(private val scene: Scene) {
     }
     
     /**
+     * Show or hide a typing indicator above an object
+     *
+     * This renders a small "💬" billboard 0.5 units above the object while typing is true.
+     * A 30s safety timeout will auto-clear the indicator if a stop event is missed.
+     */
+    private fun setObjectTyping(objectId: String, isTyping: Boolean) {
+        if (!isTyping) {
+            typingHudHandles.remove(objectId)?.remove()
+            typingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+            return
+        }
+        val node = objectNodes[objectId]
+        if (node == null) {
+            // Retry shortly if the object/node is not ready yet
+            window.setTimeout({ setObjectTyping(objectId, isTyping) }, 50)
+            return
+        }
+        val p = node.position
+        val existing = typingHudHandles[objectId]
+        if (existing != null) {
+            existing.position = Vector3(p.x, p.y + 0.5f, p.z)
+        } else {
+            val handle = createTextBillboard(
+                text = "\uD83D\uDCAC",
+                position = Vector3(p.x, p.y + 0.5f, p.z),
+                fontSize = 18,
+                textColor = "white",
+                backgroundColor = "#00000080",
+            )
+            if (handle != null) typingHudHandles[objectId] = handle
+        }
+        // Safety timeout to auto-clear after 30s
+        typingTimeouts[objectId]?.let { window.clearTimeout(it) }
+        typingTimeouts[objectId] = window.setTimeout({
+            typingHudHandles.remove(objectId)?.remove()
+            typingTimeouts.remove(objectId)
+        }, 30000)
+    }
+    
+    /**
      * Sets up WebSocket listeners for object updates
      */
     fun setupWebSocketListeners() {
@@ -288,6 +353,16 @@ class WorldObjectManager(private val scene: Scene) {
                 removeObject(objectId)
             } catch (e: Throwable) {
                 console.error("Error parsing REMOVE_OBJECT message", e)
+            }
+        }
+        
+        // Listen for object typing status (server → clients only)
+        WebSocketApi.addListener(WebSocketAction.OBJECT_TYPING) { message ->
+            try {
+                val data = ApiClient.json.decodeFromString(ObjectTypingData.serializer(), message.data)
+                setObjectTyping(data.objectId, data.isTyping)
+            } catch (e: Throwable) {
+                console.error("Error parsing OBJECT_TYPING message", e)
             }
         }
     }
