@@ -14,6 +14,7 @@ import androidx.compose.runtime.DisposableEffect
 import lib.Vector3
 import main.api.FriendApi
 import main.api.WorldApi
+import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.ListenerToken
 import main.api.addUserJoinListener
@@ -388,6 +389,15 @@ fun FriendListItem(
     // State to control the visibility of the confirmation dialog
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showSendDialog by remember { mutableStateOf(false) }
+    var friendUser by remember { mutableStateOf<models.User?>(null) }
+
+    LaunchedEffect(friend.friendId) {
+        try {
+            friendUser = UserApi.getUserById(friend.friendId)
+        } catch (t: Throwable) {
+            console.error("[Friends] Failed to load friend user: ${t.message}")
+        }
+    }
     
     Div(
         attrs = {
@@ -424,6 +434,28 @@ fun FriendListItem(
                 }
             ) {
                 Text(formatLastActive(friend.lastActive))
+            }
+        }
+        
+        // Friend status and status bars (if present)
+        friendUser?.let { fu ->
+            if (fu.status.isNotBlank()) {
+                Div(
+                    attrs = {
+                        classes(Styles.userStatusText, FriendsStyles.statusText)
+                    }
+                ) {
+                    Text(fu.status)
+                }
+            }
+            Div {
+                UserStatusBars(
+                    health = fu.health,
+                    mind = fu.mind,
+                    spirit = fu.spirit,
+                    readOnly = true,
+                    size = 18,
+                )
             }
         }
         

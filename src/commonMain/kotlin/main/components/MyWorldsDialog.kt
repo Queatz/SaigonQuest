@@ -104,10 +104,6 @@ fun MyWorldsDialog(
                                         src = thumb,
                                         attrs = {
                                             classes(Styles.imageFullWidth, Styles.clickable)
-                                            onClick { ev ->
-                                                ev.stopPropagation()
-                                                previewImageUrl = thumb
-                                            }
                                         }
                                     )
                                 }

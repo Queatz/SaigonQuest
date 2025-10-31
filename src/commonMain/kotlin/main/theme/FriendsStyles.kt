@@ -27,6 +27,8 @@ import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
 
 object FriendsStyles : StyleSheet() {
     // Root container for FriendsContent
@@ -82,6 +84,7 @@ object FriendsStyles : StyleSheet() {
         backgroundColor(Theme.colors.white04)
         borderRadius(8.px)
         border(1.px, LineStyle.Solid, Theme.colors.white08)
+        gap(16.px)
     }
 
     // Header row
@@ -89,7 +92,6 @@ object FriendsStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
-        marginBottom(8.px)
     }
 
     // Friend name
@@ -128,8 +130,8 @@ object FriendsStyles : StyleSheet() {
     // Current world text (online)
     val currentWorldOnline by style {
         fontSize(14.px)
+        fontWeight("bold")
         color(Theme.colors.success)
-        marginBottom(8.px)
         dark(self) { color(Theme.colors.successDark) }
     }
 
@@ -141,6 +143,17 @@ object FriendsStyles : StyleSheet() {
         dark(self) { color(Theme.colors.textMutedDark) }
     }
 
+    val statusText by style {
+        padding(8.px)
+        borderRadius(8.px)
+
+        backgroundColor(Theme.colors.white70)
+
+        dark(self) {
+            backgroundColor(Theme.colors.black70)
+        }
+    }
+    
     // Buttons row
     val buttonsRow by style {
         display(DisplayStyle.Flex)
@@ -155,6 +168,7 @@ object FriendsStyles : StyleSheet() {
         property("border", "none")
         borderRadius(16.px)
         property("cursor", "pointer")
+        flexGrow(1)
         dark(self) { backgroundColor(Theme.colors.primaryDark) }
     }
 
@@ -165,6 +179,7 @@ object FriendsStyles : StyleSheet() {
         property("border", "none")
         borderRadius(16.px)
         property("cursor", "pointer")
+        flexGrow(1)
         dark(self) { backgroundColor(Theme.colors.successDark) }
     }
 
@@ -174,6 +189,7 @@ object FriendsStyles : StyleSheet() {
         border(1.px, LineStyle.Solid, Theme.colors.error)
         color(Theme.colors.error)
         borderRadius(16.px)
+        flexShrink(0)
         property("cursor", "pointer")
         dark(self) { border(1.px, LineStyle.Solid, Theme.colors.errorDark); color(Theme.colors.errorDark) }
     }
