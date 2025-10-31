@@ -58,6 +58,12 @@ vi: Thế giới của tôi
 Close
 vi: Đóng
 
+Download
+vi: Tải xuống
+
+Send to chat
+vi: Gửi vào chat
+
 Settings
 vi: Cài đặt
 
@@ -1406,7 +1412,7 @@ vi: Ảnh chụp thế giới
 Set screenshot from scene
 vi: Đặt ảnh chụp từ cảnh hiện tại
 
-Change screenshot
+a
 vi: Thay đổi ảnh chụp
 
 Search nodes

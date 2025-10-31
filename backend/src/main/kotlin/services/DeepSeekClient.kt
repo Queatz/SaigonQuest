@@ -18,6 +18,8 @@ import kotlinx.serialization.json.Json
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import io.ktor.network.sockets.BoundDatagramSocket
+import io.ktor.server.websocket.DefaultWebSocketServerSession
 import utils.json as appJson
 
 /**
@@ -84,7 +86,12 @@ object DeepSeekClient {
      * Call DeepSeek with the provided system and user prompts and return extracted text.
      * If the provider does not return valid JSON, falls back to raw content.
      */
-    suspend fun promptText(systemPrompt: String, userPrompt: String, logSession: io.ktor.server.websocket.DefaultWebSocketServerSession?): String? {
+    suspend fun promptText(
+        systemPrompt: String,
+        userPrompt: String,
+        logSession: DefaultWebSocketServerSession?,
+        reason: Boolean = false
+    ): String? {
         val apiKey = System.getenv("DEEPSEEK_API_KEY")
             ?: System.getProperty("DEEPSEEK_API_KEY")
 
@@ -98,7 +105,7 @@ object DeepSeekClient {
             ChatMessage(role = "user", content = userPrompt)
         )
 
-        val body = DeepSeekRequest(messages = messages)
+        val body = DeepSeekRequest(messages = messages, model = if (reason) "deepseek-reasoner" else "deepseek-chat")
 
         return try {
             val httpResp: HttpResponse = http.post("https://api.deepseek.com/beta/chat/completions") {

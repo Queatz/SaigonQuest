@@ -156,6 +156,7 @@ fun Routing.configureChatRoutes() {
                 
                 // Receive JSON body only (no receiveText)
                 val body = try { call.receive<models.chat.CreateChatMessageRequest>() } catch (t: Throwable) {
+                    t.printStackTrace()
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorResponse(message = "Invalid request body", code = HttpStatusCode.BadRequest.value)

@@ -33,6 +33,7 @@ fun VisitedWorldsDialog(
 
     // Track confirmation dialog state
     var confirmWorldId by remember { mutableStateOf<String?>(null) }
+    var previewImageUrl by remember { mutableStateOf<String?>(null) }
 
     suspend fun load() {
         try {
@@ -84,7 +85,13 @@ fun VisitedWorldsDialog(
                                     if (!thumb.isNullOrBlank()) {
                                         org.jetbrains.compose.web.dom.Img(
                                             src = thumb,
-                                            attrs = { classes(Styles.imageThumbSmall) }
+                                            attrs = {
+                                                classes(Styles.imageFullWidth, Styles.clickable)
+                                                onClick { ev ->
+                                                    ev.stopPropagation()
+                                                    previewImageUrl = thumb
+                                                }
+                                            }
                                         )
                                     }
 
@@ -165,4 +172,12 @@ fun VisitedWorldsDialog(
             DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
+
+    val previewUrl = previewImageUrl
+    if (previewUrl != null) {
+        ImageDialog(
+            imageUrl = previewUrl,
+            onClose = { previewImageUrl = null },
+        )
+    }
 }

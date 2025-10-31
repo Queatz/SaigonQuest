@@ -3,21 +3,20 @@ package main
 import androidx.compose.runtime.key
 import app.softwork.routingcompose.BrowserRouter
 import app.softwork.routingcompose.Router
+import lib.configureBabylonDracoDecoder
 import main.api.WebSocketConnectionManager
 import main.components.ByePage
 import main.components.LanguageSettings
 import main.components.PausedPage
 import main.components.SceneComponent
-import main.components.DialogueBox
+import main.theme.AssetStyles
 import main.theme.EditorStyles
-import lib.configureBabylonDracoDecoder
 import main.theme.InventoryStyles
 import main.theme.NodeEditorStyles
 import main.theme.NotificationStyles
-import main.theme.Styles
-import main.theme.AssetStyles
 import main.theme.OverlayStyles
 import main.theme.PanelStyles
+import main.theme.Styles
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 
@@ -46,11 +45,6 @@ fun main() {
             Style(EditorStyles)
             Style(InventoryStyles)
             Style(AssetStyles)
-
-            // Global dialogue host: listens for SHOW_DIALOGUE and renders dialogs (including Player input)
-            DialogueBox(
-                onClose = {}
-            )
 
             BrowserRouter(
                 initPath = "/"

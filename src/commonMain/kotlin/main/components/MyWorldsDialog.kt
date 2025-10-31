@@ -27,6 +27,7 @@ fun MyWorldsDialog(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showNewWorldPrompt by remember { mutableStateOf(false) }
+    var previewImageUrl by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         try {
@@ -101,7 +102,13 @@ fun MyWorldsDialog(
                                 if (!thumb.isNullOrBlank()) {
                                     org.jetbrains.compose.web.dom.Img(
                                         src = thumb,
-                                        attrs = { classes(Styles.imageThumbSmall) }
+                                        attrs = {
+                                            classes(Styles.imageFullWidth, Styles.clickable)
+                                            onClick { ev ->
+                                                ev.stopPropagation()
+                                                previewImageUrl = thumb
+                                            }
+                                        }
                                     )
                                 }
 
@@ -133,6 +140,14 @@ fun MyWorldsDialog(
             }
         }
     )
+
+    val previewUrl = previewImageUrl
+    if (previewUrl != null) {
+        ImageDialog(
+            imageUrl = previewUrl,
+            onClose = { previewImageUrl = null },
+        )
+    }
 
     if (showNewWorldPrompt) {
         BasicPromptDialog(

@@ -62,7 +62,7 @@ import org.jetbrains.compose.web.css.width
 
 object Styles : StyleSheet() {
     val md by style {
-        property("word-break", "break-all")
+        property("word-break", "break-word")
 
         desc(self, selector("p") + firstChild) style {
             marginTop(0.px)
@@ -1025,6 +1025,14 @@ object Styles : StyleSheet() {
         cursor("pointer")
     }
 
+    // Full-width responsive image (used for world screenshots)
+    val imageFullWidth by style {
+        width(100.percent)
+        property("object-fit", "cover")
+        borderRadius(8.px)
+        property("border", "1px solid ${Theme.colors.white20}")
+    }
+
     // Event row styles
     val eventRow by style {
         display(DisplayStyle.Flex)
@@ -1149,7 +1157,7 @@ object Styles : StyleSheet() {
 
     val requestActions by style {
         display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.FlexEnd)
+        justifyContent(JustifyContent.SpaceBetween)
         property("gap", "8px")
         marginTop(8.px)
     }

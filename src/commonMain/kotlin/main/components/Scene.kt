@@ -1028,6 +1028,13 @@ fun SceneComponent(url: String) {
         }
     }
 
+    // Add DialogueBox component for displaying dialogue messages
+    DialogueBox {
+        scope.launch {
+            awaitAnimationFrame()
+            canvasRef?.focus()
+        }
+    }
 
     // Add TakeItems dialog for item transfer prompts
     TakeItemsDialog()

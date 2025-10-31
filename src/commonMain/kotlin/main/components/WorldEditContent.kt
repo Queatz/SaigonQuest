@@ -160,6 +160,7 @@ fun WorldEditContent(
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
     var screenshot by remember { mutableStateOf(currentWorld?.screenshot) }
     var isUploadingScreenshot by remember { mutableStateOf(false) }
+    var previewImageUrl by remember { mutableStateOf<String?>(null) }
     // Chat history
     var chatLongevityEnabled by remember { mutableStateOf((currentWorld?.chatLongevity ?: 0.0) > 0.0) }
     var chatLongevityDays by remember { mutableStateOf(
@@ -722,7 +723,10 @@ fun WorldEditContent(
                 org.jetbrains.compose.web.dom.Img(
                     src = screenshot!!,
                     attrs = {
-                        classes(Styles.imageThumb)
+                        classes(Styles.imageFullWidth, Styles.clickable)
+                        onClick {
+                            previewImageUrl = screenshot
+                        }
                     }
                 )
             }
@@ -759,6 +763,14 @@ fun WorldEditContent(
                     ) { Translated("Remove") }
                 }
             }
+        }
+
+        val previewUrl = previewImageUrl
+        if (previewUrl != null) {
+            ImageDialog(
+                imageUrl = previewUrl,
+                onClose = { previewImageUrl = null },
+            )
         }
 
         // Asset browser dialog for selecting world file

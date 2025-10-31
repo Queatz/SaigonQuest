@@ -21,10 +21,12 @@ import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.AssetApi
 import main.api.ChatApi
+import main.api.ContentApi
+import main.api.UserApi
+import models.chat.ImageAttachment
 import main.api.NotificationApi
 import main.api.ObjectApi
 import main.api.PushApi
-import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.inventory.InventoryTray
@@ -82,6 +84,11 @@ fun WorldUI(
     // State for print dialog
     var showPrintDialog by remember { mutableStateOf(false) }
     var printImageUrl by remember { mutableStateOf("") }
+
+    // State for screenshot dialog
+    var isScreenshotDialogOpen by remember { mutableStateOf(false) }
+    var screenshotDataUrl by remember { mutableStateOf<String?>(null) }
+    var isSendingScreenshot by remember { mutableStateOf(false) }
     
     // State for unread notification count
     var unreadNotificationCount by remember { mutableStateOf(0) }
@@ -604,8 +611,8 @@ fun WorldUI(
                         scope.launch {
                             try {
                                 val data = main.utils.ScreenshotUtils.captureCurrentScenePng()
-                                val filename = main.utils.ScreenshotUtils.buildScreenshotFilename(currentWorld?.title)
-                                main.utils.ScreenshotUtils.downloadDataUrlAsFile(data, filename)
+                                screenshotDataUrl = data
+                                isScreenshotDialogOpen = true
                             } catch (e: Throwable) {
                                 console.error("Screenshot capture error: ${e.message}")
                             }
@@ -831,6 +838,59 @@ fun WorldUI(
                 imageUrl = printImageUrl,
                 worldTitle = currentWorld?.title ?: "Saigon.Quest",
                 onClose = { showPrintDialog = false }
+            )
+        }
+
+        // Screenshot preview dialog
+        if (isScreenshotDialogOpen && screenshotDataUrl != null) {
+            ScreenshotDialog(
+                imageDataUrl = screenshotDataUrl!!,
+                isSending = isSendingScreenshot,
+                onSendToChat = {
+                    if (screenshotDataUrl != null) {
+                        scope.launch {
+                            isSendingScreenshot = true
+                            try {
+                                val worldId = currentWorld?.key
+                                val dataUrl = screenshotDataUrl!!
+                                val filename = main.utils.ScreenshotUtils.buildScreenshotFilename(currentWorld?.title)
+                                val file = main.utils.ScreenshotUtils.dataUrlToFile(dataUrl, filename, "image/png")
+                                val token = UserApi.getToken() ?: ""
+                                val record = ContentApi.upload(file, token)
+                                val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
+                                if (!worldId.isNullOrBlank()) {
+                                    val attachments = listOf(
+                                        ImageAttachment(url = finalUrl)
+                                    )
+                                    ChatApi.createMessage(
+                                        worldId = worldId,
+                                        message = "",
+                                        attachments = attachments,
+                                    )
+                                    // Open chat to show the sent image
+                                    updatePanelState(SidePanelState.Chat)
+                                    unreadChatCount = 0
+                                    isScreenshotDialogOpen = false
+                                    screenshotDataUrl = null
+                                }
+                            } catch (e: Throwable) {
+                                console.error("Failed to send screenshot to chat", e)
+                            } finally {
+                                isSendingScreenshot = false
+                            }
+                        }
+                    }
+                },
+                onDownload = {
+                    if (screenshotDataUrl != null) {
+                        val filename = main.utils.ScreenshotUtils.buildScreenshotFilename(currentWorld?.title)
+                        main.utils.ScreenshotUtils.downloadDataUrlAsFile(screenshotDataUrl!!, filename)
+                    }
+                },
+                onClose = {
+                    isScreenshotDialogOpen = false
+                    screenshotDataUrl = null
+                }
             )
         }
         
