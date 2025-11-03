@@ -206,7 +206,11 @@ fun ChatMessages(
                     val msg = messages.find { it.key == pin.messageId }
                     Div(attrs = { classes(Styles.chatMessageItem) }) {
                         P(attrs = { classes(Styles.chatMessageText) }) {
-                            if (msg != null && !msg.deleted) Text(msg.message) else Text("(message)")
+                            if (msg != null && !msg.deleted) {
+                                Md(msg.message)
+                            } else {
+                                Translated("Deleted")
+                            }
                         }
 
                         // Attachments

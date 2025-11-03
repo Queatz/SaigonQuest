@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.theme.NodeEditorStyles
+import main.utils.ellipsize
 import models.NodeCategory
 import models.nodeeditor.NodeData
 import models.nodeeditor.PortData
@@ -338,7 +339,7 @@ fun NodeElement(
                         nodeData.properties.forEach { property ->
                             when (property.key) {
                                 PropertyKey.TEXT_CONTENT -> {
-                                    Text( property.value)
+                                    Text(property.value.ellipsize())
                                 }
 
                                 PropertyKey.TARGET_WORLD_ID -> {

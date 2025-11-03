@@ -37,6 +37,7 @@ import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.transform
 import org.jetbrains.compose.web.css.vh
+import org.jetbrains.compose.web.css.whiteSpace
 import org.jetbrains.compose.web.css.width
 
 /**
@@ -186,6 +187,7 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
+        whiteSpace("nowrap")
     }
 
     // Small badge for system notifications
@@ -195,6 +197,7 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
+        whiteSpace("nowrap")
     }
 
     // Small badge for system notifications
@@ -204,6 +207,7 @@ object NotificationStyles : StyleSheet() {
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)
+        whiteSpace("nowrap")
     }
 
     // Friend request notification specific styles

@@ -1417,6 +1417,12 @@ vi: Thay đổi ảnh chụp
 
 Search nodes
 vi: Tìm kiếm node
+
+Copy link
+vi: Sao chép liên kết
+
+Copied!
+vi: Đã sao chép!
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

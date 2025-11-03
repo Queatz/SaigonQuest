@@ -63,6 +63,7 @@ import org.jetbrains.compose.web.css.width
 object Styles : StyleSheet() {
     val md by style {
         property("word-break", "break-word")
+        textAlign("justify")
 
         desc(self, selector("p") + firstChild) style {
             marginTop(0.px)
@@ -70,6 +71,11 @@ object Styles : StyleSheet() {
 
         desc(self, selector("p") + lastChild) style {
             marginBottom(0.px)
+        }
+
+        desc(self, selector("img")) style {
+            width(100.percent)
+            borderRadius(12.px)
         }
     }
 
@@ -447,6 +453,8 @@ object Styles : StyleSheet() {
         property("border", "0")
         property("border-radius", "16px")
         property("cursor", "pointer")
+        fontSize(18.px)
+        fontWeight("bold")
 
         self + disabled style {
             opacity(.25f)
@@ -460,10 +468,24 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.primary}")
         property("border-radius", "16px")
         property("cursor", "pointer")
+        fontSize(18.px)
+        fontWeight("bold")
 
         self + disabled style {
             opacity(.25f)
         }
+    }
+
+    // Button variants
+    val baseDialogButtonDangerPrimary by style {
+        padding(8.px, 16.px)
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        property("border", "0")
+        borderRadius(16.px)
+        property("cursor", "pointer")
+        fontSize(18.px)
+        fontWeight("bold")
     }
 
     // Common style for input elements with box-sizing: border-box
@@ -1092,16 +1114,6 @@ object Styles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         alignItems(AlignItems.FlexEnd)
         flexGrow(1)
-    }
-
-    // Button variants
-    val baseDialogButtonDangerPrimary by style {
-        padding(8.px, 16.px)
-        backgroundColor(Theme.colors.error)
-        color(Theme.colors.onPrimary)
-        property("border", "0")
-        borderRadius(16.px)
-        property("cursor", "pointer")
     }
 
     // Request row styles (pending requests)

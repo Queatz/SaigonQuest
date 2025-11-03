@@ -77,6 +77,7 @@ fun DialogueBox(
         showCloseButton = false,
         isFullscreen = false,
         clickOutside = true,
+        maxWidth = 800.px.toString(),
         anchorToBottom = isMobile.value,
         content = {
             // Optional image above the text
