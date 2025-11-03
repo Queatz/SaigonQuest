@@ -13,6 +13,8 @@ external object marked {
         options: dynamic = definedExternally
     ): String
 
+    fun use(options: dynamic): Unit
+
     interface RendererLinkToken {
         var href: String
         var raw: String

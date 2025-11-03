@@ -46,6 +46,7 @@ fun ChatMessageDialog(
         BaseDialog(
             onClose = onClose,
             title = translated("Message"),
+            maxWidth = "800px",
             content = {
                 P(
                     attrs = {
@@ -116,16 +117,7 @@ fun ChatMessageDialog(
                 }
             } else {
                 // Message display
-                P(
-                    attrs = {
-                        style {
-                            margin(0.px)
-                            padding(8.px)
-                        }
-                    }
-                ) {
-                    Md(message.message)
-                }
+                Md(message.message)
             }
         },
         actions = {

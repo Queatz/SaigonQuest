@@ -14,6 +14,45 @@ import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLSpanElement
+import kotlin.js.Json
+import kotlin.js.json
+
+private var underlineExtensionRegistered: Boolean = false
+
+private fun registerUnderlineExtension() {
+    if (underlineExtensionRegistered) return
+
+    // Build a Marked extension that supports <u>...</u> in inline content
+    val extension: Json = json(
+        "extensions" to arrayOf<Json>(
+            json(
+                "name" to "underline",
+                "level" to "inline",
+                // Note: Marked extension API inspects function arity dynamically; the casts align with JS expectations
+                "start" to { src: String -> src.indexOf("<u>") }.unsafeCast<() -> Int>(),
+                "token" to { src: String ->
+                    val rule = Regex("^<u>(.*?)</u>")
+                    val match = rule.find(src)
+                    if (match != null) {
+                        json(
+                            "type" to "underline",
+                            "raw" to match.value,
+                            "text" to match.groupValues[1].trim(),
+                        )
+                    } else {
+                        null
+                    }
+                }.unsafeCast<() -> Any?>(),
+                "renderer" to { token: Json ->
+                    "<u>${token["text"] as String}</u>"
+                }.unsafeCast<() -> String>(),
+            ),
+        ),
+    )
+
+    marked.use(extension)
+    underlineExtensionRegistered = true
+}
 
 @Composable
 fun Md(
@@ -36,7 +75,7 @@ fun Md(
             } else {
                 html.replace(
                     regex = "^<a ".toRegex(),
-                    replacement = "<a target=\"_blank\" rel=\"noreferrer noopener nofollow\" "
+                    replacement = "<a target=\"_blank\" rel=\"noreferrer noopener nofollow\" ",
                 )
             }
         }
@@ -44,10 +83,13 @@ fun Md(
         // Create options object with renderer
         val options: dynamic = object {}
         options.renderer = renderer
-        
+
+        // Ensure the underline extension is registered once
+        registerUnderlineExtension()
+
         parse(
             text = content.replace("\n", "  \n"),
-            options = options
+            options = options,
         )
     }
     var element by remember { mutableStateOf<Element?>(null) }
@@ -68,6 +110,6 @@ fun Md(
                     element = null
                 }
             }
-        }
+        },
     )
 }

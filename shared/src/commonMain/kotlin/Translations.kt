@@ -1423,6 +1423,48 @@ vi: Sao chép liên kết
 
 Copied!
 vi: Đã sao chép!
+
+Write chat message
+vi: Viết tin nhắn
+
+Bold
+vi: Đậm
+
+Italic
+vi: Nghiêng
+
+Underline
+vi: Gạch dưới
+
+Strikethrough
+vi: Gạch ngang
+
+Insert image
+vi: Chèn hình ảnh
+
+Insert link
+vi: Chèn liên kết
+
+Quote
+vi: Trích dẫn
+
+Code
+vi: Mã
+
+Enter URL
+vi: Nhập URL
+
+H1
+vi: H1
+
+H2
+vi: H2
+
+H3
+vi: H3
+
+H4
+vi: H4
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

@@ -56,6 +56,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
 import main.components.media.UploadMediaDialog
+import main.components.chat.RichTextEditorDialog
 import models.chat.ImageAttachment
 import main.api.ContentApi
 import org.jetbrains.compose.web.css.borderRadius
@@ -81,6 +82,8 @@ fun ChatContent(worldId: String) {
     var isSubscribed by remember { mutableStateOf(true) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
     var willSubscribe by remember { mutableStateOf<Boolean?>(null) }
+    // Rich text editor dialog state
+    var showRichEditorDialog by remember { mutableStateOf(false) }
 
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
@@ -532,53 +535,79 @@ fun ChatContent(worldId: String) {
                 }
             )
 
-            // Send button
-            Button(
-                attrs = {
-                    style {
-                        padding(8.px, 16.px)
-                        backgroundColor(Theme.colors.primary)
-                        color(Theme.colors.onPrimary)
-                        property("border", "0")
-                        borderRadius(8.px)
-                        cursor(if (isAuthenticated && messageText.isNotEmpty()) "pointer" else "not-allowed")
-                        opacity(if (isAuthenticated && messageText.isNotEmpty()) 1.0 else 0.5)
+            // Send button or rich editor launcher
+            if (messageText.isBlank()) {
+                Button(
+                    attrs = {
+                        style {
+                            padding(8.px, 12.px)
+                            backgroundColor(Theme.colors.primary)
+                            color(Theme.colors.onPrimary)
+                            property("border", "0")
+                            borderRadius(8.px)
+                            cursor(if (isAuthenticated) "pointer" else "not-allowed")
+                            opacity(if (isAuthenticated) 1.0 else 0.5)
+                        }
+                        if (!isAuthenticated) {
+                            disabled()
+                        }
+                        onClick {
+                            if (isAuthenticated) {
+                                showRichEditorDialog = true
+                            }
+                        }
                     }
-                    if (!isAuthenticated) {
-                        disabled()
-                    }
-                    onClick {
-                        if (isAuthenticated && messageText.isNotEmpty()) {
-                            // Send message using WebSocketApi
-                            console.log("Attempting to send chat message: $messageText to world: $worldId")
-                            val currentMessage = messageText // Capture current message text
-                            WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
-                                if (success) {
-                                    console.log("Message sent successfully")
-                                    messageText = ""
-                                    shoutNext = false
+                ) {
+                    Text("📝")
+                }
+            } else {
+                Button(
+                    attrs = {
+                        style {
+                            padding(8.px, 16.px)
+                            backgroundColor(Theme.colors.primary)
+                            color(Theme.colors.onPrimary)
+                            property("border", "0")
+                            borderRadius(8.px)
+                            cursor(if (isAuthenticated && messageText.isNotEmpty()) "pointer" else "not-allowed")
+                            opacity(if (isAuthenticated && messageText.isNotEmpty()) 1.0 else 0.5)
+                        }
+                        if (!isAuthenticated) {
+                            disabled()
+                        }
+                        onClick {
+                            if (isAuthenticated && messageText.isNotEmpty()) {
+                                // Send message using WebSocketApi
+                                console.log("Attempting to send chat message: $messageText to world: $worldId")
+                                val currentMessage = messageText // Capture current message text
+                                WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
+                                    if (success) {
+                                        console.log("Message sent successfully")
+                                        messageText = ""
+                                        shoutNext = false
 
-                                    // Set typing status to false when message is sent
-                                    console.log("[TYPING] Message sent via Send button, setting typing status to false")
-                                    updateTypingStatus(false)
+                                        // Set typing status to false when message is sent
+                                        console.log("[TYPING] Message sent via Send button, setting typing status to false")
+                                        updateTypingStatus(false)
 
-                                    // Mark messages as read when sending a message
-                                    scope.launch {
-                                        try {
-                                            ChatApi.markMessagesAsRead(worldId)
-                                        } catch (e: Throwable) {
-                                            console.error("Error marking messages as read", e)
+                                        // Mark messages as read when sending a message
+                                        scope.launch {
+                                            try {
+                                                ChatApi.markMessagesAsRead(worldId)
+                                            } catch (e: Throwable) {
+                                                console.error("Error marking messages as read", e)
+                                            }
                                         }
+                                    } else {
+                                        console.error("Failed to send message: ${WebSocketApi.getLastError()}")
                                     }
-                                } else {
-                                    console.error("Failed to send message: ${WebSocketApi.getLastError()}")
                                 }
                             }
                         }
                     }
+                ) {
+                    Translated("Send")
                 }
-            ) {
-                Translated("Send")
             }
 
             // Upload media dialog
@@ -602,6 +631,34 @@ fun ChatContent(worldId: String) {
                                 console.error("Failed to send image message", t)
                             } finally {
                                 showUploadDialog = false
+                            }
+                        }
+                    },
+                )
+            }
+
+            // Rich text editor dialog
+            if (showRichEditorDialog) {
+                RichTextEditorDialog(
+                    onClose = { showRichEditorDialog = false },
+                    onSend = { markdown ->
+                        if (isAuthenticated && markdown.isNotBlank()) {
+                            WebSocketApi.sendChatMessage(worldId, markdown, shouted = shoutNext) { success ->
+                                if (success) {
+                                    // Reset states on success
+                                    shoutNext = false
+                                    updateTypingStatus(false)
+                                    scope.launch {
+                                        try {
+                                            ChatApi.markMessagesAsRead(worldId)
+                                        } catch (e: Throwable) {
+                                            console.error("Error marking messages as read", e)
+                                        }
+                                    }
+                                } else {
+                                    console.error("Failed to send rich text message: ${WebSocketApi.getLastError()}")
+                                }
+                                showRichEditorDialog = false
                             }
                         }
                     },

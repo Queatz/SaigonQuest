@@ -45,6 +45,7 @@ import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.css.overflow
+import org.jetbrains.compose.web.css.overflowX
 import org.jetbrains.compose.web.css.overflowY
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.paddingTop
@@ -76,6 +77,11 @@ object Styles : StyleSheet() {
         desc(self, selector("img")) style {
             width(100.percent)
             borderRadius(12.px)
+        }
+
+        desc(self, selector("pre")) style {
+            whiteSpace("pre-wrap")
+            overflowX("auto")
         }
     }
 
@@ -1206,6 +1212,12 @@ object Styles : StyleSheet() {
             opacity(0.5)
             cursor("not-allowed")
         }
+    }
+    val textButton by style {
+        backgroundColor(Color.transparent)
+        property("border", "0")
+        cursor("pointer")
+        fontSize(20.px)
     }
 
     val logoutButton by style {
