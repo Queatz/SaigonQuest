@@ -172,6 +172,7 @@ allowing the project to remain maintainable as it grows.
 - **Routing**: Use the Route sealed interface for type-safe routing, and the extension functions in RouterExtensions.kt for navigation.
 - **UI Components**: Place reusable UI components in the `main/components` package.
 - **Styling**: Use the theme system defined in `main/theme` for consistent styling.
+- **CSS**: Define colors in `src/commonMain/kotlin/main/theme/Theme.kt`. Do not use CSS vars.
 
 ## Git Guidelines
 

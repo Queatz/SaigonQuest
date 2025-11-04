@@ -17,6 +17,7 @@ import main.theme.NotificationStyles
 import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
+import main.theme.WorldDocsStyles
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 
@@ -45,6 +46,7 @@ fun main() {
             Style(EditorStyles)
             Style(InventoryStyles)
             Style(AssetStyles)
+            Style(WorldDocsStyles)
 
             BrowserRouter(
                 initPath = "/"

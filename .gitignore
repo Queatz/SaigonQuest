@@ -2,6 +2,7 @@
 /build/
 /backend/build/
 /content/build/
+/content/static/
 /shared/build/
 /sw/build/
 .kotlin/

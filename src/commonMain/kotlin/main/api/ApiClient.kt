@@ -29,6 +29,7 @@ object ApiClient {
         install(ContentNegotiation) {
             json(json)
         }
+        install(io.ktor.client.plugins.websocket.WebSockets) {}
     }
     
     /**

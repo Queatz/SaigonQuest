@@ -597,7 +597,8 @@ fun SceneComponent(url: String) {
             canvas = canvas
         )
 
-        engine.maxFPS = 60
+        val initialMaxFps = 60
+        engine.maxFPS = initialMaxFps
 
         // Set hardware scaling level based on graphics mode
         engine.setHardwareScalingLevel(GraphicsSettings.getEngineScalingFactor())
@@ -618,6 +619,33 @@ fun SceneComponent(url: String) {
             engine.resize()
         }
         window.addEventListener("resize", resizeHandler)
+
+        // Reduce FPS when canvas loses focus for > 30s; restore on focus
+        coroutineScope.launch {
+            var unfocusedSeconds = 0
+            var reduced = false
+            while (true) {
+                delay(1_000)
+                val hasFocus = (document.activeElement == canvas)
+                if (hasFocus) {
+                    if (reduced) {
+                        engine.maxFPS = initialMaxFps
+                        reduced = false
+                        console.log("[FPS] Canvas focused again; restoring maxFPS to $initialMaxFps")
+                    }
+                    unfocusedSeconds = 0
+                } else {
+                    if (unfocusedSeconds < 30) {
+                        unfocusedSeconds += 1
+                    }
+                    if (!reduced && unfocusedSeconds >= 30) {
+                        engine.maxFPS = 1
+                        reduced = true
+                        console.log("[FPS] Canvas unfocused for 30s; reducing maxFPS to 1")
+                    }
+                }
+            }
+        }
 
         // Create the scene
         val scene = Scene(engine).apply {

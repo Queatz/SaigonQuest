@@ -576,6 +576,11 @@ array-flatten@1.1.1:
   resolved "https://registry.yarnpkg.com/array-flatten/-/array-flatten-1.1.1.tgz#9a5f699051b1e7073328f2a008968b64ea2955d2"
   integrity sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==
 
+babylonjs-gltf2interface@8.32.2:
+  version "8.32.2"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-8.32.2.tgz#401f4d17abf757f2151f7983476ca1d13f692ae7"
+  integrity sha512-vphVhz4EKt4QBEDk+0wUIgp8RQzUkuOI5VlqOQnh9gYLZhRBkq2iLuyWqRHVgXN/KJ2j5ZAFElZSle4rw3ucpg==
+
 balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"

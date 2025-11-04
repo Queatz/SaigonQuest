@@ -175,6 +175,9 @@ vi: Đang tải thế giới Saigon.Quest...
 Loading...
 vi: Đang tải...
 
+Loading…
+vi: Đang tải…
+
 Error loading world
 vi: Lỗi tải thế giới
 
@@ -1468,6 +1471,57 @@ vi: H4
 
 Rich editor
 vi: Trình soạn thảo
+
+World docs
+vi: Tài liệu thế giới
+
+New doc
+vi: Tài liệu mới
+
+Create doc
+vi: Tạo tài liệu
+
+Search docs
+vi: Tìm kiếm tài liệu
+
+World has no docs.
+vi: Thế giới chưa có tài liệu.
+
+Saving…
+vi: Đang lưu…
+
+Saved
+vi: Đã lưu
+
+Version conflict
+vi: Xung đột phiên bản
+
+Cannot edit
+vi: Không thể chỉnh sửa
+
+Empty doc
+vi: Tài liệu trống
+
+Are you sure you want to delete this doc?
+vi: Bạn có chắc chắn muốn xóa tài liệu này không?
+
+Cannot delete: this doc has children
+vi: Không thể xóa: tài liệu này có tài liệu con
+
+Move up
+vi: Di chuyển lên
+
+Move down
+vi: Di chuyển xuống
+
+Title
+vi: Tiêu đề
+
+Online
+vi: Trực tuyến
+
+Reconnecting…
+vi: Đang kết nối lại…
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
@@ -1497,4 +1551,5 @@ object Translations {
         key
     }
 }
+
 

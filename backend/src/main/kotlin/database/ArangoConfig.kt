@@ -4,6 +4,7 @@ import com.arangodb.ArangoDB
 import com.arangodb.ArangoDatabase
 import com.arangodb.entity.CollectionType
 import com.arangodb.model.CollectionCreateOptions
+import com.arangodb.model.PersistentIndexOptions
 import com.arangodb.serde.jackson.internal.JacksonSerdeImpl
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
@@ -110,6 +111,9 @@ object CollectionsConfig {
     const val WORLD_ASSET_ITEMS_COLLECTION = "world_asset_items"
     const val OBJECT_ASSET_ITEMS_COLLECTION = "object_asset_items"
     
+    // World docs collection
+    const val DOCS_COLLECTION = "docs"
+    
     // Collection definitions
     private val collections = mapOf(
         WORLDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
@@ -133,11 +137,23 @@ object CollectionsConfig {
         ITEM_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         SPRITESHEET_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
         WORLD_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        OBJECT_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+        OBJECT_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
+        DOCS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
     )
 
     fun initializeCollections(database: ArangoDatabase) {
         val existing = database.collections.map { it.name }
-        collections.forEach { (name, opts) -> if (name !in existing) database.createCollection(name, opts) }
+        collections.forEach { (name, opts) ->
+            if (name !in existing) database.createCollection(name, opts)
+        }
+        // Ensure indices for docs collection
+        try {
+            val coll = database.collection(DOCS_COLLECTION)
+            coll.ensurePersistentIndex(listOf("worldId", "parentId", "orderIndex"), PersistentIndexOptions())
+            coll.ensurePersistentIndex(listOf("worldId", "title"), PersistentIndexOptions())
+            coll.ensurePersistentIndex(listOf("updatedAt"), PersistentIndexOptions())
+        } catch (_: Throwable) {
+            // Ignore index errors at startup
+        }
     }
 }

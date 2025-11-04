@@ -114,14 +114,14 @@ tasks.register<Copy>("prepareDracoAssetsProdDist") {
 tasks.register("devApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn("prepareDevServiceWorker", ":jsBrowserDevelopmentRun")
+    dependsOn(":clean", "prepareDevServiceWorker", ":jsBrowserDevelopmentRun")
 }
 
 // Convenience task: build SW and start frontend dev server
 tasks.register("prodApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn("prepareProdServiceWorker", ":jsBrowserDistribution")
+    dependsOn(":clean", "prepareProdServiceWorker", ":jsBrowserDistribution")
 }
 
 kotlin {
@@ -162,6 +162,7 @@ kotlin {
                 implementation(npm("@babylonjs/core", "8.32.2"))
                 implementation(npm("@babylonjs/materials", "8.32.2"))
                 implementation(npm("@babylonjs/loaders", "8.32.2"))
+                implementation(npm("babylonjs-gltf2interface", "8.32.2"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.10.10")
 

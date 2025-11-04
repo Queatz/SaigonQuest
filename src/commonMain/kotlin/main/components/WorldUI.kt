@@ -30,6 +30,7 @@ import main.api.PushApi
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.inventory.InventoryTray
+import main.components.worlddocs.WorldDocsDialog
 import main.theme.Styles
 import main.theme.OverlayStyles
 import main.utils.PathUtils
@@ -80,6 +81,7 @@ fun WorldUI(
     var isFullscreen by remember { mutableStateOf(false) }
     var isQrDialogOpen by remember { mutableStateOf(false) }
     var isAdminDialogOpen by remember { mutableStateOf(false) }
+    var isWorldDocsDialogOpen by remember { mutableStateOf(false) }
     
     // State for print dialog
     var showPrintDialog by remember { mutableStateOf(false) }
@@ -648,9 +650,9 @@ fun WorldUI(
 
                 CircleButton(
                     onClick = {
-                        // todo
+                        isWorldDocsDialogOpen = true
                     },
-                    iconIndex = 29, // Using a different icon index for world
+                    iconIndex = 29, // world docs
                     badgeCount = 0,
                     id = "worldButton"
                 )
@@ -846,6 +848,17 @@ fun WorldUI(
                 imageUrl = printImageUrl,
                 worldTitle = currentWorld?.title ?: "Saigon.Quest",
                 onClose = { showPrintDialog = false }
+            )
+        }
+
+        // World Docs dialog
+        if (isWorldDocsDialogOpen && currentWorld != null && currentUser != null) {
+            WorldDocsDialog(
+                worldId = currentWorld!!.key,
+                worldName = currentWorld!!.title,
+                isOwner = currentUser!!.key == currentWorld!!.userId,
+                currentUserId = currentUser!!.key,
+                onClose = { isWorldDocsDialogOpen = false },
             )
         }
 
