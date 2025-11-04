@@ -1465,6 +1465,9 @@ vi: H3
 
 H4
 vi: H4
+
+Rich editor
+vi: Trình soạn thảo
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

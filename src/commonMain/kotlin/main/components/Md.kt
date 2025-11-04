@@ -28,9 +28,9 @@ private fun registerUnderlineExtension() {
             json(
                 "name" to "underline",
                 "level" to "inline",
-                // Note: Marked extension API inspects function arity dynamically; the casts align with JS expectations
-                "start" to { src: String -> src.indexOf("<u>") }.unsafeCast<() -> Int>(),
-                "token" to { src: String ->
+                // Marked extension API expects function with correct arity
+                "start" to { src: String -> src.indexOf("<u>") },
+                "tokenizer" to { src: String ->
                     val rule = Regex("^<u>(.*?)</u>")
                     val match = rule.find(src)
                     if (match != null) {
@@ -42,7 +42,7 @@ private fun registerUnderlineExtension() {
                     } else {
                         null
                     }
-                }.unsafeCast<() -> Any?>(),
+                },
                 "renderer" to { token: Json ->
                     "<u>${token["text"] as String}</u>"
                 }.unsafeCast<() -> String>(),

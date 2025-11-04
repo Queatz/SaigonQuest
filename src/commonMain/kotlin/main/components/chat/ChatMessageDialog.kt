@@ -22,7 +22,6 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
 
 /**
  * A dialog for editing or deleting a chat message.
@@ -78,6 +77,9 @@ fun ChatMessageDialog(
     
     // State for delete confirmation
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    // Rich editor state
+    var showRichEditorDialog by remember { mutableStateOf(false) }
     
     BaseDialog(
         onClose = onClose,
@@ -127,6 +129,11 @@ fun ChatMessageDialog(
                     onClick = { isEditing = false }
                 ) {
                     Translated("Cancel")
+                }
+                DialogButton(
+                    onClick = { showRichEditorDialog = true }
+                ) {
+                    Translated("Rich editor")
                 }
                 DialogButton(
                     onClick = {
@@ -180,4 +187,16 @@ fun ChatMessageDialog(
             }
         }
     )
+
+    // Child rich text editor dialog (for editing existing message)
+    if (showRichEditorDialog) {
+        RichTextEditorDialog(
+            onClose = { showRichEditorDialog = false },
+            onSend = { markdown ->
+                editedText = markdown
+                showRichEditorDialog = false
+            },
+            initialText = editedText,
+        )
+    }
 }

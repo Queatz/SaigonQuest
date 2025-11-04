@@ -298,7 +298,7 @@ fun RichTextEditorDialog(
                                     when (k) {
                                         "b" -> applyInline("**")
                                         "i" -> applyInline("*")
-                                        "u" -> applyInline("__", "__")
+                                        "u" -> applyInline("<u>", "</u>")
                                     }
                                 }
                             }
