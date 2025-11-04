@@ -13,6 +13,7 @@ import main.components.Translated
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
 import main.components.media.UploadMediaDialog
+import main.components.chat.RichTextEditorDialog
 import main.components.translated
 import main.theme.NodeEditorStyles
 import main.theme.Styles
@@ -25,6 +26,8 @@ import models.nodeeditor.PropertyValue
 import models.nodeeditor.getPropertyDefinitions
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.CheckboxInput
 import org.jetbrains.compose.web.dom.Div
@@ -201,6 +204,8 @@ fun PropertyPanel(
                                         PropertyKey.TEMPLATE,
                                     )
                                 ) {
+                                    var showRichEditorDialog by remember(nodeId, propDef.key) { mutableStateOf(false) }
+
                                     // Use TextArea for text content
                                     TextArea(
                                         value = propertyValues[propDef.key] ?: "",
@@ -216,6 +221,32 @@ fun PropertyPanel(
                                             placeholder(str("Enter text"))
                                         }
                                     )
+
+                                    // Rich editor launcher
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                            padding(0.px)
+                                        }
+                                    }) {
+                                        Button(attrs = {
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
+                                            onClick { showRichEditorDialog = true }
+                                        }) { Translated("Rich editor") }
+                                    }
+
+                                    if (showRichEditorDialog) {
+                                        RichTextEditorDialog(
+                                            onClose = { showRichEditorDialog = false },
+                                            onSend = { markdown ->
+                                                propertyValues = propertyValues.edit { it[propDef.key] = markdown }
+                                                showRichEditorDialog = false
+                                            },
+                                            initialText = propertyValues[propDef.key] ?: "",
+                                        )
+                                    }
                                 } else if (propDef.key == PropertyKey.IMAGE_URL) {
                                     val imageUrl = propertyValues[propDef.key] ?: ""
                                     var showDialog by remember(nodeId) { mutableStateOf(false) }

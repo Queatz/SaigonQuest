@@ -646,6 +646,15 @@ fun WorldUI(
                     )
                 }
 
+                CircleButton(
+                    onClick = {
+                        // todo
+                    },
+                    iconIndex = 29, // Using a different icon index for world
+                    badgeCount = 0,
+                    id = "worldButton"
+                )
+
                 // Chat button
                 CircleButton(
                     onClick = {
@@ -665,7 +674,6 @@ fun WorldUI(
                     id = "chatButton",
                     elementRef = { element -> buttonRefs["chatButton"] = element }
                 )
-
 
                 if (currentUser?.isPlayer == true) {
                     // Notifications button

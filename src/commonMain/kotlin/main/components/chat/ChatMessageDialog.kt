@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.TextArea
 
 /**
  * A dialog for editing or deleting a chat message.
@@ -95,12 +96,11 @@ fun ChatMessageDialog(
                 // Edit message form
                 Div {
                     val editPlaceholder = translated("Edit your message")
-                    Input(
-                        type = InputType.Text,
+                    TextArea(
+                        value = editedText,
                         attrs = {
                             classes(Styles.inputField)
                             placeholder(editPlaceholder)
-                            value(editedText)
                             onInput { editedText = it.value }
                         }
                     )

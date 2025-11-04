@@ -16,14 +16,12 @@ import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
  * @param controller The NodeEditorController that manages state and operations
  * @param onKeyDown Callback for keyboard events
  * @param onNodeAdd Callback for adding a new node
- * @param onNodeDelete Callback for deleting a node
  */
 @Composable
 fun NodeEditorPanel(
     controller: NodeEditorController,
     onKeyDown: ((SyntheticKeyboardEvent) -> Unit)? = null,
-    onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null,
-    onNodeDelete: ((nodeId: String) -> Unit)? = null
+    onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null
 ) {
     // Register DOM elements with the controller as soon as they mount, no timeout
     // Node editor canvas wrapper

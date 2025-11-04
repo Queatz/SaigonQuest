@@ -88,6 +88,49 @@ fun LogicEditorDialog(
         }
     }
 
+    // Global keyboard handler to ensure Delete/Undo/Redo work regardless of focus (e.g., after dragging)
+    DisposableEffect(controller) {
+        val keydownListener = fun(ev: org.w3c.dom.events.Event) {
+            val kev = ev as? org.w3c.dom.events.KeyboardEvent ?: return
+
+            // Ignore when user is typing in an input/textarea or contentEditable element
+            val targetEl = kev.target as? org.w3c.dom.Element
+            val tag = targetEl?.tagName?.lowercase()
+            val isTypingTarget = tag == "input" || tag == "textarea" ||
+                (targetEl?.getAttribute("contenteditable")?.lowercase() == "true")
+            if (isTypingTarget) return
+
+            when {
+                kev.key == "Delete" || kev.key == "Backspace" -> {
+                    when {
+                        controller.selectedNode != null -> {
+                            controller.deleteNode(controller.selectedNode!!)
+                            kev.preventDefault()
+                        }
+                        controller.selectedConnection != null -> {
+                            controller.deleteConnection(controller.selectedConnection!!)
+                            kev.preventDefault()
+                        }
+                    }
+                }
+                kev.key.lowercase() == "z" && kev.ctrlKey && !kev.shiftKey -> {
+                    controller.undo()
+                    kev.preventDefault()
+                }
+                (kev.key.lowercase() == "y" && kev.ctrlKey) ||
+                (kev.key.lowercase() == "z" && kev.ctrlKey && kev.shiftKey) -> {
+                    controller.redo()
+                    kev.preventDefault()
+                }
+            }
+        }
+
+        document.addEventListener("keydown", keydownListener)
+        onDispose {
+            document.removeEventListener("keydown", keydownListener)
+        }
+    }
+
     // Function to handle form submission
     val handleSubmit = {
         isSubmitting = true
@@ -150,7 +193,6 @@ fun LogicEditorDialog(
     BaseDialog(
         onClose = onClose,
         title = dialogTitle,
-        maxWidth = "100%",
         clickOutside = false,
         isFullHeight = true,
         isFullWidth = true,

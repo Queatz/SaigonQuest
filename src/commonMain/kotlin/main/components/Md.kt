@@ -45,7 +45,7 @@ private fun registerUnderlineExtension() {
                 },
                 "renderer" to { token: Json ->
                     "<u>${token["text"] as String}</u>"
-                }.unsafeCast<() -> String>(),
+                },
             ),
         ),
     )

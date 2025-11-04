@@ -85,6 +85,18 @@ object Styles : StyleSheet() {
         }
     }
 
+    val richTextEditorToolbar by style {
+        display(DisplayStyle.Flex)
+        gap(8.px)
+        marginBottom(8.px)
+        overflowX("auto")
+        flexShrink(0)
+
+        child(self, selector("button")) style {
+            flexShrink(0)
+        }
+    }
+
     val dialogueButtons by style {
         display(DisplayStyle.Flex)
         flexWrap(FlexWrap.Wrap)
