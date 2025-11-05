@@ -1,16 +1,20 @@
 package models
 
 import kotlinx.serialization.Serializable
+import models.annotations.Indexed
 
 @Serializable
 data class World(
     var title: String = "",
     var subtitle: String = "",
     var description: String = "",
+    @field:Indexed
     var url: String = "", // external URL, empty string is valid
     var assetId: String = "", // world asset id so we can get the asset name
     var file: String = "", // world file name without .glb
+    @field:Indexed
     var userId: String = "", // to track ownership
+    var ownerIds: List<String> = emptyList(), // to track ownership
     var isOutdoors: Boolean = false, // to track ownership
     var latLng: List<Double>? = null, // to track time of day
     var backgroundColor: String = "#ffffff", // background color in hex format
@@ -25,3 +29,7 @@ data class World(
     // Chat settings
     var chatLongevity: Double = 0.0, // in days; 0.0 means forever
 ) : BaseModel()
+
+fun World.canUserEdit(userId: String): Boolean {
+    return userId == this.userId || ownerIds.contains(userId)
+}

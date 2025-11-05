@@ -34,7 +34,9 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.width
+import web.cssom.atrule.maxWidth
 
 object WorldDocsStyles : StyleSheet() {
     // Indentation helpers for tree levels
@@ -88,7 +90,7 @@ object WorldDocsStyles : StyleSheet() {
     // Search input styling hook
     val searchInput by style {
         flex(1)
-        minWidth(0.px)
+        maxWidth(140.px)
         padding(8.px)
         borderRadius(6.px)
         backgroundColor(Theme.colors.surfaceVariant)
@@ -113,7 +115,7 @@ object WorldDocsStyles : StyleSheet() {
     // Tree item
     val treeItem by style {
         padding(8.px)
-        borderRadius(6.px)
+        borderRadius(12.px)
         cursor("pointer")
         color(Theme.colors.onSurface)
         width(100.percent)
@@ -132,7 +134,7 @@ object WorldDocsStyles : StyleSheet() {
     // Selected tree item
     val treeItemSelected by style {
         padding(8.px)
-        borderRadius(6.px)
+        borderRadius(12.px)
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
     }

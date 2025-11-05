@@ -58,6 +58,7 @@ import web.notifications.requestPermission
 import lib.ScreenshotOptions
 import lib.Tools
 import main.components.chat.ChatStore
+import models.canUserEdit
 import org.w3c.dom.HTMLAnchorElement
 import web.navigator.navigator
 import web.push.PushManager
@@ -856,7 +857,7 @@ fun WorldUI(
             WorldDocsDialog(
                 worldId = currentWorld!!.key,
                 worldName = currentWorld!!.title,
-                isOwner = currentUser!!.key == currentWorld!!.userId,
+                isOwner = currentWorld!!.canUserEdit(currentUser!!.key),
                 currentUserId = currentUser!!.key,
                 onClose = { isWorldDocsDialogOpen = false },
             )

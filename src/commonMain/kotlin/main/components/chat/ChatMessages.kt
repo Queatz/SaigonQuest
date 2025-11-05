@@ -50,13 +50,21 @@ import kotlin.js.Date
 fun ChatMessages(
     worldId: String,
 ) {
+    // Ensure data is loaded
+    LaunchedEffect(worldId) {
+        ChatStore.preload(worldId)
+    }
+
     // Chat state from ChatStore
     val chatState = ChatStore.getState(worldId)
     val messages = chatState.messages
     val pins = chatState.pins
     val isLoading = chatState.isLoading.value
+    val isLoadingMore = chatState.isLoadingMore.value
+    val hasMore = chatState.hasMore.value
     val error = chatState.error.value
     val isOwner = chatState.isOwner.value
+    val lastMutation = chatState.lastMutation.value
     val pinnedIds = remember(pins) { pins.map { it.messageId }.toSet() }
     
     // State for selected message (for editing/deleting)
@@ -109,6 +117,18 @@ fun ChatMessages(
             }
         }
     }
+
+    // Helper: check if user is near the bottom to respect their reading position
+    fun isNearBottom(thresholdPx: Double = 120.0): Boolean {
+        return try {
+            val el = messagesContainerRef.value ?: return false
+            val remaining = el.scrollHeight - el.scrollTop - el.clientHeight
+            remaining <= thresholdPx
+        } catch (e: Throwable) {
+            console.error("Error computing isNearBottom", e)
+            false
+        }
+    }
     
     // Scroll to bottom when messages finish initial loading
     LaunchedEffect(isLoading) {
@@ -119,12 +139,15 @@ fun ChatMessages(
         }
     }
 
-    // Smooth scroll on new messages
+    // Smooth scroll only for newly appended messages (not when loading older history)
     var lastCount by remember { mutableStateOf(0) }
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(messages.size, lastMutation) {
         if (lastCount != 0 && messages.size > lastCount) {
+            val isAppend = (lastMutation == ChatStore.ChatMutationType.AppendNew)
             lastCount = messages.size
-            smoothScrollToBottom()
+            if (isAppend && isNearBottom()) {
+                smoothScrollToBottom()
+            }
         } else {
             lastCount = messages.size
         }
@@ -218,7 +241,7 @@ fun ChatMessages(
                             MessageAttachments(
                                 attachments = msg.attachments,
                                 onImageClick = { url -> imageDialogUrl = url },
-                                onImageLoaded = { smoothScrollToBottom() },
+                                onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
                             )
                         }
 
@@ -245,6 +268,32 @@ fun ChatMessages(
             }
         }
 
+        // Helper to load older messages when scrolled to the top, preserving scroll position
+        fun tryLoadOlder() {
+            val el = messagesContainerRef.value ?: return
+            try {
+                if (!hasMore || isLoadingMore) return
+                // Trigger when near the top
+                if (el.scrollTop <= 50.0) {
+                    val prevScrollHeight = el.scrollHeight
+                    val prevScrollTop = el.scrollTop
+                    scope.launch {
+                        val added = ChatStore.loadOlder(worldId)
+                        if (added > 0) {
+                            awaitAnimationFrame()
+                            try {
+                                val newScrollHeight = el.scrollHeight
+                                val delta = newScrollHeight - prevScrollHeight
+                                el.scrollTop = prevScrollTop + delta
+                            } catch (_: Throwable) { }
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("Error attempting to load older messages", t)
+            }
+        }
+
         // Scrollable messages container
         Div(
             attrs = {
@@ -253,6 +302,7 @@ fun ChatMessages(
                     messagesContainerRef.value = element
                     onDispose { }
                 }
+                onScroll { tryLoadOlder() }
             }
         ) {
             if (isLoading && messages.isEmpty()) {
@@ -278,6 +328,9 @@ fun ChatMessages(
             }
             } else {
             // Display messages
+            if (isLoadingMore && hasMore) {
+                Spinner(message = "Loading older messages...")
+            }
             messages.forEach { chatMessage ->
                 ChatMessageItem(
                     message = chatMessage,
@@ -300,7 +353,7 @@ fun ChatMessages(
                         }
                     },
                     onImageClick = { url -> imageDialogUrl = url },
-                    onImageLoaded = { smoothScrollToBottom() },
+                    onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
                 )
             }
             }

@@ -20,6 +20,7 @@ import main.components.common.formatAmount
 import main.theme.Styles
 import models.User
 import models.World
+import models.canUserEdit
 import models.AssetType
 import main.api.ItemApi
 import main.api.AssetItemApi
@@ -56,11 +57,14 @@ import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
 import Translations.str
 import models.Item
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.gap
 
 /**
  * Content component for the world edit form.
- * 
+ *
  * @param currentWorld The world being edited, or null if creating a new world
  * @param onClose Callback when the form is closed
  * @param onSave Callback when a world is saved (created or updated)
@@ -69,26 +73,26 @@ import org.jetbrains.compose.web.css.borderRadius
 fun WorldEditContent(
     currentWorld: World? = null,
     onClose: () -> Unit,
-    onSave: (World) -> Unit
+    onSave: (World) -> Unit,
 ) {
     /**
      * Updates the scene background color from a hex color string.
-     * 
+     *
      * @param hexColor The hex color string (e.g., "#FF0000" for red)
      */
     fun updateSceneBackgroundColor(hexColor: String) {
         try {
             // Get the scene from SceneManager
             val scene = SceneManager.getScene()
-            
+
             if (scene != null) {
                 // Convert hex color string to Color3
                 val color3 = Color3.FromHexString(hexColor)
-                
+
                 // Convert Color3 to Color4 with alpha=1 (fully opaque)
                 val color4 = color3.toColor4()
                 color4.a = 1.0f
-                
+
                 // Set the scene's clear color
                 scene.clearColor = color4.toLinearSpace()
 
@@ -103,40 +107,40 @@ fun WorldEditContent(
             println("[ERROR] Failed to update background color: ${e.message}")
         }
     }
-    
+
     /**
      * Updates the scene fog density.
-     * 
+     *
      * @param density The fog density value (0.0 to 1.0)
      */
     fun updateSceneFogDensity(density: Float) {
         try {
             // Get the scene from SceneManager
             val scene = SceneManager.getScene()
-            
+
             // Get the rendering pipeline from the CameraController
             val cameraController = SceneManager.getCameraController()
             val pipeline = cameraController?.getPipeline()
-            
+
             if (scene != null) {
                 if (density > 0.0f) {
                     // Enable fog in the scene
                     scene.fogMode = Scene.FOGMODE_EXP2
-                    
+
                     // Scale the density for better visual effect (0.0-1.0 to 0.0-0.1)
                     scene.fogDensity = density * 0.1f
 
                     // Enable fog in the rendering pipeline
                     pipeline?.fogEnabled = true
-                    
+
                     println("[DEBUG] Updated scene fog density to $density and enabled fog in pipeline")
                 } else {
                     // Disable fog by setting density to 0
                     scene.fogDensity = 0.0f
-                    
+
                     // Disable fog in the rendering pipeline
                     pipeline?.fogEnabled = false
-                    
+
                     println("[DEBUG] Disabled scene fog and disabled fog in pipeline")
                 }
             } else {
@@ -146,6 +150,7 @@ fun WorldEditContent(
             println("[ERROR] Failed to update fog density: ${e.message}")
         }
     }
+
     val router = Router.current
     val defaultUrl = router.currentPath.path.trimStart('/')
     // State for form fields
@@ -163,9 +168,11 @@ fun WorldEditContent(
     var previewImageUrl by remember { mutableStateOf<String?>(null) }
     // Chat history
     var chatLongevityEnabled by remember { mutableStateOf((currentWorld?.chatLongevity ?: 0.0) > 0.0) }
-    var chatLongevityDays by remember { mutableStateOf(
-        currentWorld?.chatLongevity?.takeIf { it > 0.0 }?.toString() ?: ""
-    ) }
+    var chatLongevityDays by remember {
+        mutableStateOf(
+            currentWorld?.chatLongevity?.takeIf { it > 0.0 }?.toString() ?: ""
+        )
+    }
     // Outdoors/time-of-day
     var isOutdoors by remember { mutableStateOf(currentWorld?.isOutdoors ?: false) }
     var latitude by remember { mutableStateOf(currentWorld?.latLng?.getOrNull(0)?.toString() ?: "") }
@@ -180,6 +187,12 @@ fun WorldEditContent(
     var allowHoldersOfItemId by remember { mutableStateOf(currentWorld?.allowHoldersOfItemId) }
     var showAccessItemBrowser by remember { mutableStateOf(false) }
     var accessItemError by remember { mutableStateOf<String?>(null) }
+
+    // Owners state
+    var ownerIds by remember { mutableStateOf(currentWorld?.ownerIds ?: emptyList()) }
+    var ownerNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var primaryOwnerName by remember { mutableStateOf<String?>(null) }
+    var showOwnerPicker by remember { mutableStateOf(false) }
 
     // Re-seed local state when the incoming currentWorld changes
     LaunchedEffect(currentWorld?.key) {
@@ -204,6 +217,8 @@ fun WorldEditContent(
         allowAllPlayers = currentWorld?.allowAllPlayers ?: false
         allowFriendsOfOwners = currentWorld?.allowFriendsOfOwners ?: false
         allowHoldersOfItemId = currentWorld?.allowHoldersOfItemId
+        // Owners
+        ownerIds = currentWorld?.ownerIds ?: emptyList()
 
     }
 
@@ -218,6 +233,36 @@ fun WorldEditContent(
         }
     }
 
+    // Load owner display names
+    LaunchedEffect(currentWorld?.userId, ownerIds) {
+        try {
+            val primaryId = currentWorld?.userId
+            if (!primaryId.isNullOrBlank()) {
+                try {
+                    primaryOwnerName = UserApi.getUserById(primaryId)?.username ?: primaryId
+                } catch (_: Throwable) {
+                    primaryOwnerName = primaryId
+                }
+            } else {
+                primaryOwnerName = null
+            }
+            val map = mutableMapOf<String, String>()
+            ownerIds.forEach { id ->
+                if (id.isNotBlank()) {
+                    try {
+                        val u = UserApi.getUserById(id)
+                        map[id] = u?.username ?: id
+                    } catch (_: Throwable) {
+                        map[id] = id
+                    }
+                }
+            }
+            ownerNames = map
+        } catch (_: Throwable) {
+            // ignore
+        }
+    }
+
     // Enforce initial checkbox behavior per rules
     LaunchedEffect(Unit) {
         if (allowAllVisitors) {
@@ -229,11 +274,11 @@ fun WorldEditContent(
             if (allowHoldersOfItemId == null) allowHoldersOfItemId = ""
         }
     }
-    
+
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    
+
     // State for current user
     var currentUser by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -249,11 +294,11 @@ fun WorldEditContent(
 
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Fetch current user
     LaunchedEffect(Unit) {
         isLoading = true
-        
+
         try {
             val user = UserApi.getCurrentUser()
             currentUser = user
@@ -279,19 +324,24 @@ fun WorldEditContent(
             console.warn("[WARN] Failed to load balance: ${t.message}")
         }
     }
-    
-    
-    // Determine if the current user is the owner of the world
+
+
+    // Determine ownership and edit permissions
     val isOwner = if (isEditing && currentUser != null) {
         currentWorld?.userId == currentUser?.key
     } else {
         // If creating a new world or user not loaded yet, default to true
         true
     }
-    
+    val canEditWorld = if (isEditing && currentUser != null) {
+        currentWorld?.canUserEdit(currentUser!!.key) == true
+    } else {
+        true
+    }
+
     // Determine if form fields should be enabled
-    val fieldsEnabled = !isEditing || isOwner
-    
+    val fieldsEnabled = !isEditing || canEditWorld
+
     // Snapshot the active world at editor open to allow restore on cancel
     val initialActiveWorldSnapshot = remember { WorldLoader.getActiveWorld() }
     // Track whether a save occurred
@@ -340,10 +390,10 @@ fun WorldEditContent(
     }
 
     // Function to handle form submission
-    val handleSubmit = submit@ { 
+    val handleSubmit = submit@{
         isSubmitting = true
         errorMessage = ""
-        
+
         // Validate chat longevity input if enabled
         val chatLongevityValue: Double = if (chatLongevityEnabled) {
             val parsed = chatLongevityDays.toDoubleOrNull()
@@ -354,7 +404,7 @@ fun WorldEditContent(
             }
             parsed
         } else 0.0
-        
+
         val worldModel = if (isEditing) {
             // Update existing world
             currentWorld.copy(
@@ -368,7 +418,10 @@ fun WorldEditContent(
                 latLng = run {
                     val lat = latitude.toDoubleOrNull()
                     val lon = longitude.toDoubleOrNull()
-                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(
+                        lat,
+                        lon
+                    ) else null
                 },
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
@@ -379,6 +432,8 @@ fun WorldEditContent(
                 allowAllPlayers = allowAllPlayers,
                 allowFriendsOfOwners = allowFriendsOfOwners,
                 allowHoldersOfItemId = allowHoldersOfItemId?.takeIf { it.isNotBlank() },
+                // Owners
+                ownerIds = ownerIds,
                 // Chat settings
                 chatLongevity = chatLongevityValue,
             )
@@ -395,7 +450,10 @@ fun WorldEditContent(
                 latLng = run {
                     val lat = latitude.toDoubleOrNull()
                     val lon = longitude.toDoubleOrNull()
-                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+                    if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(
+                        lat,
+                        lon
+                    ) else null
                 },
                 backgroundColor = backgroundColor,
                 directionalLightColor = directionalLightColor,
@@ -408,7 +466,7 @@ fun WorldEditContent(
                 chatLongevity = chatLongevityValue,
             )
         }
-        
+
         coroutineScope.launch {
             try {
                 val fileChanged = isEditing && currentWorld!!.file != worldModel.file
@@ -426,7 +484,7 @@ fun WorldEditContent(
                     // Only lighting changed
                     WorldLoader.notifyWorldEdited(savedWorld)
                 }
-                
+
                 isSubmitting = false
                 didSave = true
                 onSave(savedWorld)
@@ -437,13 +495,14 @@ fun WorldEditContent(
             }
         }
     }
-        
+
     // Helper to preview lighting immediately when editing
     fun previewLightingFromForm() {
         try {
             val lat = latitude.toDoubleOrNull()
             val lon = longitude.toDoubleOrNull()
-            val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+            val latLngList =
+                if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
             val previewWorld = currentWorld?.copy(
                 // Only fields relevant to lighting are necessary
                 isOutdoors = isOutdoors,
@@ -457,7 +516,7 @@ fun WorldEditContent(
             console.warn("[WARN] Failed to preview lighting from form: ${e.message}")
         }
     }
-        
+
     // Form content
     Div(
         attrs = {
@@ -485,9 +544,9 @@ fun WorldEditContent(
                 Translated(errorMessage)
             }
         }
-        
+
         // Ownership message
-        if (isEditing && !isOwner) {
+        if (isEditing && !canEditWorld) {
             P(
                 attrs = {
                     style {
@@ -502,7 +561,81 @@ fun WorldEditContent(
                 Translated("You don't own this world.")
             }
         }
-        
+
+        // Owners management
+        if (isEditing) {
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        flexDirection(FlexDirection.Column)
+                        property("gap", "8px")
+                    }
+                }
+            ) {
+                Label(attrs = { style { fontSize(14.px) } }) { Translated("Owners") }
+
+                // Other owners list
+                if (ownerIds.isNotEmpty()) {
+                    ownerIds.forEach { oid ->
+                        Div(attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                justifyContent(JustifyContent.SpaceBetween)
+                                gap(8.px)
+                                alignItems(AlignItems.Center)
+                            }
+                        }) {
+                            val ownerName = ownerNames[oid] ?: oid
+                            P(attrs = { style { margin(0.px) } }) {
+                                Translated(ownerName)
+                            }
+                            Div { Text(ownerNames[oid] ?: oid) }
+                            if (isOwner) {
+                                Button(attrs = {
+                                    classes(Styles.secondaryButton)
+                                    onClick {
+                                        ownerIds = ownerIds.filter { it != oid }
+                                    }
+                                }) { Translated("Remove owner") }
+                            }
+                        }
+                    }
+                } else {
+                    P(attrs = { style { margin(0.px); color(rgba(255, 255, 255, 0.6)) } }) { Translated("No owners") }
+                }
+
+                // Add owner controls (primary owner only)
+                if (isOwner) {
+                    Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px") } }) {
+                        Button(attrs = {
+                            classes(Styles.primaryButton)
+                            onClick { showOwnerPicker = true }
+                        }) { Translated("Add owner") }
+                    }
+                }
+
+                if (showOwnerPicker) {
+                    main.components.friends.SelectFriendDialog(
+                        onSelect = { f ->
+                            val id = f.friendId
+                            if (id.isNotBlank() && id != currentWorld?.userId && !ownerIds.contains(id)) {
+                                ownerIds = ownerIds + id
+                                // Optimistically update display name map
+                                ownerNames = ownerNames + (id to (f.friendUsername.ifBlank { id }))
+                            }
+                            showOwnerPicker = false
+                        },
+                        onClose = { showOwnerPicker = false },
+                        excludeIds = buildSet {
+                            currentWorld?.userId?.let { if (it.isNotBlank()) add(it) }
+                            addAll(ownerIds)
+                        },
+                    )
+                }
+            }
+        }
+
         // Title field
         Div(
             attrs = {
@@ -523,7 +656,7 @@ fun WorldEditContent(
             ) {
                 Translated("Title")
             }
-            
+
             Input(
                 type = InputType.Text,
                 attrs = {
@@ -545,7 +678,7 @@ fun WorldEditContent(
                 }
             )
         }
-        
+
         // Subtitle field
         Div(
             attrs = {
@@ -566,7 +699,7 @@ fun WorldEditContent(
             ) {
                 Translated("Subtitle")
             }
-            
+
             Input(
                 type = InputType.Text,
                 attrs = {
@@ -588,7 +721,7 @@ fun WorldEditContent(
                 }
             )
         }
-        
+
         // Description field
         Div(
             attrs = {
@@ -609,7 +742,7 @@ fun WorldEditContent(
             ) {
                 Translated("Description")
             }
-            
+
             TextArea(
                 attrs = {
                     classes(Styles.inputField)
@@ -632,7 +765,7 @@ fun WorldEditContent(
                 }
             )
         }
-        
+
         // URL field
         Div(
             attrs = {
@@ -653,7 +786,7 @@ fun WorldEditContent(
             ) {
                 Translated("URL")
             }
-            
+
             Input(
                 type = InputType.Text,
                 attrs = {
@@ -685,7 +818,7 @@ fun WorldEditContent(
         ) {
             Translated("Asset")
         }
-        
+
         // File field
         Button(attrs = {
             classes(Styles.primaryButton)
@@ -787,7 +920,11 @@ fun WorldEditContent(
                     try {
                         val lat = latitude.toDoubleOrNull()
                         val lon = longitude.toDoubleOrNull()
-                        val latLngList = if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(lat, lon) else null
+                        val latLngList =
+                            if (lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0) listOf(
+                                lat,
+                                lon
+                            ) else null
 
                         val previewWorld = if (isEditing) {
                             currentWorld.copy(
@@ -830,7 +967,7 @@ fun WorldEditContent(
                 onClose = { showWorldAssetBrowser = false },
             )
         }
-        
+
         // Outdoors (realtime sun)
         Div(
             attrs = {
@@ -925,7 +1062,7 @@ fun WorldEditContent(
                 )
             }
         }
-        
+
         // Access control
         Div(
             attrs = {
@@ -1064,7 +1201,8 @@ fun WorldEditContent(
                                         allowHoldersOfItemId = matched.key
                                         showAccessItemBrowser = false
                                     } else {
-                                        accessItemError = "No item found for this asset selection. Please create an item for this asset first."
+                                        accessItemError =
+                                            "No item found for this asset selection. Please create an item for this asset first."
                                     }
                                 } catch (t: Throwable) {
                                     accessItemError = t.message ?: "Failed to load items"
@@ -1076,7 +1214,7 @@ fun WorldEditContent(
                 }
             }
         }
-        
+
         // Chat history
         Div(
             attrs = {
@@ -1124,7 +1262,7 @@ fun WorldEditContent(
                 }
             }
         }
-        
+
         // Background Color field
         Div(
             attrs = {
@@ -1145,7 +1283,7 @@ fun WorldEditContent(
             ) {
                 Translated("Background color")
             }
-            
+
             Div(
                 attrs = {
                     style {
@@ -1174,7 +1312,8 @@ fun WorldEditContent(
                                 backgroundColor = event.value
                                 val lat = latitude.toDoubleOrNull()
                                 val lon = longitude.toDoubleOrNull()
-                                val outdoorsRealtime = isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
+                                val outdoorsRealtime =
+                                    isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
                                 if (!outdoorsRealtime) {
                                     // Update the scene background color in real-time
                                     updateSceneBackgroundColor(event.value)
@@ -1188,7 +1327,7 @@ fun WorldEditContent(
                         }
                     }
                 )
-                
+
                 // Display the hex color value next to the color picker
                 Div(
                     attrs = {
@@ -1202,7 +1341,7 @@ fun WorldEditContent(
                 }
             }
         }
-        
+
         // Directional Light Color field
         Div(
             attrs = {
@@ -1274,7 +1413,7 @@ fun WorldEditContent(
                 }
             }
         }
-        
+
         // Fog Density field
         Div(
             attrs = {
@@ -1296,7 +1435,7 @@ fun WorldEditContent(
             ) {
                 Translated("Fog density")
             }
-            
+
             Div(
                 attrs = {
                     style {
@@ -1320,14 +1459,14 @@ fun WorldEditContent(
                                 property("cursor", "not-allowed")
                             }
                         }
-                        
+
                         // Set disabled state
                         if (!fieldsEnabled) {
                             disabled()
                         }
-                        
+
                         // Handle input event
-                        onInput { event -> 
+                        onInput { event ->
                             // Update the state
                             fogDensity = event.value?.toFloat() ?: 0.0f
                             // Update the scene fog density in real-time
@@ -1335,7 +1474,7 @@ fun WorldEditContent(
                         }
                     }
                 )
-                
+
                 // Display the fog density value next to the slider
                 Div(
                     attrs = {
@@ -1456,7 +1595,7 @@ fun WorldEditContent(
             }
         }
     }
-    
+
     // Footer with action buttons
     Div(
         attrs = {
@@ -1486,7 +1625,7 @@ fun WorldEditContent(
         ) {
             Translated("Cancel")
         }
-        
+
         // Save button
         Button(
             attrs = {
@@ -1532,7 +1671,11 @@ fun WorldEditContent(
     if (showConfirmPurchase) {
         val price = worldBasePrice ?: 0L
         BasicConfirmDialog(
-            message = "${translated("You are about to purchase a world for")} ${formatAmount(price)} ${translated("VND")}. ${translated("Continue?")}",
+            message = "${translated("You are about to purchase a world for")} ${formatAmount(price)} ${translated("VND")}. ${
+                translated(
+                    "Continue?"
+                )
+            }",
             onConfirm = {
                 showConfirmPurchase = false
                 handleSubmit()

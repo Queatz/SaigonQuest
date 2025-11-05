@@ -17,6 +17,7 @@ import repository.ObjectRepository
 import models.ChatMessagePin
 import models.Notification
 import models.NotificationType
+import models.canUserEdit
 import models.WebSocketAction
 import utils.json
 import repository.UserRepository
@@ -222,7 +223,7 @@ fun Routing.configureChatRoutes() {
                             HttpStatusCode.NotFound,
                             ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
                         )
-                        if (world.userId != userId) {
+                        if (!world.canUserEdit(userId)) {
                             return@post call.respond(
                                 HttpStatusCode.Forbidden,
                                 ErrorResponse(message = "Only owner can send system messages", code = HttpStatusCode.Forbidden.value)
@@ -407,7 +408,7 @@ fun Routing.configureChatRoutes() {
                     ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
                 )
 
-                if (world.userId != userId) {
+                if (!world.canUserEdit(userId)) {
                     return@post call.respond(
                         HttpStatusCode.Forbidden,
                         ErrorResponse(message = "Only the world owner can pin messages", code = HttpStatusCode.Forbidden.value)
@@ -454,7 +455,7 @@ fun Routing.configureChatRoutes() {
                     ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
                 )
 
-                if (world.userId != userId) {
+                if (!world.canUserEdit(userId)) {
                     return@delete call.respond(
                         HttpStatusCode.Forbidden,
                         ErrorResponse(message = "Only the world owner can unpin messages", code = HttpStatusCode.Forbidden.value)

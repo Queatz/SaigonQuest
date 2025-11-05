@@ -15,6 +15,7 @@ import models.DocTree
 import repository.DocRepository
 import auth.JWTUtils
 import repository.WorldRepository
+import models.canUserEdit
 
 /**
  * World Docs routes
@@ -70,7 +71,7 @@ fun Routing.configureDocRoutes() {
                 // Owner-only: verify requester owns the world
                 val world = worldRepository.getById(worldId)
                     ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "World not found"))
-                if (world.userId != userId) {
+                if (!world.canUserEdit(userId)) {
                     return@post call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Only the world owner can create docs"))
                 }
 
@@ -119,10 +120,10 @@ fun Routing.configureDocRoutes() {
 
                 val doc = docRepository.getById(docId)
                     ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
-                val worldOwnerId = worldRepository.getById(doc.worldId)?.userId
+                val world = worldRepository.getById(doc.worldId)
                 val ancestors = runCatching { docRepository.getAncestors(docId) }.getOrNull().orEmpty()
                 val canEdit = when {
-                    worldOwnerId != null && userId == worldOwnerId -> true
+                    world != null && world.canUserEdit(userId) -> true
                     doc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit } -> true
                     else -> false
                 }
@@ -153,7 +154,7 @@ fun Routing.configureDocRoutes() {
                     ?: return@delete call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
                 val world = worldRepository.getById(doc.worldId)
                     ?: return@delete call.respond(HttpStatusCode.NotFound, mapOf("message" to "World not found"))
-                if (world.userId != userId) {
+                if (!world.canUserEdit(userId)) {
                     return@delete call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Only the world owner can delete docs"))
                 }
 
@@ -180,10 +181,10 @@ fun Routing.configureDocRoutes() {
 
                 val doc = docRepository.getById(docId)
                     ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
-                val worldOwnerId = worldRepository.getById(doc.worldId)?.userId
+                val world = worldRepository.getById(doc.worldId)
                 val ancestors = runCatching { docRepository.getAncestors(docId) }.getOrNull().orEmpty()
                 val canEdit = when {
-                    worldOwnerId != null && userId == worldOwnerId -> true
+                    world != null && world.canUserEdit(userId) -> true
                     doc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit } -> true
                     else -> false
                 }
@@ -221,10 +222,10 @@ fun Routing.configureDocRoutes() {
 
                 val doc = docRepository.getById(docId)
                     ?: return@put call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
-                val worldOwnerId = worldRepository.getById(doc.worldId)?.userId
+                val world = worldRepository.getById(doc.worldId)
                 val ancestors = runCatching { docRepository.getAncestors(docId) }.getOrNull().orEmpty()
                 val canEdit = when {
-                    worldOwnerId != null && userId == worldOwnerId -> true
+                    world != null && world.canUserEdit(userId) -> true
                     doc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit } -> true
                     else -> false
                 }
@@ -283,10 +284,10 @@ fun Routing.configureDocRoutes() {
 
             // Compute edit permission: owner can edit; otherwise worldUsersCanEdit must be true and user authenticated
             val doc = runCatching { repo.getById(docId) }.getOrNull()
-            val worldOwnerId = doc?.worldId?.let { runCatching { worldRepository.getById(it)?.userId }.getOrNull() }
+            val world = doc?.worldId?.let { runCatching { worldRepository.getById(it) }.getOrNull() }
             val ancestors = if (doc != null) runCatching { repo.getAncestors(doc.key) }.getOrNull().orEmpty() else emptyList()
             val canEditComputed = when {
-                worldOwnerId != null && userId == worldOwnerId -> true
+                world != null && userId != "Anonymous" && world.canUserEdit(userId) -> true
                 doc != null && userId != "Anonymous" &&
                         doc.permissions.worldUsersCanEdit &&
                         ancestors.all { it.permissions.worldUsersCanEdit } -> true

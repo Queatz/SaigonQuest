@@ -114,46 +114,125 @@ object CollectionsConfig {
     // World docs collection
     const val DOCS_COLLECTION = "docs"
     
-    // Collection definitions
-    private val collections = mapOf(
-        WORLDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USERS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        OBJECTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        CHAT_MESSAGES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        CHAT_READ_MARKERS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        CHAT_MESSAGE_PINS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        NOTIFICATIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        FRIENDS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        FRIEND_REQUESTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        INVENTORIES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        INVENTORY_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        ASSETS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        PUSH_SUBSCRIPTIONS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USER_MEDIA_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USER_BALANCES_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USER_BALANCE_CHANGE_REQUESTS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        USER_BALANCE_HISTORY_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        ITEM_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        SPRITESHEET_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        WORLD_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        OBJECT_ASSET_ITEMS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT),
-        DOCS_COLLECTION to CollectionCreateOptions().type(CollectionType.DOCUMENT)
+    // Collection definitions + model registry (unified)
+    private data class CollectionSpec(
+        val options: CollectionCreateOptions,
+        val model: Class<*>? = null,
+    )
+
+    private fun documentOptions(): CollectionCreateOptions =
+        CollectionCreateOptions().type(CollectionType.DOCUMENT)
+
+    private val registry: Map<String, CollectionSpec> = mapOf(
+        WORLDS_COLLECTION to CollectionSpec(documentOptions(), models.World::class.java),
+        USERS_COLLECTION to CollectionSpec(documentOptions(), models.User::class.java),
+        OBJECTS_COLLECTION to CollectionSpec(documentOptions(), models.Object::class.java),
+        CHAT_MESSAGES_COLLECTION to CollectionSpec(documentOptions(), models.ChatMessage::class.java),
+        CHAT_READ_MARKERS_COLLECTION to CollectionSpec(documentOptions(), models.ChatReadMarker::class.java),
+        CHAT_MESSAGE_PINS_COLLECTION to CollectionSpec(documentOptions(), models.ChatMessagePin::class.java),
+        NOTIFICATIONS_COLLECTION to CollectionSpec(documentOptions(), models.Notification::class.java),
+        FRIENDS_COLLECTION to CollectionSpec(documentOptions(), models.Friend::class.java),
+        FRIEND_REQUESTS_COLLECTION to CollectionSpec(documentOptions(), models.FriendRequest::class.java),
+        INVENTORIES_COLLECTION to CollectionSpec(documentOptions(), models.Inventory::class.java),
+        INVENTORY_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.InventoryItem::class.java),
+        ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.Item::class.java),
+        ASSETS_COLLECTION to CollectionSpec(documentOptions(), models.Asset::class.java),
+        PUSH_SUBSCRIPTIONS_COLLECTION to CollectionSpec(documentOptions(), models.PushSubscription::class.java),
+        USER_MEDIA_COLLECTION to CollectionSpec(documentOptions(), models.UserMedia::class.java),
+        USER_BALANCES_COLLECTION to CollectionSpec(documentOptions(), models.UserBalance::class.java),
+        USER_BALANCE_CHANGE_REQUESTS_COLLECTION to CollectionSpec(documentOptions(), models.UserBalanceChangeRequest::class.java),
+        USER_BALANCE_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.UserBalanceHistory::class.java),
+        ITEM_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.ItemAssetItem::class.java),
+        SPRITESHEET_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.SpriteSheetAssetItem::class.java),
+        WORLD_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.WorldAssetItem::class.java),
+        OBJECT_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.ObjectAssetItem::class.java),
+        DOCS_COLLECTION to CollectionSpec(documentOptions(), models.Doc::class.java),
     )
 
     fun initializeCollections(database: ArangoDatabase) {
         val existing = database.collections.map { it.name }
-        collections.forEach { (name, opts) ->
-            if (name !in existing) database.createCollection(name, opts)
+        registry.forEach { (name, spec) ->
+            if (name !in existing) database.createCollection(name, spec.options)
         }
-        // Ensure indices for docs collection
+        // Ensure indices declared via annotations on models
         try {
-            val coll = database.collection(DOCS_COLLECTION)
-            coll.ensurePersistentIndex(listOf("worldId", "parentId", "orderIndex"), PersistentIndexOptions())
-            coll.ensurePersistentIndex(listOf("worldId", "title"), PersistentIndexOptions())
-            coll.ensurePersistentIndex(listOf("updatedAt"), PersistentIndexOptions())
+            ensureAnnotatedIndexes(database)
         } catch (_: Throwable) {
             // Ignore index errors at startup
+        }
+    }
+
+    private fun ensureAnnotatedIndexes(database: ArangoDatabase) {
+        registry.forEach { (collectionName, spec) ->
+            val clazz = spec.model ?: return@forEach
+            try {
+                ensureModelIndexes(database, collectionName, clazz)
+            } catch (_: Throwable) {
+                // Ignore per-model index errors at startup
+            }
+        }
+    }
+
+    private data class IndexedField(
+        val name: String,
+        val group: String,
+        val order: Int,
+        val unique: Boolean,
+        val sparse: Boolean,
+        val deduplicate: Boolean,
+    )
+
+    private fun ensureModelIndexes(
+        database: ArangoDatabase,
+        collectionName: String,
+        modelClass: Class<*>,
+    ) {
+        val coll = database.collection(collectionName)
+        val fields = modelClass.declaredFields.mapNotNull { f ->
+            val ann = f.getAnnotation(models.annotations.Indexed::class.java) ?: return@mapNotNull null
+            IndexedField(
+                name = f.name,
+                group = ann.group,
+                order = ann.order,
+                unique = ann.unique,
+                sparse = ann.sparse,
+                deduplicate = ann.deduplicate,
+            )
+        }
+        // Single-field indices (no group)
+        fields.filter { it.group.isBlank() }.forEach { sf ->
+            val opts = PersistentIndexOptions()
+                .unique(sf.unique)
+                .sparse(sf.sparse)
+                .deduplicate(sf.deduplicate)
+            coll.ensurePersistentIndex(listOf(sf.name), opts)
+        }
+        // Grouped (composite) indices from field annotations
+        fields.filter { it.group.isNotBlank() }
+            .groupBy { it.group }
+            .forEach { (_, groupFields) ->
+                val ordered = groupFields.sortedBy { it.order }
+                if (ordered.isEmpty()) return@forEach
+                val first = ordered.first()
+                val opts = PersistentIndexOptions()
+                    .unique(first.unique)
+                    .sparse(first.sparse)
+                    .deduplicate(first.deduplicate)
+                val fieldNames = ordered.map { it.name }
+                coll.ensurePersistentIndex(fieldNames, opts)
+            }
+        // Class-level composite indices (CompositeIndex/CompositeIndexes)
+        run {
+            val composites = mutableListOf<models.annotations.CompositeIndex>()
+            modelClass.getAnnotation(models.annotations.CompositeIndexes::class.java)?.let { composites.addAll(it.value) }
+            modelClass.getAnnotation(models.annotations.CompositeIndex::class.java)?.let { composites.add(it) }
+            composites.forEach { ci ->
+                val opts = PersistentIndexOptions()
+                    .unique(ci.unique)
+                    .sparse(ci.sparse)
+                    .deduplicate(ci.deduplicate)
+                coll.ensurePersistentIndex(ci.fields.toList(), opts)
+            }
         }
     }
 }

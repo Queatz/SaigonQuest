@@ -35,7 +35,7 @@ import utils.json
 object CollaborationService {
     private val scope = CoroutineScope(Dispatchers.Default)
 
-    private data class Client(val userId: String, val session: DefaultWebSocketServerSession)
+    private data class Client(var userId: String, val session: DefaultWebSocketServerSession)
 
     private data class DocState(
         var content: String,
@@ -90,7 +90,7 @@ object CollaborationService {
             room.mutex.withLock {
                 room.clients.add(client)
             }
-            broadcast(room, WsMsg.Presence(userId = userId, cursor = 0))
+            broadcast(room, WsMsg.Presence(userId = client.userId, cursor = 0))
         }
 
         try {
@@ -102,12 +102,18 @@ object CollaborationService {
                 val msg = runCatching { json.decodeFromString(WsMsg.serializer(), text) }.getOrNull() ?: continue
                 when (msg) {
                     is WsMsg.Join -> {
-                        // Already handled implicitly by connecting, but echo presence for compatibility
-                        broadcast(room, WsMsg.Presence(userId = userId, cursor = msg.cursor))
+                        // Update client identity if server inferred Anonymous and client provided a userId
+                        room.mutex.withLock {
+                            if (client.userId == "Anonymous" && msg.userId.isNotBlank()) {
+                                client.userId = msg.userId
+                            }
+                        }
+                        // Echo presence with the resolved client userId
+                        broadcast(room, WsMsg.Presence(userId = client.userId, cursor = msg.cursor))
                     }
                     is WsMsg.Presence -> {
-                        // Re-broadcast presence updates (cursor changes)
-                        broadcast(room, WsMsg.Presence(userId = userId, cursor = msg.cursor))
+                        // Re-broadcast presence updates (cursor changes) with resolved client userId
+                        broadcast(room, WsMsg.Presence(userId = client.userId, cursor = msg.cursor))
                     }
                     is WsMsg.Op -> {
                         // Enforce permissions: read-only clients cannot send ops
@@ -140,8 +146,8 @@ object CollaborationService {
                                 room.state.content = updated.content
                                 room.state.version = updated.version
 
-                                // Broadcast op to all clients (including sender)
-                                broadcast(room, WsMsg.Op(userId = userId, baseVersion = currentVersion, ops = msg.ops))
+                                // Broadcast op to other clients (do not echo back to sender)
+                                broadcast(room, WsMsg.Op(userId = client.userId, baseVersion = currentVersion, ops = msg.ops), except = client)
                                 // Ack new version to sender
                                 runCatching { val data = json.encodeToString(WsMsg.serializer(), WsMsg.Ack(version = updated.version)); ws.send(Frame.Text(data)) }
                             } catch (e: IllegalStateException) {
@@ -178,7 +184,7 @@ object CollaborationService {
             // Remove client and broadcast presence leave (using cursor -1 to indicate offline)
             scope.launch {
                 room.mutex.withLock { room.clients.remove(client) }
-                broadcast(room, WsMsg.Presence(userId = userId, cursor = -1))
+                broadcast(room, WsMsg.Presence(userId = client.userId, cursor = -1))
             }
             runCatching { ws.close(CloseReason(CloseReason.Codes.NORMAL, "Bye")) }
         }
@@ -208,12 +214,13 @@ object CollaborationService {
         return content
     }
 
-    private fun broadcast(room: Room, message: WsMsg) {
+    private fun broadcast(room: Room, message: WsMsg, except: Client? = null) {
         scope.launch {
             val data = runCatching { json.encodeToString(WsMsg.serializer(), message) }.getOrNull()
             if (data == null) return@launch
             val clientsCopy = room.mutex.withLock { room.clients.toList() }
             clientsCopy.forEach { client ->
+                if (except != null && client === except) return@forEach
                 runCatching { client.session.send(Frame.Text(data)) }
             }
         }

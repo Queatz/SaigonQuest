@@ -231,6 +231,8 @@ fun createNode(
         NodeId.PlayerInput -> LogicNode.PlayerInput()
         NodeId.StringTemplate -> LogicNode.StringTemplate()
         NodeId.PlayerName -> LogicNode.PlayerName()
+        NodeId.DocContent -> LogicNode.DocContent()
+        NodeId.SetStatus -> LogicNode.SetStatus()
         NodeId.Ai -> LogicNode.Ai()
     }
     

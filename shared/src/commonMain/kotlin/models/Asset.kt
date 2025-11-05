@@ -1,6 +1,7 @@
 package models
 
 import kotlinx.serialization.Serializable
+import models.annotations.Indexed
 
 /**
  * Enum representing the different types of assets in the system
@@ -21,12 +22,14 @@ enum class AssetType {
  */
 @Serializable
 data class Asset(
+    @field:Indexed
     var type: AssetType = AssetType.Items,
     var file: String = "",
 ) : BaseModel()
 
 @Serializable
 data class ItemAssetItem(
+    @field:Indexed
     var assetId: String = "",
     var title: String = "",
     var category: String = "",
@@ -35,6 +38,7 @@ data class ItemAssetItem(
 
 @Serializable
 data class ObjectAssetItem(
+    @field:Indexed
     var assetId: String = "",
     var title: String = "",
     var category: String = "",
@@ -43,6 +47,7 @@ data class ObjectAssetItem(
 
 @Serializable
 data class WorldAssetItem(
+    @field:Indexed
     var assetId: String = "",
     var title: String = "",
     var category: String = "",
@@ -50,6 +55,7 @@ data class WorldAssetItem(
 
 @Serializable
 data class SpriteSheetAssetItem(
+    @field:Indexed
     var assetId: String = "",
     var title: String = "",
     var category: String = "",

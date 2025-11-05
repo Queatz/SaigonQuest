@@ -10,12 +10,16 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import models.ErrorResponse
 import models.World
+import models.canUserEdit
+import models.Notification
+import models.NotificationType
 import models.UserBalanceHistory
 import models.UserBalanceHistoryEventType
 import repository.WorldRepository
 import repository.UserRepository
 import repository.FriendRepository
 import repository.InventoryRepository
+import repository.NotificationRepository
 
 fun Routing.configureWorldRoutes() {
     val worldRepository = WorldRepository()
@@ -24,13 +28,14 @@ fun Routing.configureWorldRoutes() {
     val inventoryRepository = InventoryRepository()
     val balances = repository.UserBalanceRepository()
     val balanceHistory = repository.UserBalanceHistoryRepository()
+    val notificationRepository = NotificationRepository()
 
     fun checkAccess(call: ApplicationCall, world: World): ErrorResponse? {
         val principal = call.principal<JWTPrincipal>()
         val requesterUserId = JWTUtils.getUserId(principal)
 
-        // Owner is always allowed
-        if (world.userId.isNotEmpty() && requesterUserId == world.userId) {
+        // Owner or co-owner is always allowed
+        if (requesterUserId != null && world.canUserEdit(requesterUserId)) {
             return null
         }
 
@@ -59,7 +64,7 @@ fun Routing.configureWorldRoutes() {
             )
         }
 
-        // Friends of the owner only
+        // Friends of the owner(s) only
         if (world.allowFriendsOfOwners) {
             if (requesterUserId == null) {
                 return ErrorResponse(
@@ -68,8 +73,14 @@ fun Routing.configureWorldRoutes() {
                     details = "ACCESS_REQUIRES_FRIEND"
                 )
             }
-            val isFriend = friendRepository.existsFriendship(requesterUserId, world.userId)
-            if (isFriend) {
+            val ownerIds = buildList {
+                if (world.userId.isNotBlank()) add(world.userId)
+                addAll(world.ownerIds)
+            }
+            val isFriendOfAnyOwner = ownerIds.any { ownerId ->
+                try { friendRepository.existsFriendship(requesterUserId, ownerId) } catch (_: Throwable) { false }
+            }
+            if (isFriendOfAnyOwner) {
                 return null
             }
             return ErrorResponse(
@@ -235,27 +246,65 @@ fun Routing.configureWorldRoutes() {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
                 
-                // Check if the world belongs to the user
+                // Check if the world exists
                 val existingWorld = worldRepository.getById(id) ?: return@post call.respond(
                     HttpStatusCode.NotFound,
                     ErrorResponse(message = "World not found", code = HttpStatusCode.NotFound.value)
                 )
-                if (existingWorld.userId != userId) {
+                // Allow updates by any owner/co-owner
+                if (!existingWorld.canUserEdit(userId)) {
                     return@post call.respond(
-                        HttpStatusCode.Forbidden, 
+                        HttpStatusCode.Forbidden,
                         ErrorResponse(
                             message = "You don't have permission to update this world",
                             code = HttpStatusCode.Forbidden.value
                         )
                     )
                 }
+                // Only the primary owner can change ownerIds
+                val ownerIdsChanging = try { existingWorld.ownerIds.toSet() != worldUpdate.ownerIds.toSet() } catch (_: Throwable) { false }
+                if (ownerIdsChanging && userId != existingWorld.userId) {
+                    return@post call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse(
+                            message = "Only the primary owner can change owners",
+                            code = HttpStatusCode.Forbidden.value
+                        )
+                    )
+                }
+                // Compute newly added owners for notifications
+                val addedOwnerIds: List<String> = if (ownerIdsChanging) {
+                    val before = existingWorld.ownerIds.toSet()
+                    val after = worldUpdate.ownerIds.toSet()
+                    (after - before).filter { it.isNotBlank() }
+                } else emptyList()
                 
                 val updatedWorld = worldRepository.update(id, worldUpdate)
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ErrorResponse(message = "Failed to update world", code = HttpStatusCode.NotFound.value)
                     )
-                    
+                
+                // Notify newly added owners
+                if (addedOwnerIds.isNotEmpty()) {
+                    try {
+                        addedOwnerIds.forEach { newOwnerId ->
+                            try {
+                                val note = Notification(
+                                    userId = newOwnerId,
+                                    title = "You're now an owner of \"${updatedWorld.title}\"",
+                                    description = "You can now edit this world.",
+                                    isRead = false,
+                                    type = NotificationType.WORLD_UPDATE,
+                                    worldId = updatedWorld.key,
+                                    otherUserId = existingWorld.userId,
+                                )
+                                notificationRepository.create(note)
+                            } catch (_: Throwable) { /* per-user best-effort */ }
+                        }
+                    } catch (_: Throwable) { /* ignore */ }
+                }
+                
                 call.respond(updatedWorld)
             }
 

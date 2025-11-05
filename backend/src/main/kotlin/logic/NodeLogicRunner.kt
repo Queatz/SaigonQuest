@@ -1,6 +1,8 @@
 package logic
 
 import debug.WebSocketDebug
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import models.LogicNode
 import models.NodeId
 import models.Object
@@ -164,32 +166,34 @@ class NodeLogicRunner(
      * @param eventData Additional data related to the event (mutable)
      */
     private suspend fun processNode(node: NodeDataModel, eventData: MutableMap<String, Any>, executedNodes: MutableSet<String>) {
-        fun reconstructLogicNode(node: NodeDataModel): models.LogicNode {
+        fun reconstructLogicNode(node: NodeDataModel): LogicNode {
             return when (node.nodeId) {
-                NodeId.Teleport -> models.LogicNode.Teleport()
-                NodeId.VisitorInteract -> models.LogicNode.VisitorInteract()
-                NodeId.PlayerInteract -> models.LogicNode.PlayerInteract()
-                NodeId.PlayerJoined -> models.LogicNode.PlayerJoined()
-                NodeId.VisitorJoined -> models.LogicNode.VisitorJoined()
-                NodeId.Ai -> models.LogicNode.Ai()
-                NodeId.Dialogue -> models.LogicNode.Dialogue()
-                NodeId.UserLanguage -> models.LogicNode.UserLanguage()
-                NodeId.UserSex -> models.LogicNode.UserSex()
-                NodeId.UserAge -> models.LogicNode.UserAge()
-                NodeId.HasItem -> models.LogicNode.HasItem()
-                NodeId.OpenUrl -> models.LogicNode.OpenUrl()
-                NodeId.ObjectNotification -> models.LogicNode.ObjectNotification()
-                NodeId.ObjectOwnerNotification -> models.LogicNode.ObjectOwnerNotification()
-                NodeId.Delay -> models.LogicNode.Delay()
-                NodeId.TakeItems -> models.LogicNode.TakeItems()
-                NodeId.GiveItems -> models.LogicNode.GiveItems()
-                NodeId.SendChat -> models.LogicNode.SendChat()
-                NodeId.PlayerInput -> models.LogicNode.PlayerInput()
-                NodeId.StringTemplate -> models.LogicNode.StringTemplate()
-                NodeId.PlayerName -> models.LogicNode.PlayerName()
+                NodeId.Teleport -> LogicNode.Teleport()
+                NodeId.VisitorInteract -> LogicNode.VisitorInteract()
+                NodeId.PlayerInteract -> LogicNode.PlayerInteract()
+                NodeId.PlayerJoined -> LogicNode.PlayerJoined()
+                NodeId.VisitorJoined -> LogicNode.VisitorJoined()
+                NodeId.Ai -> LogicNode.Ai()
+                NodeId.Dialogue -> LogicNode.Dialogue()
+                NodeId.UserLanguage -> LogicNode.UserLanguage()
+                NodeId.UserSex -> LogicNode.UserSex()
+                NodeId.UserAge -> LogicNode.UserAge()
+                NodeId.HasItem -> LogicNode.HasItem()
+                NodeId.OpenUrl -> LogicNode.OpenUrl()
+                NodeId.ObjectNotification -> LogicNode.ObjectNotification()
+                NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
+                NodeId.Delay -> LogicNode.Delay()
+                NodeId.TakeItems -> LogicNode.TakeItems()
+                NodeId.GiveItems -> LogicNode.GiveItems()
+                NodeId.SendChat -> LogicNode.SendChat()
+                NodeId.SetStatus -> LogicNode.SetStatus()
+                NodeId.PlayerInput -> LogicNode.PlayerInput()
+                NodeId.StringTemplate -> LogicNode.StringTemplate()
+                NodeId.PlayerName -> LogicNode.PlayerName()
+                NodeId.DocContent -> LogicNode.DocContent()
             }
         }
-        fun getOutputPropertyTypes(node: NodeDataModel): List<models.nodeeditor.PropertyType> {
+        fun getOutputPropertyTypes(node: NodeDataModel): List<PropertyType> {
             val logicNode = reconstructLogicNode(node)
             return logicNode.getOutputPropertyDefinitions().map { it.type }
         }
@@ -200,7 +204,7 @@ class NodeLogicRunner(
             val index = match.groupValues[1].toIntOrNull() ?: return false
             val types = getOutputPropertyTypes(node)
             val t = types.getOrNull(index)
-            return t == models.nodeeditor.PropertyType.TRIGGER
+            return t == PropertyType.TRIGGER
         }
         fun propagateValue(fromPort: String, toPort: String) {
             val value = eventData[fromPort]
@@ -548,36 +552,43 @@ class NodeLogicRunner(
                 for (connection in connections) {
                     propagateValue(connection.fromPort, connection.toPort)
                 }
-                // Pass 2: traverse triggers
-                for (connection in connections) {
-                    WebSocketDebug.logMessage(
-                        "FOLLOWING_CONNECTION",
-                        "Following connection from ${connection.from} to ${connection.to}",
-                        context.session
-                    )
-
-                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                    if (targetNode != null) {
+                // Pass 2: traverse triggers concurrently
+                coroutineScope {
+                    for (connection in connections) {
                         WebSocketDebug.logMessage(
-                            "TARGET_NODE_FOUND",
-                            "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
+                            "FOLLOWING_CONNECTION",
+                            "Following connection from ${connection.from} to ${connection.to}",
                             context.session
                         )
-                        if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData, executedNodes)
-                        } else {
+
+                        val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
+                        if (targetNode != null) {
                             WebSocketDebug.logMessage(
-                                "SKIP_NON_TRIGGER_CONNECTION",
-                                "Skipping non-trigger connection fromPort=${connection.fromPort} toPort=${connection.toPort} for node=${node.id}",
+                                "TARGET_NODE_FOUND",
+                                "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
+                                context.session
+                            )
+                            if (isTriggerConnection(node, connection.fromPort)) {
+                                // Launch each trigger-connected branch concurrently with isolated state
+                                val branchEventData = eventData.toMutableMap()
+                                val branchExecuted = executedNodes.toMutableSet()
+                                launch {
+                                    processNode(targetNode, branchEventData, branchExecuted)
+                                }
+                            } else {
+                                WebSocketDebug.logMessage(
+                                    "SKIP_NON_TRIGGER_CONNECTION",
+                                    "Skipping non-trigger connection fromPort=${connection.fromPort} toPort=${connection.toPort} for node=${node.id}",
+                                    context.session
+                                )
+                            }
+                        } else {
+                            WebSocketDebug.logError(
+                                "Target node not found for connection: ${connection.from} -> ${connection.to}",
+                                null,
                                 context.session
                             )
                         }
-                    } else {
-                        WebSocketDebug.logError(
-                            "Target node not found for connection: ${connection.from} -> ${connection.to}",
-                            null,
-                            context.session
-                        )
                     }
                 }
             }
@@ -715,6 +726,14 @@ class NodeLogicRunner(
                 )
                 SendChatNodeRunner(context)
             }
+            NodeId.SetStatus -> {
+                WebSocketDebug.logMessage(
+                    "SET_STATUS_RUNNER_SELECTED",
+                    "Selected SetStatusNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                SetStatusNodeRunner(context)
+            }
             NodeId.PlayerInput -> {
                 WebSocketDebug.logMessage(
                     "PLAYER_INPUT_RUNNER_SELECTED",
@@ -746,6 +765,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 AiNodeRunner(context)
+            }
+            NodeId.DocContent -> {
+                WebSocketDebug.logMessage(
+                    "DOC_CONTENT_RUNNER_SELECTED",
+                    "Selected DocContentNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                DocContentNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

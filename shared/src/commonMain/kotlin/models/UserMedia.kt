@@ -1,12 +1,14 @@
 package models
 
 import kotlinx.serialization.Serializable
+import models.annotations.Indexed
 
 @Serializable
 enum class MediaType { Image, Video }
 
 @Serializable
 data class UserMedia(
+    @field:Indexed
     var userId: String = "",
     var type: MediaType = MediaType.Image,
     var path: String = "",

@@ -32,6 +32,7 @@ import main.components.world.isSkybox
 import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
 import models.World
+import models.canUserEdit
 import kotlin.math.abs
 
 /**
@@ -131,8 +132,8 @@ class InputHandler(
             // Get the current user
             val currentUser = UserApi.getCurrentUser()
             
-            // Check if the user is the owner of the world
-            return currentUser.key == currentWorld?.userId
+            // Check if the user can edit the world (owner or co-owner)
+            return currentWorld?.canUserEdit(currentUser.key) == true
         } catch (e: Throwable) {
             console.error("Error checking world ownership", e)
             return false

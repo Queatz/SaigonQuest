@@ -25,8 +25,20 @@ import main.theme.Styles
 import kotlinx.browser.document
 import main.utils.toggleFullscreen
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
+import web.animations.awaitAnimationFrame
+import web.cssom.PropertyName.Companion.display
+import web.cssom.PropertyName.Companion.flexDirection
+import web.cssom.attr
 
 @Composable
 fun WorldDocsDialog(
@@ -147,10 +159,14 @@ fun WorldDocsDialog(
             // Connection status state (for header chip)
             var connState by remember { mutableStateOf<ConnectionState>(ConnectionState.Closed) }
             // Only show connection status when the selected doc is editable for this user
-            val canEditSelected = remember(selectedDocId, docs, isOwner) {
+            val canEditSelected = remember(selectedDocId, docs, isOwner, currentUserId) {
                 val doc = flatDocs.firstOrNull { it.key == selectedDocId }
                 if (doc == null) false else {
-                    isOwner || (doc.permissions.worldUsersCanEdit && ancestorsOf(docs, doc.key).all { anc -> anc.permissions.worldUsersCanEdit })
+                    isOwner || (
+                        currentUserId != "Anonymous" &&
+                        doc.permissions.worldUsersCanEdit &&
+                        ancestorsOf(docs, doc.key).all { anc -> anc.permissions.worldUsersCanEdit }
+                    )
                 }
             }
 
@@ -189,6 +205,11 @@ fun WorldDocsDialog(
                     onInput { ev -> searchInput = ev.value }
                     placeholder(Translations.str("Search docs"))
                 }
+                Div(
+                    attrs = {
+                        style { flexGrow(1); flexShrink(1) }
+                    }
+                )
                 if (canEditSelected) {
                     // Connection status chip
                     Div(attrs = {
@@ -242,7 +263,13 @@ fun WorldDocsDialog(
                                         res.onFailure { t -> error = t.message }
                                     }
                                 },
-                                canEditDoc = { d -> isOwner || (d.permissions.worldUsersCanEdit && ancestorsOf(docs, d.key).all { ancestor -> ancestor.permissions.worldUsersCanEdit }) },
+                                canEditDoc = { d ->
+                                    isOwner || (
+                                        currentUserId != "Anonymous" &&
+                                        d.permissions.worldUsersCanEdit &&
+                                        ancestorsOf(docs, d.key).all { ancestor -> ancestor.permissions.worldUsersCanEdit }
+                                    )
+                                },
                                 expandPathToId = if (serverSearchIds != null) selectedDocId else null,
                             )
                         }
@@ -251,43 +278,65 @@ fun WorldDocsDialog(
                         Div(attrs = { classes(WorldDocsStyles.rightPanel) }) {
                             if (selectedDoc != null) {
                                 val ancestors = ancestorsOf(docs, selectedDoc.key)
-                                val canEditDoc = isOwner || (selectedDoc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit })
+                                val canEditDoc = isOwner || (
+                                    currentUserId != "Anonymous" &&
+                                    selectedDoc.permissions.worldUsersCanEdit &&
+                                    ancestors.all { it.permissions.worldUsersCanEdit }
+                                )
 
                                 // Controls: title rename (owners and editors), delete (owner-only), move (owners and editors)
                                 Div(attrs = { classes(WorldDocsStyles.controlsRow) }) {
                                     // Title input + Save for editors/owners
                                     if (canEditDoc) {
-                                        TextInput(value = renameTitle) {
-                                            classes(WorldDocsStyles.titleInput)
-                                            onInput { ev -> renameTitle = ev.value }
-                                            placeholder(Translations.str("Title"))
-                                            autoFocus()
-                                            ref {
-                                                titleInputEl = it
-                                                it.focus()
-                                                onDispose { titleInputEl = null }
-                                            }
-                                        }
-                                        // Collaborators indicator just under the title input
-                                        if (collaborators.isNotEmpty()) {
-                                            PresenceIndicator(users = collaborators)
-                                        }
-                                        Button(attrs = {
-                                            classes(Styles.primaryButton)
-                                            onClick {
-                                                val id = selectedDoc.key
-                                                val newTitle = renameTitle.trim().ifBlank { selectedDoc.title }
-                                                scope.launch {
-                                                    val result = runCatching {
-                                                        DocApi.updateDoc(id, DocApi.UpdateDocRequest(title = newTitle))
-                                                    }
-                                                    result.onSuccess { updated ->
-                                                        docs = docs.map { updateNode(it, updated) }
-                                                    }
-                                                    result.onFailure { t -> error = t.message }
+                                        Div(
+                                            attrs = {
+                                                style {
+                                                    display(DisplayStyle.Flex)
+                                                    flexDirection(FlexDirection.Column)
+                                                    gap(4.px)
                                                 }
                                             }
-                                        }) { Translated("Save") }
+                                        ) {
+                                            TextInput(value = renameTitle) {
+                                                classes(WorldDocsStyles.titleInput)
+                                                onInput { ev -> renameTitle = ev.value }
+                                                placeholder(Translations.str("Title"))
+                                                autoFocus()
+                                                ref {
+                                                    titleInputEl = it
+                                                    scope.launch {
+                                                        delay(100)
+                                                        awaitAnimationFrame()
+                                                        it.focus()
+                                                    }
+                                                    onDispose { titleInputEl = null }
+                                                }
+                                            }
+                                            // Collaborators indicator just under the title input
+                                            if (collaborators.isNotEmpty()) {
+                                                PresenceIndicator(users = collaborators)
+                                            }
+                                        }
+                                        val trimmed = renameTitle.trim()
+                                        if (trimmed != selectedDoc.title) {
+                                            Button(attrs = {
+                                                classes(Styles.primaryButton)
+                                                if (trimmed.isBlank()) disabled()
+                                                onClick {
+                                                    val id = selectedDoc.key
+                                                    val newTitle = trimmed.ifBlank { selectedDoc.title }
+                                                    scope.launch {
+                                                        val result = runCatching {
+                                                            DocApi.updateDoc(id, DocApi.UpdateDocRequest(title = newTitle))
+                                                        }
+                                                        result.onSuccess { updated ->
+                                                            docs = docs.map { updateNode(it, updated) }
+                                                        }
+                                                        result.onFailure { t -> error = t.message }
+                                                    }
+                                                }
+                                            }) { Translated("Save") }
+                                        }
                                     }
 
                                     // Delete only for owner

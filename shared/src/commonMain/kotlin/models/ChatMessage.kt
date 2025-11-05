@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Instant
 import models.chat.Attachment
+import models.annotations.CompositeIndex
 
 @Serializable
 enum class ChatSenderType {
@@ -16,6 +17,12 @@ enum class ChatSenderType {
 /**
  * Represents a chat message in a world.
  */
+@CompositeIndex(
+    fields = [
+        "worldId",
+        "timestamp",
+    ],
+)
 @Serializable
 data class ChatMessage(
     var worldId: String = "",

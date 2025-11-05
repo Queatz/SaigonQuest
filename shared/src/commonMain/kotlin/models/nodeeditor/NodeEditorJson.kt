@@ -100,9 +100,11 @@ object NodeEditorJsonUtil {
             NodeId.TakeItems -> LogicNode.TakeItems()
             NodeId.GiveItems -> LogicNode.GiveItems()
             NodeId.SendChat -> LogicNode.SendChat()
+            NodeId.SetStatus -> LogicNode.SetStatus()
             NodeId.PlayerInput -> LogicNode.PlayerInput()
             NodeId.StringTemplate -> LogicNode.StringTemplate()
             NodeId.PlayerName -> LogicNode.PlayerName()
+            NodeId.DocContent -> LogicNode.DocContent()
             NodeId.Ai -> LogicNode.Ai()
         }
 

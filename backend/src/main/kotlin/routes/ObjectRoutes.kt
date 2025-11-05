@@ -13,6 +13,7 @@ import models.Object
 import models.WebSocketAction
 import repository.InventoryRepository
 import repository.ObjectRepository
+import models.canUserEdit
 import repository.WorldRepository
 import routes.activeConnections
 import utils.json
@@ -40,7 +41,7 @@ fun Routing.configureObjectRoutes() {
                     // as objects don't need to be related to worlds
                     
                     // If world exists, check if user has permission
-                    if (world != null && world.userId != userId) {
+                    if (world != null && !world.canUserEdit(userId)) {
                         return@post call.respond(
                             HttpStatusCode.Forbidden,
                             ErrorResponse(
@@ -141,7 +142,7 @@ fun Routing.configureObjectRoutes() {
                     val world = worldRepository.getById(existingObject.worldId)
                     
                     // If world exists, check if user has permission
-                    if (world != null && world.userId != userId) {
+                    if (world != null && !world.canUserEdit(userId)) {
                         return@put call.respond(
                             HttpStatusCode.Forbidden,
                             ErrorResponse(
@@ -199,7 +200,7 @@ fun Routing.configureObjectRoutes() {
                     val world = worldRepository.getById(existingObject.worldId)
                     
                     // If world exists, check if user has permission
-                    if (world != null && world.userId != userId) {
+                    if (world != null && !world.canUserEdit(userId)) {
                         return@delete call.respond(
                             HttpStatusCode.Forbidden,
                             ErrorResponse(

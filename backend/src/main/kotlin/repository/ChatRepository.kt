@@ -9,6 +9,7 @@ import models.ChatMessage
 import models.ChatMessagePin
 import models.ChatReadMarker
 import models.World
+import models.canUserEdit
 import models.VisitedWorld
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -196,7 +197,7 @@ class ChatRepository {
             val isAuthor = (existingMessage.senderType == models.ChatSenderType.USER && existingMessage.senderId == requesterId)
             val isWorldOwner = try {
                 val world = worldsCollection.getDocument(existingMessage.worldId, World::class.java)
-                world.userId == requesterId
+                world.canUserEdit(requesterId)
             } catch (_: Throwable) { false }
 
             val canEdit = when (existingMessage.senderType) {

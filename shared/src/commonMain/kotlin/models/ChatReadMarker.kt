@@ -5,6 +5,9 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
 import kotlin.time.Instant
+import models.annotations.Indexed
+import models.annotations.CompositeIndex
+import models.annotations.CompositeIndexes
 
 /**
  * Represents a marker for tracking when a user last read messages in a world.
@@ -16,11 +19,24 @@ import kotlin.time.Instant
  * @property subscribed Whether the user is currently subscribed to the world
  */
 
+@CompositeIndexes(
+    value = [
+        CompositeIndex(
+            fields = [
+                "userId",
+                "worldId",
+            ],
+        ),
+    ],
+)
 @Serializable
  data class ChatReadMarker(
+    @field:Indexed
     var userId: String = "",
+    @field:Indexed
     var worldId: String = "",
     @Contextual
+    @field:Indexed
     var lastReadTimestamp: Instant = Clock.System.now(),
     var notificationSent: Boolean = false,
     var subscribed: Boolean = true,

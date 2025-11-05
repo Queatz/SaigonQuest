@@ -282,6 +282,7 @@ fun LogicEditorDialog(
                         PropertyPanel(
                             nodeId = controller.selectedNode!!,
                             node = node,
+                            worldId = objectModel.worldId,
                             onNodeUpdate = { nodeId, updatedNode ->
                                 controller.updateNode(nodeId, updatedNode)
                             }

@@ -14,17 +14,24 @@ import main.api.WorldApi
 import models.ChatMessage
 import models.ChatMessagePin
 import models.WebSocketAction
+import kotlin.time.Clock
 
 /**
  * Global chat state store keyed by worldId. Loads chat history and pins once per world,
  * listens for WebSocket updates, and exposes Compose-observable state for rendering.
  */
 object ChatStore {
+    private const val MIN_OLDER_LOAD_INTERVAL_MS = 1_000L
+    enum class ChatMutationType { ReplaceAll, AppendNew, PrependOld, Update }
     class ChatState {
         val messages = mutableStateListOf<ChatMessage>()
         val pins = mutableStateListOf<ChatMessagePin>()
         val isOwner = mutableStateOf(false)
         val isLoading = mutableStateOf(true)
+        val isLoadingMore = mutableStateOf(false)
+        val hasMore = mutableStateOf(true)
+        val lastOlderLoadAtMs = mutableStateOf(0L)
+        val lastMutation = mutableStateOf(ChatMutationType.ReplaceAll)
         val error = mutableStateOf<String?>(null)
     }
 
@@ -45,6 +52,7 @@ object ChatStore {
             state.messages.add(updated)
             state.messages.sortBy { it.timestamp }
         }
+        state.lastMutation.value = ChatMutationType.Update
     }
 
     fun setPins(worldId: String, newPins: List<ChatMessagePin>) {
@@ -78,6 +86,8 @@ object ChatStore {
 
         state.isLoading.value = true
         state.error.value = null
+        state.hasMore.value = true
+        state.lastOlderLoadAtMs.value = 0L
 
         scope.launch {
             try {
@@ -86,10 +96,13 @@ object ChatStore {
                 val world = try { WorldApi.getWorld(worldId) } catch (_: Throwable) { null }
                 state.isOwner.value = (me != null && world != null && me.key == world.userId)
 
-                // Load messages
+                // Load latest page of messages (server defaults: limit=100, olderThan=now)
                 val chatMessages = ChatApi.getChatMessages(worldId).toList().sortedBy { it.timestamp }
                 state.messages.clear()
                 state.messages.addAll(chatMessages)
+                state.lastMutation.value = ChatMutationType.ReplaceAll
+                // If fewer than typical page size, assume no more
+                if (chatMessages.isEmpty()) state.hasMore.value = false
 
                 // Load pins
                 try {
@@ -108,6 +121,50 @@ object ChatStore {
         }
     }
 
+    /**
+     * Load a page of older messages and merge into the beginning of the list.
+     * Returns the number of new messages added.
+     */
+    suspend fun loadOlder(worldId: String, limit: Int = 100): Int {
+        val state = getState(worldId)
+        if (state.isLoadingMore.value || !state.hasMore.value) return 0
+        // Throttle: ensure at least 1s between successive older-loads per world
+        val nowMs = Clock.System.now().toEpochMilliseconds()
+        if (nowMs - state.lastOlderLoadAtMs.value < MIN_OLDER_LOAD_INTERVAL_MS) return 0
+        state.lastOlderLoadAtMs.value = nowMs
+        state.isLoadingMore.value = true
+        state.error.value = null
+        return try {
+            val oldestMs = state.messages.firstOrNull()?.timestamp?.toEpochMilliseconds()
+                ?: Clock.System.now().toEpochMilliseconds()
+            val older = ChatApi.getChatMessagesBefore(worldId, oldestMs, limit).toList()
+            if (older.isEmpty()) {
+                state.hasMore.value = false
+                0
+            } else {
+                val existingKeys = state.messages.map { it.key }.toHashSet()
+                val newOnes = older.filter { it.key !in existingKeys }
+                if (newOnes.isEmpty()) {
+                    // If server returned only duplicates, assume no more
+                    state.hasMore.value = older.size >= limit
+                    0
+                } else {
+                    state.lastMutation.value = ChatMutationType.PrependOld
+                    state.messages.addAll(newOnes)
+                    state.messages.sortBy { it.timestamp }
+                    if (older.size < limit) state.hasMore.value = false
+                    newOnes.size
+                }
+            }
+        } catch (t: Throwable) {
+            console.error("Failed to load older messages for $worldId", t)
+            state.error.value = "Failed to load messages"
+            0
+        } finally {
+            state.isLoadingMore.value = false
+        }
+    }
+
     private fun initializeListenersIfNeeded() {
         if (listenersInitialized) return
         listenersInitialized = true
@@ -121,6 +178,7 @@ object ChatStore {
                     val st = states.getOrPut(chatMessage.worldId) { ChatState() }
                     // Mark as not loading if we start receiving live messages
                     if (st.isLoading.value) st.isLoading.value = false
+                    st.lastMutation.value = ChatMutationType.AppendNew
                     st.messages.add(chatMessage)
                     st.messages.sortBy { it.timestamp }
                 } else {

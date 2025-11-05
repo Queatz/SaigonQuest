@@ -20,6 +20,7 @@ import repository.InventoryRepository
 import repository.ObjectRepository
 import repository.UserRepository
 import repository.WorldRepository
+import models.canUserEdit
 import routes.activeConnections
 import routes.handlers.WebSocketUtils
 import utils.json
@@ -223,9 +224,9 @@ fun Routing.configureInventoryRoutes() {
                         )
                     }
 
-                    // Permission check: user must own the world if it exists
+                    // Permission check: user must be an owner of the world if it exists
                     val world = worldRepository.getById(req.worldId)
-                    if (world != null && world.userId != userId) {
+                    if (world != null && !world.canUserEdit(userId)) {
                         return@post call.respond(
                             HttpStatusCode.Forbidden,
                             ErrorResponse(

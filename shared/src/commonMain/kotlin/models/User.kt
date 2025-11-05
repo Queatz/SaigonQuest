@@ -6,17 +6,22 @@ import kotlinx.serialization.Transient
 import kotlin.time.Clock
 
 import kotlin.time.Instant
+import models.annotations.Indexed
 
 
 @Serializable
 data class User(
+    @field:Indexed
     var username: String = "",
     var isPlayer: Boolean = false,
+    @field:Indexed
     var isAdmin: Boolean = false,
+    @field:Indexed
     var visitorId: String = "",
     @Transient
     var passwordHash: String = "",
     @Contextual
+    @field:Indexed
     var lastActive: Instant = Clock.System.now(),
     var yearOfBirth: Int? = null,
     var sex: Sex? = null,

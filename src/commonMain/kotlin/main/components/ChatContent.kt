@@ -12,40 +12,38 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.ChatApi
+import main.api.ContentApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.api.sendChatMessage
 import main.api.sendTypingStatus
 import main.components.chat.ChatMessages
+import main.components.chat.RichTextEditorDialog
+import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import main.theme.Theme
+import models.chat.ImageAttachment
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.bottom
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.flexWrap
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.maxHeight
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgb
 import org.jetbrains.compose.web.css.rgba
@@ -55,11 +53,6 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
-import main.components.media.UploadMediaDialog
-import main.components.chat.RichTextEditorDialog
-import models.chat.ImageAttachment
-import main.api.ContentApi
-import org.jetbrains.compose.web.css.borderRadius
 
 /**
  * Content for the chat panel/dialog.

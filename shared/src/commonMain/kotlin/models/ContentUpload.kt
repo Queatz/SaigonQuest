@@ -1,6 +1,7 @@
 package models
 
 import kotlinx.serialization.Serializable
+import models.annotations.Indexed
 
 /**
  * Record of a user-uploaded content file stored by the content server.
@@ -11,6 +12,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ContentUpload(
+    @field:Indexed
     var userId: String = "",
     var originalFileName: String = "",
     var uploadedFilePath: String = ""

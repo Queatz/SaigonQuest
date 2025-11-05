@@ -1522,6 +1522,30 @@ vi: Trực tuyến
 
 Reconnecting…
 vi: Đang kết nối lại…
+
+You don't own this world.
+vi: Bạn không sở hữu thế giới này.
+
+Owners
+vi: Chủ sở hữu
+
+Owner user ID
+vi: ID người dùng chủ sở hữu
+
+Add owner
+vi: Thêm chủ sở hữu
+
+Remove owner
+vi: Xóa chủ sở hữu
+
+No owners
+vi: Không có chủ sở hữu
+
+Select friend
+vi: Chọn bạn
+
+Search friends
+vi: Tìm kiếm bạn bè
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

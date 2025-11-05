@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
 import kotlin.time.Instant
+import models.annotations.Indexed
+import models.annotations.CompositeIndex
+import models.annotations.CompositeIndexes
 
 /**
  * Represents a notification for a user.
@@ -19,8 +22,15 @@ import kotlin.time.Instant
  * @property timestamp The time when the notification was created (milliseconds since epoch)
  */
 
+@CompositeIndexes(
+    value = [
+        CompositeIndex(fields = ["userId", "timestamp"]),
+        CompositeIndex(fields = ["userId", "isRead"]),
+    ],
+)
 @Serializable
  data class Notification(
+    @field:Indexed
     var userId: String = "",
     var title: String = "",
     var description: String = "",
@@ -29,5 +39,6 @@ import kotlin.time.Instant
     var worldId: String = "",
     var objectId: String = "",
     var otherUserId: String = "",
+    @field:Indexed
     var timestamp: Instant = Clock.System.now()
 ) : BaseModel()

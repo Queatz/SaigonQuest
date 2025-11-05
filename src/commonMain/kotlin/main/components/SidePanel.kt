@@ -73,7 +73,8 @@ fun SidePanel(
                     when (notification.type) {
                         // For object or chat notifications, navigate to the world URL
                         models.NotificationType.OBJECT_NOTIFICATION,
-                        models.NotificationType.CHAT_NEW -> {
+                        models.NotificationType.CHAT_NEW,
+                        models.NotificationType.WORLD_UPDATE -> {
                             if (notification.worldId.isNotEmpty()) {
                                 console.log("Navigating to world: ${notification.worldId}")
                                 scope.launch {

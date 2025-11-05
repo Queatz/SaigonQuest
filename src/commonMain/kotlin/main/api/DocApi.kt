@@ -179,7 +179,15 @@ object DocApi {
     }
 
     fun collaborate(docId: String): CollaborationConnection {
-        val url = toWsUrl(ApiConstants.API_BASE_URL) + "/docs/$docId/collaborate"
+        val base = toWsUrl(ApiConstants.API_BASE_URL) + "/docs/$docId/collaborate"
+        // Browsers cannot set Authorization headers on WebSocket handshakes; pass token/visitorId via query
+        val token = UserApi.getToken()
+        val visitorId = UserApi.getVisitorId()
+        val url = when {
+            !token.isNullOrBlank() -> "$base?token=$token"
+            !visitorId.isNullOrBlank() -> "$base?visitorId=$visitorId"
+            else -> base
+        }
         val channel = kotlinx.coroutines.channels.Channel<WsEvent>(capacity = kotlinx.coroutines.channels.Channel.BUFFERED)
         val outgoing = kotlinx.coroutines.channels.Channel<models.WsMsg>(capacity = kotlinx.coroutines.channels.Channel.BUFFERED)
         val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)

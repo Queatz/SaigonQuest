@@ -225,6 +225,17 @@ sealed interface LogicNode {
     ) : LogicNode
 
     /**
+     * SetStatus node - sets the object's status text
+     */
+    @Serializable
+    data class SetStatus(
+        override val id: NodeId = NodeId.SetStatus,
+        override val label: String = "Set status",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Set this object's status text"
+    ) : LogicNode
+
+    /**
      * PlayerInput node - prompts the player for a text input
      */
     @Serializable
@@ -267,6 +278,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Generate text using DeepSeek from system and user prompts"
     ) : LogicNode
+
+    /**
+     * DocContent node - outputs the content of a doc if accessible
+     */
+    @Serializable
+    data class DocContent(
+        override val id: NodeId = NodeId.DocContent,
+        override val label: String = "Doc content",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Outputs the document content if the user has access"
+    ) : LogicNode
 }
 
 /**
@@ -291,9 +313,11 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.TakeItems(),
         LogicNode.GiveItems(),
         LogicNode.SendChat(),
+        LogicNode.SetStatus(),
         LogicNode.PlayerInput(),
         LogicNode.StringTemplate(),
         LogicNode.PlayerName(),
+        LogicNode.DocContent(),
         LogicNode.Ai(),
     )
 }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.ItemApi
+import main.api.DocApi
 import main.components.Translated
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
@@ -51,6 +52,7 @@ import org.jetbrains.compose.web.dom.TextInput
 fun PropertyPanel(
     nodeId: String,
     node: NodeData,
+    worldId: String,
     onNodeUpdate: (String, NodeData) -> Unit,
 ) {
     // State for node properties
@@ -245,6 +247,79 @@ fun PropertyPanel(
                                                 showRichEditorDialog = false
                                             },
                                             initialText = propertyValues[propDef.key] ?: "",
+                                        )
+                                    }
+                                } else if (propDef.key == PropertyKey.ID && node.type is models.LogicNode.DocContent) {
+                                    val currentId = propertyValues[propDef.key] ?: ""
+                                    var selectedDoc by remember(nodeId) { mutableStateOf<models.Doc?>(null) }
+                                    var loadingDoc by remember(nodeId) { mutableStateOf(false) }
+                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
+
+                                    LaunchedEffect(currentId) {
+                                        if (currentId.isNotBlank()) {
+                                            loadingDoc = true
+                                            try {
+                                                selectedDoc = DocApi.getDoc(currentId)
+                                            } catch (t: Throwable) {
+                                                console.error("Failed to load doc by id", t)
+                                                selectedDoc = null
+                                            } finally {
+                                                loadingDoc = false
+                                            }
+                                        } else {
+                                            selectedDoc = null
+                                        }
+                                    }
+
+                                    // Preview and info
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                            property("align-items", "center")
+                                        }
+                                    }) {
+                                        when {
+                                            loadingDoc -> Text(translated("Loading..."))
+                                            selectedDoc != null -> Text(selectedDoc!!.title.ifBlank { translated("Selected doc") })
+                                            else -> Text(translated("No doc selected"))
+                                        }
+                                    }
+
+                                    // Actions
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                        }
+                                    }) {
+                                        Button(attrs = {
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
+                                            onClick { showSelect = true }
+                                        }) { Translated(if (currentId.isBlank()) "Select doc" else "Change") }
+
+                                        if (currentId.isNotBlank()) {
+                                            Button(attrs = {
+                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
+                                                onClick {
+                                                    propertyValues = propertyValues.edit {
+                                                        it[PropertyKey.ID] = ""
+                                                    }
+                                                }
+                                            }) { Translated("Clear") }
+                                        }
+                                    }
+
+                                    if (showSelect) {
+                                        main.components.worlddocs.SelectDocDialog(
+                                            worldId = worldId,
+                                            onSelect = { d ->
+                                                propertyValues = propertyValues.edit { it[PropertyKey.ID] = d.key }
+                                                showSelect = false
+                                            },
+                                            onClose = { showSelect = false },
                                         )
                                     }
                                 } else if (propDef.key == PropertyKey.IMAGE_URL) {

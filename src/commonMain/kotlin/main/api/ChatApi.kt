@@ -98,6 +98,30 @@ object ChatApi {
             throw e
         }
     }
+
+    /**
+     * Get chat messages before a timestamp (paging)
+     *
+     * @param worldId World ID
+     * @param olderThanMs Return messages older than this timestamp (ms)
+     * @param limit Max number to fetch
+     */
+    suspend fun getChatMessagesBefore(
+        worldId: String,
+        olderThanMs: Long,
+        limit: Int = 100,
+    ): Array<ChatMessage> {
+        try {
+            val url = "${ApiConstants.API_BASE_URL}/chat/$worldId?limit=$limit&olderThan=$olderThanMs"
+            val response = ApiClient.httpClient.get(url) {
+                ApiClient.addAuthHeader(this)
+            }
+            return response.body<Array<ChatMessage>>()
+        } catch (e: Throwable) {
+            console.error("Error fetching older chat messages", e)
+            return emptyArray()
+        }
+    }
     
     /**
      * Get unread message count for a world
