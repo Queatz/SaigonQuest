@@ -290,6 +290,31 @@ fun WorldDocsDialog(
                                             )
                                 },
                                 expandPathToId = if (serverSearchIds != null) selectedDocId else null,
+                                showAddButtonForSelected = isOwner,
+                                onCreateChild = { parentId ->
+                                    scope.launch {
+                                        val createdRes = runCatching {
+                                            DocApi.createDoc(
+                                                worldId = worldId,
+                                                title = Translations.str("New doc"),
+                                                parentId = parentId,
+                                            )
+                                        }
+                                        createdRes.onSuccess { created ->
+                                            // Refresh tree to include new child at proper order
+                                            val refreshed = runCatching { DocApi.getDocTree(worldId) }
+                                            refreshed.onSuccess {
+                                                docs = it
+                                                selectedDocId = created.key
+                                                renameTitle = created.title
+                                                requestFocusOnTitle = true
+                                                error = null
+                                            }
+                                            refreshed.onFailure { t -> error = t.message }
+                                        }
+                                        createdRes.onFailure { t -> error = t.message }
+                                    }
+                                },
                             )
                         }
 

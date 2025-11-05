@@ -141,11 +141,41 @@ object WorldDocsStyles : StyleSheet() {
     val treeItemSelected by style {
         padding(8.px)
         borderRadius(12.px)
+        cursor("pointer")
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         boxSizing("border-box")
         // Keep positioned container in selected state as well
         property("position", "relative")
+    }
+
+    // Row actions container for selected item (e.g., inline create child)
+    val rowActions by style {
+        property("position", "absolute")
+        property("right", "8px")
+        property("top", "50%")
+        property("transform", "translateY(-50%)")
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(6.px)
+        // above DnD overlays
+        property("z-index", "3")
+    }
+    val rowActionButton by style {
+        cursor("pointer")
+        color(Theme.colors.onSurfaceVariant)
+        fontSize(14.px)
+        padding(4.px)
+        borderRadius(6.px)
+        self + hover style {
+            backgroundColor(Theme.colors.surfaceVariant)
+        }
+        dark(self) {
+            color(Theme.colors.onSurfaceVariantDark)
+            self + hover style {
+                backgroundColor(Theme.colors.surfaceVariantDark)
+            }
+        }
     }
 
     // Right panel: top controls row (rename/delete)
@@ -202,25 +232,39 @@ object WorldDocsStyles : StyleSheet() {
     // Overlay zones: absolutely positioned within each row so they don't affect layout
     val dropZone by style {
         // thin overlay band used for BEFORE/AFTER targets when not active
-        height(8.px)
+        height(4.px)
         backgroundColor(Color.transparent)
         borderRadius(4.px)
         property("position", "absolute")
         property("left", "0")
         property("right", "0")
-        property("z-index", "1")
+        property("z-index", "2")
         // ensure the band can receive drag events while present
         property("pointer-events", "auto")
     }
     val dropZoneActive by style {
-        height(8.px)
+        height(4.px)
         backgroundColor(Theme.colors.accentInfoSoft)
         borderRadius(4.px)
         property("position", "absolute")
         property("left", "0")
         property("right", "0")
-        property("z-index", "1")
+        property("z-index", "2")
         property("pointer-events", "auto")
+    }
+    // Full-row INTO overlay (visual only)
+    val dropIntoOverlay by style {
+        property("position", "absolute")
+        property("top", "0")
+        property("bottom", "0")
+        property("left", "0")
+        property("right", "0")
+        borderRadius(12.px)
+        border(4.px, LineStyle.Solid, Theme.colors.accentInfoSoft)
+        // Place under edge bands; visual only
+        property("z-index", "1")
+        // Do not intercept any events; row/edge handlers remain active
+        property("pointer-events", "none")
     }
     // Position helpers for overlay zones
     val dropZoneTop by style {

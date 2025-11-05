@@ -21,6 +21,7 @@ import main.theme.WorldDocsStyles
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import kotlinx.coroutines.delay
+import Translations
 
 @Composable
 fun DocTreeView(
@@ -31,6 +32,8 @@ fun DocTreeView(
     onMoveRequest: (docId: String, newParentId: String?, newOrderIndex: Double) -> Unit = { _, _, _ -> },
     canEditDoc: (Doc) -> Boolean = { true },
     expandPathToId: String? = null,
+    showAddButtonForSelected: Boolean = false,
+    onCreateChild: (parentId: String) -> Unit = {},
 ) {
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -46,6 +49,7 @@ fun DocTreeView(
     var draggingId by remember { mutableStateOf<String?>(null) }
     var dragOverId by remember { mutableStateOf<String?>(null) }
     var dragOverPos by remember { mutableStateOf<DragPos?>(null) }
+    var dragOverIntoId by remember { mutableStateOf<String?>(null) }
 
     // Auto-expand on drag over after a short delay
     val scope = rememberCoroutineScope()
@@ -146,10 +150,18 @@ fun DocTreeView(
                         draggingId = null
                         dragOverId = null
                         dragOverPos = null
+                        dragOverIntoId = null
                     }
                     // Drop INTO (as last child) when dropping on the row itself
                     onDragOver {
                         it.preventDefault()
+                        // Mark this row as INTO hover when valid, but only if no edge (BEFORE/AFTER) hover is active
+                        if (draggingId != null && draggingId != node.doc.key && dragOverId == null && dragOverPos == null) {
+                            val invalidInto = isDescendant(docs, draggingId!!, node.doc.key)
+                            if (!invalidInto) {
+                                dragOverIntoId = node.doc.key
+                            }
+                        }
                         // Schedule auto-expand if hovering over a collapsed parent
                         if (hasChildren && (expanded[node.doc.key] != true)) {
                             if (lastHoverId != node.doc.key) {
@@ -160,6 +172,11 @@ fun DocTreeView(
                                     expanded[node.doc.key] = true
                                 }
                             }
+                        }
+                    }
+                    onDragLeave {
+                        if (dragOverIntoId == node.doc.key) {
+                            dragOverIntoId = null
                         }
                     }
                     onDrop {
@@ -175,9 +192,14 @@ fun DocTreeView(
                         draggingId = null
                         dragOverId = null
                         dragOverPos = null
+                        dragOverIntoId = null
                     }
                 }
             }) {
+                // INTO drop overlay (visual only). Edge (BEFORE/AFTER) hover takes precedence, so only show when no edge hover is active.
+                if (canDrag && draggingId != null && dragOverIntoId == node.doc.key && dragOverId == null && dragOverPos == null) {
+                    Div(attrs = { classes(WorldDocsStyles.dropIntoOverlay) }) {}
+                }
                 // Top drop zone (before this node)
                 if (canDrag && draggingId != null) {
                     Div(attrs = {
@@ -189,6 +211,8 @@ fun DocTreeView(
                             it.preventDefault()
                             dragOverId = node.doc.key
                             dragOverPos = DragPos.BEFORE
+                            // Edge band hovered; hide INTO overlay
+                            dragOverIntoId = null
                         }
                         onDragLeave {
                             dragOverId = null
@@ -216,6 +240,7 @@ fun DocTreeView(
                             draggingId = null
                             dragOverId = null
                             dragOverPos = null
+                            dragOverIntoId = null
                         }
                     }) {}
                 }
@@ -242,6 +267,22 @@ fun DocTreeView(
                     Text(node.doc.title)
                 }
 
+                // Row actions (e.g., add child) shown only for selected row when enabled
+                if (isSelected && showAddButtonForSelected) {
+                    Div(attrs = {
+                        classes(WorldDocsStyles.rowActions)
+                    }) {
+                        Span(attrs = {
+                            classes(WorldDocsStyles.rowActionButton)
+                            attr("title", Translations.str("Create doc"))
+                            onClick {
+                                it.stopPropagation()
+                                onCreateChild(node.doc.key)
+                            }
+                        }) { Text("➕") }
+                    }
+                }
+
                 // Bottom drop zone (after this node)
                 if (canDrag && draggingId != null) {
                     Div(attrs = {
@@ -253,6 +294,8 @@ fun DocTreeView(
                             it.preventDefault()
                             dragOverId = node.doc.key
                             dragOverPos = DragPos.AFTER
+                            // Edge band hovered; hide INTO overlay
+                            dragOverIntoId = null
                         }
                         onDragLeave {
                             dragOverId = null
