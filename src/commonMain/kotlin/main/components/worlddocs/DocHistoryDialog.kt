@@ -73,7 +73,6 @@ fun DocHistoryDialog(
                                 // Header with users and created timestamp
                                 Div({ classes(WorldDocsStyles.historyHeader) }) {
                                     Div({ classes(WorldDocsStyles.historyUsers) }) {
-                                        Span { Text(str("Users") + ": ") }
                                         val names = h.userIds.map { uid -> userNames[uid] ?: str("Unknown") }
                                         if (names.isEmpty()) {
                                             Span { Text(translated("Unknown")) }

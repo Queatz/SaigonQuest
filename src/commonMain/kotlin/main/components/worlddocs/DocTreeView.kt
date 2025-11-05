@@ -181,7 +181,10 @@ fun DocTreeView(
                 // Top drop zone (before this node)
                 if (canDrag && draggingId != null) {
                     Div(attrs = {
-                        classes(if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone)
+                        classes(
+                            if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                            WorldDocsStyles.dropZoneTop
+                        )
                         onDragOver {
                             it.preventDefault()
                             dragOverId = node.doc.key
@@ -234,19 +237,18 @@ fun DocTreeView(
                     Span { Text("  ") }
                 }
 
-                // Title + lock if read-only
-                val isEditableNode = canEditDoc(node.doc)
+                // Title
                 Span {
                     Text(node.doc.title)
-                }
-                if (!isEditableNode) {
-                    Span { Text(" \uD83D\uDD12") } // lock glyph
                 }
 
                 // Bottom drop zone (after this node)
                 if (canDrag && draggingId != null) {
                     Div(attrs = {
-                        classes(if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone)
+                        classes(
+                            if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                            WorldDocsStyles.dropZoneBottom
+                        )
                         onDragOver {
                             it.preventDefault()
                             dragOverId = node.doc.key

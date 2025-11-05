@@ -188,6 +188,12 @@ fun WorldDocsDialog(
             }
 
             Div(attrs = { classes(WorldDocsStyles.headerBar) }) {
+                Input(type = org.jetbrains.compose.web.attributes.InputType.Text) {
+                    classes(WorldDocsStyles.searchInput)
+                    value(searchInput)
+                    onInput { ev -> searchInput = ev.value }
+                    placeholder(Translations.str("Search docs"))
+                }
                 if (isOwner) {
                     Button(attrs = {
                         classes(Styles.primaryButton)
@@ -215,12 +221,6 @@ fun WorldDocsDialog(
                     }) {
                         Translated("Create doc")
                     }
-                }
-                Input(type = org.jetbrains.compose.web.attributes.InputType.Text) {
-                    classes(WorldDocsStyles.searchInput)
-                    value(searchInput)
-                    onInput { ev -> searchInput = ev.value }
-                    placeholder(Translations.str("Search docs"))
                 }
                 Div(
                     attrs = {

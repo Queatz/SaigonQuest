@@ -62,10 +62,14 @@ object WorldDocsStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         gap(12.px)
-        padding(8.px)
-        borderRadius(8.px)
-        backgroundColor(Theme.colors.surface)
-        dark(self) { backgroundColor(Theme.colors.surfaceDark) }
+        padding(16.px)
+        marginBottom(16.px)
+        borderRadius(16.px)
+        backgroundColor(Theme.colors.background)
+
+        dark(self) {
+            backgroundColor(Theme.colors.backgroundDark)
+        }
     }
 
     // Left panel container
@@ -120,6 +124,8 @@ object WorldDocsStyles : StyleSheet() {
         cursor("pointer")
         color(Theme.colors.onSurface)
         boxSizing("border-box")
+        // Make row a positioned container so drop-zone overlays can be absolutely positioned
+        property("position", "relative")
         self + hover style {
             backgroundColor(Theme.colors.surfaceVariant)
         }
@@ -138,6 +144,8 @@ object WorldDocsStyles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         boxSizing("border-box")
+        // Keep positioned container in selected state as well
+        property("position", "relative")
     }
 
     // Right panel: top controls row (rename/delete)
@@ -191,15 +199,35 @@ object WorldDocsStyles : StyleSheet() {
     }
 
     // Drag-and-drop drop zones
+    // Overlay zones: absolutely positioned within each row so they don't affect layout
     val dropZone by style {
-        height(12.px)
+        // thin overlay band used for BEFORE/AFTER targets when not active
+        height(8.px)
         backgroundColor(Color.transparent)
         borderRadius(4.px)
+        property("position", "absolute")
+        property("left", "0")
+        property("right", "0")
+        property("z-index", "1")
+        // ensure the band can receive drag events while present
+        property("pointer-events", "auto")
     }
     val dropZoneActive by style {
-        height(12.px)
+        height(8.px)
         backgroundColor(Theme.colors.accentInfoSoft)
         borderRadius(4.px)
+        property("position", "absolute")
+        property("left", "0")
+        property("right", "0")
+        property("z-index", "1")
+        property("pointer-events", "auto")
+    }
+    // Position helpers for overlay zones
+    val dropZoneTop by style {
+        property("top", "0")
+    }
+    val dropZoneBottom by style {
+        property("bottom", "0")
     }
     val dropInto by style {
         border(1.px, LineStyle.Dashed, Theme.colors.panelBorderSubtle)

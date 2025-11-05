@@ -133,13 +133,13 @@ class DocRepository {
     fun updateDocMeta(
         docId: String,
         title: String? = null,
-        parentId: String? = null,
+        parentId: String?,
         orderIndex: Double? = null,
     ): Doc? {
         val existing = getById(docId) ?: return null
         val updated = existing.copy(
             title = title ?: existing.title,
-            parentId = parentId ?: existing.parentId,
+            parentId = parentId,
             orderIndex = orderIndex ?: existing.orderIndex,
             updatedAt = Clock.System.now()
         ).also { it.key = existing.key }
@@ -258,6 +258,7 @@ class DocRepository {
                 changed = true
                 updateDocMeta(
                     docId = d.key,
+                    parentId = d.parentId,
                     orderIndex = desired,
                 )
             }
