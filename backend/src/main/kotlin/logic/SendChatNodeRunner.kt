@@ -44,6 +44,14 @@ class SendChatNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             return false
         }
 
+        // Shout flag (optional)
+        val overrideShout = (eventData[inKey(PropertyKey.SHOUT)] as? String)?.trim()?.lowercase()
+        val shouted = when (overrideShout) {
+            "true" -> true
+            "false" -> false
+            else -> nodeData.properties.find { it.key == PropertyKey.SHOUT }?.value?.trim()?.lowercase() == "true"
+        }
+
         // Resolve object info
         val obj = try { ObjectRepository().getById(context.objectId) } catch (_: Throwable) { null }
         val senderName = obj?.title?.takeIf { it.isNotBlank() } ?: "Object"
@@ -55,6 +63,7 @@ class SendChatNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             senderId = context.objectId,
             senderName = senderName,
             message = messageText,
+            shouted = shouted,
         )
 
         try {

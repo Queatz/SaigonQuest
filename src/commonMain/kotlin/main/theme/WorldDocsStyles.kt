@@ -36,6 +36,7 @@ import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.justifyContent
 import web.cssom.atrule.maxWidth
 
 object WorldDocsStyles : StyleSheet() {
@@ -118,7 +119,6 @@ object WorldDocsStyles : StyleSheet() {
         borderRadius(12.px)
         cursor("pointer")
         color(Theme.colors.onSurface)
-        width(100.percent)
         boxSizing("border-box")
         self + hover style {
             backgroundColor(Theme.colors.surfaceVariant)
@@ -137,12 +137,13 @@ object WorldDocsStyles : StyleSheet() {
         borderRadius(12.px)
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
+        boxSizing("border-box")
     }
 
     // Right panel: top controls row (rename/delete)
     val controlsRow by style {
         display(DisplayStyle.Flex)
-        alignItems(AlignItems.Center)
+        alignItems(AlignItems.FlexStart)
         gap(8.px)
         marginBottom(8.px)
     }
@@ -191,12 +192,12 @@ object WorldDocsStyles : StyleSheet() {
 
     // Drag-and-drop drop zones
     val dropZone by style {
-        height(6.px)
+        height(12.px)
         backgroundColor(Color.transparent)
         borderRadius(4.px)
     }
     val dropZoneActive by style {
-        height(6.px)
+        height(12.px)
         backgroundColor(Theme.colors.accentInfoSoft)
         borderRadius(4.px)
     }
@@ -241,5 +242,96 @@ object WorldDocsStyles : StyleSheet() {
                 gridTemplateColumns("1fr")
             }
         }
+    }
+
+    // History list and items
+    val historyList by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(12.px)
+        overflowY("auto")
+        minHeight(0.px)
+    }
+
+    val historyItem by style {
+        backgroundColor(Theme.colors.surface)
+        border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
+        borderRadius(8.px)
+        padding(12.px)
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+            border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtleDark)
+        }
+    }
+
+    val historyHeader by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(org.jetbrains.compose.web.css.JustifyContent.SpaceBetween)
+        gap(8.px)
+        marginBottom(8.px)
+    }
+
+    val historyUsers by style {
+        color(Theme.colors.onSurface)
+        dark(self) { color(Theme.colors.onSurfaceDark) }
+        fontSize(12.px)
+    }
+
+    val historyTimestamp by style {
+        color(Theme.colors.textSecondary)
+        fontSize(12.px)
+    }
+
+    // Diff block
+    val diffBlock by style {
+        borderRadius(6.px)
+        border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
+        backgroundColor(Theme.colors.surfaceVariant)
+        padding(8.px)
+        property("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace")
+        property("white-space", "pre-wrap")
+        property("overflow-x", "auto")
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtleDark)
+        }
+    }
+
+    val diffAdd by style {
+        backgroundColor(Theme.colors.successSoftBg)
+        color(Theme.colors.onSurface)
+        borderRadius(4.px)
+        padding(1.px, 6.px)
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
+    }
+
+    val diffRemove by style {
+        backgroundColor(Theme.colors.accentWarnSoft)
+        color(Theme.colors.onSurface)
+        borderRadius(4.px)
+        padding(1.px, 6.px)
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
+    }
+
+    val diffHeader by style {
+        color(Theme.colors.textSecondary)
+        padding(1.px, 6.px)
+        dark(self) { color(Theme.colors.textSecondaryDark) }
+    }
+
+    val diffContext by style {
+        padding(1.px, 6.px)
+        color(Theme.colors.onSurface)
+        dark(self) { color(Theme.colors.onSurfaceDark) }
+    }
+
+    // Spacing above the Restore button row
+    val historyRestoreRow by style {
+        marginTop(8.px)
     }
 }

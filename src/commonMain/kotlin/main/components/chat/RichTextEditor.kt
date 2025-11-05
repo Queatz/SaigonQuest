@@ -29,17 +29,40 @@ import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
 import kotlinx.coroutines.delay
+import kotlinx.browser.document
+import models.DocOperation
+import org.w3c.dom.events.Event
 
 /**
  * A reusable rich text (markdown) editor with toolbar and live preview.
  *
  * Controlled input: pass [value] and handle changes via [onValueChange].
  */
+class RichTextEditorController {
+    internal var applyOpsImpl: ((List<DocOperation>, Int, Int) -> Boolean)? = null
+    internal var applySnapshotImpl: ((String, Int, Int) -> Boolean)? = null
+    internal var setSelectionImpl: ((Int, Int) -> Boolean)? = null
+
+    fun applyRemoteOps(ops: List<DocOperation>, newSelStart: Int, newSelEnd: Int): Boolean {
+        return applyOpsImpl?.invoke(ops, newSelStart, newSelEnd) == true
+    }
+    fun applySnapshot(newText: String, newSelStart: Int, newSelEnd: Int): Boolean {
+        return applySnapshotImpl?.invoke(newText, newSelStart, newSelEnd) == true
+    }
+    fun setSelection(start: Int, end: Int): Boolean {
+        return setSelectionImpl?.invoke(start, end) == true
+    }
+}
+
 @Composable
 fun RichTextEditor(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String? = null,
+    selection: IntRange? = null,
+    onSelectionChange: (Int, Int) -> Unit = { _, _ -> },
+    selectionTargetLength: Int? = null,
+    controller: RichTextEditorController? = null,
 ) {
     var showUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
@@ -48,6 +71,8 @@ fun RichTextEditor(
     var selEnd by remember { mutableStateOf(0) }
     // Defer caret/selection application until after recomposition to avoid browser resetting it
     var pendingSelection by remember { mutableStateOf<IntRange?>(null) }
+    // Guard to suppress recursive onInput when we imperatively mutate the textarea
+    var suppressOnInput by remember { mutableStateOf(false) }
 
     fun setText(newText: String) {
         onValueChange(newText)
@@ -59,26 +84,97 @@ fun RichTextEditor(
         if (pendingSelection != null) return
         selStart = el.selectionStart ?: 0
         selEnd = el.selectionEnd ?: 0
+        try { onSelectionChange(selStart, selEnd) } catch (_: Throwable) {}
+    }
+
+    // Sync selection from parent control prop, if provided
+    LaunchedEffect(editorEl, selection, value) {
+        val sel = selection
+        val el = editorEl
+        if (el != null && sel != null) {
+            val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
+            // Always re-apply selection after value/value-length changes to prevent caret jumps (Firefox)
+            pendingSelection = desired
+        }
+    }
+
+    // Track retry attempts for applying pending selection to defeat browser races
+    var pendingSelectionAttempts by remember { mutableStateOf(0) }
+    var isComposing by remember { mutableStateOf(false) }
+
+    fun applyOpsTo(base: String, ops: List<DocOperation>): String {
+        var content = base
+        ops.forEach { op ->
+            when (op) {
+                is DocOperation.Insert -> {
+                    val pos = op.position.coerceIn(0, content.length)
+                    content = content.substring(0, pos) + op.text + content.substring(pos)
+                }
+                is DocOperation.Delete -> {
+                    if (op.length > 0) {
+                        val start = op.position.coerceIn(0, content.length)
+                        val end = (start + op.length).coerceAtMost(content.length)
+                        if (start < end) content = content.removeRange(start, end)
+                    }
+                }
+                is DocOperation.Format -> { /* ignore for now */ }
+            }
+        }
+        return content
     }
 
     // After each recomposition, if there is a pending selection to apply, set it on the element.
-    LaunchedEffect(editorEl, value, pendingSelection) {
+    LaunchedEffect(editorEl, value, pendingSelection, pendingSelectionAttempts, selectionTargetLength, isComposing) {
         val el = editorEl
         val ps = pendingSelection
         if (el != null && ps != null) {
             val len = value.length
+            // If composing (IME), defer applying external selection to avoid fighting the IME
+            if (isComposing) return@LaunchedEffect
             val start = ps.first.coerceIn(0, len)
             val end = ps.last.coerceIn(0, len)
-            // Wait for DOM commit: multiple frames + microtask
-            awaitAnimationFrame()
-            awaitAnimationFrame()
-            awaitAnimationFrame()
-            delay(0)
-            el.focus()
+            // If the element already has the desired selection, skip
+            val curStart = el.selectionStart ?: 0
+            val curEnd = el.selectionEnd ?: 0
+            if (curStart == start && curEnd == end) {
+                selStart = start
+                selEnd = end
+                pendingSelection = null
+                pendingSelectionAttempts = 0
+                return@LaunchedEffect
+            }
+            // If a target length is specified, only apply when the current value length matches it
+            val targetLen = selectionTargetLength
+            if (targetLen != null && targetLen != len) {
+                // Defer until value matches the intended length
+                return@LaunchedEffect
+            }
+            // Try immediate application (microtask), then 1 RAF retry if needed
+            // Only focus if this textarea is already the active element to avoid focus churn
+            val isActive = (document.activeElement === el)
+            if (isActive) {
+                el.focus()
+            }
             el.setSelectionRange(start, end)
-            selStart = start
-            selEnd = end
-            pendingSelection = null
+            var appliedStart = el.selectionStart ?: 0
+            var appliedEnd = el.selectionEnd ?: 0
+            if ((appliedStart != start || appliedEnd != end) && pendingSelectionAttempts < 1) {
+                awaitAnimationFrame()
+                if (isActive) el.focus()
+                el.setSelectionRange(start, end)
+                appliedStart = el.selectionStart ?: 0
+                appliedEnd = el.selectionEnd ?: 0
+                pendingSelectionAttempts += 1
+            }
+            selStart = appliedStart
+            selEnd = appliedEnd
+            if (appliedStart == start && appliedEnd == end) {
+                pendingSelection = null
+                pendingSelectionAttempts = 0
+            } else {
+                // keep pendingSelection to try again on next state change
+                pendingSelection = start..end
+            }
         }
     }
 
@@ -285,8 +381,10 @@ fun RichTextEditor(
                 }
                 autoFocus()
                 onInput {
-                    setText(it.value)
+                    if (suppressOnInput) return@onInput
+                    // Capture current selection BEFORE mutating value so we can preserve caret accurately
                     saveSelectionFromEl()
+                    setText(it.value)
                 }
                 onClick { saveSelectionFromEl() }
                 onKeyDown { event ->
@@ -308,13 +406,101 @@ fun RichTextEditor(
                 onKeyUp { saveSelectionFromEl() }
                 ref { el ->
                     editorEl = el
-                    // Autofocus on mount and set caret at end
+                    // Wire controller bindings if provided
+                    controller?.apply {
+                        applyOpsImpl = { ops, newSelStart, newSelEnd ->
+                            val textarea = editorEl
+                            if (textarea == null || isComposing) {
+                                false
+                            } else {
+                                val base = textarea.value
+                                val newVal = applyOpsTo(base, ops)
+                                suppressOnInput = true
+                                try {
+                                    textarea.value = newVal
+                                    val s = newSelStart.coerceIn(0, newVal.length)
+                                    val e = newSelEnd.coerceIn(0, newVal.length)
+                                    val isActive = (document.activeElement === textarea)
+                                    if (isActive) textarea.focus()
+                                    textarea.setSelectionRange(s, e)
+                                    selStart = textarea.selectionStart ?: s
+                                    selEnd = textarea.selectionEnd ?: e
+                                    pendingSelection = null
+                                    pendingSelectionAttempts = 0
+                                    // Parent is responsible for syncing state to avoid unintended saves
+                                    true
+                                } finally {
+                                    suppressOnInput = false
+                                }
+                            }
+                        }
+                        applySnapshotImpl = { newText, newSelStart, newSelEnd ->
+                            val textarea = editorEl
+                            if (textarea == null || isComposing) {
+                                false
+                            } else {
+                                suppressOnInput = true
+                                try {
+                                    textarea.value = newText
+                                    val s = newSelStart.coerceIn(0, newText.length)
+                                    val e = newSelEnd.coerceIn(0, newText.length)
+                                    val isActive = (document.activeElement === textarea)
+                                    if (isActive) textarea.focus()
+                                    textarea.setSelectionRange(s, e)
+                                    selStart = textarea.selectionStart ?: s
+                                    selEnd = textarea.selectionEnd ?: e
+                                    pendingSelection = null
+                                    pendingSelectionAttempts = 0
+                                    // Sync compose state
+                                    onValueChange(newText)
+                                    true
+                                } finally {
+                                    suppressOnInput = false
+                                }
+                            }
+                        }
+                        setSelectionImpl = { s0, e0 ->
+                            val textarea = editorEl
+                            if (textarea == null) {
+                                false
+                            } else {
+                                val len = textarea.value?.length ?: 0
+                                val s = s0.coerceIn(0, len)
+                                val e = e0.coerceIn(0, len)
+                                val isActive = (document.activeElement === textarea)
+                                if (isActive) textarea.focus()
+                                textarea.setSelectionRange(s, e)
+                                selStart = textarea.selectionStart ?: s
+                                selEnd = textarea.selectionEnd ?: e
+                                pendingSelection = null
+                                pendingSelectionAttempts = 0
+                                true
+                            }
+                        }
+                    }
+
+                    // Autofocus on mount; if external selection is provided, do not override it here
                     el.focus()
-                    val end = value.length
-                    el.setSelectionRange(end, end)
-                    selStart = end
-                    selEnd = end
-                    onDispose { editorEl = null }
+                    val sel = selection
+                    if (sel == null) {
+                        val end = value.length
+                        el.setSelectionRange(end, end)
+                        selStart = end
+                        selEnd = end
+                    } else {
+                        // Defer selection application to the pendingSelection effect
+                        val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
+                        pendingSelection = desired
+                    }
+                    onDispose {
+                        // Clear controller bindings
+                        controller?.apply {
+                            applyOpsImpl = null
+                            applySnapshotImpl = null
+                            setSelectionImpl = null
+                        }
+                        editorEl = null
+                    }
                 }
             },
         )

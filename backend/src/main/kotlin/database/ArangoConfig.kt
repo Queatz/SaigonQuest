@@ -113,6 +113,8 @@ object CollectionsConfig {
     
     // World docs collection
     const val DOCS_COLLECTION = "docs"
+    // Doc history collection
+    const val DOC_HISTORY_COLLECTION = "doc_history"
     
     // Collection definitions + model registry (unified)
     private data class CollectionSpec(
@@ -147,6 +149,7 @@ object CollectionsConfig {
         WORLD_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.WorldAssetItem::class.java),
         OBJECT_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.ObjectAssetItem::class.java),
         DOCS_COLLECTION to CollectionSpec(documentOptions(), models.Doc::class.java),
+        DOC_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.DocHistory::class.java),
     )
 
     fun initializeCollections(database: ArangoDatabase) {

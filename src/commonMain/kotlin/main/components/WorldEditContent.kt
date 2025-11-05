@@ -56,11 +56,13 @@ import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
 import org.jetbrains.compose.web.dom.CheckboxInput
 import Translations.str
+import main.components.friends.SelectFriendDialog
 import models.Item
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.width
 
 /**
  * Content component for the world edit form.
@@ -586,23 +588,35 @@ fun WorldEditContent(
                                 alignItems(AlignItems.Center)
                             }
                         }) {
-                            val ownerName = ownerNames[oid] ?: oid
-                            P(attrs = { style { margin(0.px) } }) {
-                                Translated(ownerName)
+                            Div(
+                                attrs = {
+                                    style {
+                                        width(0.px)
+                                        flexGrow(1)
+                                        property("overflow", "hidden")
+                                        property("text-overflow", "ellipsis")
+
+                                    }
+                                }
+                            ) {
+                                Text(ownerNames[oid] ?: oid)
                             }
-                            Div { Text(ownerNames[oid] ?: oid) }
                             if (isOwner) {
                                 Button(attrs = {
                                     classes(Styles.secondaryButton)
                                     onClick {
                                         ownerIds = ownerIds.filter { it != oid }
                                     }
-                                }) { Translated("Remove owner") }
+                                }) {
+                                    Translated("Remove owner")
+                                }
                             }
                         }
                     }
                 } else {
-                    P(attrs = { style { margin(0.px); color(rgba(255, 255, 255, 0.6)) } }) { Translated("No owners") }
+                    P(attrs = { style { margin(0.px); color(rgba(255, 255, 255, 0.6)) } }) {
+                        Translated("No owners")
+                    }
                 }
 
                 // Add owner controls (primary owner only)
@@ -611,15 +625,17 @@ fun WorldEditContent(
                         Button(attrs = {
                             classes(Styles.primaryButton)
                             onClick { showOwnerPicker = true }
-                        }) { Translated("Add owner") }
+                        }) {
+                            Translated("Add owner")
+                        }
                     }
                 }
 
                 if (showOwnerPicker) {
-                    main.components.friends.SelectFriendDialog(
+                    SelectFriendDialog(
                         onSelect = { f ->
                             val id = f.friendId
-                            if (id.isNotBlank() && id != currentWorld?.userId && !ownerIds.contains(id)) {
+                            if (id.isNotBlank() && id != currentWorld.userId && !ownerIds.contains(id)) {
                                 ownerIds = ownerIds + id
                                 // Optimistically update display name map
                                 ownerNames = ownerNames + (id to (f.friendUsername.ifBlank { id }))
@@ -628,7 +644,7 @@ fun WorldEditContent(
                         },
                         onClose = { showOwnerPicker = false },
                         excludeIds = buildSet {
-                            currentWorld?.userId?.let { if (it.isNotBlank()) add(it) }
+                            currentWorld.userId?.let { if (it.isNotBlank()) add(it) }
                             addAll(ownerIds)
                         },
                     )

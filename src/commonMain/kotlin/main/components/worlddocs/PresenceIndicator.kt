@@ -11,7 +11,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 /**
- * Presence indicator with compact colored dots and user IDs.
+ * Presence indicator with compact colored dots and user names.
  * Keeps single @Composable per file and uses theme styles only.
  */
 @Composable

@@ -1546,6 +1546,27 @@ vi: Chọn bạn
 
 Search friends
 vi: Tìm kiếm bạn bè
+
+Doc history
+vi: Lịch sử tài liệu
+
+No history yet
+vi: Chưa có lịch sử
+
+Users
+vi: Người dùng
+
+Unknown
+vi: Không rõ
+
+Restore
+vi: Khôi phục
+
+Are you sure you want to restore this version?
+vi: Bạn có chắc chắn muốn khôi phục phiên bản này không?
+
+Failed to load history
+vi: Tải lịch sử không thành công
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

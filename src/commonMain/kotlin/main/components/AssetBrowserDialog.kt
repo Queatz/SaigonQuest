@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import Translations.str
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -78,14 +79,9 @@ fun AssetBrowserDialog(
         }
     }
 
-    LaunchedEffect(type) {
-        loadCategories()
-        loadResults()
-    }
-
     // Debounce title search
     LaunchedEffect(titleQuery) {
-        kotlinx.coroutines.delay(300L)
+        delay(300L)
         loadCategories()
         loadResults()
     }

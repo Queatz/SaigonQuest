@@ -40,6 +40,8 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.boxSizing
+import main.components.translated
+import main.components.LabeledCheckbox
 
 @Composable
 fun AdminEditAssetDialog(
@@ -246,13 +248,14 @@ fun AdminEditAssetDialog(
                             }
                         )
                         // Toggle for custom weights
-                        Label { Translated("Customize wind weights") }
-                        Input(type = InputType.Checkbox, attrs = {
-                            if (sItem.customWeights) attr("checked", "true")
-                            onChange { ev ->
-                                spriteItems = listOf(sItem.copy(customWeights = ev.target.checked))
-                            }
-                        })
+                        LabeledCheckbox(
+                            checked = sItem.customWeights,
+                            enabled = true,
+                            label = translated("Customize wind weights"),
+                            onCheckedChange = { next ->
+                                spriteItems = listOf(sItem.copy(customWeights = next))
+                            },
+                        )
                         if (sItem.customWeights) {
                             // Manage 5x5 grid state derived from CSV
                             var weightGrid by remember(sItem.weightsCsv, sItem.customWeights) {

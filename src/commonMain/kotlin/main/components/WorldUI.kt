@@ -566,7 +566,7 @@ fun WorldUI(
                 )
 
                 // Edit world button - only visible if the current user is the owner of the world
-                if (currentUser?.key == currentWorld?.userId) {
+                if (currentWorld != null && currentUser != null && currentWorld!!.canUserEdit(currentUser!!.key)) {
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.WorldEdit) },
                         iconIndex = 4, // 4: edit world

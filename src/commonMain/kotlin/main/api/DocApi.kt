@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import io.ktor.websocket.Frame
 import models.Doc
 import models.DocTree
+import models.DocHistory
 import models.ErrorResponse
 
 object DocApi {
@@ -176,6 +177,31 @@ object DocApi {
         httpUrl.startsWith("https://") -> httpUrl.replaceFirst("https://", "wss://")
         httpUrl.startsWith("http://") -> httpUrl.replaceFirst("http://", "ws://")
         else -> "wss://$httpUrl"
+    }
+
+    suspend fun getDocHistory(docId: String): List<DocHistory> {
+        val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/docs/$docId/history") {
+            ApiClient.addAuthHeader(this)
+        }
+        if (response.status.isSuccess()) {
+            return response.body()
+        } else {
+            val errorResponse = try { response.body<ErrorResponse>() } catch (_: Throwable) { ErrorResponse(message = response.bodyAsText()) }
+            throw Error(errorResponse.message)
+        }
+    }
+
+    suspend fun restoreDocVersion(docId: String, historyId: String): Doc {
+        val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/docs/$docId/history/$historyId/restore") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+        }
+        if (response.status.isSuccess()) {
+            return response.body()
+        } else {
+            val errorResponse = try { response.body<ErrorResponse>() } catch (_: Throwable) { ErrorResponse(message = response.bodyAsText()) }
+            throw Error(errorResponse.message)
+        }
     }
 
     fun collaborate(docId: String): CollaborationConnection {

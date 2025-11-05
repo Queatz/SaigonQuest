@@ -2,6 +2,7 @@ package main.theme
 
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.AlignSelf
+import org.jetbrains.compose.web.css.AnimationTimingFunction
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -13,6 +14,7 @@ import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.alignSelf
+import org.jetbrains.compose.web.css.animation
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.borderRadius
@@ -22,6 +24,7 @@ import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.duration
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
@@ -53,8 +56,10 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.right
+import org.jetbrains.compose.web.css.s
 import org.jetbrains.compose.web.css.selectors.CSSSelector
 import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.timingFunction
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.vw
@@ -746,30 +751,44 @@ object Styles : StyleSheet() {
         width(100.percent)
     }
 
+    // Proper keyframes for chat loading spinner rotation
+    val chatLoadingSpin by keyframes {
+        0.percent { property("transform", "rotate(0deg)") }
+        100.percent { property("transform", "rotate(360deg)") }
+    }
+
     val chatLoadingSpinner by style {
         width(40.px)
         height(40.px)
         property("border", "4px solid ${Theme.colors.white10}")
         property("border-top", "4px solid ${Theme.colors.white80}")
         property("border-radius", "50%")
-        property("animation", "spin 1s linear infinite")
-        property("@keyframes spin", "{0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}")
+        animation(chatLoadingSpin) {
+            duration(1.s)
+            timingFunction(AnimationTimingFunction.Linear)
+        }
+        // Compose Web does not yet provide a DSL helper for infinite iteration in this codebase; set via raw property
+        property("animation-iteration-count", "infinite")
     }
 
     val chatLoadingText by style {
-        color(Theme.colors.textMuted); property("text-align", "center"); margin(0.px); dark(
-        self
-    ) { color(Theme.colors.textMutedDark) }
+        color(Theme.colors.textMuted); property("text-align", "center")
+        margin(0.px)
+        dark(self) {
+            color(Theme.colors.textMutedDark)
+        }
     }
 
     val chatErrorText by style { color(Theme.colors.error); property("text-align", "center") }
 
     val chatEmptyText by style {
-        color(Theme.colors.textMuted); property("text-align", "center"); dark(self) {
-        color(
-            Theme.colors.textMutedDark
-        )
-    }
+        color(Theme.colors.textMuted)
+        property("text-align", "center")
+        dark(self) {
+            color(
+                Theme.colors.textMutedDark
+            )
+        }
     }
 
     val chatMessageItem by style {

@@ -13,9 +13,12 @@ import kotlinx.serialization.Serializable
 import models.Doc
 import models.DocTree
 import repository.DocRepository
+import repository.DocHistoryRepository
+import models.DocHistory
 import auth.JWTUtils
 import repository.WorldRepository
 import models.canUserEdit
+import service.CollaborationService
 
 /**
  * World Docs routes
@@ -88,6 +91,57 @@ fun Routing.configureDocRoutes() {
                 }
                 call.respond(HttpStatusCode.Created, created)
             }
+
+            // Restore content from a history snapshot (owner or editor)
+            post("/{docId}/history/{historyId}/restore") {
+                val docId = call.parameters["docId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Missing docId")
+                )
+                val historyId = call.parameters["historyId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Missing historyId")
+                )
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val doc = docRepository.getById(docId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
+                val world = worldRepository.getById(doc.worldId)
+                val ancestors = runCatching { docRepository.getAncestors(docId) }.getOrNull().orEmpty()
+                val canEdit = when {
+                    world != null && world.canUserEdit(userId) -> true
+                    doc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit } -> true
+                    else -> false
+                }
+                if (!canEdit) {
+                    return@post call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Forbidden: cannot restore doc content"))
+                }
+
+                val history = DocHistoryRepository().getById(historyId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "History not found"))
+                if (history.docId != docId) {
+                    return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "History does not belong to this doc"))
+                }
+
+                try {
+                    val updated = docRepository.saveContentAndVersion(
+                        docId = docId,
+                        newContent = history.content,
+                        baseVersion = doc.version,
+                    ) ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
+
+                    // Broadcast fresh snapshot to current collaborators
+                    runCatching { CollaborationService.refreshAndBroadcastSnapshot(docId, docRepository) }
+
+                    call.respond(updated)
+                } catch (e: IllegalStateException) {
+                    call.respond(HttpStatusCode.Conflict, mapOf("message" to (e.message ?: "Version conflict")))
+                } catch (t: Throwable) {
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("message" to (t.message ?: "Error")))
+                }
+            }
         }
     }
 
@@ -106,8 +160,73 @@ fun Routing.configureDocRoutes() {
             }
         }
 
+        // History listing (no auth required; visibility enforced by doc/world access rules elsewhere if needed)
+        get("/{docId}/history") {
+            val docId = call.parameters["docId"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("message" to "Missing docId")
+            )
+            try {
+                val list = DocHistoryRepository().listByDocId(docId)
+                call.respond(list)
+            } catch (t: Throwable) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("message" to (t.message ?: "Error")))
+            }
+        }
+
         // Mutations require authentication
         authenticate {
+            // Restore content from a history snapshot (owner or editor)
+            post("/{docId}/history/{historyId}/restore") {
+                val docId = call.parameters["docId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Missing docId")
+                )
+                val historyId = call.parameters["historyId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Missing historyId")
+                )
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val doc = docRepository.getById(docId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
+                val world = worldRepository.getById(doc.worldId)
+                val ancestors = runCatching { docRepository.getAncestors(docId) }.getOrNull().orEmpty()
+                val canEdit = when {
+                    world != null && world.canUserEdit(userId) -> true
+                    doc.permissions.worldUsersCanEdit && ancestors.all { it.permissions.worldUsersCanEdit } -> true
+                    else -> false
+                }
+                if (!canEdit) {
+                    return@post call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Forbidden: cannot restore doc content"))
+                }
+
+                val history = DocHistoryRepository().getById(historyId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "History not found"))
+                if (history.docId != docId) {
+                    return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "History does not belong to this doc"))
+                }
+
+                try {
+                    val updated = docRepository.saveContentAndVersion(
+                        docId = docId,
+                        newContent = history.content,
+                        baseVersion = doc.version,
+                    ) ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("message" to "Doc not found"))
+
+                    // Broadcast fresh snapshot to current collaborators
+                    runCatching { CollaborationService.refreshAndBroadcastSnapshot(docId, docRepository) }
+
+                    call.respond(updated)
+                } catch (e: IllegalStateException) {
+                    call.respond(HttpStatusCode.Conflict, mapOf("message" to (e.message ?: "Version conflict")))
+                } catch (t: Throwable) {
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("message" to (t.message ?: "Error")))
+                }
+            }
+
             // Update metadata
             put("/{docId}") {
                 val docId = call.parameters["docId"] ?: return@put call.respond(
@@ -192,7 +311,20 @@ fun Routing.configureDocRoutes() {
                     return@post call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Forbidden: cannot move/reorder doc"))
                 }
 
-                val req = try { call.receive<MoveDocRequest>() } catch (_: Throwable) { return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid request")) }
+                val req = try { call.receive<MoveDocRequest>() } catch (e: Throwable) {
+                    e.printStackTrace()
+                    return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid request"))
+                }
+                // Prevent cycles: cannot move a doc under itself or under its own descendant
+                if (req.newParentId == docId) {
+                    return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Cannot move a doc under itself"))
+                }
+                if (req.newParentId != null) {
+                    val parentAncestors = runCatching { docRepository.getAncestors(req.newParentId) }.getOrNull().orEmpty()
+                    if (parentAncestors.any { it.key == docId }) {
+                        return@post call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Cannot move a doc under its own descendant"))
+                    }
+                }
                 val updated = docRepository.moveDoc(
                     docId = docId,
                     newParentId = req.newParentId,
@@ -233,7 +365,8 @@ fun Routing.configureDocRoutes() {
                     return@put call.respond(HttpStatusCode.Forbidden, mapOf("message" to "Forbidden: cannot edit doc content"))
                 }
 
-                val req = try { call.receive<UpdateContentRequest>() } catch (_: Throwable) {
+                val req = try { call.receive<UpdateContentRequest>() } catch (e: Throwable) {
+                    e.printStackTrace()
                     return@put call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid request"))
                 }
                 try {
@@ -294,7 +427,7 @@ fun Routing.configureDocRoutes() {
                 else -> false
             }
 
-            service.CollaborationService.handle(
+            CollaborationService.handle(
                 call = call,
                 ws = this,
                 userId = userId,

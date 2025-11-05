@@ -290,12 +290,12 @@ fun EditItemDialog(
 
                     // Customize weights checkbox
                     Div(attrs = { style { marginBottom(8.px); display(DisplayStyle.Flex); property("align-items", "center") } }) {
-                        Input(type = InputType.Checkbox, attrs = {
-                            checked(customizeWeights)
-                            onChange { event -> customizeWeights = event.target.checked }
-                            style { marginTop(4.px) }
-                        })
-                        Label(attrs = { style { ; marginBottom(4.px); marginTop(2.px); padding(0.px, 0.px, 0.px, 8.px) } }) { Translated("Customize wind weights") }
+                        LabeledCheckbox(
+                            checked = customizeWeights,
+                            enabled = true,
+                            label = translated("Customize wind weights"),
+                            onCheckedChange = { next -> customizeWeights = next },
+                        )
                     }
 
                     if (customizeWeights) {

@@ -35,7 +35,22 @@ import utils.json
 object CollaborationService {
     private val scope = CoroutineScope(Dispatchers.Default)
 
-    private data class Client(var userId: String, val session: DefaultWebSocketServerSession)
+    // Expose a helper to refresh room state from DB and broadcast a snapshot (used after restores)
+    suspend fun refreshAndBroadcastSnapshot(docId: String, repo: DocRepository) {
+        val room = getOrCreateRoom(docId, repo)
+        val doc = runCatching { repo.getById(docId) }.getOrNull() ?: return
+        room.mutex.withLock {
+            room.state.content = doc.content
+            room.state.version = doc.version
+        }
+        broadcast(room, WsMsg.Snapshot(content = doc.content, version = doc.version))
+    }
+
+    private data class Client(var userId: String, var userName: String, val session: DefaultWebSocketServerSession) {
+        var connectVersion: Int = 0
+        var connectContent: String = ""
+        val contributors: MutableSet<String> = mutableSetOf()
+    }
 
     private data class DocState(
         var content: String,
@@ -84,13 +99,28 @@ object CollaborationService {
             ws.send(Frame.Text(data))
         } catch (_: Throwable) { /* ignore */ }
 
-        val client = Client(userId, ws)
+        val userRepo = repository.UserRepository()
+        fun resolveUserName(id: String): String {
+            if (id == "Anonymous") return "Anonymous"
+            return try {
+                userRepo.getById(id)?.username?.takeIf { it.isNotBlank() } ?: id
+            } catch (_: Throwable) {
+                id
+            }
+        }
+        val client = Client(userId, resolveUserName(userId), ws)
+        // Initialize per-client baseline state for history tracking
+        room.mutex.withLock {
+            client.connectVersion = room.state.version
+            client.connectContent = room.state.content
+            client.contributors.clear()
+        }
         // Track presence and broadcast join presence
         scope.launch {
             room.mutex.withLock {
                 room.clients.add(client)
             }
-            broadcast(room, WsMsg.Presence(userId = client.userId, cursor = 0))
+            broadcast(room, WsMsg.Presence(userId = client.userId, userName = client.userName, cursor = 0))
         }
 
         try {
@@ -106,14 +136,15 @@ object CollaborationService {
                         room.mutex.withLock {
                             if (client.userId == "Anonymous" && msg.userId.isNotBlank()) {
                                 client.userId = msg.userId
+                                client.userName = resolveUserName(client.userId)
                             }
                         }
-                        // Echo presence with the resolved client userId
-                        broadcast(room, WsMsg.Presence(userId = client.userId, cursor = msg.cursor))
+                        // Echo presence with the resolved client identity
+                        broadcast(room, WsMsg.Presence(userId = client.userId, userName = client.userName, cursor = msg.cursor))
                     }
                     is WsMsg.Presence -> {
-                        // Re-broadcast presence updates (cursor changes) with resolved client userId
-                        broadcast(room, WsMsg.Presence(userId = client.userId, cursor = msg.cursor))
+                        // Re-broadcast presence updates (cursor changes) with resolved client identity
+                        broadcast(room, WsMsg.Presence(userId = client.userId, userName = client.userName, cursor = msg.cursor))
                     }
                     is WsMsg.Op -> {
                         // Enforce permissions: read-only clients cannot send ops
@@ -145,6 +176,14 @@ object CollaborationService {
                                 // Update in-memory state to authoritative values
                                 room.state.content = updated.content
                                 room.state.version = updated.version
+
+                                // Mark contributor for all clients who were connected before this version
+                                val senderId = client.userId
+                                room.clients.forEach { c ->
+                                    if (c.connectVersion < updated.version) {
+                                        if (senderId.isNotBlank() && senderId != "Anonymous") c.contributors.add(senderId)
+                                    }
+                                }
 
                                 // Broadcast op to other clients (do not echo back to sender)
                                 broadcast(room, WsMsg.Op(userId = client.userId, baseVersion = currentVersion, ops = msg.ops), except = client)
@@ -181,10 +220,37 @@ object CollaborationService {
                 ws.send(Frame.Text(err))
             }
         } finally {
+            // Before fully leaving, snapshot history if there were changes since connect
+            scope.launch {
+                try {
+                    val baselineVersion: Int
+                    val baselineContent: String
+                    val currentVersion: Int
+                    val currentContent: String
+                    val contributors: Set<String>
+                    room.mutex.withLock {
+                        baselineVersion = client.connectVersion
+                        baselineContent = client.connectContent
+                        currentVersion = room.state.version
+                        currentContent = room.state.content
+                        contributors = client.contributors.toSet()
+                    }
+                    if (currentVersion != baselineVersion || currentContent != baselineContent) {
+                        val patch = utils.DiffUtils.unifiedDiff(baselineContent, currentContent)
+                        val history = models.DocHistory(
+                            docId = docId,
+                            content = currentContent,
+                            patch = patch,
+                            userIds = contributors.filter { it.isNotBlank() && it != "Anonymous" }.distinct(),
+                        )
+                        runCatching { repository.DocHistoryRepository().insert(history) }
+                    }
+                } catch (_: Throwable) { /* ignore history errors */ }
+            }
             // Remove client and broadcast presence leave (using cursor -1 to indicate offline)
             scope.launch {
                 room.mutex.withLock { room.clients.remove(client) }
-                broadcast(room, WsMsg.Presence(userId = client.userId, cursor = -1))
+                broadcast(room, WsMsg.Presence(userId = client.userId, userName = client.userName, cursor = -1))
             }
             runCatching { ws.close(CloseReason(CloseReason.Codes.NORMAL, "Bye")) }
         }

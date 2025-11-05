@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import main.components.attrs.touchDraggable
 import main.theme.NodeEditorStyles
 import main.utils.DataType
-import main.utils.ellipsize
 import models.LogicNode
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.marginTop
@@ -81,7 +80,7 @@ fun DraggableNodeItem(node: LogicNode) {
                     }
                 }
             ) {
-                Text(description.ellipsize())
+                Text(description)
             }
         }
     }

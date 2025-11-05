@@ -16,6 +16,7 @@ enum class PropertyKey {
     // Text properties
     TEXT_CONTENT,
     TEXT,
+    SHOUT,
 
     // Dialogue properties
     BUTTONS,
@@ -528,6 +529,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.SHOUT,
+                name = "Shout",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "false"
             )
         )
 

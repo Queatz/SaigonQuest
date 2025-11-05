@@ -8,6 +8,7 @@ import main.api.DocApi
 import main.components.Translated
 import main.components.translated
 import main.components.chat.RichTextEditor
+import main.components.chat.RichTextEditorController
 import models.Doc
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -44,9 +45,76 @@ fun DocEditor(
     var version by remember(doc.key) { mutableStateOf(doc.version) }
     var savingState by remember { mutableStateOf<SavingState>(SavingState.Idle) }
     val scope = rememberCoroutineScope()
+    // Imperative controller for zero-flash remote updates
+    val rtedController = remember(doc.key) { main.components.chat.RichTextEditorController() }
+    var suppressSave by remember { mutableStateOf(false) }
+
+    // Track local selection (caret) so we can preserve it across remote updates
+    var selStart by remember(doc.key) { mutableStateOf(doc.content.length) }
+    var selEnd by remember(doc.key) { mutableStateOf(doc.content.length) }
+    // When we programmatically re-apply selection after remote updates, gate application
+    // in the child on the intended target length to avoid clamping to an older value.
+    var selTargetLen by remember(doc.key) { mutableStateOf<Int?>(doc.content.length) }
+
+    fun currentCursor(): Int = selEnd.coerceIn(0, text.length)
+
+    // Transform selection to account for remote operations applied to visible text
+    // Transform selection using end-exclusive semantics: [start, end)
+    fun transformSelection(range: IntRange, ops: List<DocOperation>): IntRange {
+        var start = range.first
+        var endExcl = range.last // treat as exclusive end
+        ops.forEach { op ->
+            when (op) {
+                is DocOperation.Insert -> {
+                    val pos = op.position
+                    val len = op.text.length
+                    when {
+                        // Insert strictly before start -> shift both
+                        pos < start -> { start += len; endExcl += len }
+                        // Insert exactly at start
+                        pos == start -> {
+                            if (start == endExcl) {
+                                // Collapsed caret: keep caret after the inserted text
+                                start += len; endExcl += len
+                            } else {
+                                // Expanded selection: treat as before selection; do not extend
+                                // no-op
+                            }
+                        }
+                        // Insert inside selection (not at end boundary) -> extend end
+                        pos in (start until endExcl) -> { endExcl += len }
+                        // Insert at end boundary or after -> no change
+                        else -> {}
+                    }
+                }
+                is DocOperation.Delete -> {
+                    val delStart = op.position
+                    val delEndExcl = op.position + op.length
+                    when {
+                        // Deletion entirely after selection end — no change
+                        endExcl <= delStart -> { /* no change */ }
+                        // Deletion entirely before selection start — shift left
+                        start >= delEndExcl -> { start -= op.length; endExcl -= op.length }
+                        else -> {
+                            // Overlap with selection: collapse to start of deletion
+                            val caret = delStart.coerceAtLeast(0)
+                            start = caret
+                            endExcl = caret
+                        }
+                    }
+                }
+                is DocOperation.Format -> { /* no effect on indices */ }
+            }
+        }
+        // Do not clamp to the old text length here; the caller will clamp to the NEW content length.
+        if (start < 0) start = 0
+        if (endExcl < 0) endExcl = 0
+        if (start > endExcl) start = endExcl
+        return start..endExcl
+    }
 
     // Collaboration state
-    var collaborators by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var collaborators by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var wsConn by remember(doc.key) { mutableStateOf<DocApi.CollaborationConnection?>(null) }
     var lastWsText by remember(doc.key) { mutableStateOf(doc.content) }
     var connectionIssue by remember { mutableStateOf<String?>(null) }
@@ -59,8 +127,11 @@ fun DocEditor(
 
     // Notify parent about collaborator changes (filter out self and anon)
     LaunchedEffect(collaborators, currentUserId) {
-        val filtered = collaborators.filter { it.isNotBlank() && it != currentUserId && it != "Anonymous" }.toSet()
-        onCollaboratorsChange(filtered)
+        val filteredNames: Set<String> = collaborators
+            .filter { (id, name) -> id.isNotBlank() && id != currentUserId && name.isNotBlank() && name != "Anonymous" }
+            .values
+            .toSet()
+        onCollaboratorsChange(filteredNames)
     }
 
     fun applyOps(base: String, ops: List<DocOperation>): String {
@@ -86,9 +157,23 @@ fun DocEditor(
 
     fun makeOps(from: String, to: String): List<DocOperation> {
         if (from == to) return emptyList()
+        val fromLen = from.length
+        val toLen = to.length
+        var prefix = 0
+        val minLen = kotlin.math.min(fromLen, toLen)
+        while (prefix < minLen && from[prefix] == to[prefix]) prefix++
+        var suffix = 0
+        while (suffix < (minLen - prefix) && from[fromLen - 1 - suffix] == to[toLen - 1 - suffix]) suffix++
         val ops = mutableListOf<DocOperation>()
-        if (from.isNotEmpty()) ops += DocOperation.Delete(position = 0, length = from.length)
-        if (to.isNotEmpty()) ops += DocOperation.Insert(position = 0, text = to)
+        val delLen = fromLen - prefix - suffix
+        if (delLen > 0) {
+            ops += DocOperation.Delete(position = prefix, length = delLen)
+        }
+        val insLen = toLen - prefix - suffix
+        if (insLen > 0) {
+            val insertText = to.substring(prefix, prefix + insLen)
+            ops += DocOperation.Insert(position = prefix, text = insertText)
+        }
         return ops
     }
 
@@ -135,6 +220,7 @@ fun DocEditor(
         inFlight = false
         pendingResend = false
         serverReadOnly = false
+        selTargetLen = doc.content.length
         try { ackTimeoutJob?.cancel() } catch (_: Throwable) {}
         ackTimeoutJob = null
     }
@@ -153,14 +239,16 @@ fun DocEditor(
             scope.launch {
                 // A small delay to let connection initialize
                 delay(50)
-                runCatching { c.send(WsMsg.Join(docId = doc.key, userId = currentUserId, cursor = 0)) }
+                val cur = currentCursor()
+                runCatching { c.send(WsMsg.Join(docId = doc.key, userId = currentUserId, cursor = cur)) }
             }
-            // Presence heartbeat (cursor=0 for now)
+            // Presence heartbeat with current cursor
             scope.launch {
                 try {
                     while (true) {
                         delay(2500)
-                        runCatching { c.send(WsMsg.Presence(userId = currentUserId, cursor = 0)) }
+                        val cur = currentCursor()
+                        runCatching { c.send(WsMsg.Presence(userId = currentUserId, cursor = cur)) }
                     }
                 } catch (_: Throwable) { /* cancelled when editor closes */ }
             }
@@ -180,7 +268,21 @@ fun DocEditor(
                                 ackTimeoutJob = null
                                 if (!localDirty || serverReadOnly) {
                                     // If read-only, always show the server content and do not attempt to resend
-                                    text = m.content
+                                    val newLen = m.content.length
+                                    // Try zero-flash snapshot application via controller (if editor is mounted and focused)
+                                    val clampedStart = selStart.coerceIn(0, newLen)
+                                    val clampedEnd = selEnd.coerceIn(0, newLen)
+                                    val applied = rtedController.applySnapshot(m.content, clampedStart, clampedEnd)
+                                    suppressSave = true
+                                    try {
+                                        // Sync state regardless of DOM path used
+                                        text = m.content
+                                        selTargetLen = newLen
+                                        selStart = clampedStart
+                                        selEnd = clampedEnd
+                                    } finally {
+                                        suppressSave = false
+                                    }
                                     pendingResend = false
                                     inFlight = false
                                     if (serverReadOnly) savingState = SavingState.Error("Read-only") else if (savingState is SavingState.Saving) savingState = SavingState.Idle
@@ -202,7 +304,28 @@ fun DocEditor(
                                 if (m.userId != currentUserId) {
                                     val localDirty = text != oldBaseline
                                     if (!localDirty) {
-                                        text = applyOps(text, m.ops)
+                                        // Apply remote ops to visible text and adjust local selection
+                                        val newTextContent = applyOps(text, m.ops)
+                                        // Use anchored diff between current visible text and new content to transform selection robustly
+                                        val opsForTransform = makeOps(text, newTextContent)
+                                        val newSel = transformSelection(selStart..selEnd, opsForTransform)
+                                        val max = newTextContent.length
+                                        val clampedStart = newSel.first.coerceIn(0, max)
+                                        val clampedEnd = newSel.last.coerceIn(0, max)
+                                        // Try zero-flash DOM patch via controller
+                                        val applied = rtedController.applyRemoteOps(m.ops, clampedStart, clampedEnd)
+                                        suppressSave = true
+                                        try {
+                                            // Sync state regardless of DOM path used
+                                            text = newTextContent
+                                            selTargetLen = max
+                                            if (clampedStart != selStart || clampedEnd != selEnd) {
+                                                selStart = clampedStart
+                                                selEnd = clampedEnd
+                                            }
+                                        } finally {
+                                            suppressSave = false
+                                        }
                                     } else {
                                         // Keep local edits; schedule resend against new baseline
                                         pendingResend = true
@@ -211,7 +334,12 @@ fun DocEditor(
                                 }
                             }
                             is WsMsg.Presence -> {
-                                collaborators = if (m.cursor >= 0) collaborators + m.userId else collaborators - m.userId
+                                if (m.cursor >= 0) {
+                                    val name = m.userName.ifBlank { m.userId }
+                                    collaborators = collaborators + (m.userId to name)
+                                } else {
+                                    collaborators = collaborators - m.userId
+                                }
                             }
                             is WsMsg.Ack -> {
                                 // Clear in-flight and mark saved; adopt server version
@@ -353,10 +481,28 @@ fun DocEditor(
                 RichTextEditor(
                     value = text,
                     onValueChange = {
-                        text = it
-                        scheduleSave()
+                        // When we update programmatically via the controller, suppress autosave
+                        if (suppressSave) {
+                            text = it
+                        } else {
+                            text = it
+                            scheduleSave()
+                        }
                     },
                     placeholder = translated("Empty doc"),
+                    selection = selStart..selEnd,
+                    onSelectionChange = { s, e ->
+                        selStart = s
+                        selEnd = e
+                        // Emit presence update immediately with the new cursor position
+                        wsConn?.let { conn ->
+                            scope.launch {
+                                runCatching { conn.send(WsMsg.Presence(userId = currentUserId, cursor = e.coerceIn(0, text.length))) }
+                            }
+                        }
+                    },
+                    selectionTargetLength = selTargetLen,
+                    controller = rtedController,
                 )
             }
         } else {

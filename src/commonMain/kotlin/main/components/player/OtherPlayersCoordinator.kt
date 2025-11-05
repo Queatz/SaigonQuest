@@ -307,19 +307,35 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         scope.launch {
             op.mutex.withLock {
                 val prevIsPlayer = op.isPlayer
+                val prevUsername = op.username
+                // Basic fields
                 op.username = update.name
                 op.isPlayer = update.isPlayer
-                update.status?.let { s -> op.status = s; hud.setDesiredStatus(update.userId, s) }
-                // Track explicit activity if server provides it
+
+                // Status/HUD updates (do not trigger appearance refresh)
+                update.status?.let { s ->
+                    op.status = s
+                    hud.setDesiredStatus(update.userId, s)
+                }
+
+                // Activity updates should only change animation, never appearance
                 op.activity = update.activity
-                // Apply activity immediately to reflect sit/stand for other players
                 op.handle?.updateActivity(update.activity)
-                // If username changed, refresh username billboard
-                refreshUsernameBillboard(op)
-                // If appearance-related changes exist server-side, we can bump revision and re-assemble
-                assembleAppearance(op, scale = false)
+
+                // Refresh username billboard only if changed
+                if (prevUsername != op.username) {
+                    refreshUsernameBillboard(op)
+                }
+
+                // Only refresh appearance when the update carries no activity or status fields.
+                // This pattern is used when customization/worn items change and we need to refetch profile.
+                val shouldRefreshAppearance = update.activity == null && update.status == null
+                if (shouldRefreshAppearance) {
+                    assembleAppearance(op, scale = false)
+                }
+
                 if (prevIsPlayer != op.isPlayer) {
-                    // Remove old mesh and respawn to reflect new role cleanly
+                    // Role changed (visitor <-> player): respawn cleanly to swap base if needed
                     op.handle?.remove(); op.handle = null
                     usernameTextHandles.remove(op.userId)?.remove()
                     attemptSpawnWithUser(op,)

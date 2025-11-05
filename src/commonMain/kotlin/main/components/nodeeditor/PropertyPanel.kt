@@ -16,6 +16,7 @@ import main.components.inventory.SelectItemDialog
 import main.components.media.UploadMediaDialog
 import main.components.chat.RichTextEditorDialog
 import main.components.translated
+import main.components.LabeledCheckbox
 import main.theme.NodeEditorStyles
 import main.theme.Styles
 import models.NodeCategory
@@ -187,13 +188,15 @@ fun PropertyPanel(
                             classes(NodeEditorStyles.propertyGroup)
                         }
                     ) {
-                        Label(
-                            attrs = {
-                                classes(NodeEditorStyles.propertyLabel)
-                                attr("for", "prop-${propDef.key.name.lowercase()}")
+                        if (propDef.type != PropertyType.BOOLEAN) {
+                            Label(
+                                attrs = {
+                                    classes(NodeEditorStyles.propertyLabel)
+                                    attr("for", "prop-${propDef.key.name.lowercase()}")
+                                }
+                            ) {
+                                Text(propDef.name)
                             }
-                        ) {
-                            Text(propDef.name)
                         }
 
                         when (propDef.type) {
@@ -597,18 +600,15 @@ fun PropertyPanel(
                             }
 
                             PropertyType.BOOLEAN -> {
-                                CheckboxInput(
+                                LabeledCheckbox(
                                     checked = (propertyValues[propDef.key] ?: "false") == "true",
-                                    attrs = {
-                                        classes(NodeEditorStyles.propertyInput)
-                                        id("prop-${propDef.key.name.lowercase()}")
-                                        onInput { event ->
-                                            val isChecked = event.target.checked
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = if (isChecked) "true" else "false"
-                                            }
+                                    enabled = true,
+                                    label = propDef.name,
+                                    onCheckedChange = { isChecked ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = if (isChecked) "true" else "false"
                                         }
-                                    }
+                                    },
                                 )
                             }
 

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
+import models.annotations.Indexed
 import java.util.UUID
 import kotlin.time.Clock
 
@@ -20,5 +21,6 @@ actual open class BaseModel {
     @JsonAlias("key")
     actual var key: String = UUID.randomUUID().toString().replace("-", "")
 
+    @field:Indexed
     actual var createdAt: Instant = Clock.System.now()
 }

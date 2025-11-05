@@ -66,15 +66,15 @@ fun ChatMessages(
     val isOwner = chatState.isOwner.value
     val lastMutation = chatState.lastMutation.value
     val pinnedIds = remember(pins) { pins.map { it.messageId }.toSet() }
-    
+
     // State for selected message (for editing/deleting)
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
     // State for image dialog (selected image URL)
     var imageDialogUrl by remember { mutableStateOf<String?>(null) }
-    
+
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
-    
+
     // Reference to the messages container for scrolling
     val messagesContainerRef = remember { mutableStateOf<HTMLDivElement?>(null) }
 
@@ -100,7 +100,7 @@ fun ChatMessages(
             console.error("Error scrolling to bottom", e)
         }
     }
-    
+
     // Function to smooth scroll to the bottom of the messages container
     fun smoothScrollToBottom() {
         scope.launch {
@@ -129,7 +129,7 @@ fun ChatMessages(
             false
         }
     }
-    
+
     // Scroll to bottom when messages finish initial loading
     LaunchedEffect(isLoading) {
         if (!isLoading) {
@@ -152,9 +152,9 @@ fun ChatMessages(
             lastCount = messages.size
         }
     }
-    
+
     // WebSocket listeners are handled globally by ChatStore
-    
+
     // Show dialog for editing/deleting a message
     selectedMessage?.let { currentMessage ->
         ChatMessageDialog(
@@ -171,13 +171,13 @@ fun ChatMessages(
                         console.error("Failed to update message: ${WebSocketApi.getLastError() ?: "Unknown error"}")
                     }
                 }
-                
+
                 // Also update via ChatApi for persistence
                 scope.launch {
                     try {
                         val updatedMessage = ChatApi.updateChatMessage(currentMessage, newText)
                         console.log("Message updated in database")
-                        
+
                         // Update the message in the store with the server response
                         ChatStore.replaceMessage(worldId, updatedMessage)
                     } catch (e: Throwable) {
@@ -194,13 +194,13 @@ fun ChatMessages(
                         console.error("Failed to delete message: ${WebSocketApi.getLastError() ?: "Unknown error"}")
                     }
                 }
-                
+
                 // Also delete via ChatApi for persistence
                 scope.launch {
                     try {
                         val deletedMessage = ChatApi.deleteChatMessage(currentMessage)
                         console.log("Message deleted in database")
-                        
+
                         // Update the message in the store with the server response
                         ChatStore.replaceMessage(worldId, deletedMessage)
                     } catch (e: Throwable) {
@@ -218,7 +218,7 @@ fun ChatMessages(
             onClose = { imageDialogUrl = null }
         )
     }
-    
+
     // Display messages
     Div(attrs = { classes(Styles.chatMessagesWrapper) }) {
         // Pinned section (outside scroll container so it stays fixed)
@@ -257,7 +257,10 @@ fun ChatMessages(
                                     scope.launch {
                                         val ok = ChatApi.unpinMessage(worldId, pin.messageId)
                                         if (!ok) {
-                                            try { ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList()) } catch (_: Throwable) {}
+                                            try {
+                                                ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList())
+                                            } catch (_: Throwable) {
+                                            }
                                         }
                                     }
                                 }
@@ -285,7 +288,8 @@ fun ChatMessages(
                                 val newScrollHeight = el.scrollHeight
                                 val delta = newScrollHeight - prevScrollHeight
                                 el.scrollTop = prevScrollTop + delta
-                            } catch (_: Throwable) { }
+                            } catch (_: Throwable) {
+                            }
                         }
                     }
                 }
@@ -306,56 +310,63 @@ fun ChatMessages(
             }
         ) {
             if (isLoading && messages.isEmpty()) {
-            // Use the reusable Spinner component
-            Spinner(message = "Loading messages...")
+                // Use the reusable Spinner component
+                Spinner(message = "Loading messages...")
             } else if (error != null) {
-            // Error message
-            P(
-                attrs = {
-                    classes(Styles.chatErrorText)
+                // Error message
+                P(
+                    attrs = {
+                        classes(Styles.chatErrorText)
+                    }
+                ) {
+                    Text(error)
                 }
-            ) {
-                Text(error ?: "Unknown error")
-            }
             } else if (messages.isEmpty()) {
-            // Empty state
-            P(
-                attrs = {
-                    classes(Styles.chatEmptyText)
+                // Empty state
+                P(
+                    attrs = {
+                        classes(Styles.chatEmptyText)
+                    }
+                ) {
+                    Text("No messages yet")
                 }
-            ) {
-                Text("No messages yet")
-            }
             } else {
-            // Display messages
-            if (isLoadingMore && hasMore) {
-                Spinner(message = "Loading older messages...")
-            }
-            messages.forEach { chatMessage ->
-                ChatMessageItem(
-                    message = chatMessage,
-                    onMessageClick = { message -> selectedMessage = message },
-                    isOwner = isOwner,
-                    isCurrentUser = (chatMessage.senderType == models.ChatSenderType.USER && currentUserId.value == chatMessage.senderId),
-                    isPinned = pinnedIds.contains(chatMessage.key),
-                    onPinToggle = {
-                        scope.launch {
-                            if (pinnedIds.contains(chatMessage.key)) {
-                                ChatStore.removePinByMessageId(chatMessage.key)
-                                val ok = ChatApi.unpinMessage(worldId, chatMessage.key)
-                                if (!ok) { try { ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList()) } catch (_: Throwable) {} }
-                            } else {
-                                try {
-                                    val pin = ChatApi.pinMessage(worldId, chatMessage.key)
-                                    ChatStore.addPin(worldId, pin)
-                                } catch (e: Throwable) { console.error("Pin failed", e) }
+                // Display messages
+                if (isLoadingMore && hasMore) {
+                    Spinner(message = "Loading older messages...")
+                }
+                messages.forEach { chatMessage ->
+                    ChatMessageItem(
+                        message = chatMessage,
+                        onMessageClick = { message -> selectedMessage = message },
+                        isOwner = isOwner,
+                        isCurrentUser = (chatMessage.senderType == models.ChatSenderType.USER && currentUserId.value == chatMessage.senderId),
+                        isPinned = pinnedIds.contains(chatMessage.key),
+                        onPinToggle = {
+                            scope.launch {
+                                if (pinnedIds.contains(chatMessage.key)) {
+                                    ChatStore.removePinByMessageId(chatMessage.key)
+                                    val ok = ChatApi.unpinMessage(worldId, chatMessage.key)
+                                    if (!ok) {
+                                        try {
+                                            ChatStore.setPins(worldId, ChatApi.listPins(worldId).toList())
+                                        } catch (_: Throwable) {
+                                        }
+                                    }
+                                } else {
+                                    try {
+                                        val pin = ChatApi.pinMessage(worldId, chatMessage.key)
+                                        ChatStore.addPin(worldId, pin)
+                                    } catch (e: Throwable) {
+                                        console.error("Pin failed", e)
+                                    }
+                                }
                             }
-                        }
-                    },
-                    onImageClick = { url -> imageDialogUrl = url },
-                    onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
-                )
-            }
+                        },
+                        onImageClick = { url -> imageDialogUrl = url },
+                        onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
+                    )
+                }
             }
         }
     }
@@ -384,7 +395,7 @@ fun ChatMessageItem(
             classes(if (isCurrentUser) Styles.chatMessageItemCurrentUser else Styles.chatMessageItemOtherUser)
             if (message.senderType == models.ChatSenderType.OBJECT) classes(Styles.chatMessageItemObject)
             if (message.senderType == models.ChatSenderType.SYSTEM) classes(Styles.chatMessageItemSystem)
-            
+
             onClick { onMessageClick(message) }
         }
     ) {
@@ -405,7 +416,7 @@ fun ChatMessageItem(
                     Text(message.senderName)
                 }
             }
-            
+
             // Timestamp with edited indicator
             Span(
                 attrs = {
@@ -454,7 +465,7 @@ fun ChatMessageItem(
                 }
             }
         }
-        
+
         // Message content
         P(
             attrs = {
@@ -496,14 +507,14 @@ private fun formatTimestamp(timestamp: Long): String {
     val now = Date()
     val today = Date(now.getFullYear(), now.getMonth(), now.getDate())
     val yesterday = Date(today.getTime() - 86400000) // 24 hours in milliseconds
-    
+
     val messageDate = Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
+
     // Format time as HH:MM using standard JavaScript methods
     val hours = date.getHours().toString().padStart(2, '0')
     val minutes = date.getMinutes().toString().padStart(2, '0')
     val timeString = "$hours:$minutes"
-    
+
     return when {
         messageDate.getTime() == today.getTime() -> "Today, $timeString"
         messageDate.getTime() == yesterday.getTime() -> "Yesterday, $timeString"

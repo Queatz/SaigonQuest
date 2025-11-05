@@ -12,7 +12,7 @@ sealed class DocOperation {
 @Serializable
 sealed class WsMsg {
     @Serializable data class Join(val docId: String, val userId: String, val cursor: Int) : WsMsg()
-    @Serializable data class Presence(val userId: String, val cursor: Int) : WsMsg()
+    @Serializable data class Presence(val userId: String, val userName: String = "", val cursor: Int) : WsMsg()
     @Serializable data class Op(val userId: String, val baseVersion: Int, val ops: List<DocOperation>) : WsMsg()
     @Serializable data class Snapshot(val content: String, val version: Int) : WsMsg()
     @Serializable data class Ack(val version: Int) : WsMsg()

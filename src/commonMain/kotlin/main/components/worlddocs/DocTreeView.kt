@@ -179,7 +179,7 @@ fun DocTreeView(
                 }
             }) {
                 // Top drop zone (before this node)
-                if (canDrag) {
+                if (canDrag && draggingId != null) {
                     Div(attrs = {
                         classes(if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone)
                         onDragOver {
@@ -194,12 +194,21 @@ fun DocTreeView(
                         onDrop {
                             it.preventDefault()
                             if (draggingId != null && draggingId != node.doc.key) {
-                                val siblings = siblingsOf(docs, node.doc.parentId)
-                                val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
-                                val after = node.doc.orderIndex
-                                val newIdx = newIndex(before, after)
-                                onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                val targetParentId = node.doc.parentId
+                                // Prevent creating a cycle by moving a node to be sibling under its own subtree
+                                val invalid = when {
+                                    targetParentId == null -> false
+                                    targetParentId == draggingId -> true
+                                    else -> isDescendant(docs, draggingId!!, targetParentId)
+                                }
+                                if (!invalid) {
+                                    val siblings = siblingsOf(docs, node.doc.parentId)
+                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                    val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
+                                    val after = node.doc.orderIndex
+                                    val newIdx = newIndex(before, after)
+                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                }
                             }
                             draggingId = null
                             dragOverId = null
@@ -235,7 +244,7 @@ fun DocTreeView(
                 }
 
                 // Bottom drop zone (after this node)
-                if (canDrag) {
+                if (canDrag && draggingId != null) {
                     Div(attrs = {
                         classes(if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone)
                         onDragOver {
@@ -250,12 +259,20 @@ fun DocTreeView(
                         onDrop {
                             it.preventDefault()
                             if (draggingId != null && draggingId != node.doc.key) {
-                                val siblings = siblingsOf(docs, node.doc.parentId)
-                                val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                val before = node.doc.orderIndex
-                                val after = if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
-                                val newIdx = newIndex(before, after)
-                                onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                val targetParentId = node.doc.parentId
+                                val invalid = when {
+                                    targetParentId == null -> false
+                                    targetParentId == draggingId -> true
+                                    else -> isDescendant(docs, draggingId!!, targetParentId)
+                                }
+                                if (!invalid) {
+                                    val siblings = siblingsOf(docs, node.doc.parentId)
+                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                    val before = node.doc.orderIndex
+                                    val after = if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
+                                    val newIdx = newIndex(before, after)
+                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                }
                             }
                             draggingId = null
                             dragOverId = null

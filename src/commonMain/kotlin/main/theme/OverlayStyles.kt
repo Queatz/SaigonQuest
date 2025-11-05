@@ -66,6 +66,7 @@ object OverlayStyles : StyleSheet() {
         left(0.px)
         width(100.percent)
         height(100.percent)
+        padding(24.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
