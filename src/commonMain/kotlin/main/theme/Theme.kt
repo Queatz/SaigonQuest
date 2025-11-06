@@ -43,7 +43,7 @@ object Theme {
 
         // Subtle borders on translucent panels
         val panelBorderSubtle = Color("rgba(0, 0, 0, 0.15)")
-        val panelBorderSubtleDark = Color("rgba(255, 255, 255, 0.2)")
+        val panelBorderSubtleDark = Color("rgba(255, 255, 255, 0.25)")
 
         // Accents for info/warn/success states
         val accentInfo = Color("#a6c8ff")

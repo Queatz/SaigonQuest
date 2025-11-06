@@ -137,6 +137,7 @@ fun SendVndDialog(
         BasicAlertDialog(
             title = translated("Successfully sent VND"),
             message = "${translated("Sent")} $amountInput ${translated("VND")} to ${friendUsername}",
+            onClose = { showSuccess = false },
             onConfirm = {
                 showSuccess = false
                 onSent?.invoke()

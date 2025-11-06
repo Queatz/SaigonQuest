@@ -62,7 +62,8 @@ fun DocTreeView(
         2 -> WorldDocsStyles.indent2
         3 -> WorldDocsStyles.indent3
         4 -> WorldDocsStyles.indent4
-        else -> WorldDocsStyles.indent5
+        5 -> WorldDocsStyles.indent5
+        else -> WorldDocsStyles.indent6
     }
 
     val visible = buildVisibleList(docs, expanded)

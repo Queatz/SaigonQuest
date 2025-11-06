@@ -699,6 +699,10 @@ object Styles : StyleSheet() {
         padding(16.px, 0.px)
         maxHeight(25.percent)
         overflowY("auto")
+
+        dark(self) {
+            property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtleDark}")
+        }
     }
 
     // Clickable pin/unpin action style
@@ -1496,7 +1500,10 @@ object Styles : StyleSheet() {
         property("flex-shrink", "0")
     }
 
-    val emoteTriggerButton by style {
+    val chatButtonSelected by style {
+    }
+
+    val chatButton by style {
         width(40.px)
         height(40.px)
         display(DisplayStyle.Flex)
@@ -1504,12 +1511,20 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         borderRadius(8.px)
         cursor("pointer")
-        backgroundColor(Theme.colors.white10)
+        backgroundColor(Theme.colors.black20)
         property("transition", "background-color 0.2s, opacity 0.2s")
         property("flex-shrink", "0")
 
+        self + className(chatButtonSelected) style {
+            backgroundColor(Theme.colors.black50)
+        }
+
         dark(self) {
-            backgroundColor(Theme.colors.black20)
+            backgroundColor(Theme.colors.white10)
+
+            self + className(chatButtonSelected) style {
+                backgroundColor(Theme.colors.white30)
+            }
         }
     }
 

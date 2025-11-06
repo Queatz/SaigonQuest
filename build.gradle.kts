@@ -114,14 +114,14 @@ tasks.register<Copy>("prepareDracoAssetsProdDist") {
 tasks.register("devApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn(":clean", "prepareDevServiceWorker", ":jsBrowserDevelopmentRun")
+    dependsOn("prepareDevServiceWorker", ":jsBrowserDevelopmentRun")
 }
 
 // Convenience task: build SW and start frontend dev server
 tasks.register("prodApp") {
     group = "application"
     description = "Builds the service worker and starts the frontend dev server"
-    dependsOn(":clean", "prepareProdServiceWorker", ":jsBrowserDistribution")
+    dependsOn("prepareProdServiceWorker", ":jsBrowserDistribution")
 }
 
 kotlin {

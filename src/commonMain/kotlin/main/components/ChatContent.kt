@@ -306,9 +306,12 @@ fun ChatContent(worldId: String) {
                     // Emote button
                     Div(
                         attrs = {
-                            classes(Styles.emoteTriggerButton)
+                            classes(Styles.chatButton)
                             if (!isAuthenticated) {
                                 classes(Styles.disabledAction)
+                            }
+                            if (showEmotePopup) {
+                                classes(Styles.chatButtonSelected)
                             }
                             onClick {
                                 if (isAuthenticated) {
@@ -366,17 +369,7 @@ fun ChatContent(worldId: String) {
                 if (isPlayer) {
                     Div(
                         attrs = {
-                            style {
-                                width(40.px)
-                                height(40.px)
-                                backgroundColor(rgba(255, 255, 255, 0.1))
-                                borderRadius(8.px)
-                                display(DisplayStyle.Flex)
-                                justifyContent(JustifyContent.Center)
-                                alignItems(AlignItems.Center)
-                                cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                                opacity(if (isAuthenticated) 1.0 else 0.5)
-                            }
+                            classes(Styles.chatButton)
                             onClick {
                                 if (isAuthenticated) {
                                     showUploadDialog = true
@@ -393,17 +386,12 @@ fun ChatContent(worldId: String) {
             Div(
                 attrs = {
                     title(str("Shout"))
-                    style {
-                        width(40.px)
-                        height(40.px)
-                        backgroundColor(if (shoutNext) rgba(255, 255, 255, 0.25) else rgba(255, 255, 255, 0.1))
-                        borderRadius(8.px)
-                        display(DisplayStyle.Flex)
-                        justifyContent(JustifyContent.Center)
-                        alignItems(AlignItems.Center)
-                        cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                        opacity(if (isAuthenticated) 1.0 else 0.5)
+                    classes(Styles.chatButton)
+
+                    if (shoutNext) {
+                        classes(Styles.chatButtonSelected)
                     }
+
                     onClick {
                         if (isAuthenticated) {
                             shoutNext = !shoutNext

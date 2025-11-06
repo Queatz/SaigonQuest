@@ -14,8 +14,8 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun BasicAlertDialog(
     message: String,
-    onConfirm: () -> Unit = {},
-    onClose: () -> Unit = onConfirm,
+    onClose: () -> Unit,
+    onConfirm: () -> Unit = onClose,
     title: String? = null,
 ) {
     BaseDialog(

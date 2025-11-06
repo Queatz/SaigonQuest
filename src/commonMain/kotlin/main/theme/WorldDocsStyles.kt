@@ -5,6 +5,7 @@ import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.CSSColorValue
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.StyleSheet
 import org.jetbrains.compose.web.css.alignItems
@@ -19,6 +20,7 @@ import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexWrap
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.gridTemplateColumns
 import org.jetbrains.compose.web.css.margin
@@ -37,16 +39,18 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.overflowX
 import web.cssom.atrule.maxWidth
 
 object WorldDocsStyles : StyleSheet() {
     // Indentation helpers for tree levels
     val indent0 by style { marginLeft(0.px) }
-    val indent1 by style { marginLeft(12.px) }
-    val indent2 by style { marginLeft(24.px) }
-    val indent3 by style { marginLeft(36.px) }
-    val indent4 by style { marginLeft(48.px) }
-    val indent5 by style { marginLeft(60.px) }
+    val indent1 by style { marginLeft(28.px) }
+    val indent2 by style { marginLeft(56.px) }
+    val indent3 by style { marginLeft(84.px) }
+    val indent4 by style { marginLeft(112.px) }
+    val indent5 by style { marginLeft(140.px) }
+    val indent6 by style { marginLeft(168.px) }
 
     // Main dialog content area, uses grid for left tree + right content
     val content by style {
@@ -66,6 +70,8 @@ object WorldDocsStyles : StyleSheet() {
         marginBottom(16.px)
         borderRadius(16.px)
         backgroundColor(Theme.colors.background)
+        overflowX("auto")
+        flexWrap(FlexWrap.Wrap)
 
         dark(self) {
             backgroundColor(Theme.colors.backgroundDark)
@@ -183,7 +189,9 @@ object WorldDocsStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.FlexStart)
         gap(8.px)
-        marginBottom(8.px)
+        marginBottom(16.px)
+        overflowX("auto")
+        flexWrap(FlexWrap.Wrap)
     }
 
     val titleInput by style {
