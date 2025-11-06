@@ -157,7 +157,10 @@ fun WorldDocsDialog(
         isFullWidth = true,
         isFullscreen = isFullscreen,
         headerActions = {
-            Button(attrs = { classes(Styles.textButton); onClick { toggleFullscreen() } }) {
+            Button(attrs = {
+                classes(Styles.textButton)
+                onClick { toggleFullscreen() }
+            }) {
                 IconRenderer(
                     url = "raw/data/ui/ui.png",
                     index = if (isFullscreen) 1 else 0,

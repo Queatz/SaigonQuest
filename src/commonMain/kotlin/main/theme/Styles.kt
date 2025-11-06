@@ -1227,6 +1227,7 @@ object Styles : StyleSheet() {
         property("border", "0")
         borderRadius(16.px)
         property("cursor", "pointer")
+        property("user-select", "none")
 
         self + disabled style {
             opacity(0.5)
@@ -1240,6 +1241,7 @@ object Styles : StyleSheet() {
         color(Theme.colors.primary)
         property("border", "0")
         property("cursor", "pointer")
+        property("user-select", "none")
         borderRadius(16.px)
         property("border", "1px solid ${Theme.colors.primary}")
 
@@ -1252,6 +1254,7 @@ object Styles : StyleSheet() {
         backgroundColor(Color.transparent)
         property("border", "0")
         cursor("pointer")
+        property("user-select", "none")
         fontSize(20.px)
     }
 
@@ -1263,7 +1266,7 @@ object Styles : StyleSheet() {
         property("border", "0")
         borderRadius(16.px)
         property("cursor", "pointer")
-        property("margin-top", "16px")
+        property("user-select", "none")
     }
 
     val radioGroupContainer by style {
@@ -1514,6 +1517,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.black20)
         property("transition", "background-color 0.2s, opacity 0.2s")
         property("flex-shrink", "0")
+        property("user-select", "none")
 
         self + className(chatButtonSelected) style {
             backgroundColor(Theme.colors.black50)

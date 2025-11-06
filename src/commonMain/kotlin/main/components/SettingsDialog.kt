@@ -103,6 +103,9 @@ fun SettingsDialog(
             Button(
                 attrs = {
                     classes(Styles.logoutButton)
+                    style {
+                        marginTop(16.px)
+                    }
                     onClick {
                         showLogoutDialog.value = true
                     }
