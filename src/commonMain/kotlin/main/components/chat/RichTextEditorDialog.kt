@@ -1,5 +1,6 @@
 package main.components.chat
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -14,7 +15,9 @@ import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import main.utils.toggleFullscreen
+import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Div
 
 /**
  * A rich text (markdown) editor dialog for composing chat messages.
@@ -26,6 +29,7 @@ import org.jetbrains.compose.web.dom.Button
 fun RichTextEditorDialog(
     onClose: () -> Unit,
     onSend: (String) -> Unit,
+    actions: (@Composable () -> Unit)? = null,
     initialText: String = "",
 ) {
     var text by remember { mutableStateOf(initialText) }
@@ -67,6 +71,16 @@ fun RichTextEditorDialog(
             )
         },
         actions = {
+            actions?.let {
+                it()
+                Div(
+                    {
+                        style {
+                            flex(1)
+                        }
+                    }
+                )
+            }
             DialogButton(
                 onClick = onClose,
             ) { Translated("Cancel") }
@@ -74,6 +88,6 @@ fun RichTextEditorDialog(
                 onClick = { if (text.isNotBlank()) onSend(text) },
                 isPrimary = true,
             ) { Translated("Send") }
-        },
+        }
     )
 }

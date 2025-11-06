@@ -622,9 +622,34 @@ fun ChatContent(worldId: String) {
             if (showRichEditorDialog) {
                 RichTextEditorDialog(
                     onClose = { showRichEditorDialog = false },
+                    actions = {
+                        // Shout toggle button
+                        Div(
+                            attrs = {
+                                title(str("Shout"))
+                                classes(Styles.chatButton)
+
+                                if (shoutNext) {
+                                    classes(Styles.chatButtonSelected)
+                                }
+
+                                onClick {
+                                    if (isAuthenticated) {
+                                        shoutNext = !shoutNext
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("📣")
+                        }
+                    },
                     onSend = { markdown ->
                         if (isAuthenticated && markdown.isNotBlank()) {
-                            WebSocketApi.sendChatMessage(worldId, markdown, shouted = shoutNext) { success ->
+                            WebSocketApi.sendChatMessage(
+                                worldId = worldId,
+                                messageText = markdown,
+                                shouted = shoutNext
+                            ) { success ->
                                 if (success) {
                                     // Reset states on success
                                     shoutNext = false

@@ -144,61 +144,74 @@ fun TutorialBubble(
         Text(text)
         
         // Add the arrow as a separate div with direction based on arrowDirection
-        Div(
-            attrs = {
-                style {
-                    position(Position.Absolute)
-                    width(0.px)
-                    height(0.px)
-                    
-                    when (arrowDirection) {
-                        ArrowDirection.RIGHT -> {
-                            // Arrow points to the right (bubble is on the left of the target)
-                            right(-8.px)
-                            top(50.percent)
-                            transform {
-                                translateY(-50.percent)
-                            }
-                            borderWidth(10.px, 0.px, 10.px, 10.px)
-                            property("border-style", "solid")
-                            property("border-color", "transparent transparent transparent $backgroundColor")
+        (0..1).forEach { index ->
+            Div(
+                attrs = {
+                    style {
+                        position(Position.Absolute)
+                        width(0.px)
+                        height(0.px)
+
+                        val bw = 10 + index
+                        val bc = if (index == 0) backgroundColor else borderColor
+                        val o = 10 + index
+
+                        if (index == 0) {
+                            property("z-index", "1")
                         }
-                        ArrowDirection.LEFT -> {
-                            // Arrow points to the left (bubble is on the right of the target)
-                            left(-8.px)
-                            top(50.percent)
-                            transform {
-                                translateY(-50.percent)
+
+                        when (arrowDirection) {
+                            ArrowDirection.RIGHT -> {
+                                // Arrow points to the right (bubble is on the left of the target)
+                                right(-o.px)
+                                top(50.percent)
+                                transform {
+                                    translateY(-50.percent)
+                                }
+                                borderWidth(bw.px, 0.px, bw.px, bw.px)
+                                property("border-style", "solid")
+                                property("border-color", "transparent transparent transparent $bc")
                             }
-                            borderWidth(10.px, 10.px, 10.px, 0.px)
-                            property("border-style", "solid")
-                            property("border-color", "transparent $backgroundColor transparent transparent")
-                        }
-                        ArrowDirection.BOTTOM -> {
-                            // Arrow points to the bottom (bubble is above the target)
-                            bottom(-8.px)
-                            left(50.percent)
-                            transform {
-                                translateX(-50.percent)
+
+                            ArrowDirection.LEFT -> {
+                                // Arrow points to the left (bubble is on the right of the target)
+                                left(-o.px)
+                                top(50.percent)
+                                transform {
+                                    translateY(-50.percent)
+                                }
+                                borderWidth(bw.px, bw.px, bw.px, 0.px)
+                                property("border-style", "solid")
+                                property("border-color", "transparent $bc transparent transparent")
                             }
-                            borderWidth(10.px, 10.px, 0.px, 10.px)
-                            property("border-style", "solid")
-                            property("border-color", "$backgroundColor transparent transparent transparent")
-                        }
-                        ArrowDirection.TOP -> {
-                            // Arrow points to the top (bubble is below the target)
-                            top(-8.px)
-                            left(50.percent)
-                            transform {
-                                translateX(-50.percent)
+
+                            ArrowDirection.BOTTOM -> {
+                                // Arrow points to the bottom (bubble is above the target)
+                                bottom(-o.px)
+                                left(50.percent)
+                                transform {
+                                    translateX(-50.percent)
+                                }
+                                borderWidth(bw.px, bw.px, 0.px, bw.px)
+                                property("border-style", "solid")
+                                property("border-color", "$bc transparent transparent transparent")
                             }
-                            borderWidth(0.px, 10.px, 10.px, 10.px)
-                            property("border-style", "solid")
-                            property("border-color", "transparent transparent $backgroundColor transparent")
+
+                            ArrowDirection.TOP -> {
+                                // Arrow points to the top (bubble is below the target)
+                                top(-o.px)
+                                left(50.percent)
+                                transform {
+                                    translateX(-50.percent)
+                                }
+                                borderWidth(0.px, bw.px, bw.px, bw.px)
+                                property("border-style", "solid")
+                                property("border-color", "transparent transparent $bc transparent")
+                            }
                         }
                     }
                 }
-            }
-        ) {}
+            )
+        }
     }
 }
