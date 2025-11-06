@@ -661,10 +661,10 @@ vi: ngày trước
 Long time ago
 vi: Lâu lắm rồi
 
-Edit World
+Edit world
 vi: Chỉnh sửa thế giới
 
-Create World
+Create world
 vi: Tạo thế giới
 
 Create your player
@@ -1424,6 +1424,9 @@ vi: Tìm kiếm node
 Copy link
 vi: Sao chép liên kết
 
+Copy to chat
+vi: Sao chép vào tin nhắn
+
 Copied!
 vi: Đã sao chép!
 
@@ -1567,6 +1570,13 @@ vi: Bạn có chắc chắn muốn khôi phục phiên bản này không?
 
 Failed to load history
 vi: Tải lịch sử không thành công
+
+Fullscreen
+vi: Toàn màn hình
+
+Take a photo
+vi: Chụp ảnh
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

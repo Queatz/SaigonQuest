@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import main.api.ChatApi
 import main.api.ContentApi
 import main.api.UserApi
@@ -24,6 +25,7 @@ import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import main.theme.Theme
 import models.chat.ImageAttachment
+import main.components.chat.ChatComposerController
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
@@ -62,6 +64,7 @@ import org.w3c.dom.HTMLInputElement
  */
 @Composable
 fun ChatContent(worldId: String) {
+    var initialRichText by remember { mutableStateOf("") }
     var messageText by remember { mutableStateOf("") }
     var isAuthenticated by remember { mutableStateOf(false) }
     var isPlayer by remember { mutableStateOf(false) }
@@ -618,32 +621,26 @@ fun ChatContent(worldId: String) {
                 )
             }
 
+            // Listen for external requests to open rich editor with initial text
+            LaunchedEffect(worldId) {
+                ChatComposerController.requests.collect { req ->
+                    if (req != null && req.worldId == worldId) {
+                        initialRichText = req.initialText
+                        showRichEditorDialog = true
+                        ChatComposerController.clear()
+                    }
+                }
+            }
+
             // Rich text editor dialog
             if (showRichEditorDialog) {
                 RichTextEditorDialog(
-                    onClose = { showRichEditorDialog = false },
-                    actions = {
-                        // Shout toggle button
-                        Div(
-                            attrs = {
-                                title(str("Shout"))
-                                classes(Styles.chatButton)
-
-                                if (shoutNext) {
-                                    classes(Styles.chatButtonSelected)
-                                }
-
-                                onClick {
-                                    if (isAuthenticated) {
-                                        shoutNext = !shoutNext
-                                    }
-                                }
-                            }
-                        ) {
-                            Text("📣")
-                        }
+                    onClose = { 
+                        showRichEditorDialog = false 
+                        initialRichText = ""
                     },
                     onSend = { markdown ->
+                        initialRichText = ""
                         if (isAuthenticated && markdown.isNotBlank()) {
                             WebSocketApi.sendChatMessage(
                                 worldId = worldId,
@@ -668,6 +665,28 @@ fun ChatContent(worldId: String) {
                             }
                         }
                     },
+                    actions = {
+                        // Shout toggle button
+                        Div(
+                            attrs = {
+                                title(str("Shout"))
+                                classes(Styles.chatButton)
+
+                                if (shoutNext) {
+                                    classes(Styles.chatButtonSelected)
+                                }
+
+                                onClick {
+                                    if (isAuthenticated) {
+                                        shoutNext = !shoutNext
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("📣")
+                        }
+                    },
+                    initialText = initialRichText,
                 )
             }
         }

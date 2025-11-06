@@ -18,6 +18,7 @@ import main.theme.WorldDocsStyles
 import models.DocOperation
 import models.WsMsg
 import kotlinx.coroutines.flow.collect
+import main.components.Md
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
@@ -40,6 +41,7 @@ fun DocEditor(
     onUpdated: (Doc) -> Unit,
     onCollaboratorsChange: (Set<String>) -> Unit = {},
     onConnectionStateChange: (ConnectionState) -> Unit = {},
+    onLocalContentChange: (String) -> Unit = {},
 ) {
     var text by remember(doc.key) { mutableStateOf(doc.content) }
     var version by remember(doc.key) { mutableStateOf(doc.version) }
@@ -214,6 +216,7 @@ fun DocEditor(
     // Keep local state in sync if parent provides new doc instance (selection changed or external update)
     LaunchedEffect(doc.key, doc.content, doc.version) {
         text = doc.content
+        try { onLocalContentChange(doc.content) } catch (_: Throwable) {}
         version = doc.version
         lastWsText = doc.content
         savingState = SavingState.Idle
@@ -277,6 +280,7 @@ fun DocEditor(
                                     try {
                                         // Sync state regardless of DOM path used
                                         text = m.content
+                                        try { onLocalContentChange(m.content) } catch (_: Throwable) {}
                                         selTargetLen = newLen
                                         selStart = clampedStart
                                         selEnd = clampedEnd
@@ -318,6 +322,7 @@ fun DocEditor(
                                         try {
                                             // Sync state regardless of DOM path used
                                             text = newTextContent
+                                            try { onLocalContentChange(newTextContent) } catch (_: Throwable) {}
                                             selTargetLen = max
                                             if (clampedStart != selStart || clampedEnd != selEnd) {
                                                 selStart = clampedStart
@@ -387,7 +392,7 @@ fun DocEditor(
                             }
                             is WsMsg.Join -> { /* ignore */ }
                         }
-                        is main.api.DocApi.WsEvent.Failed -> {
+                        is DocApi.WsEvent.Failed -> {
                             connectionIssue = ev.error
                             inFlight = false
                             try { ackTimeoutJob?.cancel() } catch (_: Throwable) {}
@@ -396,7 +401,7 @@ fun DocEditor(
                             if (savingState is SavingState.Saving) savingState = SavingState.Error("Disconnected")
                             try { onConnectionStateChange(ConnectionState.Reconnecting) } catch (_: Throwable) {}
                         }
-                        is main.api.DocApi.WsEvent.Closed -> {
+                        is DocApi.WsEvent.Closed -> {
                             connectionIssue = connectionIssue ?: "Closed"
                             inFlight = false
                             try { ackTimeoutJob?.cancel() } catch (_: Throwable) {}
@@ -445,6 +450,7 @@ fun DocEditor(
                         val latest = DocApi.getDoc(doc.key)
                         lastWsText = latest.content
                         text = latest.content
+                        try { onLocalContentChange(latest.content) } catch (_: Throwable) {}
                         version = latest.version
                         savingState = SavingState.Conflict
                         onUpdated(latest)
@@ -477,15 +483,17 @@ fun DocEditor(
         }
     ) {
         if (isEditable && !serverReadOnly) {
-            androidx.compose.runtime.key(doc.key) {
+            key(doc.key) {
                 RichTextEditor(
                     value = text,
                     onValueChange = {
                         // When we update programmatically via the controller, suppress autosave
                         if (suppressSave) {
                             text = it
+                            try { onLocalContentChange(it) } catch (_: Throwable) {}
                         } else {
                             text = it
+                            try { onLocalContentChange(it) } catch (_: Throwable) {}
                             scheduleSave()
                         }
                     },
@@ -508,7 +516,7 @@ fun DocEditor(
         } else {
             // Not editable or server has marked this doc read-only; show notice and fallback to viewer-like minimal
             P { Span { Translated("Cannot edit") } }
-            main.components.Md(content = text.ifBlank { translated("Empty doc") })
+            Md(content = text.ifBlank { translated("Empty doc") })
         }
 
         // Saving state indicator

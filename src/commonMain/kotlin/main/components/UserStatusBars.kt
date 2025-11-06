@@ -6,6 +6,7 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
@@ -101,6 +102,10 @@ fun UserStatusBars(
                     display(DisplayStyle.Flex)
                     alignItems(AlignItems.Center)
                     gap(8.px)
+
+                    if (!readOnly) {
+                        cursor("pointer")
+                    }
                 }
             }) {
                 repeat(5) { i ->
@@ -145,6 +150,10 @@ fun UserStatusBars(
                     display(DisplayStyle.Flex)
                     alignItems(AlignItems.Center)
                     gap(8.px)
+
+                    if (!readOnly) {
+                        cursor("pointer")
+                    }
                 }
             }) {
                 repeat(5) { i ->
@@ -189,6 +198,10 @@ fun UserStatusBars(
                     display(DisplayStyle.Flex)
                     alignItems(AlignItems.Center)
                     gap(8.px)
+
+                    if (!readOnly) {
+                        cursor("pointer")
+                    }
                 }
             }) {
                 repeat(5) { i ->

@@ -28,6 +28,7 @@ fun CircleButton(
     opacity: Double = 1.0,
     isChat: Boolean = false,
     id: String? = null,
+    title: String = "",
     elementRef: ((HTMLElement) -> Unit)? = null
 ) {
     Div(
@@ -35,6 +36,9 @@ fun CircleButton(
             classes(Styles.circleButton)
             onClick { onClick() }
             style { opacity(opacity) }
+            if (title.isNotBlank()) {
+                title(title)
+            }
             id?.let { id(it) }
             if (elementRef != null) {
                 ref { element -> 

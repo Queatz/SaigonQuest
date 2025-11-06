@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import kotlinx.coroutines.delay
 import Translations
+import org.jetbrains.compose.web.css.opacity
 
 @Composable
 fun DocTreeView(
@@ -257,10 +258,9 @@ fun DocTreeView(
 
                         style {
                             padding(8.px)
+                            opacity(.5f)
                         }
-                    }) { Text(if (isExpanded) "▾ " else "▸ ") }
-                } else {
-                    Span { Text("  ") }
+                    }) { Text(if (isExpanded) "▾" else "▸") }
                 }
 
                 // Title

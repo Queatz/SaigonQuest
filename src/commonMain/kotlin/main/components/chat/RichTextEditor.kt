@@ -28,10 +28,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
-import kotlinx.coroutines.delay
 import kotlinx.browser.document
 import models.DocOperation
-import org.w3c.dom.events.Event
 
 /**
  * A reusable rich text (markdown) editor with toolbar and live preview.

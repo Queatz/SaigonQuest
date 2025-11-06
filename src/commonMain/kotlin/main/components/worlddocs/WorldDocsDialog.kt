@@ -1,30 +1,32 @@
 package main.components.worlddocs
 
-import androidx.compose.runtime.*
+import Translations
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.browser.document
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.DocApi
 import main.components.BaseDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
-import main.components.Translated
 import main.components.IconRenderer
-import main.components.translated
-import Translations
+import main.components.Translated
+import main.components.chat.ChatComposerController
+import main.theme.Styles
+import main.theme.WorldDocsStyles
+import main.utils.toggleFullscreen
 import models.Doc
 import models.DocTree
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.value
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Text
-import main.theme.WorldDocsStyles
-import main.theme.Styles
-import kotlinx.browser.document
-import main.utils.toggleFullscreen
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.attributes.disabled
+import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
@@ -33,12 +35,13 @@ import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
 import web.animations.awaitAnimationFrame
-import web.cssom.PropertyName.Companion.display
-import web.cssom.PropertyName.Companion.flexDirection
-import web.cssom.attr
 
 @Composable
 fun WorldDocsDialog(
@@ -121,6 +124,10 @@ fun WorldDocsDialog(
 
     val flatDocs = remember(docs) { docs.flatMap { flatten(it) } }
     val selectedDoc = flatDocs.firstOrNull { it.key == selectedDocId }
+
+    // Local edited content for currently selected doc (freshest value from editor)
+    var editedContent by remember(selectedDoc?.key) { mutableStateOf(selectedDoc?.content ?: "") }
+    LaunchedEffect(selectedDoc?.key) { editedContent = selectedDoc?.content ?: "" }
 
     // Rename state
     var renameTitle by remember(selectedDoc?.key) { mutableStateOf(selectedDoc?.title ?: "") }
@@ -486,6 +493,10 @@ fun WorldDocsDialog(
                                         currentUserId = currentUserId,
                                         onUpdated = { updated ->
                                             docs = docs.map { updateNode(it, updated) }
+                                            // Keep local edited content in sync with server-updated content
+                                            if (updated.key == selectedDoc.key) {
+                                                editedContent = updated.content
+                                            }
                                         },
                                         onCollaboratorsChange = { set ->
                                             // Filter out self and anon here as a safety net
@@ -494,6 +505,9 @@ fun WorldDocsDialog(
                                         },
                                         onConnectionStateChange = { state ->
                                             connState = state
+                                        },
+                                        onLocalContentChange = { latest ->
+                                            editedContent = latest
                                         },
                                     )
                                 } else {
@@ -526,6 +540,19 @@ fun WorldDocsDialog(
         },
         actions = {
             DialogButton(onClick = onClose) { Translated("Close") }
+            if (selectedDoc != null) {
+                DialogButton(
+                    isPrimary = true,
+                    onClick = {
+                        val content = editedContent
+                        ChatComposerController.openRichEditor(
+                            worldId = worldId,
+                            initialText = content,
+                        )
+                        onClose()
+                    }
+                ) { Translated("Copy to chat") }
+            }
         },
     )
 

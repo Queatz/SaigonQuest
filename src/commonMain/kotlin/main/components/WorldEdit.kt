@@ -18,7 +18,7 @@ fun WorldEdit(
     onSave: (models.World) -> Unit
 ) {
     ResponsivePanel(
-        title = if (currentWorld != null) translated("Edit World") else translated("Create World"),
+        title = if (currentWorld != null) translated("Edit world") else translated("Create world"),
         isMobile = isMobile,
         onClose = onClose
     ) {

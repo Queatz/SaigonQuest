@@ -55,15 +55,12 @@ import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
 import web.notifications.requestPermission
-import lib.ScreenshotOptions
-import lib.Tools
 import main.components.chat.ChatStore
+import main.components.chat.ChatComposerController
+import kotlinx.coroutines.flow.collect
 import models.canUserEdit
-import org.w3c.dom.HTMLAnchorElement
 import web.navigator.navigator
 import web.push.PushManager
-import kotlin.js.Date
-
 
 /**
  * A component that renders a responsive UI overlay for the 3D world scene.
@@ -503,6 +500,16 @@ fun WorldUI(
         }
     }
     
+    // Listen for 'Copy to chat' requests to open Chat panel
+    LaunchedEffect(Unit) {
+        ChatComposerController.requests.collect { req ->
+            if (req != null) {
+                updatePanelState(SidePanelState.Chat)
+                unreadChatCount = 0
+            }
+        }
+    }
+
     // Main UI overlay container
     WorldUIContainer {
         // Reconnecting banner at the very top (fixed)
@@ -562,7 +569,8 @@ fun WorldUI(
                 CircleButton(
                     onClick = { toggleFullscreen() },
                     iconIndex = if (isFullscreen) 1 else 0, // 0: enter fullscreen, 1: exit fullscreen
-                    badgeCount = 0
+                    badgeCount = 0,
+                    title = translated("Fullscreen")
                 )
 
                 // Edit world button - only visible if the current user is the owner of the world
@@ -570,14 +578,16 @@ fun WorldUI(
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.WorldEdit) },
                         iconIndex = 4, // 4: edit world
-                        badgeCount = 0
+                        badgeCount = 0,
+                        title = translated("Edit world")
                     )
 
                     // Objects button - only visible if the current user is the owner of the world
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.ObjectsPanel) },
                         iconIndex = 5, // 5: edit objects
-                        badgeCount = 0
+                        badgeCount = 0,
+                        title = translated("Objects")
                     )
                 }
             }
@@ -604,7 +614,8 @@ fun WorldUI(
                         },
                         iconIndex = 9, // Using a different icon index for admin
                         badgeCount = 0,
-                        id = "adminButton"
+                        id = "adminButton",
+                        title = translated("Admin panel")
                     )
                 }
 
@@ -622,7 +633,8 @@ fun WorldUI(
                         }
                     },
                     iconIndex = 19,
-                    badgeCount = 0
+                    badgeCount = 0,
+                    title = translated("Take a photo"),
                 )
 
                 // QR code button (not part of the panel system)
@@ -637,6 +649,7 @@ fun WorldUI(
                     iconIndex = 6, // 6: share / qr code
                     badgeCount = 0,
                     id = "qrButton",
+                    title = translated("Share this world"),
                     elementRef = { element -> buttonRefs["qrButton"] = element }
                 )
 
@@ -645,7 +658,8 @@ fun WorldUI(
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.Friends) },
                         iconIndex = 3, // 3: friends
-                        badgeCount = 0
+                        badgeCount = 0,
+                        title = translated("Friends")
                     )
                 }
 
@@ -655,7 +669,8 @@ fun WorldUI(
                     },
                     iconIndex = 29, // world docs
                     badgeCount = 0,
-                    id = "worldButton"
+                    id = "worldButton",
+                    title = translated("World docs"),
                 )
 
                 // Chat button
@@ -675,6 +690,7 @@ fun WorldUI(
                     badgeCount = unreadChatCount,
                     isChat = true,
                     id = "chatButton",
+                    title = translated("Chat"),
                     elementRef = { element -> buttonRefs["chatButton"] = element }
                 )
 
@@ -683,7 +699,8 @@ fun WorldUI(
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.Notifications) },
                         iconIndex = 2, // 2: notifications
-                        badgeCount = unreadNotificationCount
+                        badgeCount = unreadNotificationCount,
+                        title = translated("Notifications"),
                     )
                 }
 
@@ -699,6 +716,7 @@ fun WorldUI(
                     iconIndex = 8, // 8: my profile
                     badgeCount = 0,
                     id = "profileButton",
+                    title = translated("My profile"),
                     elementRef = { element -> buttonRefs["profileButton"] = element }
                 )
             }

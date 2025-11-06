@@ -45,12 +45,12 @@ import web.cssom.atrule.maxWidth
 object WorldDocsStyles : StyleSheet() {
     // Indentation helpers for tree levels
     val indent0 by style { marginLeft(0.px) }
-    val indent1 by style { marginLeft(28.px) }
-    val indent2 by style { marginLeft(56.px) }
-    val indent3 by style { marginLeft(84.px) }
-    val indent4 by style { marginLeft(112.px) }
-    val indent5 by style { marginLeft(140.px) }
-    val indent6 by style { marginLeft(168.px) }
+    val indent1 by style { marginLeft(24.px) }
+    val indent2 by style { marginLeft(48.px) }
+    val indent3 by style { marginLeft(72.px) }
+    val indent4 by style { marginLeft(96.px) }
+    val indent5 by style { marginLeft(120.px) }
+    val indent6 by style { marginLeft(144.px) }
 
     // Main dialog content area, uses grid for left tree + right content
     val content by style {
