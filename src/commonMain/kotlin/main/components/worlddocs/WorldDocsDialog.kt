@@ -342,6 +342,26 @@ fun WorldDocsDialog(
                                 Div(attrs = { classes(WorldDocsStyles.controlsRow) }) {
                                     // Title input + Save for editors/owners
                                     if (canEditDoc) {
+                                        val saveTitle: () -> Unit = {
+                                            val id = selectedDoc.key
+                                            val newTitle = renameTitle.trim()
+                                            if (newTitle.isBlank() || newTitle == selectedDoc.title) {
+                                                // no-op when blank or unchanged
+                                            } else {
+                                                scope.launch {
+                                                    val result = runCatching {
+                                                        DocApi.updateDoc(
+                                                            id,
+                                                            DocApi.UpdateDocRequest(title = newTitle)
+                                                        )
+                                                    }
+                                                    result.onSuccess { updated ->
+                                                        docs = docs.map { updateNode(it, updated) }
+                                                    }
+                                                    result.onFailure { t -> error = t.message }
+                                                }
+                                            }
+                                        }
                                         Div(
                                             attrs = {
                                                 style {
@@ -356,6 +376,14 @@ fun WorldDocsDialog(
                                                 onInput { ev -> renameTitle = ev.value }
                                                 placeholder(Translations.str("Title"))
                                                 autoFocus()
+
+                                                onKeyDown { ev ->
+                                                    if (ev.key == "Enter") {
+                                                        ev.preventDefault()
+                                                        saveTitle()
+                                                    }
+                                                }
+
                                                 ref {
                                                     titleInputEl = it
                                                     scope.launch {
@@ -377,20 +405,7 @@ fun WorldDocsDialog(
                                                 classes(Styles.primaryButton)
                                                 if (trimmed.isBlank()) disabled()
                                                 onClick {
-                                                    val id = selectedDoc.key
-                                                    val newTitle = trimmed.ifBlank { selectedDoc.title }
-                                                    scope.launch {
-                                                        val result = runCatching {
-                                                            DocApi.updateDoc(
-                                                                id,
-                                                                DocApi.UpdateDocRequest(title = newTitle)
-                                                            )
-                                                        }
-                                                        result.onSuccess { updated ->
-                                                            docs = docs.map { updateNode(it, updated) }
-                                                        }
-                                                        result.onFailure { t -> error = t.message }
-                                                    }
+                                                    saveTitle()
                                                 }
                                             }) { Translated("Save") }
                                         }

@@ -1,28 +1,29 @@
 package main.components.worlddocs
 
+import Translations
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import main.theme.WorldDocsStyles
 import models.Doc
 import models.DocTree
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Li
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Ul
-import main.theme.WorldDocsStyles
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
-import kotlinx.coroutines.delay
-import Translations
-import org.jetbrains.compose.web.css.opacity
 
 @Composable
 fun DocTreeView(
@@ -84,6 +85,7 @@ fun DocTreeView(
                         onSelect(target)
                     }
                 }
+
                 "ArrowDown" -> {
                     val currentIndex = visible.indexOfFirst { it.node.doc.key == selectedDocId }
                     val newIndex = if (currentIndex < 0) 0 else (currentIndex + 1).coerceAtMost(visible.lastIndex)
@@ -93,6 +95,7 @@ fun DocTreeView(
                         onSelect(target)
                     }
                 }
+
                 "ArrowLeft" -> {
                     // Collapse if expanded, else move to parent
                     val focus = visible.firstOrNull { it.node.doc.key == selectedDocId }
@@ -110,6 +113,7 @@ fun DocTreeView(
                         }
                     }
                 }
+
                 "ArrowRight" -> {
                     val focus = visible.firstOrNull { it.node.doc.key == selectedDocId }
                     if (focus != null) {
@@ -135,108 +139,61 @@ fun DocTreeView(
             val isExpanded = expanded[node.doc.key] ?: (level == 0)
             val isSelected = node.doc.key == selectedDocId
 
-            Li(attrs = {
-                classes(
-                    if (isSelected) WorldDocsStyles.treeItemSelected else WorldDocsStyles.treeItem,
-                    indentClass(level)
-                )
-                onClick { onSelect(node.doc.key) }
-                if (canDrag) attr("draggable", "true")
-                if (canDrag) {
-                    onDragStart {
-                        draggingId = node.doc.key
-                        it.dataTransfer?.effectAllowed = "move"
-                        it.dataTransfer?.setData("text/plain", node.doc.key)
-                    }
-                    onDragEnd {
-                        draggingId = null
-                        dragOverId = null
-                        dragOverPos = null
-                        dragOverIntoId = null
-                    }
-                    // Drop INTO (as last child) when dropping on the row itself
-                    onDragOver {
-                        it.preventDefault()
-                        // Mark this row as INTO hover when valid, but only if no edge (BEFORE/AFTER) hover is active
-                        if (draggingId != null && draggingId != node.doc.key && dragOverId == null && dragOverPos == null) {
-                            val invalidInto = isDescendant(docs, draggingId!!, node.doc.key)
-                            if (!invalidInto) {
-                                dragOverIntoId = node.doc.key
-                            }
+            key(node.doc.key) {
+                Li(attrs = {
+                    classes(
+                        if (isSelected) WorldDocsStyles.treeItemSelected else WorldDocsStyles.treeItem,
+                        indentClass(level)
+                    )
+                    onClick { onSelect(node.doc.key) }
+                    if (canDrag) attr("draggable", "true")
+                    if (canDrag) {
+                        onDragStart {
+                            draggingId = node.doc.key
+                            it.dataTransfer?.effectAllowed = "move"
+                            it.dataTransfer?.setData("text/plain", node.doc.key)
                         }
-                        // Schedule auto-expand if hovering over a collapsed parent
-                        if (hasChildren && (expanded[node.doc.key] != true)) {
-                            if (lastHoverId != node.doc.key) {
-                                expandJob?.cancel()
-                                lastHoverId = node.doc.key
-                                expandJob = scope.launch {
-                                    delay(500)
-                                    expanded[node.doc.key] = true
+                        onDragEnd {
+                            draggingId = null
+                            dragOverId = null
+                            dragOverPos = null
+                            dragOverIntoId = null
+                        }
+                        // Drop INTO (as last child) when dropping on the row itself
+                        onDragOver {
+                            it.preventDefault()
+                            // Mark this row as INTO hover when valid, but only if no edge (BEFORE/AFTER) hover is active
+                            if (draggingId != null && draggingId != node.doc.key && dragOverId == null && dragOverPos == null) {
+                                val invalidInto = isDescendant(docs, draggingId!!, node.doc.key)
+                                if (!invalidInto) {
+                                    dragOverIntoId = node.doc.key
+                                }
+                            }
+                            // Schedule auto-expand if hovering over a collapsed parent
+                            if (hasChildren && (expanded[node.doc.key] != true)) {
+                                if (lastHoverId != node.doc.key) {
+                                    expandJob?.cancel()
+                                    lastHoverId = node.doc.key
+                                    expandJob = scope.launch {
+                                        delay(500)
+                                        expanded[node.doc.key] = true
+                                    }
                                 }
                             }
                         }
-                    }
-                    onDragLeave {
-                        if (dragOverIntoId == node.doc.key) {
-                            dragOverIntoId = null
-                        }
-                    }
-                    onDrop {
-                        it.preventDefault()
-                        if (draggingId != null && draggingId != node.doc.key) {
-                            // Prevent moving a node into its own descendant
-                            if (!isDescendant(docs, draggingId!!, node.doc.key)) {
-                                val lastChild = node.children.maxByOrNull { c -> c.doc.orderIndex }?.doc
-                                val newIndex = if (lastChild != null) lastChild.orderIndex + 1.0 else 0.0
-                                onMoveRequest(draggingId!!, node.doc.key, newIndex)
-                            }
-                        }
-                        draggingId = null
-                        dragOverId = null
-                        dragOverPos = null
-                        dragOverIntoId = null
-                    }
-                }
-            }) {
-                // INTO drop overlay (visual only). Edge (BEFORE/AFTER) hover takes precedence, so only show when no edge hover is active.
-                if (canDrag && draggingId != null && dragOverIntoId == node.doc.key && dragOverId == null && dragOverPos == null) {
-                    Div(attrs = { classes(WorldDocsStyles.dropIntoOverlay) }) {}
-                }
-                // Top drop zone (before this node)
-                if (canDrag && draggingId != null) {
-                    Div(attrs = {
-                        classes(
-                            if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
-                            WorldDocsStyles.dropZoneTop
-                        )
-                        onDragOver {
-                            it.preventDefault()
-                            dragOverId = node.doc.key
-                            dragOverPos = DragPos.BEFORE
-                            // Edge band hovered; hide INTO overlay
-                            dragOverIntoId = null
-                        }
                         onDragLeave {
-                            dragOverId = null
-                            dragOverPos = null
+                            if (dragOverIntoId == node.doc.key) {
+                                dragOverIntoId = null
+                            }
                         }
                         onDrop {
                             it.preventDefault()
                             if (draggingId != null && draggingId != node.doc.key) {
-                                val targetParentId = node.doc.parentId
-                                // Prevent creating a cycle by moving a node to be sibling under its own subtree
-                                val invalid = when {
-                                    targetParentId == null -> false
-                                    targetParentId == draggingId -> true
-                                    else -> isDescendant(docs, draggingId!!, targetParentId)
-                                }
-                                if (!invalid) {
-                                    val siblings = siblingsOf(docs, node.doc.parentId)
-                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                    val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
-                                    val after = node.doc.orderIndex
-                                    val newIdx = newIndex(before, after)
-                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                // Prevent moving a node into its own descendant
+                                if (!isDescendant(docs, draggingId!!, node.doc.key)) {
+                                    val lastChild = node.children.maxByOrNull { c -> c.doc.orderIndex }?.doc
+                                    val newIndex = if (lastChild != null) lastChild.orderIndex + 1.0 else 0.0
+                                    onMoveRequest(draggingId!!, node.doc.key, newIndex)
                                 }
                             }
                             draggingId = null
@@ -244,87 +201,137 @@ fun DocTreeView(
                             dragOverPos = null
                             dragOverIntoId = null
                         }
-                    }) {}
-                }
+                    }
+                }) {
+                    // INTO drop overlay (visual only). Edge (BEFORE/AFTER) hover takes precedence, so only show when no edge hover is active.
+                    if (canDrag && draggingId != null && dragOverIntoId == node.doc.key && dragOverId == null && dragOverPos == null) {
+                        Div(attrs = { classes(WorldDocsStyles.dropIntoOverlay) }) {}
+                    }
+                    // Top drop zone (before this node)
+                    if (canDrag && draggingId != null) {
+                        Div(attrs = {
+                            classes(
+                                if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                                WorldDocsStyles.dropZoneTop
+                            )
+                            onDragOver {
+                                it.preventDefault()
+                                dragOverId = node.doc.key
+                                dragOverPos = DragPos.BEFORE
+                                // Edge band hovered; hide INTO overlay
+                                dragOverIntoId = null
+                            }
+                            onDragLeave {
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                            onDrop {
+                                it.preventDefault()
+                                if (draggingId != null && draggingId != node.doc.key) {
+                                    val targetParentId = node.doc.parentId
+                                    // Prevent creating a cycle by moving a node to be sibling under its own subtree
+                                    val invalid = when {
+                                        targetParentId == null -> false
+                                        targetParentId == draggingId -> true
+                                        else -> isDescendant(docs, draggingId!!, targetParentId)
+                                    }
+                                    if (!invalid) {
+                                        val siblings = siblingsOf(docs, node.doc.parentId)
+                                        val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                        val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
+                                        val after = node.doc.orderIndex
+                                        val newIdx = newIndex(before, after)
+                                        onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                    }
+                                }
+                                draggingId = null
+                                dragOverId = null
+                                dragOverPos = null
+                                dragOverIntoId = null
+                            }
+                        }) {}
+                    }
 
-                // Row contents
-                // Arrow
-                if (hasChildren) {
-                    Span(attrs = {
-                        onClick {
-                            it.stopPropagation()
-                            expanded[node.doc.key] = !isExpanded
-                        }
-
-                        style {
-                            padding(8.px)
-                            opacity(.5f)
-                        }
-                    }) { Text(if (isExpanded) "▾" else "▸") }
-                }
-
-                // Title
-                Span {
-                    Text(node.doc.title)
-                }
-
-                // Row actions (e.g., add child) shown only for selected row when enabled
-                if (isSelected && showAddButtonForSelected) {
-                    Div(attrs = {
-                        classes(WorldDocsStyles.rowActions)
-                    }) {
+                    // Row contents
+                    // Arrow
+                    if (hasChildren) {
                         Span(attrs = {
-                            classes(WorldDocsStyles.rowActionButton)
-                            attr("title", Translations.str("Create doc"))
                             onClick {
                                 it.stopPropagation()
-                                onCreateChild(node.doc.key)
+                                expanded[node.doc.key] = !isExpanded
                             }
-                        }) { Text("➕") }
-                    }
-                }
 
-                // Bottom drop zone (after this node)
-                if (canDrag && draggingId != null) {
-                    Div(attrs = {
-                        classes(
-                            if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
-                            WorldDocsStyles.dropZoneBottom
-                        )
-                        onDragOver {
-                            it.preventDefault()
-                            dragOverId = node.doc.key
-                            dragOverPos = DragPos.AFTER
-                            // Edge band hovered; hide INTO overlay
-                            dragOverIntoId = null
-                        }
-                        onDragLeave {
-                            dragOverId = null
-                            dragOverPos = null
-                        }
-                        onDrop {
-                            it.preventDefault()
-                            if (draggingId != null && draggingId != node.doc.key) {
-                                val targetParentId = node.doc.parentId
-                                val invalid = when {
-                                    targetParentId == null -> false
-                                    targetParentId == draggingId -> true
-                                    else -> isDescendant(docs, draggingId!!, targetParentId)
-                                }
-                                if (!invalid) {
-                                    val siblings = siblingsOf(docs, node.doc.parentId)
-                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                    val before = node.doc.orderIndex
-                                    val after = if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
-                                    val newIdx = newIndex(before, after)
-                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
-                                }
+                            style {
+                                padding(8.px)
+                                opacity(.5f)
                             }
-                            draggingId = null
-                            dragOverId = null
-                            dragOverPos = null
+                        }) { Text(if (isExpanded) "▾" else "▸") }
+                    }
+
+                    // Title
+                    Span {
+                        Text(node.doc.title)
+                    }
+
+                    // Row actions (e.g., add child) shown only for selected row when enabled
+                    if (isSelected && showAddButtonForSelected) {
+                        Div(attrs = {
+                            classes(WorldDocsStyles.rowActions)
+                        }) {
+                            Span(attrs = {
+                                classes(WorldDocsStyles.rowActionButton)
+                                attr("title", Translations.str("Create doc"))
+                                onClick {
+                                    it.stopPropagation()
+                                    onCreateChild(node.doc.key)
+                                }
+                            }) { Text("➕") }
                         }
-                    }) {}
+                    }
+
+                    // Bottom drop zone (after this node)
+                    if (canDrag && draggingId != null) {
+                        Div(attrs = {
+                            classes(
+                                if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                                WorldDocsStyles.dropZoneBottom
+                            )
+                            onDragOver {
+                                it.preventDefault()
+                                dragOverId = node.doc.key
+                                dragOverPos = DragPos.AFTER
+                                // Edge band hovered; hide INTO overlay
+                                dragOverIntoId = null
+                            }
+                            onDragLeave {
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                            onDrop {
+                                it.preventDefault()
+                                if (draggingId != null && draggingId != node.doc.key) {
+                                    val targetParentId = node.doc.parentId
+                                    val invalid = when {
+                                        targetParentId == null -> false
+                                        targetParentId == draggingId -> true
+                                        else -> isDescendant(docs, draggingId!!, targetParentId)
+                                    }
+                                    if (!invalid) {
+                                        val siblings = siblingsOf(docs, node.doc.parentId)
+                                        val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                        val before = node.doc.orderIndex
+                                        val after =
+                                            if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
+                                        val newIdx = newIndex(before, after)
+                                        onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                    }
+                                }
+                                draggingId = null
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                        }) {}
+                    }
                 }
             }
         }
@@ -382,6 +389,7 @@ private fun parentIdOf(forest: List<DocTree>, id: String): String? {
         }
         return null
     }
+
     val target = forest.asSequence().mapNotNull { findById(it, id) }.firstOrNull()
     return target?.doc?.parentId
 }
@@ -396,6 +404,7 @@ private fun ancestorsPath(forest: List<DocTree>, id: String): List<String> {
         }
         return null
     }
+
     val target = forest.asSequence().mapNotNull { findById(it, id) }.firstOrNull() ?: return emptyList()
     val result = mutableListOf<String>()
     var parentId = target.doc.parentId
@@ -419,6 +428,7 @@ private fun isDescendant(forest: List<DocTree>, ancestorId: String, descendantId
         }
         return null
     }
+
     val ancestor = forest.asSequence().mapNotNull { findById(it, ancestorId) }.firstOrNull() ?: return false
     fun contains(node: DocTree, needle: String): Boolean {
         if (node.doc.key == needle) return true
