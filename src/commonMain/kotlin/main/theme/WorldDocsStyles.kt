@@ -190,7 +190,6 @@ object WorldDocsStyles : StyleSheet() {
         alignItems(AlignItems.FlexStart)
         gap(8.px)
         marginBottom(16.px)
-        overflowX("auto")
         flexWrap(FlexWrap.Wrap)
     }
 

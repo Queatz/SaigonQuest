@@ -351,8 +351,12 @@ fun WorldDocsDialog(
                                                 scope.launch {
                                                     val result = runCatching {
                                                         DocApi.updateDoc(
-                                                            id,
-                                                            DocApi.UpdateDocRequest(title = newTitle)
+                                                            docId = id,
+                                                            update = DocApi.UpdateDocRequest(
+                                                                title = newTitle,
+                                                                parentId = selectedDoc.parentId,
+                                                                orderIndex = selectedDoc.orderIndex,
+                                                            )
                                                         )
                                                     }
                                                     result.onSuccess { updated ->
