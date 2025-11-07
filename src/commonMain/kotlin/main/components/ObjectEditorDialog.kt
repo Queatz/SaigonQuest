@@ -1,6 +1,5 @@
 package main.components
 
-import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,10 +21,8 @@ import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.opacity
-import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -72,6 +69,7 @@ fun ObjectEditorDialog(
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
     // Determine if we're editing or creating
@@ -142,18 +140,46 @@ fun ObjectEditorDialog(
     
     // Define the footer actions
     val footerActions = @Composable {
+        // Remove button (only when editing)
+        if (isEditing) {
+            DialogButtonDanger(
+                onClick = {
+                    if (!isSubmitting && !isDeleting) {
+                        isDeleting = true
+                        errorMessage = ""
+                        coroutineScope.launch {
+                            try {
+                                ObjectApi.deleteObject(objectModel!!.key)
+                                isDeleting = false
+                                onClose()
+                            } catch (error: Throwable) {
+                                isDeleting = false
+                                errorMessage = error.message ?: "An error occurred"
+                            }
+                        }
+                    }
+                }
+            ) {
+                Text(if (isDeleting) "Removing..." else "Remove")
+            }
+        }
+        
+        // Spacer could be handled by CSS; buttons will align according to Styles
+        
         // Cancel button
         DialogButton(
-            onClick = { onClose() },
-            isPrimary = false
+            onClick = { if (!isSubmitting && !isDeleting) onClose() },
+            isPrimary = false,
+            isDisabled = isSubmitting || isDeleting
         ) {
             Text("Cancel")
         }
         
         // Save button
         DialogButton(
-            onClick = { if (!isSubmitting) handleSubmit() },
-            isPrimary = true
+            onClick = { if (!isSubmitting && !isDeleting) handleSubmit() },
+            isPrimary = true,
+            isDisabled = isSubmitting || isDeleting
         ) {
             Text(if (isSubmitting) "Saving..." else "Save")
         }

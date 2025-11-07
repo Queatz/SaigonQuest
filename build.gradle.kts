@@ -154,17 +154,17 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.ui)
-                // Removed compose.components.resources as it's causing runtime errors and not directly used
 
                 implementation("app.softwork:routing-compose:0.5.0")
-                implementation(npm("marked", "16.4.1"))
-                implementation(npm("qr", "0.5.2"))
-                implementation(npm("@babylonjs/core", "8.32.2"))
-                implementation(npm("@babylonjs/materials", "8.32.2"))
-                implementation(npm("@babylonjs/loaders", "8.32.2"))
-                implementation(npm("babylonjs-gltf2interface", "8.32.2"))
-                implementation(npm("shell-quote", "1.8.3")) // force version
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.10.10")
+
+                implementation(npm("marked", "16.4.2"))
+                implementation(npm("qr", "0.5.2"))
+                implementation(npm("@babylonjs/core", "8.36.0"))
+                implementation(npm("@babylonjs/materials", "8.36.0"))
+                implementation(npm("@babylonjs/loaders", "8.36.0"))
+                implementation(npm("babylonjs-gltf2interface", "8.36.0"))
+                implementation(npm("shell-quote", "1.8.3")) // force version
 
                 // Ktor client
                 implementation("io.ktor:ktor-client-core:3.3.1")

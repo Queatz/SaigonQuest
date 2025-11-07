@@ -17,6 +17,7 @@ import main.components.translated
 import main.theme.Styles
 import models.Doc
 import models.DocTree
+import main.utils.ellipsize
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.cursor
 import web.cssom.AtRules.Companion.property
@@ -89,7 +90,7 @@ fun SelectDocDialog(
     BaseDialog(
         onClose = onClose,
         title = translated("Select doc"),
-        maxWidth = "720px",
+        maxWidth = "900px",
         content = {
             // Search and refresh row
             Div(attrs = {
@@ -107,10 +108,6 @@ fun SelectDocDialog(
                         onInput { ev -> query = ev.value }
                     }
                 )
-                Button(attrs = {
-                    classes(Styles.primaryButton)
-                    onClick { loadDocs() }
-                }) { Translated("Refresh") }
             }
 
             if (errorMessage != null) {
@@ -141,7 +138,29 @@ fun SelectDocDialog(
                                 }
                                 onClick { onSelect(d) }
                             }) {
-                                Text(d.title.ifBlank { translated("Untitled doc") })
+                                val titleText = d.title.ifBlank { translated("Untitled doc") }
+                                val previewText = d.content
+                                    .trim()
+                                    .replace(Regex("\\s+"), " ")
+                                    .ellipsize(64)
+                                Div(attrs = {
+                                    style {
+                                        property("font-weight", "500")
+                                    }
+                                }) {
+                                    Text(titleText)
+                                }
+                                if (previewText.isNotBlank()) {
+                                    Div(attrs = {
+                                        style {
+                                            property("margin-top", "4px")
+                                            property("font-size", "12px")
+                                            property("opacity", "0.7")
+                                        }
+                                    }) {
+                                        Text(previewText)
+                                    }
+                                }
                             }
                         }
                     }

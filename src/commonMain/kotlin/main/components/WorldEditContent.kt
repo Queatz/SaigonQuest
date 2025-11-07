@@ -54,7 +54,6 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
-import org.jetbrains.compose.web.dom.CheckboxInput
 import Translations.str
 import main.components.friends.SelectFriendDialog
 import models.Item
@@ -195,6 +194,7 @@ fun WorldEditContent(
     var ownerNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var primaryOwnerName by remember { mutableStateOf<String?>(null) }
     var showOwnerPicker by remember { mutableStateOf(false) }
+    var ownerIdPendingRemoval by remember { mutableStateOf<String?>(null) }
 
     // Re-seed local state when the incoming currentWorld changes
     LaunchedEffect(currentWorld?.key) {
@@ -326,7 +326,6 @@ fun WorldEditContent(
             console.warn("[WARN] Failed to load balance: ${t.message}")
         }
     }
-
 
     // Determine ownership and edit permissions
     val isOwner = if (isEditing && currentUser != null) {
@@ -605,7 +604,7 @@ fun WorldEditContent(
                                 Button(attrs = {
                                     classes(Styles.secondaryButton)
                                     onClick {
-                                        ownerIds = ownerIds.filter { it != oid }
+                                        ownerIdPendingRemoval = oid
                                     }
                                 }) {
                                     Translated("Remove owner")
@@ -647,6 +646,18 @@ fun WorldEditContent(
                             currentWorld.userId?.let { if (it.isNotBlank()) add(it) }
                             addAll(ownerIds)
                         },
+                    )
+                }
+
+                if (ownerIdPendingRemoval != null) {
+                    val oidToRemove = ownerIdPendingRemoval!!
+                    BasicConfirmDialog(
+                        message = translated("Remove owner"),
+                        onConfirm = {
+                            ownerIds = ownerIds.filter { it != oidToRemove }
+                            ownerIdPendingRemoval = null
+                        },
+                        onCancel = { ownerIdPendingRemoval = null },
                     )
                 }
             }

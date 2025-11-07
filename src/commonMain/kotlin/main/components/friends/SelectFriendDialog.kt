@@ -81,7 +81,7 @@ fun SelectFriendDialog(
     BaseDialog(
         onClose = onClose,
         title = translated("Select friend"),
-        maxWidth = "720px",
+        maxWidth = "900px",
         content = {
             // Search and refresh row
             Div(attrs = {
@@ -99,10 +99,6 @@ fun SelectFriendDialog(
                         onInput { ev -> query = ev.value }
                     }
                 )
-                Button(attrs = {
-                    classes(Styles.primaryButton)
-                    onClick { loadFriends() }
-                }) { Translated("Refresh") }
             }
 
             if (errorMessage != null) {
