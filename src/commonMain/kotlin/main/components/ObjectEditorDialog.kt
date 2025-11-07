@@ -19,9 +19,14 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
@@ -31,6 +36,11 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
+import web.cssom.PropertyName.Companion.display
+import web.cssom.PropertyName.Companion.flexDirection
+import web.cssom.PropertyName.Companion.gap
+import web.cssom.PropertyName.Companion.justifyContent
+import web.cssom.atrule.displayMode
 
 /**
  * A dialog for creating and editing objects.
@@ -70,6 +80,7 @@ fun ObjectEditorDialog(
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
+    var showConfirmRemove by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
     // Determine if we're editing or creating
@@ -145,18 +156,7 @@ fun ObjectEditorDialog(
             DialogButtonDanger(
                 onClick = {
                     if (!isSubmitting && !isDeleting) {
-                        isDeleting = true
-                        errorMessage = ""
-                        coroutineScope.launch {
-                            try {
-                                ObjectApi.deleteObject(objectModel!!.key)
-                                isDeleting = false
-                                onClose()
-                            } catch (error: Throwable) {
-                                isDeleting = false
-                                errorMessage = error.message ?: "An error occurred"
-                            }
-                        }
+                        showConfirmRemove = true
                     }
                 }
             ) {
@@ -213,7 +213,13 @@ fun ObjectEditorDialog(
                 
                 // Title field
                 Div {
-                    P {
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(16.px)
+                            }
+                        }
+                    ) {
                         Text("Title")
                     }
                     Input(
@@ -236,7 +242,13 @@ fun ObjectEditorDialog(
                         }
                     }
                 ) {
-                    P {
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(16.px)
+                            }
+                        }
+                    ) {
                         Translated("Asset")
                     }
                     Div {
@@ -268,7 +280,13 @@ fun ObjectEditorDialog(
 
                 // Status field
                 Div {
-                    P {
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(16.px)
+                            }
+                        }
+                    ) {
                         Text("Status")
                     }
                     Input(
@@ -284,7 +302,13 @@ fun ObjectEditorDialog(
                 
                 // Z rotation field
                 Div {
-                    P {
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(16.px)
+                            }
+                        }
+                    ) {
                         Text("Rotation")
                     }
                     RangeInput(
@@ -299,7 +323,37 @@ fun ObjectEditorDialog(
                             }
                         }
                     )
-                    P {
+                    // Quick set buttons for rotation
+                    Div(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                gap(4.px)
+                                justifyContent(JustifyContent.Stretch)
+                            }
+                        }
+                    ) {
+                        listOf(0, 90, 180, 270).forEach { deg ->
+                            Button(
+                                attrs = {
+                                    classes(Styles.secondaryButton)
+                                    style {
+                                        flex(1)
+                                    }
+                                    onClick { rotationYDeg = deg.toFloat() }
+                                }
+                            ) {
+                                Text("$deg°")
+                            }
+                        }
+                    }
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(8.px)
+                            }
+                        }
+                    ) {
                         Text("${rotationYDeg.toInt()}°")
                     }
                 }
@@ -398,6 +452,31 @@ fun ObjectEditorDialog(
                 collection = r.collection ?: ""
             },
             onClose = { showCollectionBrowser = false },
+        )
+    }
+
+    // Confirm remove dialog
+    if (showConfirmRemove && isEditing) {
+        BasicConfirmDialog(
+            message = translated("Are you sure you want to remove this object?"),
+            onConfirm = {
+                if (!isSubmitting && !isDeleting) {
+                    showConfirmRemove = false
+                    isDeleting = true
+                    errorMessage = ""
+                    coroutineScope.launch {
+                        try {
+                            ObjectApi.deleteObject(objectModel!!.key)
+                            isDeleting = false
+                            onClose()
+                        } catch (error: Throwable) {
+                            isDeleting = false
+                            errorMessage = error.message ?: "An error occurred"
+                        }
+                    }
+                }
+            },
+            onCancel = { showConfirmRemove = false },
         )
     }
 }
