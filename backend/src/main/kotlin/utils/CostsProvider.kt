@@ -9,7 +9,7 @@ import models.Costs
 object CostsProvider {
     // For now, static pricing. In the future, this can be loaded from DB or configuration.
     private val current = Costs(
-        worldBasePrice = 8_000_000L,
+        worldBasePrice = 12_000_000L,
     )
 
     fun get(): Costs = current

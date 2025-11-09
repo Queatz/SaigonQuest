@@ -1580,6 +1580,12 @@ vi: Toàn màn hình
 Take a photo
 vi: Chụp ảnh
 
+Use real-time sun lighting based on latitude and longitude
+vi: Sử dụng ánh sáng mặt trời thực thời gian dựa trên kinh độ và vĩ độ
+
+Latitude and longitude
+vi: Kinh độ và vĩ độ
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

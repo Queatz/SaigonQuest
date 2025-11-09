@@ -1020,7 +1020,7 @@ fun WorldEditContent(
             LabeledCheckbox(
                 checked = isOutdoors,
                 enabled = fieldsEnabled,
-                label = "Use real-time sun lighting based on latitude and longitude",
+                label = translated("Use real-time sun lighting based on latitude and longitude"),
                 onCheckedChange = { next ->
                     isOutdoors = next
                     previewLightingFromForm()
@@ -1045,7 +1045,7 @@ fun WorldEditContent(
                         fontSize(14.px)
                     }
                 }
-            ) { Text("Latitude and longitude") }
+            ) { Translated("Latitude and longitude") }
 
             // Mini globe picker (click to select coordinates)
             LatLngPicker3D(
