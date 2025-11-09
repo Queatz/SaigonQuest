@@ -22,6 +22,7 @@ object AiApi {
         val caretStart: Int,
         val caretEnd: Int,
         val docId: String? = null,
+        val docName: String? = null,
     )
 
     @Serializable
@@ -35,6 +36,7 @@ object AiApi {
         caretStart: Int,
         caretEnd: Int,
         docId: String? = null,
+        docName: String? = null,
     ): String {
         val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/prompt") {
             contentType(ContentType.Application.Json)
@@ -45,6 +47,7 @@ object AiApi {
                 caretStart = caretStart,
                 caretEnd = caretEnd,
                 docId = docId,
+                docName = docName,
             ))
         }
         if (resp.status.isSuccess()) {
@@ -65,7 +68,7 @@ object AiApi {
             return resp.body()
         } else {
             val txt = runCatching { resp.bodyAsText() }.getOrNull()
-            throw Error(txt ?: "Failed to load AI history: HTTP ${'$'}{resp.status.value}")
+            throw Error(txt ?: "Failed to load AI history: HTTP ${resp.status.value}")
         }
     }
 }

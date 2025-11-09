@@ -44,7 +44,7 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                val sysPrompt = buildSystemPrompt(req.docContents, req.caretStart, req.caretEnd)
+                val sysPrompt = buildSystemPrompt(req.docContents, req.caretStart, req.caretEnd, req.docName)
 
                 // 2-minute timeout per requirements
                 val text = try {
@@ -115,6 +115,7 @@ data class AiPromptRequest(
     val caretStart: Int,
     val caretEnd: Int,
     val docId: String? = null,
+    val docName: String? = null,
 )
 
 @Serializable
@@ -122,7 +123,7 @@ data class AiPromptResponse(
     val text: String,
 )
 
-private fun buildSystemPrompt(contents: String, caretStart: Int, caretEnd: Int): String {
+private fun buildSystemPrompt(contents: String, caretStart: Int, caretEnd: Int, docName: String?): String {
     fun toLineCol(idx: Int): Pair<Int, Int> {
         var line = 1
         var col = 1
@@ -149,11 +150,16 @@ private fun buildSystemPrompt(contents: String, caretStart: Int, caretEnd: Int):
         appendLine("You are helping a user edit a document.")
         appendLine()
         appendLine("# INSTRUCTIONS")
-        appendLine("Return the markdown supported text to be inserted into the document (replacing any selection)")
+        appendLine("Return the markdown-supported text to be inserted into the document (replacing any selection) at the caret position. Do not return any other text, including the exiting text in the document that is not going to be replaced.")
         appendLine()
         appendLine("# CARET POSITION")
         appendLine(caretSection)
         appendLine()
+        if (!docName.isNullOrBlank()) {
+            appendLine("# DOCUMENT TITLE")
+            appendLine(docName)
+            appendLine()
+        }
         appendLine("# DOCUMENT CONTENTS")
         appendLine()
         appendLine(contents)

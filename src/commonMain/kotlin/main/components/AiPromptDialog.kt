@@ -61,8 +61,15 @@ fun AiPromptDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onCancel, isPrimary = false) { Translated("Cancel") }
-            DialogButton(onClick = onSubmit, isPrimary = true) { Translated("Send") }
+            DialogButton(
+                onClick = onCancel,
+                isPrimary = false,
+            ) { Translated("Cancel") }
+            DialogButton(
+                onClick = { if (prompt.trim().isNotEmpty()) onSubmit() },
+                isPrimary = true,
+                isDisabled = prompt.trim().isBlank(),
+            ) { Translated("Send") }
         }
     )
 }

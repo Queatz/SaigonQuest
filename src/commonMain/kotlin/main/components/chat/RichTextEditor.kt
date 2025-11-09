@@ -416,7 +416,7 @@ fun RichTextEditor(
                     padding(8.px)
 
                     if (aiLoading) {
-                        opacity(0.75)
+                        opacity(0.5)
                         property("pointer-events", "none")
                     }
                 }
