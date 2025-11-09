@@ -60,7 +60,12 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         }
 
         val text = try {
-            DeepSeekClient.promptText(systemPrompt, userPrompt, context.session)
+            DeepSeekClient.promptText(
+                systemPrompt = systemPrompt,
+                userPrompt = userPrompt,
+                logSession = context.session,
+                json = true
+            )
         } finally {
             // Always broadcast OBJECT_TYPING false (stop)
             if (context.objectId.isNotBlank()) {

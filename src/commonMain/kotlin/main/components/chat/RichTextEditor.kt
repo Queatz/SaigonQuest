@@ -6,11 +6,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import main.api.AiApi
+import main.components.AiPromptDialog
+import main.components.AiPromptHistoryDialog
 import main.components.BasicPromptDialog
 import main.components.Md
 import main.components.Translated
 import main.components.media.UploadMediaDialog
 import main.components.translated
+import main.components.BasicAlertDialog
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
@@ -25,11 +31,14 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
 import kotlinx.browser.document
 import models.DocOperation
+import org.jetbrains.compose.web.attributes.disabled
+import org.jetbrains.compose.web.css.opacity
 
 /**
  * A reusable rich text (markdown) editor with toolbar and live preview.
@@ -64,6 +73,17 @@ fun RichTextEditor(
 ) {
     var showUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
+    // AI integration state
+    var showAiDialog by remember { mutableStateOf(false) }
+    var showAiHistoryDialog by remember { mutableStateOf(false) }
+    var aiPrompt by remember { mutableStateOf("") }
+    var aiLoading by remember { mutableStateOf(false) }
+    var aiHistory by remember { mutableStateOf<List<models.AiPromptHistory>>(emptyList()) }
+    data class AiRequest(val prompt: String, val doc: String, val s: Int, val e: Int)
+    var aiRequest by remember { mutableStateOf<AiRequest?>(null) }
+    var aiError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
     var editorEl by remember { mutableStateOf<HTMLTextAreaElement?>(null) }
     var selStart by remember { mutableStateOf(0) }
     var selEnd by remember { mutableStateOf(0) }
@@ -290,6 +310,24 @@ fun RichTextEditor(
     Div(attrs = {
         classes(Styles.richTextEditorToolbar)
     }) {
+        // AI button at start
+        Button(attrs = {
+            classes(Styles.primaryButton)
+            if (aiLoading) classes(Styles.disabledAction)
+            onMouseDown { it.preventDefault() }
+            onClick {
+                if (aiLoading) return@onClick
+                saveSelectionFromEl()
+                aiPrompt = ""
+                showAiDialog = true
+            }
+        }) {
+            if (aiLoading) {
+                Div(attrs = { classes(Styles.tinySpinner) }) {}
+            } else {
+                Text("✨ ${translated("AI")}")
+            }
+        }
         // Heading buttons
         Button(attrs = {
             classes(Styles.primaryButton)
@@ -376,6 +414,11 @@ fun RichTextEditor(
                 style {
                     height(160.px)
                     padding(8.px)
+
+                    if (aiLoading) {
+                        opacity(0.75)
+                        property("pointer-events", "none")
+                    }
                 }
                 autoFocus()
                 onInput {
@@ -385,6 +428,9 @@ fun RichTextEditor(
                     setText(it.value)
                 }
                 onClick { saveSelectionFromEl() }
+                if (aiLoading) {
+                    disabled()
+                }
                 onKeyDown { event ->
                     // Keyboard shortcuts: Ctrl/Cmd + B/I/U
                     val isMod = event.ctrlKey || event.metaKey
@@ -526,6 +572,77 @@ fun RichTextEditor(
                 insertAtCursor("![$alt]($imageUrl)")
                 showUploadDialog = false
             },
+        )
+    }
+
+    if (showAiDialog) {
+        AiPromptDialog(
+            prompt = aiPrompt,
+            onPromptChange = { aiPrompt = it },
+            onOpenHistory = {
+                scope.launch {
+                    aiLoading = true
+                    try {
+                        aiHistory = runCatching { AiApi.getHistory(50) }.getOrElse { emptyList() }
+                        showAiHistoryDialog = true
+                    } finally {
+                        aiLoading = false
+                    }
+                }
+            },
+            onSubmit = {
+                // Snapshot current doc and selection before starting async call
+                saveSelectionFromEl()
+                val s = selStart
+                val e = selEnd
+                val docSnapshot = value
+                val userPrompt = aiPrompt
+                // Close the prompt dialog immediately per requirement, show toolbar spinner during request
+                showAiDialog = false
+                aiLoading = true
+                scope.launch {
+                    try {
+                        val text = AiApi.sendPrompt(
+                            prompt = userPrompt,
+                            docContents = docSnapshot,
+                            caretStart = s,
+                            caretEnd = e,
+                            docId = null,
+                        )
+                        val before = docSnapshot.substring(0, s)
+                        val after = docSnapshot.substring(e)
+                        val newText = before + text + after
+                        setText(newText)
+                        val caret = (before + text).length
+                        pendingSelection = caret..caret
+                        selStart = caret
+                        selEnd = caret
+                    } catch (t: Throwable) {
+                        aiError = "AI request failed or timed out"
+                    } finally {
+                        aiLoading = false
+                    }
+                }
+            },
+            onCancel = { showAiDialog = false },
+        )
+    }
+
+    if (showAiHistoryDialog) {
+        AiPromptHistoryDialog(
+            items = aiHistory,
+            onSelect = { selected ->
+                aiPrompt = selected
+                showAiHistoryDialog = false
+            },
+            onClose = { showAiHistoryDialog = false },
+        )
+    }
+
+    if (aiError != null) {
+        BasicAlertDialog(
+            message = translated("AI request failed or timed out"),
+            onClose = { aiError = null },
         )
     }
 

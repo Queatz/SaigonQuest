@@ -33,14 +33,14 @@ object DeepSeekClient {
             json(appJson)
         }
         engine {
-            requestTimeout = 60_000
+            requestTimeout = 120_000
         }
     }
 
     @Serializable
     private data class ChatMessage(
         val role: String,
-        val content: String
+        val content: String,
     )
 
     @Serializable
@@ -48,12 +48,12 @@ object DeepSeekClient {
         val index: Int? = null,
         val message: ChatMessage,
         @SerialName("finish_reason")
-        val finishReason: String? = null
+        val finishReason: String? = null,
     )
 
     @Serializable
     private data class ResponseFormat(
-        val type: String? = "json_object"
+        val type: String? = "text",
     )
 
     @Serializable
@@ -64,7 +64,7 @@ object DeepSeekClient {
         @SerialName("max_tokens")
         val maxTokens: Int? = 2048,
         @SerialName("response_format")
-        val responseFormat: ResponseFormat? = ResponseFormat()
+        val responseFormat: ResponseFormat? = null,
     )
 
     @Serializable
@@ -74,12 +74,12 @@ object DeepSeekClient {
         val obj: String? = null,
         val created: Long? = null,
         val model: String? = null,
-        val choices: List<Choice> = emptyList()
+        val choices: List<Choice> = emptyList(),
     )
 
     @Serializable
     private data class AiTextJson(
-        val text: String
+        val text: String,
     )
 
     /**
@@ -90,7 +90,8 @@ object DeepSeekClient {
         systemPrompt: String,
         userPrompt: String,
         logSession: DefaultWebSocketServerSession?,
-        reason: Boolean = false
+        reason: Boolean = false,
+        json: Boolean = false,
     ): String? {
         val apiKey = System.getenv("DEEPSEEK_API_KEY")
             ?: System.getProperty("DEEPSEEK_API_KEY")
@@ -105,7 +106,11 @@ object DeepSeekClient {
             ChatMessage(role = "user", content = userPrompt)
         )
 
-        val body = DeepSeekRequest(messages = messages, model = if (reason) "deepseek-reasoner" else "deepseek-chat")
+        val body = DeepSeekRequest(
+            messages = messages,
+            model = if (reason) "deepseek-reasoner" else "deepseek-chat",
+            responseFormat = if (json) ResponseFormat(type = "json_object") else null,
+        )
 
         return try {
             val httpResp: HttpResponse = http.post("https://api.deepseek.com/beta/chat/completions") {
@@ -117,7 +122,13 @@ object DeepSeekClient {
             val statusOk = httpResp.status.isSuccess()
             val rawBody = runCatching { httpResp.bodyAsText() }.getOrNull()
             if (!statusOk) {
-                WebSocketDebug.logError("DeepSeek HTTP ${httpResp.status.value}: ${httpResp.status.description}. Body preview: ${rawBody?.take(300)}", null, logSession)
+                WebSocketDebug.logError(
+                    "DeepSeek HTTP ${httpResp.status.value}: ${httpResp.status.description}. Body preview: ${
+                        rawBody?.take(
+                            300
+                        )
+                    }", null, logSession
+                )
                 return null
             }
 
@@ -127,7 +138,13 @@ object DeepSeekClient {
                 ?: rawBody
 
             if (content.isNullOrBlank()) {
-                WebSocketDebug.logMessage("AI_NODE_RESPONSE_PREVIEW", "DeepSeek returned empty content. Raw body preview: ${rawBody?.take(300)}", logSession!!)
+                if (logSession != null) {
+                    WebSocketDebug.logMessage(
+                        "AI_RESPONSE_PREVIEW",
+                        "DeepSeek returned empty content. Raw body preview: ${rawBody?.take(300)}",
+                        logSession
+                    )
+                }
                 return null
             }
 
@@ -150,11 +167,13 @@ object DeepSeekClient {
 
             val finalText = (parsedText ?: content).trim()
             finalText.ifBlank {
-                WebSocketDebug.logMessage(
-                    "AI_NODE_RESPONSE_PREVIEW",
-                    "DeepSeek yielded blank text after parsing. Content preview: ${content.take(200)}",
-                    logSession!!
-                )
+                if (logSession != null) {
+                    WebSocketDebug.logMessage(
+                        "AI_NODE_RESPONSE_PREVIEW",
+                        "DeepSeek yielded blank text after parsing. Content preview: ${content.take(200)}",
+                        logSession
+                    )
+                }
                 null
             }
         } catch (e: Throwable) {

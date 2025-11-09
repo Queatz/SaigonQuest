@@ -1554,6 +1554,19 @@ object Styles : StyleSheet() {
     }
 
     // Generic helper to mark non-interactive actions
+    val tinySpinner by style {
+        width(14.px)
+        height(14.px)
+        property("border", "2px solid ${Theme.colors.white10}")
+        property("border-top", "2px solid ${Theme.colors.white80}")
+        property("border-radius", "50%")
+        animation(chatLoadingSpin) {
+            duration(1.s)
+            timingFunction(AnimationTimingFunction.Linear)
+        }
+        property("animation-iteration-count", "infinite")
+    }
+
     val disabledAction by style {
         cursor("not-allowed")
         opacity(0.5)

@@ -156,7 +156,7 @@ kotlin {
                 implementation(compose.ui)
 
                 implementation("app.softwork:routing-compose:0.5.0")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.10.10")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.11.5")
 
                 implementation(npm("marked", "16.4.2"))
                 implementation(npm("qr", "0.5.2"))

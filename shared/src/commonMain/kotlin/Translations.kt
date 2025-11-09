@@ -1586,6 +1586,30 @@ vi: Sử dụng ánh sáng mặt trời thực thời gian dựa trên kinh đ�
 Latitude and longitude
 vi: Kinh độ và vĩ độ
 
+AI
+vi: AI
+
+AI prompt
+vi: Nhắc AI
+
+AI prompt history
+vi: Lịch sử nhắc AI
+
+History
+vi: Lịch sử
+
+No items
+vi: Không có mục
+
+Prompt
+vi: Lời nhắc
+
+Response
+vi: Phản hồi
+
+AI request failed or timed out
+vi: Yêu cầu AI thất bại hoặc hết thời gian
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
