@@ -667,10 +667,10 @@ fun WorldUI(
                     onClick = {
                         isWorldDocsDialogOpen = true
                     },
-                    iconIndex = 29, // world docs
+                    iconIndex = 29, // Docs
                     badgeCount = 0,
                     id = "worldButton",
-                    title = translated("World docs"),
+                    title = translated("Docs"),
                 )
 
                 // Chat button

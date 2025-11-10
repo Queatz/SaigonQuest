@@ -69,7 +69,7 @@ class OcclusionManager(private val scene: Scene) {
         }
         // Force post-process pipeline to refresh its depth/pre-pass bindings,
         // because disabling/enabling the scene's DepthRenderer can invalidate internal references.
-        try { main.components.SceneManager.getCameraController()?.updatePipelineSettings() } catch (_: Throwable) {}
+        SceneManager.getCameraController()?.updatePipelineSettings()
     }
     // Don't initialize these at construction time, get them dynamically when needed
     private var camera: lib.Camera? = null
@@ -83,7 +83,7 @@ class OcclusionManager(private val scene: Scene) {
     // Smoothed tracking of player world position (follows actual player over ~2s)
     private var trackedPlayerWorldPos: Vector3? = null
     private var lastSmoothingTimeSeconds: Float = 0f
-    private var playerTrackTimeConstantSeconds: Float = 2.0f
+    private var playerTrackTimeConstantSeconds: Float = 1.0f
 
     // Depth renderer and shared white depth material
     private var depthRenderer: DepthRenderer = createDepthRenderer()

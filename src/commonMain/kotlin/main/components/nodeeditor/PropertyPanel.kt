@@ -252,7 +252,7 @@ fun PropertyPanel(
                                             initialText = propertyValues[propDef.key] ?: "",
                                         )
                                     }
-                                } else if (propDef.key == PropertyKey.ID && node.type is models.LogicNode.DocContent) {
+                                } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc)) {
                                     val currentId = propertyValues[propDef.key] ?: ""
                                     var selectedDoc by remember(nodeId) { mutableStateOf<models.Doc?>(null) }
                                     var loadingDoc by remember(nodeId) { mutableStateOf(false) }

@@ -289,6 +289,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Outputs the document content if the user has access"
     ) : LogicNode
+
+    /**
+     * CreateDoc node - creates a new document
+     */
+    @Serializable
+    data class CreateDoc(
+        override val id: NodeId = NodeId.CreateDoc,
+        override val label: String = "Create doc",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Create a new doc"
+    ) : LogicNode
 }
 
 /**
@@ -317,6 +328,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.PlayerInput(),
         LogicNode.StringTemplate(),
         LogicNode.PlayerName(),
+        LogicNode.CreateDoc(),
         LogicNode.DocContent(),
         LogicNode.Ai(),
     )

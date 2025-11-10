@@ -190,6 +190,7 @@ class NodeLogicRunner(
                 NodeId.PlayerInput -> LogicNode.PlayerInput()
                 NodeId.StringTemplate -> LogicNode.StringTemplate()
                 NodeId.PlayerName -> LogicNode.PlayerName()
+                NodeId.CreateDoc -> LogicNode.CreateDoc()
                 NodeId.DocContent -> LogicNode.DocContent()
             }
         }
@@ -773,6 +774,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 DocContentNodeRunner(context)
+            }
+            NodeId.CreateDoc -> {
+                WebSocketDebug.logMessage(
+                    "CREATE_DOC_RUNNER_SELECTED",
+                    "Selected CreateDocNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                CreateDocNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

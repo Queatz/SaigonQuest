@@ -562,6 +562,44 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
         )
 
+        // CreateDoc node properties
+        is LogicNode.CreateDoc -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ID,
+                name = "Parent doc",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "",
+                description = "Optional parent doc id"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+        )
+
         // PlayerInput node properties
         is LogicNode.PlayerInput -> listOf(
             NodePropertyDefinition(

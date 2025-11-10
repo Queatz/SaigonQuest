@@ -160,7 +160,7 @@ fun WorldDocsDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = worldName.ifBlank { Translations.str("World docs") },
+        title = worldName.ifBlank { str("Docs") },
         isFullHeight = true,
         isFullWidth = true,
         isFullscreen = isFullscreen,

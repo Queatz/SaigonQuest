@@ -1481,6 +1481,9 @@ vi: Trình soạn thảo
 World docs
 vi: Tài liệu thế giới
 
+Docs
+vi: Tài liệu
+
 New doc
 vi: Tài liệu mới
 

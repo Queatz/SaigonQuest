@@ -25,6 +25,7 @@ enum class NodeId {
     PlayerInput,
     StringTemplate,
     PlayerName,
+    CreateDoc,
     DocContent,
     Ai,
 }

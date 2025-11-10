@@ -104,6 +104,7 @@ object NodeEditorJsonUtil {
             NodeId.PlayerInput -> LogicNode.PlayerInput()
             NodeId.StringTemplate -> LogicNode.StringTemplate()
             NodeId.PlayerName -> LogicNode.PlayerName()
+            NodeId.CreateDoc -> LogicNode.CreateDoc()
             NodeId.DocContent -> LogicNode.DocContent()
             NodeId.Ai -> LogicNode.Ai()
         }

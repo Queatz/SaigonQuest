@@ -234,6 +234,7 @@ fun createNode(
         NodeId.DocContent -> LogicNode.DocContent()
         NodeId.SetStatus -> LogicNode.SetStatus()
         NodeId.Ai -> LogicNode.Ai()
+        NodeId.CreateDoc -> LogicNode.CreateDoc()
     }
     
     // Create ports based on node type and data
