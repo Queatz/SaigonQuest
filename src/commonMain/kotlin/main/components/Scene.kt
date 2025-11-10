@@ -638,7 +638,7 @@ fun SceneComponent(url: String) {
                     if (unfocusedSeconds < 30) {
                         unfocusedSeconds += 1
                     }
-                    if (!reduced && unfocusedSeconds >= 30) {
+                    if (!reduced && unfocusedSeconds >= 10) {
                         engine.maxFPS = 1
                         reduced = true
                         console.log("[FPS] Canvas unfocused for 30s; reducing maxFPS to 1")

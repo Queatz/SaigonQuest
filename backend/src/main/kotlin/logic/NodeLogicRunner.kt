@@ -34,9 +34,6 @@ class NodeLogicRunner(
         )
     }
 
-    // We no longer need to store original connections since we're using a simpler approach
-    // for button index mapping
-
     // Parse the node configuration from the object data
     private val nodeConfig: NodeConfig? = try {
         if (objectData.data.isNotBlank()) {
@@ -121,6 +118,8 @@ class NodeLogicRunner(
             val matches = when (startNodeType) {
                 is LogicNode.PlayerInteract -> node.nodeId == NodeId.PlayerInteract
                 is LogicNode.VisitorInteract -> node.nodeId == NodeId.VisitorInteract
+                is LogicNode.PlayerNearby -> node.nodeId == NodeId.PlayerNearby
+                is LogicNode.VisitorNearby -> node.nodeId == NodeId.VisitorNearby
                 is LogicNode.PlayerJoined -> node.nodeId == NodeId.PlayerJoined
                 is LogicNode.VisitorJoined -> node.nodeId == NodeId.VisitorJoined
                 else -> false
@@ -171,6 +170,8 @@ class NodeLogicRunner(
                 NodeId.Teleport -> LogicNode.Teleport()
                 NodeId.VisitorInteract -> LogicNode.VisitorInteract()
                 NodeId.PlayerInteract -> LogicNode.PlayerInteract()
+                NodeId.VisitorNearby -> LogicNode.VisitorNearby()
+                NodeId.PlayerNearby -> LogicNode.PlayerNearby()
                 NodeId.PlayerJoined -> LogicNode.PlayerJoined()
                 NodeId.VisitorJoined -> LogicNode.VisitorJoined()
                 NodeId.Ai -> LogicNode.Ai()

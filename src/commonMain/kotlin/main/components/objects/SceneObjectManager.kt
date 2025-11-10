@@ -1296,6 +1296,9 @@ class SceneObjectManager(
         return result
     }
 
+    /** Returns a snapshot of root nodes for all backend objects, keyed by backend object ID. */
+    fun getObjectNodes(): Map<String, Node> = objectMeshes.toMap()
+
     fun isInventoryObject(objectId: String): Boolean {
         return objectKinds[objectId] == ObjectKind.Inventory
     }

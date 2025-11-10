@@ -50,6 +50,16 @@ data class PlayerInteractData(
 )
 
 /**
+ * Player nearby data model
+ */
+@Serializable
+data class PlayerNearbyData(
+    val objectId: String,
+    val isPlayer: Boolean,
+    val userId: String
+)
+
+/**
  * Trigger event data model
  */
 @Serializable

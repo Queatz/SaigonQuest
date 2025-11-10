@@ -6,7 +6,10 @@ import lib.Node
 import lib.Scene
 import lib.Vector3
 import main.api.ApiClient
+import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.userNearby
+import main.components.SceneManager
 import main.components.shadow.ShadowManager
 import models.User
 import models.WebSocketAction
@@ -116,13 +119,54 @@ class WorldObjectManager(private val scene: Scene) {
      * 
      * @param deltaTime Time since last update in seconds
      */
+    // Proximity detection state
+    private var lastProximityCheckMs: Double = 0.0
+    private val enteredProximity = mutableSetOf<String>()
+    private val proximityRadiusSq: Float = 2f * 2f // 2-unit radius squared
+    private val proximityIntervalMs: Double = 500.0
+
     fun update(deltaTime: Float) {
         objects.values.forEach { it.update(deltaTime) }
         // Keep typing HUD billboards positioned above their objects
         typingHudHandles.forEach { (objectId, handle) ->
-            val node = objectNodes[objectId] ?: return@forEach
+            val node = SceneManager.getObjectManager()?.getObjectNodes()?.get(objectId) ?: return@forEach
             val p = node.position
             handle.position = Vector3(p.x, p.y + 0.5f, p.z)
+        }
+
+        // Periodic proximity checks (performance-sensitive)
+        maybeCheckProximity()
+    }
+
+    private fun maybeCheckProximity() {
+        val now = window.performance.now()
+        if (now - lastProximityCheckMs < proximityIntervalMs) return
+        lastProximityCheckMs = now
+
+        val player = SceneManager.getPlayerController() ?: return
+        val playerPos = player.getPlayerPosition() ?: return
+        val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
+
+        // Iterate over backend object nodes from the SceneObjectManager and check distance
+        val backendNodes = SceneManager.getObjectManager()?.getObjectNodes() ?: return
+        backendNodes.forEach { (backendObjectId, node) ->
+            val pos = node.position
+            val dx = pos.x - playerPos.x
+            val dy = pos.y - playerPos.y
+            val dz = pos.z - playerPos.z
+            val distSq = dx * dx + dy * dy + dz * dz
+
+            val wasInside = enteredProximity.contains(backendObjectId)
+            val isInside = distSq <= proximityRadiusSq
+
+            if (isInside && !wasInside) {
+                // Entered radius: mark and send once
+                enteredProximity.add(backendObjectId)
+                WebSocketApi.userNearby(objectId = backendObjectId, isPlayer = isPlayer)
+            } else if (!isInside && wasInside) {
+                // Exited radius: allow future re-entry to trigger again
+                enteredProximity.remove(backendObjectId)
+            }
         }
     }
     

@@ -300,6 +300,28 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Create a new doc"
     ) : LogicNode
+
+    /**
+     * VisitorNearby node - triggers when a visitor comes within range
+     */
+    @Serializable
+    data class VisitorNearby(
+        override val id: NodeId = NodeId.VisitorNearby,
+        override val label: String = "Visitor nearby",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when a visitor comes near this object"
+    ) : LogicNode
+
+    /**
+     * PlayerNearby node - triggers when a player comes within range
+     */
+    @Serializable
+    data class PlayerNearby(
+        override val id: NodeId = NodeId.PlayerNearby,
+        override val label: String = "Player nearby",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when the player comes near this object"
+    ) : LogicNode
 }
 
 /**
@@ -309,6 +331,8 @@ fun getAllNodeTypes(): List<LogicNode> {
     return listOf(
         LogicNode.PlayerInteract(),
         LogicNode.VisitorInteract(),
+        LogicNode.PlayerNearby(),
+        LogicNode.VisitorNearby(),
         LogicNode.PlayerJoined(),
         LogicNode.VisitorJoined(),
         LogicNode.Teleport(),

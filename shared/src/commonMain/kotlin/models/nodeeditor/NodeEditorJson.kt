@@ -86,6 +86,8 @@ object NodeEditorJsonUtil {
             NodeId.Teleport -> LogicNode.Teleport()
             NodeId.VisitorInteract -> LogicNode.VisitorInteract()
             NodeId.PlayerInteract -> LogicNode.PlayerInteract()
+            NodeId.VisitorNearby -> LogicNode.VisitorNearby()
+            NodeId.PlayerNearby -> LogicNode.PlayerNearby()
             NodeId.PlayerJoined -> LogicNode.PlayerJoined()
             NodeId.VisitorJoined -> LogicNode.VisitorJoined()
             NodeId.Dialogue -> LogicNode.Dialogue()

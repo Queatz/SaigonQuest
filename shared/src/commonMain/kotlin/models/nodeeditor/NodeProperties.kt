@@ -227,6 +227,26 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             )
         )
 
+        // PlayerNearby node properties
+        is LogicNode.PlayerNearby -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // VisitorNearby node properties
+        is LogicNode.VisitorNearby -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
         // PlayerJoined node properties
         is LogicNode.PlayerJoined -> listOf(
             NodePropertyDefinition(

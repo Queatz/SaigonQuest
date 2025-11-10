@@ -34,6 +34,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.REMOVE_OBJECT -> NullHandler()
             WebSocketAction.OBJECT_UPDATE -> NullHandler()
             WebSocketAction.USER_INTERACT -> PlayerInteractHandler(objectRepository)
+            WebSocketAction.USER_NEARBY -> PlayerNearbyHandler(objectRepository)
             WebSocketAction.TRIGGER_OBJECT_EVENT -> TriggerObjectEventHandler()
             WebSocketAction.UPDATE_PLAYER -> UpdatePlayerHandler()
             WebSocketAction.DIALOGUE_CONFIRM -> DialogueConfirmHandler()

@@ -7,6 +7,8 @@ enum class NodeId {
     Teleport,
     VisitorInteract,
     PlayerInteract,
+    VisitorNearby,
+    PlayerNearby,
     PlayerJoined,
     VisitorJoined,
     Dialogue,

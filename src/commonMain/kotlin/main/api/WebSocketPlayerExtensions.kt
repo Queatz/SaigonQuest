@@ -3,6 +3,7 @@ package main.api
 import kotlinx.coroutines.launch
 import main.components.world.PlayerActivity
 import models.PlayerInteractData
+import models.PlayerNearbyData
 import models.PlayerPositionData
 import models.PlayerTypingData
 import models.Position
@@ -11,6 +12,33 @@ import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
 import utils.json
+
+/**
+ * Sends a USER_NEARBY event when the local user enters proximity of an object.
+ * Fires only once per enter on the client side (caller controls semantics).
+ *
+ * @param objectId The ID of the nearby object
+ * @param isPlayer Whether the user is a player (true) or visitor (false)
+ * @return true if the message was queued to send successfully, false otherwise
+ */
+fun WebSocketApi.userNearby(objectId: String, isPlayer: Boolean): Boolean {
+    var success = false
+    apiScope.launch {
+        try {
+            val user = UserApi.getCurrentUser()
+            val data = PlayerNearbyData(
+                objectId = objectId,
+                isPlayer = isPlayer,
+                userId = user.key,
+            )
+            val message = WebSocketMessage.fromEnum(WebSocketAction.USER_NEARBY, json.encodeToString(data))
+            success = sendMessage(message)
+        } catch (e: Throwable) {
+            console.error("Error sending user nearby event", e)
+        }
+    }
+    return success
+}
 
 /**
  * Extension functions for WebSocketApi related to player operations
