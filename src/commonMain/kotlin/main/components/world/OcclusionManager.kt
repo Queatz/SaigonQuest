@@ -14,6 +14,7 @@ import lib.Vector3
 import lib.CustomMaterial
 import main.components.SceneManager
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * Manages occlusion for objects that obstruct the player's view.
@@ -117,8 +118,20 @@ class OcclusionManager(private val scene: Scene) {
     precision mediump float;
 
     // Stochastic dithering noise in [0,1)
+    // High-quality hash-based noise to eliminate visible waves/stripes
+    float hash12(vec2 p) {
+        // Dave Hoskins style 2D hash (good distribution, low cost)
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+
     float noise(vec2 p) {
-        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453 + time);
+        // Interleaved Gradient Noise (IGN) — decorrelates neighboring pixels
+        float ig = fract(52.9829189 * fract(p.x * 0.06711056 + p.y * 0.00583715));
+        // Cranley–Patterson rotation with time to avoid static patterns
+        float t = fract(time * 0.61803398875);
+        return fract(hash12(p + t) + ig);
     }
 
     float applyOcclusion(float alpha) {
@@ -291,7 +304,7 @@ class OcclusionManager(private val scene: Scene) {
                         effect.setFloat("occlusionSoftness", occlusionSoftness)
                         effect.setVector2("screenSize", screenSize)
                         effect.setBool("useRadius", false)
-                        effect.setFloat("time", currentTimeSeconds)
+                        effect.setFloat("time", (currentTimeSeconds * 8).toInt() / 8f)
                     }
                 } catch (_: Throwable) {
                     // avoid crashing if effect is not ready yet
@@ -433,7 +446,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setBool("useRadius", false)
 
                     // Set time uniform for animations
-                    effect.setFloat("time", currentTimeSeconds)
+                    effect.setFloat("time", (currentTimeSeconds * 8).toInt() / 8f)
                 } catch (e: Throwable) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
