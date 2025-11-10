@@ -488,6 +488,12 @@ class WorldObjectManager(private val scene: Scene) {
                     try { obj.update(0f, null) } catch (_: Throwable) {}
                 }
             }
+
+            override fun updateText(text: String) {
+                if (obj is TextBillboard) {
+                    obj.text = text
+                }
+            }
             
             override fun getMeshes(): Array<AbstractMesh> {
                 return node.getChildMeshes(false)

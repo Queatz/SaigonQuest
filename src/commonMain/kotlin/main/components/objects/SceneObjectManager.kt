@@ -1119,9 +1119,15 @@ class SceneObjectManager(
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     } else {
-                        // Recreate to reflect potential inventory or status changes
-                        removeObject(obj.key)
-                        createObjectPreferInventory(obj)
+                        // Update existing object transform and status in-place
+                        node.position = Vector3(obj.position.x, obj.position.y, obj.position.z)
+                        node.rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+                        node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
+                        // Update status text as well
+                        handleObjectStatusText(obj.key, obj.status, node)
+                        // Update kind tracking just in case
+                        objectKinds[obj.key] = obj.kind
+                        console.log("OBJECT_UPDATE applied in-place for ${obj.key}")
                     }
                 } else {
                     // Object doesn't exist in scene, prefer inventory-based rendering
@@ -1344,7 +1350,8 @@ class SceneObjectManager(
             val existingHandle = objectStatusTextHandles[objectId]
             console.log("[DEBUG_STATUS] Existing handle: ${existingHandle != null}")
 
-            // Cache last known status text for restoration after typing
+            // Read previous status and cache latest for restoration after typing
+            val previousStatus = objectStatusTexts[objectId] ?: ""
             objectStatusTexts[objectId] = status
 
             // If typing indicator is active, hide status text (typing has precedence)
@@ -1417,31 +1424,40 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] No child meshes found, using node position")
                 }
                 
-                // Position the status text 0.5 units above the highest point
-                val newPosition = Vector3(
-                    x = node.position.x,
-                    y = highestY + 0.5f,
-                    z = node.position.z
-                )
-                
-                if (existingHandle != null) {
-                    // If there's an existing handle, update its position
+                // Position the status text 0.5 units above the highest point (local offset so it follows during drag)
+                val offsetY = (highestY + 0.5f) - node.position.y
 
-                    console.log("[DEBUG_STATUS] Updating status text position for object: $objectId")
-                    console.log("[DEBUG_STATUS] Old position: (${existingHandle.position.x}, ${existingHandle.position.y}, ${existingHandle.position.z})")
-                    console.log("[DEBUG_STATUS] New position: (${newPosition.x}, ${newPosition.y}, ${newPosition.z})")
-                    
-                    existingHandle.position = newPosition
+                if (existingHandle != null) {
+                    // If there's an existing handle, update its text (if changed) and ensure it is parented and positioned locally
+                    val prev = previousStatus.trim()
+                    val next = status.trim()
+                    if (prev != next) {
+                        console.log("[DEBUG_STATUS] Updating status text content for object: $objectId from '$prev' to '$next'")
+                        try {
+                            existingHandle.updateText(status)
+                            console.log("[DEBUG_STATUS] Successfully updated status text content for object: $objectId")
+                        } catch (e: Throwable) {
+                            console.error("[DEBUG_STATUS] Error updating status text content for object: $objectId", e)
+                        }
+                    }
+
+                    // Parent to object so it moves with it during drag and transforms
+                    try { if (existingHandle.node.parent != node) existingHandle.node.parent = node } catch (_: Throwable) {}
+
+                    console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
+                    existingHandle.position = Vector3(0f, offsetY, 0f)
                     console.log("[DEBUG_STATUS] Successfully updated status text position for object: $objectId")
                 } else {
                     // Create new status text
                     console.log("[DEBUG_STATUS] Creating new status text for object: $objectId with status: '$status'")
                     val statusTextHandle = worldObjectManager.createObjectStatusText(objectHandle, status)
-                    
+
                     if (statusTextHandle != null) {
+                        // Parent to object so it moves with it automatically
+                        try { statusTextHandle.node.parent = node } catch (_: Throwable) {}
                         // Store the handle for future updates
                         objectStatusTextHandles[objectId] = statusTextHandle
-                        statusTextHandle.position = newPosition
+                        statusTextHandle.position = Vector3(0f, offsetY, 0f)
                         console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")
                         console.log("[DEBUG_STATUS] Total status text handles: ${objectStatusTextHandles.size}")
                     } else {

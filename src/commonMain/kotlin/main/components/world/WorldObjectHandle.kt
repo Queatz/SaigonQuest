@@ -78,6 +78,14 @@ interface WorldObjectHandle {
     fun updateAppearance(additionalSpriteSheets: List<SpriteSheet>?, skinTone: Float?) {
         // Default implementation does nothing
     }
+
+    /**
+     * Updates text of a text-based world object (e.g., TextBillboard) in-place.
+     * No-op for non-text objects.
+     */
+    fun updateText(text: String) {
+        // Default implementation does nothing
+    }
     
     /**
      * Helper method to get all meshes for this object
