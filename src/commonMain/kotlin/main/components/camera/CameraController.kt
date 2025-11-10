@@ -46,8 +46,8 @@ class CameraController(private val scene: Scene) {
         // Set camera constraints
         this.lowerRadiusLimit = 4f // Min constraint
         this.upperRadiusLimit = 16f // Max constraint
-        this.lowerBetaLimit = (15f * PI / 180f).toFloat() // 85 degrees in radians
-        this.upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
+        this.lowerBetaLimit = (57.5f * PI / 180f).toFloat()
+        this.upperBetaLimit = (87.5f * PI / 180f).toFloat()
 
         this.wheelPrecision = 200f
 

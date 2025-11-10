@@ -79,6 +79,11 @@ class OcclusionManager(private val scene: Scene) {
     // Single source of truth for current time (seconds), updated once per frame in update()
     private var currentTimeSeconds: Float = 0f
 
+    // Smoothed tracking of player world position (follows actual player over ~2s)
+    private var trackedPlayerWorldPos: Vector3? = null
+    private var lastSmoothingTimeSeconds: Float = 0f
+    private var playerTrackTimeConstantSeconds: Float = 2.0f
+
     // Depth renderer and shared white depth material
     private var depthRenderer: DepthRenderer = createDepthRenderer()
     private var sharedWhiteDepthMaterial: CustomMaterial? = null
@@ -266,7 +271,8 @@ class OcclusionManager(private val scene: Scene) {
                     // Skip occlusion binding if we don't have player/camera
                     val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider()
                     if (playerMesh != null) {
-                        val playerWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+                        val targetWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+                        val playerWorldPos = trackedPlayerWorldPos ?: targetWorldPos
                         val playerScreenPos = Vector3.Project(
                             vector = playerWorldPos,
                             world = Matrix.Identity(),
@@ -390,8 +396,9 @@ class OcclusionManager(private val scene: Scene) {
                     val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return@add
                     val cam = camera ?: scene.activeCamera ?: return@add
 
-                    // Get player's world position
-                    val playerWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+                    // Get player's world position (smoothed)
+                    val targetWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
+                    val playerWorldPos = trackedPlayerWorldPos ?: targetWorldPos
 
                     // Get player's screen position (normalized [0,1] coordinates)
                     val playerScreenPos = Vector3.Project(
@@ -468,6 +475,27 @@ class OcclusionManager(private val scene: Scene) {
 
         // Update shared current time once per frame (seconds)
         currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
+
+        // Update smoothed player world position to track real player over ~2 seconds
+        val playerMeshRef = player
+        if (playerMeshRef != null) {
+            val targetWorldPos = playerMeshRef.position.add(Vector3(0f, .5f, 0f))
+            if (trackedPlayerWorldPos == null) {
+                trackedPlayerWorldPos = targetWorldPos
+                lastSmoothingTimeSeconds = currentTimeSeconds
+            } else {
+                val dt = (currentTimeSeconds - lastSmoothingTimeSeconds).coerceAtLeast(0f)
+                lastSmoothingTimeSeconds = currentTimeSeconds
+                val duration = playerTrackTimeConstantSeconds
+                val alpha = if (duration <= 0f) 1f else (dt / duration).coerceIn(0f, 1f)
+                val cur = trackedPlayerWorldPos!!
+                trackedPlayerWorldPos = Vector3(
+                    cur.x + (targetWorldPos.x - cur.x) * alpha,
+                    cur.y + (targetWorldPos.y - cur.y) * alpha,
+                    cur.z + (targetWorldPos.z - cur.z) * alpha,
+                )
+            }
+        }
 
         // Detect engine render size changes and recreate depth renderer if needed
         try {

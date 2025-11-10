@@ -1,6 +1,7 @@
 package main.components.worlddocs
 
 import Translations
+import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -431,7 +432,7 @@ fun WorldDocsDialog(
                                             classes(Styles.secondaryButton)
                                             if (hasChildren) {
                                                 disabled()
-                                                attr("title", Translations.str("Cannot delete: this doc has children"))
+                                                attr("title", str("Cannot delete: this doc has children"))
                                             }
                                             onClick {
                                                 if (!hasChildren) showDeleteConfirm = true
