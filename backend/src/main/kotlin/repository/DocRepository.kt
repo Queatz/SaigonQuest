@@ -68,7 +68,7 @@ class DocRepository {
     ): Doc? {
         val existing = getById(docId) ?: return null
         if (existing.version != baseVersion) {
-            throw IllegalStateException("Version conflict: expected ${'$'}baseVersion, found ${'$'}{existing.version}")
+            throw IllegalStateException("Version conflict: expected $baseVersion, found ${existing.version}")
         }
         val updated = existing.copy(
             content = newContent,

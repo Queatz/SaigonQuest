@@ -32,6 +32,9 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
 import web.cssom.HtmlAttributes.Companion.value
@@ -121,36 +124,56 @@ fun DialogueBox(
 
             if (dialogue.requiresInput) {
                 Br()
-                TextInput(textInput) {
-                    if (!dialogue.placeholder.isNullOrBlank()) {
-                        placeholder(dialogue.placeholder!!)
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            gap(8.px)
+                        }
                     }
-                    classes(Styles.inputField)
-                    autoFocus()
-                    onInput { ev -> textInput = ev.value }
-                    onKeyDown { ev ->
-                        if (ev.key == "Enter") {
-                            val scope = MainScope()
-                            scope.launch {
-                                try {
-                                    val user = UserApi.getCurrentUser()
-                                    val userId = user.key
-                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
-                                } catch (e: Throwable) {
-                                    console.error("Error sending dialogue confirmation via Enter", e)
-                                } finally {
-                                    textInput = ""
-                                    currentDialogue = null
+                ) {
+                    TextInput(textInput) {
+                        if (!dialogue.placeholder.isNullOrBlank()) {
+                            placeholder(dialogue.placeholder!!)
+                        }
+                        classes(Styles.inputField)
+                        autoFocus()
+                        onInput { ev -> textInput = ev.value }
+                        onKeyDown { ev ->
+                            if (ev.key == "Enter") {
+                                val scope = MainScope()
+                                scope.launch {
+                                    try {
+                                        val user = UserApi.getCurrentUser()
+                                        val userId = user.key
+                                        WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
+                                    } catch (e: Throwable) {
+                                        console.error("Error sending dialogue confirmation via Enter", e)
+                                    } finally {
+                                        textInput = ""
+                                        currentDialogue = null
+                                    }
                                 }
                             }
                         }
+
+                        ref {
+                            it.focus()
+
+                            onDispose {  }
+                        }
                     }
 
-                    ref {
-                        it.focus()
-
-                        onDispose {  }
-                    }
+                    // Voice input button - appends transcribed text to the end of textInput
+                    VoiceInput(
+                        onText = { transcribed ->
+                            textInput = buildString {
+                                append(textInput)
+                                if (isNotEmpty() && !textInput.endsWith(" ")) append(' ')
+                                append(transcribed.trim())
+                            }
+                        }
+                    )
                 }
             }
         },

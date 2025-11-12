@@ -74,7 +74,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         }
 
         // Extract text content (allow override from connected input)
-        val text = fromEventOrNode("text_content", PropertyKey.TEXT_CONTENT) ?: return false
+        val text = fromEventOrNode("text_content", PropertyKey.TEXT_CONTENT) ?: ""
         
         // Optional title override
         val title = fromEventOrNode("title", PropertyKey.TITLE)

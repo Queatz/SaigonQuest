@@ -35,6 +35,7 @@ dependencies {
     // Ktor client (for external HTTP calls e.g., DeepSeek)
     implementation("io.ktor:ktor-client-core:3.3.1")
     implementation("io.ktor:ktor-client-cio:3.3.1")
+    implementation("io.ktor:ktor-client-websockets:3.3.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
     

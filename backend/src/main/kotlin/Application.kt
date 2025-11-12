@@ -32,6 +32,7 @@ import routes.configureAssetItemRoutes
 import routes.configureCostsRoutes
 import routes.configureDocRoutes
 import routes.configureAiRoutes
+import routes.configureVoiceRoutes
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 
@@ -93,5 +94,6 @@ fun Application.module() {
         configureDocRoutes()
         configureAiRoutes()
         configureWebSocketRoutes()
+        configureVoiceRoutes()
     }
 }

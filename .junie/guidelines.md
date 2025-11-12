@@ -154,7 +154,7 @@ allowing the project to remain maintainable as it grows.
 - **Use `Throwable` for exception handling**: `Exception` is not enough!
 - **Use `kotlin.time.Instant` in database models and DTOs.**
 - **data classes that are used in the database MUST have default values for all fields**: Jackson needs a zero-argument constructor to deserialize the data.
-- **Do not use `${'$'}varNam` to insert variables into strings**: Use `$varName` or `${varName}` instead.
+- **DO NOT use `${'$'}varNam` to insert variables into strings**: Use `$varName` or `${varName}` instead.
 
 ## Code Style and Development Guidelines
 

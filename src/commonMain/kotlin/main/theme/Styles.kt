@@ -343,6 +343,28 @@ object Styles : StyleSheet() {
         }
     }
 
+    // Voice input button (green, circular)
+    val voiceButton by style {
+        width(44.px)
+        height(44.px)
+        property("border-radius", "9999px")
+        property("border", "none")
+        // inline-flex; compose DSL might not have InlineFlex on this version
+        property("display", "inline-flex")
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        backgroundColor(Theme.colors.success)
+        color(Color.white)
+        cursor("pointer")
+        flexShrink(0)
+        fontSize(20.px)
+
+        dark(self) {
+            backgroundColor(Theme.colors.successDark)
+            color(Color.white)
+        }
+    }
+
     val badgeBase by style {
         position(Position.Absolute)
         top(0.px)
