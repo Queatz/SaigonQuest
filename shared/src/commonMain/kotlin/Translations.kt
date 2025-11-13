@@ -1613,6 +1613,9 @@ vi: Phản hồi
 AI request failed or timed out
 vi: Yêu cầu AI thất bại hoặc hết thời gian
 
+Send to doc
+vi: Gửi vào tài liệu
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

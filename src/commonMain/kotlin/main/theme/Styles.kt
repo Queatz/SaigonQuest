@@ -343,6 +343,8 @@ object Styles : StyleSheet() {
         }
     }
 
+    val voiceButtonSmall by style {  }
+
     // Voice input button (green, circular)
     val voiceButton by style {
         width(44.px)
@@ -358,6 +360,12 @@ object Styles : StyleSheet() {
         cursor("pointer")
         flexShrink(0)
         fontSize(20.px)
+
+        self + className(voiceButtonSmall) style {
+            width(34.px)
+            height(34.px)
+            fontSize(16.px)
+        }
 
         dark(self) {
             backgroundColor(Theme.colors.successDark)

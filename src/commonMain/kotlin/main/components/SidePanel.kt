@@ -35,15 +35,14 @@ fun SidePanel(
     
     when (currentPanel) {
         SidePanelState.Chat -> {
-            // Get current world ID from the URL path or use the current world's ID
-            val chatWorldId = currentWorld?.key ?: PathUtils.getCurrentPath(router)
-            
-            // Responsive chat component that adapts between mobile and desktop
-            Chat(
-                worldId = chatWorldId,
-                isMobile = isMobile.value,
-                onClose = onClose
-            )
+            currentWorld?.key?.let { chatWorldId ->
+                // Responsive chat component that adapts between mobile and desktop
+                Chat(
+                    worldId = chatWorldId,
+                    isMobile = isMobile.value,
+                    onClose = onClose
+                )
+            }
         }
         
         SidePanelState.WorldEdit -> {

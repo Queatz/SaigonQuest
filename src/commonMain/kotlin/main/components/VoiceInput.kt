@@ -40,6 +40,7 @@ private data class VoiceTranscriptMessage(
 
 @Composable
 fun VoiceInput(
+    small: Boolean = false,
     onText: (String) -> Unit,
 ) {
     val scope = remember { MainScope() }
@@ -84,6 +85,11 @@ fun VoiceInput(
     Button(
         attrs = {
             classes(Styles.voiceButton)
+
+            if (small) {
+                classes(Styles.voiceButtonSmall)
+            }
+
             onClick {
                 if (isRecording) {
                     stopRecording()

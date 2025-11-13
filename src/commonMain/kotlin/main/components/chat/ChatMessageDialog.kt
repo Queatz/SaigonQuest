@@ -4,12 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import main.api.DocApi
+import Translations.str
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.Md
 import main.components.Translated
 import main.components.translated
+import main.components.worlddocs.SelectDocDialog
 import main.theme.Styles
 import models.ChatMessage
 import org.jetbrains.compose.web.attributes.InputType
@@ -22,7 +29,9 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * A dialog for editing or deleting a chat message.
@@ -39,7 +48,9 @@ fun ChatMessageDialog(
     isCurrentUser: Boolean,
     onClose: () -> Unit,
     onEdit: (String) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    worldId: String,
+    canEditWorld: Boolean = false,
 ) {
     // If the message is already deleted, just show a simple dialog
     if (message.deleted) {
@@ -81,7 +92,53 @@ fun ChatMessageDialog(
 
     // Rich editor state
     var showRichEditorDialog by remember { mutableStateOf(false) }
-    
+
+    // Send to doc state
+    var showSelectDocDialog by remember { mutableStateOf(false) }
+    var isSendingToDoc by remember { mutableStateOf(false) }
+    var lastSendCreatedTitle by remember { mutableStateOf<String?>(null) }
+    var lastSendError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(lastSendCreatedTitle, lastSendError) {
+        delay(3.seconds)
+        lastSendCreatedTitle = null
+        lastSendError = null
+    }
+
+    fun handleSendToDoc(parentId: String?) {
+        isSendingToDoc = true
+        lastSendCreatedTitle = null
+        lastSendError = null
+        val contentText = message.message
+        val lines = contentText.split("\n")
+        val firstLine = lines.firstOrNull()?.trim() ?: ""
+        val title = if (firstLine.isNotBlank()) firstLine else str("Untitled doc")
+        val body = if (lines.size <= 1) "" else contentText
+        scope.launch {
+            try {
+                val created = DocApi.createDoc(
+                    worldId = worldId,
+                    title = title,
+                    parentId = parentId,
+                )
+                if (body.isNotEmpty()) {
+                    // Use base version from created doc
+                    DocApi.updateDocContent(created.key, body, created.version)
+                }
+                lastSendCreatedTitle = title
+                lastSendError = null
+            } catch (t: Throwable) {
+                console.error("Failed to create doc from chat message", t)
+                lastSendError = t.message ?: str("Failed to create doc")
+                lastSendCreatedTitle = null
+            } finally {
+                isSendingToDoc = false
+                showSelectDocDialog = false
+            }
+        }
+    }
+
     BaseDialog(
         onClose = onClose,
         title = if (isEditing) {
@@ -120,6 +177,16 @@ fun ChatMessageDialog(
             } else {
                 // Message display
                 Md(message.message)
+                // Send to doc result message
+                if (lastSendCreatedTitle != null) {
+                    P(attrs = { classes(Styles.formSuccessMessage) }) {
+                        Text(str("Created doc") + ": " + lastSendCreatedTitle!!)
+                    }
+                } else if (lastSendError != null) {
+                    P(attrs = { classes(Styles.formErrorMessage) }) {
+                        Text(lastSendError!!)
+                    }
+                }
             }
         },
         actions = {
@@ -178,6 +245,13 @@ fun ChatMessageDialog(
                         Translated("Edit")
                     }
                 }
+                if (canEditWorld) {
+                    DialogButton(
+                        onClick = { showSelectDocDialog = true }
+                    ) {
+                        Translated("Send to doc")
+                    }
+                }
                 DialogButton(
                     onClick = onClose,
                     isPrimary = true
@@ -197,6 +271,16 @@ fun ChatMessageDialog(
                 showRichEditorDialog = false
             },
             initialText = editedText,
+        )
+    }
+
+    // Select doc dialog
+    if (showSelectDocDialog && canEditWorld) {
+        SelectDocDialog(
+            worldId = worldId,
+            onSelect = { parent -> handleSendToDoc(parent.key) },
+            onClose = { showSelectDocDialog = false },
+            onSelectNew = { handleSendToDoc(null) },
         )
     }
 }

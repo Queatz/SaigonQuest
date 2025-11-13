@@ -8,10 +8,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.callbackFlow
-import io.ktor.websocket.Frame
+import kotlinx.serialization.Serializable
 import models.Doc
 import models.DocTree
 import models.DocHistory
@@ -21,33 +19,36 @@ object DocApi {
     class VersionConflictError(message: String) : Throwable(message)
 
     // --- Collaboration (WebSocket) API ---
-    @kotlinx.serialization.Serializable
+    @Serializable
     sealed class WsEvent {
-        @kotlinx.serialization.Serializable data class Message(val msg: models.WsMsg) : WsEvent()
-        @kotlinx.serialization.Serializable data class Closed(val reason: String? = null) : WsEvent()
-        @kotlinx.serialization.Serializable data class Failed(val error: String) : WsEvent()
+        @Serializable
+        data class Message(val msg: models.WsMsg) : WsEvent()
+        @Serializable
+        data class Closed(val reason: String? = null) : WsEvent()
+        @Serializable
+        data class Failed(val error: String) : WsEvent()
     }
 
-    @kotlinx.serialization.Serializable
+    @Serializable
     data class CreateDocRequest(
         val title: String,
         val parentId: String? = null,
     )
 
-    @kotlinx.serialization.Serializable
+    @Serializable
     data class UpdateDocRequest(
         val title: String? = null,
         val parentId: String? = null,
         val orderIndex: Double? = null,
     )
 
-    @kotlinx.serialization.Serializable
+    @Serializable
     data class MoveDocRequest(
         val newParentId: String?,
         val newOrderIndex: Double,
     )
 
-    @kotlinx.serialization.Serializable
+    @Serializable
     data class UpdateContentRequest(
         val content: String,
         val baseVersion: Int,

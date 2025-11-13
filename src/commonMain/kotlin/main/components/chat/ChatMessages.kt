@@ -2,32 +2,28 @@ package main.components.chat
 
 import Translations.str
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.api.ApiClient
 import main.api.ChatApi
-import main.api.WorldApi
 import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.WorldApi
 import main.api.deleteChatMessage
 import main.api.updateChatMessage
-import main.components.common.Spinner
-import main.components.Translated
 import main.components.ImageDialog
 import main.components.Md
+import main.components.Translated
+import main.components.common.Spinner
 import main.theme.Styles
-import main.utils.TimeUtils.formatTimestamp
 import models.ChatMessage
-import models.ChatMessagePin
 import models.ChatSenderType
-import models.WebSocketAction
+import models.World
+import models.canUserEdit
 import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
@@ -35,8 +31,6 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Img
-import models.chat.ImageAttachment
 import org.w3c.dom.HTMLDivElement
 import web.animations.awaitAnimationFrame
 import kotlin.js.Date
@@ -80,13 +74,20 @@ fun ChatMessages(
 
     // Get current user to determine if this message is from the current user
     val currentUserId = remember { mutableStateOf("") }
+    val world = remember { mutableStateOf<World?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(worldId) {
         try {
             val user = UserApi.getCurrentUser()
             currentUserId.value = user.key
+            try {
+                world.value = WorldApi.getWorld(worldId)
+                console.log("[ChatMessages]", world, user)
+            } catch (e: Throwable) {
+                console.error("[ChatMessages] Error getting world for permissions", e)
+            }
         } catch (e: Throwable) {
-            console.error("Error getting current user", e)
+            console.error("[ChatMessages] Error getting current user", e)
         }
     }
 
@@ -97,7 +98,7 @@ fun ChatMessages(
                 it.scrollTo(0.0, it.scrollHeight.toDouble())
             }
         } catch (e: Throwable) {
-            console.error("Error scrolling to bottom", e)
+            console.error("[ChatMessages] Error scrolling to bottom", e)
         }
     }
 
@@ -207,7 +208,9 @@ fun ChatMessages(
                         console.error("Error deleting message in database", e)
                     }
                 }
-            }
+            },
+            worldId = worldId,
+            canEditWorld = world.value?.canUserEdit(currentUserId.value) ?: false,
         )
     }
 

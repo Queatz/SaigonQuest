@@ -1,6 +1,5 @@
 package routes
 
-import auth.JwtConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -20,8 +19,6 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.putJsonObject
 import utils.json
@@ -121,13 +118,14 @@ fun Routing.configureVoiceRoutes() {
                         put("input_audio_format", JsonPrimitive("pcm16"))
                         putJsonObject("input_audio_transcription") {
                             put("model", JsonPrimitive(transcribeModel))
-                            put("prompt", JsonPrimitive("Expect Vietnamese and/or English speech but detect all languages as needed."))
+                            //put("prompt", JsonPrimitive("Transcribe exactly the user provided audio. Expect Vietnamese and/or English speech but detect other languages as needed. Totally ignore silence (do not output any text other than transcribed audio ever.)"))
+                            put("prompt", JsonPrimitive(""))
                         }
                         putJsonObject("turn_detection") {
                             put("type", JsonPrimitive("server_vad"))
-                            put("threshold", JsonPrimitive(0.5))
-                            put("prefix_padding_ms", JsonPrimitive(400))
-                            put("silence_duration_ms", JsonPrimitive(200))
+                            put("threshold", JsonPrimitive(0.3))
+                            put("prefix_padding_ms", JsonPrimitive(100))
+                            put("silence_duration_ms", JsonPrimitive(100))
                         }
                     }
                 }.toString()

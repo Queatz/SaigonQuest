@@ -17,6 +17,7 @@ import main.components.Translated
 import main.components.media.UploadMediaDialog
 import main.components.translated
 import main.components.BasicAlertDialog
+import main.components.VoiceInput
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
@@ -119,6 +120,8 @@ fun RichTextEditor(
     // Track retry attempts for applying pending selection to defeat browser races
     var pendingSelectionAttempts by remember { mutableStateOf(0) }
     var isComposing by remember { mutableStateOf(false) }
+    // Internal target length to gate selection application until the controlled value length matches
+    var internalSelectionTargetLength by remember { mutableStateOf<Int?>(null) }
 
     fun applyOpsTo(base: String, ops: List<DocOperation>): String {
         var content = base
@@ -142,7 +145,7 @@ fun RichTextEditor(
     }
 
     // After each recomposition, if there is a pending selection to apply, set it on the element.
-    LaunchedEffect(editorEl, value, pendingSelection, pendingSelectionAttempts, selectionTargetLength, isComposing) {
+    LaunchedEffect(editorEl, value, pendingSelection, pendingSelectionAttempts, selectionTargetLength, internalSelectionTargetLength, isComposing) {
         val el = editorEl
         val ps = pendingSelection
         if (el != null && ps != null) {
@@ -159,10 +162,11 @@ fun RichTextEditor(
                 selEnd = end
                 pendingSelection = null
                 pendingSelectionAttempts = 0
+                internalSelectionTargetLength = null
                 return@LaunchedEffect
             }
             // If a target length is specified, only apply when the current value length matches it
-            val targetLen = selectionTargetLength
+            val targetLen = internalSelectionTargetLength ?: selectionTargetLength
             if (targetLen != null && targetLen != len) {
                 // Defer until value matches the intended length
                 return@LaunchedEffect
@@ -189,6 +193,7 @@ fun RichTextEditor(
             if (appliedStart == start && appliedEnd == end) {
                 pendingSelection = null
                 pendingSelectionAttempts = 0
+                internalSelectionTargetLength = null
             } else {
                 // keep pendingSelection to try again on next state change
                 pendingSelection = start..end
@@ -210,31 +215,38 @@ fun RichTextEditor(
         // Defer caret placement until after recomposition to prevent browser reset
         val caret = start + wrapperLeft.length + selected.length + wrapperRight.length
         pendingSelection = caret..caret
+        internalSelectionTargetLength = newText.length
         // Keep internal selection state in sync
         selStart = caret
         selEnd = caret
-        // Keep focus on the editor
+        // Keep focus on the editor and immediately collapse selection
         el.focus()
+        val clamped = caret.coerceIn(0, el.value.length)
+        el.setSelectionRange(clamped, clamped)
     }
 
     fun insertAtCursor(snippet: String) {
         val el = editorEl ?: return
         // Refresh selection to support replacing the current selection
         saveSelectionFromEl()
-        val start = selStart
-        val end = selEnd
-        val before = value.substring(0, start)
-        val after = value.substring(end)
+        val domValue = el.value
+        val start = selStart.coerceIn(0, domValue.length)
+        val end = selEnd.coerceIn(0, domValue.length)
+        val before = domValue.substring(0, start)
+        val after = domValue.substring(end)
         val newText = before + snippet + after
         setText(newText)
         val caret = start + snippet.length
-        // Defer caret placement until after recomposition
+        // Defer caret placement until after recomposition and gate by expected length
         pendingSelection = caret..caret
+        internalSelectionTargetLength = newText.length
         // Keep internal selection state in sync
         selStart = caret
         selEnd = caret
-        // Keep focus on the editor
+        // Keep focus on the editor and immediately collapse selection to caret to avoid selecting inserted text
         el.focus()
+        val clamped = caret.coerceIn(0, el.value.length)
+        el.setSelectionRange(clamped, clamped)
     }
 
     fun applyQuote() {
@@ -250,13 +262,16 @@ fun RichTextEditor(
         val newText = before + block + after
         setText(newText)
         val caret = (before + block).length
-        // Defer caret placement until after recomposition
+        // Defer caret placement until after recomposition and gate by length
         pendingSelection = caret..caret
+        internalSelectionTargetLength = newText.length
         // Keep internal selection state in sync
         selStart = caret
         selEnd = caret
-        // Keep focus on the editor
+        // Keep focus on the editor and collapse selection
         el.focus()
+        val clamped = caret.coerceIn(0, el.value.length)
+        el.setSelectionRange(clamped, clamped)
     }
 
     fun applyCode() {
@@ -300,6 +315,8 @@ fun RichTextEditor(
 
         // Place caret at end of transformed block
         val caret = lineStart + newBlock.length
+        pendingSelection = caret..caret
+        internalSelectionTargetLength = newText.length
         el.setSelectionRange(caret, caret)
         el.focus()
         selStart = caret
@@ -310,6 +327,13 @@ fun RichTextEditor(
     Div(attrs = {
         classes(Styles.richTextEditorToolbar)
     }) {
+        // Voice input
+        VoiceInput(
+            small = true,
+            onText = { text ->
+                insertAtCursor(text)
+            },
+        )
         // AI button at start
         Button(attrs = {
             classes(Styles.primaryButton)
@@ -469,7 +493,9 @@ fun RichTextEditor(
                                     textarea.setSelectionRange(s, e)
                                     selStart = textarea.selectionStart ?: s
                                     selEnd = textarea.selectionEnd ?: e
-                                    pendingSelection = null
+                                    // Defer selection stabilization until controlled value matches newVal
+                                    pendingSelection = s..e
+                                    internalSelectionTargetLength = newVal.length
                                     pendingSelectionAttempts = 0
                                     // Parent is responsible for syncing state to avoid unintended saves
                                     true
@@ -493,7 +519,9 @@ fun RichTextEditor(
                                     textarea.setSelectionRange(s, e)
                                     selStart = textarea.selectionStart ?: s
                                     selEnd = textarea.selectionEnd ?: e
-                                    pendingSelection = null
+                                    // Defer selection stabilization until controlled value matches newText
+                                    pendingSelection = s..e
+                                    internalSelectionTargetLength = newText.length
                                     pendingSelectionAttempts = 0
                                     // Sync compose state
                                     onValueChange(newText)
@@ -508,7 +536,7 @@ fun RichTextEditor(
                             if (textarea == null) {
                                 false
                             } else {
-                                val len = textarea.value?.length ?: 0
+                                val len = textarea.value.length
                                 val s = s0.coerceIn(0, len)
                                 val e = e0.coerceIn(0, len)
                                 val isActive = (document.activeElement === textarea)
@@ -516,7 +544,9 @@ fun RichTextEditor(
                                 textarea.setSelectionRange(s, e)
                                 selStart = textarea.selectionStart ?: s
                                 selEnd = textarea.selectionEnd ?: e
-                                pendingSelection = null
+                                // Defer selection stabilization until the controlled value reflects the DOM
+                                pendingSelection = s..e
+                                internalSelectionTargetLength = len
                                 pendingSelectionAttempts = 0
                                 true
                             }
@@ -615,8 +645,15 @@ fun RichTextEditor(
                         setText(newText)
                         val caret = (before + text).length
                         pendingSelection = caret..caret
+                        internalSelectionTargetLength = newText.length
                         selStart = caret
                         selEnd = caret
+                        // Collapse DOM selection immediately to avoid replacement on subsequent inserts
+                        editorEl?.let { el ->
+                            el.focus()
+                            val clamped = caret.coerceIn(0, el.value.length)
+                            el.setSelectionRange(clamped, clamped)
+                        }
                     } catch (t: Throwable) {
                         aiError = "AI request failed or timed out"
                     } finally {

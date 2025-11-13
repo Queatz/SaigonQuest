@@ -19,11 +19,7 @@ import models.Doc
 import models.DocTree
 import main.utils.ellipsize
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.cursor
-import web.cssom.AtRules.Companion.property
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
@@ -40,6 +36,7 @@ fun SelectDocDialog(
     worldId: String,
     onSelect: (Doc) -> Unit,
     onClose: () -> Unit,
+    onSelectNew: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -80,10 +77,10 @@ fun SelectDocDialog(
     LaunchedEffect(worldId) { loadDocs() }
 
     val filtered = remember(docs, query) {
-        val q = query.trim().lowercase()
+        val q = query.trim()
         if (q.isBlank()) docs
         else docs.filter { d ->
-            d.title.lowercase().contains(q) || d.key.lowercase().contains(q)
+            d.title.contains(q, ignoreCase = true) || d.key.contains(q, ignoreCase = true)
         }
     }
 
@@ -171,6 +168,12 @@ fun SelectDocDialog(
             DialogButton(
                 onClick = onClose,
             ) { Translated("Cancel") }
+            if (onSelectNew != null) {
+                DialogButton(
+                    onClick = { onSelectNew() },
+                    isPrimary = true,
+                ) { Translated("New doc") }
+            }
         }
     )
 }
