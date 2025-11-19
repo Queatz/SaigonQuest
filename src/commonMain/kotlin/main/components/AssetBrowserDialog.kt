@@ -24,10 +24,12 @@ import org.jetbrains.compose.web.dom.Text
 import Translations.str
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.dom.TextInput
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
+import models.UserRequestType
 
 @Composable
 fun AssetBrowserDialog(
@@ -86,10 +88,20 @@ fun AssetBrowserDialog(
         loadResults()
     }
 
+    var showRequestsDialog by remember { mutableStateOf(false) }
+
     BaseDialog(
         onClose = onClose,
         title = translated("Asset browser"),
         maxWidth = "860px",
+        headerActions = {
+            if (type == AssetType.Objects) {
+                Button(attrs = {
+                    classes(Styles.baseDialogButtonSecondary)
+                    onClick { showRequestsDialog = true }
+                }) { Text("💡 "); Translated("Request new object type") }
+            }
+        },
         content = {
             Div(attrs = {
                 classes(main.theme.AssetStyles.assetDialogContent)
@@ -98,14 +110,16 @@ fun AssetBrowserDialog(
                 Div(attrs = { classes(main.theme.AssetStyles.assetFiltersRow) }) {
                     // Title search
                     Label { Translated("Title") }
-                    Input(type = InputType.Text, attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search by title"))
-                        value(titleQuery)
-                        onInput {
-                            titleQuery = it.value
-                        }
-                    })
+                    TextInput(
+                        value = titleQuery,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder(str("Search by title"))
+                            onInput {
+                                titleQuery = it.value
+                            }
+                        },
+                    )
 
                     // Category select
                     Label { Translated("Category") }
@@ -164,4 +178,11 @@ fun AssetBrowserDialog(
             DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
+
+    if (showRequestsDialog) {
+        UserRequestsDialog(
+            preselectedType = UserRequestType.Object,
+            onClose = { showRequestsDialog = false },
+        )
+    }
 }

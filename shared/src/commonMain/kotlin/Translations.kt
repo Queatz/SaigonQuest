@@ -979,6 +979,9 @@ vi: Trọng số gió không hợp lệ
 Pending balance requests
 vi: Yêu cầu số dư đang chờ
 
+Pending user requests
+vi: Yêu cầu người dùng đang chờ
+
 Send system notification
 vi: Gửi thông báo hệ thống
 
@@ -1615,6 +1618,72 @@ vi: Yêu cầu AI thất bại hoặc hết thời gian
 
 Send to doc
 vi: Gửi vào tài liệu
+
+User requests
+vi: Yêu cầu của người dùng
+
+User requests (admin)
+vi: Yêu cầu của người dùng (quản trị)
+
+Request new item type
+vi: Yêu cầu loại vật phẩm mới
+
+Request new object type
+vi: Yêu cầu loại đối tượng mới
+
+Request new node type
+vi: Yêu cầu loại nút mới
+                
+Request new wearable type
+vi: Yêu cầu loại trang phục mới
+
+Request new wearable item type
+vi: Yêu cầu loại vật phẩm có thể mặc mới
+
+Fee
+vi: Phí
+
+Coming soon
+vi: Sắp ra mắt
+
+New request
+vi: Yêu cầu mới
+
+Submit request
+vi: Gửi yêu cầu
+
+My requests
+vi: Yêu cầu của tôi
+
+Wearable item
+vi: Vật phẩm có thể mặc
+
+You are about to purchase a request for
+vi: Bạn sắp mua một yêu cầu với giá
+
+Title must be between 3 and 80 characters
+vi: Tiêu đề phải từ 3 đến 80 ký tự
+
+Description must be between 10 and 2000 characters
+vi: Mô tả phải từ 10 đến 2000 ký tự
+
+In review
+vi: Đang xem xét
+
+Refunded
+vi: Đã hoàn tiền
+
+Mark in review
+vi: Đánh dấu đang xem xét
+
+Mark completed
+vi: Đánh dấu hoàn thành
+
+Add note
+vi: Thêm ghi chú
+
+All
+vi: Tất cả
 
 """
 

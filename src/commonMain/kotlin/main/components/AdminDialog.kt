@@ -38,6 +38,7 @@ fun AdminDialog(
     // Admin modal states
     var showSendNotificationDialog by remember { mutableStateOf(false) }
     var showBalanceRequestsDialog by remember { mutableStateOf(false) }
+    var showUserRequestsDialog by remember { mutableStateOf(false) }
     var showItemsDialog by remember { mutableStateOf(false) }
     var showAssetsDialog by remember { mutableStateOf(false) }
 
@@ -110,6 +111,21 @@ fun AdminDialog(
                 ) {
                     Translated("Pending balance requests")
                 }
+                // Button to view pending user requests
+                DialogButton(
+                    onClick = {
+                        val token = main.api.UserApi.getToken()
+                        if (token.isNullOrEmpty()) {
+                            adminAuthError = "Please sign in to access admin tools"
+                        } else {
+                            adminAuthError = null
+                            showUserRequestsDialog = true
+                        }
+                    },
+                    isPrimary = false,
+                ) {
+                    Translated("Pending user requests")
+                }
                 adminAuthError?.let { msg ->
                     Div { Text(msg) }
                 }
@@ -152,6 +168,12 @@ fun AdminDialog(
     if (showAssetsDialog) {
         AdminAssetsDialog(
             onClose = { showAssetsDialog = false }
+        )
+    }
+
+    if (showUserRequestsDialog) {
+        AdminUserRequestsDialog(
+            onClose = { showUserRequestsDialog = false },
         )
     }
 }

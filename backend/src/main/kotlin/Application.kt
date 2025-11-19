@@ -33,6 +33,7 @@ import routes.configureCostsRoutes
 import routes.configureDocRoutes
 import routes.configureAiRoutes
 import routes.configureVoiceRoutes
+import routes.configureUserRequestRoutes
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 
@@ -91,6 +92,7 @@ fun Application.module() {
         configureMediaRoutes()
         configureBalanceRoutes()
         configureCostsRoutes()
+        configureUserRequestRoutes()
         configureDocRoutes()
         configureAiRoutes()
         configureWebSocketRoutes()

@@ -105,6 +105,7 @@ object CollectionsConfig {
     const val USER_BALANCES_COLLECTION = "user_balances"
     const val USER_BALANCE_CHANGE_REQUESTS_COLLECTION = "user_balance_change_requests"
     const val USER_BALANCE_HISTORY_COLLECTION = "user_balance_history"
+    const val USER_REQUESTS_COLLECTION = "user_requests"
     // New asset item collections
     const val ITEM_ASSET_ITEMS_COLLECTION = "item_asset_items"
     const val SPRITESHEET_ASSET_ITEMS_COLLECTION = "spritesheet_asset_items"
@@ -145,6 +146,7 @@ object CollectionsConfig {
         USER_BALANCES_COLLECTION to CollectionSpec(documentOptions(), models.UserBalance::class.java),
         USER_BALANCE_CHANGE_REQUESTS_COLLECTION to CollectionSpec(documentOptions(), models.UserBalanceChangeRequest::class.java),
         USER_BALANCE_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.UserBalanceHistory::class.java),
+        USER_REQUESTS_COLLECTION to CollectionSpec(documentOptions(), models.UserRequest::class.java),
         ITEM_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.ItemAssetItem::class.java),
         SPRITESHEET_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.SpriteSheetAssetItem::class.java),
         WORLD_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.WorldAssetItem::class.java),

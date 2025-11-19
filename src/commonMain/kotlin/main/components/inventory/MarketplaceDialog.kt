@@ -18,6 +18,8 @@ import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
+import models.UserRequestType
+import main.components.UserRequestsDialog
 
 @Composable
 fun MarketplaceDialog(
@@ -30,10 +32,10 @@ fun MarketplaceDialog(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
-
     var balance by remember { mutableStateOf<Long?>(null) }
-
     var buyingItem by remember { mutableStateOf<Item?>(null) }
+    var showRequestsDialog by remember { mutableStateOf(false) }
+    var requestType by remember { mutableStateOf(UserRequestType.Item) }
 
     fun load() {
         loading = true
@@ -78,6 +80,23 @@ fun MarketplaceDialog(
                 Text(" ")
                 Translated("VND")
             }
+
+            // Request new item and wearable type buttons
+            Button(attrs = {
+                classes(Styles.baseDialogButtonSecondary)
+                onClick {
+                    requestType = UserRequestType.Item
+                    showRequestsDialog = true
+                }
+            }) { Text("💡 "); Translated("Request new item type") }
+
+            Button(attrs = {
+                classes(Styles.baseDialogButtonSecondary)
+                onClick {
+                    requestType = UserRequestType.Wearable
+                    showRequestsDialog = true
+                }
+            }) { Text("💡 "); Translated("Request new wearable item type") }
         },
         content = {
             // Search row
@@ -88,12 +107,14 @@ fun MarketplaceDialog(
                     property("align-items", "center")
                 }
             }) {
-                Input(type = InputType.Text, attrs = {
-                    classes(Styles.inputField)
-                    value(query)
-                    placeholder(str("Search items"))
-                    onInput { query = it.value }
-                })
+                TextInput(
+                    value = query,
+                    attrs = {
+                        classes(Styles.inputField)
+                        placeholder(str("Search items"))
+                        onInput { query = it.value }
+                    },
+                )
             }
 
             if (error != null) {
@@ -180,6 +201,13 @@ fun MarketplaceDialog(
                 balance = resp.balance.balance
                 onPurchased()
             }
+        )
+    }
+
+    if (showRequestsDialog) {
+        UserRequestsDialog(
+            preselectedType = requestType,
+            onClose = { showRequestsDialog = false },
         )
     }
 }

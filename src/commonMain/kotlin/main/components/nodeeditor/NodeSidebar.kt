@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.translated
 import Translations.str
+import main.components.Translated
 import main.theme.NodeEditorStyles
 import main.theme.Styles
 import models.LogicNode
@@ -20,6 +21,9 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
+import models.UserRequestType
+import main.components.UserRequestsDialog
+import org.jetbrains.compose.web.dom.Button
 
 /**
  * Sidebar component for the node editor that contains draggable node items.
@@ -32,7 +36,6 @@ fun NodeSidebar() {
     var nodeTypesByCategory by remember { mutableStateOf<Map<NodeCategory, List<LogicNode>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    // Query for filtering nodes
     var searchQuery by remember { mutableStateOf("") }
     
     // Create a coroutine scope for async operations
@@ -54,11 +57,21 @@ fun NodeSidebar() {
         onDispose { }
     }
     
+    var showRequestsDialog by remember { mutableStateOf(false) }
+
     Div(
         attrs = {
             classes(NodeEditorStyles.sidebarContainer)
         }
     ) {
+        // Entry button to request new node type
+        Div {
+            Button(attrs = {
+                classes(Styles.baseDialogButtonSecondary)
+                onClick { showRequestsDialog = true }
+            }) { Text("💡 "); Translated("Request new node type") }
+        }
+
         if (isLoading) {
             // Show loading state
             Div {
@@ -122,5 +135,12 @@ fun NodeSidebar() {
                 }
             }
         }
+    }
+
+    if (showRequestsDialog) {
+        UserRequestsDialog(
+            preselectedType = UserRequestType.Node,
+            onClose = { showRequestsDialog = false },
+        )
     }
 }
