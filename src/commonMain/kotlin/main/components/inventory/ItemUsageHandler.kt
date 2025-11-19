@@ -1,10 +1,12 @@
 package main.components.inventory
 
+import Translations.str
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.updatePlayer
+import main.components.translated
 import models.Item
 import models.User
 
@@ -53,7 +55,7 @@ object ItemUsageHandler {
             ItemType.WEARABLE -> {
                 // Handle wearable items
                 if (currentUser == null) {
-                    onError("You must be logged in to wear items")
+                    onError(str("You must be logged in to wear items"))
                     return
                 }
                 
@@ -90,28 +92,23 @@ object ItemUsageHandler {
                                 }
                             )
                             
-                            onSuccess("Removed ${item.title}")
+                            onSuccess("${str("Removed")} ${item.title}")
                         } catch (error: Throwable) {
                             console.error("Error removing worn item", error)
-                            onError("Failed to remove ${item.title}: ${error.message}")
+                            onError("${str("Couldn't remove")} ${item.title}: ${error.message}")
                         }
                     }
                 } else {
                     // Wear the item if it's not already worn
                     coroutineScope.launch {
                         try {
-                            console.log("[WEAR] 1")
                             // Add to worn items
                             val updatedWornItems = currentUser.wornItems.toMutableList()
                             updatedWornItems.add(item.key)
 
-                            console.log("[WEAR] 2")
-
                             // Update the user locally and on the server
                             currentUser.wornItems = updatedWornItems
                             val updatedUser = UserApi.updateUserWornItems(currentUser)
-
-                            console.log("[WEAR] 3")
 
                             // Broadcast the change to other players
                             WebSocketApi.updatePlayer(
@@ -120,8 +117,6 @@ object ItemUsageHandler {
                                 status = updatedUser.status
                             )
 
-                            console.log("[WEAR] 4")
-                            
                             // Refresh inventory state to update CharacterRenderer
                             InventoryState.refreshInventory(
                                 coroutineScope = coroutineScope,
@@ -133,10 +128,10 @@ object ItemUsageHandler {
                                 }
                             )
                             
-                            onSuccess("Wearing ${item.title}")
+                            onSuccess("${str("Wearing")} ${item.title}")
                         } catch (error: Throwable) {
                             console.error("Error wearing item", error)
-                            onError("Failed to wear ${item.title}: ${error.message}")
+                            onError("${str("Couldn't wear")} ${item.title}: ${error.message}")
                         }
                     }
                 }
@@ -146,7 +141,7 @@ object ItemUsageHandler {
                 // For now, just log that the item was used
                 // This can be extended in the future to handle different types of standard items
                 console.log("Used standard item: ${item.title}")
-                onSuccess("Used ${item.title}")
+                onSuccess("${str("Used")} ${item.title}")
             }
             
             // Add cases for future item types here

@@ -481,13 +481,13 @@ vi: Bạn phải đăng nhập để mặc vật phẩm
 Removed
 vi: Đã gỡ
 
-Failed to remove
+Couldn't remove
 vi: Không thể gỡ
 
 Wearing
 vi: Đang mặc
 
-Failed to wear
+Couldn't wear
 vi: Không thể mặc
 
 Used

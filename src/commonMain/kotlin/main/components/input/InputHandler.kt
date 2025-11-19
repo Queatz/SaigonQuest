@@ -159,6 +159,10 @@ class InputHandler(
     private var preventClickToMoveUntil: Double = 0.0 // performance.now() in ms
     private val gestureSuppressionMs: Double = 500.0 // half a second after multi-touch ends
     
+    // Single-finger camera drag detection (to suppress click-to-move on lift)
+    private var didRotateCameraThisPointer: Boolean = false
+    private val singleFingerCameraSlop: Int = 10
+    
     // Store the click point for object dragging
     private var objectClickPoint: Vector3? = null
 
@@ -408,6 +412,14 @@ class InputHandler(
                 val deltaX = abs(scene.pointerX - pointerStartX)
                 val deltaY = abs(scene.pointerY - pointerStartY)
 
+                // Detect single-finger camera rotation with a small slop to avoid accidental moves on lift
+                // Only when not manipulating objects and not multi-touching
+                if (!isObjectBeingDragged && !isObjectSelected && activePointers <= 1) {
+                    if (!didRotateCameraThisPointer && (deltaX > singleFingerCameraSlop || deltaY > singleFingerCameraSlop)) {
+                        didRotateCameraThisPointer = true
+                    }
+                }
+
                 // Consider it a drag if moved more than SLOP pixels in any direction
                 if (deltaX > SLOP || deltaY > SLOP) {
                     isDragging = true
@@ -428,6 +440,7 @@ class InputHandler(
             pointerStartX = scene.pointerX
             pointerStartY = scene.pointerY
             isDragging = false
+            didRotateCameraThisPointer = false
 
             // Starting a new pointer interaction: cancel any pending single-tap
             pendingTapSingleJob?.cancel()
@@ -478,8 +491,8 @@ class InputHandler(
             // If it was a click (not a drag) and no object is selected, handle movement
             if (!isDragging && !isObjectSelected) {
                 // Suppress click-to-move if a multi-touch gesture just occurred or is ongoing
-                if (isClickToMoveSuppressed() || multiTouchActive || activePointers > 0) {
-                    console.log("[POINTER] Click-to-move suppressed on POINTERUP due to multi-touch context")
+                if (isClickToMoveSuppressed() || multiTouchActive || activePointers > 0 || didRotateCameraThisPointer) {
+                    console.log("[POINTER] Click-to-move suppressed on POINTERUP due to gesture context (multi-touch or single-finger camera drag)")
                 } else {
                     handleClickToMove()
                 }
@@ -489,6 +502,7 @@ class InputHandler(
             if (activePointers == 0) {
                 isPointerDown = false
                 isDragging = false
+                didRotateCameraThisPointer = false
             }
         }
         

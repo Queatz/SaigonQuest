@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
+import org.jetbrains.compose.web.dom.B
 import org.jetbrains.compose.web.dom.Div
 
 @Composable
@@ -12,7 +13,9 @@ fun ByePage() {
         }
     ) {
         Div {
-            Translated("Bye")
+            B {
+                Translated("Bye")
+            }
         }
         Div {
             Translated("Please close this window")

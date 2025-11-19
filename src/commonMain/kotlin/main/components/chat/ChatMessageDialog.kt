@@ -19,6 +19,7 @@ import main.components.translated
 import main.components.worlddocs.SelectDocDialog
 import main.theme.Styles
 import models.ChatMessage
+import models.chat.ImageAttachment
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.color
@@ -115,6 +116,19 @@ fun ChatMessageDialog(
         val firstLine = lines.firstOrNull()?.trim() ?: ""
         val title = if (firstLine.isNotBlank()) firstLine else str("Untitled doc")
         val body = if (lines.size <= 1) "" else contentText
+        // Build image attachments markdown block (prepended to content)
+        val imageMd = message.attachments
+            .filterIsInstance<ImageAttachment>()
+            .mapNotNull { att ->
+                val url = att.url.trim()
+                if (url.isBlank()) null else "![Image]($url)"
+            }
+            .joinToString("\n")
+        val combinedContent = when {
+            imageMd.isNotBlank() && body.isNotBlank() -> imageMd + "\n\n" + body
+            imageMd.isNotBlank() -> imageMd
+            else -> body
+        }
         scope.launch {
             try {
                 val created = DocApi.createDoc(
@@ -122,9 +136,9 @@ fun ChatMessageDialog(
                     title = title,
                     parentId = parentId,
                 )
-                if (body.isNotEmpty()) {
+                if (combinedContent.isNotEmpty()) {
                     // Use base version from created doc
-                    DocApi.updateDocContent(created.key, body, created.version)
+                    DocApi.updateDocContent(created.key, combinedContent, created.version)
                 }
                 lastSendCreatedTitle = title
                 lastSendError = null
@@ -180,7 +194,7 @@ fun ChatMessageDialog(
                 // Send to doc result message
                 if (lastSendCreatedTitle != null) {
                     P(attrs = { classes(Styles.formSuccessMessage) }) {
-                        Text(str("Created doc") + ": " + lastSendCreatedTitle!!)
+                        Text(str("Created doc"))
                     }
                 } else if (lastSendError != null) {
                     P(attrs = { classes(Styles.formErrorMessage) }) {
