@@ -38,14 +38,14 @@ sealed interface LogicNode {
     val description: String
     
     /**
-     * Teleport node - moves player to a different location
+     * Teleport node - moves the player or visitor to a different world
      */
     @Serializable
     data class Teleport(
         override val id: NodeId = NodeId.Teleport,
-        override val label: String = "Teleport player",
+        override val label: String = "Teleport",
         override val category: NodeCategory = NodeCategory.Action,
-        override val description: String = "Move player to a different location"
+        override val description: String = "Move player or visitor to a different world"
     ) : LogicNode
     
     /**
@@ -287,7 +287,7 @@ sealed interface LogicNode {
         override val id: NodeId = NodeId.DocContent,
         override val label: String = "Doc content",
         override val category: NodeCategory = NodeCategory.Input,
-        override val description: String = "Outputs the document content if the user has access"
+        override val description: String = "Outputs the document content"
     ) : LogicNode
 
     /**

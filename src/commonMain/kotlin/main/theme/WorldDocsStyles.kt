@@ -103,7 +103,7 @@ object WorldDocsStyles : StyleSheet() {
         flex(1)
         maxWidth(140.px)
         padding(8.px)
-        borderRadius(6.px)
+        borderRadius(12.px)
         backgroundColor(Theme.colors.surfaceVariant)
         border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
         dark(self) {
@@ -195,7 +195,7 @@ object WorldDocsStyles : StyleSheet() {
 
     val titleInput by style {
         padding(8.px)
-        borderRadius(6.px)
+        borderRadius(12.px)
         backgroundColor(Theme.colors.surfaceVariant)
         border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
         minWidth(200.px)

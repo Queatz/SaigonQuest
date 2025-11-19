@@ -392,7 +392,7 @@ object NodeEditorStyles : StyleSheet() {
         outline("none")
         fontSize(14.px)
         boxSizing("border-box")
-        borderRadius(8.px)
+        borderRadius(12.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)
@@ -412,7 +412,7 @@ object NodeEditorStyles : StyleSheet() {
         property("resize", "vertical")
         property("min-height", "80px")
         boxSizing("border-box")
-        borderRadius(8.px)
+        borderRadius(12.px)
 
         dark(self) {
             backgroundColor(Theme.colors.surfaceVariantDark)

@@ -2,39 +2,30 @@
 
 # Kill processes using ports 8080 and 8090
 
-echo "Checking for processes on port 8080..."
-PID_8080=$(lsof -ti :8080)
-if [ -n "$PID_8080" ]; then
-    echo "Killing process(es) on port 8080: $PID_8080"
-    kill -9 $PID_8080
-    echo "Port 8080 freed"
-else
-    echo "No process found on port 8080"
+# Function to kill process on a specific port
+kill_port() {
+    local port=$1
+    echo "Checking for processes on port $port..."
+    local PID=$(lsof -ti :$port)
+    if [ -n "$PID" ]; then
+        echo "Killing process(es) on port $port: $PID"
+        kill -9 $PID
+        echo "Port $port freed"
+    else
+        echo "No process found on port $port"
+    fi
+    echo ""
+}
+
+# Check if port argument is provided
+if [ $# -eq 1 ]; then
+    kill_port $1
+    echo "Done!"
+    exit 0
 fi
 
-echo ""
-echo "Checking for processes on port 8090..."
-PID_8090=$(lsof -ti :8090)
-if [ -n "$PID_8090" ]; then
-    echo "Killing process(es) on port 8090: $PID_8090"
-    kill -9 $PID_8090
-    echo "Port 8090 freed"
-else
-    echo "No process found on port 8090"
-fi
 
-
-
-echo ""
-echo "Checking for processes on port 4080..."
-PID_4080=$(lsof -ti :4080)
-if [ -n "$PID_4080" ]; then
-    echo "Killing process(es) on port 4080: $PID_4080"
-    kill -9 $PID_4080
-    echo "Port 4080 freed"
-else
-    echo "No process found on port 4080"
-fi
-
-echo ""
+kill_port 8080
+kill_port 8090
+kill_port 4080
 echo "Done!"

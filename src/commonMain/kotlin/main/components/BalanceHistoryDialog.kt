@@ -46,7 +46,7 @@ fun BalanceHistoryDialog(
         content = {
             error?.let { e -> P { Text("Error: $e") } }
             if (items.isEmpty() && error == null) {
-                P { Text("No history yet.") }
+                P { Translated("No history yet") }
             } else {
                 items.forEach { h ->
                     BalanceEventRow(item = h)
@@ -54,7 +54,7 @@ fun BalanceHistoryDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose) { Text("Close") }
+            DialogButton(onClick = onClose) { Translated("Close") }
         }
     )
 }

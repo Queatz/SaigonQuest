@@ -506,7 +506,6 @@ object Styles : StyleSheet() {
         property("border", "0")
         property("border-radius", "16px")
         property("cursor", "pointer")
-        fontSize(18.px)
         fontWeight("bold")
 
         self + disabled style {
@@ -521,7 +520,6 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.primary}")
         property("border-radius", "16px")
         property("cursor", "pointer")
-        fontSize(18.px)
         fontWeight("bold")
 
         self + disabled style {
@@ -537,7 +535,6 @@ object Styles : StyleSheet() {
         property("border", "0")
         borderRadius(16.px)
         property("cursor", "pointer")
-        fontSize(18.px)
         fontWeight("bold")
     }
 
@@ -548,7 +545,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurface)
         property("border", "1px solid ${Theme.colors.outline}")
-        borderRadius(8.px)
+        borderRadius(12.px)
         property("outline", "none")
         boxSizing("border-box")
 

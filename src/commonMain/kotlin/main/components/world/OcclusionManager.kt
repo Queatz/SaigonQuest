@@ -95,7 +95,7 @@ class OcclusionManager(private val scene: Scene) {
     private var lastRenderHeight: Int = 0
     
     // Configurable parameters
-    private var occlusionSoftness = 0.05f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
+    private var occlusionSoftness = 0.1f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
 
     // Custom shader name
     private val customShaderName = "occlusionFader"
@@ -304,7 +304,7 @@ class OcclusionManager(private val scene: Scene) {
                         effect.setFloat("occlusionSoftness", occlusionSoftness)
                         effect.setVector2("screenSize", screenSize)
                         effect.setBool("useRadius", false)
-                        effect.setFloat("time", (currentTimeSeconds * 8).toInt() / 8f)
+                        effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                     }
                 } catch (_: Throwable) {
                     // avoid crashing if effect is not ready yet
@@ -446,7 +446,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setBool("useRadius", false)
 
                     // Set time uniform for animations
-                    effect.setFloat("time", (currentTimeSeconds * 8).toInt() / 8f)
+                    effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 } catch (e: Throwable) {
                     console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
                 }
