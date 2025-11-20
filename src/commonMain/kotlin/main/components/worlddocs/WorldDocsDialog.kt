@@ -140,6 +140,9 @@ fun WorldDocsDialog(
     // History dialog state
     var showHistoryDialog by remember { mutableStateOf(false) }
 
+    // Move dialog state
+    var showMoveDialog by remember { mutableStateOf(false) }
+
     // Collaborators shown under the title input
     var collaborators by remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(selectedDocId) { collaborators = emptySet() }
@@ -502,6 +505,14 @@ fun WorldDocsDialog(
                                                 }
                                             }
                                         }) { Translated("Move down") }
+
+                                        // Move to another parent
+                                        Button(attrs = {
+                                            classes(Styles.secondaryButton)
+                                            onClick {
+                                                showMoveDialog = true
+                                            }
+                                        }) { Translated("Move") }
                                     }
                                 }
 
@@ -587,6 +598,49 @@ fun WorldDocsDialog(
             docId = selectedDoc.key,
             canRestore = canRestore,
             onClose = { showHistoryDialog = false },
+        )
+    }
+
+    // Move dialog
+    if (showMoveDialog && selectedDoc != null) {
+        // Exclude moving into itself or any of its descendants
+        val selectedNode = docs.firstNotNullOfOrNull { findNode(it, selectedDoc.key) }
+        val excludeIds: Set<String> = buildSet {
+            fun walk(node: DocTree?) {
+                if (node == null) return
+                add(node.doc.key)
+                node.children.forEach { child -> walk(child) }
+            }
+            walk(selectedNode)
+        }
+
+        SelectDocDialog(
+            worldId = worldId,
+            onSelect = { targetParent ->
+                showMoveDialog = false
+                val movingId = selectedDoc.key
+                scope.launch {
+                    // Compute new order index to append as last child of the target parent
+                    val targetNode = docs.firstNotNullOfOrNull { findNode(it, targetParent.key) }
+                    val lastChildOrder = targetNode?.children?.maxByOrNull { it.doc.orderIndex }?.doc?.orderIndex
+                    val idx = newIndex(before = lastChildOrder, after = null)
+                    val res = runCatching { DocApi.moveDoc(movingId, targetParent.key, idx) }
+                    res.onSuccess {
+                        val refreshed = runCatching { DocApi.getDocTree(worldId) }
+                        refreshed.onSuccess {
+                            docs = it
+                            // Keep selection on the moved doc
+                            selectedDocId = movingId
+                            error = null
+                        }
+                        refreshed.onFailure { t -> error = t.message }
+                    }
+                    res.onFailure { t -> error = t.message }
+                }
+            },
+            onClose = { showMoveDialog = false },
+            excludeIds = excludeIds,
+            confirmButtonLabel = str("Move"),
         )
     }
 }

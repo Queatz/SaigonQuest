@@ -15,6 +15,7 @@ import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
+import main.theme.WorldDocsStyles
 import models.Doc
 import models.DocTree
 import main.utils.ellipsize
@@ -37,6 +38,8 @@ fun SelectDocDialog(
     onSelect: (Doc) -> Unit,
     onClose: () -> Unit,
     onSelectNew: (() -> Unit)? = null,
+    excludeIds: Set<String> = emptySet(),
+    confirmButtonLabel: String? = null,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -45,6 +48,7 @@ fun SelectDocDialog(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var query by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf<Doc?>(null) }
 
     fun flatten(tree: List<DocTree>): List<Doc> {
         val list = mutableListOf<Doc>()
@@ -76,10 +80,11 @@ fun SelectDocDialog(
 
     LaunchedEffect(worldId) { loadDocs() }
 
-    val filtered = remember(docs, query) {
+    val filtered = remember(docs, query, excludeIds) {
         val q = query.trim()
-        if (q.isBlank()) docs
-        else docs.filter { d ->
+        val base = docs.filter { it.key !in excludeIds }
+        if (q.isBlank()) base
+        else base.filter { d ->
             d.title.contains(q, ignoreCase = true) || d.key.contains(q, ignoreCase = true)
         }
     }
@@ -91,11 +96,7 @@ fun SelectDocDialog(
         content = {
             // Search and refresh row
             Div(attrs = {
-                style {
-                    property("display", "flex")
-                    property("gap", "8px")
-                    property("align-items", "center")
-                }
+                classes(WorldDocsStyles.selectDocToolbar)
             }) {
                 TextInput(
                     value = query,
@@ -116,24 +117,24 @@ fun SelectDocDialog(
                 filtered.isEmpty() -> P { Translated("No results") }
                 else -> {
                     Div(attrs = {
-                        style {
-                            property("display", "flex")
-                            property("flex-direction", "column")
-                            property("gap", "8px")
-                            property("margin-top", "12px")
-                            property("max-height", "50vh")
-                            property("overflow-y", "auto")
-                        }
+                        classes(WorldDocsStyles.selectDocList)
                     }) {
                         filtered.forEach { d ->
                             Div(attrs = {
-                                classes(Styles.clickable)
-                                style {
-                                    property("padding", "11px")
-                                    property("border", "1px solid rgba(255,255,255,0.1)")
-                                    property("border-radius", "8px")
+                                classes(
+                                    Styles.clickable,
+                                    WorldDocsStyles.selectDocItem,
+                                )
+                                if (confirmButtonLabel != null && selected?.key == d.key) {
+                                    classes(WorldDocsStyles.selectDocItemSelected)
                                 }
-                                onClick { onSelect(d) }
+                                onClick {
+                                    if (confirmButtonLabel == null) {
+                                        onSelect(d)
+                                    } else {
+                                        selected = d
+                                    }
+                                }
                             }) {
                                 val titleText = d.title.ifBlank { translated("Untitled doc") }
                                 val previewText = d.content
@@ -141,19 +142,13 @@ fun SelectDocDialog(
                                     .replace(Regex("\\s+"), " ")
                                     .ellipsize(64)
                                 Div(attrs = {
-                                    style {
-                                        property("font-weight", "500")
-                                    }
+                                    classes(WorldDocsStyles.selectDocItemTitle)
                                 }) {
                                     Text(titleText)
                                 }
                                 if (previewText.isNotBlank()) {
                                     Div(attrs = {
-                                        style {
-                                            property("margin-top", "4px")
-                                            property("font-size", "12px")
-                                            property("opacity", "0.7")
-                                        }
+                                        classes(WorldDocsStyles.selectDocItemPreview)
                                     }) {
                                         Text(previewText)
                                     }
@@ -168,7 +163,12 @@ fun SelectDocDialog(
             DialogButton(
                 onClick = onClose,
             ) { Translated("Cancel") }
-            if (onSelectNew != null) {
+            if (confirmButtonLabel != null) {
+                DialogButton(
+                    onClick = { selected?.let { onSelect(it) } },
+                    isPrimary = true,
+                ) { Text(confirmButtonLabel) }
+            } else if (onSelectNew != null) {
                 DialogButton(
                     onClick = { onSelectNew() },
                     isPrimary = true,

@@ -413,4 +413,68 @@ object WorldDocsStyles : StyleSheet() {
     val historyRestoreRow by style {
         marginTop(8.px)
     }
+
+    // =====================
+    // SelectDocDialog styles
+    // Extracted from inline styles to support dark mode and reuse
+    // =====================
+
+    // Toolbar row with search field
+    val selectDocToolbar by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+    }
+
+    // Container list for results
+    val selectDocList by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(8.px)
+        marginTop(12.px)
+        property("max-height", "50vh")
+        overflowY("auto")
+    }
+
+    // Result row
+    val selectDocItem by style {
+        padding(11.px)
+        borderRadius(8.px)
+        border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
+        backgroundColor(Color.transparent)
+        dark(self) {
+            border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtleDark)
+            backgroundColor(Color.transparent)
+        }
+    }
+
+    // Selected state for result row
+    val selectDocItemSelected by style {
+        // Keep base padding/radius; apply stronger border to indicate selection
+        padding(11.px)
+        borderRadius(8.px)
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
+        property("border", "1px solid ${Theme.colors.black30}")
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceVariantDark)
+            color(Theme.colors.onSurfaceVariantDark)
+            property("border", "1px solid ${Theme.colors.white35}")
+        }
+    }
+
+    // Title text within item
+    val selectDocItemTitle by style {
+        property("font-weight", "500")
+        color(Theme.colors.onSurface)
+        dark(self) { color(Theme.colors.onSurfaceDark) }
+    }
+
+    // Preview text within item
+    val selectDocItemPreview by style {
+        marginTop(4.px)
+        fontSize(12.px)
+        color(Theme.colors.textSecondary)
+        dark(self) { color(Theme.colors.textSecondaryDark) }
+    }
 }
