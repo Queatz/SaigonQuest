@@ -38,6 +38,7 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.TextArea
+import org.jetbrains.compose.web.dom.TextInput
 
 @Composable
 fun EditItemDialog(
@@ -176,12 +177,14 @@ fun EditItemDialog(
                 Div(attrs = { style { marginBottom(16.px) } }) {
                     Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Title") }
                     val titlePlaceholder = translated("Enter item title")
-                    Input(type = InputType.Text, attrs = {
-                        classes(Styles.inputField)
-                        placeholder(titlePlaceholder)
-                        value(title)
-                        onInput { title = it.value }
-                    })
+                    TextInput(
+                        value = title,
+                        attrs = {
+                            classes(Styles.inputField)
+                            placeholder(titlePlaceholder)
+                            onInput { title = it.value }
+                        }
+                    )
                     if (titleError.isNotEmpty()) {
                         P(attrs = { style { color(rgba(255, 100, 100, 0.9)); fontSize(12.px); marginTop(4.px) } }) { Translated(titleError) }
                     }

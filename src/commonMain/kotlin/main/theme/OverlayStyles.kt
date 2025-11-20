@@ -81,7 +81,7 @@ object OverlayStyles : StyleSheet() {
         borderRadius(24.px)
         fontSize(84.px)
         textAlign("center")
-        property("box-shadow", "0 8px 24px ${Theme.colors.shadowMedium}")
+        property("box-shadow", "0 6px 24px ${Theme.colors.shadowMedium}")
         animation(shoutIn) {
             duration(120.ms)
             timingFunction(AnimationTimingFunction.EaseOut)

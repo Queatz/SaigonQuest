@@ -88,8 +88,8 @@ object Theme {
         val black70 = Color("rgba(0, 0, 0, 0.70)")
 
         // Shadows
-        val shadowLight = Color("rgba(0, 0, 0, 0.2)")
-        val shadowMedium = Color("rgba(0, 0, 0, 0.3)")
+        val shadowLight = Color("rgba(0, 0, 0, 0.25)")
+        val shadowMedium = Color("rgba(0, 0, 0, 0.375)")
         val shadowStrong = Color("rgba(0, 0, 0, 0.5)")
 
         // Soft state backgrounds and borders

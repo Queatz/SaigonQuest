@@ -199,11 +199,10 @@ fun WorldDocsDialog(
             }
 
             Div(attrs = { classes(WorldDocsStyles.headerBar) }) {
-                Input(type = org.jetbrains.compose.web.attributes.InputType.Text) {
+                TextInput(value = searchInput) {
                     classes(WorldDocsStyles.searchInput)
-                    value(searchInput)
                     onInput { ev -> searchInput = ev.value }
-                    placeholder(Translations.str("Search docs"))
+                    placeholder(str("Search docs"))
                 }
                 if (isOwner) {
                     Button(attrs = {
@@ -213,7 +212,7 @@ fun WorldDocsDialog(
                                 val result = runCatching {
                                     DocApi.createDoc(
                                         worldId = worldId,
-                                        title = Translations.str("New doc"),
+                                        title = str("New doc"),
                                         parentId = null,
                                     )
                                 }

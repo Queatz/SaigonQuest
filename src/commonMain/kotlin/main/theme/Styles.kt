@@ -451,7 +451,7 @@ object Styles : StyleSheet() {
     val baseDialogContainer by style {
         backgroundColor(Theme.colors.surface)
         borderRadius(16.px)
-        property("box-shadow", "0 4px 16px ${Theme.colors.shadowLight}")
+        property("box-shadow", "0 6px 24px ${Theme.colors.shadowLight}")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflowY("auto")

@@ -76,15 +76,17 @@ fun BuyItemDialog(
                 }
             }) {
                 Label { Translated("Quantity") }
-                Input(type = InputType.Number, attrs = {
-                    classes(Styles.inputField)
-                    min("1")
-                    value(quantity.toString())
-                    onInput { evt ->
-                        val v = evt.value?.toInt() ?: 1
-                        quantity = if (v < 1) 1 else v
+                NumberInput(
+                    value = quantity,
+                    attrs = {
+                        classes(Styles.inputField)
+                        min("1")
+                        onInput { evt ->
+                            val v = evt.value?.toInt() ?: 1
+                            quantity = if (v < 1) 1 else v
+                        }
                     }
-                })
+                )
 
                 Label { Translated("Per item") }
                 P { Text(formatAmount(perItemCost)) ; Text(" ") ; Translated("VND") }

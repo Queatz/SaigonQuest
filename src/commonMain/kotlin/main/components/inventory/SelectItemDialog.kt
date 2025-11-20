@@ -28,6 +28,7 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 import web.cssom.AtRules.Companion.property
 
 /**
@@ -94,12 +95,14 @@ fun SelectItemDialog(
                 }
             }) {
                 Label { Translated("Search by title") }
-                Input(type = InputType.Text, attrs = {
-                    classes(Styles.inputField)
-                    value(query)
-                    placeholder(str("Search by title"))
-                    onInput { query = it.value }
-                })
+                TextInput(
+                    value = query,
+                    attrs = {
+                        classes(Styles.inputField)
+                        placeholder(str("Search by title"))
+                        onInput { query = it.value }
+                    }
+                )
             }
 
             if (errorMessage != null) {
