@@ -136,7 +136,7 @@ object InventoryState {
     ) {
         if (isLoading) return
         
-        isLoading = true
+        isLoading = inventory == null || items.isEmpty()
         lastError = null
         
         coroutineScope.launch {

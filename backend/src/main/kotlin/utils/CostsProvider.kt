@@ -14,7 +14,7 @@ object CostsProvider {
         objectBasePrice = 1_000_000L,
         itemBasePrice = 100_000L,
         wearableItemBasePrice = 500_000L,
-        nodeBasePrice = 2_000_000L,
+        nodeBasePrice = 2_500_000L,
     )
 
     fun get(): Costs = current

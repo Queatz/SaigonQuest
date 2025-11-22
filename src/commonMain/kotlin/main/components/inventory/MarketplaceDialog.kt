@@ -6,6 +6,8 @@ import kotlinx.coroutines.launch
 import main.api.BalanceApi
 import main.api.ItemApi
 import main.components.BaseDialog
+import main.components.BasicAlertDialog
+import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.common.formatAmount
@@ -20,6 +22,11 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 import models.UserRequestType
 import main.components.UserRequestsDialog
+import main.components.translated
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.gap
 
 @Composable
 fun MarketplaceDialog(
@@ -35,6 +42,7 @@ fun MarketplaceDialog(
     var balance by remember { mutableStateOf<Long?>(null) }
     var buyingItem by remember { mutableStateOf<Item?>(null) }
     var showRequestsDialog by remember { mutableStateOf(false) }
+    var showRequestTypeDialog by remember { mutableStateOf(false) }
     var requestType by remember { mutableStateOf(UserRequestType.Item) }
 
     fun load() {
@@ -62,8 +70,12 @@ fun MarketplaceDialog(
     LaunchedEffect(Unit) { load() }
 
     val filtered = remember(items, query) {
-        val q = query.trim().lowercase()
-        if (q.isBlank()) items else items.filter { it.title.lowercase().contains(q) || it.description.lowercase().contains(q) || it.key.lowercase().contains(q) }
+        val q = query.trim()
+        if (q.isBlank()) items else items.filter {
+            it.title.contains(q, ignoreCase = true) ||
+                    it.description.contains(q, ignoreCase = true) ||
+                    it.key.contains(q, ignoreCase = true)
+        }
     }
 
     BaseDialog(
@@ -86,25 +98,17 @@ fun MarketplaceDialog(
                 classes(Styles.baseDialogButtonSecondary)
                 onClick {
                     requestType = UserRequestType.Item
-                    showRequestsDialog = true
+                    showRequestTypeDialog = true
                 }
             }) { Text("💡 "); Translated("Request new item type") }
-
-            Button(attrs = {
-                classes(Styles.baseDialogButtonSecondary)
-                onClick {
-                    requestType = UserRequestType.Wearable
-                    showRequestsDialog = true
-                }
-            }) { Text("💡 "); Translated("Request new wearable item type") }
         },
         content = {
             // Search row
             Div({
                 style {
-                    property("display", "flex")
-                    property("gap", "8px")
-                    property("align-items", "center")
+                    display(DisplayStyle.Flex)
+                    gap(8.px)
+                    alignItems(AlignItems.Center)
                 }
             }) {
                 TextInput(
@@ -200,6 +204,25 @@ fun MarketplaceDialog(
                 buyingItem = null
                 balance = resp.balance.balance
                 onPurchased()
+            }
+        )
+    }
+
+    if (showRequestTypeDialog) {
+        BasicConfirmDialog(
+            translated("Is the item wearable?"),
+            onConfirm = {
+                showRequestTypeDialog = false
+                requestType = UserRequestType.Wearable
+                showRequestsDialog = true
+            },
+            onCancel = {
+                showRequestTypeDialog = false
+                requestType = UserRequestType.Item
+                showRequestsDialog = true
+            },
+            onDismiss = {
+                showRequestTypeDialog = false
             }
         )
     }

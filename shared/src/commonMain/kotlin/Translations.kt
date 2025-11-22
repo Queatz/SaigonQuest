@@ -1685,6 +1685,9 @@ vi: Thêm ghi chú
 All
 vi: Tất cả
 
+Is the item wearable?
+vi: Vật phẩm có thể mặc không?
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

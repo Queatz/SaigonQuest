@@ -9,6 +9,7 @@ import org.jetbrains.compose.web.dom.Text
  * @param message The message to display in the dialog
  * @param onConfirm Callback when the user confirms (clicks Yes)
  * @param onCancel Callback when the user cancels (clicks No or closes the dialog)
+ * @param onDismiss Callback when the user dismisses the dialog (e.g., by clicking outside)
  * @param title The title of the dialog (optional)
  */
 @Composable
@@ -16,10 +17,11 @@ fun BasicConfirmDialog(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
+    onDismiss: () -> Unit = onCancel,
     title: String? = translated("Confirm"),
 ) {
     BaseDialog(
-        onClose = onCancel,
+        onClose = onDismiss,
         title = title,
         content = {
             Text(message)
