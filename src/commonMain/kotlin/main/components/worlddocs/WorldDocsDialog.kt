@@ -309,7 +309,7 @@ fun WorldDocsDialog(
                                         val createdRes = runCatching {
                                             DocApi.createDoc(
                                                 worldId = worldId,
-                                                title = Translations.str("New doc"),
+                                                title = str("New doc"),
                                                 parentId = parentId,
                                             )
                                         }

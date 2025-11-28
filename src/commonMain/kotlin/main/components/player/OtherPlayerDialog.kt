@@ -64,15 +64,6 @@ fun OtherPlayerDialog(
         onClose = onClose,
         title = username,
         content = {
-            // Account type
-            P({
-                style {
-                    property("margin", "0 0 16px 0")
-                }
-            }) {
-                Translated(if (isPlayer) "Player Account" else "Visitor Account")
-            }
-
             // Show status bars for other player
             if (isPlayer) {
                 otherUserState.value?.let { ou ->

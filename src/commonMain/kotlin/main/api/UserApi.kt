@@ -341,12 +341,9 @@ object UserApi {
      * Updates user worn items
      */
     suspend fun updateUserWornItems(user: User): User {
-        console.log("[WEAR] 2.1")
         val request = WornItemsRequest(
             wornItems = user.wornItems
         )
-
-        console.log("[WEAR] 2.2")
 
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/worn-items") {

@@ -294,7 +294,6 @@ object InventoryApi {
                 console.warn("[DEBUG_LOG] Filtered out ${itemOrder.size - validItemOrder.size} empty strings from inventory item order")
             }
             
-            console.log("[DEBUG_LOG] Updating inventory item order: $validItemOrder")
             val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/inventory/item-order") {
                 contentType(ContentType.Application.Json)
                 ApiClient.addAuthHeader(this)
@@ -302,7 +301,6 @@ object InventoryApi {
             }
             
             if (response.status.isSuccess()) {
-                console.log("[DEBUG_LOG] Successfully updated inventory item order")
                 return response.body<Inventory>()
             } else {
                 // Parse error response

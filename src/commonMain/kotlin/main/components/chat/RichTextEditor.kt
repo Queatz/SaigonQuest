@@ -97,31 +97,38 @@ fun RichTextEditor(
         onValueChange(newText)
     }
 
-    fun saveSelectionFromEl() {
+    fun saveSelectionFromEl(force: Boolean = false) {
         val el = editorEl ?: return
         // If we have a pending selection to apply, don't overwrite it with a stale value
-        if (pendingSelection != null) return
+        if (!force && pendingSelection != null) return
         selStart = el.selectionStart ?: 0
         selEnd = el.selectionEnd ?: 0
-        try { onSelectionChange(selStart, selEnd) } catch (_: Throwable) {}
+        // Only notify parent on natural (non-forced) sync; forced reads are internal-only.
+        if (!force) {
+            try { onSelectionChange(selStart, selEnd) } catch (_: Throwable) {}
+        }
     }
 
     // Sync selection from parent control prop, if provided
-    LaunchedEffect(editorEl, selection, value) {
-        val sel = selection
-        val el = editorEl
-        if (el != null && sel != null) {
-            val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
-            // Always re-apply selection after value/value-length changes to prevent caret jumps (Firefox)
-            pendingSelection = desired
-        }
-    }
+    // (moved below internalSelectionTargetLength declaration to avoid unresolved reference)
 
     // Track retry attempts for applying pending selection to defeat browser races
     var pendingSelectionAttempts by remember { mutableStateOf(0) }
     var isComposing by remember { mutableStateOf(false) }
     // Internal target length to gate selection application until the controlled value length matches
     var internalSelectionTargetLength by remember { mutableStateOf<Int?>(null) }
+
+    // Sync selection from parent control prop
+    LaunchedEffect(editorEl, selection, value) {
+        val sel = selection
+        val el = editorEl
+        if (el != null && sel != null) {
+            if (pendingSelection == null && internalSelectionTargetLength == null) {
+                val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
+                pendingSelection = desired
+            }
+        }
+    }
 
     fun applyOpsTo(base: String, ops: List<DocOperation>): String {
         var content = base
@@ -154,7 +161,18 @@ fun RichTextEditor(
             if (isComposing) return@LaunchedEffect
             val start = ps.first.coerceIn(0, len)
             val end = ps.last.coerceIn(0, len)
-            // If the element already has the desired selection, skip
+            // If a target length is specified, only apply when the current value length matches it
+            val targetLen = internalSelectionTargetLength ?: selectionTargetLength
+            if (targetLen != null && targetLen != len) {
+                // Defer until value matches the intended length
+                return@LaunchedEffect
+            }
+            // Wait until DOM value length is ready to avoid clamped selection
+            val domLen = el.value.length
+            if ((targetLen != null && domLen != len) || (targetLen == null && domLen < end)) {
+                return@LaunchedEffect
+            }
+            // If the element already has the desired selection (after length gating), skip
             val curStart = el.selectionStart ?: 0
             val curEnd = el.selectionEnd ?: 0
             if (curStart == start && curEnd == end) {
@@ -165,14 +183,7 @@ fun RichTextEditor(
                 internalSelectionTargetLength = null
                 return@LaunchedEffect
             }
-            // If a target length is specified, only apply when the current value length matches it
-            val targetLen = internalSelectionTargetLength ?: selectionTargetLength
-            if (targetLen != null && targetLen != len) {
-                // Defer until value matches the intended length
-                return@LaunchedEffect
-            }
             // Try immediate application (microtask), then 1 RAF retry if needed
-            // Only focus if this textarea is already the active element to avoid focus churn
             val isActive = (document.activeElement === el)
             if (isActive) {
                 el.focus()
@@ -195,7 +206,6 @@ fun RichTextEditor(
                 pendingSelectionAttempts = 0
                 internalSelectionTargetLength = null
             } else {
-                // keep pendingSelection to try again on next state change
                 pendingSelection = start..end
             }
         }
@@ -204,31 +214,48 @@ fun RichTextEditor(
     fun applyInline(wrapperLeft: String, wrapperRight: String = wrapperLeft) {
         val el = editorEl ?: return
         // Always refresh selection from the live element to avoid stale values
-        saveSelectionFromEl()
+        saveSelectionFromEl(force = true)
         val start = selStart
         val end = selEnd
-        val before = value.substring(0, start)
-        val selected = value.substring(start, end)
-        val after = value.substring(end)
+        // Build from live DOM to avoid races with controlled state
+        val domValue = el.value
+        val before = domValue.substring(0, start)
+        val selected = domValue.substring(start, end)
+        val after = domValue.substring(end)
         val newText = before + wrapperLeft + selected + wrapperRight + after
         setText(newText)
-        // Defer caret placement until after recomposition to prevent browser reset
-        val caret = start + wrapperLeft.length + selected.length + wrapperRight.length
-        pendingSelection = caret..caret
+
+        // If selection existed: select wrappers+content; else caret between wrappers
+        val newStart = if (start != end) {
+            start
+        } else {
+            start + wrapperLeft.length
+        }
+        val newEnd = if (start != end) {
+            end + wrapperLeft.length + wrapperRight.length
+        } else {
+            newStart
+        }
+
+        pendingSelection = newStart..newEnd
         internalSelectionTargetLength = newText.length
+        pendingSelectionAttempts = 0
         // Keep internal selection state in sync
-        selStart = caret
-        selEnd = caret
-        // Keep focus on the editor and immediately collapse selection
+        selStart = newStart
+        selEnd = newEnd
         el.focus()
-        val clamped = caret.coerceIn(0, el.value.length)
-        el.setSelectionRange(clamped, clamped)
+        val domLen = el.value.length
+        if (newEnd <= domLen) {
+            val cs = newStart.coerceIn(0, domLen)
+            val ce = newEnd.coerceIn(0, domLen)
+            el.setSelectionRange(cs, ce)
+        }
     }
 
     fun insertAtCursor(snippet: String) {
         val el = editorEl ?: return
         // Refresh selection to support replacing the current selection
-        saveSelectionFromEl()
+        saveSelectionFromEl(force = true)
         val domValue = el.value
         val start = selStart.coerceIn(0, domValue.length)
         val end = selEnd.coerceIn(0, domValue.length)
@@ -251,35 +278,49 @@ fun RichTextEditor(
 
     fun applyQuote() {
         val el = editorEl ?: return
-        // Ensure we operate on the latest selection
-        saveSelectionFromEl()
+        // Use latest selection
+        saveSelectionFromEl(force = true)
         val start = selStart
         val end = selEnd
-        val before = value.substring(0, start)
-        val selected = value.substring(start, end)
-        val after = value.substring(end)
+        val domValue = el.value
+        val before = domValue.substring(0, start)
+        val selected = domValue.substring(start, end)
+        val after = domValue.substring(end)
         val block = if (selected.isBlank()) "> " else selected.lines().joinToString("\n") { "> $it" }
         val newText = before + block + after
         setText(newText)
-        val caret = (before + block).length
-        // Defer caret placement until after recomposition and gate by length
-        pendingSelection = caret..caret
+
+        val newRange: IntRange = if (selected.isBlank()) {
+            val caret = start + 2
+            caret..caret
+        } else {
+            val linesCount = selected.lines().size
+            val newStart = start + 2
+            val newEnd = end + (2 * linesCount)
+            newStart..newEnd
+        }
+
+        pendingSelection = newRange
         internalSelectionTargetLength = newText.length
+        pendingSelectionAttempts = 0
         // Keep internal selection state in sync
-        selStart = caret
-        selEnd = caret
-        // Keep focus on the editor and collapse selection
+        selStart = newRange.first
+        selEnd = newRange.last
         el.focus()
-        val clamped = caret.coerceIn(0, el.value.length)
-        el.setSelectionRange(clamped, clamped)
+        val domLen = el.value.length
+        if (newRange.last <= domLen) {
+            val cs = newRange.first.coerceIn(0, domLen)
+            val ce = newRange.last.coerceIn(0, domLen)
+            el.setSelectionRange(cs, ce)
+        }
     }
 
     fun applyCode() {
-        // Ensure we use the current selection to decide inline vs block code
-        saveSelectionFromEl()
+        // Decide inline vs block code using current selection
+        saveSelectionFromEl(force = true)
         val start = selStart
         val end = selEnd
-        val selected = value.substring(start, end)
+        val selected = editorEl?.value?.substring(start, end) ?: value.substring(start, end)
         if ("\n" in selected) {
             applyInline("```\n", "\n```")
         } else {
@@ -289,9 +330,9 @@ fun RichTextEditor(
 
     fun applyHeading(level: Int) {
         val el = editorEl ?: return
-        // Refresh selection from element first
-        saveSelectionFromEl()
-        val currentText = value
+        // Refresh selection first
+        saveSelectionFromEl(force = true)
+        val currentText = el.value
         val startIdx = selStart.coerceIn(0, currentText.length)
         val endIdx = selEnd.coerceIn(0, currentText.length)
 
@@ -341,7 +382,7 @@ fun RichTextEditor(
             onMouseDown { it.preventDefault() }
             onClick {
                 if (aiLoading) return@onClick
-                saveSelectionFromEl()
+                saveSelectionFromEl(force = true)
                 aiPrompt = ""
                 showAiDialog = true
             }
@@ -409,7 +450,7 @@ fun RichTextEditor(
             classes(Styles.primaryButton)
             onMouseDown { it.preventDefault() }
             onClick {
-                saveSelectionFromEl()
+                saveSelectionFromEl(force = true)
                 showUploadDialog = true
             }
         }) { Translated("Insert image") }
@@ -417,7 +458,7 @@ fun RichTextEditor(
             classes(Styles.primaryButton)
             onMouseDown { it.preventDefault() }
             onClick {
-                saveSelectionFromEl()
+                saveSelectionFromEl(force = true)
                 showLinkDialog = true
             }
         }) { Translated("Insert link") }
@@ -451,7 +492,7 @@ fun RichTextEditor(
                     saveSelectionFromEl()
                     setText(it.value)
                 }
-                onClick { saveSelectionFromEl() }
+                onClick { saveSelectionFromEl(force = true) }
                 if (aiLoading) {
                     disabled()
                 }
@@ -462,7 +503,7 @@ fun RichTextEditor(
                         val k = event.key.lowercase()
                         if (k == "b" || k == "i" || k == "u") {
                             event.preventDefault()
-                            saveSelectionFromEl()
+                            saveSelectionFromEl(force = true)
                             when (k) {
                                 "b" -> applyInline("**")
                                 "i" -> applyInline("*")
@@ -622,7 +663,7 @@ fun RichTextEditor(
             },
             onSubmit = {
                 // Snapshot current doc and selection before starting async call
-                saveSelectionFromEl()
+                saveSelectionFromEl(force = true)
                 val s = selStart
                 val e = selEnd
                 val docSnapshot = value

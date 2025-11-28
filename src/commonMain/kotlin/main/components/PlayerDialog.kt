@@ -125,12 +125,8 @@ fun PlayerDialog(
 
     // Function to update user status
     val updateUserStatus = {
-        console.log("[DEBUG_LOG] PlayerDialog: updateUserStatus called")
-        console.log("[DEBUG_LOG] PlayerDialog: Current status: '${user.status}', New status: '${status.value}'")
-
         // Only update if status has changed
         if (user.status != status.value) {
-            console.log("[DEBUG_LOG] PlayerDialog: Status changed, updating from '${user.status}' to '${status.value}'")
             user.status = status.value
 
             // Store the status value to use in the coroutine
@@ -142,7 +138,6 @@ fun PlayerDialog(
                 try {
                     // Check connection state again inside coroutine
                     val isConnected = WebSocketApi.isConnected()
-                    console.log("[DEBUG_LOG] PlayerDialog: WebSocket connection state before update: ${if (isConnected) "CONNECTED" else "DISCONNECTED"}")
 
                     if (!isConnected) {
                         console.warn("[DEBUG_LOG] PlayerDialog: WebSocket not connected, will retry status update")
@@ -156,7 +151,6 @@ fun PlayerDialog(
 
                     // Get current world ID
                     val worldId = WebSocketApi.getCurrentWorldId()
-                    console.log("[DEBUG_LOG] PlayerDialog: Current world ID: ${worldId ?: "null"}")
 
                     if (worldId == null) {
                         console.error("[DEBUG_LOG] PlayerDialog: No world ID available, status update failed")
@@ -352,15 +346,6 @@ fun PlayerDialog(
                             }
                         ) {
                             Text(user.username)
-                        }
-
-                        // Player status
-                        Div(
-                            attrs = {
-                                classes(Styles.userStatusText)
-                            }
-                        ) {
-                            Translated("Player Account")
                         }
                     }
                     // Balance summary (clickable)

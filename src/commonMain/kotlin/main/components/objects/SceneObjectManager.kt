@@ -111,7 +111,6 @@ class SceneObjectManager(
             // Set the inner glow color to false to create only an outline
             highlightLayer.innerGlow = false
             
-            console.log("[DEBUG_HIGHLIGHT] Set additional properties: outerGlow=true, innerGlow=false")
         } catch (e: Throwable) {
             console.log("[DEBUG_HIGHLIGHT] Could not set additional properties: ${e.message}")
         }
@@ -125,8 +124,6 @@ class SceneObjectManager(
                 highlightLayer.blurVerticalSize = 1f
             }
         }
-
-        console.log("[DEBUG_HIGHLIGHT] HighlightLayer initialized with intensity: ${highlightLayer.intensity}, blurHorizontalSize: ${highlightLayer.blurHorizontalSize}, blurVerticalSize: ${highlightLayer.blurVerticalSize}")
     }
 
     fun setShadowManager(shadowManager: ShadowManager) {
@@ -140,23 +137,19 @@ class SceneObjectManager(
      * @return true if the object was highlighted successfully, false otherwise
      */
     fun highlightObject(objectId: String): Boolean {
-        console.log("[DEBUG_HIGHLIGHT] Attempting to highlight object: $objectId")
-        
+
         // Remove highlight from previously hovered object
         unhighlightObject()
         
         // Find the object node
         val node = objectMeshes[objectId]
         if (node != null) {
-            console.log("[DEBUG_HIGHLIGHT] Found node for object: $objectId")
             try {
                 // Get all child meshes from the node
                 val childMeshes = node.getChildMeshes(false)
-                console.log("[DEBUG_HIGHLIGHT] Found ${childMeshes.size} child meshes to highlight")
-                
+
                 // Add each child mesh to the highlight layer
                 childMeshes.forEach { childMesh ->
-                    console.log("[DEBUG_HIGHLIGHT] Adding mesh to highlight layer: ${childMesh.name}")
                     highlightLayer.addMesh(childMesh, Color3(1f, 1f, 0f), false)
                 }
                 
@@ -165,16 +158,12 @@ class SceneObjectManager(
                 
                 // Change cursor to grab
                 document.body?.style?.cursor = "grab"
-                console.log("[DEBUG_HIGHLIGHT] Changed cursor to grab")
-                
-                console.log("[DEBUG_HIGHLIGHT] Successfully highlighted object: $objectId")
+
                 return true
             } catch (error: Throwable) {
                 console.error("[DEBUG_HIGHLIGHT] Error highlighting object", error)
                 return false
             }
-        } else {
-            console.log("[DEBUG_HIGHLIGHT] No node found for object: $objectId")
         }
         return false
     }
@@ -183,39 +172,29 @@ class SceneObjectManager(
      * Removes highlight from the currently hovered object
      */
     fun unhighlightObject() {
-        console.log("[DEBUG_HIGHLIGHT] Attempting to unhighlight object")
-        
+
         hoveredObjectId?.let { objectId ->
-            console.log("[DEBUG_HIGHLIGHT] Current hovered object: $objectId")
-            
+
             val node = objectMeshes[objectId]
             if (node != null) {
-                console.log("[DEBUG_HIGHLIGHT] Found node for object: $objectId")
                 try {
                     // Get all child meshes from the node
                     val childMeshes = node.getChildMeshes(false)
-                    console.log("[DEBUG_HIGHLIGHT] Found ${childMeshes.size} child meshes to unhighlight")
-                    
+
                     // Remove each child mesh from the highlight layer
                     childMeshes.forEach { childMesh ->
-                        console.log("[DEBUG_HIGHLIGHT] Removing mesh from highlight layer: ${childMesh.name}")
                         highlightLayer.removeMesh(childMesh)
                     }
                     
                     // Reset cursor
                     document.body?.style?.cursor = "default"
-                    console.log("[DEBUG_HIGHLIGHT] Reset cursor to default")
-                    
-                    console.log("[DEBUG_HIGHLIGHT] Successfully unhighlighted object: $objectId")
+
                 } catch (error: Throwable) {
                     console.error("[DEBUG_HIGHLIGHT] Error unhighlighting object", error)
                 }
             } else {
-                console.log("[DEBUG_HIGHLIGHT] No node found for object: $objectId")
             }
             hoveredObjectId = null
-        } ?: run {
-            console.log("[DEBUG_HIGHLIGHT] No object currently highlighted")
         }
     }
     

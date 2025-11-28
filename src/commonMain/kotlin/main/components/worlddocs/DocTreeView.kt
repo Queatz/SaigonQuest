@@ -132,7 +132,7 @@ fun DocTreeView(
             val node = item.node
             val level = item.level
             val hasChildren = node.children.isNotEmpty()
-            val isExpanded = expanded[node.doc.key] ?: (level == 0)
+            val isExpanded = expanded[node.doc.key] ?: false // ?: (level == 0)
             val isSelected = node.doc.key == selectedDocId
 
             Li(attrs = {
@@ -249,19 +249,17 @@ fun DocTreeView(
 
                 // Row contents
                 // Arrow
-                if (hasChildren) {
-                    Span(attrs = {
-                        onClick {
-                            it.stopPropagation()
-                            expanded[node.doc.key] = !isExpanded
-                        }
+                Span(attrs = {
+                    onClick {
+                        it.stopPropagation()
+                        expanded[node.doc.key] = !isExpanded
+                    }
 
-                        style {
-                            padding(8.px)
-                            opacity(.5f)
-                        }
-                    }) { Text(if (isExpanded) "▾" else "▸") }
-                }
+                    style {
+                        padding(8.px)
+                        opacity(if (!hasChildren) 0.125f else .75f)
+                    }
+                }) { Text(if (isExpanded) "▾" else "▸") }
 
                 // Title
                 Span {
@@ -339,7 +337,7 @@ private fun buildVisibleList(nodes: List<DocTree>, expanded: Map<String, Boolean
     val result = mutableListOf<NodeLevel>()
     fun walk(n: DocTree, level: Int) {
         result += NodeLevel(n, level)
-        val isExpanded = expanded[n.doc.key] ?: (level == 0)
+        val isExpanded = expanded[n.doc.key] ?: false // ?: (level == 0)
         if (n.children.isNotEmpty() && isExpanded) {
             n.children.forEach { child -> walk(child, level + 1) }
         }

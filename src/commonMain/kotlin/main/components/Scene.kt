@@ -165,10 +165,7 @@ fun SceneComponent(url: String) {
         while (true) {
             delay(1_000)
             awaitAnimationFrame()
-            console.log("[FOCUS]", document.activeElement == document.body, document.activeElement?.tagName)
-            console.log("[FOCUS] canvasRef", canvasRef)
             if (document.activeElement == document.body) {
-                console.log("[FOCUS] body has focus")
                 canvasRef?.focus()
                 val canvas = document.getElementById(canvasId) as HTMLCanvasElement
                 canvas.focus()
@@ -209,12 +206,10 @@ fun SceneComponent(url: String) {
 
             ref {
                 canvasRef = it
-                console.log("[FOCUS] canvasRef = ", canvasRef)
                 it.focus()
 
                 onDispose {
                     canvasRef = null
-                    console.log("[FOCUS] canvasRef = ", canvasRef)
                 }
             }
 

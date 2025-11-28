@@ -72,6 +72,7 @@ object EditorStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         gap(8.px)
+        height(0.px)
         property("overflow-y", "auto")
         property("flex-grow", "1")
     }
