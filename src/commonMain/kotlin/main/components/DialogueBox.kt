@@ -5,8 +5,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -37,6 +39,8 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
+import org.w3c.dom.HTMLElement
+import web.animations.awaitAnimationFrame
 import web.cssom.HtmlAttributes.Companion.value
 import kotlin.invoke
 
@@ -50,12 +54,15 @@ import kotlin.invoke
 fun DialogueBox(
     onClose: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    
     // State to track the current dialogue
     var currentDialogue by remember { mutableStateOf<DialogueData?>(null) }
 
     // Responsive helper
     val isMobile = rememberIsMobile()
     var textInput by remember { mutableStateOf("") }
+    var inputEl by remember { mutableStateOf<HTMLElement?>(null) }
 
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
@@ -159,8 +166,12 @@ fun DialogueBox(
 
                         ref {
                             it.focus()
-
-                            onDispose {  }
+                            
+                            inputEl = it
+                            
+                            onDispose {
+                                inputEl = null
+                            }
                         }
                     }
 
@@ -171,6 +182,13 @@ fun DialogueBox(
                                 append(textInput)
                                 if (isNotEmpty() && !textInput.endsWith(" ")) append(' ')
                                 append(transcribed.trim())
+                            }
+                            scope.launch {
+                                delay(100)
+                                awaitAnimationFrame()
+                                inputEl?.let { element ->
+                                    element.scrollLeft = element.scrollWidth.toDouble()
+                                }
                             }
                         }
                     )

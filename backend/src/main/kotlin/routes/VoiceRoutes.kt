@@ -25,8 +25,7 @@ import utils.json
 import org.slf4j.LoggerFactory
 import models.voice.VoiceAudioChunk
 
-private const val model = "gpt-4o-realtime-preview"
-private const val transcribeModel = "gpt-4o-mini-transcribe"
+private const val transcribeModel = "gpt-4o-transcribe"
 
 fun Routing.configureVoiceRoutes() {
     val log = LoggerFactory.getLogger("VoiceRoutes")
@@ -41,6 +40,8 @@ fun Routing.configureVoiceRoutes() {
             }
             return@webSocket
         }
+
+        val language = call.parameters["language"].orEmpty().ifBlank { "vi" }
 
         // Client for OpenAI Realtime
         val client = HttpClient(CIO) {
@@ -108,7 +109,6 @@ fun Routing.configureVoiceRoutes() {
         ) openAi@{
             // Track session readiness for gating audio until the server applies our transcription settings
             val sessionReady = kotlinx.coroutines.CompletableDeferred<Unit>()
-            var seenSessionType: String? = null
 
             // Configure transcription session (no model responses)
             runCatching {
@@ -118,8 +118,7 @@ fun Routing.configureVoiceRoutes() {
                         put("input_audio_format", JsonPrimitive("pcm16"))
                         putJsonObject("input_audio_transcription") {
                             put("model", JsonPrimitive(transcribeModel))
-                            //put("prompt", JsonPrimitive("Transcribe exactly the user provided audio. Expect Vietnamese and/or English speech but detect other languages as needed. Totally ignore silence (do not output any text other than transcribed audio ever.)"))
-                            put("prompt", JsonPrimitive(""))
+                            put("prompt", JsonPrimitive("""Transcribe the Vietnamese and English user input audio. DO NOT output any system or prompt text."""))
                         }
                         putJsonObject("turn_detection") {
                             put("type", JsonPrimitive("server_vad"))
@@ -220,7 +219,6 @@ fun Routing.configureVoiceRoutes() {
                         if (ev.type == "session.created") {
                             val st = ev.session?.type
                             if (st != null) {
-                                seenSessionType = st
                                 log.info("/ws/voice: session.created -> type=$st")
                                 if (st == "transcription" && !sessionReady.isCompleted) sessionReady.complete(Unit)
                             }
@@ -231,7 +229,6 @@ fun Routing.configureVoiceRoutes() {
                         if (ev.type == "session.updated") {
                             val st = ev.session?.type
                             if (st != null) {
-                                seenSessionType = st
                                 log.info("/ws/voice: session.updated -> type=$st")
                                 if (st == "transcription" && !sessionReady.isCompleted) sessionReady.complete(Unit)
                             }
@@ -241,7 +238,6 @@ fun Routing.configureVoiceRoutes() {
                     runCatching {
                         val ev = json.decodeFromString(OpenAiEventType.serializer(), txt)
                         if (ev.type == "transcription_session.created" || ev.type == "transcription_session.updated") {
-                            seenSessionType = "transcription"
                             if (!sessionReady.isCompleted) sessionReady.complete(Unit)
                             log.info("/ws/voice: ${ev.type} -> gating ready")
                         }

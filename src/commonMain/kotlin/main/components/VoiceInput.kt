@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.ApiConstants
@@ -47,12 +48,86 @@ fun VoiceInput(
     var isRecording by remember { mutableStateOf(false) }
     var socket: WebSocket? by remember { mutableStateOf(null) }
     var mediaStream: MediaStream? by remember { mutableStateOf(null) }
-    var audioContext: lib.AudioContext? by remember { mutableStateOf(null) }
+    var audioContext: AudioContext? by remember { mutableStateOf(null) }
     var sourceNode: lib.MediaStreamAudioSourceNode? by remember { mutableStateOf(null) }
     var processorNode: lib.ScriptProcessorNode? by remember { mutableStateOf(null) }
     var flushPending: (() -> Unit)? by remember { mutableStateOf(null) }
+    // Reconnect control
+    var allowReconnect by remember { mutableStateOf(false) }
+    var reconnectAttempts by remember { mutableStateOf(0) }
+    var reconnectJob: Job? by remember { mutableStateOf(null) }
+
+    fun scheduleReconnect(connectSocket: () -> Unit) {
+        // Only if user is still recording and reconnection allowed
+        if (!isRecording || !allowReconnect) return
+        // Avoid multiple concurrent schedules
+        if (reconnectJob?.isActive == true) return
+        val attempts = reconnectAttempts + 1
+        reconnectAttempts = attempts
+        // Exponential backoff with jitter: base 300ms up to 10s
+        val baseMs = 300
+        val maxMs = 10_000
+        val delayMs = kotlin.math.min(maxMs, baseMs * (1 shl kotlin.math.min(8, attempts)))
+        val jitter = (delayMs * 0.2).toInt() // +/-20%
+        val actualDelay = (delayMs - jitter) + kotlin.random.Random.nextInt(jitter * 2 + 1)
+        reconnectJob = scope.launch {
+            try {
+                kotlinx.coroutines.delay(actualDelay.toLong())
+                // If user stopped in the meantime, abort
+                if (!isRecording || !allowReconnect) return@launch
+                // Attempt a new connection
+                connectSocket()
+            } catch (_: Throwable) {
+                // If scheduling fails, we’ll try again on the next onclose/error
+            }
+        }
+    }
+
+    fun connectSocket(wsUrl: String) {
+        // Capture URL for future reconnects
+        val ws = WebSocket(wsUrl)
+        ws.onopen = { _: org.w3c.dom.events.Event ->
+            // Reset backoff
+            reconnectAttempts = 0
+            // When (re)connected during an active recording session, inform backend
+            try {
+                val msg = ApiClient.json.encodeToString(
+                    VoiceControlMessage.serializer(),
+                    VoiceControlMessage(type = "start"),
+                )
+                ws.send(msg)
+            } catch (_: Throwable) {}
+        }
+        ws.onmessage = { event: MessageEvent ->
+            val dataStr: String? = when (val dataAny: Any? = event.data) {
+                is String -> dataAny
+                else -> dataAny?.toString()
+            }
+            if (dataStr != null) {
+                val msg = runCatching { ApiClient.json.decodeFromString(VoiceTranscriptMessage.serializer(), dataStr) }.getOrNull()
+                if (msg != null && msg.type == "final" && msg.text.isNotBlank()) {
+                    onText(msg.text)
+                }
+            }
+        }
+        ws.onclose = { _: org.w3c.dom.events.Event ->
+            socket = null
+            // Auto-reconnect if still recording
+            scheduleReconnect { connectSocket(wsUrl) }
+        }
+        ws.onerror = { _: org.w3c.dom.events.Event ->
+            console.error("VoiceInput: websocket error")
+            // In some browsers onerror precedes onclose; schedule reconnect just in case
+            scheduleReconnect { connectSocket(wsUrl) }
+        }
+        socket = ws
+    }
 
     fun stopRecording() {
+        // Prevent future reconnects and cancel any scheduled one
+        allowReconnect = false
+        try { reconnectJob?.cancel() } catch (_: Throwable) {}
+        reconnectJob = null
         // Flush any buffered audio before signaling stop
         runCatching { flushPending?.invoke() }
         try {
@@ -60,6 +135,8 @@ fun VoiceInput(
             if (s != null) {
                 val msg = ApiClient.json.encodeToString(VoiceControlMessage.serializer(), VoiceControlMessage(type = "stop"))
                 s.send(msg)
+                // Close the socket gracefully to free server resources
+                runCatching { s.close() }
             }
         } catch (_: Throwable) {}
         // Tear down audio graph
@@ -105,35 +182,11 @@ fun VoiceInput(
 
                             // Connect WebSocket to backend proxy
                             val token = UserApi.getToken() ?: ""
-                            val wsUrl = "${ApiConstants.API_BASE_URL}/ws/voice?token=$token"
-                            val ws = WebSocket(wsUrl)
-                            ws.onopen = { _: org.w3c.dom.events.Event ->
-                                val msg = ApiClient.json.encodeToString(
-                                    VoiceControlMessage.serializer(),
-                                    VoiceControlMessage(type = "start"),
-                                )
-                                ws.send(msg)
-                            }
-                            ws.onmessage = { event: MessageEvent ->
-                                val dataAny: Any? = event.data as Any?
-                                val dataStr: String? = when (dataAny) {
-                                    is String -> dataAny
-                                    else -> dataAny?.toString()
-                                }
-                                if (dataStr != null) {
-                                    val msg = runCatching { ApiClient.json.decodeFromString(VoiceTranscriptMessage.serializer(), dataStr) }.getOrNull()
-                                    if (msg != null && msg.type == "final" && msg.text.isNotBlank()) {
-                                        onText(msg.text)
-                                    }
-                                }
-                            }
-                            ws.onclose = { _: org.w3c.dom.events.Event ->
-                                socket = null
-                            }
-                            ws.onerror = { _: org.w3c.dom.events.Event ->
-                                console.error("VoiceInput: websocket error")
-                            }
-                            socket = ws
+                            val user = UserApi.getCurrentUser()
+                            val wsUrl = "${ApiConstants.API_BASE_URL}/ws/voice?language=${user.language}"
+                            allowReconnect = true
+                            reconnectAttempts = 0
+                            connectSocket(wsUrl)
 
                             // Web Audio fallback (Firefox compatible): AudioContext + ScriptProcessorNode
                             val ctx = AudioContext()
@@ -152,7 +205,7 @@ fun VoiceInput(
                             var bytesAccum = 0
                             fun flushIfReady(force: Boolean = false) {
                                 if (bytesAccum == 0) return
-                                if (!force && bytesAccum < 4800) return
+                                if (!force && bytesAccum < 640) return
                                 val totalSamples = bytesAccum / 2
                                 val merged = Int16Array(totalSamples)
                                 var offset = 0

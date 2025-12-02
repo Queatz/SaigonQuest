@@ -119,13 +119,20 @@ fun RichTextEditor(
     var internalSelectionTargetLength by remember { mutableStateOf<Int?>(null) }
 
     // Sync selection from parent control prop
-    LaunchedEffect(editorEl, selection, value) {
+    LaunchedEffect(editorEl, selection, value, selectionTargetLength) {
         val sel = selection
         val el = editorEl
         if (el != null && sel != null) {
             if (pendingSelection == null && internalSelectionTargetLength == null) {
-                val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
-                pendingSelection = desired
+                // If parent provides a target length, only accept when it matches current value length
+                val targetLen = selectionTargetLength
+                if (targetLen == null || targetLen == value.length) {
+                    val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
+                    // Avoid re-applying the same range which can cause flicker
+                    if (!(selStart == desired.first && selEnd == desired.last)) {
+                        pendingSelection = desired
+                    }
+                }
             }
         }
     }
@@ -538,6 +545,8 @@ fun RichTextEditor(
                                     pendingSelection = s..e
                                     internalSelectionTargetLength = newVal.length
                                     pendingSelectionAttempts = 0
+                                    // Notify parent so external selection prop stays in sync and doesn't reapply stale ranges
+                                    try { onSelectionChange(s, e) } catch (_: Throwable) {}
                                     // Parent is responsible for syncing state to avoid unintended saves
                                     true
                                 } finally {
@@ -566,6 +575,8 @@ fun RichTextEditor(
                                     pendingSelectionAttempts = 0
                                     // Sync compose state
                                     onValueChange(newText)
+                                    // Keep parent selection in sync to avoid external reapplication of stale selection
+                                    try { onSelectionChange(s, e) } catch (_: Throwable) {}
                                     true
                                 } finally {
                                     suppressOnInput = false
@@ -589,6 +600,8 @@ fun RichTextEditor(
                                 pendingSelection = s..e
                                 internalSelectionTargetLength = len
                                 pendingSelectionAttempts = 0
+                                // Inform parent about programmatic selection changes
+                                try { onSelectionChange(s, e) } catch (_: Throwable) {}
                                 true
                             }
                         }
