@@ -76,6 +76,9 @@ vi: Quét để tham gia!
 Change Password
 vi: Đổi mật khẩu
 
+Change
+vi: Thay đổi
+
 Current Password
 vi: Mật khẩu hiện tại
 
@@ -1495,6 +1498,9 @@ vi: Tạo tài liệu
 
 Search docs
 vi: Tìm kiếm tài liệu
+
+Select doc
+vi: Chọn tài liệu
 
 World has no docs.
 vi: Thế giới chưa có tài liệu.

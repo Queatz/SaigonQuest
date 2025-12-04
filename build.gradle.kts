@@ -158,18 +158,18 @@ kotlin {
                 implementation("app.softwork:routing-compose:0.5.0")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.11.5")
 
-                implementation(npm("marked", "16.4.2"))
+                implementation(npm("marked", "17.0.1"))
                 implementation(npm("qr", "0.5.2"))
-                implementation(npm("@babylonjs/core", "8.36.0"))
-                implementation(npm("@babylonjs/materials", "8.36.0"))
-                implementation(npm("@babylonjs/loaders", "8.36.0"))
-                implementation(npm("babylonjs-gltf2interface", "8.36.0"))
+                implementation(npm("@babylonjs/core", "8.39.3"))
+                implementation(npm("@babylonjs/materials", "8.39.3"))
+                implementation(npm("@babylonjs/loaders", "8.39.3"))
+                implementation(npm("babylonjs-gltf2interface", "8.39.3"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
 
                 // Ktor client
-                implementation("io.ktor:ktor-client-core:3.3.1")
-                implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
+                implementation("io.ktor:ktor-client-core:3.3.3")
+                implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")

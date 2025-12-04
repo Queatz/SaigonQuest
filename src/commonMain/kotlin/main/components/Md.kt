@@ -13,7 +13,9 @@ import main.theme.Styles
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLSpanElement
+import org.w3c.dom.events.Event
 import kotlin.js.Json
 import kotlin.js.json
 
@@ -24,7 +26,7 @@ private fun registerUnderlineExtension() {
 
     // Build a Marked extension that supports <u>...</u> in inline content
     val extension: Json = json(
-        "extensions" to arrayOf<Json>(
+        "extensions" to arrayOf(
             json(
                 "name" to "underline",
                 "level" to "inline",
@@ -95,7 +97,45 @@ fun Md(
     var element by remember { mutableStateOf<Element?>(null) }
 
     LaunchedEffect(html, element) {
-        element?.innerHTML = html
+        val container = element ?: return@LaunchedEffect
+
+        // Inject HTML
+        container.innerHTML = html
+
+        // After injection, attach load handlers to images so they fade in once ready
+        val images = container.getElementsByTagName("img")
+        for (i in 0 until images.length) {
+            val img = images.item(i) as? HTMLImageElement ?: continue
+
+            // Ensure we start hidden (CSS handles opacity 0), and reveal when ready
+            img.classList.remove("loaded")
+
+            // If already loaded from cache, mark as loaded immediately
+            if (img.complete && img.naturalWidth > 0) {
+                img.classList.add("loaded")
+                continue
+            }
+
+            var onLoad: ((Event) -> Unit)? = null
+            var onError: ((Event) -> Unit)? = null
+
+            onLoad = {
+                img.classList.add("loaded")
+                // Clean up listeners
+                img.removeEventListener("load", onLoad!!)
+                img.removeEventListener("error", onError!!)
+            }
+
+            // In case of error, still reveal the element so the broken image indicator shows
+            onError = {
+                img.classList.add("loaded")
+                img.removeEventListener("load", onLoad!!)
+                img.removeEventListener("error", onError!!)
+            }
+
+            img.addEventListener("load", onLoad)
+            img.addEventListener("error", onError)
+        }
     }
 
     Span(

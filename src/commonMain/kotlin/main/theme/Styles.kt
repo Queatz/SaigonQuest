@@ -80,8 +80,18 @@ object Styles : StyleSheet() {
         }
 
         desc(self, selector("img")) style {
+            // Start images hidden until they load, then fade in
+            opacity(0)
+            property("transition", "opacity 250ms ease")
+
             width(100.percent)
             borderRadius(12.px)
+            backgroundColor(Color.transparent)
+        }
+
+        // When the image has the `loaded` class, reveal it
+        desc(self, selector("img.loaded")) style {
+            opacity(1)
         }
 
         desc(self, selector("pre")) style {

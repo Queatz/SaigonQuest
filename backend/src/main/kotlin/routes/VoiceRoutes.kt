@@ -25,7 +25,7 @@ import utils.json
 import org.slf4j.LoggerFactory
 import models.voice.VoiceAudioChunk
 
-private const val transcribeModel = "gpt-4o-transcribe"
+private const val transcribeModel = "gpt-4o-mini-transcribe"
 
 fun Routing.configureVoiceRoutes() {
     val log = LoggerFactory.getLogger("VoiceRoutes")

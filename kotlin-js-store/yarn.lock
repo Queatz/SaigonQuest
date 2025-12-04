@@ -2,20 +2,20 @@
 # yarn lockfile v1
 
 
-"@babylonjs/core@8.36.0":
-  version "8.36.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/core/-/core-8.36.0.tgz#5167fe0f62e21980ed69674c8cd5e3181b0301bf"
-  integrity sha512-4hPQXdAT8yDFUQZzVbc0kD4BLrK0vlu4ikw3SNqY2cridJnVXTNE93LJDvTyl/0PVCf1pZTxUlFAOPrlcKqFpA==
+"@babylonjs/core@8.39.3":
+  version "8.39.3"
+  resolved "https://registry.yarnpkg.com/@babylonjs/core/-/core-8.39.3.tgz#367e0e69fa25fbeaee3ca6b80795da8549ab229f"
+  integrity sha512-SS0n8uHpSNr0xUQoynel1EYCw/4ZtgKOoWrlq7oxVNHJ+ssqcGviScJAZKayUzn75h5UtcZfRuBn/MCNk6c5IQ==
 
-"@babylonjs/loaders@8.36.0":
-  version "8.36.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-8.36.0.tgz#352625bf268588a236cd7e07f16f1e10851ba308"
-  integrity sha512-0c9cXXAzn3nNl4jZkZaxrPeT9ygRmuxP+/jX+m9hFrDYizbKBqRowxUpUkqGGBridD1csl8i/XWD9Ryt4ENYCA==
+"@babylonjs/loaders@8.39.3":
+  version "8.39.3"
+  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-8.39.3.tgz#81d5e2e6188e60f2b8c845b6541ccea629244ce7"
+  integrity sha512-iCZcArCnkEA+s7j98dZsNkAmFTdukWK18BDwdD7qyE/Yxdf0j7+ZPUfmuoGej02vaXecP8vzDqQJSUYxhvwR3A==
 
-"@babylonjs/materials@8.36.0":
-  version "8.36.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/materials/-/materials-8.36.0.tgz#7fce8e3a98d49388402277e4d670a6bba0236308"
-  integrity sha512-w2CpdfwrLOjMqIgSVJAwN8vFpKG3HpKWc/v2EWYELCo4AlC1a0MMm+4ANNYmrXGPZn/7T5rIZ8mk0ftvNnswww==
+"@babylonjs/materials@8.39.3":
+  version "8.39.3"
+  resolved "https://registry.yarnpkg.com/@babylonjs/materials/-/materials-8.39.3.tgz#88d0202ce6d3973a657fea324a309eed685001c0"
+  integrity sha512-9WY/S6ftediSRGlXYEDY64uoqv8ElUU9dRjPmbwPn5EYVG9S1n/WqsDNdYwkOkg/mHgqlwmffciGW6EWvAOWWw==
 
 "@colors/colors@1.5.0":
   version "1.5.0"
@@ -576,10 +576,10 @@ array-flatten@1.1.1:
   resolved "https://registry.yarnpkg.com/array-flatten/-/array-flatten-1.1.1.tgz#9a5f699051b1e7073328f2a008968b64ea2955d2"
   integrity sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==
 
-babylonjs-gltf2interface@8.36.0:
-  version "8.36.0"
-  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-8.36.0.tgz#532b1f8b7cee75a2300ddaf0dc32254d74f1debc"
-  integrity sha512-qYvS9fWbc4TM8zd7mgA8Jo7n9Z5wmLY8RORxeqQN8gqUcQq6q7HOB9oviBBrCCtZ7vPXb3moFIUbOxGXIF1qaQ==
+babylonjs-gltf2interface@8.39.3:
+  version "8.39.3"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-8.39.3.tgz#0738590c437e938d83a738e368c6fd409f54faf8"
+  integrity sha512-1HIWC3JqfHjkPby9YWpE1wUUeTSfUr7l3xr6Mw4okqW4RWsbtZdSWzL1KisIIO87QOuG5lJjMqeAh8HWGDrUSw==
 
 balanced-match@^1.0.0:
   version "1.0.2"
@@ -1892,10 +1892,10 @@ lru-cache@^10.2.0:
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-10.4.3.tgz#410fc8a17b70e598013df257c2446b7f3383f119"
   integrity sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==
 
-marked@16.4.2:
-  version "16.4.2"
-  resolved "https://registry.yarnpkg.com/marked/-/marked-16.4.2.tgz#4959a64be6c486f0db7467ead7ce288de54290a3"
-  integrity sha512-TI3V8YYWvkVf3KJe1dRkpnjs68JUPyEa5vjKrp1XEEJUAOaQc+Qj+L1qWbPd0SJuAdQkFU0h73sXXqwDYxsiDA==
+marked@17.0.1:
+  version "17.0.1"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-17.0.1.tgz#9db34197ac145e5929572ee49ef701e37ee9b2e6"
+  integrity sha512-boeBdiS0ghpWcSwoNm/jJBwdpFaMnZWRzjA6SkUMYb40SVaN1x7mmfGKp0jvexGcx+7y2La5zRZsYFZI6Qpypg==
 
 math-intrinsics@^1.1.0:
   version "1.1.0"
