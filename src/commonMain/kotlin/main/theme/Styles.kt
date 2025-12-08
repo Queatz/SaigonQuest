@@ -411,6 +411,15 @@ object Styles : StyleSheet() {
         fontSize(12.px)
     }
 
+    // Success (green) variant for badges
+    val badgeSuccess by style {
+        backgroundColor(Theme.colors.success)
+
+        dark(self) {
+            backgroundColor(Theme.colors.successDark)
+        }
+    }
+
     val redDotIndicator by style {
         position(Position.Absolute)
         top(4.px)

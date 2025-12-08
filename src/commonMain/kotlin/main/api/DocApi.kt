@@ -167,6 +167,22 @@ object DocApi {
         }
     }
 
+    suspend fun getDocCount(worldId: String): Int {
+        val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/worlds/$worldId/docs/count") {
+            ApiClient.addAuthHeader(this)
+        }
+        if (response.status.isSuccess()) {
+            return try {
+                response.body()
+            } catch (_: Throwable) {
+                response.bodyAsText().toIntOrNull() ?: 0
+            }
+        } else {
+            val errorResponse = try { response.body<ErrorResponse>() } catch (_: Throwable) { ErrorResponse(message = response.bodyAsText()) }
+            throw Error(errorResponse.message)
+        }
+    }
+
     // Collaboration connection handle
     class CollaborationConnection(
         val events: kotlinx.coroutines.flow.Flow<WsEvent>,

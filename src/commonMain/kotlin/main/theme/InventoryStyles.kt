@@ -91,7 +91,7 @@ object InventoryStyles : StyleSheet() {
         property("text-align", "center")
         padding(12.px)
         backgroundColor(Theme.colors.white06)
-        borderRadius(4.px)
+        borderRadius(12.px)
 
         dark(self) {
             color(Theme.colors.onSurfaceDark)
@@ -151,7 +151,7 @@ object InventoryStyles : StyleSheet() {
         padding(12.px)
         property("margin-bottom", "8px")
         backgroundColor(Theme.colors.white06)
-        borderRadius(4.px)
+        borderRadius(12.px)
         alignItems(AlignItems.Center)
         cursor("grab")
 

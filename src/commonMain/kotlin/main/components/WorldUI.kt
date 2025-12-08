@@ -22,6 +22,7 @@ import main.api.ApiClient
 import main.api.AssetApi
 import main.api.ChatApi
 import main.api.ContentApi
+import main.api.DocApi
 import main.api.UserApi
 import models.chat.ImageAttachment
 import main.api.NotificationApi
@@ -96,6 +97,9 @@ fun WorldUI(
     // State for unread chat count
     var unreadChatCount by remember { mutableStateOf(0) }
 
+    // State for total docs in the world (for the Docs button badge)
+    var worldDocsCount by remember { mutableStateOf(0) }
+
     // State for active shout overlay
     var activeShout by remember { mutableStateOf<ChatMessage?>(null) }
     var shoutOpacity by remember { mutableStateOf(0.0) }
@@ -159,17 +163,34 @@ fun WorldUI(
             }
         }
     }
+
+    // Function to fetch total docs count for current world
+    fun fetchWorldDocsCount() {
+        currentWorld?.let { world ->
+            scope.launch {
+                try {
+                    val count = DocApi.getDocCount(world.key)
+                    worldDocsCount = count
+                } catch (e: Throwable) {
+                    console.error("Error fetching docs count for world ${world.key}", e)
+                }
+            }
+        }
+    }
     
     // Fetch unread counts when the component is first rendered
     LaunchedEffect(Unit) {
         fetchUnreadNotificationCount()
         fetchUnreadChatCount()
+        fetchWorldDocsCount()
         
         // Periodically refresh the unread counts (every 30 seconds)
         while (true) {
             delay(30000) // 30 seconds
             fetchUnreadNotificationCount()
             fetchUnreadChatCount()
+            // Keep docs count reasonably fresh in case of external changes
+            fetchWorldDocsCount()
         }
     }
     
@@ -185,6 +206,26 @@ fun WorldUI(
             // Small delay to allow any "mark as read" operations to complete
             delay(500)
             fetchUnreadChatCount()
+        }
+    }
+
+    // Fetch docs count when current world changes
+    LaunchedEffect(currentWorld?.key) {
+        fetchWorldDocsCount()
+    }
+
+    // Listen for worldDocsChanged custom events to refresh docs count
+    DisposableEffect(currentWorld?.key) {
+        val handler: (dynamic) -> Unit = { ev: dynamic ->
+            val detail = ev?.detail
+            val wid = detail?.worldId as? String
+            if (wid == currentWorld?.key) {
+                fetchWorldDocsCount()
+            }
+        }
+        window.addEventListener("worldDocsChanged", handler)
+        onDispose {
+            window.removeEventListener("worldDocsChanged", handler)
         }
     }
     
@@ -668,7 +709,8 @@ fun WorldUI(
                         isWorldDocsDialogOpen = true
                     },
                     iconIndex = 29, // Docs
-                    badgeCount = 0,
+                    badgeCount = worldDocsCount,
+                    badgeIsSuccess = true,
                     id = "worldButton",
                     title = translated("Docs"),
                 )

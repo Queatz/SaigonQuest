@@ -22,6 +22,7 @@ import main.components.Translated
 import main.components.chat.ChatComposerController
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
 import models.Doc
 import models.DocTree
@@ -43,6 +44,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
 import web.animations.awaitAnimationFrame
+import kotlinx.browser.window
 
 @Composable
 fun WorldDocsDialog(
@@ -225,6 +227,11 @@ fun WorldDocsDialog(
                                     renameTitle = created.title
                                     requestFocusOnTitle = true
                                     error = null
+                                    // Notify listeners that world docs changed (for counts)
+                                    val detail: dynamic = object {}
+                                    detail.worldId = worldId
+                                    val evt = createCustomEvent("worldDocsChanged", detail)
+                                    window.dispatchEvent(evt)
                                 }
                                 result.onFailure { t ->
                                     error = t.message
@@ -560,6 +567,11 @@ fun WorldDocsDialog(
                             result.onSuccess {
                                 docs = removeNode(docs, id)
                                 selectedDocId = docs.firstOrNull()?.doc?.key
+                                // Notify listeners that world docs changed (for counts)
+                                val detail: dynamic = object {}
+                                detail.worldId = worldId
+                                val evt = createCustomEvent("worldDocsChanged", detail)
+                                window.dispatchEvent(evt)
                             }
                             result.onFailure { t -> error = t.message }
                         }

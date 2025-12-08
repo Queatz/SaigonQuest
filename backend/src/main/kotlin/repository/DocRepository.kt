@@ -110,6 +110,25 @@ class DocRepository {
         return buildTree(docs)
     }
 
+    /**
+     * Lightweight count of docs in a world.
+     */
+    fun countByWorldId(worldId: String): Int {
+        val aql = """
+            RETURN LENGTH(
+              FOR d IN @@collection
+              FILTER d.worldId == @worldId
+              RETURN 1
+            )
+        """.trimIndent()
+        val bind = mapOf(
+            "@collection" to CollectionsConfig.DOCS_COLLECTION,
+            "worldId" to worldId,
+        )
+        val list = ArangoConfig.db.query(aql, Int::class.java, bind).toList()
+        return list.firstOrNull() ?: 0
+    }
+
     fun searchDocs(worldId: String, query: String, limit: Int = 50): List<Doc> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()

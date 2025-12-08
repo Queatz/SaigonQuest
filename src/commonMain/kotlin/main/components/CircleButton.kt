@@ -27,6 +27,7 @@ fun CircleButton(
     badgeCount: Int? = -1,
     opacity: Double = 1.0,
     isChat: Boolean = false,
+    badgeIsSuccess: Boolean = false,
     id: String? = null,
     title: String = "",
     elementRef: ((HTMLElement) -> Unit)? = null
@@ -71,6 +72,9 @@ fun CircleButton(
                             classes(Styles.chatBadge)
                         } else {
                             classes(Styles.normalBadge)
+                        }
+                        if (badgeIsSuccess) {
+                            classes(Styles.badgeSuccess)
                         }
                     }
                 ) {

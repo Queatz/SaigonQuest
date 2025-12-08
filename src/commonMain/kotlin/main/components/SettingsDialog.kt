@@ -30,7 +30,7 @@ fun SettingsDialog(
 
             Button(
                 attrs = {
-                    classes(Styles.secondaryButton)
+                    classes(Styles.primaryButton)
                     onClick {
                         onShowUI(!showUI)
                         onClose()
@@ -43,7 +43,7 @@ fun SettingsDialog(
             // Wide Angle
             Button(
                 attrs = {
-                    classes(Styles.secondaryButton)
+                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
                     }
@@ -59,7 +59,7 @@ fun SettingsDialog(
             // Observer Mode
             Button(
                 attrs = {
-                    classes(Styles.secondaryButton)
+                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
                     }
@@ -75,7 +75,7 @@ fun SettingsDialog(
             // Always show QR code
             Button(
                 attrs = {
-                    classes(Styles.secondaryButton)
+                    classes(Styles.primaryButton)
                     style { marginTop(16.px) }
                     onClick {
                         alwaysShowQr.value = !alwaysShowQr.value
@@ -89,7 +89,7 @@ fun SettingsDialog(
             // Change Password
             Button(
                 attrs = {
-                    classes(Styles.secondaryButton)
+                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
                     }

@@ -42,6 +42,20 @@ fun Routing.configureDocRoutes() {
             call.respond(tree)
         }
 
+        // Lightweight total docs count for a world
+        get("/count") {
+            val worldId = call.parameters["worldId"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("message" to "Missing worldId")
+            )
+            try {
+                val count = docRepository.countByWorldId(worldId)
+                call.respond(count)
+            } catch (t: Throwable) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("message" to (t.message ?: "Error")))
+            }
+        }
+
         // Search docs by title
         get("/search") {
             val worldId = call.parameters["worldId"] ?: return@get call.respond(
