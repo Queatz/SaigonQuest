@@ -63,7 +63,7 @@ object WindSystem {
     }
 
     /** Current boost influence [0..1], where 1 at start, 0 at end of duration. */
-    fun getBoostInfluence(now: Float = timeSeconds): Float {
+    private fun getBoostInfluence(now: Float = timeSeconds): Float {
         if (now > boostUntilTime) return 0f
         val remaining = boostUntilTime - now
         return (remaining / boostDuration).coerceIn(0f, 1f).pow(2f)

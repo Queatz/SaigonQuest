@@ -90,10 +90,7 @@ class SpriteSheet(
                 imageUrl = "/raw/data/spritesheets/$imageUrl.png",
                 cellWidthPx = 32,
                 cellHeightPx = 48,
-                columns = 8,
-                // Enable wind on base to ensure movement boost has visible target even without hair
-                windEnabled = true,
-                windIntensityScale = 0.02f,
+                columns = 8
             )
         }
 
@@ -120,10 +117,7 @@ class SpriteSheet(
                 imageUrl = "/raw/data/spritesheets/$fileName.png",
                 cellWidthPx = 32,
                 cellHeightPx = 48,
-                columns = 8,
-                // Enable wind on base to ensure movement boost has visible target even without hair
-                windEnabled = true,
-                windIntensityScale = 0.02f,
+                columns = 8
             )
         }
 

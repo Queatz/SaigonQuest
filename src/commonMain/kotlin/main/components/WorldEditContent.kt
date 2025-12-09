@@ -1472,6 +1472,7 @@ fun WorldEditContent(
                     }
                 }
             ) {
+                var showFogPrompt by remember { mutableStateOf(false) }
                 // Slider for fog density
                 RangeInput(
                     value = fogDensity,
@@ -1506,13 +1507,40 @@ fun WorldEditContent(
                 Div(
                     attrs = {
                         style {
-
-                            fontSize(14.px)
                             property("min-width", "40px")
+                            if (fieldsEnabled) {
+                                cursor("pointer")
+                            } else {
+                                property("opacity", "0.7")
+                                cursor("not-allowed")
+                            }
+                        }
+                        if (fieldsEnabled) {
+                            attr("title", str("Click to edit"))
+                            onClick { showFogPrompt = true }
                         }
                     }
                 ) {
                     Text(fogDensity.toString())
+                }
+
+                if (showFogPrompt) {
+                    BasicPromptDialog(
+                        title = translated("Fog density"),
+                        defaultValue = fogDensity.toString(),
+                        isNumber = true,
+                        min = 0f,
+                        max = 1f,
+                        onSubmit = { input ->
+                            val parsed = input.toFloatOrNull()
+                            if (parsed != null) {
+                                fogDensity = parsed.coerceIn(0f, 1f)
+                                updateSceneFogDensity(fogDensity)
+                            }
+                            showFogPrompt = false
+                        },
+                        onCancel = { showFogPrompt = false },
+                    )
                 }
             }
         }

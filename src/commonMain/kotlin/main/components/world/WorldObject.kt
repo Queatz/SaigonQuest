@@ -494,7 +494,7 @@ class Character(
                 // Drive base amplitude via intensityScale (sheet scale only; outdoors gating moved into windIntensity)
                 effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
                 // Set initial windDirLocal including decayed movement boost
-                val camera = main.components.SceneManager.getCameraController()?.getCamera()
+                val camera = SceneManager.getCameraController()?.getCamera()
                 val camDir = if (camera != null) {
                     val d = camera.target.subtract(camera.position).normalize()
                     Vector3(d.x, 0f, d.z).normalize()
