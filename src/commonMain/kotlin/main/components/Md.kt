@@ -21,7 +21,7 @@ import kotlin.js.json
 
 private var underlineExtensionRegistered: Boolean = false
 
-private fun registerUnderlineExtension() {
+internal fun ensureUnderlineExtensionRegistered() {
     if (underlineExtensionRegistered) return
 
     // Build a Marked extension that supports <u>...</u> in inline content
@@ -56,44 +56,56 @@ private fun registerUnderlineExtension() {
     underlineExtensionRegistered = true
 }
 
+/**
+ * Converts markdown to HTML using the same Marked configuration as the Md composable.
+ *
+ * softBreaks=true (default) will convert single newlines to Markdown soft breaks ("  \n") for display.
+ * For contenteditable editing, pass softBreaks=false so lists do not get extra <br> at line ends.
+ */
+fun markdownToHtml(
+    content: String,
+    softBreaks: Boolean = true,
+): String {
+    val renderer = marked.Renderer()
+    val originalLinkRenderer: dynamic = renderer.link
+
+    renderer.html = { data ->
+        data.text.replace("<", "&lt;").replace(">", "&gt;")
+    }
+
+    renderer.link = { data ->
+        val localLink = data.href.startsWith("${window.location.protocol}//${window.location.hostname}")
+        val html = originalLinkRenderer.call(renderer, data) as String
+        if (localLink) {
+            html
+        } else {
+            html.replace(
+                regex = "^<a ".toRegex(),
+                replacement = "<a target=\"_blank\" rel=\"noreferrer noopener nofollow\" ",
+            )
+        }
+    }
+
+    val options: dynamic = object {}
+    options.renderer = renderer
+
+    // Ensure the underline extension is registered once
+    ensureUnderlineExtensionRegistered()
+
+    val text = if (softBreaks) content.replace("\n", "  \n") else content
+
+    return parse(
+        text = text,
+        options = options,
+    )
+}
+
 @Composable
 fun Md(
     content: String,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {
-    val html = remember(content) {
-        val renderer = marked.Renderer()
-        val originalLinkRenderer: dynamic = renderer.link
-
-        renderer.html = { data ->
-            data.text.replace("<", "&lt;").replace(">", "&gt;")
-        }
-
-        renderer.link = { data ->
-            val localLink = data.href.startsWith("${window.location.protocol}//${window.location.hostname}")
-            val html = originalLinkRenderer.call(renderer, data) as String
-            if (localLink) {
-                html
-            } else {
-                html.replace(
-                    regex = "^<a ".toRegex(),
-                    replacement = "<a target=\"_blank\" rel=\"noreferrer noopener nofollow\" ",
-                )
-            }
-        }
-
-        // Create options object with renderer
-        val options: dynamic = object {}
-        options.renderer = renderer
-
-        // Ensure the underline extension is registered once
-        registerUnderlineExtension()
-
-        parse(
-            text = content.replace("\n", "  \n"),
-            options = options,
-        )
-    }
+    val html = remember(content) { markdownToHtml(content, softBreaks = true) }
     var element by remember { mutableStateOf<Element?>(null) }
 
     LaunchedEffect(html, element) {

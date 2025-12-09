@@ -85,4 +85,16 @@ class WorldRepository {
             false
         }
     }
+
+    /**
+     * Returns true if there is at least one world in the database.
+     */
+    fun existsAny(): Boolean {
+        val query = "FOR w IN @@collection LIMIT 1 RETURN 1"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.WORLDS_COLLECTION,
+        )
+
+        return ArangoConfig.db.query(query, Int::class.java, bindVars).toList().isNotEmpty()
+    }
 }

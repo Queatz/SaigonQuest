@@ -1643,6 +1643,12 @@ vi: Yêu cầu loại nút mới
 Request new wearable type
 vi: Yêu cầu loại trang phục mới
 
+Show MD
+vi: Hiện MD
+
+Hide MD
+vi: Ẩn MD
+
 Request new wearable item type
 vi: Yêu cầu loại vật phẩm có thể mặc mới
 

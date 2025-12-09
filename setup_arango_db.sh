@@ -8,7 +8,7 @@
 DB_NAME="saigon_quest"
 UPLOADS_DB_NAME="saigon_quest_uploads"
 ADMIN_USER="root"
-ADMIN_PASSWORD="root"
+ADMIN_PASSWORD="root" # May be ""
 APP_USER="saigonquest"
 APP_PASSWORD="saigonquest"
 HOST="localhost"

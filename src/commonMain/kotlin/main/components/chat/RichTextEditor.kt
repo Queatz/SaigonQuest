@@ -18,6 +18,7 @@ import main.components.media.UploadMediaDialog
 import main.components.translated
 import main.components.BasicAlertDialog
 import main.components.VoiceInput
+import main.components.chat.MdEditable
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
@@ -50,6 +51,7 @@ class RichTextEditorController {
     internal var applyOpsImpl: ((List<DocOperation>, Int, Int) -> Boolean)? = null
     internal var applySnapshotImpl: ((String, Int, Int) -> Boolean)? = null
     internal var setSelectionImpl: ((Int, Int) -> Boolean)? = null
+    internal var inlineWrapImpl: ((String, String) -> Boolean)? = null
 
     fun applyRemoteOps(ops: List<DocOperation>, newSelStart: Int, newSelEnd: Int): Boolean {
         return applyOpsImpl?.invoke(ops, newSelStart, newSelEnd) == true
@@ -59,6 +61,10 @@ class RichTextEditorController {
     }
     fun setSelection(start: Int, end: Int): Boolean {
         return setSelectionImpl?.invoke(start, end) == true
+    }
+
+    fun inlineWrap(left: String, right: String = left): Boolean {
+        return inlineWrapImpl?.invoke(left, right) == true
     }
 }
 
@@ -74,6 +80,7 @@ fun RichTextEditor(
 ) {
     var showUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
+    var showRawMd by remember { mutableStateOf(false) }
     // AI integration state
     var showAiDialog by remember { mutableStateOf(false) }
     var showAiHistoryDialog by remember { mutableStateOf(false) }
@@ -219,80 +226,84 @@ fun RichTextEditor(
     }
 
     fun applyInline(wrapperLeft: String, wrapperRight: String = wrapperLeft) {
-        val el = editorEl ?: return
-        // Always refresh selection from the live element to avoid stale values
-        saveSelectionFromEl(force = true)
+        // Always fetch latest selection from active surface if textarea is focused
+        val rawFocused = (document.activeElement === editorEl)
+        if (rawFocused) saveSelectionFromEl(force = true)
+
+        // If contenteditable surface is focused, delegate wrapping to it for exact mapping
+        if (!rawFocused) {
+            val handled = controller?.inlineWrap(wrapperLeft, wrapperRight) == true
+            if (handled) return
+        }
+
         val start = selStart
         val end = selEnd
-        // Build from live DOM to avoid races with controlled state
-        val domValue = el.value
-        val before = domValue.substring(0, start)
-        val selected = domValue.substring(start, end)
-        val after = domValue.substring(end)
+        val source = if (rawFocused && editorEl != null) editorEl!!.value else value
+        val before = source.substring(0, start)
+        val selected = source.substring(start, end)
+        val after = source.substring(end)
         val newText = before + wrapperLeft + selected + wrapperRight + after
         setText(newText)
 
         // If selection existed: select wrappers+content; else caret between wrappers
-        val newStart = if (start != end) {
-            start
-        } else {
-            start + wrapperLeft.length
-        }
-        val newEnd = if (start != end) {
-            end + wrapperLeft.length + wrapperRight.length
-        } else {
-            newStart
-        }
+        val newStart = if (start != end) start else start + wrapperLeft.length
+        val newEnd = if (start != end) end + wrapperLeft.length + wrapperRight.length else newStart
 
-        pendingSelection = newStart..newEnd
-        internalSelectionTargetLength = newText.length
-        pendingSelectionAttempts = 0
-        // Keep internal selection state in sync
+        // Update internal state and apply selection to the surface that is focused
         selStart = newStart
         selEnd = newEnd
-        el.focus()
-        val domLen = el.value.length
-        if (newEnd <= domLen) {
-            val cs = newStart.coerceIn(0, domLen)
-            val ce = newEnd.coerceIn(0, domLen)
-            el.setSelectionRange(cs, ce)
+        if (rawFocused && editorEl != null) {
+            pendingSelection = newStart..newEnd
+            internalSelectionTargetLength = newText.length
+            pendingSelectionAttempts = 0
+            val el = editorEl!!
+            el.focus()
+            val domLen = el.value.length
+            if (newEnd <= domLen) {
+                val cs = newStart.coerceIn(0, domLen)
+                val ce = newEnd.coerceIn(0, domLen)
+                el.setSelectionRange(cs, ce)
+            }
+        } else {
+            controller?.setSelection(newStart, newEnd)
         }
     }
 
     fun insertAtCursor(snippet: String) {
-        val el = editorEl ?: return
-        // Refresh selection to support replacing the current selection
-        saveSelectionFromEl(force = true)
-        val domValue = el.value
-        val start = selStart.coerceIn(0, domValue.length)
-        val end = selEnd.coerceIn(0, domValue.length)
-        val before = domValue.substring(0, start)
-        val after = domValue.substring(end)
+        val rawFocused = (document.activeElement === editorEl)
+        if (rawFocused) saveSelectionFromEl(force = true)
+        val src = if (rawFocused && editorEl != null) editorEl!!.value else value
+        val start = selStart.coerceIn(0, src.length)
+        val end = selEnd.coerceIn(0, src.length)
+        val before = src.substring(0, start)
+        val after = src.substring(end)
         val newText = before + snippet + after
         setText(newText)
         val caret = start + snippet.length
-        // Defer caret placement until after recomposition and gate by expected length
-        pendingSelection = caret..caret
-        internalSelectionTargetLength = newText.length
-        // Keep internal selection state in sync
         selStart = caret
         selEnd = caret
-        // Keep focus on the editor and immediately collapse selection to caret to avoid selecting inserted text
-        el.focus()
-        val clamped = caret.coerceIn(0, el.value.length)
-        el.setSelectionRange(clamped, clamped)
+        if (rawFocused && editorEl != null) {
+            // Defer caret placement until after recomposition and gate by expected length
+            pendingSelection = caret..caret
+            internalSelectionTargetLength = newText.length
+            val el = editorEl!!
+            el.focus()
+            val clamped = caret.coerceIn(0, el.value.length)
+            el.setSelectionRange(clamped, clamped)
+        } else {
+            controller?.setSelection(caret, caret)
+        }
     }
 
     fun applyQuote() {
-        val el = editorEl ?: return
-        // Use latest selection
-        saveSelectionFromEl(force = true)
+        val rawFocused = (document.activeElement === editorEl)
+        if (rawFocused) saveSelectionFromEl(force = true)
+        val src = if (rawFocused && editorEl != null) editorEl!!.value else value
         val start = selStart
         val end = selEnd
-        val domValue = el.value
-        val before = domValue.substring(0, start)
-        val selected = domValue.substring(start, end)
-        val after = domValue.substring(end)
+        val before = src.substring(0, start)
+        val selected = src.substring(start, end)
+        val after = src.substring(end)
         val block = if (selected.isBlank()) "> " else selected.lines().joinToString("\n") { "> $it" }
         val newText = before + block + after
         setText(newText)
@@ -307,27 +318,33 @@ fun RichTextEditor(
             newStart..newEnd
         }
 
-        pendingSelection = newRange
-        internalSelectionTargetLength = newText.length
-        pendingSelectionAttempts = 0
-        // Keep internal selection state in sync
         selStart = newRange.first
         selEnd = newRange.last
-        el.focus()
-        val domLen = el.value.length
-        if (newRange.last <= domLen) {
-            val cs = newRange.first.coerceIn(0, domLen)
-            val ce = newRange.last.coerceIn(0, domLen)
-            el.setSelectionRange(cs, ce)
+        if (rawFocused && editorEl != null) {
+            pendingSelection = newRange
+            internalSelectionTargetLength = newText.length
+            pendingSelectionAttempts = 0
+            val el = editorEl!!
+            el.focus()
+            val domLen = el.value.length
+            if (newRange.last <= domLen) {
+                val cs = newRange.first.coerceIn(0, domLen)
+                val ce = newRange.last.coerceIn(0, domLen)
+                el.setSelectionRange(cs, ce)
+            }
+        } else {
+            controller?.setSelection(newRange.first, newRange.last)
         }
     }
 
     fun applyCode() {
         // Decide inline vs block code using current selection
-        saveSelectionFromEl(force = true)
+        val rawFocused = (document.activeElement === editorEl)
+        if (rawFocused) saveSelectionFromEl(force = true)
+        val src = if (rawFocused && editorEl != null) editorEl!!.value else value
         val start = selStart
         val end = selEnd
-        val selected = editorEl?.value?.substring(start, end) ?: value.substring(start, end)
+        val selected = src.substring(start.coerceIn(0, src.length), end.coerceIn(0, src.length))
         if ("\n" in selected) {
             applyInline("```\n", "\n```")
         } else {
@@ -336,10 +353,9 @@ fun RichTextEditor(
     }
 
     fun applyHeading(level: Int) {
-        val el = editorEl ?: return
-        // Refresh selection first
-        saveSelectionFromEl(force = true)
-        val currentText = el.value
+        val rawFocused = (document.activeElement === editorEl)
+        if (rawFocused) saveSelectionFromEl(force = true)
+        val currentText = if (rawFocused && editorEl != null) editorEl!!.value else value
         val startIdx = selStart.coerceIn(0, currentText.length)
         val endIdx = selEnd.coerceIn(0, currentText.length)
 
@@ -363,12 +379,16 @@ fun RichTextEditor(
 
         // Place caret at end of transformed block
         val caret = lineStart + newBlock.length
-        pendingSelection = caret..caret
-        internalSelectionTargetLength = newText.length
-        el.setSelectionRange(caret, caret)
-        el.focus()
         selStart = caret
         selEnd = caret
+        if (rawFocused && editorEl != null) {
+            pendingSelection = caret..caret
+            internalSelectionTargetLength = newText.length
+            editorEl!!.setSelectionRange(caret, caret)
+            editorEl!!.focus()
+        } else {
+            controller?.setSelection(caret, caret)
+        }
     }
 
     // Toolbar
@@ -469,172 +489,87 @@ fun RichTextEditor(
                 showLinkDialog = true
             }
         }) { Translated("Insert link") }
+
+        // Toggle raw MD textarea visibility
+        Button(attrs = {
+            classes(Styles.primaryButton)
+            onMouseDown { it.preventDefault() }
+            onClick { showRawMd = !showRawMd }
+        }) {
+            Translated(if (showRawMd) "Hide MD" else "Show MD")
+        }
     }
 
     // Editor area
-    Div(attrs = {
-        style {
-            marginBottom(8.px)
-        }
-    }) {
-        val placeholderText = placeholder ?: translated("Write chat message")
-        TextArea(
-            value = value,
-            attrs = {
-                classes(Styles.inputField)
-                placeholder(placeholderText)
-                style {
-                    height(160.px)
-                    padding(8.px)
+    if (showRawMd) {
+        Div(attrs = {
+            style { marginBottom(8.px) }
+        }) {
+            val placeholderText = placeholder ?: translated("Write chat message")
+            TextArea(
+                value = value,
+                attrs = {
+                    classes(Styles.inputField)
+                    placeholder(placeholderText)
+                    style {
+                        height(160.px)
+                        padding(8.px)
 
+                        if (aiLoading) {
+                            opacity(0.5)
+                            property("pointer-events", "none")
+                        }
+                    }
+                    autoFocus()
+                    onInput {
+                        if (suppressOnInput) return@onInput
+                        saveSelectionFromEl()
+                        setText(it.value)
+                    }
+                    onClick { saveSelectionFromEl(force = true) }
                     if (aiLoading) {
-                        opacity(0.5)
-                        property("pointer-events", "none")
+                        disabled()
                     }
-                }
-                autoFocus()
-                onInput {
-                    if (suppressOnInput) return@onInput
-                    // Capture current selection BEFORE mutating value so we can preserve caret accurately
-                    saveSelectionFromEl()
-                    setText(it.value)
-                }
-                onClick { saveSelectionFromEl(force = true) }
-                if (aiLoading) {
-                    disabled()
-                }
-                onKeyDown { event ->
-                    // Keyboard shortcuts: Ctrl/Cmd + B/I/U
-                    val isMod = event.ctrlKey || event.metaKey
-                    if (isMod) {
-                        val k = event.key.lowercase()
-                        if (k == "b" || k == "i" || k == "u") {
-                            event.preventDefault()
-                            saveSelectionFromEl(force = true)
-                            when (k) {
-                                "b" -> applyInline("**")
-                                "i" -> applyInline("*")
-                                "u" -> applyInline("<u>", "</u>")
-                            }
-                        }
-                    }
-                }
-                onKeyUp { saveSelectionFromEl() }
-                ref { el ->
-                    editorEl = el
-                    // Wire controller bindings if provided
-                    controller?.apply {
-                        applyOpsImpl = { ops, newSelStart, newSelEnd ->
-                            val textarea = editorEl
-                            if (textarea == null || isComposing) {
-                                false
-                            } else {
-                                val base = textarea.value
-                                val newVal = applyOpsTo(base, ops)
-                                suppressOnInput = true
-                                try {
-                                    textarea.value = newVal
-                                    val s = newSelStart.coerceIn(0, newVal.length)
-                                    val e = newSelEnd.coerceIn(0, newVal.length)
-                                    val isActive = (document.activeElement === textarea)
-                                    if (isActive) textarea.focus()
-                                    textarea.setSelectionRange(s, e)
-                                    selStart = textarea.selectionStart ?: s
-                                    selEnd = textarea.selectionEnd ?: e
-                                    // Defer selection stabilization until controlled value matches newVal
-                                    pendingSelection = s..e
-                                    internalSelectionTargetLength = newVal.length
-                                    pendingSelectionAttempts = 0
-                                    // Notify parent so external selection prop stays in sync and doesn't reapply stale ranges
-                                    try { onSelectionChange(s, e) } catch (_: Throwable) {}
-                                    // Parent is responsible for syncing state to avoid unintended saves
-                                    true
-                                } finally {
-                                    suppressOnInput = false
+                    onKeyDown { event ->
+                        val isMod = event.ctrlKey || event.metaKey
+                        if (isMod) {
+                            val k = event.key.lowercase()
+                            if (k == "b" || k == "i" || k == "u") {
+                                event.preventDefault()
+                                saveSelectionFromEl(force = true)
+                                when (k) {
+                                    "b" -> applyInline("**")
+                                    "i" -> applyInline("*")
+                                    "u" -> applyInline("<u>", "</u>")
                                 }
                             }
                         }
-                        applySnapshotImpl = { newText, newSelStart, newSelEnd ->
-                            val textarea = editorEl
-                            if (textarea == null || isComposing) {
-                                false
-                            } else {
-                                suppressOnInput = true
-                                try {
-                                    textarea.value = newText
-                                    val s = newSelStart.coerceIn(0, newText.length)
-                                    val e = newSelEnd.coerceIn(0, newText.length)
-                                    val isActive = (document.activeElement === textarea)
-                                    if (isActive) textarea.focus()
-                                    textarea.setSelectionRange(s, e)
-                                    selStart = textarea.selectionStart ?: s
-                                    selEnd = textarea.selectionEnd ?: e
-                                    // Defer selection stabilization until controlled value matches newText
-                                    pendingSelection = s..e
-                                    internalSelectionTargetLength = newText.length
-                                    pendingSelectionAttempts = 0
-                                    // Sync compose state
-                                    onValueChange(newText)
-                                    // Keep parent selection in sync to avoid external reapplication of stale selection
-                                    try { onSelectionChange(s, e) } catch (_: Throwable) {}
-                                    true
-                                } finally {
-                                    suppressOnInput = false
-                                }
-                            }
+                    }
+                    onKeyUp { saveSelectionFromEl() }
+                    ref { el ->
+                        editorEl = el
+                        // Autofocus on mount; if external selection is provided, do not override it here
+                        el.focus()
+                        val sel = selection
+                        if (sel == null) {
+                            val end = value.length
+                            el.setSelectionRange(end, end)
+                            selStart = end
+                            selEnd = end
+                        } else {
+                            val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
+                            pendingSelection = desired
                         }
-                        setSelectionImpl = { s0, e0 ->
-                            val textarea = editorEl
-                            if (textarea == null) {
-                                false
-                            } else {
-                                val len = textarea.value.length
-                                val s = s0.coerceIn(0, len)
-                                val e = e0.coerceIn(0, len)
-                                val isActive = (document.activeElement === textarea)
-                                if (isActive) textarea.focus()
-                                textarea.setSelectionRange(s, e)
-                                selStart = textarea.selectionStart ?: s
-                                selEnd = textarea.selectionEnd ?: e
-                                // Defer selection stabilization until the controlled value reflects the DOM
-                                pendingSelection = s..e
-                                internalSelectionTargetLength = len
-                                pendingSelectionAttempts = 0
-                                // Inform parent about programmatic selection changes
-                                try { onSelectionChange(s, e) } catch (_: Throwable) {}
-                                true
-                            }
+                        onDispose {
+                            editorEl = null
                         }
                     }
-
-                    // Autofocus on mount; if external selection is provided, do not override it here
-                    el.focus()
-                    val sel = selection
-                    if (sel == null) {
-                        val end = value.length
-                        el.setSelectionRange(end, end)
-                        selStart = end
-                        selEnd = end
-                    } else {
-                        // Defer selection application to the pendingSelection effect
-                        val desired = sel.first.coerceAtLeast(0)..sel.last.coerceAtLeast(0)
-                        pendingSelection = desired
-                    }
-                    onDispose {
-                        // Clear controller bindings
-                        controller?.apply {
-                            applyOpsImpl = null
-                            applySnapshotImpl = null
-                            setSelectionImpl = null
-                        }
-                        editorEl = null
-                    }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 
-    // WYSIWYG preview using Md
+    // WYSIWYG contenteditable editor
     Div(
         attrs = {
             style {
@@ -644,7 +579,19 @@ fun RichTextEditor(
             }
         }
     ) {
-        Md(value)
+        MdEditable(
+            markdown = value,
+            onMarkdownChange = { newMd -> setText(newMd) },
+            selection = selection,
+            onSelectionChange = { s, e ->
+                selStart = s
+                selEnd = e
+                try { onSelectionChange(s, e) } catch (_: Throwable) {}
+            },
+            controller = controller,
+            selectionTargetLength = selectionTargetLength,
+            enabled = !aiLoading,
+        )
     }
 
     if (showUploadDialog) {
