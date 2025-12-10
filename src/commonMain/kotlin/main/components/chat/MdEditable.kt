@@ -28,21 +28,44 @@ fun MdEditable(
     controller: RichTextEditorController?,
     selectionTargetLength: Int? = null,
     enabled: Boolean = true,
+    // When false, this surface mirrors content but must NOT modify the value (no normalization, no input edits)
+    mutatesValue: Boolean = true,
 ) {
     var root by remember { mutableStateOf<HTMLDivElement?>(null) }
     var isComposing by remember { mutableStateOf(false) }
     var pendingSelection by remember { mutableStateOf<IntRange?>(null) }
     var internalSelectionTargetLength by remember { mutableStateOf<Int?>(null) }
     var suppressDomRenderOnce by remember { mutableStateOf(false) }
+    // Cache the latest markdown-mapped selection so toolbar actions don't read a transient DOM selection
+    var lastMdSelection by remember { mutableStateOf(0..0) }
+    // Normalize the incoming markdown once per value to avoid large first-edit rewrites
+    var normalizedOnceForThisValue by remember(markdown) { mutableStateOf(false) }
 
     // Render markdown to HTML using Marked
     LaunchedEffect(markdown, root) {
         val el = root ?: return@LaunchedEffect
         if (!suppressDomRenderOnce) {
-            // Disable soft breaks during editing to avoid extraneous <br> in list items
+            // Disable soft breaks during editing to avoid extraneous <br> and simplify selection mapping
             el.innerHTML = markdownToHtml(markdown, softBreaks = false)
         }
         suppressDomRenderOnce = false
+
+        // One-time normalization ONLY when this surface is allowed to mutate and is focused.
+        // This avoids raw editor surprises and prevents first-action churn while passive.
+        val isActive = (document.activeElement === el)
+        if (mutatesValue && isActive && !normalizedOnceForThisValue) {
+            val canonicalMd = serializeDomToMarkdown(el)
+            normalizedOnceForThisValue = true
+            if (canonicalMd != markdown) {
+                suppressDomRenderOnce = true
+                onMarkdownChange(canonicalMd)
+                // Preserve current selection mapped to markdown
+                val r = domSelectionToMarkdownRange(el)
+                pendingSelection = r
+                internalSelectionTargetLength = canonicalMd.length
+                lastMdSelection = r
+            }
+        }
 
         // Try to apply any pending selection once the DOM matches expected length
         val desired = pendingSelection
@@ -83,6 +106,7 @@ fun MdEditable(
                     isComposing = false
                     // After IME completes, resync selection
                     val r = domSelectionToMarkdownRange(el)
+                    lastMdSelection = r
                     try { onSelectionChange(r.first, r.last) } catch (_: Throwable) {}
                 }
                 el.addEventListener("compositionstart", compStart)
@@ -90,9 +114,10 @@ fun MdEditable(
 
                 // Input listener (fires on typing, paste, delete, undo/redo)
                 val inputListener: (Event) -> Unit = {
-                    if (!isComposing) {
+                    if (!isComposing && mutatesValue) {
                         val newMd = serializeDomToMarkdown(el)
                         val range = domSelectionToMarkdownRange(el)
+                        lastMdSelection = range
                         suppressDomRenderOnce = true
                         onMarkdownChange(newMd)
                         try { onSelectionChange(range.first, range.last) } catch (_: Throwable) {}
@@ -104,7 +129,7 @@ fun MdEditable(
 
                 // Keyboard shortcuts: Ctrl/Cmd + B/I/U for bold/italic/underline
                 val keydownListener: (Event) -> Unit = keydown@ { evt ->
-                    if (!enabled) return@keydown
+                    if (!enabled || !mutatesValue) return@keydown
                     if (isComposing) return@keydown
                     if (evt is KeyboardEvent) {
                         val isMod = evt.ctrlKey || evt.metaKey
@@ -112,19 +137,59 @@ fun MdEditable(
                             val k = evt.key.lowercase()
                             val wrapperLeft: String?
                             val wrapperRight: String?
+                            var domTag: String? = null
                             when (k) {
-                                "b" -> { wrapperLeft = "**"; wrapperRight = "**" }
-                                "i" -> { wrapperLeft = "*"; wrapperRight = "*" }
-                                "u" -> { wrapperLeft = "<u>"; wrapperRight = "</u>" }
+                                "b" -> { wrapperLeft = "**"; wrapperRight = "**"; domTag = "strong" }
+                                "i" -> { wrapperLeft = "*"; wrapperRight = "*"; domTag = "em" }
+                                "u" -> { wrapperLeft = "<u>"; wrapperRight = "</u>"; domTag = "u" }
                                 else -> { wrapperLeft = null; wrapperRight = null }
                             }
                             if (wrapperLeft != null) {
                                 evt.preventDefault()
-                                // Map current DOM selection to markdown indices using current DOM-derived markdown
-                                val sel = domSelectionToMarkdownRange(el)
+                                // Try DOM-native wrapping to avoid re-injection and selection flicker
+                                val sel = getWindowSelection()
+                                val canDomWrap = sel != null && sel.rangeCount > 0 && domTag != null
+                                if (canDomWrap) {
+                                    try {
+                                        val range = sel!!.getRangeAt(0)
+                                        if (!range.collapsed) {
+                                            val wrapper = el.ownerDocument?.createElement(domTag!!) ?: document.createElement(domTag!!)
+                                            range.surroundContents(wrapper)
+                                            // Select contents of the new wrapper (exclude wrapper element itself)
+                                            val newRange = document.createRange()
+                                            newRange.selectNodeContents(wrapper)
+                                            sel.removeAllRanges()
+                                            sel.addRange(newRange)
+                                            // Serialize DOM → MD without re-injection to avoid flash
+                                            val newMd = serializeDomToMarkdown(el)
+                                            val r = domSelectionToMarkdownRange(el)
+                                            lastMdSelection = r
+                                            suppressDomRenderOnce = true
+                                            onMarkdownChange(newMd)
+                                            try { onSelectionChange(r.first, r.last) } catch (_: Throwable) {}
+                                            pendingSelection = r
+                                            internalSelectionTargetLength = newMd.length
+                                            return@keydown
+                                        }
+                                    } catch (_: Throwable) {
+                                        // Fallback to markdown-range wrapping below
+                                    }
+                                }
+                                // Fallback path: Compute live DOM→MD selection and combine with cached + visible length for robustness
+                                val liveSel = domSelectionToMarkdownRange(el)
                                 val sourceMd = serializeDomToMarkdown(el)
-                                val start = sel.first.coerceIn(0, sourceMd.length)
-                                val end = sel.last.coerceIn(0, sourceMd.length)
+                                var start = liveSel.first.coerceIn(0, sourceMd.length)
+                                val baseLen = (liveSel.last - liveSel.first).coerceAtLeast(0)
+                                val cachedLen = (lastMdSelection.last - lastMdSelection.first).coerceAtLeast(0)
+                                val visibleText = getCurrentSelectionText()
+                                val singleLineVisible = visibleText != null && !visibleText.contains('\n') && visibleText.isNotEmpty()
+                                val visibleLen = if (singleLineVisible) visibleText!!.length else 0
+                                // Avoid wrapping list markers if start accidentally points at "- "
+                                if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText!!.startsWith("-")) {
+                                    start = (start + 2).coerceAtMost(sourceMd.length)
+                                }
+                                val chosenLen = if (visibleLen > 0) visibleLen else maxOf(baseLen, cachedLen)
+                                var end = (start + chosenLen).coerceIn(start, sourceMd.length)
                                 val before = sourceMd.substring(0, start)
                                 val selected = sourceMd.substring(start, end)
                                 val after = sourceMd.substring(end)
@@ -135,12 +200,16 @@ fun MdEditable(
                                     append(wrapperRight ?: wrapperLeft)
                                     append(after)
                                 }
-                                val newStart = if (start != end) start else start + wrapperLeft.length
-                                val newEnd = if (start != end) end + (wrapperLeft.length + (wrapperRight?.length ?: wrapperLeft.length)) else newStart
+                                // After wrapping, keep selection on the content (exclude wrapper tokens)
+                                val newStart = if (start != end) start + wrapperLeft.length else start + wrapperLeft.length
+                                val rightLen = (wrapperRight?.length ?: wrapperLeft.length)
+                                val newEnd = if (start != end) end + wrapperLeft.length else newStart
+                                suppressDomRenderOnce = false // we didn't touch DOM; allow re-injection
                                 onMarkdownChange(newMd)
                                 try { onSelectionChange(newStart, newEnd) } catch (_: Throwable) {}
                                 pendingSelection = newStart..newEnd
                                 internalSelectionTargetLength = newMd.length
+                                lastMdSelection = newStart..newEnd
                             }
                         }
                     }
@@ -150,14 +219,17 @@ fun MdEditable(
                 // Selection change helpers
                 val keyupListener: (Event) -> Unit = {
                     val range = domSelectionToMarkdownRange(el)
+                    lastMdSelection = range
                     try { onSelectionChange(range.first, range.last) } catch (_: Throwable) {}
                 }
                 val mouseupListener: (Event) -> Unit = {
                     val range = domSelectionToMarkdownRange(el)
+                    lastMdSelection = range
                     try { onSelectionChange(range.first, range.last) } catch (_: Throwable) {}
                 }
                 val clickListener: (Event) -> Unit = {
                     val range = domSelectionToMarkdownRange(el)
+                    lastMdSelection = range
                     try { onSelectionChange(range.first, range.last) } catch (_: Throwable) {}
                 }
                 el.addEventListener("keyup", keyupListener)
@@ -166,10 +238,11 @@ fun MdEditable(
 
                 // Wire controller so collaboration applies to CE
                 controller?.apply {
-                    applyOpsImpl = { ops, newSelStart, newSelEnd ->
+                    applyOpsImpl = applyOps@ { ops, newSelStart, newSelEnd ->
                         if (isComposing) {
                             false
                         } else {
+                            if (!mutatesValue) return@applyOps false
                             val base = markdown
                             val newVal = applyOpsTo(base, ops)
                             val s = newSelStart.coerceIn(0, newVal.length)
@@ -184,10 +257,11 @@ fun MdEditable(
                             true
                         }
                     }
-                    applySnapshotImpl = { newText, newSelStart, newSelEnd ->
+                    applySnapshotImpl = snapshot@ { newText, newSelStart, newSelEnd ->
                         if (isComposing) {
                             false
                         } else {
+                            if (!mutatesValue) return@snapshot false
                             val s = newSelStart.coerceIn(0, newText.length)
                             val e = newSelEnd.coerceIn(0, newText.length)
                             onMarkdownChange(newText)
@@ -200,14 +274,60 @@ fun MdEditable(
                             true
                         }
                     }
-                    inlineWrapImpl = { left, right ->
+                    inlineWrapImpl = wrap@ { left, right ->
                         if (isComposing) {
                             false
                         } else {
-                            val sel = domSelectionToMarkdownRange(el)
+                            if (!mutatesValue) return@wrap false
+                            // Prefer DOM-native wrapping to avoid selection flash
+                            val tag = when {
+                                left == "**" && right == "**" -> "strong"
+                                left == "*" && right == "*" -> "em"
+                                left == "<u>" && right == "</u>" -> "u"
+                                else -> null
+                            }
+                            val sel = getWindowSelection()
+                            if (tag != null && sel != null && sel.rangeCount > 0) {
+                                try {
+                                    val range = sel.getRangeAt(0)
+                                    if (!range.collapsed) {
+                                        val wrapper = el.ownerDocument?.createElement(tag) ?: document.createElement(tag)
+                                        range.surroundContents(wrapper)
+                                        val newRange = document.createRange()
+                                        newRange.selectNodeContents(wrapper)
+                                        sel.removeAllRanges()
+                                        sel.addRange(newRange)
+                                        val newMd = serializeDomToMarkdown(el)
+                                        val r = domSelectionToMarkdownRange(el)
+                                        lastMdSelection = r
+                                        suppressDomRenderOnce = true
+                                        onMarkdownChange(newMd)
+                                        try { onSelectionChange(r.first, r.last) } catch (_: Throwable) {}
+                                        pendingSelection = r
+                                        internalSelectionTargetLength = newMd.length
+                                        if (document.activeElement === el) {
+                                            el.focus()
+                                        }
+                                        return@wrap true
+                                    }
+                                } catch (_: Throwable) {
+                                    // fall back to string-based wrapping
+                                }
+                            }
+                            // Compute live DOM→MD selection and combine with cached + visible length for robustness
+                            val liveSel = domSelectionToMarkdownRange(el)
                             val sourceMd = serializeDomToMarkdown(el)
-                            val start = sel.first.coerceIn(0, sourceMd.length)
-                            val end = sel.last.coerceIn(0, sourceMd.length)
+                            var start = liveSel.first.coerceIn(0, sourceMd.length)
+                            val baseLen = (liveSel.last - liveSel.first).coerceAtLeast(0)
+                            val cachedLen = (lastMdSelection.last - lastMdSelection.first).coerceAtLeast(0)
+                            val visibleText = getCurrentSelectionText()
+                            val singleLineVisible = visibleText != null && !visibleText.contains('\n') && visibleText.isNotEmpty()
+                            val visibleLen = if (singleLineVisible) visibleText!!.length else 0
+                            if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText!!.startsWith("-")) {
+                                start = (start + 2).coerceAtMost(sourceMd.length)
+                            }
+                            val chosenLen = if (visibleLen > 0) visibleLen else maxOf(baseLen, cachedLen)
+                            val end = (start + chosenLen).coerceIn(start, sourceMd.length)
                             val before = sourceMd.substring(0, start)
                             val selected = sourceMd.substring(start, end)
                             val after = sourceMd.substring(end)
@@ -219,11 +339,13 @@ fun MdEditable(
                                 append(after)
                             }
                             onMarkdownChange(newMd)
-                            val newStart = if (start != end) start else start + left.length
-                            val newEnd = if (start != end) end + left.length + right.length else newStart
+                            // Keep selection on the wrapped content (exclude wrapper tokens)
+                            val newStart = if (start != end) start + left.length else start + left.length
+                            val newEnd = if (start != end) end + left.length else newStart
                             try { onSelectionChange(newStart, newEnd) } catch (_: Throwable) {}
                             pendingSelection = newStart..newEnd
                             internalSelectionTargetLength = newMd.length
+                            lastMdSelection = newStart..newEnd
                             if (document.activeElement === el) {
                                 el.focus()
                             }
@@ -343,4 +465,14 @@ private external interface DomSelection {
 }
 private fun getWindowSelection(): DomSelection? = try {
     window.unsafeCast<WindowWithSelection>().getSelection()
+} catch (_: Throwable) { null }
+
+// Access selected visible text without using dynamic/js
+private external interface DomSelectionWithToString {
+    override fun toString(): String
+}
+
+private fun getCurrentSelectionText(): String? = try {
+    val sel = getWindowSelection() ?: return null
+    sel.unsafeCast<DomSelectionWithToString>().toString()
 } catch (_: Throwable) { null }

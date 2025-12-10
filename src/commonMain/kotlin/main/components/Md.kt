@@ -59,12 +59,12 @@ internal fun ensureUnderlineExtensionRegistered() {
 /**
  * Converts markdown to HTML using the same Marked configuration as the Md composable.
  *
- * softBreaks=true (default) will convert single newlines to Markdown soft breaks ("  \n") for display.
- * For contenteditable editing, pass softBreaks=false so lists do not get extra <br> at line ends.
+ * softBreaks controls whether single newlines are converted to Markdown soft breaks ("  \n").
+ * We disable soft breaks across the app to avoid extraneous <br> and selection/mapping issues.
  */
 fun markdownToHtml(
     content: String,
-    softBreaks: Boolean = true,
+    softBreaks: Boolean = false,
 ): String {
     val renderer = marked.Renderer()
     val originalLinkRenderer: dynamic = renderer.link
@@ -105,7 +105,7 @@ fun Md(
     content: String,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {
-    val html = remember(content) { markdownToHtml(content, softBreaks = true) }
+    val html = remember(content) { markdownToHtml(content, softBreaks = false) }
     var element by remember { mutableStateOf<Element?>(null) }
 
     LaunchedEffect(html, element) {

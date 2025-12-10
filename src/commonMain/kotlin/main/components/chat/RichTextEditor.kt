@@ -590,7 +590,9 @@ fun RichTextEditor(
             },
             controller = controller,
             selectionTargetLength = selectionTargetLength,
-            enabled = !aiLoading,
+            // When raw MD is visible, keep CE passive (mirror-only) to avoid value mutations and flicker
+            enabled = !aiLoading && !showRawMd,
+            mutatesValue = !showRawMd,
         )
     }
 
