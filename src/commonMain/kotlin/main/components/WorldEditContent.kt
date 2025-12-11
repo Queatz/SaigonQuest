@@ -57,6 +57,7 @@ import main.components.world.LatLngPicker3D
 import Translations.str
 import main.components.friends.SelectFriendDialog
 import models.Item
+import main.components.inventory.SelectItemDialog
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
@@ -1176,7 +1177,6 @@ fun WorldEditContent(
 
                     P(attrs = {
                         style {
-
                             margin(0.px); fontSize(12.px)
                         }
                     }) {
@@ -1215,25 +1215,18 @@ fun WorldEditContent(
                 }
 
                 if (showAccessItemBrowser) {
-                    AssetBrowserDialog(
-                        type = AssetType.Items,
-                        onSelect = { r ->
+                    SelectItemDialog(
+                        initial = emptyList(),
+                        multiple = false,
+                        useQuantities = false,
+                        onConfirm = { selected ->
                             accessItemError = null
-                            coroutineScope.launch {
-                                try {
-                                    val items = ItemApi.getAllItems()
-                                    val idx = r.index ?: 0
-                                    val matched = items.find { it.file == r.asset!!.file && it.assetIndex == idx }
-                                    if (matched != null) {
-                                        allowHoldersOfItemId = matched.key
-                                        showAccessItemBrowser = false
-                                    } else {
-                                        accessItemError =
-                                            "No item found for this asset selection. Please create an item for this asset first."
-                                    }
-                                } catch (t: Throwable) {
-                                    accessItemError = t.message ?: "Failed to load items"
-                                }
+                            val first = selected.firstOrNull()?.first
+                            if (first != null) {
+                                allowHoldersOfItemId = first.key
+                                showAccessItemBrowser = false
+                            } else {
+                                accessItemError = "Please select an item"
                             }
                         },
                         onClose = { showAccessItemBrowser = false },

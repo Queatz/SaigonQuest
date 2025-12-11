@@ -94,7 +94,6 @@ fun SelectItemDialog(
                     property("align-items", "center")
                 }
             }) {
-                Label { Translated("Search by title") }
                 TextInput(
                     value = query,
                     attrs = {

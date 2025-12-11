@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.components.applyImageLoadBehavior
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.components.markdownToHtml
@@ -47,6 +48,8 @@ fun MdEditable(
         if (!suppressDomRenderOnce) {
             // Disable soft breaks during editing to avoid extraneous <br> and simplify selection mapping
             el.innerHTML = markdownToHtml(markdown, softBreaks = false)
+            // Ensure images adopt the same load/fade behavior as in Md
+            applyImageLoadBehavior(el)
         }
         suppressDomRenderOnce = false
 
@@ -71,11 +74,25 @@ fun MdEditable(
         val desired = pendingSelection
         if (desired != null) {
             val targetLen = internalSelectionTargetLength
-            if (targetLen == null || targetLen == markdown.length) {
-                awaitAnimationFrame()
-                applyMarkdownRangeToDom(el, desired.first, desired.last)
-                pendingSelection = null
-                internalSelectionTargetLength = null
+            // Only attempt to apply if:
+            // - length matches (or not constrained)
+            // - element is focused
+            // - we're not in the middle of IME composition
+            if ((targetLen == null || targetLen == markdown.length) &&
+                (document.activeElement === el) &&
+                !isComposing
+            ) {
+                // Skip if current DOM selection already equals desired range
+                val current = domSelectionToMarkdownRange(el)
+                if (current.first == desired.first && current.last == desired.last) {
+                    pendingSelection = null
+                    internalSelectionTargetLength = null
+                } else {
+                    awaitAnimationFrame()
+                    applyMarkdownRangeToDom(el, desired.first, desired.last)
+                    pendingSelection = null
+                    internalSelectionTargetLength = null
+                }
             }
         }
     }
@@ -118,11 +135,13 @@ fun MdEditable(
                         val newMd = serializeDomToMarkdown(el)
                         val range = domSelectionToMarkdownRange(el)
                         lastMdSelection = range
+                        // We intentionally suppress DOM re-injection and avoid forcing selection
+                        // application because the native caret is already correct.
                         suppressDomRenderOnce = true
                         onMarkdownChange(newMd)
                         try { onSelectionChange(range.first, range.last) } catch (_: Throwable) {}
-                        pendingSelection = range
-                        internalSelectionTargetLength = newMd.length
+                        // Do NOT set pendingSelection here to avoid fighting the native caret
+                        // while the user is typing.
                     }
                 }
                 el.addEventListener("input", inputListener)
@@ -164,11 +183,12 @@ fun MdEditable(
                                             val newMd = serializeDomToMarkdown(el)
                                             val r = domSelectionToMarkdownRange(el)
                                             lastMdSelection = r
+                                            // We've mutated DOM directly; suppress re-injection and
+                                            // avoid re-applying selection since it's already correct.
                                             suppressDomRenderOnce = true
                                             onMarkdownChange(newMd)
                                             try { onSelectionChange(r.first, r.last) } catch (_: Throwable) {}
-                                            pendingSelection = r
-                                            internalSelectionTargetLength = newMd.length
+                                            // No pendingSelection here — prevents cursor jumps
                                             return@keydown
                                         }
                                     } catch (_: Throwable) {
@@ -300,11 +320,11 @@ fun MdEditable(
                                         val newMd = serializeDomToMarkdown(el)
                                         val r = domSelectionToMarkdownRange(el)
                                         lastMdSelection = r
+                                        // DOM was edited directly; keep caret as-is and suppress re-injection
                                         suppressDomRenderOnce = true
                                         onMarkdownChange(newMd)
                                         try { onSelectionChange(r.first, r.last) } catch (_: Throwable) {}
-                                        pendingSelection = r
-                                        internalSelectionTargetLength = newMd.length
+                                        // No pendingSelection here — prevents cursor jumps
                                         if (document.activeElement === el) {
                                             el.focus()
                                         }
@@ -388,33 +408,7 @@ fun MdEditable(
 
 // --- Utilities ---
 
-private fun childNodesList(n: Node): List<Node> {
-    val list = mutableListOf<Node>()
-    val cn = n.childNodes
-    for (i in 0 until cn.length) list.add(cn.item(i)!!)
-    return list
-}
-
-private fun isElement(node: Node, tag: String): Boolean {
-    return (node as? Element)?.tagName?.equals(tag, ignoreCase = true) == true
-}
-
-private fun getAttribute(el: Element, name: String): String? = el.getAttribute(name)
-
 internal fun serializeDomToMarkdown(root: Element): String = buildPositionMap(root).markdown
-
-private fun markdownWrappersFor(@Suppress("UNUSED_PARAMETER") el: Element): Pair<Int, Int> = 0 to 0
-
-private fun markdownBlockSpacingFor(el: Element): Int {
-    // Trailing spacing appended by serializer after blocks
-    return when (el.tagName.lowercase()) {
-        "p", "blockquote", "h1","h2","h3","h4","h5","h6" -> 2 // \n\n
-        // For lists, serializer adds a newline after each <li> and then one extra newline after list.
-        // We will account for those inside list-specific branches; do not add block spacing here.
-        "ul", "ol" -> 0
-        else -> 0
-    }
-}
 
 internal fun domSelectionToMarkdownRange(root: Element): IntRange {
     val sel = getWindowSelection() ?: return 0..0
