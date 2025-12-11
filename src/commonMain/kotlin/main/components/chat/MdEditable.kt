@@ -112,7 +112,12 @@ fun MdEditable(
 
     Div(
         attrs = {
-            classes(Styles.md, Styles.inputField)
+            classes(Styles.md)
+
+            if (enabled) {
+                classes(Styles.inputField)
+            }
+
             attr("contenteditable", if (enabled) "true" else "false")
             ref { el ->
                 root = el

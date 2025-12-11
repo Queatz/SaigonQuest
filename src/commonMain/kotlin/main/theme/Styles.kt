@@ -75,6 +75,30 @@ object Styles : StyleSheet() {
             marginTop(0.px)
         }
 
+        desc(self, selector("h1") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("h2") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("h3") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("h4") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("h5") + firstChild) style {
+            marginTop(0.px)
+        }
+
+        desc(self, selector("h6") + firstChild) style {
+            marginTop(0.px)
+        }
+
         desc(self, selector("p") + lastChild) style {
             marginBottom(0.px)
         }

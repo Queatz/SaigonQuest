@@ -22,7 +22,14 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import kotlinx.coroutines.delay
 import Translations
+import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
+import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.overflow
+import org.jetbrains.compose.web.css.whiteSpace
+import org.jetbrains.compose.web.css.width
+import web.cssom.PropertyName.Companion.textOverflow
 
 @Composable
 fun DocTreeView(
@@ -249,21 +256,45 @@ fun DocTreeView(
 
                 // Row contents
                 // Arrow
-                Span(attrs = {
+                Div(attrs = {
                     onClick {
                         it.stopPropagation()
                         expanded[node.doc.key] = !isExpanded
                     }
 
                     style {
-                        padding(8.px)
+                        padding(0.px, 8.px)
                         opacity(if (!hasChildren) 0.125f else .75f)
+                        flexShrink(0)
                     }
                 }) { Text(if (isExpanded) "▾" else "▸") }
 
-                // Title
-                Span {
-                    Text(node.doc.title)
+                Div(
+                    {
+                        style {
+                            width(0.px)
+                            flexGrow(1)
+                        }
+                    }
+                ) {
+                    // Title
+                    Div {
+                        Text(node.doc.title)
+                    }
+
+                    node.doc.content.takeIf { it.isNotBlank() }?.let { content ->
+                        Div({
+                            style {
+                                overflow("hidden")
+                                whiteSpace("nowrap")
+                                property("text-overflow", "ellipsis")
+                                fontSize(10.px)
+                                opacity(.5f)
+                            }
+                        }) {
+                            Text(content)
+                        }
+                    }
                 }
 
                 // Row actions (e.g., add child) shown only for selected row when enabled

@@ -189,10 +189,10 @@ internal fun buildPositionMap(root: Element): PositionMap {
                 val tag = el.tagName.lowercase()
                 when (tag) {
                     "br" -> {
-                        // Treat <br> as a raw newline in markdown (no soft break spaces)
+                        // Treat <br> as a soft break
                         val parent = el.parentElement ?: return
                         val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
-                        addLiteral("\n", BoundaryAnchor(parent, idx + 1))
+                        addLiteral("  \n", BoundaryAnchor(parent, idx + 1))
                         // parent boundaries will be set by parent walk
                     }
                     "img" -> {

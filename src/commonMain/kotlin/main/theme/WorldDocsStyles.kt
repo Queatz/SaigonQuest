@@ -129,6 +129,8 @@ object WorldDocsStyles : StyleSheet() {
         borderRadius(12.px)
         cursor("pointer")
         color(Theme.colors.onSurface)
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
         boxSizing("border-box")
         // Make row a positioned container so drop-zone overlays can be absolutely positioned
         property("position", "relative")
@@ -149,6 +151,8 @@ object WorldDocsStyles : StyleSheet() {
         borderRadius(12.px)
         cursor("pointer")
         backgroundColor(Theme.colors.primary)
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
         color(Theme.colors.onPrimary)
         boxSizing("border-box")
         // Keep positioned container in selected state as well
