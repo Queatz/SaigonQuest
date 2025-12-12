@@ -61,13 +61,15 @@ object WebSocketDebug {
     /**
      * Log a WebSocket message
      */
-    fun logMessage(direction: String, rawMessage: String, session: DefaultWebSocketServerSession) {
+    fun logMessage(direction: String, rawMessage: String, session: DefaultWebSocketServerSession?) {
         if (!enabled) return
         
         val messageId = messageCounter.incrementAndGet()
         logger.debug("=== WEBSOCKET DEBUG [Message #$messageId] ===")
         logger.debug("Direction: $direction")
-        logger.debug("Session: $session")
+        if (session != null) {
+            logger.debug("Session: $session")
+        }
         logger.debug("Raw Message: $rawMessage")
         
         logger.debug("=== END WEBSOCKET DEBUG [Message #$messageId] ===")

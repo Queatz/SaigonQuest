@@ -148,6 +148,12 @@ fun DocTreeView(
                     indentClass(level)
                 )
                 onClick { onSelect(node.doc.key) }
+                onDoubleClick {
+                    if (hasChildren) {
+                        val currentlyExpanded = expanded[node.doc.key] ?: false
+                        expanded[node.doc.key] = !currentlyExpanded
+                    }
+                }
                 if (canDrag) attr("draggable", "true")
                 if (canDrag) {
                     onDragStart {
@@ -251,7 +257,7 @@ fun DocTreeView(
                             dragOverPos = null
                             dragOverIntoId = null
                         }
-                    }) {}
+                    })
                 }
 
                 // Row contents
@@ -267,7 +273,9 @@ fun DocTreeView(
                         opacity(if (!hasChildren) 0.125f else .75f)
                         flexShrink(0)
                     }
-                }) { Text(if (isExpanded) "▾" else "▸") }
+                }) {
+                    Text(if (!hasChildren) "▹" else if (isExpanded) "▾" else "▸")
+                }
 
                 Div(
                     {
@@ -282,7 +290,23 @@ fun DocTreeView(
                         Text(node.doc.title)
                     }
 
-                    node.doc.content.takeIf { it.isNotBlank() }?.let { content ->
+                    // Content
+                    if (node.doc.content.isBlank()) {
+                        val titles = node.children.map { it.doc.title }.filter { it.isNotBlank() }
+                        if (titles.isNotEmpty()) {
+                            Div({
+                                style {
+                                    overflow("hidden")
+                                    whiteSpace("nowrap")
+                                    property("text-overflow", "ellipsis")
+                                    fontSize(10.px)
+                                    opacity(.5f)
+                                }
+                            }) {
+                                Text(titles.joinToString())
+                            }
+                        }
+                    } else {
                         Div({
                             style {
                                 overflow("hidden")
@@ -292,7 +316,7 @@ fun DocTreeView(
                                 opacity(.5f)
                             }
                         }) {
-                            Text(content)
+                            Text(node.doc.content)
                         }
                     }
                 }

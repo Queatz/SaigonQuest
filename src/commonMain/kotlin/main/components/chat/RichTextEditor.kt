@@ -73,6 +73,7 @@ fun RichTextEditor(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String? = null,
+    docName: String? = null,
     selection: IntRange? = null,
     onSelectionChange: (Int, Int) -> Unit = { _, _ -> },
     selectionTargetLength: Int? = null,
@@ -641,6 +642,7 @@ fun RichTextEditor(
                             caretStart = s,
                             caretEnd = e,
                             docId = null,
+                            docName = docName
                         )
                         val before = docSnapshot.substring(0, s)
                         val after = docSnapshot.substring(e)

@@ -46,26 +46,11 @@ fun Routing.configureAiRoutes() {
 
                 val sysPrompt = buildSystemPrompt(req.docContents, req.caretStart, req.caretEnd, req.docName)
 
-                // 2-minute timeout per requirements
-                val text = try {
-                    withTimeout(120_000) {
-                        DeepSeekClient.promptText(
-                            systemPrompt = sysPrompt,
-                            userPrompt = req.prompt,
-                            logSession = null
-                        )
-                    }
-                } catch (t: TimeoutCancellationException) {
-                    return@post call.respond(
-                        HttpStatusCode.GatewayTimeout,
-                        ErrorResponse(message = "AI request timed out", code = HttpStatusCode.GatewayTimeout.value, details = t.message)
-                    )
-                } catch (t: Throwable) {
-                    return@post call.respond(
-                        HttpStatusCode.InternalServerError,
-                        ErrorResponse(message = "AI request failed", code = HttpStatusCode.InternalServerError.value, details = t.message)
-                    )
-                }
+                val text = DeepSeekClient.promptText(
+                    systemPrompt = sysPrompt,
+                    userPrompt = req.prompt,
+                    temperature = 0.5,
+                )
 
                 if (text.isNullOrBlank()) {
                     return@post call.respond(
@@ -124,44 +109,39 @@ data class AiPromptResponse(
 )
 
 private fun buildSystemPrompt(contents: String, caretStart: Int, caretEnd: Int, docName: String?): String {
-    fun toLineCol(idx: Int): Pair<Int, Int> {
-        var line = 1
-        var col = 1
-        var i = 0
-        while (i < idx && i < contents.length) {
-            if (contents[i] == '\n') {
-                line += 1
-                col = 1
-            } else {
-                col += 1
-            }
-            i += 1
-        }
-        return line to col
-    }
-    val (sLine, sCol) = toLineCol(caretStart.coerceIn(0, contents.length))
-    val (eLine, eCol) = toLineCol(caretEnd.coerceIn(0, contents.length))
     val caretSection = if (caretStart != caretEnd) {
-        "line $sLine, position $sCol UNTIL line $eLine, position $eCol"
+        "FROM OFFSET $caretStart TO OFFSET $caretEnd"
     } else {
-        "line $sLine, position $sCol"
+        "AT OFFSET $caretStart"
     }
     return buildString {
         appendLine("You are helping a user edit a document.")
         appendLine()
-        appendLine("# INSTRUCTIONS")
-        appendLine("Return the markdown-supported text to be inserted into the document (replacing any selection) at the caret position. Do not return any other text, including the exiting text in the document that is not going to be replaced.")
+        appendLine("# CRITICAL INSTRUCTIONS")
         appendLine()
-        appendLine("# CARET POSITION")
+        appendLine(" - Output the markdown-supported text to be inserted into the document, replacing the user's current selection.")
+        appendLine(" - Document contents are provided for context ONLY - DO NOT INCLUDE IN YOUR OUTPUT.")
+        appendLine(" - Output ONLY the exact text to be inserted.")
+        appendLine()
+        appendLine("# USER SELECTION (IN TOTAL CHARACTER OFFSETS, INCLUDING ALL MARKUP AND LINE BREAKS)")
+        appendLine()
         appendLine(caretSection)
         appendLine()
+        if (caretStart != caretEnd) {
+            appendLine("# SELECTION CONTENTS")
+            appendLine()
+            appendLine("```")
+            appendLine(contents.substring(caretStart, caretEnd))
+            appendLine("```")
+            appendLine()
+        }
         if (!docName.isNullOrBlank()) {
             appendLine("# DOCUMENT TITLE")
+            appendLine()
             appendLine(docName)
             appendLine()
         }
-        appendLine("# DOCUMENT CONTENTS")
-        appendLine()
+        appendLine("# DOCUMENT CONTENTS (ALL TEXT BELOW THIS LINE) -----------")
         appendLine(contents)
     }
 }

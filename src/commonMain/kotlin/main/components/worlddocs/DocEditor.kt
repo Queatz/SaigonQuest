@@ -498,6 +498,7 @@ fun DocEditor(
                         }
                     },
                     placeholder = translated("Empty doc"),
+                    docName = doc.title,
                     selection = selStart..selEnd,
                     onSelectionChange = { s, e ->
                         selStart = s

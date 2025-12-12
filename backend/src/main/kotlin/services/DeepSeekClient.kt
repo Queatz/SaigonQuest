@@ -57,12 +57,18 @@ object DeepSeekClient {
     )
 
     @Serializable
+    private data class Thinking(
+        val type: String,
+    )
+
+    @Serializable
     private data class DeepSeekRequest(
         val model: String = "deepseek-chat",
         val messages: List<ChatMessage>,
-        val temperature: Double? = 1.0,
+        val thinking: Thinking? = null,
+        val temperature: Double? = null,
         @SerialName("max_tokens")
-        val maxTokens: Int? = 2048,
+        val maxTokens: Int? = 1024,
         @SerialName("response_format")
         val responseFormat: ResponseFormat? = null,
     )
@@ -89,7 +95,9 @@ object DeepSeekClient {
     suspend fun promptText(
         systemPrompt: String,
         userPrompt: String,
-        logSession: DefaultWebSocketServerSession?,
+        logSession: DefaultWebSocketServerSession? = null,
+        temperature: Double? = null,
+        thinking: Boolean? = null,
         reason: Boolean = false,
         json: Boolean = false,
     ): String? {
@@ -108,20 +116,22 @@ object DeepSeekClient {
 
         val body = DeepSeekRequest(
             messages = messages,
+            temperature = temperature,
             model = if (reason) "deepseek-reasoner" else "deepseek-chat",
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
+            thinking = thinking?.let { Thinking(type = if (it) "enabled" else "disabled") },
         )
 
         return try {
-            val httpResp: HttpResponse = http.post("https://api.deepseek.com/beta/chat/completions") {
+            val httpResp: HttpResponse = http.post("https://api.deepseek.com/chat/completions") {
                 header(HttpHeaders.Authorization, "Bearer $apiKey")
                 contentType(ContentType.Application.Json)
                 setBody(body)
             }
 
             val statusOk = httpResp.status.isSuccess()
-            val rawBody = runCatching { httpResp.bodyAsText() }.getOrNull()
             if (!statusOk) {
+                val rawBody = runCatching { httpResp.bodyAsText() }.getOrNull()
                 WebSocketDebug.logError(
                     "DeepSeek HTTP ${httpResp.status.value}: ${httpResp.status.description}. Body preview: ${
                         rawBody?.take(
@@ -135,16 +145,14 @@ object DeepSeekClient {
             // Try to deserialize the structured response
             val resp: DeepSeekResponse? = runCatching { httpResp.body<DeepSeekResponse>() }.getOrNull()
             var content = resp?.choices?.firstOrNull()?.message?.content
-                ?: rawBody
 
             if (content.isNullOrBlank()) {
-                if (logSession != null) {
-                    WebSocketDebug.logMessage(
-                        "AI_RESPONSE_PREVIEW",
-                        "DeepSeek returned empty content. Raw body preview: ${rawBody?.take(300)}",
-                        logSession
-                    )
-                }
+                val rawBody = runCatching { httpResp.bodyAsText() }.getOrNull()
+                WebSocketDebug.logMessage(
+                    "AI_RESPONSE_PREVIEW",
+                    "DeepSeek returned empty content. Raw body preview: ${rawBody?.take(300)}",
+                    logSession
+                )
                 return null
             }
 
@@ -162,7 +170,7 @@ object DeepSeekClient {
 
             // Try to decode structured JSON with `text`
             val parsedText: String? = runCatching {
-                appJson.decodeFromString(AiTextJson.serializer(), content!!).text
+                appJson.decodeFromString(AiTextJson.serializer(), content).text
             }.getOrNull()
 
             val finalText = (parsedText ?: content).trim()

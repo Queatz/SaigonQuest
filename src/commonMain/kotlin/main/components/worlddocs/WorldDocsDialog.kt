@@ -45,6 +45,7 @@ import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
 import web.animations.awaitAnimationFrame
 import kotlinx.browser.window
+import main.components.translated
 
 @Composable
 fun WorldDocsDialog(
@@ -459,13 +460,20 @@ fun WorldDocsDialog(
                                         Button(attrs = {
                                             classes(Styles.secondaryButton)
                                             if (!canMoveUp) disabled()
-                                            onClick {
+                                            title(str("[Ctrl] Move to top"))
+                                            onClick { event ->
                                                 if (canMoveUp) {
                                                     scope.launch {
-                                                        val prev = siblings[idx - 1]
-                                                        val beforePrev =
-                                                            if (idx - 2 >= 0) siblings[idx - 2].orderIndex else null
-                                                        val newIdx = newIndex(beforePrev, prev.orderIndex)
+                                                        val newIdx = if (event.ctrlKey) {
+                                                            // Move all the way to the top
+                                                            val first = siblings.first()
+                                                            newIndex(before = null, after = first.orderIndex)
+                                                        } else {
+                                                            val prev = siblings[idx - 1]
+                                                            val beforePrev =
+                                                                if (idx - 2 >= 0) siblings[idx - 2].orderIndex else null
+                                                            newIndex(beforePrev, prev.orderIndex)
+                                                        }
                                                         val res = runCatching {
                                                             DocApi.moveDoc(
                                                                 selectedDoc.key,
@@ -488,13 +496,20 @@ fun WorldDocsDialog(
                                         Button(attrs = {
                                             classes(Styles.secondaryButton)
                                             if (!canMoveDown) disabled()
-                                            onClick {
+                                            title(str("[Ctrl] Move to bottom"))
+                                            onClick { event ->
                                                 if (canMoveDown) {
                                                     scope.launch {
-                                                        val next = siblings[idx + 1]
-                                                        val afterNext =
-                                                            if (idx + 2 <= siblings.lastIndex) siblings[idx + 2].orderIndex else null
-                                                        val newIdx = newIndex(next.orderIndex, afterNext)
+                                                        val newIdx = if (event.ctrlKey) {
+                                                            // Move all the way to the bottom
+                                                            val last = siblings.last()
+                                                            newIndex(before = last.orderIndex, after = null)
+                                                        } else {
+                                                            val next = siblings[idx + 1]
+                                                            val afterNext =
+                                                                if (idx + 2 <= siblings.lastIndex) siblings[idx + 2].orderIndex else null
+                                                            newIndex(next.orderIndex, afterNext)
+                                                        }
                                                         val res = runCatching {
                                                             DocApi.moveDoc(
                                                                 selectedDoc.key,

@@ -1,6 +1,12 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+[Ctrl] Move to top
+vi: [Ctrl] Di chuyển lên đầu
+
+[Ctrl] Move to bottom
+vi: [Ctrl] Di chuyển xuống cuối
+
 Click to edit
 vi: Nhấn để chỉnh sửa
 
