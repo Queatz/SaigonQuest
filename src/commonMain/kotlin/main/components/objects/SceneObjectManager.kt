@@ -1170,7 +1170,7 @@ class SceneObjectManager(
                     position = Vector3(node.position.x, node.position.y + offsetY, node.position.z),
                     fontSize = 18,
                     textColor = "white",
-                    backgroundColor = "#00000080",
+                    backgroundColor = "#000000F0",
                 )
                 if (handle != null) {
                     // Parent to object so it moves with it automatically

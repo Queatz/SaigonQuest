@@ -115,6 +115,7 @@ abstract external class AbstractMesh : Node {
     override var parent: Node?
     var infiniteDistance: Boolean
     var checkCollisions: Boolean
+    var renderingGroupId: Int
 
     /**
      * Tests if a ray intersects the mesh

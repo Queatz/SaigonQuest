@@ -262,7 +262,7 @@ class WorldObjectManager(private val scene: Scene) {
      *     position = Vector3(x, y + 1.2f, z),
      *     fontSize = 18,
      *     textColor = "white",
-     *     backgroundColor = "#00000080"  // Semi-transparent black background
+     *     backgroundColor = "#000000F0"  // Semi-transparent black background
      * )
      * 
      * // Later, you can update the position
@@ -284,14 +284,16 @@ class WorldObjectManager(private val scene: Scene) {
         position: Vector3,
         fontSize: Int = 24,
         textColor: String = "white",
-        backgroundColor: String? = null
+        backgroundColor: String? = null,
+        zOffset: Float = 0f,
     ): WorldObjectHandle? {
         val textBillboard = TextBillboard(
             scene = scene,
             text = text,
             fontSize = fontSize,
             textColor = textColor,
-            backgroundColor = backgroundColor ?: "transparent"
+            backgroundColor = backgroundColor ?: "transparent",
+            zOffset = zOffset,
         )
         textBillboard.position = position
         
@@ -329,7 +331,8 @@ class WorldObjectManager(private val scene: Scene) {
             position = statusPosition,
             fontSize = 18,
             textColor = "white",
-            backgroundColor = "#00000080" // Semi-transparent black background
+            backgroundColor = "#000000F0", // Semi-transparent black background
+            zOffset = 5f, // Pull towards camera so it renders in front
         )
     }
     
@@ -361,7 +364,7 @@ class WorldObjectManager(private val scene: Scene) {
                 position = Vector3(p.x, p.y + 0.5f, p.z),
                 fontSize = 18,
                 textColor = "white",
-                backgroundColor = "#00000080",
+                backgroundColor = "#000000F0",
             )
             if (handle != null) typingHudHandles[objectId] = handle
         }

@@ -899,13 +899,21 @@ class InputHandler(
 
         // 2) Depth-first targeting: if we can unproject a visible world point, use it directly
         scope.launch {
+            fun isPointWithinReach(point: Vector3): Boolean {
+                val playerPos = playerController.getCollider()!!.position
+                val distance = Vector3.Distance(playerPos, point)
+                val maxDistance = (cameraController.getCamera().maxZ - cameraController.getCamera().minZ) / 2f
+                return distance <= maxDistance
+            }
+
             try {
                 val depthPoint = DepthPicking.getVisibleWorldPointAt(
                     scene = scene,
                     x = scene.pointerX,
                     y = scene.pointerY,
                 )
-                if (depthPoint != null) {
+
+                if (depthPoint != null && isPointWithinReach(depthPoint)) {
                     playerController.setTargetPosition(depthPoint)
                     return@launch
                 }
@@ -933,7 +941,7 @@ class InputHandler(
                 }
             }
 
-            if (closestPoint != null) {
+            if (closestPoint != null && isPointWithinReach(closestPoint)) {
                 playerController.setTargetPosition(closestPoint)
             }
         }

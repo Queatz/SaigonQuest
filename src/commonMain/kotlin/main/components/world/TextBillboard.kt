@@ -56,7 +56,8 @@ class TextBillboard(
     private val fontSize: Int = 32,
     private val fontFamily: String = "Arial",
     private val textColor: String = "white",
-    private val backgroundColor: String = "transparent"
+    private val backgroundColor: String = "transparent",
+    private val zOffset: Float = 0f,
 ) : WorldObject() {
     
     // The mesh that will display the text
@@ -157,12 +158,19 @@ class TextBillboard(
             
             // Enable transparency from the texture
             useAlphaFromDiffuseTexture = true
+
+            disableDepthWrite = true
             
-            // Set transparency mode to ALPHA_BLEND (2)
-            transparencyMode = Material.MATERIAL_ALPHATEST
-            
+            // Set transparency mode to MATERIAL_ALPHATESTANDBLEND
+            transparencyMode = Material.MATERIAL_ALPHATESTANDBLEND
+
             // Disable backface culling for proper transparency
             backFaceCulling = false
+        }
+        // Apply depth bias to pull billboard towards the camera when requested (consistent mapping with sprite z-offsets)
+        if (zOffset != 0f) {
+            material.zOffset = -(zOffset / 10.0f)
+            material.zOffsetUnits = -(zOffset / 10.0f)
         }
         
         // Apply the material to the plane
@@ -170,6 +178,9 @@ class TextBillboard(
         
         // Set billboard mode to make the text always face the camera
         planeMesh?.billboardMode = Mesh.BILLBOARDMODE_ALL
+
+        // Render on top of everything else
+        planeMesh?.renderingGroupId = 1
 
         texture?.let { tex ->
             // Get the canvas context

@@ -17,7 +17,7 @@ object PlayerUi {
     const val CHAT_TEXT_COLOR: String = "black"
     const val CHAT_BG_COLOR: String = "white"
     const val STATUS_TEXT_COLOR: String = "white"
-    const val STATUS_BG_COLOR: String = "#00000080"
+    const val STATUS_BG_COLOR: String = "#000000F0"
 
     fun usernamePositionFor(base: Vector3): Vector3 =
         Vector3(base.x, base.y + USERNAME_Y_OFFSET, base.z)
