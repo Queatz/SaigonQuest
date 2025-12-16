@@ -37,7 +37,9 @@ class DocContentNodeRunner(private val context: NodeRunnerContext) : NodeRunner 
         if (docId.isNullOrBlank()) {
             // No doc specified; produce empty
             eventData["${node.id}_out_0"] = ""
+            eventData["${node.id}_out_1"] = ""
             eventData["${node.id}_text"] = ""
+            eventData["${node.id}_title"] = ""
             WebSocketDebug.logMessage(
                 "DOC_CONTENT_NODE",
                 "No docId provided for node ${node.id}; emitting empty string",
@@ -49,7 +51,9 @@ class DocContentNodeRunner(private val context: NodeRunnerContext) : NodeRunner 
         val doc: Doc? = try { docRepo.getById(docId) } catch (_: Throwable) { null }
         if (doc == null) {
             eventData["${node.id}_out_0"] = ""
+            eventData["${node.id}_out_1"] = ""
             eventData["${node.id}_text"] = ""
+            eventData["${node.id}_title"] = ""
             WebSocketDebug.logMessage(
                 "DOC_CONTENT_NODE",
                 "Doc not found for id=$docId; emitting empty string",
@@ -71,12 +75,15 @@ class DocContentNodeRunner(private val context: NodeRunnerContext) : NodeRunner 
         } catch (_: Throwable) { false }
 
         val content = if (isOwner || canViewByWorld) doc.content else ""
+        val title = if (isOwner || canViewByWorld) doc.title else ""
 
         eventData["${node.id}_out_0"] = content
+        eventData["${node.id}_out_1"] = title
         eventData["${node.id}_text"] = content
+        eventData["${node.id}_title"] = title
         WebSocketDebug.logMessage(
             "DOC_CONTENT_NODE",
-            "Emitting content length=${content.length} for docId=$docId (allowed=${isOwner || canViewByWorld})",
+            "Emitting content length=${content.length}, title length=${title.length} for docId=$docId (allowed=${isOwner || canViewByWorld})",
             context.session
         )
         return true

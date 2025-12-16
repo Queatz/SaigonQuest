@@ -14,6 +14,8 @@ import main.components.chat.md.applyMdRangeToDom
 import main.components.chat.md.buildPositionMap
 import main.components.chat.md.domPointToMd
 import main.theme.Styles
+import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
@@ -115,7 +117,11 @@ fun MdEditable(
             classes(Styles.md)
 
             if (enabled) {
-                classes(Styles.inputField)
+//                classes(Styles.inputField)
+                style {
+                    borderRadius(12.px)
+                    property("outline", "none")
+                }
             }
 
             attr("contenteditable", if (enabled) "true" else "false")

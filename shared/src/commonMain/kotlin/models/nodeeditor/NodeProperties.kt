@@ -712,6 +712,12 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
         )
 
         // AI node properties (pure value, no triggers)
