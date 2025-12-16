@@ -16,6 +16,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/ssh_utils.sh
+. "$SCRIPT_DIR/scripts/ssh_utils.sh"
+
 HOST="${HOST:-api.saigon.quest}"
 HOST="156.244.25.6"
 SSH_USER="${SSH_USER:-root}"
@@ -28,6 +32,9 @@ JAR="$DEST_DIR/app.jar"
 REMOTE_ENV="${REMOTE_ENV:-"VAPID_PUBLIC_KEY=BMDAzYH2jDNtRAU3lpl9wrU3FDavNV9M5Mu8_GIqkpAWjCYoESAlJb1e2T7Y2NGbdMr4QZBB5Ti4zXzrvPt6aPg VAPID_PRIVATE_KEY=KjuxzDj7xwj0F2tHibLNsItpY-633toE45czbhj7gjs DEEPSEEK_API_KEY=sk-9dc0225d71914bbabbb4dd0cdeb66771 OPENAI_API_KEY=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"}"
 
 echo "Running backend on $SSH_USER@$HOST ..."
+
+# Ensure host key is present to avoid interactive prompt
+ensure_known_host "$HOST"
 
 ssh -o BatchMode=yes -i "$SSH_KEY" "$SSH_USER@$HOST" "set -eu; \
   mkdir -p \"$DEST_DIR\" \"$LOG_DIR\"; \

@@ -473,7 +473,7 @@ object Styles : StyleSheet() {
         height(80.vh)
         backgroundColor(Theme.colors.surface)
         color(Theme.colors.onSurface)
-        borderRadius(8.px)
+        borderRadius(16.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
 

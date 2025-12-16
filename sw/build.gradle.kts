@@ -9,6 +9,8 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     js(IR) {
         browser {
             commonWebpackConfig {

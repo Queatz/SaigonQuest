@@ -89,6 +89,7 @@ class ChatRepository {
             FILTER m.worldId == @worldId 
                AND m.timestamp > @lastReadTimestamp
                AND NOT (m.senderType == "USER" AND m.senderId == @userId)
+               AND NOT m.senderType == "SYSTEM"
             COLLECT WITH COUNT INTO count
             RETURN count
         """.trimIndent()

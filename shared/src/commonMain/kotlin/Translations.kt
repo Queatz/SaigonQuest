@@ -1,6 +1,12 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Edited
+vi: Đã chỉnh sửa
+
+Shouted
+vi: Đã hét
+
 [Ctrl] Move to top
 vi: [Ctrl] Di chuyển lên đầu
 
@@ -247,7 +253,7 @@ vi: 🖨️ In
 Print This Location
 vi: In vị trí này
 
-📥 Download Image
+📥 Download image
 vi: 📥 Tải xuống hình ảnh
 
 Log In
@@ -628,8 +634,8 @@ vi: Bộ sưu tập
 e.g. chair_collection
 vi: ví dụ: chair_collection
 
-Status text (displayed above object)
-vi: Văn bản trạng thái (hiển thị phía trên đối tượng)
+Text displayed above object
+vi: Văn bản hiển thị phía trên đối tượng
 
 Rotation
 vi: Xoay

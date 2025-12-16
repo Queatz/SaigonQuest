@@ -60,7 +60,7 @@ fun PrintDialog(imageUrl: String, worldTitle: String, onClose: () -> Unit) {
                 },
                 isPrimary = true
             ) {
-                Translated("📥 Download Image")
+                Translated("📥 Download image")
             }
         },
         content = {

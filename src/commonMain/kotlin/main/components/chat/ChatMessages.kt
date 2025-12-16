@@ -161,7 +161,7 @@ fun ChatMessages(
         ChatMessageDialog(
             message = currentMessage,
             isOwner = isOwner,
-            isCurrentUser = (currentMessage.senderType == models.ChatSenderType.USER && currentMessage.senderId == currentUserId.value),
+            isCurrentUser = (currentMessage.senderType == ChatSenderType.USER && currentMessage.senderId == currentUserId.value),
             onClose = { selectedMessage = null },
             onEdit = { newText ->
                 // Update the message using WebSocketApi
@@ -343,7 +343,7 @@ fun ChatMessages(
                         message = chatMessage,
                         onMessageClick = { message -> selectedMessage = message },
                         isOwner = isOwner,
-                        isCurrentUser = (chatMessage.senderType == models.ChatSenderType.USER && currentUserId.value == chatMessage.senderId),
+                        isCurrentUser = (chatMessage.senderType == ChatSenderType.USER && currentUserId.value == chatMessage.senderId),
                         isPinned = pinnedIds.contains(chatMessage.key),
                         onPinToggle = {
                             scope.launch {
@@ -396,8 +396,8 @@ fun ChatMessageItem(
         attrs = {
             classes(Styles.chatMessageItem)
             classes(if (isCurrentUser) Styles.chatMessageItemCurrentUser else Styles.chatMessageItemOtherUser)
-            if (message.senderType == models.ChatSenderType.OBJECT) classes(Styles.chatMessageItemObject)
-            if (message.senderType == models.ChatSenderType.SYSTEM) classes(Styles.chatMessageItemSystem)
+            if (message.senderType == ChatSenderType.OBJECT) classes(Styles.chatMessageItemObject)
+            if (message.senderType == ChatSenderType.SYSTEM) classes(Styles.chatMessageItemSystem)
 
             onClick { onMessageClick(message) }
         }
@@ -409,7 +409,7 @@ fun ChatMessageItem(
             }
         ) {
             // Username
-            if (message.senderType != models.ChatSenderType.SYSTEM) {
+            if (message.senderType != ChatSenderType.SYSTEM) {
                 Span(
                     attrs = {
                         classes(Styles.chatMessageUsername)
@@ -418,6 +418,9 @@ fun ChatMessageItem(
                 ) {
                     Text(message.senderName)
                 }
+            } else {
+                // System message content is treated as the header
+                MessageContent(message = message)
             }
 
             // Timestamp with edited indicator
@@ -431,6 +434,7 @@ fun ChatMessageItem(
                     Span(
                         attrs = {
                             classes(Styles.chatMessageEditedIndicator)
+                            title(str("Edited"))
                         }
                     ) {
                         Text("•")
@@ -441,6 +445,7 @@ fun ChatMessageItem(
                     Span(
                         attrs = {
                             classes(Styles.chatMessageEditedIndicator)
+                            title(str("Shouted"))
                         }
                     ) {
                         Text("📣")
@@ -449,7 +454,7 @@ fun ChatMessageItem(
                 Text(formatTimestamp(message.timestamp.toEpochMilliseconds()))
 
                 // Owner-only pin/unpin control
-                if (isOwner && onPinToggle != null && message.senderType != models.ChatSenderType.SYSTEM) {
+                if (isOwner && onPinToggle != null && message.senderType != ChatSenderType.SYSTEM) {
                     Span(attrs = {
                         classes(Styles.chatPinButton)
 
@@ -468,24 +473,10 @@ fun ChatMessageItem(
                 }
             }
         }
-
-        // Message content
-        P(
-            attrs = {
-                classes(Styles.chatMessageContent)
-                if (message.deleted) {
-                    classes(Styles.chatMessageContentDeleted)
-                }
-                if (message.senderType == ChatSenderType.SYSTEM) {
-                    classes(Styles.chatMessageContentSystem)
-                }
-            }
-        ) {
-            if (message.deleted) {
-                Translated("Deleted")
-            } else {
-                Md(message.message)
-            }
+        
+        if (message.senderType != ChatSenderType.SYSTEM) {
+            // Message content
+            MessageContent(message = message)
         }
 
         // Attachments
@@ -495,6 +486,27 @@ fun ChatMessageItem(
                 onImageClick = onImageClick,
                 onImageLoaded = onImageLoaded,
             )
+        }
+    }
+}
+
+@Composable
+private fun MessageContent(message: ChatMessage) {
+    P(
+        attrs = {
+            classes(Styles.chatMessageContent)
+            if (message.deleted) {
+                classes(Styles.chatMessageContentDeleted)
+            }
+            if (message.senderType == ChatSenderType.SYSTEM) {
+                classes(Styles.chatMessageContentSystem)
+            }
+        }
+    ) {
+        if (message.deleted) {
+            Translated("Deleted")
+        } else {
+            Md(message.message)
         }
     }
 }

@@ -293,7 +293,7 @@ fun ObjectEditorDialog(
                         type = InputType.Text,
                         attrs = {
                             classes(Styles.inputField)
-                            placeholder("Status text (displayed above object)")
+                            placeholder("Text displayed above object")
                             value(status)
                             onInput { event -> status = event.value }
                         }

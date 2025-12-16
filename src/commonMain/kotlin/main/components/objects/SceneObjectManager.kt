@@ -1421,7 +1421,9 @@ class SceneObjectManager(
                     }
 
                     // Parent to object so it moves with it during drag and transforms
-                    try { if (existingHandle.node.parent != node) existingHandle.node.parent = node } catch (_: Throwable) {}
+                    if (existingHandle.node.parent != node) {
+                        existingHandle.node.parent = node
+                    }
 
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
                     existingHandle.position = Vector3(0f, offsetY, 0f)

@@ -16,6 +16,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/ssh_utils.sh
+. "$SCRIPT_DIR/scripts/ssh_utils.sh"
+
 HOST="${HOST:-content.saigon.quest}"
 HOST="38.54.15.228"
 SSH_USER="${SSH_USER:-root}"
@@ -28,6 +32,9 @@ JAR="$DEST_DIR/app.jar"
 REMOTE_ENV="${REMOTE_ENV:-"API_SERVER_URL=https://api.saigon.quest"}"
 
 echo "Running content server on $SSH_USER@$HOST ..."
+
+# Ensure host key is present to avoid interactive prompt
+ensure_known_host "$HOST"
 
 ssh -o BatchMode=yes -i "$SSH_KEY" "$SSH_USER@$HOST" "set -eu; \
   mkdir -p \"$DEST_DIR\" \"$LOG_DIR\"; \

@@ -147,7 +147,7 @@ fun Routing.configureWorldRoutes() {
                 val savedBal = balances.upsert(userId) { it.balance = after }
                 
                 // Record balance history as a Use event
-                try {
+                if (cost != 0L) try {
                     balanceHistory.add(
                         UserBalanceHistory(
                             userId = userId,

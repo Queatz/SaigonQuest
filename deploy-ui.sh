@@ -6,6 +6,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/ssh_utils.sh
+. "$SCRIPT_DIR/scripts/ssh_utils.sh"
+
 HOST="saigon.quest"
 HOST="154.205.142.48"
 SSH_USER="root"
@@ -50,6 +54,9 @@ success() {
 trap 'fail' ERR
 
 echo "Deploying UI to $SSH_USER@$HOST ..."
+
+# Ensure host key is present to avoid interactive prompt
+ensure_known_host "$HOST"
 
 if $BUILD_FIRST; then
   echo "Running build: ./gradlew $GRADLE_TASK"
