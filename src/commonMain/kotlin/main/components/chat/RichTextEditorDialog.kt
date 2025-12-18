@@ -33,7 +33,7 @@ fun RichTextEditorDialog(
     initialText: String = "",
 ) {
     var text by remember { mutableStateOf(initialText) }
-    var isFullscreen by remember { mutableStateOf(false) }
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
 
     // Keep in sync with fullscreen state to mirror LogicEditorDialog behavior
     DisposableEffect(Unit) {

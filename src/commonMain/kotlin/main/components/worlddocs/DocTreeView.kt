@@ -22,6 +22,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import kotlinx.coroutines.delay
 import Translations
+import androidx.compose.runtime.key
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
 import org.jetbrains.compose.web.css.fontSize
@@ -136,120 +137,73 @@ fun DocTreeView(
         }
     }) {
         visible.forEach { item ->
-            val node = item.node
-            val level = item.level
-            val hasChildren = node.children.isNotEmpty()
-            val isExpanded = expanded[node.doc.key] ?: false // ?: (level == 0)
-            val isSelected = node.doc.key == selectedDocId
+            key(item.node.doc.key) {
+                val node = item.node
+                val level = item.level
+                val hasChildren = node.children.isNotEmpty()
+                val isExpanded = expanded[node.doc.key] ?: false // ?: (level == 0)
+                val isSelected = node.doc.key == selectedDocId
 
-            Li(attrs = {
-                classes(
-                    if (isSelected) WorldDocsStyles.treeItemSelected else WorldDocsStyles.treeItem,
-                    indentClass(level)
-                )
-                onClick { onSelect(node.doc.key) }
-                onDoubleClick {
-                    if (hasChildren) {
-                        val currentlyExpanded = expanded[node.doc.key] ?: false
-                        expanded[node.doc.key] = !currentlyExpanded
-                    }
-                }
-                if (canDrag) attr("draggable", "true")
-                if (canDrag) {
-                    onDragStart {
-                        draggingId = node.doc.key
-                        it.dataTransfer?.effectAllowed = "move"
-                        it.dataTransfer?.setData("text/plain", node.doc.key)
-                    }
-                    onDragEnd {
-                        draggingId = null
-                        dragOverId = null
-                        dragOverPos = null
-                        dragOverIntoId = null
-                    }
-                    // Drop INTO (as last child) when dropping on the row itself
-                    onDragOver {
-                        it.preventDefault()
-                        // Mark this row as INTO hover when valid, but only if no edge (BEFORE/AFTER) hover is active
-                        if (draggingId != null && draggingId != node.doc.key && dragOverId == null && dragOverPos == null) {
-                            val invalidInto = isDescendant(docs, draggingId!!, node.doc.key)
-                            if (!invalidInto) {
-                                dragOverIntoId = node.doc.key
-                            }
+                Li(attrs = {
+                    classes(
+                        if (isSelected) WorldDocsStyles.treeItemSelected else WorldDocsStyles.treeItem,
+                        indentClass(level)
+                    )
+                    onClick { onSelect(node.doc.key) }
+                    onDoubleClick {
+                        if (hasChildren) {
+                            val currentlyExpanded = expanded[node.doc.key] ?: false
+                            expanded[node.doc.key] = !currentlyExpanded
                         }
-                        // Schedule auto-expand if hovering over a collapsed parent
-                        if (hasChildren && (expanded[node.doc.key] != true)) {
-                            if (lastHoverId != node.doc.key) {
-                                expandJob?.cancel()
-                                lastHoverId = node.doc.key
-                                expandJob = scope.launch {
-                                    delay(500)
-                                    expanded[node.doc.key] = true
+                    }
+                    if (canDrag) attr("draggable", "true")
+                    if (canDrag) {
+                        onDragStart {
+                            draggingId = node.doc.key
+                            it.dataTransfer?.effectAllowed = "move"
+                            it.dataTransfer?.setData("text/plain", node.doc.key)
+                        }
+                        onDragEnd {
+                            draggingId = null
+                            dragOverId = null
+                            dragOverPos = null
+                            dragOverIntoId = null
+                        }
+                        // Drop INTO (as last child) when dropping on the row itself
+                        onDragOver {
+                            it.preventDefault()
+                            // Mark this row as INTO hover when valid, but only if no edge (BEFORE/AFTER) hover is active
+                            if (draggingId != null && draggingId != node.doc.key && dragOverId == null && dragOverPos == null) {
+                                val invalidInto = isDescendant(docs, draggingId!!, node.doc.key)
+                                if (!invalidInto) {
+                                    dragOverIntoId = node.doc.key
+                                }
+                            }
+                            // Schedule auto-expand if hovering over a collapsed parent
+                            if (hasChildren && (expanded[node.doc.key] != true)) {
+                                if (lastHoverId != node.doc.key) {
+                                    expandJob?.cancel()
+                                    lastHoverId = node.doc.key
+                                    expandJob = scope.launch {
+                                        delay(500)
+                                        expanded[node.doc.key] = true
+                                    }
                                 }
                             }
                         }
-                    }
-                    onDragLeave {
-                        if (dragOverIntoId == node.doc.key) {
-                            dragOverIntoId = null
-                        }
-                    }
-                    onDrop {
-                        it.preventDefault()
-                        if (draggingId != null && draggingId != node.doc.key) {
-                            // Prevent moving a node into its own descendant
-                            if (!isDescendant(docs, draggingId!!, node.doc.key)) {
-                                val lastChild = node.children.maxByOrNull { c -> c.doc.orderIndex }?.doc
-                                val newIndex = if (lastChild != null) lastChild.orderIndex + 1.0 else 0.0
-                                onMoveRequest(draggingId!!, node.doc.key, newIndex)
-                            }
-                        }
-                        draggingId = null
-                        dragOverId = null
-                        dragOverPos = null
-                        dragOverIntoId = null
-                    }
-                }
-            }) {
-                // INTO drop overlay (visual only). Edge (BEFORE/AFTER) hover takes precedence, so only show when no edge hover is active.
-                if (canDrag && draggingId != null && dragOverIntoId == node.doc.key && dragOverId == null && dragOverPos == null) {
-                    Div(attrs = { classes(WorldDocsStyles.dropIntoOverlay) }) {}
-                }
-                // Top drop zone (before this node)
-                if (canDrag && draggingId != null) {
-                    Div(attrs = {
-                        classes(
-                            if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
-                            WorldDocsStyles.dropZoneTop
-                        )
-                        onDragOver {
-                            it.preventDefault()
-                            dragOverId = node.doc.key
-                            dragOverPos = DragPos.BEFORE
-                            // Edge band hovered; hide INTO overlay
-                            dragOverIntoId = null
-                        }
                         onDragLeave {
-                            dragOverId = null
-                            dragOverPos = null
+                            if (dragOverIntoId == node.doc.key) {
+                                dragOverIntoId = null
+                            }
                         }
                         onDrop {
                             it.preventDefault()
                             if (draggingId != null && draggingId != node.doc.key) {
-                                val targetParentId = node.doc.parentId
-                                // Prevent creating a cycle by moving a node to be sibling under its own subtree
-                                val invalid = when {
-                                    targetParentId == null -> false
-                                    targetParentId == draggingId -> true
-                                    else -> isDescendant(docs, draggingId!!, targetParentId)
-                                }
-                                if (!invalid) {
-                                    val siblings = siblingsOf(docs, node.doc.parentId)
-                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                    val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
-                                    val after = node.doc.orderIndex
-                                    val newIdx = newIndex(before, after)
-                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                // Prevent moving a node into its own descendant
+                                if (!isDescendant(docs, draggingId!!, node.doc.key)) {
+                                    val lastChild = node.children.maxByOrNull { c -> c.doc.orderIndex }?.doc
+                                    val newIndex = if (lastChild != null) lastChild.orderIndex + 1.0 else 0.0
+                                    onMoveRequest(draggingId!!, node.doc.key, newIndex)
                                 }
                             }
                             draggingId = null
@@ -257,43 +211,104 @@ fun DocTreeView(
                             dragOverPos = null
                             dragOverIntoId = null
                         }
-                    })
-                }
-
-                // Row contents
-                // Arrow
-                Div(attrs = {
-                    onClick {
-                        it.stopPropagation()
-                        expanded[node.doc.key] = !isExpanded
-                    }
-
-                    style {
-                        padding(0.px, 8.px)
-                        opacity(if (!hasChildren) 0.125f else .75f)
-                        flexShrink(0)
                     }
                 }) {
-                    Text(if (!hasChildren) "▹" else if (isExpanded) "▾" else "▸")
-                }
+                    // INTO drop overlay (visual only). Edge (BEFORE/AFTER) hover takes precedence, so only show when no edge hover is active.
+                    if (canDrag && draggingId != null && dragOverIntoId == node.doc.key && dragOverId == null && dragOverPos == null) {
+                        Div(attrs = { classes(WorldDocsStyles.dropIntoOverlay) }) {}
+                    }
+                    // Top drop zone (before this node)
+                    if (canDrag && draggingId != null) {
+                        Div(attrs = {
+                            classes(
+                                if (dragOverId == node.doc.key && dragOverPos == DragPos.BEFORE) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                                WorldDocsStyles.dropZoneTop
+                            )
+                            onDragOver {
+                                it.preventDefault()
+                                dragOverId = node.doc.key
+                                dragOverPos = DragPos.BEFORE
+                                // Edge band hovered; hide INTO overlay
+                                dragOverIntoId = null
+                            }
+                            onDragLeave {
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                            onDrop {
+                                it.preventDefault()
+                                if (draggingId != null && draggingId != node.doc.key) {
+                                    val targetParentId = node.doc.parentId
+                                    // Prevent creating a cycle by moving a node to be sibling under its own subtree
+                                    val invalid = when {
+                                        targetParentId == null -> false
+                                        targetParentId == draggingId -> true
+                                        else -> isDescendant(docs, draggingId!!, targetParentId)
+                                    }
+                                    if (!invalid) {
+                                        val siblings = siblingsOf(docs, node.doc.parentId)
+                                        val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                        val before = if (idx - 1 >= 0) siblings[idx - 1].orderIndex else null
+                                        val after = node.doc.orderIndex
+                                        val newIdx = newIndex(before, after)
+                                        onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                    }
+                                }
+                                draggingId = null
+                                dragOverId = null
+                                dragOverPos = null
+                                dragOverIntoId = null
+                            }
+                        })
+                    }
 
-                Div(
-                    {
-                        style {
-                            width(0.px)
-                            flexGrow(1)
+                    // Row contents
+                    // Arrow
+                    Div(attrs = {
+                        onClick {
+                            it.stopPropagation()
+                            expanded[node.doc.key] = !isExpanded
                         }
-                    }
-                ) {
-                    // Title
-                    Div {
-                        Text(node.doc.title)
+
+                        style {
+                            padding(0.px, 8.px)
+                            opacity(if (!hasChildren) 0.125f else .75f)
+                            flexShrink(0)
+                        }
+                    }) {
+                        Text(if (!hasChildren) "▹" else if (isExpanded) "▾" else "▸")
                     }
 
-                    // Content
-                    if (node.doc.content.isBlank()) {
-                        val titles = node.children.map { it.doc.title }.filter { it.isNotBlank() }
-                        if (titles.isNotEmpty()) {
+                    Div(
+                        {
+                            style {
+                                width(0.px)
+                                flexGrow(1)
+                            }
+                        }
+                    ) {
+                        // Title
+                        Div {
+                            Text(node.doc.title)
+                        }
+
+                        // Content
+                        if (node.doc.content.isBlank()) {
+                            val titles = node.children.map { it.doc.title }.filter { it.isNotBlank() }
+                            if (titles.isNotEmpty()) {
+                                Div({
+                                    style {
+                                        overflow("hidden")
+                                        whiteSpace("nowrap")
+                                        property("text-overflow", "ellipsis")
+                                        fontSize(10.px)
+                                        opacity(.5f)
+                                    }
+                                }) {
+                                    Text(titles.joinToString())
+                                }
+                            }
+                        } else {
                             Div({
                                 style {
                                     overflow("hidden")
@@ -303,81 +318,70 @@ fun DocTreeView(
                                     opacity(.5f)
                                 }
                             }) {
-                                Text(titles.joinToString())
+                                Text(node.doc.content)
                             }
                         }
-                    } else {
-                        Div({
-                            style {
-                                overflow("hidden")
-                                whiteSpace("nowrap")
-                                property("text-overflow", "ellipsis")
-                                fontSize(10.px)
-                                opacity(.5f)
-                            }
+                    }
+
+                    // Row actions (e.g., add child) shown only for selected row when enabled
+                    if (isSelected && showAddButtonForSelected) {
+                        Div(attrs = {
+                            classes(WorldDocsStyles.rowActions)
                         }) {
-                            Text(node.doc.content)
+                            Span(attrs = {
+                                classes(WorldDocsStyles.rowActionButton)
+                                attr("title", Translations.str("Create doc"))
+                                onClick {
+                                    it.stopPropagation()
+                                    onCreateChild(node.doc.key)
+                                }
+                            }) { Text("➕") }
                         }
                     }
-                }
 
-                // Row actions (e.g., add child) shown only for selected row when enabled
-                if (isSelected && showAddButtonForSelected) {
-                    Div(attrs = {
-                        classes(WorldDocsStyles.rowActions)
-                    }) {
-                        Span(attrs = {
-                            classes(WorldDocsStyles.rowActionButton)
-                            attr("title", Translations.str("Create doc"))
-                            onClick {
-                                it.stopPropagation()
-                                onCreateChild(node.doc.key)
+                    // Bottom drop zone (after this node)
+                    if (canDrag && draggingId != null) {
+                        Div(attrs = {
+                            classes(
+                                if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
+                                WorldDocsStyles.dropZoneBottom
+                            )
+                            onDragOver {
+                                it.preventDefault()
+                                dragOverId = node.doc.key
+                                dragOverPos = DragPos.AFTER
+                                // Edge band hovered; hide INTO overlay
+                                dragOverIntoId = null
                             }
-                        }) { Text("➕") }
+                            onDragLeave {
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                            onDrop {
+                                it.preventDefault()
+                                if (draggingId != null && draggingId != node.doc.key) {
+                                    val targetParentId = node.doc.parentId
+                                    val invalid = when {
+                                        targetParentId == null -> false
+                                        targetParentId == draggingId -> true
+                                        else -> isDescendant(docs, draggingId!!, targetParentId)
+                                    }
+                                    if (!invalid) {
+                                        val siblings = siblingsOf(docs, node.doc.parentId)
+                                        val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
+                                        val before = node.doc.orderIndex
+                                        val after =
+                                            if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
+                                        val newIdx = newIndex(before, after)
+                                        onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
+                                    }
+                                }
+                                draggingId = null
+                                dragOverId = null
+                                dragOverPos = null
+                            }
+                        })
                     }
-                }
-
-                // Bottom drop zone (after this node)
-                if (canDrag && draggingId != null) {
-                    Div(attrs = {
-                        classes(
-                            if (dragOverId == node.doc.key && dragOverPos == DragPos.AFTER) WorldDocsStyles.dropZoneActive else WorldDocsStyles.dropZone,
-                            WorldDocsStyles.dropZoneBottom
-                        )
-                        onDragOver {
-                            it.preventDefault()
-                            dragOverId = node.doc.key
-                            dragOverPos = DragPos.AFTER
-                            // Edge band hovered; hide INTO overlay
-                            dragOverIntoId = null
-                        }
-                        onDragLeave {
-                            dragOverId = null
-                            dragOverPos = null
-                        }
-                        onDrop {
-                            it.preventDefault()
-                            if (draggingId != null && draggingId != node.doc.key) {
-                                val targetParentId = node.doc.parentId
-                                val invalid = when {
-                                    targetParentId == null -> false
-                                    targetParentId == draggingId -> true
-                                    else -> isDescendant(docs, draggingId!!, targetParentId)
-                                }
-                                if (!invalid) {
-                                    val siblings = siblingsOf(docs, node.doc.parentId)
-                                    val idx = siblings.indexOfFirst { s -> s.key == node.doc.key }
-                                    val before = node.doc.orderIndex
-                                    val after = if (idx + 1 <= siblings.lastIndex) siblings[idx + 1].orderIndex else null
-                                    val newIdx = newIndex(before, after)
-                                    onMoveRequest(draggingId!!, node.doc.parentId, newIdx)
-                                }
-                            }
-                            draggingId = null
-                            dragOverId = null
-                            dragOverPos = null
-                        }
-                    }) {}
                 }
             }
         }

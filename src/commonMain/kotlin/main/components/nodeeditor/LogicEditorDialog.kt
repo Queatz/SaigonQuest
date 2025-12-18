@@ -48,7 +48,7 @@ fun LogicEditorDialog(
     var title by remember { mutableStateOf(objectModel.title) }
 
     // State for fullscreen mode
-    var isFullscreen by remember { mutableStateOf(false) }
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
 
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }

@@ -234,7 +234,7 @@ object NotificationStyles : StyleSheet() {
         backgroundColor(Theme.colors.success)
         color(Theme.colors.onPrimary)
         padding(6.px, 12.px)
-        borderRadius(4.px)
+        borderRadius(12.px)
         cursor("pointer")
         property("border", "none")
     }
@@ -243,7 +243,7 @@ object NotificationStyles : StyleSheet() {
         backgroundColor(Theme.colors.error)
         color(Theme.colors.onPrimary)
         padding(6.px, 12.px)
-        borderRadius(4.px)
+        borderRadius(12.px)
         cursor("pointer")
         property("border", "none")
     }

@@ -117,7 +117,10 @@ fun MdEditable(
             classes(Styles.md)
 
             if (enabled) {
-//                classes(Styles.inputField)
+                if (markdown.isBlank()) {
+                    classes(Styles.inputField)
+                }
+
                 style {
                     borderRadius(12.px)
                     property("outline", "none")

@@ -67,7 +67,7 @@ fun WorldDocsDialog(
     var docs by remember { mutableStateOf<List<DocTree>>(emptyList()) }
 
     // Fullscreen state (like RichTextEditorDialog)
-    var isFullscreen by remember { mutableStateOf(false) }
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
     DisposableEffect(Unit) {
         val listener: (dynamic) -> Unit = { isFullscreen = document.fullscreenElement != null }
         document.addEventListener("fullscreenchange", listener)

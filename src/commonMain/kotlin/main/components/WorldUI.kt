@@ -77,7 +77,7 @@ fun WorldUI(
     var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.Chat) }
     
     // State for UI elements that are not part of the panel system
-    var isFullscreen by remember { mutableStateOf(false) }
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
     var isQrDialogOpen by remember { mutableStateOf(false) }
     var isAdminDialogOpen by remember { mutableStateOf(false) }
     var isWorldDocsDialogOpen by remember { mutableStateOf(false) }
