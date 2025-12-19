@@ -78,17 +78,17 @@ fun AdminDialog(
                     isPrimary = true,
                 ) { Translated("View assets") }
 
-                // System notification
-                DialogButton(
-                    onClick = { showSendNotificationDialog = true },
-                    isPrimary = true,
-                ) { Translated("Send system notification") }
-
                 // Manage items
                 DialogButton(
                     onClick = { showItemsDialog = true },
                     isPrimary = true,
                 ) { Translated("Manage items") }
+
+                // System notification
+                DialogButton(
+                    onClick = { showSendNotificationDialog = true },
+                    isPrimary = false,
+                ) { Translated("Send system notification") }
 
                 // Balance requests section
                 Div(attrs = { style { marginBottom(8.px) } }) {

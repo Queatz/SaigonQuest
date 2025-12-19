@@ -49,12 +49,7 @@ fun AdminItemsDialog(
         Button(attrs = {
             classes(Styles.primaryButton)
             onClick { showCreateItemDialog = true }
-        }) { Text("+ " + translated("New")) }
-
-        Button(attrs = {
-            classes(Styles.secondaryButton)
-            onClick { loadItems() }
-        }) { Translated("Refresh") }
+        }) { Translated("New") }
     }
 
     BaseDialog(

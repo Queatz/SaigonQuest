@@ -74,11 +74,6 @@ fun AdminUserRequestsDialog(
     }
 
     val headerActions: @Composable () -> Unit = {
-        Button(attrs = {
-            classes(Styles.baseDialogButtonSecondary)
-            onClick { load() }
-        }) { Translated("Refresh") }
-
         // Status filter
         Div {
             Select(attrs = {

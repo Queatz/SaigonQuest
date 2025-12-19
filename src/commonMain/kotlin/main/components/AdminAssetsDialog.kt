@@ -55,11 +55,6 @@ fun AdminAssetsDialog(
             classes(Styles.baseDialogButtonPrimary)
             onClick { showRegisterAssetDialog = true }
         }) { Translated("Register new asset") }
-
-        Button(attrs = {
-            classes(Styles.baseDialogButtonSecondary)
-            onClick { loadAssets() }
-        }) { Translated("Refresh") }
     }
 
     BaseDialog(
