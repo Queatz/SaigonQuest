@@ -1715,6 +1715,39 @@ vi: Tất cả
 Is the item wearable?
 vi: Vật phẩm có thể mặc không?
 
+Character tool
+vi: Công cụ nhân vật
+
+Sprite sheet settings
+vi: Cài đặt sprite sheet
+
+Cell width (px)
+vi: Chiều rộng ô (px)
+
+Cell height (px)
+vi: Chiều cao ô (px)
+
+Columns
+vi: Cột
+
+Frames per second
+vi: Khung hình mỗi giây
+
+Base sprite sheet
+vi: Sprite sheet cơ bản
+
+Additional sprite sheets
+vi: Sprite sheet bổ sung
+
+Overlay
+vi: Lớp phủ
+
+Start walking
+vi: Bắt đầu đi bộ
+
+Stop walking
+vi: Dừng đi bộ
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

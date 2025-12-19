@@ -48,7 +48,11 @@ fun CharacterRenderer(
     bodyType: String = "Normal",
     skinTone: Float = 0.5f,
     eyeColor: String = "Brown",
-    hairStyle: String? = "Short"
+    hairStyle: String? = "Short",
+    // Tooling flags
+    enableInventoryIntegration: Boolean = true,
+    useProvidedBaseSpriteSheet: Boolean = false,
+    isWalking: Boolean = false,
 ) {
     // Set up the canvas with CSS and ref instead of ID
     var canvasRef by remember { mutableStateOf<HTMLCanvasElement?>(null) }
@@ -62,41 +66,43 @@ fun CharacterRenderer(
     // Keep a reference to the character for live updates
     var characterRef by remember { mutableStateOf<Character?>(null) }
     
-    // Load inventory data if not already loaded
-    DisposableEffect(Unit) {
-        if (InventoryState.inventory == null || InventoryState.items.isEmpty()) {
-            coroutineScope.launch {
-                InventoryState.loadInventory(
-                    coroutineScope = coroutineScope,
-                    onSuccess = {
-                        // Get the sprite sheets for worn items
-                        wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
-                            InventoryState.currentUser,
-                            InventoryState.items,
-                        )
-                    }
+    // Load inventory data if not already loaded (optional)
+    if (enableInventoryIntegration) {
+        DisposableEffect(Unit) {
+            if (InventoryState.inventory == null || InventoryState.items.isEmpty()) {
+                coroutineScope.launch {
+                    InventoryState.loadInventory(
+                        coroutineScope = coroutineScope,
+                        onSuccess = {
+                            // Get the sprite sheets for worn items
+                            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                                InventoryState.currentUser,
+                                InventoryState.items,
+                            )
+                        }
+                    )
+                }
+            } else {
+                // Get the sprite sheets for worn items
+                wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                    InventoryState.currentUser,
+                    InventoryState.items,
                 )
             }
-        } else {
-            // Get the sprite sheets for worn items
-            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
-                InventoryState.currentUser,
-                InventoryState.items,
-            )
-        }
-        
-        // Register a callback to update worn items when inventory changes
-        val refreshCallback = {
-            wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
-                InventoryState.currentUser,
-                InventoryState.items,
-            )
-        }
-        
-        InventoryState.addOnRefreshCallback(refreshCallback)
-        
-        onDispose {
-            InventoryState.removeOnRefreshCallback(refreshCallback)
+
+            // Register a callback to update worn items when inventory changes
+            val refreshCallback = {
+                wornItemSpriteSheets = WornItemsRenderer.getWornItemSpriteSheetsForUser(
+                    InventoryState.currentUser,
+                    InventoryState.items,
+                )
+            }
+
+            InventoryState.addOnRefreshCallback(refreshCallback)
+
+            onDispose {
+                InventoryState.removeOnRefreshCallback(refreshCallback)
+            }
         }
     }
 
@@ -107,29 +113,47 @@ fun CharacterRenderer(
     }
 
     // React to hair and eye changes in realtime by updating additional sprite sheets
-    DisposableEffect(hairStyle, eyeColor, wornItemSpriteSheets, additionalSpriteSheets) {
-        val hairSpriteSheet = SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle)
-        val eyesSpriteSheet = SpriteSheet.createEyesSpriteSheet(
+    DisposableEffect(hairStyle, eyeColor, wornItemSpriteSheets, additionalSpriteSheets, enableInventoryIntegration) {
+        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle) else null
+        val eyesSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createEyesSpriteSheet(
             eyeColor = eyeColor,
             sex = InventoryState.currentUser?.sex,
-        )
-        val newAdditional = (listOfNotNull(hairSpriteSheet, eyesSpriteSheet) + additionalSpriteSheets + wornItemSpriteSheets)
+        ) else null
+        val inventorySheets = if (enableInventoryIntegration) wornItemSpriteSheets else emptyList()
+        val newAdditional = (listOfNotNull(hairSpriteSheet, eyesSpriteSheet) + additionalSpriteSheets + inventorySheets)
         characterRef?.updateSpriteSheets(newAdditional)
         onDispose { }
     }
 
-    // React to body type changes in realtime by updating the base sprite sheet and re-rendering
-    DisposableEffect(bodyType) {
-        val newBase = SpriteSheet.createPlayerSpriteSheetForBodyType(
-            sex = InventoryState.currentUser?.sex,
-            bodyType = bodyType,
-        )
-        characterRef?.let { character ->
-            character.spriteSheet = newBase
-            // Trigger re-render by updating sprite sheets with the current list
-            character.updateSpriteSheets(character.additionalSpriteSheets.toList())
-        }
+    // React to walking state changes
+    DisposableEffect(isWalking) {
+        characterRef?.activity = if (isWalking) main.components.world.PlayerActivity.Moving else null
         onDispose { }
+    }
+
+    // React to body type changes in realtime by updating the base sprite sheet and re-rendering
+    if (!useProvidedBaseSpriteSheet) {
+        DisposableEffect(bodyType) {
+            val newBase = SpriteSheet.createPlayerSpriteSheetForBodyType(
+                sex = InventoryState.currentUser?.sex,
+                bodyType = bodyType,
+            )
+            characterRef?.let { character ->
+                character.spriteSheet = newBase
+                // Trigger re-render by updating sprite sheets with the current list
+                character.updateSpriteSheets(character.additionalSpriteSheets.toList())
+            }
+            onDispose { }
+        }
+    } else {
+        // If external base sheet provided, update live when it changes
+        DisposableEffect(characterSpriteSheet) {
+            characterRef?.let { character ->
+                character.spriteSheet = characterSpriteSheet
+                character.updateSpriteSheets(character.additionalSpriteSheets.toList())
+            }
+            onDispose { }
+        }
     }
 
     Canvas(
@@ -196,26 +220,29 @@ fun CharacterRenderer(
             upperBetaLimit = (85f * PI / 180f).toFloat() // 85 degrees in radians
         }
         
-        // Create hair sprite sheet for preview if available
-        val hairSpriteSheet = SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle)
-        // Create eyes sprite sheet for preview based on selected eyeColor and current user's sex
-        val eyesSpriteSheet = SpriteSheet.createEyesSpriteSheet(
+        // Create hair/eyes sprite sheets for preview if enabled
+        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle) else null
+        val eyesSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createEyesSpriteSheet(
             eyeColor = eyeColor,
             sex = InventoryState.currentUser?.sex,
-        )
+        ) else null
 
-        // Select base sprite sheet based on sex and body type
-        val baseSpriteSheet = SpriteSheet.createPlayerSpriteSheetForBodyType(
-            sex = InventoryState.currentUser?.sex,
-            bodyType = bodyType,
-        )
+        // Select base sprite sheet
+        val baseSpriteSheet = if (useProvidedBaseSpriteSheet) {
+            characterSpriteSheet
+        } else {
+            SpriteSheet.createPlayerSpriteSheetForBodyType(
+                sex = InventoryState.currentUser?.sex,
+                bodyType = bodyType,
+            )
+        }
 
         // Create the character
         val character = Character(
             spriteSheet = baseSpriteSheet,
             direction = CharacterDirection.S, // Default facing south
-            activity = null,
-            additionalSpriteSheets = (listOfNotNull(eyesSpriteSheet, hairSpriteSheet) + additionalSpriteSheets + wornItemSpriteSheets).toMutableList()
+            activity = if (isWalking) main.components.world.PlayerActivity.Moving else null,
+            additionalSpriteSheets = (listOfNotNull(eyesSpriteSheet, hairSpriteSheet) + additionalSpriteSheets + (if (enableInventoryIntegration) wornItemSpriteSheets else emptyList())).toMutableList()
         )
         // Initialize skin tone
         character.skinTone = skinTone

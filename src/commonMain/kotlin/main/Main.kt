@@ -18,6 +18,7 @@ import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.components.tools.CharacterToolPage
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 
@@ -59,6 +60,12 @@ fun main() {
 
                 route("/paused") {
                     PausedPage()
+                }
+
+                route("/tools") {
+                    route("/character") {
+                        CharacterToolPage()
+                    }
                 }
 
                 // Catch-all route for any other path
