@@ -64,7 +64,7 @@ fun CharacterCustomizationDialog(
     // Use the BaseDialog component
     BaseDialog(
         onClose = onClose,
-        title = translated("Customize Character"),
+        title = translated("Customize character"),
         content = {
             // Character renderer
             Div(

@@ -12,6 +12,7 @@ import kotlinx.coroutines.await
 import kotlinx.browser.window
 import main.api.ContentApi
 import main.api.UserApi
+import org.w3c.fetch.RequestInit
 import kotlin.coroutines.resume
 import kotlin.js.Date
 
@@ -59,7 +60,7 @@ object ScreenshotUtils {
      * Converts a data URL to a File using the browser fetch + blob APIs.
      */
     suspend fun dataUrlToFile(dataUrl: String, filename: String, mimeType: String = "image/png"): File {
-        val response = window.fetch(dataUrl).await()
+        val response = window.fetch(dataUrl, RequestInit()).await()
         val blob = response.blob().await()
         return File(arrayOf(blob), filename, FilePropertyBag(type = mimeType))
     }

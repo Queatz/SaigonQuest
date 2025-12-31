@@ -115,7 +115,7 @@ vi: đã thu thập
 Open
 vi: Mở
 
-Customize Character
+Customize character
 vi: Tùy chỉnh nhân vật
 
 Status

@@ -170,6 +170,8 @@ class Character(
         // Apply initial skin tone to the base mesh
         applySkinToneToBaseMesh()
 
+        additionalSpriteSheets.clear()//TODO REMOVE
+
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
@@ -202,6 +204,7 @@ class Character(
 
         // Add all the new sprite sheets
         additionalSpriteSheets.addAll(spriteSheets)
+        additionalSpriteSheets.clear()//TODO REMOVE
 
         // Set the flag to re-render on the next update
         needsRerender = true

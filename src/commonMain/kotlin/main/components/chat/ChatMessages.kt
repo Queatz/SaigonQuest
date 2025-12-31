@@ -82,7 +82,6 @@ fun ChatMessages(
             currentUserId.value = user.key
             try {
                 world.value = WorldApi.getWorld(worldId)
-                console.log("[ChatMessages]", world, user)
             } catch (e: Throwable) {
                 console.error("[ChatMessages] Error getting world for permissions", e)
             }

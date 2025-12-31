@@ -249,7 +249,7 @@ fun PlayerDialog(
                                 }
                             }
                         ) {
-                            Translated("Customize Character")
+                            Translated("Customize character")
                         }
                     }
                     
