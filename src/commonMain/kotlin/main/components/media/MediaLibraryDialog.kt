@@ -21,7 +21,6 @@ import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.UserMedia
-import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -34,6 +33,7 @@ import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.maxHeight
@@ -46,12 +46,9 @@ import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.DragEvent
-import org.w3c.dom.HTMLInputElement
 import org.w3c.fetch.RequestInit
 import org.w3c.files.File
 
@@ -121,57 +118,12 @@ fun MediaLibraryDialog(
         maxWidth = "720px",
         isFullHeight = false,
         content = {
-            // Top drop/click area
-            var dragOver by remember { mutableStateOf(false) }
-            var inputElement by remember { mutableStateOf<HTMLInputElement?>(null) }
-
-            Div(attrs = {
-                style {
-                    property("border", if (dragOver) "2px dashed #4A90E2" else "2px dashed #aaa")
-                    property("border-radius", "8px")
-                    padding(24.px)
-                    textAlign("center")
-                    property("cursor", if (uploading) "progress" else "pointer")
-                    marginBottom(16.px)
-                }
-                onClick {
-                    if (!uploading) {
-                        inputElement?.click()
-                    }
-                }
-                onDragOver { ev ->
-                    ev.preventDefault(); dragOver = true
-                }
-                onDragLeave { dragOver = false }
-                onDrop { event ->
-                    event.preventDefault(); dragOver = false
-                    val files = (event.nativeEvent as DragEvent).dataTransfer?.files
-                    val first = files?.item(0)
-                    if (first != null) uploadFile(first)
-                }
-            }) {
-                P { Translated(if (uploading) "Uploading..." else "Click or drop image to upload") }
-                // Hidden file input
-                Input(type = InputType.File, attrs = {
-                    attr("accept", "image/*")
-                    style {
-                        display(DisplayStyle.None)
-                    }
-                    onInput { ev ->
-                        val input = ev.target
-                        val f = input.files?.item(0)
-                        if (f != null) uploadFile(f)
-                        input.value = ""
-                    }
-                    ref {
-                        inputElement = it
-
-                        onDispose {
-                            inputElement = null
-                        }
-                    }
-                })
-            }
+            // Top upload area
+            MediaUploadArea(
+                onUpload = { uploadFile(it) },
+                uploading = uploading,
+                onError = { error = it }
+            )
 
             if (error != null) {
                 Div({ style { color(Color.red); marginBottom(8.px) } }) { Text(error!!) }

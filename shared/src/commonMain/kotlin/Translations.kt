@@ -1259,6 +1259,12 @@ vi: Tổng
 Buy
 vi: Mua
 
+or
+vi: hoặc
+
+Paste
+vi: Dán
+
 for
 vi: với
 

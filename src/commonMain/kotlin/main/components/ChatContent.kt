@@ -22,6 +22,7 @@ import main.api.sendTypingStatus
 import main.components.chat.ChatMessages
 import main.components.chat.RichTextEditorDialog
 import main.components.media.UploadMediaDialog
+import main.components.media.findImageInClipboardEvent
 import main.theme.Styles
 import main.theme.Theme
 import models.chat.ImageAttachment
@@ -473,40 +474,30 @@ fun ChatContent(worldId: String) {
                     }
                     // Handle paste of image from clipboard
                     onPaste { event ->
-                        try {
-                            val dt = event.clipboardData
-                            val files = dt?.files
-                            val length = files?.length ?: 0
-                            for (i in 0 until length) {
-                                val file = files?.item(i)
-                                if (file != null && file.type.startsWith("image/")) {
-                                    event.preventDefault()
-                                    if (isAuthenticated && isPlayer) {
-                                        scope.launch {
-                                            try {
-                                                val token = UserApi.getToken() ?: ""
-                                                val record = ContentApi.upload(file, token)
-                                                val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
-                                                val attachments = listOf(
-                                                    ImageAttachment(
-                                                        url = finalUrl,
-                                                    ),
-                                                )
-                                                ChatApi.createMessage(
-                                                    worldId = worldId,
-                                                    message = "",
-                                                    attachments = attachments,
-                                                )
-                                            } catch (t: Throwable) {
-                                                console.error("Failed to send pasted image", t)
-                                            }
-                                        }
+                        val file = findImageInClipboardEvent(event)
+                        if (file != null) {
+                            event.preventDefault()
+                            if (isAuthenticated && isPlayer) {
+                                scope.launch {
+                                    try {
+                                        val token = UserApi.getToken() ?: ""
+                                        val record = ContentApi.upload(file, token)
+                                        val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
+                                        val attachments = listOf(
+                                            ImageAttachment(
+                                                url = finalUrl,
+                                            ),
+                                        )
+                                        ChatApi.createMessage(
+                                            worldId = worldId,
+                                            message = "",
+                                            attachments = attachments,
+                                        )
+                                    } catch (t: Throwable) {
+                                        console.error("Failed to send pasted image", t)
                                     }
-                                    break
                                 }
                             }
-                        } catch (t: Throwable) {
-                            console.error("Error handling paste event", t)
                         }
                     }
                     // Use ref for auto-focus

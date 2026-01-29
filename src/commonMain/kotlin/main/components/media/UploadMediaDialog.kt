@@ -16,15 +16,9 @@ import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.UserMedia
-import models.MediaType
-import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
-import org.w3c.dom.DragEvent
-import org.w3c.dom.HTMLInputElement
-import org.w3c.fetch.RequestInit
 import org.w3c.files.File
-import utils.json
 
 @Composable
 fun UploadMediaDialog(
@@ -85,82 +79,12 @@ fun UploadMediaDialog(
         maxWidth = "720px",
         isFullHeight = false,
         content = {
-            // Top drop/click area
-            var dragOver by remember { mutableStateOf(false) }
-            var inputElement by remember { mutableStateOf<HTMLInputElement?>(null) }
-
-            Div(attrs = {
-                style {
-                    property("border", if (dragOver) "2px dashed #4A90E2" else "2px dashed #aaa")
-                    property("border-radius", "8px")
-                    padding(24.px)
-                    textAlign("center")
-                    property("cursor", if (uploading) "progress" else "pointer")
-                    marginBottom(16.px)
-                }
-                onClick {
-                    if (!uploading) {
-                        inputElement?.click()
-                    }
-                }
-                onDragOver { ev ->
-                    ev.preventDefault(); dragOver = true
-                }
-                onDragLeave { dragOver = false }
-                onDrop { event ->
-                    event.preventDefault(); dragOver = false
-                    val files = (event.nativeEvent as DragEvent).dataTransfer?.files
-                    val first = files?.item(0)
-                    if (first != null) uploadFile(first)
-                }
-                onPaste { event ->
-                    try {
-                        val dt = event.clipboardData
-                        val files = dt?.files
-                        val length = files?.length ?: 0
-                        for (i in 0 until length) {
-                            val f = files?.item(i)
-                            if (f != null && f.type.startsWith("image/")) {
-                                event.preventDefault()
-                                uploadFile(f)
-                                break
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        t.printStackTrace()
-                    }
-                }
-
-                ref {
-                    it.focus()
-
-                    onDispose {
-
-                    }
-                }
-            }) {
-                P { Translated(if (uploading) "Uploading..." else "Click or drop image to upload") }
-                // Hidden file input
-                Input(type = InputType.File, attrs = {
-                    attr("accept", "image/*")
-                    style {
-                        display(DisplayStyle.None)
-                    }
-                    onInput { ev ->
-                        val input = ev.target
-                        val f = input.files?.item(0)
-                        if (f != null) uploadFile(f)
-                        input.value = ""
-                    }
-                    ref {
-                        inputElement = it
-
-                        onDispose {
-                            inputElement = null
-                        }
-                    }
-                })
-            }
+            // Top upload area
+            MediaUploadArea(
+                onUpload = { uploadFile(it) },
+                uploading = uploading,
+                onError = { error = it }
+            )
 
             // Error
             if (error != null) {
