@@ -200,15 +200,15 @@ class InputHandler(
         val event = info.event
         val key = event.key.lowercase()
         
-        // Handle movement keys (WASD and arrow keys)
-        if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright")) {
+        // Handle movement keys (WASD, arrow keys, and shift)
+        if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift")) {
             when (info.type) {
                 KeyboardEventTypes.KEYDOWN -> {
                     // Add key to pressed keys set
                     pressedKeys.add(key)
                     
-                    // Cancel any click-to-move in progress
-                    if (pressedKeys.isNotEmpty()) {
+                    // Cancel any click-to-move in progress (unless it's just shift)
+                    if (key != "shift" && pressedKeys.isNotEmpty()) {
                         playerController.stopMovement()
                     }
                 }
@@ -1026,6 +1026,15 @@ class InputHandler(
         }
     }
     
+    /**
+     * Checks if the sprint key (SHIFT) is currently pressed.
+     * 
+     * @return True if sprinting, false otherwise
+     */
+    fun isSprinting(): Boolean {
+        return "shift" in pressedKeys
+    }
+
     /**
      * Calculates the movement direction based on pressed keys.
      * 

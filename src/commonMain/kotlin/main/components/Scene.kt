@@ -992,9 +992,13 @@ fun SceneComponent(url: String) {
 
             // Calculate movement direction from input
             val moveDirection = inputHandler.calculateMovementDirection()
+            val speedMultiplier = if (inputHandler.isSprinting()) 4.0f else 1.0f
 
             // Update player position
-            val newPosition = playerController.updatePlayerPosition(moveDirection)
+            val newPosition = playerController.updatePlayerPosition(
+                moveDirection = moveDirection,
+                speedMultiplier = speedMultiplier,
+            )
             if (newPosition == null) {
                 // No movement this frame; zero out instantaneous velocity for sway
                 SceneManager.setPlayerVelocity(lib.Vector3(0f, 0f, 0f))

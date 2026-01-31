@@ -304,9 +304,13 @@ class PlayerController(private val scene: Scene) {
      * Also updates the player's direction based on movement.
      * 
      * @param moveDirection The direction to move in (from keyboard input)
+     * @param speedMultiplier The movement speed multiplier (default: 1.0)
      * @return The new position if movement occurred, null otherwise
      */
-    fun updatePlayerPosition(moveDirection: Vector3): Vector3? {
+    fun updatePlayerPosition(
+        moveDirection: Vector3,
+        speedMultiplier: Float = 1.0f,
+    ): Vector3? {
         val handle = playerHandle ?: return null
         val coll = collider ?: return null
         val validPos = mover.update(
@@ -314,7 +318,8 @@ class PlayerController(private val scene: Scene) {
             playerHandle = handle,
             collider = coll,
             worldMeshes = worldMeshes,
-            moveCircle = moveCircle
+            moveCircle = moveCircle,
+            speedMultiplier = speedMultiplier,
         )
         if (validPos != null) {
             // Update velocity for wind sway (units per frame)

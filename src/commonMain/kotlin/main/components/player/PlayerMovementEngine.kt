@@ -55,9 +55,10 @@ class PlayerMovementEngine(
         collider: Mesh,
         worldMeshes: Array<AbstractMesh>,
         moveCircle: Mesh?,
+        speedMultiplier: Float = 1.0f,
     ): Vector3? {
         val deltaTime = movementDelta.nextDeltaSeconds()
-        val frameSpeed = (baseMovementSpeed * deltaTime).toFloat()
+        val frameSpeed = (baseMovementSpeed * speedMultiplier * deltaTime).toFloat()
 
         var finalMoveDirection = Vector3.Zero()
         var isPlayerMoving = false
