@@ -2,20 +2,20 @@
 # yarn lockfile v1
 
 
-"@babylonjs/core@8.43.0":
-  version "8.43.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/core/-/core-8.43.0.tgz#3e1a296c7a442bbd9803d5f472699ffe9cd2aa0a"
-  integrity sha512-O3HOfNKBNAHNsntK3o1hJHjRyDC9up0mPd4/j9yQWxbxEgJ+zskQyvk5cu2mA5JYHonwvQDtYnH8TIQRGfDcBg==
+"@babylonjs/core@8.49.6":
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/@babylonjs/core/-/core-8.49.6.tgz#9afaaa70020481916d98c1656c5044251327b50e"
+  integrity sha512-Q0wsDfDQhwXhE22ltb89hL+XYaDzBLGDr/sSlKUEsHtALK+u36Ttwa8wVD0XJP30pgFpKIrd1LvdSB9FemNwzg==
 
-"@babylonjs/loaders@8.43.0":
-  version "8.43.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-8.43.0.tgz#91f2e599363fa88933553848061581a15fc9e975"
-  integrity sha512-UaDlekqxohhz0ZPjQXleeUfH+Irur2sfgdQZqXKJjQJzMSfZFzeyMYAPImHwHPsgRcBUzJfKUzamji2v+YMKeA==
+"@babylonjs/loaders@8.49.6":
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-8.49.6.tgz#0d189a8d85037f38c594c23f4df5cd757d999f33"
+  integrity sha512-KsguPMqonctgvyjCcR8A3izGaoQoQrEdG3n4mZ4scX/WHskAciW5P/zsE3AUYugOAb+TL7iBW5VCb+sz/uEkVw==
 
-"@babylonjs/materials@8.43.0":
-  version "8.43.0"
-  resolved "https://registry.yarnpkg.com/@babylonjs/materials/-/materials-8.43.0.tgz#b8085bfda6497baca4539b00126df145bdc3ebf0"
-  integrity sha512-UslKZY6I/8tkPRitz1nytXL7knEGMCogEwslg17xMDTsd5cOE8AjZPA+9xJVGbYKmQexY8CaMPUiuWHm32gjsg==
+"@babylonjs/materials@8.49.6":
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/@babylonjs/materials/-/materials-8.49.6.tgz#37702709708db05c546bcf7ff0212e01aa84d572"
+  integrity sha512-xDfgexV8y5Lp7Ftk8i+DWgERTSmwdLxUIOs5/9yTQTHdecdTZ0gNm5iGTWWdNvGCAX5wqd74Cg4Fwvjok1JeuQ==
 
 "@colors/colors@1.5.0":
   version "1.5.0"
@@ -576,10 +576,10 @@ array-flatten@1.1.1:
   resolved "https://registry.yarnpkg.com/array-flatten/-/array-flatten-1.1.1.tgz#9a5f699051b1e7073328f2a008968b64ea2955d2"
   integrity sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==
 
-babylonjs-gltf2interface@8.43.0:
-  version "8.43.0"
-  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-8.43.0.tgz#51bee3f337b50f45c01b530896baaa6f20b55654"
-  integrity sha512-xJIFgeSc9yZ4h+/qYxoxYrvwFTZO5lUhpQJjCiJUsBcP9TWBoqct8M02fdJorBzXhaV5CtvsrvlAbS8M+bf0Qw==
+babylonjs-gltf2interface@8.49.6:
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-8.49.6.tgz#7e1b1a7eda516fe3b5eab31b843c23524b92a2a4"
+  integrity sha512-7qxi48GxEgX9SIZf1Eze+25YCUUY9X6ZIuoozg0rHZyY9gQBso7HUIWLznsQHeUXey19QS/zirrP1spm1PW8Vw==
 
 balanced-match@^1.0.0:
   version "1.0.2"
