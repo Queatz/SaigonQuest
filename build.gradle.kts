@@ -162,10 +162,10 @@ kotlin {
 
                 implementation(npm("marked", "17.0.1"))
                 implementation(npm("qr", "0.5.2"))
-                implementation(npm("@babylonjs/core", "8.43.0"))
-                implementation(npm("@babylonjs/materials", "8.43.0"))
-                implementation(npm("@babylonjs/loaders", "8.43.0"))
-                implementation(npm("babylonjs-gltf2interface", "8.43.0"))
+                implementation(npm("@babylonjs/core", "8.49.6"))
+                implementation(npm("@babylonjs/materials", "8.49.6"))
+                implementation(npm("@babylonjs/loaders", "8.49.6"))
+                implementation(npm("babylonjs-gltf2interface", "8.49.6"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
 
                 // Ktor client

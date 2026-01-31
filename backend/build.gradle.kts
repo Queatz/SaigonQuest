@@ -49,7 +49,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.4.0")
     
     // ArangoDB - Latest version as required
-    implementation("com.arangodb:arangodb-java-driver:7.22.1")
+    implementation("com.arangodb:arangodb-java-driver:7.25.0")
     
     // Jackson modules for date/time handling
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
@@ -62,7 +62,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.20")
+    implementation("ch.qos.logback:logback-classic:1.5.26")
 
     // Web Push (VAPID + HTTP ECE)
     implementation("nl.martijndwars:web-push:5.1.2")

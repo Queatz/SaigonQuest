@@ -42,7 +42,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
 
     // ArangoDB
-    implementation("com.arangodb:arangodb-java-driver:7.22.1")
+    implementation("com.arangodb:arangodb-java-driver:7.25.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
     implementation("org.glassfish:jakarta.json:2.0.1")
@@ -53,7 +53,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.20")
+    implementation("ch.qos.logback:logback-classic:1.5.26")
 }
 
 kotlin {

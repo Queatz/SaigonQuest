@@ -40,7 +40,7 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-                implementation("com.arangodb:arangodb-java-driver:7.22.1")
+                implementation("com.arangodb:arangodb-java-driver:7.25.0")
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
             }
