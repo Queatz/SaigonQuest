@@ -250,6 +250,9 @@ fun PropertyPanel(
                                                 showRichEditorDialog = false
                                             },
                                             initialText = propertyValues[propDef.key] ?: "",
+                                            confirmButtonText = translated("Save"),
+                                            title = translated("Dialogue"),
+                                            placeholder = ""
                                         )
                                     }
                                 } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc)) {

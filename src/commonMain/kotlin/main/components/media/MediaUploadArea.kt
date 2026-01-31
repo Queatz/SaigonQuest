@@ -65,6 +65,7 @@ fun MediaUploadArea(
                     alignItems(AlignItems.Center)
                     justifyContent(JustifyContent.Center)
                     flexDirection(FlexDirection.Column)
+                    gap(16.px)
                 }
             }
         ) {

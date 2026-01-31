@@ -18,6 +18,7 @@ import main.utils.toggleFullscreen
 import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 
 /**
  * A rich text (markdown) editor dialog for composing chat messages.
@@ -31,6 +32,9 @@ fun RichTextEditorDialog(
     onSend: (String) -> Unit,
     actions: (@Composable () -> Unit)? = null,
     initialText: String = "",
+    title: String = translated("Write chat message"),
+    placeholder: String = translated("Write chat message"),
+    confirmButtonText: String = translated("Send"),
 ) {
     var text by remember { mutableStateOf(initialText) }
     var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
@@ -44,7 +48,7 @@ fun RichTextEditorDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = translated("Write chat message"),
+        title = title,
         maxWidth = "800px",
         isFullHeight = true,
         isFullscreen = isFullscreen,
@@ -67,7 +71,7 @@ fun RichTextEditorDialog(
             RichTextEditor(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = translated("Write chat message"),
+                placeholder = placeholder,
             )
         },
         actions = {
@@ -87,7 +91,7 @@ fun RichTextEditorDialog(
             DialogButton(
                 onClick = { if (text.isNotBlank()) onSend(text) },
                 isPrimary = true,
-            ) { Translated("Send") }
+            ) { Text(confirmButtonText) }
         }
     )
 }

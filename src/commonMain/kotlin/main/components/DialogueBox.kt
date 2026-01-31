@@ -37,6 +37,7 @@ import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLElement
@@ -130,12 +131,12 @@ fun DialogueBox(
             }
 
             if (dialogue.requiresInput) {
-                Br()
                 Div(
                     attrs = {
                         style {
                             display(DisplayStyle.Flex)
                             gap(8.px)
+                            marginTop(16.px)
                         }
                     }
                 ) {
