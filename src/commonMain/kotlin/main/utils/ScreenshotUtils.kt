@@ -60,7 +60,7 @@ object ScreenshotUtils {
      * Converts a data URL to a File using the browser fetch + blob APIs.
      */
     suspend fun dataUrlToFile(dataUrl: String, filename: String, mimeType: String = "image/png"): File {
-        val response = window.fetch(dataUrl, RequestInit()).await()
+        val response = window.fetch(dataUrl, js("({})").unsafeCast<RequestInit>()).await()
         val blob = response.blob().await()
         return File(arrayOf(blob), filename, FilePropertyBag(type = mimeType))
     }
