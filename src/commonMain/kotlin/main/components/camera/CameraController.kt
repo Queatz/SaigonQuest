@@ -45,7 +45,7 @@ class CameraController(private val scene: Scene) {
     ).apply {
         // Set camera constraints
         this.lowerRadiusLimit = 4f // Min constraint
-        this.upperRadiusLimit = 16f // Max constraint
+        this.upperRadiusLimit = 32f // Max constraint
         this.lowerBetaLimit = (57.5f * PI / 180f).toFloat()
         this.upperBetaLimit = (87.5f * PI / 180f).toFloat()
 
@@ -54,7 +54,7 @@ class CameraController(private val scene: Scene) {
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
         this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
         this.minZ = 0.1f
-        this.maxZ = 100f
+        this.maxZ = 500f
 
         // Set initial position
         this.alpha = (-PI / 2).toFloat()
