@@ -728,7 +728,7 @@ external class ArcRotateCamera(
     var inertialRadiusOffset: Float
     var inertialAlphaOffset: Float
     var inertialBetaOffset: Float
-    var targetScreenOffset: Vector3
+    var targetScreenOffset: Vector2
     var inputs: ArcRotateCameraInputs
 
     fun attachControl(noPreventDefault: Boolean = definedExternally)

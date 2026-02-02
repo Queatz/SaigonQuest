@@ -14,6 +14,7 @@ import lib.Mesh
 import lib.MeshBuilder
 import lib.SSAO2RenderingPipeline
 import lib.Scene
+import lib.Vector2
 import lib.Vector3
 import kotlin.math.PI
 import main.components.GraphicsSettings
@@ -48,8 +49,9 @@ class CameraController(private val scene: Scene) {
         this.upperRadiusLimit = 32f // Max constraint
         this.lowerBetaLimit = (57.5f * PI / 180f).toFloat()
         this.upperBetaLimit = (87.5f * PI / 180f).toFloat()
+        this.targetScreenOffset = Vector2(0f, -0.5f)
 
-        this.wheelPrecision = 200f
+        this.wheelPrecision = 50f
 
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
         this.fov = 0.5f // ~28 degrees - narrower telephoto-like view

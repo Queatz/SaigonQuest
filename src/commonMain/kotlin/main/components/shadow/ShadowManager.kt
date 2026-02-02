@@ -55,7 +55,7 @@ class ShadowManager(
         
         // Set shadow frustum limits
         light.shadowMinZ = 0.1f  // Reduced to match camera minZ
-        light.shadowMaxZ = 100f
+        light.shadowMaxZ = 100f // 500f
         
         // Adjust direction to point at the center of the scene
         // Slight angle for better shadow projection
