@@ -369,9 +369,9 @@ abstract external class Material {
 
 
 open external class StandardMaterial(name: String, scene: Scene) : Material {
-    var diffuseTexture: Texture
-    var emissiveTexture: Texture
-    var opacityTexture: Texture
+    var diffuseTexture: Texture?
+    var emissiveTexture: Texture?
+    var opacityTexture: Texture?
     var diffuseColor: Color3
     var specularColor: Color3
     var emissiveColor: Color3

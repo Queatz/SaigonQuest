@@ -30,15 +30,21 @@ class ObjectNotificationNodeRunner(private val context: NodeRunnerContext) : Nod
         WebSocketDebug.logMessage("OBJECT_NOTIFICATION_NODE_JSON_DATA", "Node JSON data: $jsonData", context.session)
         
         // Parse the JSON data to extract the message
-        val message = try {
-            // Try to parse as PropertyBasedNodeData
-            val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
-            // Find the property with key TEXT_CONTENT
-            nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value ?: ""
+        val nodeData = try {
+            json.decodeFromString<PropertyBasedNodeData>(jsonData)
         } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse ObjectNotification node data", e, context.session)
-            ""
+            PropertyBasedNodeData()
         }
+
+        fun inKey(name: String) = "${node.id}_in_${name}"
+        fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+            val eventVal = eventData[inKey(nameLower)] as? String
+            if (!eventVal.isNullOrBlank()) return eventVal
+            return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+        }
+
+        val message = fromEventOrNode("text_content", PropertyKey.TEXT_CONTENT) ?: ""
         
         if (message.isBlank()) {
             WebSocketDebug.logError("Missing or empty message in ObjectNotification node data", null, context.session)

@@ -21,7 +21,15 @@ class DelayNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         var delaySeconds = 5.0
         try {
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
-            val secondsStr = nodeData.properties.find { it.key == PropertyKey.DELAY_SECONDS }?.value
+
+            fun inKey(name: String) = "${node.id}_in_${name}"
+            fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+                val eventVal = eventData[inKey(nameLower)] as? String
+                if (!eventVal.isNullOrBlank()) return eventVal
+                return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+            }
+
+            val secondsStr = fromEventOrNode("delay_seconds", PropertyKey.DELAY_SECONDS)
             val parsed = secondsStr?.toDoubleOrNull()
             if (parsed != null) {
                 delaySeconds = parsed

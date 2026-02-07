@@ -20,6 +20,7 @@ import main.components.LabeledCheckbox
 import main.theme.NodeEditorStyles
 import main.theme.Styles
 import models.NodeCategory
+import models.MediaType
 import models.nodeeditor.NodeData
 import models.nodeeditor.PropertyDirection
 import models.nodeeditor.PropertyKey
@@ -370,10 +371,11 @@ fun PropertyPanel(
                                     if (showDialog) {
                                         UploadMediaDialog(
                                             onClose = { showDialog = false },
-                                            onSelect = { selectedUrl ->
+                                            onSelect = { selectedUrl, _ ->
                                                 propertyValues =
                                                     propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
-                                            }
+                                            },
+                                            filter = MediaType.Image,
                                         )
                                     }
                                 } else if (propDef.key == PropertyKey.ITEM_ID) {

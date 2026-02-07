@@ -101,6 +101,8 @@ object Theme {
         val errorSoftBg = Color("rgba(239, 83, 80, 0.15)")
         val errorSoftBorder = Color("rgba(239, 83, 80, 0.35)")
 
+        val favorite = Color("#ffee00")
+
         // Node editor specific accents
         val nodeAccentPrimary = Color("rgba(0, 140, 255, 0.8)")
         val accentInfoBlueStrong = Color("rgba(100, 200, 255, 0.9)")

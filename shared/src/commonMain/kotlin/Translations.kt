@@ -1268,14 +1268,32 @@ vi: Dán
 for
 vi: với
 
+Click or drop media to upload
+vi: Nhấp hoặc thả phương tiện để tải lên
+
 Click or drop image to upload
 vi: Nhấp hoặc thả hình ảnh để tải lên
+
+Record audio
+vi: Ghi âm
+
+Stop recording
+vi: Dừng ghi âm
+
+Click or drop audio to upload
+vi: Nhấp hoặc thả âm thanh để tải lên
 
 Uploading...
 vi: Đang tải lên...
 
+Upload or choose media
+vi: Tải lên hoặc chọn phương tiện
+
 Upload or choose image
 vi: Tải lên hoặc chọn hình ảnh
+
+Upload or choose audio
+vi: Tải lên hoặc chọn âm thanh
 
 Media Library
 vi: Thư viện phương tiện
@@ -1286,8 +1304,8 @@ vi: Xóa
 Loading media...
 vi: Đang tải phương tiện...
 
-No media yet. Upload an image above.
-vi: Chưa có phương tiện. Hãy tải lên hình ảnh phía trên.
+No media yet. Upload some media above.
+vi: Chưa có phương tiện. Hãy tải lên phương tiện phía trên.
 
 Are you sure you want to delete this media?
 vi: Bạn có chắc muốn xóa phương tiện này không?
@@ -1474,6 +1492,9 @@ vi: Gạch dưới
 
 Strikethrough
 vi: Gạch ngang
+
+Insert audio
+vi: Chèn âm thanh
 
 Insert image
 vi: Chèn hình ảnh

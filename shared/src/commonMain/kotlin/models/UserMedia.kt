@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import models.annotations.Indexed
 
 @Serializable
-enum class MediaType { Image, Video }
+enum class MediaType { Image, Video, Audio }
 
 @Serializable
 data class UserMedia(

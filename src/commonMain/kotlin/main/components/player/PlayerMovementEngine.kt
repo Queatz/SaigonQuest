@@ -6,6 +6,7 @@ import lib.Vector3
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.effect.WindSystem
+import kotlin.math.max
 
 /**
  * Encapsulates local player movement + click-to-move state and logic.
@@ -22,6 +23,7 @@ class PlayerMovementEngine(
     // Click-to-move state
     private var playerTargetPosition: Vector3? = null
     private var isMoving = false
+    private var isAutoRunning = false
 
     // Inactivity auto-sit
     private var timeSinceLastMovement = 0.0
@@ -33,15 +35,17 @@ class PlayerMovementEngine(
     private val minimalMovementThreshold = 0.01f
     private val giveUpTimeThreshold = 1.0
 
-    fun setTargetPosition(position: Vector3) {
+    fun setTargetPosition(position: Vector3, currentPosition: Vector3) {
         playerTargetPosition = Vector3(position.x, position.y + 0.5f, position.z)
         isMoving = true
+        isAutoRunning = playerTargetPosition!!.subtract(currentPosition).length() > 10f
         setActivity(PlayerActivity.Moving)
     }
 
     fun stopMovement() {
         playerTargetPosition = null
         isMoving = false
+        isAutoRunning = false
         lastSignificantPosition = null
         timeWithMinimalMovement = 0.0
     }
@@ -58,7 +62,8 @@ class PlayerMovementEngine(
         speedMultiplier: Float = 1.0f,
     ): Vector3? {
         val deltaTime = movementDelta.nextDeltaSeconds()
-        val frameSpeed = (baseMovementSpeed * speedMultiplier * deltaTime).toFloat()
+        val actualSpeedMultiplier = if (isAutoRunning) max(speedMultiplier, 4.0f) else speedMultiplier
+        val frameSpeed = (baseMovementSpeed * actualSpeedMultiplier * deltaTime).toFloat()
 
         var finalMoveDirection = Vector3.Zero()
         var isPlayerMoving = false

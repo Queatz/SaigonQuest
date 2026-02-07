@@ -239,7 +239,7 @@ class PlayerController(private val scene: Scene) {
      * @param position The target position
      */
     fun setTargetPosition(position: Vector3) {
-        mover.setTargetPosition(position)
+        mover.setTargetPosition(position, playerHandle?.position ?: Vector3.Zero())
         moveCircle?.dispose()
         moveCircle = MoveCircleEffect.create(scene, position)
     }

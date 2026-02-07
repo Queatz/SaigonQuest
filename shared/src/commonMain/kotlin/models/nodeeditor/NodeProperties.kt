@@ -427,6 +427,28 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             )
         )
+
+        // IsObjectOwner node properties
+        is LogicNode.IsObjectOwner -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Is owner",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "Is not owner",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
         
         // OpenUrl node properties
         is LogicNode.OpenUrl -> listOf(

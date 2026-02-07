@@ -23,8 +23,15 @@ class AgeNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             val jsonData = node.data["data"] ?: "{}"
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
 
-            val minAgeRaw = nodeData.properties.find { it.key == PropertyKey.MIN_AGE }?.value?.trim().orEmpty()
-            val maxAgeRaw = nodeData.properties.find { it.key == PropertyKey.MAX_AGE }?.value?.trim().orEmpty()
+            fun inKey(name: String) = "${node.id}_in_${name}"
+            fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+                val eventVal = eventData[inKey(nameLower)] as? String
+                if (!eventVal.isNullOrBlank()) return eventVal
+                return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+            }
+
+            val minAgeRaw = fromEventOrNode("min_age", PropertyKey.MIN_AGE)?.trim().orEmpty()
+            val maxAgeRaw = fromEventOrNode("max_age", PropertyKey.MAX_AGE)?.trim().orEmpty()
 
             val minAge = minAgeRaw.toIntOrNull()?.takeIf { it> 0 }
             val maxAge = maxAgeRaw.toIntOrNull()?.takeIf { it> 0 }

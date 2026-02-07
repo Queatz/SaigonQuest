@@ -17,18 +17,16 @@ import org.w3c.dom.HTMLSpanElement
 import kotlin.js.Json
 import kotlin.js.json
 
-private var underlineExtensionRegistered: Boolean = false
+private var extensionsRegistered: Boolean = false
 
-internal fun ensureUnderlineExtensionRegistered() {
-    if (underlineExtensionRegistered) return
+internal fun ensureExtensionsRegistered() {
+    if (extensionsRegistered) return
 
-    // Build a Marked extension that supports <u>...</u> in inline content
     val extension: Json = json(
         "extensions" to arrayOf(
             json(
                 "name" to "underline",
                 "level" to "inline",
-                // Marked extension API expects function with correct arity
                 "start" to { src: String -> src.indexOf("<u>") },
                 "tokenizer" to { src: String ->
                     val rule = Regex("^<u>(.*?)</u>")
@@ -47,11 +45,32 @@ internal fun ensureUnderlineExtensionRegistered() {
                     "<u>${token["text"] as String}</u>"
                 },
             ),
+            json(
+                "name" to "audio",
+                "level" to "inline",
+                "start" to { src: String -> src.indexOf("![audio]") },
+                "tokenizer" to { src: String ->
+                    val rule = Regex("^!\\[audio\\]\\((.*?)\\)")
+                    val match = rule.find(src)
+                    if (match != null) {
+                        json(
+                            "type" to "audio",
+                            "raw" to match.value,
+                            "href" to match.groupValues[1].trim(),
+                        )
+                    } else {
+                        null
+                    }
+                },
+                "renderer" to { token: Json ->
+                    "<audio src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></audio>"
+                },
+            ),
         ),
     )
 
     marked.use(extension)
-    underlineExtensionRegistered = true
+    extensionsRegistered = true
 }
 
 /**
@@ -87,8 +106,7 @@ fun markdownToHtml(
     val options: dynamic = object {}
     options.renderer = renderer
 
-    // Ensure the underline extension is registered once
-    ensureUnderlineExtensionRegistered()
+    ensureExtensionsRegistered()
 
     val text = if (softBreaks) content.replace("\n", "  \n") else content
 

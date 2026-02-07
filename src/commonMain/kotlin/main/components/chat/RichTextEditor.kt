@@ -20,6 +20,7 @@ import main.components.BasicAlertDialog
 import main.components.VoiceInput
 import main.components.chat.MdEditable
 import main.theme.Styles
+import models.MediaType
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.AlignSelf
@@ -80,6 +81,7 @@ fun RichTextEditor(
     controller: RichTextEditorController? = null,
 ) {
     var showUploadDialog by remember { mutableStateOf(false) }
+    var showAudioUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
     var showRawMd by remember { mutableStateOf(false) }
     // AI integration state
@@ -487,6 +489,14 @@ fun RichTextEditor(
             onMouseDown { it.preventDefault() }
             onClick {
                 saveSelectionFromEl(force = true)
+                showAudioUploadDialog = true
+            }
+        }) { Translated("Insert audio") }
+        Button(attrs = {
+            classes(Styles.primaryButton)
+            onMouseDown { it.preventDefault() }
+            onClick {
+                saveSelectionFromEl(force = true)
                 showLinkDialog = true
             }
         }) { Translated("Insert link") }
@@ -597,15 +607,36 @@ fun RichTextEditor(
         )
     }
 
+    fun insertMediaAtCursor(url: String, type: MediaType? = null) {
+        val isAudio = type == MediaType.Audio || (type == null && url.lowercase().let { 
+            it.endsWith(".mp3") || it.endsWith(".wav") || it.endsWith(".ogg") || it.endsWith(".m4a") || it.endsWith(".webm") || it.endsWith(".aac") || it.endsWith(".flac") || it.endsWith(".opus")
+        })
+        if (isAudio) {
+            insertAtCursor("![audio]($url)")
+        } else {
+            insertAtCursor("![image]($url)")
+        }
+    }
+
     if (showUploadDialog) {
         UploadMediaDialog(
             onClose = { showUploadDialog = false },
-            onSelect = { imageUrl ->
-                // Insert markdown image syntax at cursor
-                val alt = "image"
-                insertAtCursor("![$alt]($imageUrl)")
+            onSelect = { url, type ->
+                insertMediaAtCursor(url, type)
                 showUploadDialog = false
             },
+            filter = MediaType.Image,
+        )
+    }
+
+    if (showAudioUploadDialog) {
+        UploadMediaDialog(
+            onClose = { showAudioUploadDialog = false },
+            onSelect = { url, type ->
+                insertMediaAtCursor(url, type)
+                showAudioUploadDialog = false
+            },
+            filter = MediaType.Audio,
         )
     }
 

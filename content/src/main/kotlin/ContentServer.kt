@@ -81,6 +81,7 @@ fun Application.module() {
             var originalName: String? = null
             var savedFile: File? = null
             var tooLarge = false
+            var detectedType = "Image"
             val MAX_FILE_BYTES = 100L * 1024L * 1024L // 100 MB
 
             multipart.forEachPart { part ->
@@ -89,6 +90,12 @@ fun Application.module() {
                         if (part.name == "API_USER_BEARER_TOKEN") bearerToken = part.value
                     }
                     is PartData.FileItem -> {
+                        val contentType = part.contentType?.toString() ?: ""
+                        detectedType = when {
+                            contentType.startsWith("audio/") -> "Audio"
+                            contentType.startsWith("video/") -> "Video"
+                            else -> "Image"
+                        }
                         originalName = part.originalFileName ?: "upload.bin"
                         val sanitized = originalName.replace(Regex("[^A-Za-z0-9._-]"), "_")
                         val target = File(staticDir, "${UUID.randomUUID()}_${sanitized}")
@@ -156,7 +163,7 @@ fun Application.module() {
             // Also notify backend to record in the user's media library
             try {
                 BackendClient(apiBase).createMedia(token, CreateUserMediaRequest(
-                    type = "Image",
+                    type = detectedType,
                     path = saved.uploadedFilePath,
                     originalFileName = saved.originalFileName
                 ))

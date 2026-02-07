@@ -211,6 +211,15 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         sb.append(lit)
                         virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
                     }
+                    "audio" -> {
+                        val src = el.getAttribute("src") ?: ""
+                        val parent = el.parentElement ?: return
+                        val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
+                        val start = sb.length
+                        val lit = "![audio]($src)"
+                        sb.append(lit)
+                        virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
+                    }
                     "strong", "b" -> writeInlineWrapper(el, "**", "**")
                     "em", "i" -> writeInlineWrapper(el, "*", "*")
                     "u" -> writeInlineWrapper(el, "<u>", "</u>")

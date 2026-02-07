@@ -38,13 +38,21 @@ class ObjectOwnerNotificationNodeRunner(private val context: NodeRunnerContext) 
         )
 
         // Parse the JSON data to extract the message
-        val message = try {
-            val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
-            nodeData.properties.find { it.key == PropertyKey.TEXT_CONTENT }?.value ?: ""
+        val nodeData = try {
+            json.decodeFromString<PropertyBasedNodeData>(jsonData)
         } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse ObjectOwnerNotification node data", e, context.session)
-            ""
+            PropertyBasedNodeData()
         }
+
+        fun inKey(name: String) = "${node.id}_in_${name}"
+        fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+            val eventVal = eventData[inKey(nameLower)] as? String
+            if (!eventVal.isNullOrBlank()) return eventVal
+            return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+        }
+
+        val message = fromEventOrNode("text_content", PropertyKey.TEXT_CONTENT) ?: ""
 
         if (message.isBlank()) {
             WebSocketDebug.logError(

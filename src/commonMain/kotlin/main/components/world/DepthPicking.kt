@@ -208,16 +208,17 @@ object DepthPicking {
             }
             pickingExcludeDepthMaterial = excludeMat
 
+            val occlusionManager = WorldLoader.getCurrentOcclusionManager()
             // Try to get the same shared white depth material used by OcclusionManager
             val sharedDepthMat = try {
-                WorldLoader.getCurrentOcclusionManager()?.getSharedWhiteDepthMaterial()
+                occlusionManager?.getSharedWhiteDepthMaterial()
             } catch (_: Throwable) { null }
 
             // Build an exclusion set for quick lookup
             val excludeSet = excludeMeshes.toSet()
 
             // Apply overrides: exclude listed meshes, skybox, water, and status billboards;
-            // use shared depth material for others
+            // use shared depth material (or per-mesh depth material) for others
             scene.meshes.forEach { mesh ->
                 try {
                     if (!mesh.isVisible) return@forEach
@@ -225,9 +226,13 @@ object DepthPicking {
                     if (shouldExclude) {
                         renderer.setMaterialForRendering(mesh, excludeMat)
                         overriddenMeshesForPicking.add(mesh)
-                    } else if (sharedDepthMat != null) {
-                        renderer.setMaterialForRendering(mesh, sharedDepthMat)
-                        overriddenMeshesForPicking.add(mesh)
+                    } else {
+                        // Use per-mesh depth material from occlusion manager if available to respect alpha testing
+                        val depthMat = occlusionManager?.getDepthMaterialForMesh(mesh) ?: sharedDepthMat
+                        if (depthMat != null) {
+                            renderer.setMaterialForRendering(mesh, depthMat)
+                            overriddenMeshesForPicking.add(mesh)
+                        }
                     }
                 } catch (t: Throwable) {
                     console.warn("[DepthPicking] Failed to set picking depth material for ${mesh.name}: ${t.message ?: ""}")

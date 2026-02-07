@@ -20,6 +20,7 @@ import models.UserBalanceChangeRequest
 import models.UserBalanceChangeStatus
 import models.UserBalanceChangeType
 import models.UserBalanceHistory
+import models.MediaType
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Img
@@ -237,7 +238,8 @@ fun BalanceDialog(
             if (showUpload) {
                 UploadMediaDialog(
                     onClose = { showUpload = false },
-                    onSelect = { url: String -> attachments = listOf(url); showUpload = false }
+                    onSelect = { url, _ -> attachments = listOf(url); showUpload = false },
+                    filter = MediaType.Image,
                 )
             }
 

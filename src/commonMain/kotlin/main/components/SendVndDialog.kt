@@ -7,6 +7,7 @@ import main.components.common.formatAmount
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.UserBalance
+import models.MediaType
 import org.jetbrains.compose.web.dom.*
 
 @Composable
@@ -125,7 +126,8 @@ fun SendVndDialog(
     if (showUpload) {
         UploadMediaDialog(
             onClose = { showUpload = false },
-            onSelect = { url: String -> attachments = listOf(url); showUpload = false }
+            onSelect = { url, _ -> attachments = listOf(url); showUpload = false },
+            filter = MediaType.Image,
         )
     }
 

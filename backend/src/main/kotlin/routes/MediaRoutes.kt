@@ -40,6 +40,7 @@ fun Routing.configureMediaRoutes() {
             val type = when (req.type.lowercase()) {
                 "image" -> MediaType.Image
                 "video" -> MediaType.Video
+                "audio" -> MediaType.Audio
                 else -> MediaType.Image
             }
             val saved = repo.insert(

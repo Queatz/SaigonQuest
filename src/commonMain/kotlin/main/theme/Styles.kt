@@ -38,6 +38,8 @@ import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.marginLeft
+import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.maxHeight
 import org.jetbrains.compose.web.css.maxWidth
@@ -638,6 +640,186 @@ object Styles : StyleSheet() {
     }
 
     val objectEditorDialogErrorMessage by style { color(Theme.colors.error); margin(0.px) }
+
+    val mediaLibraryGrid by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "repeat(auto-fill, minmax(120px, 1fr))")
+        gap(12.px)
+        property("overflow-y", "auto")
+        minHeight(120.px)
+    }
+
+    val mediaLibraryItem by style {
+        property("border-radius", "6px")
+        property("border", "1px solid ${Theme.colors.outline}")
+        padding(6.px)
+        property("position", "relative")
+        property("cursor", "pointer")
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        flexDirection(FlexDirection.Column)
+        overflow("hidden")
+        backgroundColor(Theme.colors.surfaceVariant)
+
+        dark(self) {
+            property("border", "1px solid ${Theme.colors.outlineDark}")
+            backgroundColor(Theme.colors.surfaceVariantDark)
+        }
+    }
+
+    val mediaLibraryItemImage by style {
+        width(100.percent)
+        height(100.px)
+        property("object-fit", "cover")
+        borderRadius(8.px)
+    }
+
+    val mediaLibraryItemAudioContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        width(100.percent)
+        height(100.px)
+    }
+
+    val mediaLibraryItemMusicIcon by style {
+        fontSize(24.px)
+        marginBottom(4.px)
+    }
+
+    val mediaLibraryItemAudioPlayer by style {
+        width(100.percent)
+        height(24.px)
+    }
+
+    val mediaLibraryItemPlaceholder by style {
+        height(100.px)
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        marginBottom(6.px)
+    }
+
+    val mediaLibraryItemFilename by style {
+        position(Position.Absolute)
+        bottom(4.px)
+        left(4.px)
+        right(4.px)
+        fontSize(10.px)
+        textAlign("center")
+        property("text-overflow", "ellipsis")
+        whiteSpace("nowrap")
+        overflow("hidden")
+        color(Theme.colors.textSecondary)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
+    }
+
+    val mediaLibraryItemFavoriteOverlay by style {
+        position(Position.Absolute)
+        property("top", "6px")
+        property("right", "6px")
+        property("background", "transparent")
+        property("border", "none")
+        property("cursor", "pointer")
+        width(24.px)
+        height(24.px)
+        fontSize(18.px)
+        color(Theme.colors.textSecondary)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
+    }
+
+    val mediaLibraryItemFavoriteActive by style {
+        color(Theme.colors.favorite)
+    }
+
+    val mediaLibraryItemActionsRow by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        width(100.percent)
+        marginTop(6.px)
+    }
+
+    val mediaUploadArea by style {
+        property("border", "2px dashed ${Theme.colors.outline}")
+        property("border-radius", "8px")
+        padding(24.px)
+        textAlign("center")
+        marginBottom(16.px)
+        property("cursor", "pointer")
+        backgroundColor(Theme.colors.surfaceVariant)
+        property("transition", "border-color 0.2s, background-color 0.2s")
+
+        dark(self) {
+            property("border", "2px dashed ${Theme.colors.outlineDark}")
+            backgroundColor(Theme.colors.surfaceVariantDark)
+        }
+
+        self + hover style {
+            property("border-color", Theme.colors.primary)
+        }
+    }
+
+    val mediaUploadAreaActive by style {
+        property("border-color", Theme.colors.primary)
+        backgroundColor(Theme.colors.surface)
+        dark(self) {
+            backgroundColor(Theme.colors.surfaceDark)
+        }
+    }
+
+    val mediaUploadAreaContent by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        flexDirection(FlexDirection.Column)
+        gap(16.px)
+    }
+
+    val mediaUploadAreaActions by style {
+        display(DisplayStyle.Flex)
+        gap(8.px)
+        justifyContent(JustifyContent.Center)
+    }
+
+    val mediaRecorderButton by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+        padding(4.px, 8.px)
+        fontSize(14.px)
+    }
+
+    val mediaRecorderButtonRecording by style {
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        dark(self) {
+            backgroundColor(Theme.colors.errorDark)
+            color(Theme.colors.onPrimaryDark)
+        }
+    }
+
+    val mediaLibraryItemSmallText by style {
+        fontSize(12.px)
+        color(Theme.colors.textSecondary)
+        property("overflow", "hidden")
+        property("text-overflow", "ellipsis")
+        property("white-space", "nowrap")
+        width(100.percent)
+        marginRight(8.px)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
+    }
 
     // Toggle Switch styles
     val toggleSwitchContainer by style {

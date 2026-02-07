@@ -26,15 +26,21 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         WebSocketDebug.logMessage("TELEPORT_NODE_JSON_DATA", "Node JSON data: $jsonData", context.session)
         
         // Parse the JSON data to extract the worldId
-        val targetWorldUrl = try {
-            // Try to parse as PropertyBasedNodeData
-            val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
-            // Find the property with key TARGET_WORLD_ID
-            nodeData.properties.find { it.key == PropertyKey.TARGET_WORLD_ID }?.value
+        val nodeData = try {
+            json.decodeFromString<PropertyBasedNodeData>(jsonData)
         } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to parse teleport node data", e, context.session)
-            null
+            PropertyBasedNodeData()
         }
+
+        fun inKey(name: String) = "${node.id}_in_${name}"
+        fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+            val eventVal = eventData[inKey(nameLower)] as? String
+            if (!eventVal.isNullOrBlank()) return eventVal
+            return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+        }
+
+        val targetWorldUrl = fromEventOrNode("target_world_id", PropertyKey.TARGET_WORLD_ID)
         
         if (targetWorldUrl == null) {
             WebSocketDebug.logError("Missing worldId in teleport node data", null, context.session)

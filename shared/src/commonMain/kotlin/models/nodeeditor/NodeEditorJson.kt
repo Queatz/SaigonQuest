@@ -109,6 +109,7 @@ object NodeEditorJsonUtil {
             NodeId.CreateDoc -> LogicNode.CreateDoc()
             NodeId.DocContent -> LogicNode.DocContent()
             NodeId.Ai -> LogicNode.Ai()
+            NodeId.IsObjectOwner -> LogicNode.IsObjectOwner()
         }
 
         return NodeData(

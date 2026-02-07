@@ -15,6 +15,7 @@ import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
+import models.MediaType
 import models.UserMedia
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -23,7 +24,8 @@ import org.w3c.files.File
 @Composable
 fun UploadMediaDialog(
     onClose: () -> Unit,
-    onSelect: (String) -> Unit,
+    onSelect: (String, MediaType) -> Unit,
+    filter: MediaType? = null,
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
     var loading by remember { mutableStateOf(false) }
@@ -40,7 +42,11 @@ fun UploadMediaDialog(
             try {
                 // Ensure we have a valid user/token (visitor or player)
                 UserApi.getCurrentUser()
-                items = MediaApi.list()
+                var allItems = MediaApi.list()
+                if (filter != null) {
+                    allItems = allItems.filter { it.type == filter }
+                }
+                items = allItems
             } catch (t: Throwable) {
                 error = t.message ?: "Failed to load media"
             } finally {
@@ -58,7 +64,14 @@ fun UploadMediaDialog(
                 val token = UserApi.getToken() ?: ""
                 val record = ContentApi.upload(file, token)
                 val finalUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
-                onSelect(finalUrl)
+                
+                val type = when {
+                    file.type.startsWith("audio/") -> MediaType.Audio
+                    file.type.startsWith("video/") -> MediaType.Video
+                    else -> MediaType.Image
+                }
+                
+                onSelect(finalUrl, type)
                 onClose()
             } catch (t: Throwable) {
                 t.printStackTrace()
@@ -74,7 +87,11 @@ fun UploadMediaDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = translated("Upload or choose image"),
+        title = translated(when (filter) {
+            MediaType.Image -> "Upload or choose image"
+            MediaType.Audio -> "Upload or choose audio"
+            else -> "Upload or choose media"
+        }),
         isFullscreen = false,
         maxWidth = "720px",
         isFullHeight = false,
@@ -83,7 +100,8 @@ fun UploadMediaDialog(
             MediaUploadArea(
                 onUpload = { uploadFile(it) },
                 uploading = uploading,
-                onError = { error = it }
+                onError = { error = it },
+                filter = filter,
             )
 
             // Error
@@ -105,10 +123,9 @@ fun UploadMediaDialog(
                 if (loading) {
                     P { Translated("Loading media...") }
                 } else if (items.isEmpty()) {
-                    P { Translated("No media yet. Upload an image above.") }
+                    P { Translated("No media yet. Upload some media above.") }
                 } else {
                     items.forEach { item ->
-                        // Only show images for now
                         val src = imageUrlFor(item.path)
                         Div(attrs = {
                             style {
@@ -116,17 +133,72 @@ fun UploadMediaDialog(
                                 height(100.px)
                                 property("cursor", "pointer")
                                 property("position", "relative")
+                                property("background", "#f5f5f5")
+                                display(DisplayStyle.Flex)
+                                alignItems(AlignItems.Center)
+                                justifyContent(JustifyContent.Center)
+                                overflow("hidden")
                             }
+                            onClick { onSelect(src, item.type); onClose() }
                         }) {
-                            Img(src = src, attrs = {
-                                style {
-                                    width(100.percent)
-                                    height(100.percent)
-                                    property("object-fit", "cover")
-                                    borderRadius(8.px)
+                            if (item.type == models.MediaType.Image) {
+                                Img(src = src, attrs = {
+                                    style {
+                                        width(100.percent)
+                                        height(100.percent)
+                                        property("object-fit", "cover")
+                                        borderRadius(8.px)
+                                    }
+                                })
+                            } else if (item.type == models.MediaType.Audio) {
+                                Div({
+                                    style {
+                                        display(DisplayStyle.Flex)
+                                        flexDirection(FlexDirection.Column)
+                                        alignItems(AlignItems.Center)
+                                        justifyContent(JustifyContent.Center)
+                                        width(100.percent)
+                                        height(100.percent)
+                                        paddingBottom(12.px)
+                                    }
+                                }) {
+                                    Div({
+                                        style {
+                                            fontSize(24.px)
+                                            marginBottom(4.px)
+                                        }
+                                    }) {
+                                        Text("🎵")
+                                    }
+                                    Audio(attrs = {
+                                        attr("src", src)
+                                        attr("controls", "true")
+                                        style {
+                                            width(100.px)
+                                            height(24.px)
+                                        }
+                                        onClick { it.stopPropagation() }
+                                    })
                                 }
-                                onClick { onSelect(src); onClose() }
-                            })
+                                Div({
+                                    style {
+                                        property("position", "absolute")
+                                        bottom(4.px)
+                                        left(4.px)
+                                        right(4.px)
+                                        fontSize(10.px)
+                                        textAlign("center")
+                                        property("text-overflow", "ellipsis")
+                                        whiteSpace("nowrap")
+                                        overflow("hidden")
+                                        color(Color.gray)
+                                    }
+                                }) {
+                                    Text(item.originalFileName)
+                                }
+                            } else {
+                                Text(item.type.name)
+                            }
 
                             // Favorite toggle overlay
                             Button(attrs = {
@@ -145,6 +217,7 @@ fun UploadMediaDialog(
                                     }
                                 }
                                 onClick {
+                                    it.stopPropagation()
                                     val scope = MainScope()
                                     scope.launch {
                                         try {

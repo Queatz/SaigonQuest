@@ -22,10 +22,11 @@ import main.api.sendTypingStatus
 import main.components.chat.ChatMessages
 import main.components.chat.RichTextEditorDialog
 import main.components.media.UploadMediaDialog
-import main.components.media.findImageInClipboardEvent
+import main.components.media.findMediaInClipboardEvent
 import main.theme.Styles
 import main.theme.Theme
 import models.chat.ImageAttachment
+import models.MediaType
 import main.components.chat.ChatComposerController
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
@@ -56,6 +57,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
+import org.w3c.files.File
 
 /**
  * Content for the chat panel/dialog.
@@ -472,9 +474,9 @@ fun ChatContent(worldId: String) {
                             }
                         }
                     }
-                    // Handle paste of image from clipboard
+                    // Handle paste of media from clipboard
                     onPaste { event ->
-                        val file = findImageInClipboardEvent(event)
+                        val file = findMediaInClipboardEvent(event)
                         if (file != null) {
                             event.preventDefault()
                             if (isAuthenticated && isPlayer) {
@@ -589,7 +591,7 @@ fun ChatContent(worldId: String) {
             if (showUploadDialog) {
                 UploadMediaDialog(
                     onClose = { showUploadDialog = false },
-                    onSelect = { imageUrl ->
+                    onSelect = { imageUrl, _ ->
                         scope.launch {
                             try {
                                 val attachments = listOf(
@@ -609,6 +611,7 @@ fun ChatContent(worldId: String) {
                             }
                         }
                     },
+                    filter = MediaType.Image,
                 )
             }
 

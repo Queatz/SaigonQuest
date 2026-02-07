@@ -49,8 +49,15 @@ class TakeItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             val jsonData = node.data["data"] ?: "{}"
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
 
-            val itemsCsv = nodeData.properties.find { it.key == PropertyKey.ITEMS }?.value?.trim().orEmpty()
-            val quantitiesCsv = nodeData.properties.find { it.key == PropertyKey.QUANTITIES }?.value?.trim().orEmpty()
+            fun inKey(name: String) = "${node.id}_in_${name}"
+            fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+                val eventVal = eventData[inKey(nameLower)] as? String
+                if (!eventVal.isNullOrBlank()) return eventVal
+                return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+            }
+
+            val itemsCsv = fromEventOrNode("items", PropertyKey.ITEMS)?.trim().orEmpty()
+            val quantitiesCsv = fromEventOrNode("quantities", PropertyKey.QUANTITIES)?.trim().orEmpty()
 
             if (itemsCsv.isBlank()) {
                 WebSocketDebug.logError("TakeItems: ITEMS property is missing", null, context.session)

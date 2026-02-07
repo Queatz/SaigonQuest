@@ -302,6 +302,17 @@ sealed interface LogicNode {
     ) : LogicNode
 
     /**
+     * IsObjectOwner node - checks if the current player is an owner or co-owner of the world
+     */
+    @Serializable
+    data class IsObjectOwner(
+        override val id: NodeId = NodeId.IsObjectOwner,
+        override val label: String = "Is object owner",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Checks if the current player is an owner or co-owner of the world"
+    ) : LogicNode
+
+    /**
      * VisitorNearby node - triggers when a visitor comes within range
      */
     @Serializable
@@ -355,6 +366,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.CreateDoc(),
         LogicNode.DocContent(),
         LogicNode.Ai(),
+        LogicNode.IsObjectOwner(),
     )
 }
 

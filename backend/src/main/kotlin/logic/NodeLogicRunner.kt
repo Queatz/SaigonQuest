@@ -193,6 +193,7 @@ class NodeLogicRunner(
                 NodeId.PlayerName -> LogicNode.PlayerName()
                 NodeId.CreateDoc -> LogicNode.CreateDoc()
                 NodeId.DocContent -> LogicNode.DocContent()
+                NodeId.IsObjectOwner -> LogicNode.IsObjectOwner()
             }
         }
         fun getOutputPropertyTypes(node: NodeDataModel): List<PropertyType> {
@@ -349,30 +350,6 @@ class NodeLogicRunner(
         val resolving = mutableSetOf<String>()
         ensureInputValuesFor(node, resolving)
 
-        // If any connected value inputs remain unresolved (null), block execution to avoid using defaults
-        run {
-            val incoming = nodeConfig?.connections?.filter { it.to == node.id } ?: emptyList()
-            if (incoming.isNotEmpty()) {
-                val logicNode = reconstructLogicNode(node)
-                val inputDefs = logicNode.getPropertyDefinitions().filter { it.direction == PropertyDirection.INPUT && it.type != PropertyType.TRIGGER }
-                for (conn in incoming) {
-                    // Only consider ports shaped like "<nodeId>_in_<prop>"
-                    val prefix = "${node.id}_in_"
-                    if (!conn.toPort.startsWith(prefix)) continue
-                    val propSuffix = conn.toPort.removePrefix(prefix)
-                    val isValueInput = inputDefs.any { it.key.name.equals(propSuffix.replace('-', '_').uppercase()) }
-                    if (isValueInput && eventData[conn.toPort] == null) {
-                        WebSocketDebug.logMessage(
-                            "BLOCKED_INPUT_UNRESOLVED",
-                            "Node ${node.id} has unresolved connected value input ${conn.toPort}; skipping execution",
-                            context.session
-                        )
-                        return
-                    }
-                }
-            }
-        }
-
         // Get the node runner for this node type
         val nodeRunner = getNodeRunner(node)
         WebSocketDebug.logMessage(
@@ -457,7 +434,7 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge) {
+            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge || node.nodeId == NodeId.IsObjectOwner) {
                 // For HasItem nodes, use the outputProperty to select the correct connection
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -783,6 +760,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 CreateDocNodeRunner(context)
+            }
+            NodeId.IsObjectOwner -> {
+                WebSocketDebug.logMessage(
+                    "IS_OBJECT_OWNER_RUNNER_SELECTED",
+                    "Selected IsObjectOwnerNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                IsObjectOwnerNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

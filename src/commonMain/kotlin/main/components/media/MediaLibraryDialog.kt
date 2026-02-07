@@ -20,15 +20,18 @@ import main.components.BasicConfirmDialog
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
+import models.MediaType
 import models.UserMedia
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
@@ -45,6 +48,7 @@ import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Audio
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -155,17 +159,61 @@ fun MediaLibraryDialog(
                                 property("position", "relative")
                             }
                         }) {
-                            Img(src = src, attrs = {
-                                style {
-                                    width(100.percent)
-                                    height(100.px)
-                                    property("object-fit", "cover")
-                                    borderRadius(8.px)
-                                    marginBottom(6.px)
-                                    property("cursor", "pointer")
+                            if (item.type == MediaType.Image) {
+                                Img(src = src, attrs = {
+                                    style {
+                                        width(100.percent)
+                                        height(100.px)
+                                        property("object-fit", "cover")
+                                        borderRadius(8.px)
+                                        marginBottom(6.px)
+                                        property("cursor", "pointer")
+                                    }
+                                    onClick { previewUrl = src }
+                                })
+                            } else if (item.type == MediaType.Audio) {
+                                Div({
+                                    style {
+                                        display(DisplayStyle.Flex)
+                                        flexDirection(FlexDirection.Column)
+                                        alignItems(AlignItems.Center)
+                                        justifyContent(JustifyContent.Center)
+                                        width(100.percent)
+                                        height(100.px)
+                                        marginBottom(6.px)
+                                    }
+                                }) {
+                                    Div({
+                                        style {
+                                            fontSize(24.px)
+                                            marginBottom(4.px)
+                                        }
+                                    }) {
+                                        Text("🎵")
+                                    }
+                                    Audio(attrs = {
+                                        attr("src", src)
+                                        attr("controls", "true")
+                                        style {
+                                            width(100.percent)
+                                            height(24.px)
+                                        }
+                                        onClick { it.stopPropagation() }
+                                    })
                                 }
-                                onClick { previewUrl = src }
-                            })
+                            } else {
+                                Div({
+                                    style {
+                                        height(100.px)
+                                        display(DisplayStyle.Flex)
+                                        alignItems(AlignItems.Center)
+                                        justifyContent(JustifyContent.Center)
+                                        marginBottom(6.px)
+                                    }
+                                }) {
+                                    Text(item.type.name)
+                                }
+                            }
 
                             // Favorite toggle overlay
                             Button(attrs = {
@@ -184,6 +232,7 @@ fun MediaLibraryDialog(
                                     }
                                 }
                                 onClick {
+                                    it.stopPropagation()
                                     val scope = MainScope()
                                     scope.launch {
                                         try {

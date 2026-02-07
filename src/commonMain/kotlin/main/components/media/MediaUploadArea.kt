@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.components.Translated
 import main.theme.Styles
+import models.MediaType
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -16,19 +17,17 @@ fun MediaUploadArea(
     onUpload: (File) -> Unit,
     uploading: Boolean,
     onError: (String) -> Unit = {},
+    filter: MediaType? = null,
 ) {
     var dragOver by remember { mutableStateOf(false) }
     var inputElement by remember { mutableStateOf<HTMLInputElement?>(null) }
     val scope = rememberCoroutineScope()
 
     Div(attrs = {
+        classes(Styles.mediaUploadArea)
+        if (dragOver) classes(Styles.mediaUploadAreaActive)
         style {
-            property("border", if (dragOver) "2px dashed #4A90E2" else "2px dashed #aaa")
-            property("border-radius", "8px")
-            padding(24.px)
-            textAlign("center")
-            property("cursor", if (uploading) "progress" else "pointer")
-            marginBottom(16.px)
+            if (uploading) property("cursor", "progress")
         }
         onClick {
             if (!uploading) {
@@ -46,7 +45,7 @@ fun MediaUploadArea(
             if (first != null) onUpload(first)
         }
         onPaste { event ->
-            val file = findImageInClipboardEvent(event)
+            val file = findMediaInClipboardEvent(event)
             if (file != null) {
                 event.preventDefault()
                 onUpload(file)
@@ -60,42 +59,52 @@ fun MediaUploadArea(
     }) {
         Div(
             attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    alignItems(AlignItems.Center)
-                    justifyContent(JustifyContent.Center)
-                    flexDirection(FlexDirection.Column)
-                    gap(16.px)
-                }
+                classes(Styles.mediaUploadAreaContent)
             }
         ) {
-            Translated(if (uploading) "Uploading..." else "Click or drop image to upload")
+            Translated(if (uploading) "Uploading..." else when (filter) {
+                MediaType.Image -> "Click or drop image to upload"
+                MediaType.Audio -> "Click or drop audio to upload"
+                else -> "Click or drop media to upload"
+            })
             if (!uploading) {
-                Button(attrs = {
-                    classes(Styles.baseDialogButtonSecondary)
-                    style {
-                        padding(4.px, 8.px)
-                        fontSize(14.px)
-                    }
-                    onClick { ev ->
-                        ev.stopPropagation()
-                        scope.launch {
-                            try {
-                                val file = readImageFromClipboard()
-                                if (file != null) {
-                                    onUpload(file)
+                Div(attrs = {
+                    classes(Styles.mediaUploadAreaActions)
+                }) {
+                    Button(attrs = {
+                        classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
+                        onClick { ev ->
+                            ev.stopPropagation()
+                            scope.launch {
+                                try {
+                                    val file = readMediaFromClipboard()
+                                    if (file != null) {
+                                        onUpload(file)
+                                    }
+                                } catch (t: Throwable) {
+                                    onError(t.message ?: "Paste failed")
                                 }
-                            } catch (t: Throwable) {
-                                onError(t.message ?: "Paste failed")
                             }
                         }
+                    }) { Translated("Paste") }
+
+                    if (filter == MediaType.Audio) {
+                        AudioRecorder(
+                            onUpload = { onUpload(it) },
+                            onError = { onError(it) }
+                        )
                     }
-                }) { Translated("Paste") }
+                }
             }
         }
         // Hidden file input
         Input(type = InputType.File, attrs = {
-            attr("accept", "image/*")
+            val acceptTypes = when (filter) {
+                MediaType.Image -> "image/*"
+                MediaType.Audio -> "audio/*"
+                else -> "image/*,audio/*"
+            }
+            attr("accept", acceptTypes)
             style {
                 display(DisplayStyle.None)
             }

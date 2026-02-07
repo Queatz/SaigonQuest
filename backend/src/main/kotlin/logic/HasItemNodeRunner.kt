@@ -31,15 +31,22 @@ class HasItemNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             // Parse the JSON data to extract the item ID and quantity
             // Try to parse as PropertyBasedNodeData
             val nodeData = json.decodeFromString<PropertyBasedNodeData>(jsonData)
-            
+
+            fun inKey(name: String) = "${node.id}_in_${name}"
+            fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
+                val eventVal = eventData[inKey(nameLower)] as? String
+                if (!eventVal.isNullOrBlank()) return eventVal
+                return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+            }
+
             // Extract item ID (required)
-            val itemId = nodeData.properties.find { it.key == PropertyKey.ITEM_ID }?.value ?: run {
+            val itemId = fromEventOrNode("item_id", PropertyKey.ITEM_ID) ?: run {
                 WebSocketDebug.logError("Missing itemId in HasItem node", null, context.session)
                 return false
             }
-            
+
             // Extract quantity (default to 1 if not specified)
-            val quantity = nodeData.properties.find { it.key == PropertyKey.QUANTITY }?.value?.toIntOrNull() ?: 1
+            val quantity = fromEventOrNode("quantity", PropertyKey.QUANTITY)?.toIntOrNull() ?: 1
             
             WebSocketDebug.logMessage("HAS_ITEM_CHECK", "Checking if user ${context.connection.userId} has $quantity of item $itemId", context.session)
             

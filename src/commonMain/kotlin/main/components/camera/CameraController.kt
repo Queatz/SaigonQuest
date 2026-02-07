@@ -49,10 +49,9 @@ class CameraController(private val scene: Scene) {
         this.upperRadiusLimit = 32f // Max constraint
         this.lowerBetaLimit = (57.5f * PI / 180f).toFloat()
         this.upperBetaLimit = (87.5f * PI / 180f).toFloat()
-        this.targetScreenOffset = Vector2(0f, -0.5f)
+        this.targetScreenOffset = Vector2(0f, 0f)
 
         this.wheelPrecision = 50f
-
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
         this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
         this.minZ = 0.1f
@@ -60,7 +59,7 @@ class CameraController(private val scene: Scene) {
 
         // Set initial position
         this.alpha = (-PI / 2).toFloat()
-        this.beta = (PI / 3).toFloat()
+        this.beta = upperBetaLimit
 
         // Attach camera controls
         attachControl(true)
