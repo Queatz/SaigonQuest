@@ -219,6 +219,16 @@ external class Scene(engine: Engine? = definedExternally) {
     val meshes: Array<AbstractMesh>
 
     /**
+     * List of all cameras in the scene
+     */
+    val cameras: Array<Camera>
+
+    /**
+     * List of all animation groups in the scene
+     */
+    val animationGroups: Array<AnimationGroup>
+
+    /**
      * Gets the engine that created this scene
      * @return The engine that created this scene
      */
@@ -652,6 +662,7 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
 }
 
 external class Matrix {
+    var m: org.khronos.webgl.Float32Array
     fun invert(): Matrix
 
     companion object {
@@ -692,16 +703,20 @@ external class Viewport(x: Float, y: Float, width: Float, height: Float) {
     fun toGlobal(renderWidth: Int, renderHeight: Int): Viewport
 }
 
-abstract external class Camera {
+abstract external class Camera : Node {
     var minZ: Float
     var maxZ: Float
-    var position: Vector3
+    override var position: Vector3
     var fov: Float
     var globalPosition: Vector3
+    var upVector: Vector3
     var viewport: Viewport
+    val onProjectionMatrixChangedObservable: Observable<Camera>
 
     fun getDirection(direction: Vector3): Vector3
     fun getForwardRay(length: Float = definedExternally): Ray
+    fun getProjectionMatrix(usingRightHandedSystem: Boolean = definedExternally): Matrix
+    fun freezeProjectionMatrix()
 }
 
 external class ArcRotateCamera(
@@ -1756,6 +1771,15 @@ external class AssetContainer(scene: Scene) {
         nameFunction: (String) -> String = definedExternally, 
         cloneMaterials: Boolean = definedExternally
     ): dynamic
+}
+
+external class AnimationGroup(name: String, scene: Scene? = definedExternally) {
+    val name: String
+    val isPlaying: Boolean
+    fun play(loop: Boolean = definedExternally)
+    fun stop()
+    fun pause()
+    fun restart()
 }
 
 external class SceneLoader {

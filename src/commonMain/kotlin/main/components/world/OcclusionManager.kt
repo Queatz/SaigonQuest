@@ -100,6 +100,7 @@ class OcclusionManager(private val scene: Scene) {
     
     // Configurable parameters
     private var occlusionSoftness = 0.1f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
+    private var isEnabled = true
 
     // Custom shader name
     private val customShaderName = "occlusionFader"
@@ -139,6 +140,9 @@ class OcclusionManager(private val scene: Scene) {
     }
 
     float applyOcclusion(float alpha) {
+        if (!isEnabled) {
+            return alpha;
+        }
         vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
         vec2 delta = gl_FragCoord.xy - playerScreenPixel;
         float distance = sqrt(dot(delta, delta));
@@ -223,6 +227,10 @@ class OcclusionManager(private val scene: Scene) {
         occlusionSoftness = softnessRatio.coerceIn(0f, 1f)
     }
 
+    fun setEnabled(enabled: Boolean) {
+        isEnabled = enabled
+    }
+
     private fun createDepthMaterial(original: Material?): CustomMaterial {
         val matName = if (original != null) "${customShaderName}-depth-${original.name}" else "${customShaderName}-depth-shared"
         val mat = CustomMaterial(matName, scene)
@@ -239,6 +247,7 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("playerWorld", "vec3")
         mat.AddUniform("occlusionSoftness", "float")
         mat.AddUniform("useRadius", "bool")
+        mat.AddUniform("isEnabled", "bool")
         mat.AddUniform("time", "float")
 
         // Depth linearization and any shared helpers
@@ -327,6 +336,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)
                     effect.setBool("useRadius", false)
+                    effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 }
             } catch (_: Throwable) {
@@ -422,6 +432,7 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.AddUniform("cameraWorld", "vec3")
             customMaterial.AddUniform("occlusionSoftness", "float")
             customMaterial.AddUniform("useRadius", "bool")
+            customMaterial.AddUniform("isEnabled", "bool")
             customMaterial.AddUniform("time", "float")
 
             customMaterial.Fragment_Begin(uniformDeclarations)
@@ -480,6 +491,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setVector2("screenSize", screenSize)
 
                     effect.setBool("useRadius", false)
+                    effect.setBool("isEnabled", isEnabled)
 
                     // Set time uniform for animations
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)

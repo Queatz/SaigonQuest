@@ -1,33 +1,18 @@
 package main.components
 
 import Translations.str
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import app.softwork.routingcompose.Router
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import lib.Engine
 import lib.Scene
-import lib.initializeBabylonJSLoaders
 import lib.configureBabylonDracoDecoder
-import main.api.ApiClient
-import main.api.FriendApi
-import main.api.UserApi
-import main.api.WebSocketApi
-import main.api.WebSocketConnectionManager
+import lib.initializeBabylonJSLoaders
+import main.api.*
 import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
 import main.components.input.InputHandler
@@ -46,15 +31,17 @@ import models.OpenUrlData
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
+import org.khronos.webgl.get
+import org.khronos.webgl.set
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import utils.json
 import web.animations.awaitAnimationFrame
 import web.navigator.navigator
-import web.wakelock.request
 import web.wakelock.WakeLockSentinel
 import web.wakelock.release
+import web.wakelock.request
 import kotlin.random.Random
 
 /**
@@ -682,9 +669,79 @@ fun SceneComponent(url: String) {
             worldObjectManager = worldObjectManager
         )
 
+        // ------- Screen saver state -------
+        var lastInteractionTime = window.performance.now()
+        var isScreenSaverActive = false
+        var screenSaverAnimationGroup: lib.AnimationGroup? = null
+        val flippedCameras = mutableSetOf<lib.Camera>()
+
+        fun stopScreenSaver() {
+            if (!isScreenSaverActive) return
+            isScreenSaverActive = false
+            screenSaverAnimationGroup?.stop()
+            screenSaverAnimationGroup = null
+            scene.activeCamera = cameraController.getCamera()
+            worldLoader.getOcclusionManager()?.setEnabled(true)
+            console.log("[ScreenSaver] Stopped")
+        }
+
+        fun triggerScreenSaver() {
+            if (isScreenSaverActive) return
+            
+            // Find the first camera that isn't the main player camera
+            val mainCam = cameraController.getCamera()
+            val ssCam = scene.cameras.firstOrNull { it != mainCam }
+            
+            if (ssCam != null) {
+                // Fix for horizontally flipped view in screen saver by modifying projection matrix
+                // We only want to flip it once to avoid toggling back and forth on subsequent screen saver starts
+                if (ssCam !in flippedCameras) {
+                    try {
+                        // Store original parent
+                        val originalParent = ssCam.parent
+
+                        // Create flip node with -1 z scaling
+                        val flipNode = lib.TransformNode("cameraFlipNode_${ssCam.name}", scene)
+                        flipNode.position = ssCam.position
+                        flipNode.scaling = lib.Vector3(-1f, 1f, 1f)
+
+                        // Set flip node's parent to camera's original parent
+                        flipNode.parent = originalParent
+
+                        // Parent camera to flip node
+                        ssCam.parent = flipNode
+
+//                        val projectionMatrix = ssCam.getProjectionMatrix()
+//                        projectionMatrix.m[0] = projectionMatrix.m[0] * -1f
+//                        ssCam.onProjectionMatrixChangedObservable.add { camera ->
+//                            val projectionMatrix = camera.getProjectionMatrix()
+//                            projectionMatrix.m[0] = projectionMatrix.m[0] * -1f
+//                        }
+
+                        flippedCameras.add(ssCam)
+                    } catch (t: Throwable) {
+                        console.warn("[ScreenSaver] Failed to modify projection matrix", t)
+                    }
+                }
+
+                // Find first animation group
+                val animationGroup = scene.animationGroups.firstOrNull()
+                
+                isScreenSaverActive = true
+                scene.activeCamera = ssCam
+                worldLoader.getOcclusionManager()?.setEnabled(false)
+                animationGroup?.play(loop = true)
+                screenSaverAnimationGroup = animationGroup
+                console.log("[ScreenSaver] Started with camera: ${ssCam.name}")
+                console.log("[ScreenSaver]", ssCam)
+            }
+        }
+
         // Set up shadow manager in the world object manager
         // This needs to be done after world loading since the shadow manager is created during world loading
         WorldLoader.onWorldLoaded {
+            // Ensure occlusion manager state matches current screen saver state
+            worldLoader.getOcclusionManager()?.setEnabled(!isScreenSaverActive)
             // Get the shadow manager from the world loader and set it on the world object manager
             worldLoader.getShadowManager()?.let { shadowManager ->
                 worldObjectManager.setShadowManager(shadowManager)
@@ -729,6 +786,14 @@ fun SceneComponent(url: String) {
                 showMessageDialog.value = true
             }
         )
+
+
+        inputHandler.setOnActivity {
+            lastInteractionTime = window.performance.now()
+            if (isScreenSaverActive) {
+                stopScreenSaver()
+            }
+        }
 
         // Set up object drop handler
         val objectDropHandler: (Event) -> Unit = { event ->
@@ -967,7 +1032,7 @@ fun SceneComponent(url: String) {
                 }
 
                 // If FPS has been < 30 for 5 seconds, degrade graphics
-                if (lowFpsAccumulatedMs >= 5_000.0) {
+                if (lowFpsAccumulatedMs >= 60_000.0) {
                     // First step: disable pretty graphics if still enabled
                     if (GraphicsSettings.isPrettyGraphicsEnabled()) {
                         console.warn("[AutoLevel] Disabling pretty graphics due to sustained <30 FPS")
@@ -1010,7 +1075,22 @@ fun SceneComponent(url: String) {
             }
 
             // Update camera animation
-            cameraController.updateAnimation()
+            val isCameraAnimating = cameraController.updateAnimation()
+
+            val currentTime = window.performance.now()
+            val isPlayerMoving = newPosition != null || moveDirection.length() > 0
+            
+            if (isPlayerMoving || isCameraAnimating) {
+                lastInteractionTime = currentTime
+                if (isScreenSaverActive) {
+                    stopScreenSaver()
+                }
+            } else {
+                // Check for inactivity
+                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 5_000.0) {
+                    triggerScreenSaver()
+                }
+            }
 
             // Update world objects
             worldObjectManager.update(scene.deltaTime)

@@ -168,6 +168,12 @@ class InputHandler(
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
+    private var onActivity: (() -> Unit)? = null
+
+    fun setOnActivity(callback: () -> Unit) {
+        onActivity = callback
+    }
+
     // Returns true when we should ignore taps/click-to-move (e.g., right after multi-touch)
     private fun isClickToMoveSuppressed(): Boolean {
         return window.performance.now() < preventClickToMoveUntil
@@ -197,6 +203,7 @@ class InputHandler(
      * @param info The keyboard event information
      */
     private fun handleKeyboardEvent(info: KeyboardInfo) {
+        onActivity?.invoke()
         val event = info.event
         val key = event.key.lowercase()
         
@@ -238,6 +245,7 @@ class InputHandler(
      * @param info The pointer event information
      */
     private fun handlePointerEvent(info: PointerInfo) {
+        onActivity?.invoke()
         // Check if an object is selected or being dragged
         var isObjectSelected = objectManager?.getSelectedObject() != null
         val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
