@@ -4,6 +4,7 @@ import lib.ArcRotateCamera
 import lib.ArcRotateCameraKeyboardMoveInput
 import lib.ArcRotateCameraMouseWheelInput
 import lib.ArcRotateCameraPointersInput
+import lib.Camera
 import lib.Color4
 import lib.ColorCorrectionPostProcess
 import lib.CreateSphereOptions
@@ -205,8 +206,7 @@ class CameraController(private val scene: Scene) {
             updateCameraTargetImmediate(targetPosition!!)
             
             // Reset animation state
-            isAnimating = false
-            targetPosition = null
+            stopAnimating()
 
             updateSkybox()
             
@@ -261,8 +261,17 @@ class CameraController(private val scene: Scene) {
      */
     private fun updateDepthOfFieldFocus() {
         if (pipeline.depthOfFieldEnabled && cameraTarget != null) {
+            // Use active camera if available, fallback to main camera
+            val currentCamera = scene.activeCamera ?: camera
+            
+            // Skip updating DOF if the active camera is not our main camera (e.g. screen saver)
+            // The screen saver or other camera systems will handle their own focal distance.
+            if (currentCamera != camera) {
+                return
+            }
+
             // Calculate distance between camera and camera target
-            val distanceToTarget = Vector3.Distance(camera.position, cameraTarget!!.position)
+            val distanceToTarget = Vector3.Distance(currentCamera.position, cameraTarget!!.position)
             // Update DOF focus distance with the actual distance to target
             pipeline.depthOfField.focusDistance = distanceToTarget * 1_000f // in millimeters
         }
@@ -280,8 +289,12 @@ class CameraController(private val scene: Scene) {
         val maxWeight = 4f // Weight when radius is at minimum
         val minWeight = 1f // Weight when radius is at maximum
         
+        // Use active camera radius if it's an ArcRotateCamera, otherwise use main camera's radius
+        val activeCamera = scene.activeCamera ?: camera
+        val currentRadius = (activeCamera as? lib.ArcRotateCamera)?.radius ?: camera.radius
+        
         // Calculate the vignette weight using linear interpolation
-        val weight = maxWeight - (camera.radius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
+        val weight = maxWeight - (currentRadius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
         
         // Update the vignette weight
         vignettePostProcess.vignetteWeight = weight
@@ -332,8 +345,7 @@ class CameraController(private val scene: Scene) {
         }
         
         // Reset animation state to ensure consistent behavior when called multiple times
-        isAnimating = false
-        targetPosition = null
+        stopAnimating()
         
         // Update the camera target with animation
         updateCameraTarget(position)
@@ -352,6 +364,42 @@ class CameraController(private val scene: Scene) {
      */
     fun getPipeline(): DefaultRenderingPipeline {
         return pipeline
+    }
+
+    fun stopAnimating() {
+        isAnimating = false
+        targetPosition = null
+    }
+
+    /**
+     * Adds a camera to the post-processing pipeline.
+     * This ensures the camera has the same effects as the main camera.
+     * 
+     * @param cameraToAdd The camera to add to the pipeline
+     */
+    fun addCameraToPipeline(cameraToAdd: lib.Camera) {
+        try {
+            pipeline.addCamera(cameraToAdd)
+            ssaoPipeline?.addCamera(cameraToAdd)
+            println("[DEBUG] Added camera ${cameraToAdd.name} to rendering pipelines")
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to add camera to pipeline: ${e.message}")
+        }
+    }
+
+    /**
+     * Removes a camera from the post-processing pipeline.
+     * 
+     * @param cameraToRemove The camera to remove from the pipeline
+     */
+    fun removeCameraFromPipeline(cameraToRemove: lib.Camera) {
+        try {
+            pipeline.removeCamera(cameraToRemove)
+            ssaoPipeline?.removeCamera(cameraToRemove)
+            println("[DEBUG] Removed camera ${cameraToRemove.name} from rendering pipelines")
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to remove camera from pipeline: ${e.message}")
+        }
     }
     
     // Store reference to the SSAO pipeline
@@ -465,12 +513,20 @@ class CameraController(private val scene: Scene) {
             // Disabled due to issue with pre-pass depth map
             if (isPrettyEnabled && false) {
                 try {
+                    // Include active camera if it's not the main camera
+                    val allCameras = mutableListOf<Camera>(camera)
+                    scene.activeCamera?.let {
+                        if (it != camera) {
+                            allCameras.add(it)
+                        }
+                    }
+
                     // Create SSAO pipeline with subtle settings
                     ssaoPipeline = SSAO2RenderingPipeline(
                         name = "ssao",
                         scene = scene,
                         ratio = 1.0, // Full resolution
-                        cameras = arrayOf(camera)
+                        cameras = allCameras.toTypedArray()
                     )
                     
                     // Configure SSAO for subtle effect

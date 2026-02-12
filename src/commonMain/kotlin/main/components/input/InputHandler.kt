@@ -22,6 +22,7 @@ import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.playerInteract
+import main.components.GraphicsSettings
 import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.inventory.InventoryState
@@ -166,6 +167,9 @@ class InputHandler(
     // Store the click point for object dragging
     private var objectClickPoint: Vector3? = null
 
+    // Job for observer mode depth picking
+    private var observerModeTargetJob: Job? = null
+
     private val scope = CoroutineScope(Dispatchers.Default)
 
     private var onActivity: (() -> Unit)? = null
@@ -239,6 +243,23 @@ class InputHandler(
         }
     }
     
+    private fun updateObserverTarget() {
+        if (!GraphicsSettings.isObserverModeEnabled()) return
+        if (isObjectDragging || draggingObjectId != null || objectManager?.getSelectedObject() != null) return
+
+        observerModeTargetJob?.cancel()
+        observerModeTargetJob = scope.launch {
+            val worldPoint = DepthPicking.getVisibleWorldPointAt(
+                scene = scene,
+                x = scene.pointerX,
+                y = scene.pointerY
+            )
+            if (worldPoint != null && isPointWithinReach(worldPoint)) {
+                cameraController.updateCameraTarget(worldPoint)
+            }
+        }
+    }
+
     /**
      * Handles pointer events.
      * 
@@ -425,6 +446,7 @@ class InputHandler(
                 if (!isObjectBeingDragged && !isObjectSelected && activePointers <= 1) {
                     if (!didRotateCameraThisPointer && (deltaX > singleFingerCameraSlop || deltaY > singleFingerCameraSlop)) {
                         didRotateCameraThisPointer = true
+                        playerController.stopMovement()
                     }
                 }
 
@@ -440,7 +462,21 @@ class InputHandler(
             }
             handleObjectHovering()
         }
-        
+
+        if (!isObjectBeingDragged && !isObjectSelected) {
+            val isMouseDown = info.type == PointerEventTypes.POINTERWHEEL || info.type == PointerEventTypes.POINTERDOWN
+
+            // If moving the camera with the mouse (zoom), stop player movement
+            if (isMouseDown) {
+                cameraController.stopAnimating()
+
+                // In observer mode, set the camera target to the point under the cursor when moving/zooming the camera
+                if (GraphicsSettings.isObserverModeEnabled()) {
+                    updateObserverTarget()
+                }
+            }
+        }
+
         // Handle object selection on pointer down
         if (info.type == PointerEventTypes.POINTERDOWN && objectManager != null) {
             // Track pointer down state and position
@@ -907,13 +943,6 @@ class InputHandler(
 
         // 2) Depth-first targeting: if we can unproject a visible world point, use it directly
         scope.launch {
-            fun isPointWithinReach(point: Vector3): Boolean {
-                val playerPos = playerController.getCollider()!!.position
-                val distance = Vector3.Distance(playerPos, point)
-                val maxDistance = (cameraController.getCamera().maxZ - cameraController.getCamera().minZ) / 2f
-                return distance <= maxDistance
-            }
-
             try {
                 val depthPoint = DepthPicking.getVisibleWorldPointAt(
                     scene = scene,
@@ -953,6 +982,13 @@ class InputHandler(
                 playerController.setTargetPosition(closestPoint)
             }
         }
+    }
+
+    private fun isPointWithinReach(point: Vector3): Boolean {
+        val playerPos = playerController.getCollider()!!.position
+        val distance = Vector3.Distance(playerPos, point)
+        val maxDistance = (cameraController.getCamera().maxZ - cameraController.getCamera().minZ) / 2f
+        return distance <= maxDistance
     }
     
     /**

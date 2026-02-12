@@ -21,6 +21,7 @@ import main.components.player.FriendshipStatus
 import main.components.player.OtherPlayerDialog
 import main.components.player.OtherPlayersController
 import main.components.player.PlayerController
+import main.components.world.DepthPicking
 import main.components.world.WorldLoader
 import main.components.world.WorldObjectManager
 import main.theme.Styles
@@ -674,12 +675,23 @@ fun SceneComponent(url: String) {
         var isScreenSaverActive = false
         var screenSaverAnimationGroup: lib.AnimationGroup? = null
         val flippedCameras = mutableSetOf<lib.Camera>()
+        var screenSaverFocusJob: Job? = null
 
         fun stopScreenSaver() {
             if (!isScreenSaverActive) return
             isScreenSaverActive = false
+            screenSaverFocusJob?.cancel()
+            screenSaverFocusJob = null
             screenSaverAnimationGroup?.stop()
             screenSaverAnimationGroup = null
+
+            // Remove the screensaver camera from post-processing pipeline
+            scene.activeCamera?.let {
+                if (it != cameraController.getCamera()) {
+                    cameraController.removeCameraFromPipeline(it)
+                }
+            }
+
             scene.activeCamera = cameraController.getCamera()
             worldLoader.getOcclusionManager()?.setEnabled(true)
             console.log("[ScreenSaver] Stopped")
@@ -725,15 +737,49 @@ fun SceneComponent(url: String) {
                 }
 
                 // Find first animation group
-                val animationGroup = scene.animationGroups.firstOrNull()
+                val animationGroup = scene.animationGroups.firstOrNull() ?: return
                 
                 isScreenSaverActive = true
                 scene.activeCamera = ssCam
+
+                // Add the screensaver camera to post-processing pipeline
+                cameraController.addCameraToPipeline(ssCam)
+
                 worldLoader.getOcclusionManager()?.setEnabled(false)
                 animationGroup?.play(loop = true)
                 screenSaverAnimationGroup = animationGroup
                 console.log("[ScreenSaver] Started with camera: ${ssCam.name}")
                 console.log("[ScreenSaver]", ssCam)
+
+                // Continuously update focal distance to center of view
+                screenSaverFocusJob?.cancel()
+                screenSaverFocusJob = coroutineScope.launch {
+                    while (isScreenSaverActive) {
+                        try {
+                            val activeCam = scene.activeCamera
+                            val pipeline = cameraController.getPipeline()
+                            if (activeCam != null && pipeline.depthOfFieldEnabled) {
+                                val renderWidth = engine.getRenderWidth()
+                                val renderHeight = engine.getRenderHeight()
+                                
+                                // Read depth at center of screen
+                                val depth = DepthPicking.readLinearDepthAt(renderWidth / 2, renderHeight / 2)
+                                if (depth != null) {
+                                    // Convert linear depth [0..1] to world distance
+                                    // linearDepth = (z - zNear) / (zFar - zNear)
+                                    // => z = linearDepth * (zFar - zNear) + zNear
+                                    val distance = depth * (activeCam.maxZ - activeCam.minZ) + activeCam.minZ
+                                    
+                                    // Set focus distance in millimeters
+                                    pipeline.depthOfField.focusDistance = distance * 1000f
+                                }
+                            }
+                        } catch (t: Throwable) {
+                            console.warn("[ScreenSaver] Focus update failed", t)
+                        }
+                        delay(100)
+                    }
+                }
             }
         }
 
@@ -1087,7 +1133,7 @@ fun SceneComponent(url: String) {
                 }
             } else {
                 // Check for inactivity
-                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 5_000.0) {
+                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0) {
                     triggerScreenSaver()
                 }
             }

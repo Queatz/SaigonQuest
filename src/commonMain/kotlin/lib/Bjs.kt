@@ -899,7 +899,7 @@ external class DefaultRenderingPipeline(
     hdr: Boolean,
     scene: Scene,
     cameras: Array<Camera?>
-) {
+): PostProcessRenderPipeline {
     var depthOfFieldEnabled: Boolean
     var depthOfField: DepthOfFieldEffect
     var depthOfFieldBlurLevel: Int
@@ -1271,6 +1271,8 @@ external interface SSAOOptions {
 }
 
 open external class PostProcessRenderPipeline {
+    fun addCamera(camera: Camera)
+    fun removeCamera(camera: Camera)
     fun dispose(): Unit
 }
 

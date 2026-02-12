@@ -97,6 +97,7 @@ class OcclusionManager(private val scene: Scene) {
     // Track engine render size to detect size changes (window resize, zoom, graphics mode)
     private var lastRenderWidth: Int = 0
     private var lastRenderHeight: Int = 0
+    private var lastActiveCamera: lib.Camera? = null
     
     // Configurable parameters
     private var occlusionSoftness = 0.1f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
@@ -531,8 +532,15 @@ class OcclusionManager(private val scene: Scene) {
      */
     fun update() {
         // Refresh player and camera references
-        camera = scene.activeCamera
+        val currentCamera = scene.activeCamera
+        camera = currentCamera
         player = SceneManager.getPlayerController()?.getCollider()
+
+        if (currentCamera != lastActiveCamera) {
+            console.log("[OcclusionManager] Active camera changed from ${lastActiveCamera?.name} to ${currentCamera?.name}. Recreating DepthRenderer.")
+            recreateDepthRenderer()
+            lastActiveCamera = currentCamera
+        }
 
         // Update shared current time once per frame (seconds)
         currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
