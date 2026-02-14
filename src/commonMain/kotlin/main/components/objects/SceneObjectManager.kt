@@ -473,6 +473,9 @@ class SceneObjectManager(
             // Render the object in the scene
             val node = inventoryObject.render(scene)
             if (node != null) {
+                // Start animations
+                startAnimations(node)
+                    
                 // Store the object in our map for future reference
                 objectMeshes[obj.key] = node
                 // Track as inventory-based source to stabilize model-change checks
@@ -685,6 +688,9 @@ class SceneObjectManager(
             // Track kind as World for regular objects
             objectKinds[obj.key] = ObjectKind.World
 
+            // Start animations
+            startAnimations(fallbackSphere)
+
             // Handle status text
             handleObjectStatusText(obj.key, obj.status, fallbackSphere)
         }
@@ -736,6 +742,9 @@ class SceneObjectManager(
                         objectModelSources[obj.key] = Pair(obj.file, obj.collection)
                         // Track kind as World for regular objects
                         objectKinds[obj.key] = ObjectKind.World
+                        
+                        // Start animations
+                        startAnimations(node)
                         
                         // Verify the mesh was added to the map
                         val storedMesh = objectMeshes[obj.key]
@@ -1306,6 +1315,39 @@ class SceneObjectManager(
 
     fun onMouseLeave() {
         document.body?.style?.cursor = "default"
+    }
+
+    /**
+     * Starts all animations for an object and ensures all scene animation groups are playing
+     * 
+     * @param node The root node of the object
+     */
+    private fun startAnimations(node: Node) {
+        try {
+            console.log("[DEBUG_ANIMATION] Starting animations for node: ${node.name}")
+            
+            // Start simple animations on the node itself
+            if (node.animations.isNotEmpty()) {
+                scene.beginAnimation(node, 0f, 1000f, true)
+            }
+            
+            // Start simple animations on all child meshes
+            node.getChildMeshes(false).forEach { mesh ->
+                if (mesh.animations.isNotEmpty()) {
+                    scene.beginAnimation(mesh, 0f, 1000f, true)
+                }
+            }
+            
+            // Also start all animation groups in the scene
+            // This ensures GLB-based animations are playing
+            scene.animationGroups.forEach { group ->
+                if (!group.isPlaying) {
+                    group.play(true)
+                }
+            }
+        } catch (e: Throwable) {
+            console.warn("[DEBUG_ANIMATION] Error starting animations: ${e.message}")
+        }
     }
     
     /**

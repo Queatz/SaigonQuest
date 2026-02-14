@@ -1,7 +1,6 @@
 package main.components.camera
 
 import lib.ArcRotateCamera
-import lib.ArcRotateCameraKeyboardMoveInput
 import lib.ArcRotateCameraMouseWheelInput
 import lib.ArcRotateCameraPointersInput
 import lib.Camera
@@ -20,7 +19,6 @@ import lib.Vector3
 import kotlin.math.PI
 import main.components.GraphicsSettings
 import main.components.SceneManager
-import main.components.world.isSkybox
 
 /**
  * Controller for managing the camera in the 3D scene.
@@ -46,13 +44,12 @@ class CameraController(private val scene: Scene) {
         scene = scene
     ).apply {
         // Set camera constraints
-        this.lowerRadiusLimit = 4f // Min constraint
-        this.upperRadiusLimit = 32f // Max constraint
-        this.lowerBetaLimit = (57.5f * PI / 180f).toFloat()
-        this.upperBetaLimit = (87.5f * PI / 180f).toFloat()
+        updateConstraints()
         this.targetScreenOffset = Vector2(0f, 0f)
 
         this.wheelPrecision = 50f
+        this.zoomToMouseLocation = true
+        this.wheelDeltaPercentage = 0.01f
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
         this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
         this.minZ = 0.1f
@@ -98,6 +95,7 @@ class CameraController(private val scene: Scene) {
      */
     private val graphicsSettingsObserver: () -> Unit = {
         updatePipelineSettings()
+        camera.updateConstraints()
     }
 
     init {
@@ -127,9 +125,9 @@ class CameraController(private val scene: Scene) {
         // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
         GraphicsSettings.addObserver(graphicsSettingsObserver)
 
-        // Initial setup of pipeline settings based on current settings
-        // This will configure bloom, DOF, grain, image processing, tone mapping, and SSAO
+        // Initial setup of pipeline and camera settings
         updatePipelineSettings()
+        camera.updateConstraints()
 
 //        colorCorrectionPostProcess = ColorCorrectionPostProcess(
 //            name = "colorCorrection",
@@ -163,9 +161,12 @@ class CameraController(private val scene: Scene) {
      * Sets the target position for smooth animation.
      * 
      * @param position The new position for the camera target
+     * @param useAnimation Whether to animate the transition
+     * @param preserveSettings Whether to preserve current alpha, beta, and radius
      */
-    fun updateCameraTarget(position: Vector3) {
-        // Set the target position for animation
+    fun updateCameraTarget(
+        position: Vector3,
+    ) {
         targetPosition = position.clone()
         isAnimating = true
     }
@@ -240,20 +241,32 @@ class CameraController(private val scene: Scene) {
      * Used internally and for initial positioning.
      * 
      * @param position The new position for the camera target
+     * @param preserveSettings Whether to preserve current alpha, beta, and radius
      */
-    private fun updateCameraTargetImmediate(position: Vector3) {
-        // Store current camera settings
-        val currentAlpha = camera.alpha
-        val currentBeta = camera.beta
-        val currentRadius = camera.radius
-        
-        // Update camera to target the camera target object
-        camera.setTarget(position)
-        
-        // Restore camera settings to maintain relative position
-        camera.alpha = currentAlpha
-        camera.beta = currentBeta
-        camera.radius = currentRadius
+    fun updateCameraTargetImmediate(position: Vector3, preserveSettings: Boolean = true) {
+        if (preserveSettings) {
+            // Store current camera settings
+            val currentAlpha = camera.alpha
+            val currentBeta = camera.beta
+            val currentRadius = camera.radius
+            
+            // Update camera to target the camera target object
+            camera.setTarget(position)
+            
+            // Restore camera settings to maintain relative position
+            camera.alpha = currentAlpha
+            camera.beta = currentBeta
+            camera.radius = currentRadius
+        } else {
+            // This is the "Auto Depth" / Navigation mode:
+            // Set new pivot, camera stays put, radius/alpha/beta recompute naturally
+            val currentPosition = camera.position.clone()
+            camera.setTarget(position)
+            camera.setPosition(currentPosition)
+        }
+
+        // Also update the internal target mesh position
+        cameraTarget?.position = position
     }
     
     /**
@@ -405,6 +418,24 @@ class CameraController(private val scene: Scene) {
     // Store reference to the SSAO pipeline
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
     
+    /**
+     * Updates camera constraints (limits) based on current settings.
+     * Relaxed constraints in Observer Mode allow for Blender-style navigation.
+     */
+    fun ArcRotateCamera.updateConstraints() {
+        if (GraphicsSettings.isObserverModeEnabled()) {
+            lowerRadiusLimit = 0.1f
+            upperRadiusLimit = 500f // Matches maxZ
+            lowerBetaLimit = 0.01f
+            upperBetaLimit = (PI/2f - 0.01f).toFloat()
+        } else {
+            lowerRadiusLimit = 4f
+            upperRadiusLimit = 32f
+            lowerBetaLimit = (57.5f * PI / 180f).toFloat()
+            upperBetaLimit = (87.5f * PI / 180f).toFloat()
+        }
+    }
+
     /**
      * Updates the pipeline settings based on the pretty graphics setting.
      * This method can be called when the pretty graphics setting changes.

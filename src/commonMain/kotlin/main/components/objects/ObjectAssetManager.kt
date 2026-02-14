@@ -165,6 +165,15 @@ class ObjectAssetManager(private val scene: Scene) {
                 assetContainerPromise.then { assetContainer ->
                     console.log("[ASSET_MANAGER] Asset container loaded successfully")
 
+                    // Add all animation groups from the container to the scene
+                    assetContainer.animationGroups.forEach { group ->
+                        try {
+                            scene.addAnimationGroup(group)
+                        } catch (e: Throwable) {
+                            console.warn("[ASSET_MANAGER] Failed to add animation group: ${group.name}", e)
+                        }
+                    }
+
                     // First, try to find the requested node by name
                     var foundRequestedNode = false
 

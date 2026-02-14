@@ -38,6 +38,11 @@ open external class Node {
      */
     open var scaling: Vector3
 
+    /**
+     * List of animations attached to the node
+     */
+    open val animations: Array<dynamic>
+
     open var metadata: MeshMetadata?
 
     open fun getAbsolutePosition(): Vector3 = definedExternally
@@ -263,6 +268,31 @@ external class Scene(engine: Engine? = definedExternally) {
     fun registerBeforeRender(callback: () -> Unit)
     fun getFrameId(): Int
     fun removeMesh(mesh: AbstractMesh)
+
+    /**
+     * Adds an animation group to the scene
+     * @param animationGroup The animation group to add
+     */
+    fun addAnimationGroup(animationGroup: AnimationGroup)
+
+    /**
+     * Starts an animation on a target
+     * @param target The target to animate
+     * @param from The start frame
+     * @param to The end frame
+     * @param loop If true, the animation will loop
+     * @param speedRatio The speed ratio
+     * @param onAnimationEnd Callback when the animation ends
+     * @return The animatable
+     */
+    fun beginAnimation(
+        target: Any, 
+        from: Float, 
+        to: Float, 
+        loop: Boolean = definedExternally, 
+        speedRatio: Float = definedExternally, 
+        onAnimationEnd: (() -> Unit)? = definedExternally
+    ): dynamic
 
     companion object {
         val FOGMODE_EXP2: Int
@@ -750,6 +780,7 @@ external class ArcRotateCamera(
     fun detachControl()
     fun getViewMatrix(): Matrix
     fun setTarget(target: Vector3)
+    fun setPosition(position: Vector3)
 }
 
 external class ArcRotateCameraInputs {
@@ -1762,6 +1793,16 @@ external class AssetContainer(scene: Scene) {
     val rootNodes: Array<Node>
 
     fun getNodes(): Array<Node>
+    
+    /**
+     * Adds all assets from the container to the scene
+     */
+    fun addAllToScene()
+
+    /**
+     * List of animation groups in the asset container
+     */
+    val animationGroups: Array<AnimationGroup>
 
     /**
      * Creates a model instance from the asset container

@@ -255,14 +255,16 @@ class InputHandler(
                 y = scene.pointerY
             )
             if (worldPoint != null && isPointWithinReach(worldPoint)) {
-                cameraController.updateCameraTarget(worldPoint)
+                cameraController.updateCameraTarget(
+                    position = worldPoint,
+                )
             }
         }
     }
 
     /**
      * Handles pointer events.
-     * 
+     *
      * @param info The pointer event information
      */
     private fun handlePointerEvent(info: PointerInfo) {
@@ -272,7 +274,7 @@ class InputHandler(
         val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
 
         console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
-        
+
         // Track multi-touch pointer counts to suppress accidental moves after pinch/zoom
         run {
             val now = window.performance.now()
@@ -309,7 +311,7 @@ class InputHandler(
                 }
             }
         }
-        
+
         // Handle Babylon tap/double-tap events explicitly (touch & click)
         if (info.type == PointerEventTypes.POINTERDOUBLETAP && objectManager != null) {
             // Ignore double-tap actions right after a multi-touch camera gesture
@@ -438,6 +440,11 @@ class InputHandler(
         if (info.type == PointerEventTypes.POINTERMOVE) {
             // Check if dragging (pointer is down and has moved more than a threshold)
             if (isPointerDown) {
+                // Drag to move camera
+                if (info.event.ctrlKey) {
+                    cameraController.stopAnimating()
+                }
+
                 val deltaX = abs(scene.pointerX - pointerStartX)
                 val deltaY = abs(scene.pointerY - pointerStartY)
 
@@ -464,14 +471,16 @@ class InputHandler(
         }
 
         if (!isObjectBeingDragged && !isObjectSelected) {
-            val isMouseDown = info.type == PointerEventTypes.POINTERWHEEL || info.type == PointerEventTypes.POINTERDOWN
+            val isNavigationStart = info.type == PointerEventTypes.POINTERDOWN
+            val isWheel = info.type == PointerEventTypes.POINTERWHEEL
 
             // If moving the camera with the mouse (zoom), stop player movement
-            if (isMouseDown) {
+            if (isNavigationStart || isWheel) {
                 cameraController.stopAnimating()
 
-                // In observer mode, set the camera target to the point under the cursor when moving/zooming the camera
-                if (GraphicsSettings.isObserverModeEnabled()) {
+                // In observer mode, set the camera target to the point under the cursor when starting to rotate
+                // We skip this on wheel events because zoomToMouseLocation handles it automatically
+                if (GraphicsSettings.isObserverModeEnabled() && isNavigationStart) {
                     updateObserverTarget()
                 }
             }
@@ -549,7 +558,7 @@ class InputHandler(
                 didRotateCameraThisPointer = false
             }
         }
-        
+
         // If an object is selected or being dragged, handle object manipulation
         if (isObjectSelected || isObjectBeingDragged) {
             // If we just started object manipulation, disable camera inputs
@@ -558,7 +567,7 @@ class InputHandler(
                 cameraInputsEnabled = false
                 console.log("Camera inputs disabled for object manipulation")
             }
-            
+
             handleObjectManipulation(info)
             return
         } else {
@@ -767,7 +776,7 @@ class InputHandler(
                                 if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                                 val hit = ray.intersectsMesh(mesh)
                                 if (hit.pickedPoint != null) {
-                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                                     if (distance < closestDistance) {
                                         closestDistance = distance
                                         closestPoint = hit.pickedPoint
@@ -778,7 +787,7 @@ class InputHandler(
                                 if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                                 val hit = ray.intersectsMesh(mesh)
                                 if (hit.pickedPoint != null) {
-                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                                     if (distance < closestDistance) {
                                         closestDistance = distance
                                         closestPoint = hit.pickedPoint
