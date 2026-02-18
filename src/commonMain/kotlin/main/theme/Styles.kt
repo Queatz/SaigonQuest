@@ -115,7 +115,7 @@ object Styles : StyleSheet() {
 
             self + hover style {
                 outline("1px solid ${Theme.colors.outline}")
-                textDecoration("underline")
+                property("text-shadow", "0 0 6px #ff0")
             }
         }
 
@@ -1851,6 +1851,85 @@ object Styles : StyleSheet() {
         cursor("not-allowed")
         opacity(0.5)
     }
+
+    val aiChatOverlay by style {
+        position(Position.Fixed)
+        property("inset", "12px auto auto 50%")
+        property("transform", "translateX(-50%)")
+        property("z-index", "99999")
+        property("width", "min(52rem, 95%)")
+        height(24.cssRem)
+        backgroundColor(Theme.colors.controlBg)
+        borderRadius(12.px)
+        property("box-shadow", "0 20px 20px ${Theme.colors.shadowMedium}")
+        property("pointer-events", "auto")
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        overflow("hidden")
+    }
+
+    val aiChatHeader by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.SpaceBetween)
+        alignItems(AlignItems.Center)
+        padding(10.px, 12.px)
+        backgroundColor(Theme.colors.controlBg)
+        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
+    }
+
+    val aiChatTitle by style { fontWeight("600") }
+
+    val aiChatClose by style {
+        property("all", "unset")
+        cursor("pointer")
+        fontSize(22.px)
+        property("line-height", "1.0")
+        padding(2.px, 6.px)
+    }
+
+    val aiChatMessages by style {
+        property("flex", "1 1 auto")
+        overflowY("auto")
+        padding(12.px)
+        backgroundColor(Theme.colors.controlBg)
+        color(Theme.colors.onSurface)
+    }
+
+    val aiChatMsg by style {
+        padding(8.px, 10.px)
+        borderRadius(8.px)
+        marginBottom(8.px)
+    }
+
+    val aiChatMsgSystem by style {
+        backgroundColor(Theme.colors.surfaceVariant)
+        color(Theme.colors.onSurfaceVariant)
+    }
+
+    val aiChatMsgUser by style {
+        backgroundColor(Theme.colors.accentInfoSoft)
+    }
+
+    val aiChatMsgAssistant by style {
+        backgroundColor(Theme.colors.surface)
+    }
+
+    val aiChatSpinnerRow by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+    }
+
+    val aiChatInputRow by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+        padding(10.px, 12.px)
+        property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
+        backgroundColor(Theme.colors.controlBg)
+    }
+
+    val aiChatInput by style { property("flex", "1 1 auto") }
+    val aiChatSend by style {}
 
     init {
         "body, html" style {

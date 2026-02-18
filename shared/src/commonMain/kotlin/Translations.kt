@@ -1775,6 +1775,14 @@ vi: Bắt đầu đi bộ
 Stop walking
 vi: Dừng đi bộ
 
+AI chat
+vi: Chat AI
+
+Send
+vi: Gửi
+
+Type a message…
+vi: Nhập tin nhắn…
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

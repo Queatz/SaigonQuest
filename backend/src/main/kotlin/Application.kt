@@ -26,6 +26,7 @@ import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
 import routes.configurePushRoutes
 import routes.configureAuthRoutes
+import routes.configureAiChatRoutes
 import routes.configureMediaRoutes
 import routes.configureBalanceRoutes
 import routes.configureAssetItemRoutes
@@ -89,6 +90,7 @@ fun Application.module() {
         configureAssetItemRoutes()
         configurePushRoutes()
         configureAuthRoutes()
+        configureAiChatRoutes()
         configureMediaRoutes()
         configureBalanceRoutes()
         configureCostsRoutes()

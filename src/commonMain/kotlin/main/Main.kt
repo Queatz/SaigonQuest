@@ -48,6 +48,9 @@ fun main() {
             Style(InventoryStyles)
             Style(AssetStyles)
             Style(WorldDocsStyles)
+            
+            // Render the global, floating AI chat box once
+            main.components.chat.GlobalAiChat()
 
             BrowserRouter(
                 initPath = "/"
