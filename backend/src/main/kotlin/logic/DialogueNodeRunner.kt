@@ -97,6 +97,9 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         } catch (e: Throwable) {
             null
         }
+
+        // Check if word click port is connected
+        val clickableWords = context.logicRunner?.isPortConnected(node.id, "${node.id}_out_word_clicked") ?: false
         
         // Generate a unique dialogue ID
         val dialogueId = UUID.randomUUID().toString()
@@ -120,6 +123,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             imageUrl = imageUrl,
             objectTitle = objectTitle,
             title = title,  // Optional custom title
+            clickableWords = clickableWords,
         )
         
         val dialogueMessage = WebSocketMessage(

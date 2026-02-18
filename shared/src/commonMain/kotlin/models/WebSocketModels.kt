@@ -126,6 +126,7 @@ data class DialogueData(
     val requiresInput: Boolean = false, // If true, show a text input and return text on confirm
     val placeholder: String? = null, // Optional placeholder for the input
     val confirmLabel: String? = null, // Optional confirm button label override
+    val clickableWords: Boolean = false, // If true, wrap words in clickable spans
 )
 
 /**

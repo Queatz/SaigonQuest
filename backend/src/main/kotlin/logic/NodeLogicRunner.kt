@@ -37,7 +37,7 @@ class NodeLogicRunner(
     }
 
     // Parse the node configuration from the object data
-    private val nodeConfig: NodeConfig? = try {
+    internal val nodeConfig: NodeConfig? = try {
         if (objectData.data.isNotBlank()) {
             WebSocketDebug.logMessage(
                 "NODE_CONFIG_PARSING",
@@ -89,6 +89,10 @@ class NodeLogicRunner(
     } catch (e: Throwable) {
         WebSocketDebug.logError("Failed to parse node config for object: ${objectData.title}", e, context.session)
         null
+    }
+
+    fun isPortConnected(nodeId: String, portId: String): Boolean {
+        return nodeConfig?.connections?.any { it.from == nodeId && it.fromPort == portId } ?: false
     }
 
     /**

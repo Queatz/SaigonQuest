@@ -124,7 +124,7 @@ fun DialogueBox(
             // Dialogue text
             Md(
                 content = dialogue.text,
-                clickableWords = true,
+                clickableWords = dialogue.clickableWords,
             ) {
                 if (!dialogue.text.trim().contains("\n")) {
                     style {

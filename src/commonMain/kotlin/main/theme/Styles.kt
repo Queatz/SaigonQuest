@@ -1,5 +1,6 @@
 package main.theme
 
+import androidx.compose.ui.text.style.TextDecoration
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.AlignSelf
 import org.jetbrains.compose.web.css.AnimationTimingFunction
@@ -49,6 +50,7 @@ import org.jetbrains.compose.web.css.mediaMinWidth
 import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.outline
+import org.jetbrains.compose.web.css.outlineColor
 import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.overflowX
 import org.jetbrains.compose.web.css.overflowY
@@ -61,6 +63,7 @@ import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.css.s
 import org.jetbrains.compose.web.css.selectors.CSSSelector
 import org.jetbrains.compose.web.css.textAlign
+import org.jetbrains.compose.web.css.textDecoration
 import org.jetbrains.compose.web.css.timingFunction
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.vh
@@ -103,6 +106,27 @@ object Styles : StyleSheet() {
 
         desc(self, selector("p") + lastChild) style {
             marginBottom(0.px)
+        }
+
+        // Clickable word style
+        desc(self, className("word")) style {
+            cursor("pointer")
+            borderRadius(4.px)
+
+            self + hover style {
+                outline("1px solid ${Theme.colors.outline}")
+                textDecoration("underline")
+            }
+        }
+
+        // Clickable word style (dark)
+        dark(self) {
+            desc(self, className("word")) style {
+                self + hover style {
+                    outline("1px solid ${Theme.colors.outlineDark}")
+                    textDecoration("underline")
+                }
+            }
         }
 
         desc(self, selector("img")) style {
@@ -306,7 +330,11 @@ object Styles : StyleSheet() {
         property("pointer-events", "auto")
         cursor("pointer")
         // Hover affordance
-        property("&:hover", "{ opacity: 1; text-decoration: underline; }")
+
+        self + hover style {
+            opacity(1)
+            textDecoration(TextDecoration.Underline.toString())
+        }
 
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
