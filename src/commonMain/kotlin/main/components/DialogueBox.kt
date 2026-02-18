@@ -122,10 +122,33 @@ fun DialogueBox(
             }
 
             // Dialogue text
-            Md(dialogue.text) {
+            Md(
+                content = dialogue.text,
+                clickableWords = true,
+            ) {
                 if (!dialogue.text.trim().contains("\n")) {
                     style {
                         textAlign("center")
+                    }
+                }
+
+                onClick { event ->
+                    val target = event.target as? org.w3c.dom.HTMLElement ?: return@onClick
+                    val word = target.getAttribute("data-word") ?: return@onClick
+
+                    val scope = MainScope()
+                    scope.launch {
+                        try {
+                            val user = UserApi.getCurrentUser()
+                            val userId = user.key
+                            WebSocketApi.sendDialogueConfirmation(
+                                dialogueId = dialogue.dialogueId,
+                                userId = userId,
+                                clickedWord = word,
+                            )
+                        } catch (e: Throwable) {
+                            console.error("Error sending word click confirmation", e)
+                        }
                     }
                 }
             }

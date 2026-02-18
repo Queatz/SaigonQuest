@@ -336,6 +336,13 @@ sealed interface LogicNode {
 }
 
 /**
+ * Map of node IDs to their logic node instances
+ */
+val logicNodeById: Map<NodeId, LogicNode> by lazy {
+    getAllNodeTypes().associateBy { it.id }
+}
+
+/**
  * Extension function to get all available node types
  */
 fun getAllNodeTypes(): List<LogicNode> {

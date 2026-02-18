@@ -4,8 +4,9 @@ package lib
 @JsNonModule
 external object marked {
     class Renderer {
-        var link: (data: RendererLinkToken) -> String = definedExternally
-        var html: (data: RendererHtmlToken) -> String = definedExternally
+        var link: (token: RendererLinkToken) -> String = definedExternally
+        var html: (token: RendererHtmlToken) -> String = definedExternally
+        var text: (token: RendererTextToken) -> String = definedExternally
     }
 
     fun parse(
@@ -23,6 +24,11 @@ external object marked {
     }
 
     interface RendererHtmlToken {
+        var raw: String
+        var text: String
+    }
+
+    interface RendererTextToken {
         var raw: String
         var text: String
     }

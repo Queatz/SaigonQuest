@@ -3,6 +3,9 @@ package logic
 import debug.WebSocketDebug
 import io.ktor.websocket.send
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import models.DialogueConfirmation
 import models.DialogueData
@@ -28,8 +31,8 @@ import kotlin.time.Duration.Companion.seconds
 class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
     companion object {
         private val logger = LoggerFactory.getLogger(DialogueNodeRunner::class.java)
-        // Map to track pending dialogue confirmations with a deferred button index
-        private val pendingConfirmations = ConcurrentHashMap<String, CompletableDeferred<Int>>()
+        // Map to track pending dialogue confirmations with a channel for multiple events
+        private val pendingConfirmations = ConcurrentHashMap<String, Channel<DialogueConfirmation>>()
         
         // Timeout for waiting for confirmation (in seconds)
         private const val CONFIRMATION_TIMEOUT = 300L // 5 minutes
@@ -42,13 +45,14 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
          */
         fun processConfirmation(confirmation: DialogueConfirmation): Boolean {
             val dialogueId = confirmation.dialogueId
-            val deferred = pendingConfirmations[dialogueId]
-            if (deferred == null) {
+            val channel = pendingConfirmations[dialogueId]
+            if (channel == null) {
                 logger.debug("Dialogue processConfirmation: no pending for id={}", dialogueId)
                 return false
             }
-            val ok = deferred.complete(confirmation.buttonIndex)
-            logger.debug("Dialogue processConfirmation: completed id={} ok={} index={}", dialogueId, ok, confirmation.buttonIndex)
+            val result = channel.trySend(confirmation)
+            val ok = result.isSuccess
+            logger.debug("Dialogue processConfirmation: sent to channel id={} ok={} index={} word={}", dialogueId, ok, confirmation.buttonIndex, confirmation.clickedWord)
             return ok
         }
     }
@@ -97,10 +101,14 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         // Generate a unique dialogue ID
         val dialogueId = UUID.randomUUID().toString()
         
-        // Register the dialogue ID in the pending confirmations map with a deferred result
-        val deferred = CompletableDeferred<Int>()
+        // Register the dialogue ID in the pending confirmations map with a channel
+        val channel = Channel<DialogueConfirmation>(Channel.UNLIMITED)
         logger.debug("Dialogue register: id={}", dialogueId)
-        pendingConfirmations[dialogueId] = deferred
+        pendingConfirmations[dialogueId] = channel
+        
+        // Populate the entire text content output
+        eventData["${node.id}_out_text"] = text
+        eventData["${node.id}_text"] = text
         
         // Create a dialogue data object with buttons
         val dialogueData = DialogueData(
@@ -123,26 +131,42 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         WebSocketDebug.logMessage("DIALOGUE_SHOW_SEND", "dialogueId=$dialogueId nodeId=${node.id}", context.session)
         context.connection.session.send(json.encodeToString(dialogueMessage))
         
-        // Await the confirmation result via the deferred
-        val buttonIndex = try {
+        // Await confirmation results via the channel
+        try {
             WebSocketDebug.logMessage("DIALOGUE_AWAIT_START", "dialogueId=$dialogueId", context.session)
-            withTimeoutOrNull(CONFIRMATION_TIMEOUT.seconds) {
-                deferred.await()
+            while (true) {
+                val confirmationResult = withTimeoutOrNull(CONFIRMATION_TIMEOUT.seconds) {
+                    channel.receive()
+                } ?: break // Timeout
+                
+                val clickedWord = confirmationResult.clickedWord
+                if (!clickedWord.isNullOrBlank()) {
+                    WebSocketDebug.logMessage("DIALOGUE_WORD_CLICKED", "dialogueId=$dialogueId word=$clickedWord", context.session)
+                    
+                    val branchData = eventData.toMutableMap()
+                    branchData["clickedWord"] = clickedWord
+                    branchData["${node.id}_out_clicked_word"] = clickedWord
+                    branchData["isWordClick"] = true
+                    
+                    // Trigger branch ASYNCHRONOUSLY using coroutineScope but not awaiting it
+                    // To truly not await it, we should use the context's session scope
+                    context.session.launch {
+                        context.logicRunner?.triggerBranch(node.id, "${node.id}_out_word_clicked", branchData)
+                    }
+                    // Continue loop to wait for more word clicks or a button click
+                } else {
+                    WebSocketDebug.logMessage("DIALOGUE_CONFIRMED", "dialogueId=$dialogueId buttonIndex=${confirmationResult.buttonIndex}", context.session)
+                    eventData["buttonIndex"] = confirmationResult.buttonIndex
+                    eventData["isWordClick"] = false
+                    return true // Button clicked, finish this node
+                }
             }
+            WebSocketDebug.logMessage("DIALOGUE_TIMEOUT", "dialogueId=$dialogueId", context.session)
+            return false
         } finally {
             // Clean up regardless of outcome
             pendingConfirmations.remove(dialogueId)
-            if (!deferred.isCompleted) deferred.cancel()
-        }
-
-        // If confirmed within timeout, propagate button index; otherwise fail
-        return if (buttonIndex != null && buttonIndex >= 0) {
-            WebSocketDebug.logMessage("DIALOGUE_CONFIRMED", "dialogueId=$dialogueId buttonIndex=$buttonIndex", context.session)
-            eventData["buttonIndex"] = buttonIndex
-            true
-        } else {
-            WebSocketDebug.logMessage("DIALOGUE_TIMEOUT_OR_INVALID", "dialogueId=$dialogueId", context.session)
-            false
+            channel.close()
         }
     }
 }

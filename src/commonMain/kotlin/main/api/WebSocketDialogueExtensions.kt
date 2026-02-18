@@ -17,8 +17,8 @@ import models.WebSocketAction
  * @param buttonIndex The index of the button that was clicked (0 is the default/first button)
  * @return true if the message was sent, false otherwise
  */
-fun WebSocketApi.sendDialogueConfirmation(dialogueId: String, userId: String, buttonIndex: Int = 0, inputText: String? = null): Boolean {
-    console.log("WebSocketApi: Sending dialogue confirmation for dialogueId=$dialogueId, buttonIndex=$buttonIndex")
+fun WebSocketApi.sendDialogueConfirmation(dialogueId: String, userId: String, buttonIndex: Int = 0, inputText: String? = null, clickedWord: String? = null): Boolean {
+    console.log("WebSocketApi: Sending dialogue confirmation for dialogueId=$dialogueId, buttonIndex=$buttonIndex, clickedWord=$clickedWord")
     
     if (!isConnected()) {
         console.error("WebSocketApi: Cannot send dialogue confirmation - WebSocket not connected")
@@ -30,7 +30,8 @@ fun WebSocketApi.sendDialogueConfirmation(dialogueId: String, userId: String, bu
             dialogueId = dialogueId,
             userId = userId,
             buttonIndex = buttonIndex,
-            inputText = inputText
+            inputText = inputText,
+            clickedWord = clickedWord
         )
         
         val message = WebSocketMessage.fromEnum(

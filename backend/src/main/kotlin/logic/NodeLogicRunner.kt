@@ -4,6 +4,7 @@ import debug.WebSocketDebug
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import models.LogicNode
+import models.logicNodeById
 import models.NodeId
 import models.Object
 import models.nodeeditor.NodeConfig
@@ -27,6 +28,7 @@ class NodeLogicRunner(
     private val context: NodeRunnerContext
 ) {
     init {
+        context.logicRunner = this
         WebSocketDebug.logMessage(
             "NODE_LOGIC_RUNNER_INIT",
             "Initializing for object title: ${objectData.title}, worldId: ${objectData.worldId}",
@@ -165,61 +167,6 @@ class NodeLogicRunner(
      * @param eventData Additional data related to the event (mutable)
      */
     private suspend fun processNode(node: NodeDataModel, eventData: MutableMap<String, Any>, executedNodes: MutableSet<String>) {
-        fun reconstructLogicNode(node: NodeDataModel): LogicNode {
-            return when (node.nodeId) {
-                NodeId.Teleport -> LogicNode.Teleport()
-                NodeId.VisitorInteract -> LogicNode.VisitorInteract()
-                NodeId.PlayerInteract -> LogicNode.PlayerInteract()
-                NodeId.VisitorNearby -> LogicNode.VisitorNearby()
-                NodeId.PlayerNearby -> LogicNode.PlayerNearby()
-                NodeId.PlayerJoined -> LogicNode.PlayerJoined()
-                NodeId.VisitorJoined -> LogicNode.VisitorJoined()
-                NodeId.Ai -> LogicNode.Ai()
-                NodeId.Dialogue -> LogicNode.Dialogue()
-                NodeId.UserLanguage -> LogicNode.UserLanguage()
-                NodeId.UserSex -> LogicNode.UserSex()
-                NodeId.UserAge -> LogicNode.UserAge()
-                NodeId.HasItem -> LogicNode.HasItem()
-                NodeId.OpenUrl -> LogicNode.OpenUrl()
-                NodeId.ObjectNotification -> LogicNode.ObjectNotification()
-                NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
-                NodeId.Delay -> LogicNode.Delay()
-                NodeId.TakeItems -> LogicNode.TakeItems()
-                NodeId.GiveItems -> LogicNode.GiveItems()
-                NodeId.SendChat -> LogicNode.SendChat()
-                NodeId.SetStatus -> LogicNode.SetStatus()
-                NodeId.PlayerInput -> LogicNode.PlayerInput()
-                NodeId.StringTemplate -> LogicNode.StringTemplate()
-                NodeId.PlayerName -> LogicNode.PlayerName()
-                NodeId.CreateDoc -> LogicNode.CreateDoc()
-                NodeId.DocContent -> LogicNode.DocContent()
-                NodeId.IsObjectOwner -> LogicNode.IsObjectOwner()
-            }
-        }
-        fun getOutputPropertyTypes(node: NodeDataModel): List<PropertyType> {
-            val logicNode = reconstructLogicNode(node)
-            return logicNode.getOutputPropertyDefinitions().map { it.type }
-        }
-        fun isTriggerConnection(node: NodeDataModel, fromPort: String): Boolean {
-            // Dynamic dialogue button outputs are always triggers
-            if (fromPort.contains("_out_button_")) return true
-            val match = Regex("_out_(\\d+)$").find(fromPort) ?: return false
-            val index = match.groupValues[1].toIntOrNull() ?: return false
-            val types = getOutputPropertyTypes(node)
-            val t = types.getOrNull(index)
-            return t == PropertyType.TRIGGER
-        }
-        fun propagateValue(fromPort: String, toPort: String) {
-            val value = eventData[fromPort]
-            if (value != null) {
-                WebSocketDebug.logMessage(
-                    "VALUE_PROPAGATION",
-                    "Propagating value from $fromPort to $toPort",
-                    context.session
-                )
-                eventData[toPort] = value
-            }
-        }
         WebSocketDebug.logMessage(
             "PROCESSING_NODE",
             "Processing node: ${node.nodeCategory}/${node.id} with data: ${node.data}",
@@ -245,7 +192,7 @@ class NodeLogicRunner(
 
                 val srcNode = nodeConfig?.nodes?.find { it.id == conn.from }
                 if (srcNode != null) {
-                    val srcLogicNode = reconstructLogicNode(srcNode)
+                    val srcLogicNode = logicNodeById[srcNode.nodeId]!!
                     if (srcLogicNode.getPropertyDefinitions().none { it.type == PropertyType.TRIGGER }) {
                         // Invalidate the specific output from the pure value source
                         if (eventData.remove(conn.fromPort) != null) {
@@ -296,7 +243,7 @@ class NodeLogicRunner(
                 if (eventData[conn.toPort] != null) continue
 
                 val srcNode = nodeConfig?.nodes?.find { it.id == conn.from } ?: continue
-                val srcLogicNode = reconstructLogicNode(srcNode)
+                val srcLogicNode = logicNodeById[srcNode.nodeId]!!
 
                 // 1) If the source already produced a value (regardless of being pure/non‑pure), propagate it
                 eventData[conn.fromPort]?.let { existing ->
@@ -383,21 +330,35 @@ class NodeLogicRunner(
                 context.session
             )
 
-            // For dialogue and language nodes, follow the connection that matches the button index
+            // For dialogue and language nodes, follow the connection that matches the button index or word click
             // For HasItem nodes, follow the connection that matches the output property
             if (node.nodeId in listOf(NodeId.Dialogue, NodeId.UserLanguage, NodeId.UserSex)) {
-                // Get the button index from the event data (default to 0 if not present)
-                val buttonIndex = (eventData["buttonIndex"] as? Int) ?: 0
-                WebSocketDebug.logMessage(
-                    "DIALOGUE_BUTTON_INDEX",
-                    "Using button index: $buttonIndex for node: ${node.id}",
-                    context.session
-                )
+                // Pass 1: Propagate all non-trigger values (e.g. text content, clicked word)
+                for (connection in connections) {
+                    if (!isTriggerConnection(node, connection.fromPort)) {
+                        propagateValue(connection.fromPort, connection.toPort, eventData)
+                    }
+                }
 
-                // Use the button index to select a connection
-                // Prefer dynamic dialogue outputs, but fall back to static outputs
-                val connection = connections.find { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
-                    ?: connections.find { c -> c.fromPort.endsWith("_out_$buttonIndex") }
+                // Pass 2: Traverse selected trigger branch
+                val isWordClick = (eventData["isWordClick"] as? Boolean) ?: false
+                val buttonIndex = if (isWordClick) -1 else (eventData["buttonIndex"] as? Int) ?: 0
+                
+                val connection = if (isWordClick && node.nodeId == NodeId.Dialogue) {
+                    connections.find { it.fromPort.endsWith("_out_word_clicked") }
+                } else {
+                    // Get the button index from the event data (default to 0 if not present)
+                    WebSocketDebug.logMessage(
+                        "DIALOGUE_BUTTON_INDEX",
+                        "Using button index: $buttonIndex for node: ${node.id}",
+                        context.session
+                    )
+
+                    // Use the button index to select a connection
+                    // Prefer dynamic dialogue outputs, but fall back to static outputs
+                    connections.find { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
+                        ?: connections.find { c -> c.fromPort.endsWith("_out_$buttonIndex") }
+                }
 
                 if (connection != null) {
                     WebSocketDebug.logMessage(
@@ -407,7 +368,7 @@ class NodeLogicRunner(
                     )
 
                     // Always propagate any value carried on this connection
-                    propagateValue(connection.fromPort, connection.toPort)
+                    propagateValue(connection.fromPort, connection.toPort, eventData)
 
                     val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
                     if (targetNode != null) {
@@ -496,7 +457,7 @@ class NodeLogicRunner(
                     )
 
                     // Propagate any value carried on this connection
-                    propagateValue(connection.fromPort, connection.toPort)
+                    propagateValue(connection.fromPort, connection.toPort, eventData)
 
                     val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
                     if (targetNode != null) {
@@ -529,7 +490,7 @@ class NodeLogicRunner(
                 // This ensures targets receive value inputs before they are processed via a trigger.
                 // Pass 1: propagate values
                 for (connection in connections) {
-                    propagateValue(connection.fromPort, connection.toPort)
+                    propagateValue(connection.fromPort, connection.toPort, eventData)
                 }
                 // Pass 2: traverse triggers concurrently
                 coroutineScope {
@@ -577,6 +538,69 @@ class NodeLogicRunner(
                 "Node execution returned false, stopping branch at ${node.nodeCategory}/${node.id}",
                 context.session
             )
+        }
+    }
+
+    /**
+     * Triggers a specific output branch of a node.
+     * Useful for asynchronous events like word clicks in dialogues.
+     */
+    suspend fun triggerBranch(nodeId: String, fromPortId: String, additionalEventData: Map<String, Any>) {
+        val node = nodeConfig?.nodes?.find { it.id == nodeId } ?: return
+        val connections = nodeConfig.connections.filter { it.from == nodeId && it.fromPort == fromPortId }
+
+        WebSocketDebug.logMessage(
+            "TRIGGER_BRANCH",
+            "Triggering branch for node $nodeId from port $fromPortId with ${connections.size} connections",
+            context.session
+        )
+
+        coroutineScope {
+            for (connection in connections) {
+                val targetNode = nodeConfig.nodes.find { it.id == connection.to } ?: continue
+                val branchEventData = additionalEventData.toMutableMap()
+                
+                // Propagate values for the triggered connection
+                propagateValue(connection.fromPort, connection.toPort, branchEventData)
+
+                launch {
+                    processNode(targetNode, branchEventData, mutableSetOf())
+                }
+            }
+        }
+    }
+
+
+    private fun getOutputPropertyTypes(node: NodeDataModel): List<PropertyType> {
+        val logicNode = logicNodeById[node.nodeId]!!
+        return logicNode.getOutputPropertyDefinitions().map { it.type }
+    }
+
+    private fun isTriggerConnection(node: NodeDataModel, fromPort: String): Boolean {
+        // Dynamic dialogue button outputs are always triggers
+        if (fromPort.contains("_out_button_")) return true
+        // Named triggers (like word_clicked)
+        if (fromPort.endsWith("_out_word_clicked")) return true
+
+        val match = Regex("_out_(\\d+)$").find(fromPort)
+        if (match != null) {
+            val index = match.groupValues[1].toIntOrNull() ?: return false
+            val types = getOutputPropertyTypes(node)
+            val t = types.getOrNull(index)
+            return t == PropertyType.TRIGGER
+        }
+        return false
+    }
+
+    private fun propagateValue(fromPort: String, toPort: String, eventData: MutableMap<String, Any>) {
+        val value = eventData[fromPort]
+        if (value != null) {
+            WebSocketDebug.logMessage(
+                "VALUE_PROPAGATION",
+                "Propagating value from $fromPort to $toPort",
+                context.session
+            )
+            eventData[toPort] = value
         }
     }
 

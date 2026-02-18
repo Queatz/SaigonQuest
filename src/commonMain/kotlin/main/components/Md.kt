@@ -82,17 +82,44 @@ internal fun ensureExtensionsRegistered() {
 fun markdownToHtml(
     content: String,
     softBreaks: Boolean = false,
+    clickableWords: Boolean = false,
 ): String {
     val renderer = marked.Renderer()
     val originalLinkRenderer: dynamic = renderer.link
 
-    renderer.html = { data ->
-        data.text.replace("<", "&lt;").replace(">", "&gt;")
+    renderer.html = { token ->
+        token.text.replace("<", "&lt;").replace(">", "&gt;")
     }
 
-    renderer.link = { data ->
-        val localLink = data.href.startsWith("${window.location.protocol}//${window.location.hostname}")
-        val html = originalLinkRenderer.call(renderer, data) as String
+    if (clickableWords) {
+        renderer.text = { token ->
+            val text = token.text
+            // Wrap words (sequences of letters/numbers) in clickable spans
+            val result = mutableListOf<String>()
+            var currentWord = StringBuilder()
+            for (char in text) {
+                if (char.isLetterOrDigit()) {
+                    currentWord.append(char)
+                } else {
+                    if (currentWord.isNotEmpty()) {
+                        val w = currentWord.toString()
+                        result.add("<span class=\"word\" data-word=\"$w\">$w</span>")
+                        currentWord = StringBuilder()
+                    }
+                    result.add(char.toString())
+                }
+            }
+            if (currentWord.isNotEmpty()) {
+                val w = currentWord.toString()
+                result.add("<span class=\"word\" data-word=\"$w\">$w</span>")
+            }
+            result.joinToString("")
+        }
+    }
+
+    renderer.link = { token ->
+        val localLink = token.href.startsWith("${window.location.protocol}//${window.location.hostname}")
+        val html = originalLinkRenderer.call(renderer, token) as String
         if (localLink) {
             html
         } else {
@@ -103,8 +130,7 @@ fun markdownToHtml(
         }
     }
 
-    val options: dynamic = object {}
-    options.renderer = renderer
+    val options = json("renderer" to renderer)
 
     ensureExtensionsRegistered()
 
@@ -119,9 +145,12 @@ fun markdownToHtml(
 @Composable
 fun Md(
     content: String,
+    clickableWords: Boolean = false,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {
-    val html = remember(content) { markdownToHtml(content, softBreaks = false) }
+    val html = remember(content, clickableWords) { 
+        markdownToHtml(content, softBreaks = false, clickableWords = clickableWords) 
+    }
     var element by remember { mutableStateOf<Element?>(null) }
 
     LaunchedEffect(html, element) {

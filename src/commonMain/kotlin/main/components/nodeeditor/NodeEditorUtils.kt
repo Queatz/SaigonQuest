@@ -1,6 +1,7 @@
 package main.components.nodeeditor
 
 import models.LogicNode
+import models.logicNodeById
 import models.NodeCategory
 import models.NodeId
 import models.nodeeditor.Connection
@@ -146,6 +147,18 @@ fun createPortsForNodeType(logicNode: LogicNode, nodeId: String, nodeData: Strin
                 )
             )
         }
+
+        // Add additional fixed outputs for Dialogue (TEXT, WORD_CLICKED, CLICKED_WORD)
+        outputProperties.filter { it.key != PropertyKey.NEXT }.forEach { property ->
+            outputs.add(
+                PortData(
+                    id = "${nodeId}_out_${property.key.name.lowercase()}",
+                    name = property.name,
+                    type = PortType.OUTPUT,
+                    dataType = property.type
+                )
+            )
+        }
     } else {
         // For other node types, create output ports as usual
         outputProperties.forEachIndexed { index, property ->
@@ -210,35 +223,7 @@ fun createNode(
     val id = "${nodeId}_${Date.now().toLong()}"
 
     // Create the appropriate LogicNode based on nodeId
-    val logicNodeType = when (nodeId) {
-        NodeId.Teleport -> LogicNode.Teleport()
-        NodeId.VisitorInteract -> LogicNode.VisitorInteract()
-        NodeId.PlayerInteract -> LogicNode.PlayerInteract()
-        NodeId.VisitorNearby -> LogicNode.VisitorNearby()
-        NodeId.PlayerNearby -> LogicNode.PlayerNearby()
-        NodeId.PlayerJoined -> LogicNode.PlayerJoined()
-        NodeId.VisitorJoined -> LogicNode.VisitorJoined()
-        NodeId.Dialogue -> LogicNode.Dialogue()
-        NodeId.UserLanguage -> LogicNode.UserLanguage()
-        NodeId.UserSex -> LogicNode.UserSex()
-        NodeId.UserAge -> LogicNode.UserAge()
-        NodeId.HasItem -> LogicNode.HasItem()
-        NodeId.OpenUrl -> LogicNode.OpenUrl()
-        NodeId.ObjectNotification -> LogicNode.ObjectNotification()
-        NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
-        NodeId.Delay -> LogicNode.Delay()
-        NodeId.TakeItems -> LogicNode.TakeItems()
-        NodeId.GiveItems -> LogicNode.GiveItems()
-        NodeId.SendChat -> LogicNode.SendChat()
-        NodeId.PlayerInput -> LogicNode.PlayerInput()
-        NodeId.StringTemplate -> LogicNode.StringTemplate()
-        NodeId.PlayerName -> LogicNode.PlayerName()
-        NodeId.DocContent -> LogicNode.DocContent()
-        NodeId.SetStatus -> LogicNode.SetStatus()
-        NodeId.Ai -> LogicNode.Ai()
-        NodeId.CreateDoc -> LogicNode.CreateDoc()
-        NodeId.IsObjectOwner -> LogicNode.IsObjectOwner()
-    }
+    val logicNodeType = logicNodeById[nodeId]!!
     
     // Create ports based on node type and data
     val (inputs, outputs) = createPortsForNodeType(logicNodeType, id, data)

@@ -2,6 +2,7 @@ package models.nodeeditor
 
 import kotlinx.serialization.Serializable
 import models.LogicNode
+import models.logicNodeById
 import models.NodeCategory
 import models.NodeId
 
@@ -82,35 +83,7 @@ object NodeEditorJsonUtil {
      */
     fun convertToNodeData(nodeDataJson: NodeDataJson): NodeData {
         // Create the appropriate LogicNode based on nodeId
-        val logicNode = when (nodeDataJson.nodeId) {
-            NodeId.Teleport -> LogicNode.Teleport()
-            NodeId.VisitorInteract -> LogicNode.VisitorInteract()
-            NodeId.PlayerInteract -> LogicNode.PlayerInteract()
-            NodeId.VisitorNearby -> LogicNode.VisitorNearby()
-            NodeId.PlayerNearby -> LogicNode.PlayerNearby()
-            NodeId.PlayerJoined -> LogicNode.PlayerJoined()
-            NodeId.VisitorJoined -> LogicNode.VisitorJoined()
-            NodeId.Dialogue -> LogicNode.Dialogue()
-            NodeId.UserLanguage -> LogicNode.UserLanguage()
-            NodeId.UserSex -> LogicNode.UserSex()
-            NodeId.UserAge -> LogicNode.UserAge()
-            NodeId.HasItem -> LogicNode.HasItem()
-            NodeId.OpenUrl -> LogicNode.OpenUrl()
-            NodeId.ObjectNotification -> LogicNode.ObjectNotification()
-            NodeId.ObjectOwnerNotification -> LogicNode.ObjectOwnerNotification()
-            NodeId.Delay -> LogicNode.Delay()
-            NodeId.TakeItems -> LogicNode.TakeItems()
-            NodeId.GiveItems -> LogicNode.GiveItems()
-            NodeId.SendChat -> LogicNode.SendChat()
-            NodeId.SetStatus -> LogicNode.SetStatus()
-            NodeId.PlayerInput -> LogicNode.PlayerInput()
-            NodeId.StringTemplate -> LogicNode.StringTemplate()
-            NodeId.PlayerName -> LogicNode.PlayerName()
-            NodeId.CreateDoc -> LogicNode.CreateDoc()
-            NodeId.DocContent -> LogicNode.DocContent()
-            NodeId.Ai -> LogicNode.Ai()
-            NodeId.IsObjectOwner -> LogicNode.IsObjectOwner()
-        }
+        val logicNode = logicNodeById[nodeDataJson.nodeId]!!
 
         return NodeData(
             type = logicNode,

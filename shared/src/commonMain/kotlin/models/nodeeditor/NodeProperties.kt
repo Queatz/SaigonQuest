@@ -63,6 +63,10 @@ enum class PropertyKey {
     // AI properties
     USER_PROMPT,
     SYSTEM_PROMPT,
+
+    // Dialogue Word Click properties
+    WORD_CLICKED,
+    CLICKED_WORD,
 }
 
 /**
@@ -308,6 +312,24 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 key = PropertyKey.NEXT,
                 name = "Next",
                 type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Text Content",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.WORD_CLICKED,
+                name = "On Word Click",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.CLICKED_WORD,
+                name = "Clicked Word",
+                type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             )
         )

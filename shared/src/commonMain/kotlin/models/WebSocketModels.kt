@@ -138,7 +138,8 @@ data class DialogueConfirmation(
     val dialogueId: String,
     val userId: String,
     val buttonIndex: Int = 0, // Index of the button that was clicked (0 is the default/first button)
-    val inputText: String? = null // Optional text provided by the user for input dialogues
+    val inputText: String? = null, // Optional text provided by the user for input dialogues
+    val clickedWord: String? = null // Optional word that was clicked in the dialogue text
 )
 
 /**
