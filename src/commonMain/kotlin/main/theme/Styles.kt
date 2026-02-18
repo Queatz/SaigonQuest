@@ -1055,6 +1055,19 @@ object Styles : StyleSheet() {
         property("animation-iteration-count", "infinite")
     }
 
+    val aiChatLoadingSpinner by style {
+        width(20.px)
+        height(20.px)
+        property("border", "2px solid ${Theme.colors.white10}")
+        property("border-top", "2px solid ${Theme.colors.primary}")
+        property("border-radius", "50%")
+        animation(chatLoadingSpin) {
+            duration(1.s)
+            timingFunction(AnimationTimingFunction.Linear)
+        }
+        property("animation-iteration-count", "infinite")
+    }
+
     val chatLoadingText by style {
         color(Theme.colors.textMuted); property("text-align", "center")
         margin(0.px)
@@ -1854,51 +1867,37 @@ object Styles : StyleSheet() {
 
     val aiChatOverlay by style {
         position(Position.Fixed)
-        property("inset", "12px auto auto 50%")
+        property("inset", "0 auto auto 50%")
         property("transform", "translateX(-50%)")
         property("z-index", "99999")
-        property("width", "min(52rem, 95%)")
-        height(24.cssRem)
+        property("width", "800px")
+        maxWidth(100.percent)
+        height(16.cssRem)
+        maxHeight(40.vh)
         backgroundColor(Theme.colors.controlBg)
-        borderRadius(12.px)
-        property("box-shadow", "0 20px 20px ${Theme.colors.shadowMedium}")
+        color(Theme.colors.onBackground)
+        borderRadius(0.px, 0.px, 24.px, 24.px)
+        property("box-shadow", "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px")
         property("pointer-events", "auto")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflow("hidden")
     }
 
-    val aiChatHeader by style {
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.SpaceBetween)
-        alignItems(AlignItems.Center)
-        padding(10.px, 12.px)
-        backgroundColor(Theme.colors.controlBg)
-        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
-    }
-
-    val aiChatTitle by style { fontWeight("600") }
-
-    val aiChatClose by style {
-        property("all", "unset")
-        cursor("pointer")
-        fontSize(22.px)
-        property("line-height", "1.0")
-        padding(2.px, 6.px)
-    }
-
     val aiChatMessages by style {
         property("flex", "1 1 auto")
         overflowY("auto")
         padding(12.px)
-        backgroundColor(Theme.colors.controlBg)
         color(Theme.colors.onSurface)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.FlexStart)
+        gap(8.px)
     }
 
     val aiChatMsg by style {
-        padding(8.px, 10.px)
+        padding(12.px)
         borderRadius(8.px)
-        marginBottom(8.px)
     }
 
     val aiChatMsgSystem by style {
@@ -1923,9 +1922,8 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         gap(8.px)
-        padding(10.px, 12.px)
+        padding(12.px)
         property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
-        backgroundColor(Theme.colors.controlBg)
     }
 
     val aiChatInput by style { property("flex", "1 1 auto") }

@@ -797,6 +797,14 @@ class NodeLogicRunner(
                 )
                 IsObjectOwnerNodeRunner(context)
             }
+            NodeId.AiChat -> {
+                WebSocketDebug.logMessage(
+                    "AI_CHAT_RUNNER_SELECTED",
+                    "Selected AiChatNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                AiChatNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

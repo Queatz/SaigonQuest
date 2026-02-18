@@ -32,6 +32,8 @@ object GlobalAiChatStore {
 
     private var sessionId: String? = null
     private var socket: WebSocket? = null
+    var initialMessageCount by mutableStateOf(0)
+        private set
 
     fun open(
         system: String? = null,
@@ -40,10 +42,12 @@ object GlobalAiChatStore {
         if (isOpen) close() // reset any previous ephemeral session
 
         isOpen = true
-        messages = buildList {
+        val initial = buildList {
             if (!system.isNullOrBlank()) add(AiChatMessageDto(role = AiRole.System, content = system))
             if (!initialUserMessage.isNullOrBlank()) add(AiChatMessageDto(role = AiRole.User, content = initialUserMessage))
         }
+        messages = initial
+        initialMessageCount = initial.size
         isLoading = false
         input = ""
 
@@ -73,7 +77,7 @@ object GlobalAiChatStore {
         isLoading = true
 
         val payload = ApiClient.json.encodeToString(
-            AiChatClientEvent.UserMessage.serializer(),
+            AiChatClientEvent.serializer(),
             AiChatClientEvent.UserMessage(text = trimmed),
         )
         ws.send(payload)
@@ -91,7 +95,7 @@ object GlobalAiChatStore {
                 system = system,
                 initialMessages = messages,
             )
-            val payload = ApiClient.json.encodeToString(AiChatClientEvent.Start.serializer(), start)
+            val payload = ApiClient.json.encodeToString(AiChatClientEvent.serializer(), start)
             ws.send(payload)
 
             // If last preloaded message was user, we expect an assistant response
@@ -101,27 +105,21 @@ object GlobalAiChatStore {
         ws.onmessage = { ev: MessageEvent ->
             val dataStr = ev.data?.toString()
             if (dataStr != null) {
-                // Try to decode SessionOpened
-                val opened = runCatching {
-                    ApiClient.json.decodeFromString(AiChatServerEvent.SessionOpened.serializer(), dataStr)
+                val event = runCatching {
+                    ApiClient.json.decodeFromString(AiChatServerEvent.serializer(), dataStr)
                 }.getOrNull()
-                if (opened != null) {
-                    sessionId = opened.sessionId
-                } else {
-                    // Try to decode AssistantMessage
-                    val assistant = runCatching {
-                        ApiClient.json.decodeFromString(AiChatServerEvent.AssistantMessage.serializer(), dataStr)
-                    }.getOrNull()
-                    if (assistant != null) {
-                        messages = messages + AiChatMessageDto(role = AiRole.Assistant, content = assistant.text)
-                        isLoading = false
-                    } else {
-                        // Try to decode Error
-                        val err = runCatching {
-                            ApiClient.json.decodeFromString(AiChatServerEvent.Error.serializer(), dataStr)
-                        }.getOrNull()
-                        if (err != null) {
-                            console.error("AI chat error: ", err.message)
+
+                if (event != null) {
+                    when (event) {
+                        is AiChatServerEvent.SessionOpened -> {
+                            sessionId = event.sessionId
+                        }
+                        is AiChatServerEvent.AssistantMessage -> {
+                            messages = messages + AiChatMessageDto(role = AiRole.Assistant, content = event.text)
+                            isLoading = false
+                        }
+                        is AiChatServerEvent.Error -> {
+                            console.error("AI chat error: ", event.message)
                             isLoading = false
                         }
                     }

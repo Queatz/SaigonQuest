@@ -787,6 +787,30 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             ),
         )
+
+        // AiChat node properties
+        is LogicNode.AiChat -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.SYSTEM_PROMPT,
+                name = "System prompt",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.USER_PROMPT,
+                name = "Initial user message",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            )
+        )
     }
 }
 

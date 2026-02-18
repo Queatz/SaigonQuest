@@ -47,7 +47,7 @@ fun Routing.configureAiChatRoutes() {
 
         suspend fun sendError(msg: String) {
             val payload = json.encodeToString(
-                AiChatServerEvent.Error.serializer(),
+                AiChatServerEvent.serializer(),
                 AiChatServerEvent.Error(message = msg),
             )
             send(payload)
@@ -55,7 +55,7 @@ fun Routing.configureAiChatRoutes() {
 
         suspend fun sendAssistant(text: String) {
             val payload = json.encodeToString(
-                AiChatServerEvent.AssistantMessage.serializer(),
+                AiChatServerEvent.serializer(),
                 AiChatServerEvent.AssistantMessage(text = text),
             )
             send(payload)
@@ -65,48 +65,93 @@ fun Routing.configureAiChatRoutes() {
             if (frame !is Frame.Text) return@consumeEach
             val text = frame.readText()
 
-            // Try each client event type
-            val start = runCatching { json.decodeFromString(AiChatClientEvent.Start.serializer(), text) }.getOrNull()
-            if (start != null) {
-                // Create new session
-                val initial = start.initialMessages.map {
-                    AiChatMessage(role = it.role, content = it.content, createdAt = it.createdAt)
-                }.toMutableList()
+            val event = runCatching { json.decodeFromString(AiChatClientEvent.serializer(), text) }.getOrNull() ?: return@consumeEach
 
-                // Ensure optional system message is first if provided
-                val sys = start.system
-                if (!sys.isNullOrBlank()) {
-                    initial.add(0, AiChatMessage(role = AiRole.System, content = sys))
+            when (event) {
+                is AiChatClientEvent.Start -> {
+                    // Create new session
+                    val initial = event.initialMessages.map {
+                        AiChatMessage(role = it.role, content = it.content, createdAt = it.createdAt)
+                    }.toMutableList()
+
+                    // Ensure optional system message is first if provided
+                    val sys = event.system
+                    if (!sys.isNullOrBlank()) {
+                        initial.add(0, AiChatMessage(role = AiRole.System, content = sys))
+                    }
+
+                    val created = AiChatSession(
+                        userId = userId,
+                        messages = initial,
+                        isClosed = false,
+                    )
+                    val id = sessions.insert(created)
+                    sessionId = id
+
+                    val openedPayload = json.encodeToString(
+                        AiChatServerEvent.serializer(),
+                        AiChatServerEvent.SessionOpened(sessionId = id),
+                    )
+                    send(openedPayload)
+
+                    // If last message is User, immediately answer
+                    val last = initial.lastOrNull()
+                    if (last?.role == AiRole.User) {
+                        val systemPrompt = initial.firstOrNull { it.role == AiRole.System }?.content ?: "You are a helpful assistant."
+                        val historyText = initial
+                            .drop(1)
+                            .joinToString("\n\n") { m ->
+                                when (m.role) {
+                                    AiRole.User -> "User: ${m.content}"
+                                    AiRole.Assistant -> "Assistant: ${m.content}"
+                                    AiRole.System -> ""
+                                }
+                            }
+                        val userPrompt = last.content
+                        val assistant = DeepSeekClient.promptText(
+                            systemPrompt = buildString {
+                                appendLine(systemPrompt)
+                                if (historyText.isNotBlank()) {
+                                    appendLine()
+                                    appendLine("Conversation so far:")
+                                    appendLine(historyText)
+                                }
+                                appendLine()
+                                appendLine("Respond concisely to the latest user message.")
+                            },
+                            userPrompt = userPrompt,
+                            temperature = 0.6,
+                        )
+                        if (!assistant.isNullOrBlank()) {
+                            sendAssistant(assistant)
+                            sessionId?.let { sid -> sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant)) }
+                        }
+                    }
                 }
 
-                val created = AiChatSession(
-                    userId = userId,
-                    messages = initial,
-                    isClosed = false,
-                )
-                val id = sessions.insert(created)
-                sessionId = id
+                is AiChatClientEvent.UserMessage -> {
+                    val sid = sessionId
+                    if (sid == null) {
+                        sendError("No open session")
+                        return@consumeEach
+                    }
+                    // Save user message
+                    sessions.appendMessage(sid, AiChatMessage(role = AiRole.User, content = event.text))
 
-                val openedPayload = json.encodeToString(
-                    AiChatServerEvent.SessionOpened.serializer(),
-                    AiChatServerEvent.SessionOpened(sessionId = id),
-                )
-                send(openedPayload)
-
-                // If last message is User, immediately answer
-                val last = initial.lastOrNull()
-                if (last?.role == AiRole.User) {
-                    val systemPrompt = initial.firstOrNull { it.role == AiRole.System }?.content ?: "You are a helpful assistant."
-                    val historyText = initial
-                        .drop(1)
-                        .joinToString("\n\n") { m ->
-                            when (m.role) {
-                                AiRole.User -> "User: ${m.content}"
-                                AiRole.Assistant -> "Assistant: ${m.content}"
-                                AiRole.System -> ""
-                            }
+                    // Build short context from last ~12 messages
+                    val sess = sessions.getById(sid) ?: return@consumeEach
+                    val ctx = sess.messages.takeLast(12)
+                    val systemPrompt = ctx.firstOrNull { it.role == AiRole.System }?.content ?: "You are a helpful assistant."
+                    val convo = ctx.filter { it.role != AiRole.System }
+                    val historyText = convo.dropLast(1).joinToString("\n\n") { m ->
+                        when (m.role) {
+                            AiRole.User -> "User: ${m.content}"
+                            AiRole.Assistant -> "Assistant: ${m.content}"
+                            else -> ""
                         }
-                    val userPrompt = last.content
+                    }
+                    val latestUser = event.text
+
                     val assistant = DeepSeekClient.promptText(
                         systemPrompt = buildString {
                             appendLine(systemPrompt)
@@ -118,69 +163,21 @@ fun Routing.configureAiChatRoutes() {
                             appendLine()
                             appendLine("Respond concisely to the latest user message.")
                         },
-                        userPrompt = userPrompt,
+                        userPrompt = latestUser,
                         temperature = 0.6,
                     )
-                    if (!assistant.isNullOrBlank()) {
+
+                    if (assistant.isNullOrBlank()) {
+                        sendError("Empty AI response")
+                    } else {
                         sendAssistant(assistant)
-                        sessionId?.let { sid -> sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant)) }
+                        sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant))
                     }
                 }
-                return@consumeEach
-            }
 
-            val userMsg = runCatching { json.decodeFromString(AiChatClientEvent.UserMessage.serializer(), text) }.getOrNull()
-            if (userMsg != null) {
-                val sid = sessionId
-                if (sid == null) {
-                    sendError("No open session")
-                    return@consumeEach
+                is AiChatClientEvent.End -> {
+                    try { close(CloseReason(CloseReason.Codes.NORMAL, "client end")) } catch (_: Throwable) {}
                 }
-                // Save user message
-                sessions.appendMessage(sid, AiChatMessage(role = AiRole.User, content = userMsg.text))
-
-                // Build short context from last ~12 messages
-                val sess = sessions.getById(sid) ?: return@consumeEach
-                val ctx = sess.messages.takeLast(12)
-                val systemPrompt = ctx.firstOrNull { it.role == AiRole.System }?.content ?: "You are a helpful assistant."
-                val convo = ctx.filter { it.role != AiRole.System }
-                val historyText = convo.dropLast(1).joinToString("\n\n") { m ->
-                    when (m.role) {
-                        AiRole.User -> "User: ${m.content}"
-                        AiRole.Assistant -> "Assistant: ${m.content}"
-                        else -> ""
-                    }
-                }
-                val latestUser = userMsg.text
-
-                val assistant = DeepSeekClient.promptText(
-                    systemPrompt = buildString {
-                        appendLine(systemPrompt)
-                        if (historyText.isNotBlank()) {
-                            appendLine()
-                            appendLine("Conversation so far:")
-                            appendLine(historyText)
-                        }
-                        appendLine()
-                        appendLine("Respond concisely to the latest user message.")
-                    },
-                    userPrompt = latestUser,
-                    temperature = 0.6,
-                )
-
-                if (assistant.isNullOrBlank()) {
-                    sendError("Empty AI response")
-                } else {
-                    sendAssistant(assistant)
-                    sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant))
-                }
-                return@consumeEach
-            }
-
-            val end = runCatching { json.decodeFromString(AiChatClientEvent.End.serializer(), text) }.getOrNull()
-            if (end != null) {
-                try { close(CloseReason(CloseReason.Codes.NORMAL, "client end")) } catch (_: Throwable) {}
-                return@consumeEach
             }
         }
     }

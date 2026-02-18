@@ -333,6 +333,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Event,
         override val description: String = "Triggers when the player comes near this object"
     ) : LogicNode
+
+    /**
+     * AiChat node - opens a new AI Chat session
+     */
+    @Serializable
+    data class AiChat(
+        override val id: NodeId = NodeId.AiChat,
+        override val label: String = "AI chat",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Open a new AI chat session with custom system prompt and initial message"
+    ) : LogicNode
 }
 
 /**
@@ -374,6 +385,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.DocContent(),
         LogicNode.Ai(),
         LogicNode.IsObjectOwner(),
+        LogicNode.AiChat(),
     )
 }
 

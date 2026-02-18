@@ -540,6 +540,22 @@ fun WorldUI(
             WebSocketApi.removeListener(openChatToken)
         }
     }
+
+    // Listen for OPEN_AI_CHAT to open the AI Chat overlay
+    DisposableEffect(Unit) {
+        val token = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_AI_CHAT) { msg ->
+            try {
+                val data = ApiClient.json.decodeFromString(models.AiChatData.serializer(), msg.data)
+                main.components.chat.GlobalAiChatStore.open(
+                    system = data.systemPrompt,
+                    initialUserMessage = data.initialUserMessage,
+                )
+            } catch (e: Throwable) {
+                console.error("Failed to parse OPEN_AI_CHAT payload", e)
+            }
+        }
+        onDispose { WebSocketApi.removeListener(token) }
+    }
     
     // Listen for 'Copy to chat' requests to open Chat panel
     LaunchedEffect(Unit) {

@@ -31,4 +31,5 @@ enum class NodeId {
     DocContent,
     Ai,
     IsObjectOwner,
+    AiChat,
 }

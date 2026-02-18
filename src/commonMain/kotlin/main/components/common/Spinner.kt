@@ -23,7 +23,10 @@ import org.jetbrains.compose.web.dom.Text
  * @param message Optional message to display below the spinner
  */
 @Composable
-fun Spinner(message: String? = null) {
+fun Spinner(
+    message: String? = null,
+    spinnerClass: String = Styles.chatLoadingSpinner,
+) {
     Div(
         attrs = {
             classes(Styles.chatLoadingContainer)
@@ -32,7 +35,7 @@ fun Spinner(message: String? = null) {
         // Spinner element
         Div(
             attrs = {
-                classes(Styles.chatLoadingSpinner)
+                classes(spinnerClass)
             }
         )
         

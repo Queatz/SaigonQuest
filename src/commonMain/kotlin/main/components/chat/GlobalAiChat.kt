@@ -1,25 +1,41 @@
 package main.components.chat
 
 import Translations.str
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import kotlinx.browser.window
-import main.components.common.Spinner
+import kotlinx.coroutines.launch
+import main.components.Md
+import main.components.Translated
 import main.components.VoiceInput
+import main.components.common.Spinner
 import main.theme.Styles
+import models.AiRole
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
+import org.w3c.dom.SMOOTH
+import org.w3c.dom.ScrollBehavior
+import org.w3c.dom.ScrollToOptions
 import org.w3c.dom.events.KeyboardEvent
+import web.animations.awaitAnimationFrame
 
 @Composable
 fun GlobalAiChat() {
     if (!GlobalAiChatStore.isOpen) return
+
+    val scope = rememberCoroutineScope()
+    var messagesEl by remember { mutableStateOf<org.w3c.dom.HTMLElement?>(null) }
+
+    LaunchedEffect(GlobalAiChatStore.messages.size, GlobalAiChatStore.isLoading) {
+        scope.launch {
+            awaitAnimationFrame()
+            messagesEl?.let { el ->
+                el.scrollTo(ScrollToOptions(top = el.scrollHeight.toDouble(), behavior = ScrollBehavior.SMOOTH))
+            }
+        }
+    }
 
     DisposableEffect(Unit) {
         val listener: (org.w3c.dom.events.Event) -> Unit = { ev ->
@@ -31,30 +47,35 @@ fun GlobalAiChat() {
         onDispose { window.removeEventListener("keydown", listener) }
     }
 
-    Div({ classes(Styles.aiChatOverlay) }) {
-        // Header
-        Div({ classes(Styles.aiChatHeader) }) {
-            P({ classes(Styles.aiChatTitle) }) { Text(str("AI chat")) }
-            Button({
-                classes(Styles.aiChatClose)
-                onClick { GlobalAiChatStore.close() }
-            }) { Text("×") }
-        }
 
+
+    Div({ classes(Styles.aiChatOverlay) }) {
         // Messages
-        Div({ classes(Styles.aiChatMessages) }) {
-            GlobalAiChatStore.messages.forEach { m ->
+        Div({
+            classes(Styles.aiChatMessages)
+            ref {
+                messagesEl = it
+                onDispose { messagesEl = null }
+            }
+        }) {
+            GlobalAiChatStore.messages.forEachIndexed { index, m ->
+                if (m.role == AiRole.System) return@forEachIndexed
+                if (index < GlobalAiChatStore.initialMessageCount && m.role == AiRole.User) return@forEachIndexed
+
                 val roleClass = when (m.role) {
-                    models.AiRole.System -> Styles.aiChatMsgSystem
-                    models.AiRole.User -> Styles.aiChatMsgUser
-                    models.AiRole.Assistant -> Styles.aiChatMsgAssistant
+                    AiRole.System -> Styles.aiChatMsgSystem
+                    AiRole.User -> Styles.aiChatMsgUser
+                    AiRole.Assistant -> Styles.aiChatMsgAssistant
                 }
-                Div({ classes(Styles.aiChatMsg, roleClass) }) { Text(m.content) }
+                Div({ classes(Styles.aiChatMsg, roleClass) }) { Md(m.content) }
             }
 
             if (GlobalAiChatStore.isLoading) {
                 Div({ classes(Styles.aiChatSpinnerRow) }) {
-                    Spinner(message = null)
+                    Spinner(
+                        message = null,
+                        spinnerClass = Styles.aiChatLoadingSpinner,
+                    )
                 }
             }
         }
@@ -68,10 +89,18 @@ fun GlobalAiChat() {
                 onInput { ev -> GlobalAiChatStore.setInput(ev.value) }
                 onKeyDown { ev ->
                     if (ev.key == "Enter") {
+                        ev.preventDefault()
+                        ev.stopPropagation()
                         GlobalAiChatStore.send(GlobalAiChatStore.input)
                     } else if (ev.key == "Escape") {
+                        ev.preventDefault()
+                        ev.stopPropagation()
                         GlobalAiChatStore.close()
                     }
+                }
+                ref {
+                    it.focus()
+                    onDispose { }
                 }
             }
 
@@ -94,8 +123,15 @@ fun GlobalAiChat() {
 
             Button({
                 classes(Styles.primaryButton, Styles.aiChatSend)
-                onClick { GlobalAiChatStore.send(GlobalAiChatStore.input) }
-            }) { Text(str("Send")) }
+                val isBlank = GlobalAiChatStore.input.isBlank()
+                onClick {
+                    if (!isBlank) {
+                        GlobalAiChatStore.send(GlobalAiChatStore.input)
+                    } else {
+                        GlobalAiChatStore.close()
+                    }
+                }
+            }) { Translated(if (GlobalAiChatStore.input.isEmpty()) "Close" else "Send") }
         }
     }
 }

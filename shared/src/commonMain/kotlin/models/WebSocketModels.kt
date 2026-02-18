@@ -207,6 +207,18 @@ data class OpenUrlData(
 )
 
 /**
+ * AI chat data model
+ *
+ * This model is sent when an AiChat node is executed to open an AI chat session.
+ */
+@Serializable
+data class AiChatData(
+    val userId: String,
+    val systemPrompt: String? = null,
+    val initialUserMessage: String? = null,
+)
+
+/**
  * Notification data model
  * 
  * This model is sent when a notification is created to inform the user.
