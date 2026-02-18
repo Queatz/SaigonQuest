@@ -13,6 +13,7 @@ import lib.StandardMaterial
 import lib.Vector2
 import lib.Vector3
 import lib.CustomMaterial
+import main.components.GraphicsSettings
 import main.components.SceneManager
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -102,6 +103,23 @@ class OcclusionManager(private val scene: Scene) {
     // Configurable parameters
     private var occlusionSoftness = 0.1f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
     private var isEnabled = true
+    private var isForceDisabled = false
+
+    /**
+     * Observer for graphics settings changes.
+     */
+    private val graphicsSettingsObserver: () -> Unit = {
+        updateEnabledState()
+    }
+
+    init {
+        GraphicsSettings.addObserver(graphicsSettingsObserver)
+        updateEnabledState()
+    }
+
+    private fun updateEnabledState() {
+        isEnabled = !isForceDisabled && !GraphicsSettings.isObserverModeEnabled()
+    }
 
     // Custom shader name
     private val customShaderName = "occlusionFader"
@@ -229,7 +247,8 @@ class OcclusionManager(private val scene: Scene) {
     }
 
     fun setEnabled(enabled: Boolean) {
-        isEnabled = enabled
+        isForceDisabled = !enabled
+        updateEnabledState()
     }
 
     private fun createDepthMaterial(original: Material?): CustomMaterial {
@@ -589,6 +608,8 @@ class OcclusionManager(private val scene: Scene) {
      * Restores original materials to meshes and clears tracking sets.
      */
     fun dispose() {
+        GraphicsSettings.removeObserver(graphicsSettingsObserver)
+
         // Restore original materials
         occludedMeshes.forEach { mesh ->
             val metadata = mesh.metadata

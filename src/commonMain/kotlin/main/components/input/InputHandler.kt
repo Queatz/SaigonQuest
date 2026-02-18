@@ -254,7 +254,7 @@ class InputHandler(
                 x = scene.pointerX,
                 y = scene.pointerY
             )
-            if (worldPoint != null && isPointWithinReach(worldPoint)) {
+            if (worldPoint != null && isPointWithinReach(worldPoint, cameraController.getCamera().position, factor = 1f)) {
                 cameraController.updateCameraTarget(
                     position = worldPoint,
                 )
@@ -993,10 +993,13 @@ class InputHandler(
         }
     }
 
-    private fun isPointWithinReach(point: Vector3): Boolean {
-        val playerPos = playerController.getCollider()!!.position
+    private fun isPointWithinReach(
+        point: Vector3,
+        playerPos: Vector3 = playerController.getCollider()!!.position,
+        factor: Float = .5f
+    ): Boolean {
         val distance = Vector3.Distance(playerPos, point)
-        val maxDistance = (cameraController.getCamera().maxZ - cameraController.getCamera().minZ) / 2f
+        val maxDistance = (cameraController.getCamera().maxZ - cameraController.getCamera().minZ) * factor
         return distance <= maxDistance
     }
     
