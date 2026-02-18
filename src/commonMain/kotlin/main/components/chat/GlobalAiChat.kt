@@ -3,6 +3,7 @@ package main.components.chat
 import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.browser.window
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.components.Md
 import main.components.Translated
@@ -28,6 +29,14 @@ fun GlobalAiChat() {
     val scope = rememberCoroutineScope()
     var messagesEl by remember { mutableStateOf<org.w3c.dom.HTMLElement?>(null) }
 
+    // Local visibility to drive enter/exit animations without instantly unmounting
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        awaitAnimationFrame()
+        visible = true
+    }
+
     LaunchedEffect(GlobalAiChatStore.messages.size, GlobalAiChatStore.isLoading) {
         scope.launch {
             awaitAnimationFrame()
@@ -37,19 +46,29 @@ fun GlobalAiChat() {
         }
     }
 
+    fun closeWithAnimation() {
+        scope.launch {
+            visible = false
+            awaitAnimationFrame()
+            delay(200)
+            GlobalAiChatStore.close()
+        }
+    }
+
     DisposableEffect(Unit) {
         val listener: (org.w3c.dom.events.Event) -> Unit = { ev ->
             if (ev is KeyboardEvent && ev.key == "Escape") {
-                GlobalAiChatStore.close()
+                closeWithAnimation()
             }
         }
         window.addEventListener("keydown", listener)
         onDispose { window.removeEventListener("keydown", listener) }
     }
 
-
-
-    Div({ classes(Styles.aiChatOverlay) }) {
+    Div({
+        classes(Styles.aiChatOverlay)
+        if (visible) classes(Styles.aiChatOverlayOpen)
+    }) {
         // Messages
         Div({
             classes(Styles.aiChatMessages)
@@ -95,7 +114,7 @@ fun GlobalAiChat() {
                     } else if (ev.key == "Escape") {
                         ev.preventDefault()
                         ev.stopPropagation()
-                        GlobalAiChatStore.close()
+                        closeWithAnimation()
                     }
                 }
                 ref {
@@ -128,7 +147,7 @@ fun GlobalAiChat() {
                     if (!isBlank) {
                         GlobalAiChatStore.send(GlobalAiChatStore.input)
                     } else {
-                        GlobalAiChatStore.close()
+                        closeWithAnimation()
                     }
                 }
             }) { Translated(if (GlobalAiChatStore.input.isEmpty()) "Close" else "Send") }

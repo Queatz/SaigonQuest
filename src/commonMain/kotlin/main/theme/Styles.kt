@@ -1868,7 +1868,8 @@ object Styles : StyleSheet() {
     val aiChatOverlay by style {
         position(Position.Fixed)
         property("inset", "0 auto auto 50%")
-        property("transform", "translateX(-50%)")
+        // Start slightly above the viewport so we can slide down on open
+        property("transform", "translateX(-50%) translateY(-110%)")
         property("z-index", "99999")
         property("width", "800px")
         maxWidth(100.percent)
@@ -1882,6 +1883,14 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflow("hidden")
+        // Quick transition for slide in/out
+        property("transition", "transform 200ms ease-in")
+    }
+
+    val aiChatOverlayOpen by style {
+        // Final resting position after opening animation
+        property("transform", "translateX(-50%) translateY(0)")
+        property("transition", "transform 200ms ease-out")
     }
 
     val aiChatMessages by style {
