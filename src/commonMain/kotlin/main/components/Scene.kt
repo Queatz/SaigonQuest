@@ -153,10 +153,11 @@ fun SceneComponent(url: String) {
         while (true) {
             delay(1_000)
             awaitAnimationFrame()
-            if (document.activeElement == document.body) {
+            // Only steal focus if no specific element is focused and no text is selected by the user.
+            // This prevents focus jumping and losing text selections in the Chat or other UI elements.
+            val selection = window.asDynamic().getSelection()?.toString() as? String
+            if (document.activeElement == document.body && selection.isNullOrEmpty()) {
                 canvasRef?.focus()
-                val canvas = document.getElementById(canvasId) as HTMLCanvasElement
-                canvas.focus()
             }
         }
     }

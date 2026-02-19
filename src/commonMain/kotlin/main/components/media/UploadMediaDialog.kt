@@ -129,7 +129,7 @@ fun UploadMediaDialog(
                         val src = imageUrlFor(item.path)
                         Div(attrs = {
                             style {
-                                property("border-radius", "6px")
+                                borderRadius(8.px)
                                 height(100.px)
                                 property("cursor", "pointer")
                                 property("position", "relative")
@@ -147,7 +147,6 @@ fun UploadMediaDialog(
                                         width(100.percent)
                                         height(100.percent)
                                         property("object-fit", "cover")
-                                        borderRadius(8.px)
                                     }
                                 })
                             } else if (item.type == models.MediaType.Audio) {

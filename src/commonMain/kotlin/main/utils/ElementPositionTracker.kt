@@ -123,7 +123,17 @@ class ElementPositionTracker {
      */
     fun updateElementPosition(element: HTMLElement) {
         val positionState = elementPositions[element] ?: return
-        positionState.value = element.getBoundingClientRect()
+        val newRect = element.getBoundingClientRect()
+        val oldRect = positionState.value
+        
+        // Deep comparison of DOMRect values to avoid unnecessary state updates
+        if (oldRect == null || 
+            oldRect.top != newRect.top || 
+            oldRect.left != newRect.left || 
+            oldRect.width != newRect.width || 
+            oldRect.height != newRect.height) {
+            positionState.value = newRect
+        }
     }
     
     /**
