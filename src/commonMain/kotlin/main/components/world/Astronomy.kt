@@ -89,4 +89,13 @@ object Astronomy {
         
         return MoonPosition(altitudeRad = alt, azimuthRad = az, elongationDeg = elongation)
     }
+
+    /**
+     * Computes the Local Sidereal Time (LST) in radians for a given date and longitude.
+     */
+    fun computeSiderealTime(date: kotlin.js.Date, lonDeg: Double): Double {
+        val d = (date.getTime() - 946728000000.0) / 86400000.0
+        val gmst = normalize(280.46061837 + 360.98564736629 * d)
+        return (gmst + lonDeg) * PI / 180.0
+    }
 }

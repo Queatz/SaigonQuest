@@ -13,6 +13,7 @@ import lib.MeshBuilder
 import lib.PBRMaterial
 import lib.Scene
 import lib.SceneLoader
+import lib.Texture
 import lib.Vector3
 import main.api.WebSocketApi
 import main.api.WorldApi
@@ -296,6 +297,9 @@ class WorldLoader(private val scene: Scene) {
     // Realtime moon mesh and light
     private var moonMesh: Mesh? = null
     private var moonLight: DirectionalLight? = null
+
+    // Realtime stars skybox mesh
+    private var starsMesh: Mesh? = null
 
     // Interval ID for realtime sun/moon updates
     private var sunIntervalId: Int? = null
@@ -745,6 +749,8 @@ class WorldLoader(private val scene: Scene) {
                 sunMesh = null
                 moonMesh?.dispose()
                 moonMesh = null
+                starsMesh?.dispose()
+                starsMesh = null
                 moonLight?.dispose()
                 moonLight = null
                 // Apply indoor lighting immediately
@@ -963,6 +969,73 @@ class WorldLoader(private val scene: Scene) {
         } catch (e: Throwable) {
             println("[ERROR] Failed to update moon: ${e.message}")
         }
+
+        // Update stars skybox (night-only)
+        try {
+            if (isNight) {
+                if (starsMesh == null) {
+                    val mesh = MeshBuilder.CreateSphere(
+                        name = "realtimeStars",
+                        options = object : lib.CreateSphereOptions {
+                            override val diameter = 1.0f
+                            override val segments = 32
+                            override val updatable = false
+                        },
+                        scene = scene
+                    )
+                    mesh.isPickable = false
+                    mesh.infiniteDistance = true
+                    mesh.checkCollisions = false
+                    val mat = PBRMaterial("realtimeStarsMaterial", scene).apply {
+                        // Render as unlit emissive to avoid influence from scene lights
+                        unlit = true
+                        fogEnabled = false
+                        backFaceCulling = false // render inside of sphere
+                        forceDepthWrite = false
+                        disableDepthWrite = true
+                        albedoTexture = Texture(
+                            url = "raw/data/scene/stars.png",
+                            scene = scene,
+                            options = object : lib.TextureOptions {
+                                override val invertY: Boolean? get() = true
+                                override val wrapU: Int? get() = Texture.CLAMP_ADDRESSMODE
+                                override val wrapV: Int? get() = Texture.CLAMP_ADDRESSMODE
+                                override val samplingMode: Int? get() = Texture.BILINEAR_SAMPLINGMODE
+                                override val hasAlpha: Boolean? get() = false
+                                override val noMipmap: Boolean? get() = false
+                                override val generateMipMaps: Boolean? get() = true
+                                override val isCube: Boolean? get() = false
+                                override val format: Int? get() = null
+                                override val type: Int? get() = null
+                            }
+                        ).apply {
+                            coordinatesMode = Texture.EQUIRECTANGULAR_MODE
+                        }
+                    }
+                    mesh.material = mat
+                    starsMesh = mesh
+                    println("[DEBUG] Created realtime stars skybox")
+                }
+
+                starsMesh?.let { mesh ->
+                    mesh.isVisible = true
+                    // Scale sphere based on camera range for robust rendering
+                    val maxZ = scene.activeCamera?.maxZ ?: 500f
+                    val starsDistance = maxZ * 0.98f
+                    mesh.scaling = Vector3(starsDistance, starsDistance, starsDistance)
+
+                    // Orient the starfield using local sidereal time and latitude tilt
+                    val lst = Astronomy.computeSiderealTime(date, lon)
+                    val latRad = (lat * PI / 180.0)
+                    // Rotate around Y by -LST (approximate east-to-west motion) and tilt by latitude
+                    mesh.rotation = Vector3((-latRad).toFloat(), (-lst).toFloat(), 0f)
+                }
+            } else {
+                starsMesh?.isVisible = false
+            }
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to update stars skybox: ${e.message}")
+        }
     }
 
     private fun lerpColor(a: Color3, b: Color3, t: Float): Color3 {
@@ -990,6 +1063,8 @@ class WorldLoader(private val scene: Scene) {
         sunMesh = null
         moonMesh?.dispose()
         moonMesh = null
+        starsMesh?.dispose()
+        starsMesh = null
         moonLight?.dispose()
         moonLight = null
 

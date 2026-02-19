@@ -976,17 +976,6 @@ fun WorldEditContent(
                         onClick { if (fieldsEnabled) showMusicDialog = true }
                     }
                 ) { Translated(if (musicUrl.isNullOrBlank()) "Set music" else "Change music") }
-                
-                if (!musicUrl.isNullOrBlank()) {
-                    P(attrs = {
-                        style {
-                            margin(0.px)
-                            fontSize(12.px)
-                        }
-                    }) {
-                        Text(musicTitle ?: musicUrl!!)
-                    }
-                }
 
                 if (!musicUrl.isNullOrBlank()) {
                     Button(
@@ -996,6 +985,17 @@ fun WorldEditContent(
                             onClick { if (fieldsEnabled) { musicUrl = null; musicTitle = null } }
                         }
                     ) { Translated("Remove") }
+                }
+            }
+                
+            if (!musicUrl.isNullOrBlank()) {
+                P(attrs = {
+                    style {
+                        margin(0.px)
+                        fontSize(12.px)
+                    }
+                }) {
+                    Text(musicTitle ?: musicUrl!!)
                 }
             }
 
@@ -1017,17 +1017,6 @@ fun WorldEditContent(
                     ) { Translated(if (nightMusicUrl.isNullOrBlank()) "Set night music" else "Change night music") }
                 
                     if (!nightMusicUrl.isNullOrBlank()) {
-                        P(attrs = {
-                            style {
-                                margin(0.px)
-                                fontSize(12.px)
-                            }
-                        }) {
-                            Text(nightMusicTitle ?: nightMusicUrl!!)
-                        }
-                    }
-
-                    if (!nightMusicUrl.isNullOrBlank()) {
                         Button(
                             attrs = {
                                 classes(Styles.secondaryButton)
@@ -1035,6 +1024,17 @@ fun WorldEditContent(
                                 onClick { if (fieldsEnabled) { nightMusicUrl = null; nightMusicTitle = null } }
                             }
                         ) { Translated("Remove") }
+                    }
+                }
+
+                if (!nightMusicUrl.isNullOrBlank()) {
+                    P(attrs = {
+                        style {
+                            margin(0.px)
+                            fontSize(12.px)
+                        }
+                    }) {
+                        Text(nightMusicTitle ?: nightMusicUrl!!)
                     }
                 }
             }

@@ -429,6 +429,7 @@ open external class StandardMaterial(name: String, scene: Scene) : Material {
 abstract external class BaseTexture {
     var gammaSpace: Boolean
     var textureFormat: Int
+    var coordinatesMode: Int
 }
 
 /**
@@ -488,6 +489,7 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
         val LINEAR_LINEAR_MIPNEAREST: Int
         val LINEAR_LINEAR_MIPLINEAR: Int
         val CLAMP_ADDRESSMODE: Int
+        val EQUIRECTANGULAR_MODE: Int
     }
 }
 
