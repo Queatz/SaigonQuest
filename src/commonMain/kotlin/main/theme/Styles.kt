@@ -1865,6 +1865,105 @@ object Styles : StyleSheet() {
         opacity(0.5)
     }
 
+    val aiChatShadowAnim1 by keyframes {
+        0.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        25.percent {
+            property(
+                "box-shadow",
+                "rgb(200, 200, 255) 2px 2px 8px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        50.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 200, 200) 0px 4px 10px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        75.percent {
+            property(
+                "box-shadow",
+                "rgb(200, 255, 200) -2px 2px 8px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        100.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+    }
+
+    val aiChatShadowAnim2 by keyframes {
+        0.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        33.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 200, 200) 1px -1px 5px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        66.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(200, 255, 255) -1px 1px 5px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        100.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+    }
+
+    val aiChatShadowAnim3 by keyframes {
+        0.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+        20.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 220, 255) 0px 0px 30px"
+            )
+        }
+        40.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(220, 255, 255) 0px 0px 28px"
+            )
+        }
+        60.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 220) 0px 0px 32px"
+            )
+        }
+        80.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(220, 220, 255) 0px 0px 26px"
+            )
+        }
+        100.percent {
+            property(
+                "box-shadow",
+                "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
+            )
+        }
+    }
+
     val aiChatOverlay by style {
         position(Position.Fixed)
         property("inset", "0 auto auto 50%")
@@ -1879,6 +1978,19 @@ object Styles : StyleSheet() {
         color(Theme.colors.onBackground)
         borderRadius(0.px, 0.px, 24.px, 24.px)
         property("box-shadow", "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px")
+        animation(aiChatShadowAnim1) {
+            duration(6.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+        }
+        animation(aiChatShadowAnim2) {
+            duration(6.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+        }
+        animation(aiChatShadowAnim3) {
+        duration(6.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+        }
+        property("animation-iteration-count", "infinite")
         property("pointer-events", "auto")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
