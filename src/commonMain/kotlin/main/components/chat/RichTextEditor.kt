@@ -532,7 +532,7 @@ fun RichTextEditor(
     if (showUploadDialog) {
         UploadMediaDialog(
             onClose = { showUploadDialog = false },
-            onSelect = { url, type ->
+            onSelect = { url, type, _ ->
                 insertMediaAtCursor(url, type)
                 showUploadDialog = false
             },
@@ -543,7 +543,7 @@ fun RichTextEditor(
     if (showAudioUploadDialog) {
         UploadMediaDialog(
             onClose = { showAudioUploadDialog = false },
-            onSelect = { url, type ->
+            onSelect = { url, type, _ ->
                 insertMediaAtCursor(url, type)
                 showAudioUploadDialog = false
             },

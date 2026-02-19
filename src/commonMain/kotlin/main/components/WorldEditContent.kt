@@ -58,6 +58,8 @@ import Translations.str
 import main.components.friends.SelectFriendDialog
 import models.Item
 import main.components.inventory.SelectItemDialog
+import main.components.media.UploadMediaDialog
+import models.MediaType
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.borderRadius
@@ -168,6 +170,13 @@ fun WorldEditContent(
     var screenshot by remember { mutableStateOf(currentWorld?.screenshot) }
     var isUploadingScreenshot by remember { mutableStateOf(false) }
     var previewImageUrl by remember { mutableStateOf<String?>(null) }
+    // Music
+    var musicUrl by remember { mutableStateOf(currentWorld?.musicUrl) }
+    var musicTitle by remember { mutableStateOf(currentWorld?.musicTitle) }
+    var nightMusicUrl by remember { mutableStateOf(currentWorld?.nightMusicUrl) }
+    var nightMusicTitle by remember { mutableStateOf(currentWorld?.nightMusicTitle) }
+    var showMusicDialog by remember { mutableStateOf(false) }
+    var showNightMusicDialog by remember { mutableStateOf(false) }
     // Chat history
     var chatLongevityEnabled by remember { mutableStateOf((currentWorld?.chatLongevity ?: 0.0) > 0.0) }
     var chatLongevityDays by remember {
@@ -209,6 +218,11 @@ fun WorldEditContent(
         backgroundColor = currentWorld?.backgroundColor ?: "#ffffff"
         directionalLightColor = currentWorld?.directionalLightColor ?: "#ffffff"
         fogDensity = currentWorld?.fogDensity ?: 0.0f
+        // Music
+        musicUrl = currentWorld?.musicUrl
+        musicTitle = currentWorld?.musicTitle
+        nightMusicUrl = currentWorld?.nightMusicUrl
+        nightMusicTitle = currentWorld?.nightMusicTitle
         // Chat
         chatLongevityEnabled = (currentWorld?.chatLongevity ?: 0.0) > 0.0
         chatLongevityDays = currentWorld?.chatLongevity?.takeIf { it > 0.0 }?.toString() ?: ""
@@ -429,6 +443,10 @@ fun WorldEditContent(
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
                 screenshot = screenshot,
+                musicUrl = musicUrl,
+                musicTitle = musicTitle,
+                nightMusicUrl = nightMusicUrl,
+                nightMusicTitle = nightMusicTitle,
                 // Access control
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
@@ -461,6 +479,10 @@ fun WorldEditContent(
                 directionalLightColor = directionalLightColor,
                 fogDensity = fogDensity,
                 screenshot = screenshot,
+                musicUrl = musicUrl,
+                musicTitle = musicTitle,
+                nightMusicUrl = nightMusicUrl,
+                nightMusicTitle = nightMusicTitle,
                 allowAllVisitors = allowAllVisitors,
                 allowAllPlayers = allowAllPlayers,
                 allowFriendsOfOwners = allowFriendsOfOwners,
@@ -926,6 +948,124 @@ fun WorldEditContent(
             }
         }
 
+        // Music selection
+        Div(
+            attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    flexDirection(FlexDirection.Column)
+                    property("gap", "4px")
+                    property("margin-top", "16px")
+                }
+            }
+        ) {
+            Label(
+                attrs = {
+                    style {
+                        fontSize(14.px)
+                    }
+                }
+            ) { Translated("Music") }
+
+            // Day/Default music controls
+            Div(attrs = { classes(Styles.requestActions) }) {
+                Button(
+                    attrs = {
+                        classes(Styles.primaryButton)
+                        if (!fieldsEnabled) disabled()
+                        onClick { if (fieldsEnabled) showMusicDialog = true }
+                    }
+                ) { Translated(if (musicUrl.isNullOrBlank()) "Set music" else "Change music") }
+                
+                if (!musicUrl.isNullOrBlank()) {
+                    P(attrs = {
+                        style {
+                            margin(0.px)
+                            fontSize(12.px)
+                        }
+                    }) {
+                        Text(musicTitle ?: musicUrl!!)
+                    }
+                }
+
+                if (!musicUrl.isNullOrBlank()) {
+                    Button(
+                        attrs = {
+                            classes(Styles.secondaryButton)
+                            if (!fieldsEnabled) disabled()
+                            onClick { if (fieldsEnabled) { musicUrl = null; musicTitle = null } }
+                        }
+                    ) { Translated("Remove") }
+                }
+            }
+
+            // Night music controls (only outdoors)
+            if (isOutdoors) {
+                Label(
+                    attrs = {
+                        style { fontSize(14.px) }
+                        classes(Styles.settingsSectionLabel)
+                    }
+                ) { Translated("Night Music") }
+                Div(attrs = { classes(Styles.requestActions) }) {
+                    Button(
+                        attrs = {
+                            classes(Styles.primaryButton)
+                            if (!fieldsEnabled) disabled()
+                            onClick { if (fieldsEnabled) showNightMusicDialog = true }
+                        }
+                    ) { Translated(if (nightMusicUrl.isNullOrBlank()) "Set night music" else "Change night music") }
+                
+                    if (!nightMusicUrl.isNullOrBlank()) {
+                        P(attrs = {
+                            style {
+                                margin(0.px)
+                                fontSize(12.px)
+                            }
+                        }) {
+                            Text(nightMusicTitle ?: nightMusicUrl!!)
+                        }
+                    }
+
+                    if (!nightMusicUrl.isNullOrBlank()) {
+                        Button(
+                            attrs = {
+                                classes(Styles.secondaryButton)
+                                if (!fieldsEnabled) disabled()
+                                onClick { if (fieldsEnabled) { nightMusicUrl = null; nightMusicTitle = null } }
+                            }
+                        ) { Translated("Remove") }
+                    }
+                }
+            }
+        }
+
+        if (showMusicDialog) {
+            UploadMediaDialog(
+                onClose = { showMusicDialog = false },
+                onSelect = { url, type, name ->
+                    if (type == MediaType.Audio) {
+                        musicUrl = url
+                        musicTitle = name
+                    }
+                },
+                filter = MediaType.Audio,
+            )
+        }
+
+        if (showNightMusicDialog) {
+            UploadMediaDialog(
+                onClose = { showNightMusicDialog = false },
+                onSelect = { url, type, name ->
+                    if (type == MediaType.Audio) {
+                        nightMusicUrl = url
+                        nightMusicTitle = name
+                    }
+                },
+                filter = MediaType.Audio,
+            )
+        }
+
         val previewUrl = previewImageUrl
         if (previewUrl != null) {
             ImageDialog(
@@ -963,6 +1103,10 @@ fun WorldEditContent(
                                 backgroundColor = backgroundColor,
                                 directionalLightColor = directionalLightColor,
                                 fogDensity = fogDensity,
+                                musicUrl = musicUrl,
+                                musicTitle = musicTitle,
+                                nightMusicUrl = nightMusicUrl,
+                                nightMusicTitle = nightMusicTitle,
                             )
                         } else {
                             // Create temporary world model for preview when creating a new world

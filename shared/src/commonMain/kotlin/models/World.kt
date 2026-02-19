@@ -21,6 +21,11 @@ data class World(
     var directionalLightColor: String = "#ffffff", // directional light color in hex format
     var fogDensity: Float = 0.0f, // fog density (0.0 to 1.0), 0.0 means no fog
     var screenshot: String? = null, // URL (PNG) thumbnail of the world scene
+    // Music settings
+    var musicUrl: String? = null, // background music for the world (loops)
+    var musicTitle: String? = null, // title of the background music
+    var nightMusicUrl: String? = null, // optional: music to play at night when outdoors
+    var nightMusicTitle: String? = null, // title of the night music
     // Access control
     var allowAllVisitors: Boolean = true,
     var allowAllPlayers: Boolean = false,

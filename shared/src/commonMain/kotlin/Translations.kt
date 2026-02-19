@@ -136,6 +136,24 @@ vi: Chế độ đồ họa thấp
 Pretty Graphics
 vi: Đồ họa đẹp
 
+Music
+vi: Âm nhạc
+
+Night Music
+vi: Nhạc ban đêm
+
+Set music
+vi: Chọn nhạc
+
+Change music
+vi: Đổi nhạc
+
+Set night music
+vi: Chọn nhạc ban đêm
+
+Change night music
+vi: Đổi nhạc ban đêm
+
 Log Out
 vi: Đăng xuất
 

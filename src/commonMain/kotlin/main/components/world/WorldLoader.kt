@@ -366,6 +366,17 @@ class WorldLoader(private val scene: Scene) {
             // Set the scene fog density from the world model (applies in both modes)
             setSceneFogDensity(world.fogDensity)
 
+            // Configure world music
+            try {
+                main.components.audio.MusicManager.setWorldMusic(
+                    dayUrl = world.musicUrl,
+                    nightUrl = world.nightMusicUrl,
+                    isOutdoors = world.isOutdoors,
+                )
+            } catch (t: Throwable) {
+                console.error("[WorldLoader] Failed to configure world music: ${t.message}")
+            }
+
             // If outdoors with valid lat/lng, enable realtime sun and ignore background/directional colors
             val lat = world.latLng?.getOrNull(0)
             val lon = world.latLng?.getOrNull(1)
@@ -707,6 +718,17 @@ class WorldLoader(private val scene: Scene) {
             // Always ensure fog matches edited value
             setSceneFogDensity(world.fogDensity)
 
+            // Update world music immediately during edits
+            try {
+                main.components.audio.MusicManager.setWorldMusic(
+                    dayUrl = world.musicUrl,
+                    nightUrl = world.nightMusicUrl,
+                    isOutdoors = world.isOutdoors,
+                )
+            } catch (t: Throwable) {
+                console.warn("[WorldLoader] Failed to update music during edit: ${t.message}")
+            }
+
             val lat = world.latLng?.getOrNull(0)
             val lon = world.latLng?.getOrNull(1)
 
@@ -759,6 +781,11 @@ class WorldLoader(private val scene: Scene) {
 
         // Night if sun below horizon
         val isNight = alt < (-0.833 * PI / 180.0)
+        try {
+            main.components.audio.MusicManager.setIsNight(isNight)
+        } catch (t: Throwable) {
+            console.warn("[WorldLoader] Failed to update MusicManager night state: ${t.message}")
+        }
 
         // Colors
         val daySky = Color3(0.53f, 0.81f, 0.98f)

@@ -238,7 +238,7 @@ fun BalanceDialog(
             if (showUpload) {
                 UploadMediaDialog(
                     onClose = { showUpload = false },
-                    onSelect = { url, _ -> attachments = listOf(url); showUpload = false },
+                    onSelect = { url, _, _ -> attachments = listOf(url); showUpload = false },
                     filter = MediaType.Image,
                 )
             }

@@ -591,7 +591,7 @@ fun ChatContent(worldId: String) {
             if (showUploadDialog) {
                 UploadMediaDialog(
                     onClose = { showUploadDialog = false },
-                    onSelect = { imageUrl, _ ->
+                    onSelect = { imageUrl, _, _ ->
                         scope.launch {
                             try {
                                 val attachments = listOf(

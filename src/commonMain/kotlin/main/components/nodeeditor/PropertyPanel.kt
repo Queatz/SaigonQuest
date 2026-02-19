@@ -371,7 +371,7 @@ fun PropertyPanel(
                                     if (showDialog) {
                                         UploadMediaDialog(
                                             onClose = { showDialog = false },
-                                            onSelect = { selectedUrl, _ ->
+                                            onSelect = { selectedUrl, _, _ ->
                                                 propertyValues =
                                                     propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
                                             },

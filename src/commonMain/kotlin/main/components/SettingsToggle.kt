@@ -2,7 +2,6 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
-import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 
 /**
@@ -15,7 +14,7 @@ import org.jetbrains.compose.web.dom.*
  * @param id Optional ID for the toggle switch (useful for accessibility)
  */
 @Composable
-fun GraphicsToggle(
+fun SettingsToggle(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,

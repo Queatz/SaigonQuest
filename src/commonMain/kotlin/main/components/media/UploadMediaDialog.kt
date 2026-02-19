@@ -25,7 +25,7 @@ import org.w3c.files.File
 @Composable
 fun UploadMediaDialog(
     onClose: () -> Unit,
-    onSelect: (String, MediaType) -> Unit,
+    onSelect: (String, MediaType, String) -> Unit,
     filter: MediaType? = null,
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
@@ -72,7 +72,7 @@ fun UploadMediaDialog(
                     else -> MediaType.Image
                 }
                 
-                onSelect(finalUrl, type)
+                onSelect(finalUrl, type, record.originalFileName)
                 onClose()
             } catch (t: Throwable) {
                 t.printStackTrace()
@@ -129,7 +129,7 @@ fun UploadMediaDialog(
                             style {
                                 height(100.px)
                             }
-                            onClick { onSelect(src, item.type); onClose() }
+                            onClick { onSelect(src, item.type, item.originalFileName); onClose() }
                         }) {
                             if (item.type == MediaType.Image) {
                                 Img(src = src, attrs = {

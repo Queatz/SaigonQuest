@@ -37,7 +37,7 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
             val eventVal = eventData[inKey(nameLower)] as? String
             if (!eventVal.isNullOrBlank()) return eventVal
-            return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
+            return nodeData.properties.find { it.key == key }?.value
         }
 
         val targetWorldUrl = fromEventOrNode("target_world_id", PropertyKey.TARGET_WORLD_ID)

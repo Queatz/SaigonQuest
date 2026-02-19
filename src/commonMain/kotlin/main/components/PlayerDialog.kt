@@ -14,6 +14,7 @@ import main.api.updatePlayer
 import main.api.updatePlayerStatus
 import main.components.player.CharacterRenderer
 import main.theme.Styles
+import main.components.AudioSettings
 import models.User
 import models.UserBalance
 import main.httpClient
@@ -60,6 +61,7 @@ fun PlayerDialog(
     // State to track graphics settings
     val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
     val isPrettyGraphics = remember { mutableStateOf(GraphicsSettings.isPrettyGraphicsEnabled()) }
+    val isMusicEnabled = remember { mutableStateOf(AudioSettings.isMusicEnabled()) }
 
     // State to track current language
     val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
@@ -420,7 +422,7 @@ fun PlayerDialog(
                     }
 
                     // Low graphics mode toggle
-                    GraphicsToggle(
+                    SettingsToggle(
                         label = translated("Low Graphics Mode"),
                         checked = isLowGraphicsMode.value,
                         onCheckedChange = { newValue ->
@@ -431,14 +433,25 @@ fun PlayerDialog(
                     )
 
                     // Pretty graphics toggle
-                    GraphicsToggle(
+                    SettingsToggle(
                         label = translated("Pretty Graphics"),
                         checked = isPrettyGraphics.value,
                         onCheckedChange = { newValue ->
                             // Toggle pretty graphics mode
                             isPrettyGraphics.value = GraphicsSettings.togglePrettyGraphics()
                         },
-                        id = "prettyGraphicsToggle"
+                        id = "prettyGraphicsToggle",
+                    )
+
+                    // Music toggle (global)
+                    SettingsToggle(
+                        label = translated("Music"),
+                        checked = isMusicEnabled.value,
+                        onCheckedChange = { newValue ->
+                            AudioSettings.setMusicEnabled(newValue)
+                            isMusicEnabled.value = newValue
+                        },
+                        id = "musicToggle",
                     )
 
                     // My worlds button or first-world CTA
