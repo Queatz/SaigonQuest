@@ -12,12 +12,9 @@ import main.api.AiApi
 import main.components.AiPromptDialog
 import main.components.AiPromptHistoryDialog
 import main.components.BasicPromptDialog
-import main.components.Md
-import main.components.Translated
 import main.components.media.UploadMediaDialog
 import main.components.translated
 import main.components.BasicAlertDialog
-import main.components.VoiceInput
 import main.components.chat.MdEditable
 import main.theme.Styles
 import models.MediaType
@@ -395,121 +392,35 @@ fun RichTextEditor(
     }
 
     // Toolbar
-    Div(attrs = {
-        classes(Styles.richTextEditorToolbar)
-    }) {
-        // Voice input
-        VoiceInput(
-            small = true,
-            onText = { text ->
-                insertAtCursor(text)
-            },
-        )
-        // AI button at start
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            if (aiLoading) classes(Styles.disabledAction)
-            onMouseDown { it.preventDefault() }
-            onClick {
-                if (aiLoading) return@onClick
+    RichTextEditorToolbar(
+        aiLoading = aiLoading,
+        showRawMd = showRawMd,
+        onAiClick = {
+            if (!aiLoading) {
                 saveSelectionFromEl(force = true)
                 aiPrompt = ""
                 showAiDialog = true
             }
-        }) {
-            if (aiLoading) {
-                Div(attrs = { classes(Styles.tinySpinner) }) {}
-            } else {
-                Text("✨ ${translated("AI")}")
-            }
-        }
-        // Heading buttons
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyHeading(1) }
-        }) { Translated("H1") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyHeading(2) }
-        }) { Translated("H2") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyHeading(3) }
-        }) { Translated("H3") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyHeading(4) }
-        }) { Translated("H4") }
-
-        // Inline formatting
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyInline("**") }
-        }) { Translated("Bold") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyInline("*") }
-        }) { Translated("Italic") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyInline("<u>", "</u>") }
-        }) { Translated("Underline") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyInline("~~") }
-        }) { Translated("Strikethrough") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyQuote() }
-        }) { Translated("Quote") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { applyCode() }
-        }) { Translated("Code") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick {
-                saveSelectionFromEl(force = true)
-                showUploadDialog = true
-            }
-        }) { Translated("Insert image") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick {
-                saveSelectionFromEl(force = true)
-                showAudioUploadDialog = true
-            }
-        }) { Translated("Insert audio") }
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick {
-                saveSelectionFromEl(force = true)
-                showLinkDialog = true
-            }
-        }) { Translated("Insert link") }
-
-        // Toggle raw MD textarea visibility
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onMouseDown { it.preventDefault() }
-            onClick { showRawMd = !showRawMd }
-        }) {
-            Translated(if (showRawMd) "Hide MD" else "Show MD")
-        }
-    }
+        },
+        onHeadingClick = { applyHeading(it) },
+        onInlineClick = { left, right -> applyInline(left, right) },
+        onQuoteClick = { applyQuote() },
+        onCodeClick = { applyCode() },
+        onInsertImageClick = {
+            saveSelectionFromEl(force = true)
+            showUploadDialog = true
+        },
+        onInsertAudioClick = {
+            saveSelectionFromEl(force = true)
+            showAudioUploadDialog = true
+        },
+        onInsertLinkClick = {
+            saveSelectionFromEl(force = true)
+            showLinkDialog = true
+        },
+        onToggleRawMdClick = { showRawMd = !showRawMd },
+        onVoiceInput = { text -> insertAtCursor(text) }
+    )
 
     // Editor area
     if (showRawMd) {
