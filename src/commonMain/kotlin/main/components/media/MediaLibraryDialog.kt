@@ -173,31 +173,17 @@ fun MediaLibraryDialog(
                                 })
                             } else if (item.type == MediaType.Audio) {
                                 Div({
-                                    style {
-                                        display(DisplayStyle.Flex)
-                                        flexDirection(FlexDirection.Column)
-                                        alignItems(AlignItems.Center)
-                                        justifyContent(JustifyContent.Center)
-                                        width(100.percent)
-                                        height(100.px)
-                                        marginBottom(6.px)
-                                    }
+                                    classes(Styles.mediaLibraryItemAudioContainer)
                                 }) {
                                     Div({
-                                        style {
-                                            fontSize(24.px)
-                                            marginBottom(4.px)
-                                        }
+                                        classes(Styles.mediaLibraryItemMusicIcon)
                                     }) {
                                         Text("🎵")
                                     }
                                     Audio(attrs = {
                                         attr("src", src)
                                         attr("controls", "true")
-                                        style {
-                                            width(100.percent)
-                                            height(24.px)
-                                        }
+                                        classes(Styles.mediaLibraryItemAudioPlayer)
                                         onClick { it.stopPropagation() }
                                     })
                                 }

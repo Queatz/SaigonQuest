@@ -194,12 +194,18 @@ external class DirectionalLight(name: String, direction: Vector3, scene: Scene) 
     var shadowMaxZ: Float
     var position: Vector3
     var direction: Vector3
+    var includedOnlyMeshes: Array<AbstractMesh>
+    var excludedMeshes: Array<AbstractMesh>
+    fun dispose()
 }
 
 external class HemisphericLight(name: String, direction: Vector3, scene: Scene) {
     var diffuse: Color3
     var groundColor: Color3
     var intensity: Float
+    var includedOnlyMeshes: Array<AbstractMesh>
+    var excludedMeshes: Array<AbstractMesh>
+    fun dispose()
 }
 
 external class Scene(engine: Engine? = definedExternally) {
@@ -344,6 +350,7 @@ external class MeshBuilder {
         fun CreateGround(name: String, options: CreateGroundOptions = definedExternally, scene: Scene = definedExternally): Mesh
         fun CreatePlane(name: String, options: CreatePlaneOptions = definedExternally, scene: Scene = definedExternally): Mesh
         fun CreateSphere(name: String, options: CreateSphereOptions = definedExternally, scene: Scene = definedExternally): Mesh
+        fun CreateIcoSphere(name: String, options: CreateIcoSphereOptions = definedExternally, scene: Scene = definedExternally): Mesh
         /**
          * Create a tube along the given path to represent a thick line.
          * Options: { path: Array<Vector3>, radius: Float, updatable?: Boolean }
@@ -1381,6 +1388,13 @@ external interface CreateSphereOptions {
     val updatable: Boolean? get() = definedExternally
 }
 
+external interface CreateIcoSphereOptions {
+    val radius: Float? get() = definedExternally
+    val subdivisions: Int? get() = definedExternally
+    val flat: Boolean? get() = definedExternally
+    val updatable: Boolean? get() = definedExternally
+}
+
 external interface CreateGroundOptions {
     val width: Float? get() = definedExternally
     val height: Float? get() = definedExternally
@@ -1708,6 +1722,7 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
     var useAlphaFromAlbedoTexture: Boolean
     var realTimeFiltering: Boolean
     var realTimeFilteringQuality: Int
+    var unlit: Boolean
 
     /**
      * Custom shader name resolver

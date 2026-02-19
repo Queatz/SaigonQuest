@@ -669,6 +669,12 @@ object Styles : StyleSheet() {
 
     val objectEditorDialogErrorMessage by style { color(Theme.colors.error); margin(0.px) }
 
+    val mediaLibraryErrorMessage by style {
+        color(Theme.colors.error)
+        marginBottom(8.px)
+        dark(self) { color(Theme.colors.errorDark) }
+    }
+
     val mediaLibraryGrid by style {
         display(DisplayStyle.Grid)
         property("grid-template-columns", "repeat(auto-fill, minmax(120px, 1fr))")
@@ -710,11 +716,17 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         width(100.percent)
         height(100.px)
+        marginBottom(6.px)
     }
 
     val mediaLibraryItemMusicIcon by style {
         fontSize(24.px)
         marginBottom(4.px)
+        color(Theme.colors.onSurface)
+
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
     }
 
     val mediaLibraryItemAudioPlayer by style {

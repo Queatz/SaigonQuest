@@ -4,9 +4,11 @@ import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
+import lib.CreateIcoSphereOptions
 import lib.CreatePlaneOptions
 import lib.DirectionalLight
 import lib.HemisphericLight
+import lib.Mesh
 import lib.MeshBuilder
 import lib.PBRMaterial
 import lib.Scene
@@ -288,7 +290,14 @@ class WorldLoader(private val scene: Scene) {
     // Occlusion manager for fading objects that obstruct the player's view
     private var occlusionManager: OcclusionManager? = null
 
-    // Interval ID for realtime sun updates
+    // Realtime sun mesh and material
+    private var sunMesh: Mesh? = null
+
+    // Realtime moon mesh and light
+    private var moonMesh: Mesh? = null
+    private var moonLight: DirectionalLight? = null
+
+    // Interval ID for realtime sun/moon updates
     private var sunIntervalId: Int? = null
     
     /**
@@ -710,6 +719,12 @@ class WorldLoader(private val scene: Scene) {
                     try { window.clearInterval(id) } catch (_: Throwable) {}
                     sunIntervalId = null
                 }
+                sunMesh?.dispose()
+                sunMesh = null
+                moonMesh?.dispose()
+                moonMesh = null
+                moonLight?.dispose()
+                moonLight = null
                 // Apply indoor lighting immediately
                 setSceneBackgroundColor(world.backgroundColor)
                 updateDirectionalLightColorHex(world.directionalLightColor)
@@ -732,8 +747,10 @@ class WorldLoader(private val scene: Scene) {
     }
 
     private fun applyRealtimeSun(lat: Double, lon: Double) {
-        val d = kotlin.js.Date()
-        val sun = computeSunPosition(d, lat, lon)
+        val date = kotlin.js.Date()
+        val sun = Astronomy.computeSunPosition(date, lat, lon)
+        val moon = Astronomy.computeMoonPosition(date, lat, lon)
+        
         val alt = sun.altitudeRad
         val azi = sun.azimuthRad
 
@@ -784,15 +801,15 @@ class WorldLoader(private val scene: Scene) {
         }
 
         // Update directional light
+        val x = sin(azi).toFloat() * cos(alt).toFloat()
+        val y = -sin(alt).toFloat()
+        val z = cos(azi).toFloat() * cos(alt).toFloat()
+
         try {
             if (dir != null) {
                 if (isNight) {
                     dir.intensity = 0.0f
                 } else {
-                    // Calculate direction vector from azimuth/altitude
-                    val x = sin(azi).toFloat() * cos(alt).toFloat()
-                    val y = -sin(alt).toFloat()
-                    val z = cos(azi).toFloat() * cos(alt).toFloat()
                     dir.direction = Vector3(x, y, z)
 
                     // Intensity scales with altitude
@@ -806,59 +823,117 @@ class WorldLoader(private val scene: Scene) {
         } catch (e: Throwable) {
             println("[ERROR] Failed to update directional light: ${e.message}")
         }
-    }
 
-    private data class SunPosition(val altitudeRad: Double, val azimuthRad: Double)
+        // Update sun mesh
+        try {
+            if (isNight) {
+                sunMesh?.isVisible = false
+            } else {
+                if (sunMesh == null) {
+                    val mesh = MeshBuilder.CreateIcoSphere(
+                        name = "realtimeSun",
+                        options = object : CreateIcoSphereOptions {
+                            override val radius = 1.0f
+                            override val subdivisions = 4
+                            override val flat = false
+                        },
+                        scene = scene
+                    )
+                    mesh.isPickable = false
+                    mesh.infiniteDistance = true
+                    mesh.material = PBRMaterial("realtimeSunMaterial", scene).apply {
+                        unlit = true
+                        emissiveColor = sunColor
+                        emissiveIntensity = 10f
+                        fogEnabled = false
+                    }
+                    sunMesh = mesh
+                    println("[DEBUG] Created realtime sun mesh")
+                }
+                sunMesh?.let { mesh ->
+                    mesh.isVisible = true
+                    val maxZ = scene.activeCamera?.maxZ ?: 500f
+                    val sunDistance = maxZ * 0.95f
+                    // Maintain a reasonable apparent size (e.g., radius of 10 at distance 400)
+                    val sunScale = sunDistance / 40f
+                    mesh.scaling = Vector3(sunScale, sunScale, sunScale)
+                    mesh.position = Vector3(-x, -y, -z).scale(sunDistance)
+                    (mesh.material as? PBRMaterial)?.emissiveColor = sunColor
+                }
+            }
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to update sun mesh: ${e.message}")
+        }
 
-    private fun computeSunPosition(date: kotlin.js.Date, latDeg: Double, lonDeg: Double): SunPosition {
-        // Day of year
-        val startOfYear = kotlin.js.Date(date.getFullYear(), 0, 0)
-        val day = floor((date.getTime() - startOfYear.getTime()) / 86_400_000.0) + 1
+        // Update moon mesh and its dedicated light for phase rendering
+        try {
+            if (moon.altitudeRad < 0) {
+                moonMesh?.isVisible = false
+            } else {
+                if (moonMesh == null) {
+                    val mesh = MeshBuilder.CreateIcoSphere(
+                        name = "realtimeMoon",
+                        options = object : CreateIcoSphereOptions {
+                            override val radius = 1.0f
+                            override val subdivisions = 4
+                            override val flat = false
+                        },
+                        scene = scene
+                    )
+                    mesh.isPickable = false
+                    mesh.infiniteDistance = true
+                    mesh.material = PBRMaterial("realtimeMoonMaterial", scene).apply {
+                        albedoColor = Color3(0.9f, 0.9f, 0.95f) // Pale lunar grey
+                        emissiveColor = Color3(0.1f, 0.1f, 0.15f) // Slight earthshine glow
+                        emissiveIntensity = 0.05f
+                        roughness = 0.8f
+                        metallic = 0f
+                        fogEnabled = false
+                    }
+                    moonMesh = mesh
+                    
+                    // Ensure world lights don't wash out the moon's shadow/phase
+                    hemi?.excludedMeshes = (hemi?.excludedMeshes ?: emptyArray()) + mesh
+                    dir?.excludedMeshes = (dir?.excludedMeshes ?: emptyArray()) + mesh
+                    
+                    println("[DEBUG] Created realtime moon mesh")
+                }
+                
+                moonMesh?.let { mesh ->
+                    mesh.isVisible = true
+                    val maxZ = scene.activeCamera?.maxZ ?: 500f
+                    val moonDistance = maxZ * 0.90f // Slightly closer than sun (0.95) to ensure it's within maxZ
+                    val moonScale = moonDistance / 50f // Apparent size similar to sun
+                    mesh.scaling = Vector3(moonScale, moonScale, moonScale)
+                    
+                    val mx = sin(moon.azimuthRad).toFloat() * cos(moon.altitudeRad).toFloat()
+                    val my = -sin(moon.altitudeRad).toFloat()
+                    val mz = cos(moon.azimuthRad).toFloat() * cos(moon.altitudeRad).toFloat()
+                    
+                    // The position is opposite to the Altitude/Azimuth vector to look up into the sky
+                    mesh.position = Vector3(-mx, -my, -mz).scale(moonDistance)
+                    
+                    // Log positions for debugging
+                    if (isNight) {
+                        println("[DEBUG] Celestial: Sun alt=${(alt * 180 / PI).asDynamic().toFixed(2)} azi=${(azi * 180 / PI).asDynamic().toFixed(2)}, Moon alt=${(moon.altitudeRad * 180 / PI).asDynamic().toFixed(2)} azi=${(moon.azimuthRad * 180 / PI).asDynamic().toFixed(2)}")
+                        println("[DEBUG] Moon mesh at ${mesh.position.x.asDynamic().toFixed(2)}, ${mesh.position.y.asDynamic().toFixed(2)}, ${mesh.position.z.asDynamic().toFixed(2)}, distance=$moonDistance, scale=$moonScale")
+                    }
 
-        val hour = date.getHours()
-        val minute = date.getMinutes()
-        val second = date.getSeconds()
-
-        // Fractional year (radians)
-        val gamma = 2 * PI / 365 * (day - 1 + ((hour - 12) / 24.0) + (minute / 1440.0) + (second / 86400.0))
-
-        // Equation of time (minutes)
-        val eqTime = 229.18 * (
-            0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -
-            0.014615 * cos(2 * gamma) - 0.040849 * sin(2 * gamma)
-        )
-
-        // Solar declination (radians)
-        val decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) -
-                0.006758 * cos(2 * gamma) + 0.000907 * sin(2 * gamma) -
-                0.002697 * cos(3 * gamma) + 0.00148 * sin(3 * gamma)
-
-        // Time offset (minutes)
-        val timeZone = -date.getTimezoneOffset() / 60.0 // hours east of UTC
-        val timeOffset = eqTime + 4.0 * lonDeg - 60.0 * timeZone
-
-        // True solar time (minutes)
-        val tst = (hour * 60.0) + minute + (second / 60.0) + timeOffset
-
-        // Hour angle (radians)
-        val ha = ((tst / 4.0) - 180.0) * PI / 180.0
-
-        // Convert to radians
-        val lat = latDeg * PI / 180.0
-
-        // Solar altitude
-        val sinAlt = sin(lat) * sin(decl) + cos(lat) * cos(decl) * cos(ha)
-        val alt = asin(sinAlt)
-
-        // Solar azimuth (from North, eastward) in range [0, 2π)
-        val y = sin(ha)
-        val x = cos(ha) * sin(lat) - tan(decl) * cos(lat)
-        var az = atan2(y, x)
-        az += PI // convert from [-π, π] to [0, 2π]
-        if (az < 0) az += 2 * PI
-        if (az >= 2 * PI) az -= 2 * PI
-
-        return SunPosition(altitudeRad = alt, azimuthRad = az)
+                    // Dedicated light to render moon phase by lighting it from the sun's direction
+                    if (moonLight == null) {
+                        moonLight = DirectionalLight("moonPhaseLight", Vector3(x, y, z), scene).apply {
+                            includedOnlyMeshes = arrayOf(mesh)
+                            intensity = 4f // Increased from 2f
+                        }
+                        println("[DEBUG] Created moon phase light")
+                    } else {
+                        moonLight?.direction = Vector3(x, y, z)
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            println("[ERROR] Failed to update moon: ${e.message}")
+        }
     }
 
     private fun lerpColor(a: Color3, b: Color3, t: Float): Color3 {
@@ -882,6 +957,13 @@ class WorldLoader(private val scene: Scene) {
             sunIntervalId = null
         }
         
+        sunMesh?.dispose()
+        sunMesh = null
+        moonMesh?.dispose()
+        moonMesh = null
+        moonLight?.dispose()
+        moonLight = null
+
         // Dispose of shadow manager
         shadowManager?.dispose()
         shadowManager = null

@@ -15,6 +15,7 @@ import main.components.DialogButton
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
+import main.theme.Theme
 import models.MediaType
 import models.UserMedia
 import org.jetbrains.compose.web.css.*
@@ -106,17 +107,13 @@ fun UploadMediaDialog(
 
             // Error
             if (error != null) {
-                Div({ style { color(Color.red); marginBottom(8.px) } }) { Text(error!!) }
+                Div({ classes(Styles.mediaLibraryErrorMessage) }) { Text(error!!) }
             }
 
             // Library grid (bounded height, scrollable)
             Div(attrs = {
+                classes(Styles.mediaLibraryGrid)
                 style {
-                    display(DisplayStyle.Grid)
-                    property("grid-template-columns", "repeat(auto-fill, minmax(120px, 1fr))")
-                    gap(12.px)
-                    property("overflow-y", "auto")
-                    minHeight(120.px)
                     maxHeight(360.px)
                 }
             }) {
@@ -128,70 +125,40 @@ fun UploadMediaDialog(
                     items.forEach { item ->
                         val src = imageUrlFor(item.path)
                         Div(attrs = {
+                            classes(Styles.mediaLibraryItem)
                             style {
-                                borderRadius(8.px)
                                 height(100.px)
-                                property("cursor", "pointer")
-                                property("position", "relative")
-                                property("background", "#f5f5f5")
-                                display(DisplayStyle.Flex)
-                                alignItems(AlignItems.Center)
-                                justifyContent(JustifyContent.Center)
-                                overflow("hidden")
                             }
                             onClick { onSelect(src, item.type); onClose() }
                         }) {
-                            if (item.type == models.MediaType.Image) {
+                            if (item.type == MediaType.Image) {
                                 Img(src = src, attrs = {
+                                    classes(Styles.mediaLibraryItemImage)
                                     style {
-                                        width(100.percent)
                                         height(100.percent)
-                                        property("object-fit", "cover")
                                     }
                                 })
-                            } else if (item.type == models.MediaType.Audio) {
+                            } else if (item.type == MediaType.Audio) {
                                 Div({
+                                    classes(Styles.mediaLibraryItemAudioContainer)
                                     style {
-                                        display(DisplayStyle.Flex)
-                                        flexDirection(FlexDirection.Column)
-                                        alignItems(AlignItems.Center)
-                                        justifyContent(JustifyContent.Center)
-                                        width(100.percent)
                                         height(100.percent)
-                                        paddingBottom(12.px)
                                     }
                                 }) {
                                     Div({
-                                        style {
-                                            fontSize(24.px)
-                                            marginBottom(4.px)
-                                        }
+                                        classes(Styles.mediaLibraryItemMusicIcon)
                                     }) {
                                         Text("🎵")
                                     }
                                     Audio(attrs = {
                                         attr("src", src)
                                         attr("controls", "true")
-                                        style {
-                                            width(100.px)
-                                            height(24.px)
-                                        }
+                                        classes(Styles.mediaLibraryItemAudioPlayer)
                                         onClick { it.stopPropagation() }
                                     })
                                 }
                                 Div({
-                                    style {
-                                        property("position", "absolute")
-                                        bottom(4.px)
-                                        left(4.px)
-                                        right(4.px)
-                                        fontSize(10.px)
-                                        textAlign("center")
-                                        property("text-overflow", "ellipsis")
-                                        whiteSpace("nowrap")
-                                        overflow("hidden")
-                                        color(Color.gray)
-                                    }
+                                    classes(Styles.mediaLibraryItemFilename)
                                 }) {
                                     Text(item.originalFileName)
                                 }
@@ -201,19 +168,9 @@ fun UploadMediaDialog(
 
                             // Favorite toggle overlay
                             Button(attrs = {
-                                style {
-                                    property("position", "absolute")
-                                    property("top", "0")
-                                    property("right", "0")
-                                    property("background", "transparent")
-                                    property("border", "none")
-                                    property("cursor", "pointer")
-                                    width(24.px)
-                                    height(24.px)
-                                    fontSize(18.px)
-                                    if (item.favorite) {
-                                        color(Color("#ffee00"))
-                                    }
+                                classes(Styles.mediaLibraryItemFavoriteOverlay)
+                                if (item.favorite) {
+                                    classes(Styles.mediaLibraryItemFavoriteActive)
                                 }
                                 onClick {
                                     it.stopPropagation()
