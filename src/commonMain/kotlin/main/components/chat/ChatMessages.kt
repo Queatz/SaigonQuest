@@ -19,6 +19,7 @@ import main.components.ImageDialog
 import main.components.Md
 import main.components.Translated
 import main.components.common.Spinner
+import main.components.translated
 import main.theme.Styles
 import models.ChatMessage
 import models.ChatSenderType
@@ -330,12 +331,12 @@ fun ChatMessages(
                         classes(Styles.chatEmptyText)
                     }
                 ) {
-                    Text("No messages yet")
+                    Text(translated("No messages yet"))
                 }
             } else {
                 // Display messages
                 if (isLoadingMore && hasMore) {
-                    Spinner(message = "Loading older messages...")
+                    Spinner(message = translated("Loading older messages..."))
                 }
                 messages.forEach { chatMessage ->
                     ChatMessageItem(

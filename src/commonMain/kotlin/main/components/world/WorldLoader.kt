@@ -846,6 +846,7 @@ class WorldLoader(private val scene: Scene) {
                         emissiveColor = sunColor
                         emissiveIntensity = 10f
                         fogEnabled = false
+                        zOffset = 1f
                     }
                     sunMesh = mesh
                     println("[DEBUG] Created realtime sun mesh")
@@ -889,6 +890,7 @@ class WorldLoader(private val scene: Scene) {
                         roughness = 0.8f
                         metallic = 0f
                         fogEnabled = false
+                        zOffset = 1f
                     }
                     moonMesh = mesh
                     

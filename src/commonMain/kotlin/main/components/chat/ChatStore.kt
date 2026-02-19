@@ -97,9 +97,13 @@ object ChatStore {
                 state.isOwner.value = (me != null && world != null && me.key == world.userId)
 
                 // Load latest page of messages (server defaults: limit=100, olderThan=now)
-                val chatMessages = ChatApi.getChatMessages(worldId).toList().sortedBy { it.timestamp }
-                state.messages.clear()
-                state.messages.addAll(chatMessages)
+                val chatMessages = ChatApi.getChatMessages(worldId).toList()
+                val existingKeys = state.messages.map { it.key }.toSet()
+                val newMessages = chatMessages.filter { it.key !in existingKeys }
+                if (newMessages.isNotEmpty()) {
+                    state.messages.addAll(newMessages)
+                    state.messages.sortBy { it.timestamp }
+                }
                 state.lastMutation.value = ChatMutationType.ReplaceAll
                 // If fewer than typical page size, assume no more
                 if (chatMessages.isEmpty()) state.hasMore.value = false
@@ -176,8 +180,6 @@ object ChatStore {
                     val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
                     // Ensure a state exists for this world, even if preload hasn't run yet
                     val st = states.getOrPut(chatMessage.worldId) { ChatState() }
-                    // Mark as not loading if we start receiving live messages
-                    if (st.isLoading.value) st.isLoading.value = false
                     st.lastMutation.value = ChatMutationType.AppendNew
                     st.messages.add(chatMessage)
                     st.messages.sortBy { it.timestamp }

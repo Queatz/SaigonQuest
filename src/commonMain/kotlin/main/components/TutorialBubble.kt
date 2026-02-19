@@ -132,7 +132,7 @@ fun TutorialBubble(
                 
                 // Use property() for CSS properties not directly available
                 property("box-shadow", "0 2px 10px rgba(0, 0, 0, 0.3)")
-                property("z-index", "1000")
+                property("z-index", "990")
                 property("border", "1px solid $borderColor")
                 property("transform", transform)
                 property("pointer-events", "auto")

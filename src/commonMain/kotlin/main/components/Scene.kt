@@ -1138,7 +1138,7 @@ fun SceneComponent(url: String) {
                 }
             } else {
                 // Check for inactivity
-                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0) {
+                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0 && document.activeElement == canvas) {
                     triggerScreenSaver()
                 }
             }
