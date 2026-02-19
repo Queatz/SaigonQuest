@@ -1871,7 +1871,7 @@ object Styles : StyleSheet() {
         // Start slightly above the viewport so we can slide down on open
         property("transform", "translateX(-50%) translateY(-110%)")
         property("z-index", "99999")
-        property("width", "800px")
+        width(480.px)
         maxWidth(100.percent)
         height(16.cssRem)
         maxHeight(40.vh)
@@ -1906,7 +1906,7 @@ object Styles : StyleSheet() {
 
     val aiChatMsg by style {
         padding(12.px)
-        borderRadius(8.px)
+        borderRadius(12.px)
     }
 
     val aiChatMsgSystem by style {

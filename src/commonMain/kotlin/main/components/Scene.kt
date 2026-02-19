@@ -577,7 +577,11 @@ fun SceneComponent(url: String) {
 
         // Create the engine
         val engine = Engine(
-            canvas = canvas
+            canvas = canvas,
+            antialias = true,
+            options = object : lib.EngineOptions {
+                override var stencil: Boolean? = true // For highlight layer
+            }
         )
 
         val initialMaxFps = 60

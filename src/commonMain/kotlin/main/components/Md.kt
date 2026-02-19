@@ -98,7 +98,7 @@ fun markdownToHtml(
             val result = mutableListOf<String>()
             var currentWord = StringBuilder()
             for (char in text) {
-                if (char.isLetterOrDigit()) {
+                if (char.isLetterOrDigit() || char == '\'' || char == '-') {
                     currentWord.append(char)
                 } else {
                     if (currentWord.isNotEmpty()) {
