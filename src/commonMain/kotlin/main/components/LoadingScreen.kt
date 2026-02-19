@@ -10,6 +10,7 @@ import app.softwork.routingcompose.Router
 import main.api.UserApi
 import main.theme.OverlayStyles
 import main.components.Translated
+import main.theme.Styles
 
 /**
  * A component that displays a loading screen or error message.
@@ -59,7 +60,7 @@ fun LoadingScreen(
                         // Create this world or Login button
                         Button(
                             attrs = {
-                                classes(OverlayStyles.loadingScreenPrimaryButton)
+                                classes(Styles.primaryButton)
                                 onClick {
                                     // Only allow players to open the world editor
                                     if (isPlayer) {
@@ -82,7 +83,7 @@ fun LoadingScreen(
                         if (!isNoAccess) {
                             Button(
                                 attrs = {
-                                    classes(OverlayStyles.loadingScreenPrimaryButton)
+                                    classes(Styles.primaryButton)
                                     onClick {
                                         onRetry()
                                     }
@@ -96,8 +97,8 @@ fun LoadingScreen(
                     // Go back button
                     Button(
                         attrs = {
-                            classes(OverlayStyles.loadingScreenSecondaryButton)
-                            onClick { 
+                            classes(Styles.secondaryButton)
+                            onClick {
                                 onNavigateHome()
                             }
                         }

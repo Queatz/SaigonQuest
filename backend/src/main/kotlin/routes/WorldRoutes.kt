@@ -134,6 +134,7 @@ fun Routing.configureWorldRoutes() {
 
                 // World base cost (VND) - centralized via CostsProvider
                 val cost = utils.CostsProvider.get().worldBasePrice
+                world.url = world.url.sanitizeWorldUrl()
                 
                 // Ensure user has enough balance and deduct
                 val before = balances.getByUserId(userId)?.balance ?: 0L
@@ -345,4 +346,8 @@ fun Routing.configureWorldRoutes() {
             }
         }
     }
+}
+
+private fun String.sanitizeWorldUrl(): String {
+    return substringAfterLast('/')
 }

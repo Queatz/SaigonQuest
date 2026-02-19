@@ -27,7 +27,7 @@ fun BottomText() {
             onClick { showAbout = true }
         }
     ) {
-        Translated("© 2025 Saigon.Quest v0.1")
+        Translated("© 2026 Saigon.Quest v0.1")
     }
 
     if (showAbout) {

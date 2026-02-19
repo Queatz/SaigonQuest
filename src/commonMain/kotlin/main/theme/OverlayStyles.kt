@@ -143,26 +143,6 @@ object OverlayStyles : StyleSheet() {
         property("margin-top", "24px")
     }
 
-    val loadingScreenPrimaryButton by style {
-        padding(12.px, 24.px)
-        backgroundColor(Theme.colors.loadingPrimaryBg)
-        color(Theme.colors.onBackgroundDark)
-        property("border", "0")
-        borderRadius(4.px)
-        cursor("pointer")
-        fontSize(16.px)
-    }
-
-    val loadingScreenSecondaryButton by style {
-        padding(12.px, 24.px)
-        backgroundColor(Theme.colors.loadingSecondaryBg)
-        color(Theme.colors.onBackgroundDark)
-        property("border", "0")
-        borderRadius(4.px)
-        cursor("pointer")
-        fontSize(16.px)
-    }
-
     // Common styles for panels and dialogs overlay
     val overlayBase by style {
         position(Position.Fixed)
