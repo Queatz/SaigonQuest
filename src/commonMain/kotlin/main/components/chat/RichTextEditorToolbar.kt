@@ -44,6 +44,7 @@ fun RichTextEditorToolbar(
         VoiceInput(
             small = true,
             onText = onVoiceInput,
+            enabled = !aiLoading,
         )
 
         // AI button
@@ -67,6 +68,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onHeadingClick(1) },
             title = "H1",
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -77,6 +79,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onHeadingClick(2) },
             title = "H2",
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -87,6 +90,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onHeadingClick(3) },
             title = "H3",
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -97,6 +101,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onHeadingClick(4) },
             title = "H4",
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -109,6 +114,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onInlineClick("**", "**") },
             title = translated("Bold"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -119,6 +125,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onInlineClick("*", "*") },
             title = translated("Italic"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -129,6 +136,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onInlineClick("<u>", "</u>") },
             title = translated("Underline"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -139,6 +147,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = { onInlineClick("~~", "~~") },
             title = translated("Strikethrough"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -149,6 +158,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onQuoteClick,
             title = translated("Quote"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -159,6 +169,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onCodeClick,
             title = translated("Code"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -169,6 +180,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onInsertImageClick,
             title = translated("Insert image"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -179,6 +191,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onInsertAudioClick,
             title = translated("Insert audio"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -189,6 +202,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onInsertLinkClick,
             title = translated("Insert link"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,
@@ -201,6 +215,7 @@ fun RichTextEditorToolbar(
         ToolbarIconButton(
             onClick = onToggleRawMdClick,
             title = translated(if (showRawMd) "Hide MD" else "Show MD"),
+            disabled = aiLoading,
         ) {
             IconRenderer(
                 url = sheetUrl,

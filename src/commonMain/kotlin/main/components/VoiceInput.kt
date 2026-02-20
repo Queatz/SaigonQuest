@@ -27,6 +27,7 @@ import org.khronos.webgl.Int16Array
 import org.khronos.webgl.get
 import org.khronos.webgl.set
 import lib.AudioContext
+import org.jetbrains.compose.web.attributes.disabled
 
 @Serializable
 private data class VoiceControlMessage(
@@ -42,6 +43,7 @@ private data class VoiceTranscriptMessage(
 @Composable
 fun VoiceInput(
     small: Boolean = false,
+    enabled: Boolean = true,
     onText: (String) -> Unit,
 ) {
     val scope = remember { MainScope() }
@@ -165,6 +167,11 @@ fun VoiceInput(
 
             if (small) {
                 classes(Styles.voiceButtonSmall)
+            }
+
+            if (!enabled) {
+                disabled()
+                classes(Styles.disabledAction)
             }
 
             onClick {
