@@ -620,7 +620,7 @@ class CameraController(private val scene: Scene) {
             console.error("Error re-adding camera inputs: ${e.message}")
         }
 
-        camera.wheelPrecision = 200f
+        camera.wheelPrecision = 5f
         
         console.log("Camera inputs re-enabled")
     }

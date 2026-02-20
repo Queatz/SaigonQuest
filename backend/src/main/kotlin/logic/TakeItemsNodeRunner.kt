@@ -10,12 +10,14 @@ import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import repository.InventoryRepository
 import repository.ItemRepository
+import repository.NotificationRepository
 import repository.WorldRepository
 import routes.WebSocketMessage
 import utils.json
 import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -151,6 +153,29 @@ class TakeItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                 }
             }
             if (insufficient) {
+                // Notify world owner that a player attempted but lacks items
+                try {
+                    val repo = NotificationRepository()
+                    val objectId = context.objectId
+                    val objectTitle = try { repository.ObjectRepository().getById(objectId)?.title ?: "Object" } catch (_: Throwable) { "Object" }
+                    val details = entries.joinToString(", ") { "${it.title} x${it.quantity}" }
+                    val description = "${context.connection.user.username.ifBlank { context.connection.userId }} tried to transfer: $details via \"$objectTitle\" in \"${world.title.ifBlank { context.worldId }}\" but there weren't enough items."
+                    repo.create(
+                        Notification(
+                            userId = ownerUserId,
+                            title = "Item transfer failed",
+                            description = description,
+                            isRead = false,
+                            type = NotificationType.SYSTEM,
+                            worldId = context.worldId,
+                            objectId = objectId,
+                            otherUserId = context.connection.userId,
+                            timestamp = Clock.System.now()
+                        )
+                    )
+                } catch (e: Throwable) {
+                    WebSocketDebug.logError("Failed to create owner notification for TakeItems NOT_ENOUGH", e, context.session)
+                }
                 // Branch NOT_ENOUGH when user lacks required quantity
                 eventData["outputProperty"] = PropertyKey.NOT_ENOUGH
                 return true
@@ -170,6 +195,28 @@ class TakeItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                     WebSocketDebug.logError("TakeItems: Transfer failed for item=${entry.itemId}", e, context.session)
                     // If transfer fails due to insufficient quantity, branch NOT_ENOUGH
                     if (e is IllegalArgumentException && e.message?.contains("Not enough quantity") == true) {
+                        // Notify owner on failure
+                        try {
+                            val repo = NotificationRepository()
+                            val objectId = context.objectId
+                            val objectTitle = try { repository.ObjectRepository().getById(objectId)?.title ?: "Object" } catch (_: Throwable) { "Object" }
+                            val description = "${context.connection.user.username.ifBlank { context.connection.userId }} tried to transfer ${entry.title} x${entry.quantity} via \"$objectTitle\" in \"${world.title.ifBlank { context.worldId }}\" but there weren't enough items."
+                            repo.create(
+                                Notification(
+                                    userId = ownerUserId,
+                                    title = "Item transfer failed",
+                                    description = description,
+                                    isRead = false,
+                                    type = NotificationType.SYSTEM,
+                                    worldId = context.worldId,
+                                    objectId = objectId,
+                                    otherUserId = context.connection.userId,
+                                    timestamp = Clock.System.now()
+                                )
+                            )
+                        } catch (ex: Throwable) {
+                            WebSocketDebug.logError("Failed to create owner notification for TakeItems NOT_ENOUGH (transfer)", ex, context.session)
+                        }
                         eventData["outputProperty"] = PropertyKey.NOT_ENOUGH
                         return true
                     }
@@ -198,6 +245,31 @@ class TakeItemsNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             broadcastInventoryChanged(context.connection.userId)
             broadcastInventoryChanged(ownerUserId)
             WebSocketDebug.logMessage("TAKE_ITEMS_ACCEPTED", "requestId=$requestId entries=${entries.size}", context.session)
+
+            // Send a system notification to the world owner
+            try {
+                val repo = NotificationRepository()
+                val objectId = context.objectId
+                val objectTitle = try { repository.ObjectRepository().getById(objectId)?.title ?: "Object" } catch (_: Throwable) { "Object" }
+                val title = "Items received from ${context.connection.user.username.ifBlank { context.connection.userId }}"
+                val details = entries.joinToString(", ") { "${it.title} x${it.quantity}" }
+                val description = "${context.connection.user.username.ifBlank { context.connection.userId }} transferred: $details via \"$objectTitle\" in \"${world.title.ifBlank { context.worldId }}\""
+                repo.create(
+                    Notification(
+                        userId = ownerUserId,
+                        title = title,
+                        description = description,
+                        isRead = false,
+                        type = NotificationType.SYSTEM,
+                        worldId = context.worldId,
+                        objectId = objectId,
+                        otherUserId = context.connection.userId,
+                        timestamp = Clock.System.now()
+                    )
+                )
+            } catch (e: Throwable) {
+                WebSocketDebug.logError("Failed to create owner notification for TakeItems", e, context.session)
+            }
 
             // Branch YES
             eventData["outputProperty"] = PropertyKey.YES
