@@ -162,6 +162,20 @@ fun UploadMediaDialog(
                                 }) {
                                     Text(item.originalFileName)
                                 }
+                            } else if (item.type == MediaType.Video) {
+                                Div({
+                                    classes(Styles.mediaLibraryItemAudioContainer)
+                                    style {
+                                        height(100.percent)
+                                    }
+                                }) {
+                                    Video(attrs = {
+                                        attr("src", src)
+                                        attr("controls", "true")
+                                        classes(Styles.mediaLibraryItemVideoPlayer)
+                                        onClick { it.stopPropagation() }
+                                    })
+                                }
                             } else {
                                 Text(item.type.name)
                             }

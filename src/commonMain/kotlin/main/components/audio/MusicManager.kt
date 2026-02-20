@@ -4,6 +4,7 @@ import kotlinx.browser.window
 import main.components.AudioSettings
 import main.components.world.WorldLoader
 import org.w3c.dom.HTMLAudioElement
+import org.w3c.dom.HTMLMediaElement
 import kotlinx.browser.document
 
 /**
@@ -23,21 +24,95 @@ object MusicManager {
     private var isNight: Boolean? = null
 
     private var currentUrl: String? = null
+    private val activeExternalMedia = mutableSetOf<HTMLMediaElement>()
+    private var recordingCount = 0
 
     init {
         // React to global audio setting changes
         AudioSettings.addObserver {
-            try {
-                if (AudioSettings.isMusicEnabled()) {
-                    // If we have a track selected and not playing, start it
-                    val targetUrl = chooseUrl()
-                    if (targetUrl != null) playUrl(targetUrl, fadeIn = true)
-                } else {
-                    pause()
-                }
-            } catch (t: Throwable) {
-                console.error("[MusicManager] Error handling AudioSettings change", t)
+            refreshPlayback()
+        }
+
+        // Catch any <audio> or <video> elements starting to play (e.g. from Md.kt or MediaLibrary)
+        window.document.addEventListener("play", { ev ->
+            val target = ev.target
+            if (target is HTMLMediaElement && target != audio) {
+                activeExternalMedia.add(target)
+                refreshPlayback()
             }
+        }, true)
+
+        window.document.addEventListener("pause", { ev ->
+            val target = ev.target
+            if (target is HTMLMediaElement && target != audio) {
+                activeExternalMedia.remove(target)
+                refreshPlayback()
+            }
+        }, true)
+
+        window.document.addEventListener("ended", { ev ->
+            val target = ev.target
+            if (target is HTMLMediaElement && target != audio) {
+                activeExternalMedia.remove(target)
+                refreshPlayback()
+            }
+        }, true)
+
+        // Periodically refresh to catch elements removed from DOM without pause event
+        window.setInterval({
+            if (activeExternalMedia.isNotEmpty() || recordingCount > 0) {
+                refreshPlayback()
+            }
+        }, 500)
+    }
+
+    private fun shouldBePlaying(): Boolean {
+        return AudioSettings.isMusicEnabled() && activeExternalMedia.isEmpty() && recordingCount == 0
+    }
+
+    /**
+     * Call when starting an audio recording (e.g. VoiceInput, AudioRecorder).
+     * This will pause background music if it's playing.
+     */
+    fun startRecording() {
+        recordingCount++
+        refreshPlayback()
+    }
+
+    /**
+     * Call when finishing an audio recording.
+     */
+    fun stopRecording() {
+        recordingCount = (recordingCount - 1).coerceAtLeast(0)
+        refreshPlayback()
+    }
+
+    private fun refreshPlayback() {
+        try {
+            // Cleanup activeExternalMedia: remove elements that are no longer playing or no longer in the document
+            activeExternalMedia.removeAll { el ->
+                val shouldRemove = el.paused || el.ended || document.body?.contains(el) == false
+                if (shouldRemove && !el.paused && !el.ended) {
+                    // It was removed from DOM but still playing; stop it!
+                    try { el.pause() } catch (_: Throwable) {}
+                }
+                shouldRemove
+            }
+
+            val targetUrl = if (shouldBePlaying()) chooseUrl() else null
+
+            if (targetUrl != null) {
+                val a = audio
+                // If already playing the correct track, don't interrupt it
+                if (a != null && a.src == targetUrl && !a.paused) {
+                    return
+                }
+                playUrl(targetUrl, fadeIn = true)
+            } else {
+                pause()
+            }
+        } catch (t: Throwable) {
+            console.error("[MusicManager] Error refreshing playback", t)
         }
     }
 
@@ -107,6 +182,9 @@ object MusicManager {
     }
 
     private fun playUrl(url: String, fadeIn: Boolean) {
+        currentUrl = url
+        if (!shouldBePlaying()) return
+
         try {
             val a = ensureAudio()
             if (a.src != url) {
@@ -120,18 +198,21 @@ object MusicManager {
             a.play().catch { err ->
                 console.warn("[MusicManager] Autoplay prevented or error starting audio: ${'$'}err")
             }
-            currentUrl = url
             if (fadeIn) fadeToVolume(1.0, durationMs = 1500)
+            else a.volume = 1.0
         } catch (t: Throwable) {
             console.error("[MusicManager] Failed to play url", t)
         }
     }
 
     private fun crossfadeTo(url: String) {
+        currentUrl = url
+        if (!shouldBePlaying()) return
+
         try {
             val a = ensureAudio()
-            if (currentUrl == null) {
-                // Nothing was playing; just fade in new track
+            if (a.paused) {
+                // Not playing; just fade in new track
                 playUrl(url, fadeIn = true)
                 return
             }
@@ -152,7 +233,6 @@ object MusicManager {
                     a.play().catch { err ->
                         console.warn("[MusicManager] Autoplay prevented or error starting audio: ${'$'}err")
                     }
-                    currentUrl = url
                     fadeToVolume(1.0, 1000)
                 }
             }, 50)

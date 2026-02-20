@@ -734,6 +734,13 @@ object Styles : StyleSheet() {
         height(24.px)
     }
 
+    val mediaLibraryItemVideoPlayer by style {
+        width(100.percent)
+        height(100.percent)
+        property("object-fit", "cover")
+        borderRadius(8.px)
+    }
+
     val mediaLibraryItemPlaceholder by style {
         height(100.px)
         display(DisplayStyle.Flex)

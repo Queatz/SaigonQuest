@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
+import main.components.audio.MusicManager
 import main.theme.Styles
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Text
@@ -126,6 +127,7 @@ fun VoiceInput(
     }
 
     fun stopRecording() {
+        if (!isRecording) return
         // Prevent future reconnects and cancel any scheduled one
         allowReconnect = false
         try { reconnectJob?.cancel() } catch (_: Throwable) {}
@@ -153,6 +155,7 @@ fun VoiceInput(
         mediaStream = null
         flushPending = null
         isRecording = false
+        MusicManager.stopRecording()
     }
 
     DisposableEffect(Unit) {
@@ -178,6 +181,7 @@ fun VoiceInput(
                 if (isRecording) {
                     stopRecording()
                 } else {
+                    MusicManager.startRecording()
                     scope.launch {
                         runCatching {
                             // Request microphone

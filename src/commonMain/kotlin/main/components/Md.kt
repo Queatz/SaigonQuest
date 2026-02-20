@@ -66,6 +66,27 @@ internal fun ensureExtensionsRegistered() {
                     "<audio src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></audio>"
                 },
             ),
+            json(
+                "name" to "video",
+                "level" to "inline",
+                "start" to { src: String -> src.indexOf("![video]") },
+                "tokenizer" to { src: String ->
+                    val rule = Regex("^!\\[video\\]\\((.*?)\\)")
+                    val match = rule.find(src)
+                    if (match != null) {
+                        json(
+                            "type" to "video",
+                            "raw" to match.value,
+                            "href" to match.groupValues[1].trim(),
+                        )
+                    } else {
+                        null
+                    }
+                },
+                "renderer" to { token: Json ->
+                    "<video src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></video>"
+                },
+            ),
         ),
     )
 

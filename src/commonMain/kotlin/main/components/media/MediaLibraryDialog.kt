@@ -49,6 +49,7 @@ import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Audio
+import org.jetbrains.compose.web.dom.Video
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -184,6 +185,23 @@ fun MediaLibraryDialog(
                                         attr("src", src)
                                         attr("controls", "true")
                                         classes(Styles.mediaLibraryItemAudioPlayer)
+                                        onClick { it.stopPropagation() }
+                                    })
+                                }
+                            } else if (item.type == MediaType.Video) {
+                                Div({
+                                    style {
+                                        height(100.px)
+                                        display(DisplayStyle.Flex)
+                                        alignItems(AlignItems.Center)
+                                        justifyContent(JustifyContent.Center)
+                                        marginBottom(6.px)
+                                    }
+                                }) {
+                                    Video(attrs = {
+                                        attr("src", src)
+                                        attr("controls", "true")
+                                        classes(Styles.mediaLibraryItemVideoPlayer)
                                         onClick { it.stopPropagation() }
                                     })
                                 }

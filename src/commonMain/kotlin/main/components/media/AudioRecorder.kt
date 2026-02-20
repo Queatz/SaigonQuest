@@ -2,6 +2,7 @@ package main.components.media
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.audio.MusicManager
 import lib.BlobEvent
 import lib.MediaRecorder
 import lib.BlobPropertyBag
@@ -29,7 +30,17 @@ fun AudioRecorder(
     val chunks = remember { mutableListOf<Blob>() }
     val scope = rememberCoroutineScope()
 
+    DisposableEffect(Unit) {
+        onDispose {
+            if (isRecording) {
+                mediaRecorder?.stop()
+                MusicManager.stopRecording()
+            }
+        }
+    }
+
     fun startRecording() {
+        MusicManager.startRecording()
         scope.launch {
             try {
                 val constraints = MediaStreamConstraints(
@@ -69,13 +80,16 @@ fun AudioRecorder(
                 isRecording = true
             } catch (t: Throwable) {
                 onError(t.message ?: "Failed to start recording")
+                MusicManager.stopRecording()
             }
         }
     }
 
     fun stopRecording() {
+        if (!isRecording) return
         mediaRecorder?.stop()
         isRecording = false
+        MusicManager.stopRecording()
     }
 
     if (!isRecording) {
