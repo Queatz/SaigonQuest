@@ -782,7 +782,18 @@ class SceneObjectManager(
      * @param scale The scale of the sphere
      * @return The created node containing the sphere
      */
-    private fun createFallbackSphere(name: String, position: Vector3, rotation: Vector3, scale: Vector3): Node {
+    private fun createFallbackSphere(
+        name: String,
+        position: Vector3,
+        rotation: Vector3,
+        scale: Vector3,
+        color: Color3 = Color3(1f, 1f, 1f),
+        emissiveColor: Color3 = Color3.White().scale(.2f),
+        diameter: Float = .5f,
+        segments: Int = 8,
+        alpha: Float = .8f,
+        isPickable: Boolean = true,
+    ): Node {
         // Create a transform node that will act as our container
         val container = TransformNode("container_$name", scene)
         
@@ -795,19 +806,19 @@ class SceneObjectManager(
         val sphere = MeshBuilder.CreateSphere(
             name,
             object : CreateSphereOptions {
-                override val diameter = .5f
-                override val segments = 8
+                override val diameter = diameter
+                override val segments = segments
             },
             scene
         )
         
-        // Create a white material
+        // Create a material
         val material = PBRMaterial("material_$name", scene)
-        material.albedoColor = Color3(1f, 1f, 1f)  // White color
+        material.albedoColor = color
         material.metallic = 0.8f
         material.roughness = 0.2f
-        material.alpha = .8f
-        material.emissiveColor = Color3.White().scale(.2f)
+        material.alpha = alpha
+        material.emissiveColor = emissiveColor
         
         // Apply the material to the sphere
         sphere.material = material
@@ -817,13 +828,13 @@ class SceneObjectManager(
         sphere.rotation = Vector3(0f, 0f, 0f)
         sphere.scaling = Vector3(1f, 1f, 1f)
 
-        // Make the sphere pickable
-        sphere.isPickable = true
+        // Configure pickability
+        sphere.isPickable = isPickable
         
         // Make the sphere a child of the container
         sphere.parent = container
         
-        console.log("[DEBUG_OBJECT] Created fallback sphere for object: $name in container")
+        console.log("[DEBUG_OBJECT] Created fallback sphere for object: $name in container (diameter=$diameter, color=$color, pickable=$isPickable)")
         
         return container
     }
@@ -835,6 +846,111 @@ class SceneObjectManager(
      * @param clickPoint The point where the user clicked (ray intersection point)
      * @return true if dragging started successfully, false otherwise
      */
+    // --- Create Object Placement Mode ---
+    private var isCreatePlacementActive: Boolean = false
+    private var createPlacementPreview: Node? = null
+    private var onCreatePlacementConfirm: ((Vector3) -> Unit)? = null
+    private var pendingCreatePosition: Vector3? = null
+
+    fun isCreatePlacementModeActive(): Boolean = isCreatePlacementActive
+
+    /** Public API to allow editor dialog to consume the pending create position once. */
+    fun consumePendingCreatePosition(): Vector3? {
+        val p = pendingCreatePosition
+        pendingCreatePosition = null
+        return p
+    }
+
+    /** Starts the object placement mode with a small red non-pickable sphere under the cursor. */
+    fun startCreatePlacementMode(
+        onConfirm: ((Vector3) -> Unit)? = null,
+    ) {
+        if (isCreatePlacementActive) return
+        isCreatePlacementActive = true
+        onCreatePlacementConfirm = onConfirm
+
+        scene.getEngine().getRenderingCanvas()?.focus()
+
+        try {
+            // Create preview sphere (red, small, non-pickable)
+            createPlacementPreview = createFallbackSphere(
+                name = "create_preview",
+                position = Vector3(0f, 0f, 0f),
+                rotation = Vector3(0f, 0f, 0f),
+                scale = Vector3(1f, 1f, 1f),
+                color = Color3(1f, 0f, 0f),
+                emissiveColor = Color3(1f, 0f, 0f),
+                diameter = 0.2f,
+                segments = 8,
+                alpha = 0.9f,
+                isPickable = false,
+            )
+
+            // Begin dedicated picking depth to respect proper occlusion and exclusions
+            try {
+                DepthPicking.beginPickingDepth(scene, excludeMeshes = createPlacementPreview!!.getChildMeshes())
+            } catch (t: Throwable) {
+                t.printStackTrace()
+                console.warn("[CreatePlacement] Failed to begin picking depth: ${t.message}")
+            }
+
+            // Visual cursor feedback
+            document.body?.style?.cursor = "crosshair"
+        } catch (t: Throwable) {
+            console.error("[CreatePlacement] Failed to start placement mode", t)
+            endCreatePlacementMode()
+        }
+    }
+
+    /** Updates the placement preview position. Called by InputHandler. */
+    fun updateCreatePlacementPreview(x: Int, y: Int) {
+        if (!isCreatePlacementActive) return
+        coroutineScope.launch {
+            try {
+                val wp = DepthPicking.getVisibleWorldPointAt(scene, x, y)
+                if (wp != null) {
+                    createPlacementPreview?.position = Vector3(wp.x, wp.y, wp.z)
+                }
+            } catch (_: Throwable) {}
+        }
+    }
+
+    /** Confirms the object placement. Called by InputHandler. */
+    fun confirmCreatePlacement(x: Int, y: Int) {
+        if (!isCreatePlacementActive) return
+        coroutineScope.launch {
+            val wp = DepthPicking.getVisibleWorldPointAt(scene, x, y)
+            if (wp != null) {
+                pendingCreatePosition = Vector3(wp.x, wp.y, wp.z)
+                val confirm = onCreatePlacementConfirm
+                endCreatePlacementMode()
+                confirm?.invoke(pendingCreatePosition!!)
+            }
+        }
+    }
+
+    /** Cancels the object placement mode, removing preview. */
+    fun cancelCreatePlacementMode() {
+        endCreatePlacementMode()
+    }
+
+    private fun endCreatePlacementMode() {
+        if (!isCreatePlacementActive) return
+        isCreatePlacementActive = false
+
+        onCreatePlacementConfirm = null
+
+        // Dispose preview node
+        try { (createPlacementPreview as? TransformNode)?.dispose() } catch (_: Throwable) {}
+        createPlacementPreview = null
+
+        // End picking depth
+        try { DepthPicking.endPickingDepth() } catch (_: Throwable) {}
+
+        // Restore cursor
+        document.body?.style?.cursor = "default"
+    }
+
     fun startDragging(objectId: String, clickPoint: Vector3? = null): Boolean {
         // Find the object node
         val node = objectMeshes[objectId]

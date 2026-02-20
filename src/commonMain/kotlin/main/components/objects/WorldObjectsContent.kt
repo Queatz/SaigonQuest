@@ -26,6 +26,7 @@ fun WorldObjectsContent(
     objects: List<Object>,
     isLoading: Boolean,
     errorMessage: String,
+    isCreatePlacementActive: Boolean = false,
     onCreateObject: () -> Unit = {},
     onRemove: (String) -> Unit,
     onLocate: (String) -> Unit = {},
@@ -45,7 +46,11 @@ fun WorldObjectsContent(
                 onClick { onCreateObject() }
             }
         ) {
-            Translated("Create object")
+            if (isCreatePlacementActive) {
+                Translated("Cancel")
+            } else {
+                Translated("Create object")
+            }
         }
         // Loading or error message
         if (isLoading) {
@@ -114,6 +119,16 @@ fun ObjectItem(
             }
         ) {
             Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
+            if (obj.status.isNotBlank()) {
+                Span(
+                    attrs = {
+                        classes(Styles.userStatusText)
+                    }
+                ) {
+                    Text(" • ")
+                    Text(obj.status)
+                }
+            }
         }
 
         // Action buttons container

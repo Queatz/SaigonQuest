@@ -82,6 +82,9 @@ fun ObjectsContent(
         }
     }
 
+    // Placement mode state
+    var isCreatePlacementActive by remember { mutableStateOf(false) }
+
     // Load objects when the component is mounted
     LaunchedEffect(currentWorldId) {
         isLoading = true
@@ -255,7 +258,25 @@ fun ObjectsContent(
             objects = worldObjects,
             isLoading = isLoading,
             errorMessage = errorMessage,
-            onCreateObject = { onOpenObjectEditor(true) },
+            isCreatePlacementActive = isCreatePlacementActive,
+            onCreateObject = {
+                if (!isCreatePlacementActive) {
+                    if (objectManager != null) {
+                        isCreatePlacementActive = true
+                        objectManager.startCreatePlacementMode(
+                            onConfirm = { _ ->
+                                isCreatePlacementActive = false
+                                onOpenObjectEditor(true)
+                            }
+                        )
+                    } else {
+                        onOpenObjectEditor(true)
+                    }
+                } else {
+                    objectManager?.cancelCreatePlacementMode()
+                    isCreatePlacementActive = false
+                }
+            },
             onRemove = { objectId -> showRemoveObjectId = objectId },
             onLocate = { objectId -> locateObject(objectId) },
             onEdit = { objectId -> editObject(objectId) },

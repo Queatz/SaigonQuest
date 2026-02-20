@@ -107,16 +107,21 @@ fun ObjectEditorDialog(
                 ),
             )
         } else {
-            // Create new object at the player's current position (fallback to 0,0,0 if unavailable)
+            // Create new object at the user's selected position if available; otherwise, fall back to player's current position
+            val selectedPos = SceneManager.getObjectManager()?.consumePendingCreatePosition()
             val playerPos = SceneManager.getPlayerController()?.getPlayerPosition()
-            val initialPosition = if (playerPos != null) {
-                models.Position(
+            val initialPosition = when {
+                selectedPos != null -> models.Position(
+                    x = selectedPos.x,
+                    y = selectedPos.y,
+                    z = selectedPos.z,
+                )
+                playerPos != null -> models.Position(
                     x = playerPos.x,
                     y = playerPos.y,
                     z = playerPos.z,
                 )
-            } else {
-                models.Position(0f, 0f, 0f)
+                else -> models.Position(0f, 0f, 0f)
             }
             Object(
                 title = title,

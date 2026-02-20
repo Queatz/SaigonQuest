@@ -272,6 +272,7 @@ external class Scene(engine: Engine? = definedExternally) {
     fun dispose()
     fun createPickingRay(x: Int, y: Int, world: Matrix, camera: Camera? = definedExternally): Ray
     fun registerBeforeRender(callback: () -> Unit)
+    fun unregisterBeforeRender(callback: () -> Unit)
     fun getFrameId(): Int
     fun removeMesh(mesh: AbstractMesh)
 
@@ -522,6 +523,7 @@ external class Engine(
     fun dispose()
     fun getRenderWidth(): Int
     fun getRenderHeight(): Int
+    fun getRenderingCanvas(): HTMLCanvasElement?
 
     var maxFPS: Int
 
@@ -743,6 +745,7 @@ external class Viewport(x: Float, y: Float, width: Float, height: Float) {
 }
 
 abstract external class Camera : Node {
+    fun getScene(): Scene
     var minZ: Float
     var maxZ: Float
     override var position: Vector3
@@ -1184,11 +1187,7 @@ external class DepthRenderer(scene: Scene, type: Int = definedExternally) {
      * This texture contains the depth values of the scene from the camera's perspective.
      */
     fun getDepthMap(): RenderTargetTexture
-
-    /**
-     * Override the material used to render a given mesh in the depth pass.
-     * Pass null to remove the override.
-     */
+    fun getCamera(): Camera
     fun setMaterialForRendering(mesh: AbstractMesh, material: Material?)
 
     var forceDepthWriteTransparentMeshes: Boolean

@@ -34,6 +34,8 @@ import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
 import models.World
 import models.canUserEdit
+import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.MouseEvent
 import kotlin.math.abs
 
 /**
@@ -210,6 +212,14 @@ class InputHandler(
         onActivity?.invoke()
         val event = info.event
         val key = event.key.lowercase()
+
+        // Handle Escape key to cancel object placement mode
+        if ((key == "escape" || key == "esc") && info.type == KeyboardEventTypes.KEYUP) {
+            if (objectManager?.isCreatePlacementModeActive() == true) {
+                objectManager.cancelCreatePlacementMode()
+                return
+            }
+        }
         
         // Handle movement keys (WASD, arrow keys, and shift)
         if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift")) {
@@ -269,6 +279,30 @@ class InputHandler(
      */
     private fun handlePointerEvent(info: PointerInfo) {
         onActivity?.invoke()
+
+        // Intercept events for object placement mode
+        if (objectManager?.isCreatePlacementModeActive() == true) {
+            val handled = when (info.type) {
+                PointerEventTypes.POINTERMOVE -> {
+                    objectManager.updateCreatePlacementPreview(scene.pointerX, scene.pointerY)
+                    true
+                }
+                PointerEventTypes.POINTERDOWN -> {
+                    // Only confirm on left-click on the canvas
+                    val mouseEvent = info.event as? MouseEvent
+                    if (mouseEvent != null && mouseEvent.button.toInt() == 0 && !mouseEvent.ctrlKey && !mouseEvent.shiftKey && !mouseEvent.altKey) {
+                        objectManager.confirmCreatePlacement(scene.pointerX, scene.pointerY)
+                    }
+                    true
+                }
+                PointerEventTypes.POINTERUP,
+                PointerEventTypes.POINTERTAP,
+                PointerEventTypes.POINTERDOUBLETAP -> true
+                else -> false
+            }
+            if (handled) return
+        }
+
         // Check if an object is selected or being dragged
         var isObjectSelected = objectManager?.getSelectedObject() != null
         val isObjectBeingDragged = isObjectDragging || draggingObjectId != null

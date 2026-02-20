@@ -9,9 +9,6 @@ import lib.AbstractMesh
 import lib.StandardMaterial
 import lib.ArcRotateCamera
 import main.components.GraphicsSettings.getEngineScalingFactor
-import main.components.world.WorldLoader
-import main.components.world.isSkybox
-import main.components.world.isWater
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.get
 
@@ -45,6 +42,9 @@ object DepthPicking {
 
     // Temporary camera used solely for the picking depth renderer
     private var pickingCamera: ArcRotateCamera? = null
+
+    // Synchronization callback for picking camera
+    private var pickingCameraSyncCallback: (() -> Unit)? = null
 
     // Depth-pass material that disables depth writes for excluded meshes
     private var pickingExcludeDepthMaterial: lib.StandardMaterial? = null
@@ -183,6 +183,22 @@ object DepthPicking {
                 try { depthCam.viewport = active.viewport } catch (_: Throwable) {}
                 pickingCamera = depthCam
 
+                // Sync picking camera with active camera
+                val sync = {
+                    val active = scene.activeCamera
+                    if (active is ArcRotateCamera) {
+                        depthCam.alpha = active.alpha
+                        depthCam.beta = active.beta
+                        depthCam.radius = active.radius
+                        depthCam.target = active.target
+                        depthCam.minZ = active.minZ
+                        depthCam.maxZ = active.maxZ
+                        depthCam.fov = active.fov
+                    }
+                }
+                scene.registerBeforeRender(sync)
+                pickingCameraSyncCallback = sync
+
                 scene.enableDepthRenderer(
                     camera = depthCam,
                     storeNonLinearDepth = false,
@@ -259,6 +275,12 @@ object DepthPicking {
             }
         }
         overriddenMeshesForPicking.clear()
+
+        // Unregister sync callback
+        pickingCameraSyncCallback?.let {
+            try { pickingDepthRenderer?.getCamera()?.getScene()?.unregisterBeforeRender(it) } catch (_: Throwable) {}
+        }
+        pickingCameraSyncCallback = null
 
         // Dispose temporary material
         try { pickingExcludeDepthMaterial?.dispose() } catch (_: Throwable) {}

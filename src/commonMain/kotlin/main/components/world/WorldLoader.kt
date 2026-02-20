@@ -920,7 +920,7 @@ class WorldLoader(private val scene: Scene) {
                     mesh.material = PBRMaterial("realtimeMoonMaterial", scene).apply {
                         albedoColor = Color3(0.9f, 0.9f, 0.95f) // Pale lunar grey
                         emissiveColor = Color3(0.1f, 0.1f, 0.15f) // Slight earthshine glow
-                        emissiveIntensity = 0.05f
+                        emissiveIntensity = 0.0125f
                         roughness = 0.8f
                         metallic = 0f
                         fogEnabled = false
@@ -979,8 +979,8 @@ class WorldLoader(private val scene: Scene) {
                     val mesh = MeshBuilder.CreateSphere(
                         name = "realtimeStars",
                         options = object : lib.CreateSphereOptions {
-                            override val diameter = 1.0f
-                            override val segments = 32
+                            override val diameter = 2.0f
+                            override val segments = 64
                             override val updatable = false
                         },
                         scene = scene
@@ -995,6 +995,7 @@ class WorldLoader(private val scene: Scene) {
                         backFaceCulling = false // render inside of sphere
                         forceDepthWrite = false
                         disableDepthWrite = true
+                        zOffset = 1f
                         albedoTexture = Texture(
                             url = "raw/data/scene/stars.png",
                             scene = scene,
@@ -1024,7 +1025,7 @@ class WorldLoader(private val scene: Scene) {
                     mesh.isVisible = true
                     // Scale sphere based on camera range for robust rendering
                     val maxZ = scene.activeCamera?.maxZ ?: 500f
-                    val starsDistance = maxZ * 0.98f
+                    val starsDistance = maxZ * .99f
                     mesh.scaling = Vector3(starsDistance, starsDistance, starsDistance)
 
                     // Orient the starfield using local sidereal time and latitude tilt
