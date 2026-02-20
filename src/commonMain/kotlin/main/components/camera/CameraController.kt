@@ -47,9 +47,9 @@ class CameraController(private val scene: Scene) {
         updateConstraints()
         this.targetScreenOffset = Vector2(0f, 0f)
 
-        this.wheelPrecision = 50f
+        this.wheelPrecision = 5f
         this.zoomToMouseLocation = true
-        this.wheelDeltaPercentage = 0.1f
+        this.wheelDeltaPercentage = 0.01f
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
         this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
         this.minZ = 0.1f

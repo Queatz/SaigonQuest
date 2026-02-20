@@ -179,8 +179,9 @@ class TextBillboard(
         // Set billboard mode to make the text always face the camera
         planeMesh?.billboardMode = Mesh.BILLBOARDMODE_ALL
 
+        // TODO This breaks highlighting of the object
         // Render on top of everything else
-        planeMesh?.renderingGroupId = 1
+//        planeMesh?.renderingGroupId = 1
 
         texture?.let { tex ->
             // Get the canvas context

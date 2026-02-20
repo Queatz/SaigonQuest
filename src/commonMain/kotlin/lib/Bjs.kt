@@ -1611,6 +1611,20 @@ external class HighlightLayer(name: String, scene: Scene) {
      * @return The removed mesh
      */
     fun removeMesh(mesh: AbstractMesh): AbstractMesh
+
+    /**
+     * Exclude a mesh from the highlight layer
+     * 
+     * @param mesh The mesh to exclude
+     */
+    fun addExcludedMesh(mesh: AbstractMesh)
+
+    /**
+     * Remove an excluded mesh from the highlight layer
+     * 
+     * @param mesh The mesh to remove from the exclusion
+     */
+    fun removeExcludedMesh(mesh: AbstractMesh)
     
     /**
      * Dispose the highlight layer

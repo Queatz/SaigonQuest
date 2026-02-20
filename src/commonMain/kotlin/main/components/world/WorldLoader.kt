@@ -882,6 +882,7 @@ class WorldLoader(private val scene: Scene) {
                         zOffset = 1f
                     }
                     sunMesh = mesh
+                    SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
                     println("[DEBUG] Created realtime sun mesh")
                 }
                 sunMesh?.let { mesh ->
@@ -926,6 +927,7 @@ class WorldLoader(private val scene: Scene) {
                         zOffset = 1f
                     }
                     moonMesh = mesh
+                    SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
                     
                     // Ensure world lights don't wash out the moon's shadow/phase
                     hemi?.excludedMeshes = (hemi?.excludedMeshes ?: emptyArray()) + mesh
@@ -1014,6 +1016,7 @@ class WorldLoader(private val scene: Scene) {
                     }
                     mesh.material = mat
                     starsMesh = mesh
+                    SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
                     println("[DEBUG] Created realtime stars skybox")
                 }
 

@@ -137,7 +137,6 @@ class SceneObjectManager(
      * @return true if the object was highlighted successfully, false otherwise
      */
     fun highlightObject(objectId: String): Boolean {
-
         // Remove highlight from previously hovered object
         unhighlightObject()
         
@@ -172,7 +171,6 @@ class SceneObjectManager(
      * Removes highlight from the currently hovered object
      */
     fun unhighlightObject() {
-
         hoveredObjectId?.let { objectId ->
 
             val node = objectMeshes[objectId]
@@ -1004,7 +1002,20 @@ class SceneObjectManager(
         @Suppress("UNCHECKED_CAST")
         this.worldMeshes = meshes
         this.skybox = meshes.find { it.isSkybox() }
-        console.log("Set ${meshes.size} world meshes for collision detection")
+        
+        // Exclude all world meshes from highlighting to avoid unwanted outline effects
+        // on the environment when highlighting interactive objects.
+        if (false) {
+            meshes.forEach { mesh ->
+                try {
+                    highlightLayer.addExcludedMesh(mesh)
+                } catch (e: Throwable) {
+                    console.warn("Failed to exclude mesh from highlighting: ${mesh.name}")
+                }
+            }
+        }
+        
+        console.log("Set ${meshes.size} world meshes for collision detection and excluded them from highlighting")
     }
     
     /**
@@ -1017,6 +1028,17 @@ class SceneObjectManager(
     }
 
     fun getSkybox(): AbstractMesh? = skybox
+
+    /**
+     * Excludes a mesh from the highlight layer to avoid unwanted outline effects.
+     */
+    fun excludeMeshFromHighlight(mesh: AbstractMesh) {
+        try {
+            highlightLayer.addExcludedMesh(mesh)
+        } catch (e: Throwable) {
+            console.warn("Failed to exclude mesh from highlighting: ${mesh.name}")
+        }
+    }
 
     /**
      * Sets up WebSocket listeners for object updates and loads existing objects
