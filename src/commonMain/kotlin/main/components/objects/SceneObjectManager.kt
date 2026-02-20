@@ -850,6 +850,7 @@ class SceneObjectManager(
     private var isCreatePlacementActive: Boolean = false
     private var createPlacementPreview: Node? = null
     private var onCreatePlacementConfirm: ((Vector3) -> Unit)? = null
+    private var onCreatePlacementCancel: (() -> Unit)? = null
     private var pendingCreatePosition: Vector3? = null
 
     fun isCreatePlacementModeActive(): Boolean = isCreatePlacementActive
@@ -864,10 +865,12 @@ class SceneObjectManager(
     /** Starts the object placement mode with a small red non-pickable sphere under the cursor. */
     fun startCreatePlacementMode(
         onConfirm: ((Vector3) -> Unit)? = null,
+        onCancel: (() -> Unit)? = null,
     ) {
         if (isCreatePlacementActive) return
         isCreatePlacementActive = true
         onCreatePlacementConfirm = onConfirm
+        onCreatePlacementCancel = onCancel
 
         scene.getEngine().getRenderingCanvas()?.focus()
 
@@ -898,7 +901,7 @@ class SceneObjectManager(
             document.body?.style?.cursor = "crosshair"
         } catch (t: Throwable) {
             console.error("[CreatePlacement] Failed to start placement mode", t)
-            endCreatePlacementMode()
+            cancelCreatePlacementMode()
         }
     }
 
@@ -931,7 +934,9 @@ class SceneObjectManager(
 
     /** Cancels the object placement mode, removing preview. */
     fun cancelCreatePlacementMode() {
+        val cancel = onCreatePlacementCancel
         endCreatePlacementMode()
+        cancel?.invoke()
     }
 
     private fun endCreatePlacementMode() {
@@ -939,6 +944,7 @@ class SceneObjectManager(
         isCreatePlacementActive = false
 
         onCreatePlacementConfirm = null
+        onCreatePlacementCancel = null
 
         // Dispose preview node
         try { (createPlacementPreview as? TransformNode)?.dispose() } catch (_: Throwable) {}

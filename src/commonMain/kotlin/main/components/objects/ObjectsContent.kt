@@ -267,6 +267,9 @@ fun ObjectsContent(
                             onConfirm = { _ ->
                                 isCreatePlacementActive = false
                                 onOpenObjectEditor(true)
+                            },
+                            onCancel = {
+                                isCreatePlacementActive = false
                             }
                         )
                     } else {
