@@ -73,7 +73,7 @@ fun DraggableNodeItem(node: LogicNode) {
             Text(label)
         }
         
-        if (description.isNotEmpty()) {
+        if (description.isNotBlank()) {
             Div(
                 attrs = {
                     style {

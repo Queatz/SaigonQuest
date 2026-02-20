@@ -820,8 +820,8 @@ vi: Đầu vào
 Label
 vi: Nhãn
 
-Drag items from the left panel to create nodes
-vi: Kéo mục từ bảng bên trái để tạo nút
+Drag items from the left panel or double-click to create nodes
+vi: Kéo mục từ bảng bên trái hoặc nhấp đúp để tạo nút
 
 Buttons
 vi: Nút

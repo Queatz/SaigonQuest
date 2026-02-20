@@ -23,7 +23,9 @@ import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
@@ -141,8 +143,15 @@ fun NodePickerDialog(
                                     }
                                 ) {
                                     Div { Text(node.label) }
-                                    if (node.description.isNotEmpty()) {
-                                        Div {
+                                    if (node.description.isNotBlank()) {
+                                        Div(
+                                            attrs = {
+                                                style {
+                                                    fontSize(11.px)
+                                                    marginTop(3.px)
+                                                }
+                                            }
+                                        ) {
                                             Text(node.description)
                                         }
                                     }
