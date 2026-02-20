@@ -21,7 +21,8 @@ import org.jetbrains.compose.web.events.SyntheticKeyboardEvent
 fun NodeEditorPanel(
     controller: NodeEditorController,
     onKeyDown: ((SyntheticKeyboardEvent) -> Unit)? = null,
-    onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null
+    onNodeAdd: ((type: NodeCategory, nodeId: NodeId, label: String, x: Float, y: Float) -> Unit)? = null,
+    onCanvasDoubleClick: ((x: Float, y: Float) -> Unit)? = null,
 ) {
     // Register DOM elements with the controller as soon as they mount, no timeout
     // Node editor canvas wrapper
@@ -161,6 +162,19 @@ fun NodeEditorPanel(
                     if (!controller.isDraggingConnection) {
                         controller.selectNode(null)
                         event.stopPropagation()
+                    }
+                }
+
+                // Open node picker on double-click in empty canvas
+                onDoubleClick { event ->
+                    if (!controller.isDraggingConnection) {
+                        val (canvasX, canvasY) = controller.screenToCanvasCoordinates(
+                            event.clientX.toFloat(),
+                            event.clientY.toFloat(),
+                        )
+                        onCanvasDoubleClick?.invoke(canvasX, canvasY)
+                        event.stopPropagation()
+                        event.preventDefault()
                     }
                 }
             }

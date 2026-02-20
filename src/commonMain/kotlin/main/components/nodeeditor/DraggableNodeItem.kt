@@ -31,6 +31,8 @@ fun DraggableNodeItem(node: LogicNode) {
             attr("data-id", id.name)
             attr("data-label", label)
             attr("data-description", description)
+
+            tabIndex(0)
             
             // Add drag event handlers
             onDragStart { event ->

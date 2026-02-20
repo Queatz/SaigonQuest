@@ -235,7 +235,7 @@ object NodeEditorStyles : StyleSheet() {
         property("overflow-y", "auto")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        property("gap", "16px")
+        gap(8.px)
         boxSizing("border-box")
 
         dark(self) {
@@ -253,12 +253,11 @@ object NodeEditorStyles : StyleSheet() {
     val sectionHeader by style {
         margin(0.px)
         marginTop(16.px)
-        marginBottom(8.px)
     }
 
     // Draggable item styles
     val draggableItem by style {
-        padding(8.px, 12.px)
+        padding(8.px)
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurfaceVariant)
         borderRadius(12.px)

@@ -75,6 +75,10 @@ fun LogicEditorDialog(
     var showSidebar by remember(isMobile) { mutableStateOf(!isMobile) }
     var showProperties by remember(isMobile) { mutableStateOf(!isMobile) }
 
+    // State for node picker on double-click
+    var showNodePicker by remember { mutableStateOf(false) }
+    var pendingInsertPos by remember { mutableStateOf<Pair<Float, Float>?>(null) }
+
     // Update fullscreen state when fullscreen changes
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
@@ -272,7 +276,11 @@ fun LogicEditorDialog(
                     onKeyDown = handleKeyDown,
                     onNodeAdd = { type, id, label, x, y ->
                         controller.addNode(type, id, label, x, y)
-                    }
+                    },
+                    onCanvasDoubleClick = { x, y ->
+                        pendingInsertPos = x to y
+                        showNodePicker = true
+                    },
                 )
 
                 // Property panel (shown when a node is selected)
@@ -289,6 +297,23 @@ fun LogicEditorDialog(
                         )
                     }
                 }
+            }
+
+            // Node picker dialog
+            if (showNodePicker) {
+                NodePickerDialog(
+                    onSelect = { node ->
+                        val pos = pendingInsertPos
+                        if (pos != null) {
+                            controller.addNode(node.category, node.id, node.label, pos.first, pos.second)
+                        }
+                        // close handled in onClose of dialog
+                    },
+                    onClose = {
+                        showNodePicker = false
+                        pendingInsertPos = null
+                    },
+                )
             }
 
             // Show error message if present
