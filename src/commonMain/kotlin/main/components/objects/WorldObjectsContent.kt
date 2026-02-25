@@ -1,15 +1,22 @@
 package main.components.objects
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import main.components.Translated
 import main.theme.EditorStyles
 import main.theme.Styles
 import models.Object
+import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
+import Translations.str
 
 /**
  * Content for the World tab - lists all objects in the world with locate, edit, and remove functionality.
@@ -33,6 +40,14 @@ fun WorldObjectsContent(
     onEdit: (String) -> Unit = {},
     onDuplicate: (String) -> Unit = {}
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredObjects = if (searchQuery.isBlank()) {
+        objects
+    } else {
+        objects.filter { it.title.contains(searchQuery, ignoreCase = true) }
+    }
+
     // Container for the content
     Div(
         attrs = {
@@ -52,6 +67,19 @@ fun WorldObjectsContent(
                 Translated("Create object")
             }
         }
+
+        // Search input
+        if (objects.size > 5) {
+            TextInput(
+                value = searchQuery,
+                attrs = {
+                    classes(Styles.inputField)
+                    placeholder(str("Search objects"))
+                    onInput { searchQuery = it.value }
+                }
+            )
+        }
+
         // Loading or error message
         if (isLoading) {
             P(
@@ -85,7 +113,7 @@ fun WorldObjectsContent(
                 }
             ) {
                 // Display objects
-                objects.forEach { obj ->
+                filteredObjects.forEach { obj ->
                     ObjectItem(
                         obj = obj,
                         onRemove = onRemove,

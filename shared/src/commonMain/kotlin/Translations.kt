@@ -109,6 +109,9 @@ vi: Mật khẩu không khớp
 Current password is incorrect
 vi: Mật khẩu hiện tại không đúng
 
+Search objects
+vi: Tìm kiếm đối tượng
+
 collected
 vi: đã thu thập
 

@@ -189,7 +189,7 @@ fun NodeEditorPanel(
                         classes(NodeEditorStyles.emptyCanvasMessage)
                     }
                 ) {
-                    Translated("Drag items from the left panel to create nodes")
+                    Translated("Drag items from the left panel or double-click to create nodes")
                 }
             }
             

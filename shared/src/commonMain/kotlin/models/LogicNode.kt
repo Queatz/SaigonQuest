@@ -276,7 +276,7 @@ sealed interface LogicNode {
         override val id: NodeId = NodeId.Ai,
         override val label: String = "AI",
         override val category: NodeCategory = NodeCategory.Input,
-        override val description: String = "Generate text using DeepSeek from system and user prompts"
+        override val description: String = "Generate text from system and user prompts"
     ) : LogicNode
 
     /**

@@ -71,6 +71,9 @@ fun CharacterToolPage() {
     // Walking toggle
     var walking by remember { mutableStateOf(false) }
 
+    // Sitting toggle
+    var sitting by remember { mutableStateOf(false) }
+
     // Ensure sane values
     LaunchedEffect(cellWidth, cellHeight, columns, fps) {
         if (cellWidth <= 0) cellWidth = 32
@@ -230,8 +233,20 @@ fun CharacterToolPage() {
             // Walking toggle
             Button(attrs = {
                 classes(Styles.primaryButton)
-                onClick { walking = !walking }
+                onClick {
+                    walking = !walking
+                    if (walking) sitting = false
+                }
             }) { Translated(if (walking) "Stop walking" else "Start walking") }
+
+            // Sitting toggle
+            Button(attrs = {
+                classes(Styles.primaryButton)
+                onClick {
+                    sitting = !sitting
+                    if (sitting) walking = false
+                }
+            }) { Translated(if (sitting) "Stand" else "Sit") }
         }
 
         // Right: Preview
@@ -252,6 +267,7 @@ fun CharacterToolPage() {
                 enableInventoryIntegration = false,
                 useProvidedBaseSpriteSheet = true,
                 isWalking = walking,
+                isSitting = sitting,
             )
         }
     }

@@ -40,6 +40,10 @@ import kotlin.math.PI
  * @param skinTone The skin tone of the character (0-1)
  * @param eyeColor The eye color of the character (Black, Blue, Brown, Green, Gray)
  * @param hairStyle The hair style of the character (Short, Medium, Long)
+ * @param enableInventoryIntegration Whether to load inventory data for the character
+ * @param useProvidedBaseSpriteSheet Whether to use the provided characterSpriteSheet instead of creating one from bodyType
+ * @param isWalking Whether the character should be shown walking
+ * @param isSitting Whether the character should be shown sitting
  */
 @Composable
 fun CharacterRenderer(
@@ -53,6 +57,7 @@ fun CharacterRenderer(
     enableInventoryIntegration: Boolean = true,
     useProvidedBaseSpriteSheet: Boolean = false,
     isWalking: Boolean = false,
+    isSitting: Boolean = false,
 ) {
     // Set up the canvas with CSS and ref instead of ID
     var canvasRef by remember { mutableStateOf<HTMLCanvasElement?>(null) }
@@ -125,9 +130,13 @@ fun CharacterRenderer(
         onDispose { }
     }
 
-    // React to walking state changes
-    DisposableEffect(isWalking) {
-        characterRef?.activity = if (isWalking) main.components.world.PlayerActivity.Moving else null
+    // React to walking/sitting state changes
+    DisposableEffect(isWalking, isSitting) {
+        characterRef?.activity = when {
+            isWalking -> main.components.world.PlayerActivity.Moving
+            isSitting -> main.components.world.PlayerActivity.Sit
+            else -> null
+        }
         onDispose { }
     }
 
@@ -241,7 +250,11 @@ fun CharacterRenderer(
         val character = Character(
             spriteSheet = baseSpriteSheet,
             direction = CharacterDirection.S, // Default facing south
-            activity = if (isWalking) main.components.world.PlayerActivity.Moving else null,
+            activity = when {
+                isWalking -> main.components.world.PlayerActivity.Moving
+                isSitting -> main.components.world.PlayerActivity.Sit
+                else -> null
+            },
             additionalSpriteSheets = (listOfNotNull(eyesSpriteSheet, hairSpriteSheet) + additionalSpriteSheets + (if (enableInventoryIntegration) wornItemSpriteSheets else emptyList())).toMutableList()
         )
         // Initialize skin tone

@@ -883,7 +883,7 @@ class SceneObjectManager(
                 scale = Vector3(1f, 1f, 1f),
                 color = Color3(1f, 0f, 0f),
                 emissiveColor = Color3(1f, 0f, 0f),
-                diameter = 0.2f,
+                diameter = 0.5f,
                 segments = 8,
                 alpha = 0.9f,
                 isPickable = false,
