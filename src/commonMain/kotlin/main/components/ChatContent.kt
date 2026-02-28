@@ -77,10 +77,6 @@ fun ChatContent(worldId: String) {
     var isTyping by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
     var shoutNext by remember { mutableStateOf(false) }
-    // Subscription state
-    var isSubscribed by remember { mutableStateOf(true) }
-    var showSubscriptionDialog by remember { mutableStateOf(false) }
-    var willSubscribe by remember { mutableStateOf<Boolean?>(null) }
     // Rich text editor dialog state
     var showRichEditorDialog by remember { mutableStateOf(false) }
 
@@ -131,18 +127,6 @@ fun ChatContent(worldId: String) {
         } catch (e: Throwable) {
             console.error("Error checking authentication status", e)
             isAuthenticated = false
-        }
-    }
-
-    // Fetch subscription status when authenticated
-    LaunchedEffect(isAuthenticated, worldId) {
-        if (isAuthenticated && worldId.isNotEmpty()) {
-            try {
-                isSubscribed = ChatApi.getSubscription(worldId)
-            } catch (e: Throwable) {
-                console.error("Failed to fetch subscription", e)
-                isSubscribed = true
-            }
         }
     }
 
@@ -203,45 +187,6 @@ fun ChatContent(worldId: String) {
             chatInputRef.value?.focus()
         } catch (e: Throwable) {
             console.error("Error focusing chat input", e)
-        }
-    }
-
-    // Subscription bell header
-    Div(
-        attrs = {
-            style {
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.FlexEnd)
-                alignItems(AlignItems.Center)
-                padding(8.px)
-                property("border-bottom", "1px solid rgba(255, 255, 255, 0.1)")
-            }
-        }
-    ) {
-        // Bell button
-        Div(
-            attrs = {
-                title(str(if (isSubscribed) "Subscribed" else "Not subscribed"))
-                style {
-                    width(36.px)
-                    height(36.px)
-                    backgroundColor(rgba(255, 255, 255, 0.1))
-                    borderRadius(8.px)
-                    display(DisplayStyle.Flex)
-                    justifyContent(JustifyContent.Center)
-                    alignItems(AlignItems.Center)
-                    cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                    opacity(if (isAuthenticated) 1.0 else 0.5)
-                }
-                onClick {
-                    if (isAuthenticated) {
-                        willSubscribe = !isSubscribed
-                        showSubscriptionDialog = true
-                    }
-                }
-            }
-        ) {
-            Text(if (isSubscribed) "🔔" else "🔕")
         }
     }
 
@@ -686,27 +631,4 @@ fun ChatContent(worldId: String) {
         }
     }
 
-    // Subscription confirm dialog
-    if (showSubscriptionDialog && willSubscribe != null) {
-        BasicConfirmDialog(
-            message = str(if (willSubscribe == true) "Subscribe to this world?" else "Unsubscribe from this world?"),
-            onConfirm = {
-                scope.launch {
-                    try {
-                        val ok = if (willSubscribe == true) ChatApi.subscribe(worldId) else ChatApi.unsubscribe(worldId)
-                        if (ok) {
-                            isSubscribed = (willSubscribe == true)
-                        }
-                    } catch (t: Throwable) {
-                        console.error("Failed to update subscription", t)
-                    } finally {
-                        showSubscriptionDialog = false
-                    }
-                }
-            },
-            onCancel = {
-                showSubscriptionDialog = false
-            },
-        )
-    }
 }

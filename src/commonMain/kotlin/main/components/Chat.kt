@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import main.components.chat.ChatBellButton
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -53,6 +54,9 @@ fun Chat(
         title = translated("Chat"),
         isMobile = isMobile,
         onClose = onClose,
+        headerActions = {
+            ChatBellButton(worldId = worldId)
+        },
         headerRight = {
             val text = retentionText
             if (text != null) {
@@ -71,6 +75,9 @@ fun Chat(
             title = translated("Chat"),
             message = "${translated("Messages are kept for")} $retentionText",
             onClose = { showInfoDialog = false },
+            headerActions = {
+                ChatBellButton(worldId = worldId)
+            }
         )
     }
 }

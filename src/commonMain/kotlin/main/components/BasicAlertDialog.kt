@@ -17,10 +17,12 @@ fun BasicAlertDialog(
     onClose: () -> Unit,
     onConfirm: () -> Unit = onClose,
     title: String? = null,
+    headerActions: (@Composable () -> Unit)? = null,
 ) {
     BaseDialog(
         onClose = onClose,
         title = title,
+        headerActions = headerActions,
         content = {
             Text(message)
         },

@@ -17,6 +17,7 @@ import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
@@ -66,8 +67,7 @@ fun AdminDialog(
                     style {
                         display(DisplayStyle.Flex)
                         flexDirection(FlexDirection.Column)
-                        alignItems(AlignItems.Center)
-                        property("gap", "16px")
+                        gap(16.px)
                         width(100.percent)
                     }
                 }

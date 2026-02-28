@@ -19,10 +19,12 @@ fun BasicConfirmDialog(
     onCancel: () -> Unit,
     onDismiss: () -> Unit = onCancel,
     title: String? = translated("Confirm"),
+    headerActions: (@Composable () -> Unit)? = null,
 ) {
     BaseDialog(
         onClose = onDismiss,
         title = title,
+        headerActions = headerActions,
         content = {
             Text(message)
         },
