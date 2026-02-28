@@ -1036,8 +1036,8 @@ vi: Hệ thống
 Assets
 vi: Tài nguyên
 
-View assets
-vi: Xem tài nguyên
+Manage assets
+vi: Quản lý tài nguyên
 
 No assets found
 vi: Không tìm thấy tài nguyên

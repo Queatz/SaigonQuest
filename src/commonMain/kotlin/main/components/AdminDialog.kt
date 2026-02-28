@@ -76,7 +76,7 @@ fun AdminDialog(
                 DialogButton(
                     onClick = { showAssetsDialog = true },
                     isPrimary = true,
-                ) { Translated("View assets") }
+                ) { Translated("Manage assets") }
 
                 // Manage items
                 DialogButton(

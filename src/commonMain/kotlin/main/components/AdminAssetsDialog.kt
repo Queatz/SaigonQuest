@@ -18,6 +18,8 @@ import main.components.translated
 import main.components.IconRenderer
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.selected
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
@@ -157,13 +159,13 @@ fun AdminAssetsDialog(
                         Div(attrs = { classes(Styles.adminAssetsGridRow) }) {
                             // Icon
                             val iconIndex = when (asset.type) {
-                                AssetType.Items -> 11
+                                AssetType.Items -> 2
                                 AssetType.SpriteSheet -> 3
-                                AssetType.World -> 4
-                                AssetType.Objects -> 5
+                                AssetType.World -> 0
+                                AssetType.Objects -> 1
                             }
                             IconRenderer(
-                                url = "/raw/ui.png",
+                                url = "/raw/data/ui/admin.png",
                                 index = iconIndex,
                             )
 
@@ -175,9 +177,15 @@ fun AdminAssetsDialog(
                                     Text(asset.file)
                                 }
                             }
+                            val cats = assetCategories[asset.key] ?: emptySet()
                             // Categories
-                            Span {
-                                val cats = assetCategories[asset.key] ?: emptySet()
+                            Span({
+                                style {
+                                    if (cats.isEmpty()) {
+                                        opacity(0.5f)
+                                    }
+                                }
+                            }) {
                                 if (cats.isEmpty()) {
                                     Text("-")
                                 } else {
@@ -185,7 +193,13 @@ fun AdminAssetsDialog(
                                 }
                             }
                             // Actions
-                            Span {
+                            Span(
+                                {
+                                    style {
+                                        textAlign("right")
+                                    }
+                                }
+                            ) {
                                 Button(attrs = {
                                     classes(Styles.baseDialogButtonSecondary)
                                     onClick {
