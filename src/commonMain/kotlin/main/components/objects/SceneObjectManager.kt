@@ -30,7 +30,6 @@ import main.components.world.InventoryObject
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
-import main.components.world.isBillboard
 import main.components.world.isSkybox
 import models.Item
 import models.Object

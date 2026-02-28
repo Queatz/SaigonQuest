@@ -47,7 +47,7 @@ class CameraController(private val scene: Scene) {
         updateConstraints()
         this.targetScreenOffset = Vector2(0f, 0f)
 
-        this.wheelPrecision = .5f
+        this.wheelPrecision = 5f
         this.zoomToMouseLocation = true
         this.wheelDeltaPercentage = 0.01f
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
@@ -620,7 +620,9 @@ class CameraController(private val scene: Scene) {
             console.error("Error re-adding camera inputs: ${e.message}")
         }
 
-        camera.wheelPrecision = .5f
+        camera.wheelPrecision = 5f
+        camera.zoomToMouseLocation = true
+        camera.wheelDeltaPercentage = 0.01f
         
         console.log("Camera inputs re-enabled")
     }
