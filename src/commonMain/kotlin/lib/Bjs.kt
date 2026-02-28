@@ -48,6 +48,18 @@ open external class Node {
     open fun getAbsolutePosition(): Vector3 = definedExternally
 
     /**
+     * Gets all child nodes of this node
+     *
+     * @param predicate Optional predicate to filter nodes
+     * @param directDescendantsOnly If true, only direct descendants will be returned
+     * @return Array of child nodes
+     */
+    open fun getChildren(
+        predicate: ((node: Node) -> Boolean)? = definedExternally,
+        directDescendantsOnly: Boolean? = definedExternally
+    ): Array<Node>
+
+    /**
      * Gets all child meshes of this node
      * 
      * @param directDescendantsOnly If true, only direct descendants will be returned
@@ -1873,7 +1885,7 @@ external class SceneLoader {
             rootUrl: String,
             sceneFilename: String,
             scene: Scene,
-            onSuccess: (Array<AbstractMesh>, Array<dynamic>, Array<dynamic>, Array<dynamic>, transformNodes: Array<dynamic>) -> Unit = definedExternally,
+            onSuccess: (Array<AbstractMesh>, Array<dynamic>, Array<dynamic>, Array<dynamic>, transformNodes: Array<Node>) -> Unit = definedExternally,
             onProgress: ((event: dynamic) -> Unit)? = definedExternally,
             onError: ((scene: Scene, message: String, exception: dynamic) -> Unit)? = definedExternally,
             pluginExtension: String? = definedExternally

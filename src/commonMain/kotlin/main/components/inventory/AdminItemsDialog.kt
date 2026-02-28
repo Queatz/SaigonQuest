@@ -58,42 +58,40 @@ fun AdminItemsDialog(
         headerActions = headerActions,
         maxWidth = "720px",
         content = {
-            Div(attrs = { classes(Styles.adminItemsContent) }) {
-                if (errorMessage != null) {
-                    P(attrs = { classes(Styles.adminItemsErrorText) }) { Text(errorMessage!!) }
+            if (errorMessage != null) {
+                P(attrs = { classes(Styles.adminItemsErrorText) }) { Text(errorMessage!!) }
+            }
+            if (isLoading) {
+                P { Translated("Loading...") }
+            } else if (items.isEmpty()) {
+                P { Translated("No items found") }
+            } else {
+                // Header row
+                Div(attrs = { classes(Styles.adminItemsGridHeader) }) {
+                    Span { /* image column header left blank intentionally */ }
+                    Span { Translated("Title") }
+                    Span { Translated("Cost") }
+                    Span { Translated("Asset index") }
+                    Span { Translated("Wearable") }
+                    Span {}
                 }
-                if (isLoading) {
-                    P { Translated("Loading...") }
-                } else if (items.isEmpty()) {
-                    P { Translated("No items found") }
-                } else {
-                    // Header row
-                    Div(attrs = { classes(Styles.adminItemsGridHeader) }) {
-                        Span { /* image column header left blank intentionally */ }
-                        Span { Translated("Title") }
-                        Span { Translated("Cost") }
-                        Span { Translated("Asset index") }
-                        Span { Translated("Wearable") }
-                        Span {}
-                    }
 
-                    // List rows
-                    for (item in items) {
-                        Div(attrs = { classes(Styles.adminItemsGridRow) }) {
-                            // image
-                            Div {
-                                ItemRenderer(item = item, size = 32)
-                            }
-                            Span { Text(item.title.ifBlank { "(untitled)" }) }
-                            Span { Text(item.cost.toString()) }
-                            Span { Text(item.assetIndex.toString()) }
-                            Span { Text(if (item.wearable) translated("Yes") else translated("No")) }
-                            Div(attrs = { classes(Styles.adminItemsRowActions) }) {
-                                Button(attrs = {
-                                    classes(Styles.primaryButton)
-                                    onClick { editingItem = item }
-                                }) { Translated("Edit") }
-                            }
+                // List rows
+                for (item in items) {
+                    Div(attrs = { classes(Styles.adminItemsGridRow) }) {
+                        // image
+                        Div {
+                            ItemRenderer(item = item, size = 32)
+                        }
+                        Span { Text(item.title.ifBlank { "(untitled)" }) }
+                        Span { Text(item.cost.toString()) }
+                        Span { Text(item.assetIndex.toString()) }
+                        Span { Text(if (item.wearable) translated("Yes") else translated("No")) }
+                        Div(attrs = { classes(Styles.adminItemsRowActions) }) {
+                            Button(attrs = {
+                                classes(Styles.primaryButton)
+                                onClick { editingItem = item }
+                            }) { Translated("Edit") }
                         }
                     }
                 }

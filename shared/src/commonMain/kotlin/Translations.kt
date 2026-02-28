@@ -70,6 +70,12 @@ vi: Thêm hình ảnh
 My Worlds
 vi: Thế giới của tôi
 
+All types
+vi: Tất cả loại
+
+Search assets
+vi: Tìm kiếm tài sản
+
 Close
 vi: Đóng
 
@@ -1107,6 +1113,9 @@ vi: Xem trước đối tượng
 
 Collections list editor (coming soon)
 vi: Trình chỉnh sửa danh sách bộ sưu tập (sắp ra mắt)
+
+Add all remaining collections
+vi: Thêm tất cả các bộ sưu tập còn lại
 
 Category
 vi: Danh mục

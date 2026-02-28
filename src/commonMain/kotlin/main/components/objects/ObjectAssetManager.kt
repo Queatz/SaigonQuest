@@ -14,6 +14,7 @@ import lib.TransformNode
 import lib.Vector3
 import main.components.world.isBillboard
 import kotlin.time.Clock
+import kotlin.collections.*
 
 /**
  * Manages 3D model assets for objects in the scene.
@@ -22,6 +23,28 @@ import kotlin.time.Clock
  * @param scene The BabylonJS scene
  */
 class ObjectAssetManager(private val scene: Scene) {
+    
+    companion object {
+        fun getCollectionNames(nodes: List<Node>): List<String> {
+            val root = nodes.find { it.name == "__root__" }
+            console.log("[ObjectAssetManager] getCollectionNames: Found root node: ${root != null}")
+            
+            val baseNodes = root?.getChildren(null, true)?.toList() ?: nodes
+            console.log("[ObjectAssetManager] baseNodes count: ${baseNodes.size}")
+
+            // If there is only one node and it is named "Scene", "Scene Root" or "Scene Collection", we go one level deeper
+            if (baseNodes.size == 1 && (baseNodes[0].name == "Scene" || baseNodes[0].name == "Scene Root" || baseNodes[0].name == "Scene Collection")) {
+                console.log("[ObjectAssetManager] Going one level deeper into: ${baseNodes[0].name}")
+                val children = baseNodes[0].getChildren(null, true).map { it.name }.filter { it.isNotBlank() }.distinct().sorted()
+                console.log("[ObjectAssetManager] Deep children count: ${children.size}")
+                return children
+            }
+
+            val names = baseNodes.map { it.name }.filter { it.isNotBlank() }.distinct().sorted()
+            console.log("[ObjectAssetManager] Final names count: ${names.size}")
+            return names
+        }
+    }
     
     // Map of file paths to loaded meshes
     private val modelCache = mutableMapOf<String, Map<String, AbstractMesh>>()

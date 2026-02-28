@@ -28,6 +28,7 @@ fun BasicSceneRenderer(
     filename: String,
     collection: String? = null,
     transparentBackground: Boolean = false,
+    onCollectionsLoaded: ((List<String>) -> Unit)? = null,
 ) {
     var canvas by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -138,9 +139,14 @@ fun BasicSceneRenderer(
                         rootUrl = "/raw/data/",
                         sceneFilename = "$filename.glb",
                         scene = scene,
-                        onSuccess = { meshes, _, _, _, _ ->
+                        onSuccess = { meshes, _, _, _, nodes ->
+                            console.log("[BasicSceneRenderer] Scene load success. Meshes: ${meshes.size}, Nodes: ${nodes.size}")
                             loadedMeshes = meshes
                             isLoading = false
+                            val all = (meshes.unsafeCast<Array<Node>>().toList() + nodes.toList())
+                            val collectionNames = ObjectAssetManager.getCollectionNames(all)
+                            console.log("[BasicSceneRenderer] Detected collections: ${collectionNames.joinToString(", ")}")
+                            onCollectionsLoaded?.invoke(collectionNames)
                         },
                         onProgress = null,
                         onError = { _, message, _ ->

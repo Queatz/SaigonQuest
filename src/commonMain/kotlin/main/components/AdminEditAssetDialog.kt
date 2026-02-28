@@ -1,47 +1,14 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.AssetApi
 import main.api.AssetItemApi
 import main.theme.Styles
-import models.Asset
-import models.AssetType
-import models.ItemAssetItem
-import models.SpriteSheetAssetItem
-import models.WorldAssetItem
-import models.ObjectAssetItem
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.TextInput
-import org.jetbrains.compose.web.dom.TextArea
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.css.boxSizing
-import main.components.translated
-import main.components.LabeledCheckbox
+import main.theme.Theme
+import models.*
+import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun AdminEditAssetDialog(
@@ -358,9 +325,83 @@ fun AdminEditAssetDialog(
                             )
                         )
                     }
+
+                    var availableCollections by remember { mutableStateOf<List<String>>(emptyList()) }
+
                     Div(attrs = { style { padding(8.px); gap(8.px); display(DisplayStyle.Flex); flexDirection(FlexDirection.Column) } }) {
                         P { Translated("Objects preview") }
-                        BasicSceneRenderer(filename = asset.file)
+                        BasicSceneRenderer(
+                            filename = asset.file,
+                            onCollectionsLoaded = { availableCollections = it },
+                        )
+
+                        if (availableCollections.isNotEmpty()) {
+                            Div(attrs = {
+                                style {
+                                    display(DisplayStyle.Flex)
+                                    flexDirection(FlexDirection.Column)
+                                    gap(4.px)
+                                    padding(8.px)
+                                    property("background-color", "rgba(255, 255, 255, 0.05)")
+                                    borderRadius(8.px)
+                                }
+                            }) {
+                                availableCollections.forEach { name ->
+                                    val isAdded = objectItems.any { it.collection == name }
+                                    Div(attrs = {
+                                        style {
+                                            display(DisplayStyle.Flex)
+                                            property("gap", "8px")
+                                            property("align-items", "center")
+                                        }
+                                    }) {
+                                        Span(attrs = {
+                                            style {
+                                                if (isAdded) {
+                                                    textDecoration("line-through")
+                                                    opacity(0.6)
+                                                }
+                                            }
+                                        }) { Text(name) }
+                                        if (isAdded) {
+                                            Span(attrs = {
+                                                style {
+                                                    color(Theme.colors.success)
+                                                    fontWeight("bold")
+                                                }
+                                            }) { Text("✓") }
+                                        }
+                                    }
+                                }
+
+                                val remaining = availableCollections.filter { name ->
+                                    objectItems.none { it.collection == name }
+                                }
+                                if (remaining.isNotEmpty()) {
+                                    Button(attrs = {
+                                        classes(Styles.baseDialogButtonPrimary)
+                                        style { marginTop(8.px) }
+                                        onClick {
+                                            val newItems = remaining.map { name ->
+                                                ObjectAssetItem(
+                                                    assetId = asset.key,
+                                                    title = name,
+                                                    category = "",
+                                                    collection = name,
+                                                )
+                                            }
+                                            // Remove placeholder if it's the only item and empty
+                                            val base = if (objectItems.size == 1 && objectItems[0].collection.isEmpty()) {
+                                                emptyList()
+                                            } else {
+                                                objectItems
+                                            }
+                                            objectItems = base + newItems
+                                        }
+                                    }) { Translated("Add all remaining collections") }
+                                }
+                            }
+                        }
 
                         // Rows
                         for ((idx, obj) in objectItems.withIndex()) {

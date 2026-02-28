@@ -1310,6 +1310,46 @@ object Styles : StyleSheet() {
     }
 
     // Assets list styles
+    val adminAssetsHeaderBar by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(12.px)
+        marginBottom(16.px)
+    }
+
+    val adminAssetsSearchInput by style {
+        flexGrow(1)
+        maxWidth(200.px)
+    }
+
+    val adminAssetsTypeFilter by style {
+        maxWidth(150.px)
+    }
+
+    val adminAssetsGridHeader by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "32px 100px 1.5fr 1fr 100px")
+        gap(12.px)
+        fontSize(12.px)
+        fontWeight("bold")
+        marginBottom(8.px)
+        padding(0.px, 12.px)
+    }
+
+    val adminAssetsGridRow by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "32px 100px 1.5fr 1fr 100px")
+        gap(12.px)
+        alignItems(AlignItems.Center)
+        padding(8.px, 12.px)
+        property("border", "1px solid ${Theme.colors.white08}")
+        property("border-radius", "6px")
+        marginBottom(6.px)
+        dark(self) {
+            backgroundColor(Theme.colors.white05)
+        }
+    }
+
     val assetsGridHeader by style {
         display(DisplayStyle.Grid)
         property("grid-template-columns", "1fr 2fr")
@@ -1329,12 +1369,6 @@ object Styles : StyleSheet() {
         marginBottom(6.px)
     }
 
-    // Admin Items dialog styles
-    val adminItemsContent by style {
-        padding(16.px)
-        height(100.percent)
-        overflowY("auto")
-    }
 
     val adminItemsErrorText by style {
         color(Theme.colors.error)

@@ -9,23 +9,36 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.AssetApi
+import main.api.AssetItemApi
 import main.theme.Styles
 import models.Asset
+import models.AssetType
 import main.components.Translated
 import main.components.translated
+import main.components.IconRenderer
+import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 
 @Composable
 fun AdminAssetsDialog(
     onClose: () -> Unit,
 ) {
     var assets by remember { mutableStateOf<List<Asset>>(emptyList()) }
+    var assetCategories by remember { mutableStateOf<Map<String, Set<String>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf<AssetType?>(null) }
 
     val scope = rememberCoroutineScope()
 
@@ -34,7 +47,26 @@ fun AdminAssetsDialog(
         errorMessage = null
         scope.launch {
             try {
-                assets = AssetApi.getAllAssets()
+                val fetchedAssets = AssetApi.getAllAssets()
+                assets = fetchedAssets
+
+                // Fetch categories
+                val categoriesMap = mutableMapOf<String, MutableSet<String>>()
+                AssetType.entries.forEach { type ->
+                    try {
+                        val results = AssetItemApi.searchWithAsset(type, null, null)
+                        results.forEach { result ->
+                            val assetId = result.asset?.key
+                            val cat = result.category
+                            if (assetId != null && !cat.isNullOrBlank()) {
+                                categoriesMap.getOrPut(assetId) { mutableSetOf() }.add(cat)
+                            }
+                        }
+                    } catch (t: Throwable) {
+                        console.error("Failed to fetch categories for type $type", t)
+                    }
+                }
+                assetCategories = categoriesMap
             } catch (t: Throwable) {
                 console.error("Failed to load assets", t)
                 errorMessage = t.message
@@ -50,6 +82,9 @@ fun AdminAssetsDialog(
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedAsset by remember { mutableStateOf<Asset?>(null) }
 
+    val searchPlaceholder = translated("Search assets")
+    val allTypesLabel = translated("All types")
+
     val headerActions: @Composable () -> Unit = {
         Button(attrs = {
             classes(Styles.baseDialogButtonPrimary)
@@ -61,31 +96,92 @@ fun AdminAssetsDialog(
         onClose = onClose,
         title = translated("Assets"),
         headerActions = headerActions,
-        maxWidth = "720px",
         content = {
             if (errorMessage != null) {
                 P(attrs = { classes(Styles.formErrorMessage) }) { Text(errorMessage!!) }
             }
 
+            // Search and filter
+            Div(attrs = { classes(Styles.adminAssetsHeaderBar) }) {
+                TextInput(
+                    value = searchQuery,
+                    attrs = {
+                        classes(Styles.inputField, Styles.adminAssetsSearchInput)
+                        placeholder(searchPlaceholder)
+                        onInput { searchQuery = it.value }
+                    }
+                )
+
+                Select(
+                    attrs = {
+                        classes(Styles.inputField, Styles.adminAssetsTypeFilter)
+                        onChange { ev ->
+                            selectedType = AssetType.entries.firstOrNull { it.name == ev.value }
+                        }
+                    }
+                ) {
+                    Option(value = "") { Text(allTypesLabel) }
+                    AssetType.entries.forEach { type ->
+                        Option(
+                            value = type.name,
+                            attrs = {
+                                if (type == selectedType) selected()
+                            }
+                        ) { Text(type.name) }
+                    }
+                }
+            }
+
+            val filteredAssets = assets.filter { asset ->
+                val matchesType = selectedType == null || asset.type == selectedType
+                val matchesSearch = searchQuery.isBlank() || asset.file.contains(searchQuery, ignoreCase = true) ||
+                        (assetCategories[asset.key]?.any { it.contains(searchQuery, ignoreCase = true) } == true)
+                matchesType && matchesSearch
+            }
+
             when {
                 isLoading -> P { Translated("Loading...") }
-                assets.isEmpty() -> P { Translated("No assets found") }
+                filteredAssets.isEmpty() -> P { Translated("No assets found") }
                 else -> {
-                    // Header row
-                    Div(attrs = { classes(Styles.assetsGridHeader) }) {
+                    // Header
+                    Div(attrs = { classes(Styles.adminAssetsGridHeader) }) {
+                        Span {} // Icon
                         Span { Translated("Type") }
                         Span { Translated("File") }
-                        Span { Translated("Actions") }
+                        Span { Translated("Categories") }
+                        Span {} // Actions
                     }
+
                     // Rows
-                    for (asset in assets) {
-                        Div(attrs = { classes(Styles.assetsGridRow) }) {
+                    for (asset in filteredAssets) {
+                        Div(attrs = { classes(Styles.adminAssetsGridRow) }) {
+                            // Icon
+                            val iconIndex = when (asset.type) {
+                                AssetType.Items -> 11
+                                AssetType.SpriteSheet -> 3
+                                AssetType.World -> 4
+                                AssetType.Objects -> 5
+                            }
+                            IconRenderer(
+                                url = "/raw/ui.png",
+                                index = iconIndex,
+                            )
+
                             Span { Text(asset.type.name) }
                             Span {
                                 if (asset.file.isBlank()) {
                                     Translated("(untitled)")
                                 } else {
                                     Text(asset.file)
+                                }
+                            }
+                            // Categories
+                            Span {
+                                val cats = assetCategories[asset.key] ?: emptySet()
+                                if (cats.isEmpty()) {
+                                    Text("-")
+                                } else {
+                                    Text(cats.joinToString(", "))
                                 }
                             }
                             // Actions

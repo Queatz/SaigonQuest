@@ -21,15 +21,12 @@ import models.Item
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
@@ -162,172 +159,164 @@ fun EditItemDialog(
         onClose = onClose,
         title = translated("Edit item"),
         content = {
-            Div(attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    padding(16.px)
-                }
-            }) {
-                if (errorMessage.isNotEmpty()) {
-                    P(attrs = { style { color(rgba(255, 100, 100, 0.9)); marginBottom(16.px) } }) { Translated(errorMessage) }
-                }
+            if (errorMessage.isNotEmpty()) {
+                P(attrs = { style { color(rgba(255, 100, 100, 0.9)); marginBottom(16.px) } }) { Translated(errorMessage) }
+            }
 
-                // Title
-                Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Title") }
-                    val titlePlaceholder = translated("Enter item title")
-                    TextInput(
-                        value = title,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder(titlePlaceholder)
-                            onInput { title = it.value }
-                        }
-                    )
-                    if (titleError.isNotEmpty()) {
-                        P(attrs = { style { color(rgba(255, 100, 100, 0.9)); fontSize(12.px); marginTop(4.px) } }) { Translated(titleError) }
-                    }
-                }
-
-                // Description
-                Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Description") }
-                    val descriptionPlaceholder = translated("Enter item description")
-                    TextArea(attrs = {
+            // Title
+            Div(attrs = { style { marginBottom(16.px) } }) {
+                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Title") }
+                val titlePlaceholder = translated("Enter item title")
+                TextInput(
+                    value = title,
+                    attrs = {
                         classes(Styles.inputField)
-                        placeholder(descriptionPlaceholder)
-                        value(description)
-                        onInput { description = it.value }
-                        style { height(80.px) }
-                    })
+                        placeholder(titlePlaceholder)
+                        onInput { title = it.value }
+                    }
+                )
+                if (titleError.isNotEmpty()) {
+                    P(attrs = { style { color(rgba(255, 100, 100, 0.9)); fontSize(12.px); marginTop(4.px) } }) { Translated(titleError) }
+                }
+            }
+
+            // Description
+            Div(attrs = { style { marginBottom(16.px) } }) {
+                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Description") }
+                val descriptionPlaceholder = translated("Enter item description")
+                TextArea(attrs = {
+                    classes(Styles.inputField)
+                    placeholder(descriptionPlaceholder)
+                    value(description)
+                    onInput { description = it.value }
+                    style { height(80.px) }
+                })
+            }
+
+            // Asset selection
+            Div(attrs = { style { marginBottom(16.px) } }) {
+                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Asset") }
+
+                // Preview of selected asset (if any)
+                if (file.isNotBlank()) {
+                    val idx = assetIndex.toIntOrNull() ?: 0
+                    IconRenderer(
+                        url = "/raw/data/spritesheets/$file.png",
+                        index = idx,
+                        size = 48,
+                    )
+                } else {
+                    P { Translated("No results") }
                 }
 
-                // Asset selection
-                Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Asset") }
+                DialogButton(
+                    onClick = { showAssetBrowser = true },
+                    isPrimary = false,
+                ) { Translated("Browse assets") }
+            }
 
-                    // Preview of selected asset (if any)
-                    if (file.isNotBlank()) {
-                        val idx = assetIndex.toIntOrNull() ?: 0
-                        IconRenderer(
-                            url = "/raw/data/spritesheets/$file.png",
-                            index = idx,
-                            size = 48,
-                        )
-                    } else {
-                        P { Translated("No results") }
+            // Cost
+            Div(attrs = { style { marginBottom(16.px) } }) {
+                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Cost (VND)") }
+                NumberInput(value = cost, min = 0, attrs = {
+                    classes(Styles.inputField)
+                    onInput { cost = it.value?.toLong() ?: 0L }
+                })
+            }
+
+            // Wearable toggle
+            Div(attrs = { style { marginBottom(16.px) } }) {
+                LabeledCheckbox(
+                    checked = wearable,
+                    enabled = true,
+                    label = translated("Is this item wearable?"),
+                    onCheckedChange = { next: Boolean -> wearable = next },
+                )
+            }
+
+            if (wearable) {
+                // Wearable asset (preview + browser)
+                Div(attrs = { style { marginBottom(16.px) } }) {
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wearable asset") }
+
+                    // Preview first 32x48 cell if set
+                    if (wearableFile.isNotBlank()) {
+                        Div(attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginTop(8.px)
+                            }
+                        }) {
+                            Div(attrs = {
+                                classes(Styles.iconRenderer)
+                                style {
+                                    property("width", "32px")
+                                    property("height", "48px")
+                                    property("background-image", "url(\"/raw/data/spritesheets/$wearableFile.png\")")
+                                    property("background-size", "${32 * 8}px ${48 * 8}px")
+                                    property("background-position", "0px 0px")
+                                }
+                            }) {}
+                        }
                     }
 
+                    // Browse button for wearable sprite sheet
                     DialogButton(
-                        onClick = { showAssetBrowser = true },
+                        onClick = { showWearableBrowser = true },
                         isPrimary = false,
                     ) { Translated("Browse assets") }
+
+                    if (wearableFileError.isNotEmpty()) {
+                        P(
+                            attrs = {
+                                style {
+                                    color(rgba(255, 100, 100, 0.9))
+                                    fontSize(12.px)
+                                    marginTop(4.px)
+                                }
+                            }
+                        ) {
+                            Translated(wearableFileError)
+                        }
+                    }
                 }
 
-                // Cost
-                Div(attrs = { style { marginBottom(16.px) } }) {
-                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Cost (VND)") }
-                    NumberInput(value = cost, min = 0, attrs = {
-                        classes(Styles.inputField)
-                        onInput { cost = it.value?.toLong() ?: 0L }
-                    })
-                }
-
-                // Wearable toggle
-                Div(attrs = { style { marginBottom(16.px) } }) {
+                // Customize weights checkbox
+                Div(attrs = { style { marginBottom(8.px); display(DisplayStyle.Flex); property("align-items", "center") } }) {
                     LabeledCheckbox(
-                        checked = wearable,
+                        checked = customizeWeights,
                         enabled = true,
-                        label = translated("Is this item wearable?"),
-                        onCheckedChange = { next: Boolean -> wearable = next },
+                        label = translated("Customize wind weights"),
+                        onCheckedChange = { next -> customizeWeights = next },
                     )
                 }
 
-                if (wearable) {
-                    // Wearable asset (preview + browser)
-                    Div(attrs = { style { marginBottom(16.px) } }) {
-                        Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wearable asset") }
+                if (customizeWeights) {
+                    Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wind weights (5x5)") }
 
-                        // Preview first 32x48 cell if set
-                        if (wearableFile.isNotBlank()) {
-                            Div(attrs = {
-                                style {
-                                    display(DisplayStyle.Block)
-                                    marginTop(8.px)
-                                }
-                            }) {
-                                Div(attrs = {
-                                    classes(Styles.iconRenderer)
-                                    style {
-                                        property("width", "32px")
-                                        property("height", "48px")
-                                        property("background-image", "url(\"/raw/data/spritesheets/$wearableFile.png\")")
-                                        property("background-size", "${32 * 8}px ${48 * 8}px")
-                                        property("background-position", "0px 0px")
-                                    }
-                                }) {}
-                            }
-                        }
-
-                        // Browse button for wearable sprite sheet
-                        DialogButton(
-                            onClick = { showWearableBrowser = true },
-                            isPrimary = false,
-                        ) { Translated("Browse assets") }
-
-                        if (wearableFileError.isNotEmpty()) {
-                            P(
-                                attrs = {
-                                    style {
-                                        color(rgba(255, 100, 100, 0.9))
-                                        fontSize(12.px)
-                                        marginTop(4.px)
-                                    }
-                                }
-                            ) {
-                                Translated(wearableFileError)
-                            }
-                        }
+                    Div(attrs = { style { marginBottom(8.px) } }) {
+                        DialogButton(onClick = {
+                            val rv = listOf("0", "0.0125", "0.025", "0.5", "1")
+                            weightGrid = List(5) { j -> List(5) { rv[j] } }
+                        }, isPrimary = false) { Translated("Reset to defaults") }
                     }
 
-                    // Customize weights checkbox
-                    Div(attrs = { style { marginBottom(8.px); display(DisplayStyle.Flex); property("align-items", "center") } }) {
-                        LabeledCheckbox(
-                            checked = customizeWeights,
-                            enabled = true,
-                            label = translated("Customize wind weights"),
-                            onCheckedChange = { next -> customizeWeights = next },
-                        )
-                    }
-
-                    if (customizeWeights) {
-                        Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wind weights (5x5)") }
-
-                        Div(attrs = { style { marginBottom(8.px) } }) {
-                            DialogButton(onClick = {
-                                val rv = listOf("0", "0.0125", "0.025", "0.5", "1")
-                                weightGrid = List(5) { j -> List(5) { rv[j] } }
-                            }, isPrimary = false) { Translated("Reset to defaults") }
-                        }
-
-                        Div(attrs = { style { display(DisplayStyle.Grid); property("grid-template-columns", "repeat(5, 64px)"); property("gap", "6px"); marginBottom(16.px) } }) {
-                            for (j in 0 until 5) {
-                                for (i in 0 until 5) {
-                                    NumberInput(value = weightGrid[j][i].toDoubleOrNull(), attrs = {
-                                        classes(Styles.inputField)
-                                        onInput { ev ->
-                                            val v = ev.value?.toString() ?: ""
-                                            weightGrid = weightGrid.mapIndexed { r, row ->
-                                                if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
-                                            }
+                    Div(attrs = { style { display(DisplayStyle.Grid); property("grid-template-columns", "repeat(5, 64px)"); property("gap", "6px"); marginBottom(16.px) } }) {
+                        for (j in 0 until 5) {
+                            for (i in 0 until 5) {
+                                NumberInput(value = weightGrid[j][i].toDoubleOrNull(), attrs = {
+                                    classes(Styles.inputField)
+                                    onInput { ev ->
+                                        val v = ev.value?.toString() ?: ""
+                                        weightGrid = weightGrid.mapIndexed { r, row ->
+                                            if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
                                         }
-                                        attr("min", "0")
-                                        attr("max", "1")
-                                        attr("step", "0.0125")
-                                        style { property("width", "64px"); property("padding", "4px") }
-                                    })
-                                }
+                                    }
+                                    attr("min", "0")
+                                    attr("max", "1")
+                                    attr("step", "0.0125")
+                                    style { property("width", "64px"); property("padding", "4px") }
+                                })
                             }
                         }
                     }
