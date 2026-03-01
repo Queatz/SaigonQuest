@@ -51,6 +51,7 @@ fun ObjectsContent(
     onEditObject: (String) -> Unit = {},
     objectManager: SceneObjectManager? = null,
     currentWorld: World?,
+    isDialog: Boolean,
     content: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     // State for objects
@@ -257,6 +258,7 @@ fun ObjectsContent(
         WorldObjectsContent(
             objects = worldObjects,
             isLoading = isLoading,
+            isDialog = isDialog,
             errorMessage = errorMessage,
             isCreatePlacementActive = isCreatePlacementActive,
             onCreateObject = {

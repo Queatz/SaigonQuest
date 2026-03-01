@@ -25,7 +25,8 @@ fun ObjectsPanel(
         onOpenObjectEditor = onOpenObjectEditor,
         onEditObject = onEditObject,
         objectManager = objectManager,
-        currentWorld = currentWorld
+        currentWorld = currentWorld,
+        isDialog = false,
     ) { tabContent ->
         SimpleSidePanel(
             title = translated("Objects"),

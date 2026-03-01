@@ -27,16 +27,17 @@ fun ObjectsDialog(
         onEditObject = onEditObject,
         objectManager = objectManager,
         currentWorld = currentWorld,
-        { tabContent ->
+        isDialog = true,
+        content = { tabContent ->
             // Use BaseDialog for consistent styling and behavior
             BaseDialog(
                 onClose = onClose,
                 title = translated("Objects"),
+                isFullHeight = true,
+                isFullWidth = true,
                 content = {
                     // Tab content
-                    Div {
-                        tabContent()
-                    }
+                    tabContent()
                 }
             )
         },

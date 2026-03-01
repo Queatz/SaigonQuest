@@ -17,6 +17,8 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import Translations.str
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 
 /**
  * Content for the World tab - lists all objects in the world with locate, edit, and remove functionality.
@@ -34,6 +36,7 @@ fun WorldObjectsContent(
     isLoading: Boolean,
     errorMessage: String,
     isCreatePlacementActive: Boolean = false,
+    isDialog: Boolean = false,
     onCreateObject: () -> Unit = {},
     onRemove: (String) -> Unit,
     onLocate: (String) -> Unit = {},
@@ -52,6 +55,12 @@ fun WorldObjectsContent(
     Div(
         attrs = {
             classes(EditorStyles.worldObjectsContainer)
+
+            if (isDialog) {
+                style {
+                    padding(16.px)
+                }
+            }
         }
     ) {
         // Create object button
@@ -73,7 +82,7 @@ fun WorldObjectsContent(
             TextInput(
                 value = searchQuery,
                 attrs = {
-                    classes(Styles.inputField)
+                    classes(Styles.inputField, EditorStyles.worldObjectsSearchInput)
                     placeholder(str("Search objects"))
                     onInput { searchQuery = it.value }
                 }
@@ -104,6 +113,14 @@ fun WorldObjectsContent(
                 }
             ) {
                 Translated("No objects in this world yet.")
+            }
+        } else if (filteredObjects.isEmpty()) {
+            P(
+                attrs = {
+                    classes(EditorStyles.emptyMessage)
+                }
+            ) {
+                Translated("No results")
             }
         } else {
             // List of objects
