@@ -598,18 +598,14 @@ fun WorldUI(
             }
         }
         
-        // Compute dynamic bottom-right container height to avoid overlap (48px buttons, 10px gap)
-        val bottomButtonsBase = 4 // screenshot, QR, chat, profile
-        val bottomButtonsCount = bottomButtonsBase + if (currentUser?.isAdmin == true) 1 else 0
-        val bottomRightHeight = bottomButtonsCount * 48 + (bottomButtonsCount - 1) * 10
 
         var showUI by remember { mutableStateOf(true) }
 
         if (showUI) {
-            // Top right UI elements (notifications, fullscreen, and edit world)
+            // Right UI elements (consolidated container)
             Div(
                 attrs = {
-                    classes(Styles.topRightContainer)
+                    classes(Styles.rightContainer)
                     style {
                         // Adjust right position when any side panel is open on desktop
                         if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
@@ -617,11 +613,10 @@ fun WorldUI(
                         } else {
                             right(20.px)
                         }
-                        // Dynamically reserve space for the bottom-right container to prevent overlap
-                        property("bottom", "${20 + bottomRightHeight}px")
                     }
                 }
             ) {
+                // Top content
                 // Fullscreen button
                 CircleButton(
                     onClick = { toggleFullscreen() },
@@ -647,22 +642,11 @@ fun WorldUI(
                         title = translated("Objects")
                     )
                 }
-            }
 
-            // Bottom right UI elements (profile and chat)
-            Div(
-                attrs = {
-                    classes(Styles.bottomRightContainer)
-                    style {
-                        // Adjust right position when any side panel is open on desktop
-                        if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
-                            right(360.px) // 20px original padding + 320px panel width
-                        } else {
-                            right(20.px)
-                        }
-                    }
-                }
-            ) {
+                // Bubble spacer between top and bottom content
+                Div(attrs = { classes(Styles.bubble) })
+
+                // Bottom content
                 // Admin button (only visible for admins)
                 if (currentUser?.isAdmin == true) {
                     CircleButton(
@@ -792,7 +776,7 @@ fun WorldUI(
         } else {
             Div(
                 attrs = {
-                    classes(Styles.bottomRightContainer)
+                    classes(Styles.rightContainer)
                     style {
                         // Adjust right position when any side panel is open on desktop
                         if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
@@ -803,6 +787,8 @@ fun WorldUI(
                     }
                 }
             ) {
+                // Push Eye button to bottom
+                Div(attrs = { classes(Styles.bubble) })
                 CircleButton(
                     onClick = {
                         showUI = true

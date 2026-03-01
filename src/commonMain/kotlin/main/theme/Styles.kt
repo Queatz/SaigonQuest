@@ -163,11 +163,10 @@ object Styles : StyleSheet() {
         top(0.px)
         backgroundColor(Theme.colors.background)
         property("z-index", "10")
-        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
+        borderRadius(24.px)
 
         dark(self) {
             backgroundColor(Theme.colors.backgroundDark)
-            property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtleDark}")
         }
 
         child(self, selector("button")) style {
@@ -295,37 +294,27 @@ object Styles : StyleSheet() {
         property("pointer-events", "none")
     }
 
-    val topRightContainer by style {
-        position(Position.Fixed) // Changed from Absolute to Fixed for consistent positioning
+    val rightContainer by style {
+        position(Position.Fixed)
         top(20.px)
-        // Provide a minimal bottom inset so there is always some spacing if inline override isn't applied
         bottom(20.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        property("gap", "10px")
-        // Allow scrolling when constrained between top and bottom to avoid overlap with bottom buttons
+        alignItems(AlignItems.FlexEnd)
+        gap(12.px)
         property("overflow-y", "auto")
-        // Add padding at the bottom to create more space between top and bottom buttons
-        property("padding-bottom", "20px")
-        // Style the scrollbar to be subtle and match the UI
-        property("scrollbar-width", "thin")
-        property("scrollbar-color", "${Theme.colors.white30} transparent")
-        // Webkit scrollbar styling
-        property("&::-webkit-scrollbar", "{ width: 6px; }")
-        property("&::-webkit-scrollbar-track", "{ background: transparent; }")
-        property("&::-webkit-scrollbar-thumb", "{ background-color: ${Theme.colors.white30}; border-radius: 3px; }")
-        // Add z-index to ensure proper stacking
-        property("z-index", "5")
+        property("z-index", "900")
+        // Hide scrollbar but allow scrolling
+        property("scrollbar-width", "none")
+        property("-ms-overflow-style", "none")
+        self + "::-webkit-scrollbar" style {
+            display(DisplayStyle.None)
+        }
     }
 
-    val bottomRightContainer by style {
-        position(Position.Fixed) // Changed from Absolute to Fixed for guaranteed visibility
-        bottom(20.px)
-        display(DisplayStyle.Flex)
-        flexDirection(FlexDirection.Column)
-        property("gap", "10px")
-        // Add z-index to ensure these buttons are below dialog backdrops but above other elements
-        property("z-index", "900") // Higher than top container but below dialogs (z-index: 1000)
+    val bubble by style {
+        flexGrow(1)
+        minHeight(0.px)
     }
 
     val bottomText by style {

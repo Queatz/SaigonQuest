@@ -48,7 +48,10 @@ fun WorldObjectsContent(
     val filteredObjects = if (searchQuery.isBlank()) {
         objects
     } else {
-        objects.filter { it.title.contains(searchQuery, ignoreCase = true) }
+        objects.filter {
+            it.title.contains(searchQuery, ignoreCase = true) ||
+            it.status.contains(searchQuery, ignoreCase = true)
+        }
     }
 
     // Container for the content
