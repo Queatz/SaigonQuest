@@ -147,6 +147,9 @@ fun SceneComponent(url: String) {
     // Get the router for navigation
     val router = Router.current
 
+    var hasFocus by remember { mutableStateOf(true) }
+
+    var engineRef by remember { mutableStateOf<Engine?>(null) }
 
     // todo: Why doesn't 'focusin' work
     LaunchedEffect(canvasRef) {
@@ -244,6 +247,14 @@ fun SceneComponent(url: String) {
 
             onMouseLeave {
                 SceneManager.getObjectManager()?.onMouseLeave()
+            }
+
+            onFocus { hasFocus = true }
+
+            onBlur { hasFocus = false }
+
+            onMouseMove {
+                hasFocus = true
             }
         }
     )
@@ -568,6 +579,20 @@ fun SceneComponent(url: String) {
         )
     }
 
+    val initialMaxFps = 60
+
+    LaunchedEffect(hasFocus) {
+        val engine = engineRef ?: return@LaunchedEffect
+        if (hasFocus) {
+            engine.maxFPS = initialMaxFps
+            console.log("[FPS] Canvas focused again; restoring maxFPS to $initialMaxFps")
+        } else {
+            delay(30_000)
+            engine.maxFPS = 1
+            console.log("[FPS] Canvas unfocused for 30s; reducing maxFPS to 1")
+        }
+    }
+
     // Set up BabylonJS scene
     DisposableEffect(canvasId) {
         // Create a coroutine scope for async operations
@@ -583,9 +608,10 @@ fun SceneComponent(url: String) {
             options = object : lib.EngineOptions {
                 override var stencil: Boolean? = true // For highlight layer
             }
-        )
+        ).also {
+            engineRef = it
+        }
 
-        val initialMaxFps = 60
         engine.maxFPS = initialMaxFps
 
         // Set hardware scaling level based on graphics mode
@@ -607,33 +633,6 @@ fun SceneComponent(url: String) {
             engine.resize()
         }
         window.addEventListener("resize", resizeHandler)
-
-        // Reduce FPS when canvas loses focus for > 30s; restore on focus
-        coroutineScope.launch {
-            var unfocusedSeconds = 0
-            var reduced = false
-            while (true) {
-                delay(1_000)
-                val hasFocus = (document.activeElement == canvas)
-                if (hasFocus) {
-                    if (reduced) {
-                        engine.maxFPS = initialMaxFps
-                        reduced = false
-                        console.log("[FPS] Canvas focused again; restoring maxFPS to $initialMaxFps")
-                    }
-                    unfocusedSeconds = 0
-                } else {
-                    if (unfocusedSeconds < 30) {
-                        unfocusedSeconds += 1
-                    }
-                    if (!reduced && unfocusedSeconds >= 10) {
-                        engine.maxFPS = 1
-                        reduced = true
-                        console.log("[FPS] Canvas unfocused for 30s; reducing maxFPS to 1")
-                    }
-                }
-            }
-        }
 
         // Create the scene
         val scene = Scene(engine).apply {
