@@ -243,7 +243,7 @@ fun DialogueBox(
                                 }
                             }
                         },
-                        isPrimary = index == 0
+                        isPrimary = true
                     ) { Text(buttonText) }
                 }
             }
