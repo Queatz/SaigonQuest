@@ -88,6 +88,24 @@ fun Routing.configureMediaRoutes() {
             }
         }
 
+        // Rename a media record
+        post("/media/{id}/rename") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserId(principal)
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+
+            val id = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing id")
+
+            val req = call.receive<RenameMediaRequest>()
+            val updated = repo.updateNameForUser(userId, id, req.newName)
+            if (updated != null) {
+                call.respond(HttpStatusCode.OK, updated)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Not found")
+            }
+        }
+
         // Delete a media record owned by the authenticated user
         delete("/media/{id}") {
             val principal = call.principal<JWTPrincipal>()
@@ -112,4 +130,9 @@ private data class CreateMediaRequest(
     val type: String,
     val path: String,
     val originalFileName: String
+)
+
+@Serializable
+private data class RenameMediaRequest(
+    val newName: String
 )

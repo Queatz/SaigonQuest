@@ -64,5 +64,21 @@ class UserMediaRepository {
         val cursor: ArangoCursor<UserMedia> = db.query(query, UserMedia::class.java, bindVars)
         return if (cursor.hasNext()) cursor.next() else null
     }
+
+    fun updateNameForUser(userId: String, key: String, newName: String): UserMedia? {
+        val query = """
+            FOR m IN $collectionName
+            FILTER m.userId == @userId AND m._key == @key
+            UPDATE m WITH { originalFileName: @newName } IN $collectionName
+            RETURN NEW
+        """.trimIndent()
+        val bindVars = mapOf(
+            "userId" to userId,
+            "key" to key,
+            "newName" to newName,
+        )
+        val cursor: ArangoCursor<UserMedia> = db.query(query, UserMedia::class.java, bindVars)
+        return if (cursor.hasNext()) cursor.next() else null
+    }
 }
 

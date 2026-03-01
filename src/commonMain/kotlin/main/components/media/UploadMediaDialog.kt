@@ -12,6 +12,7 @@ import main.api.MediaApi
 import main.api.ContentApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.BasicInputDialog
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -32,6 +33,7 @@ fun UploadMediaDialog(
     var loading by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var renameItem by remember { mutableStateOf<UserMedia?>(null) }
 
     fun imageUrlFor(path: String) = ContentApiConstants.CONTENT_BASE_URL + path
 
@@ -205,9 +207,43 @@ fun UploadMediaDialog(
                             }) {
                                 Text(if (item.favorite) "★" else "☆")
                             }
+
+                            // Rename button
+                            if (item.type == MediaType.Audio) {
+                                Button(attrs = {
+                                    classes(Styles.mediaLibraryItemRenameOverlay)
+                                    onClick {
+                                        it.stopPropagation()
+                                        renameItem = item
+                                    }
+                                }) {
+                                    Text("✏️")
+                                }
+                            }
                         }
                     }
                 }
+            }
+            // Rename dialog
+            if (renameItem != null) {
+                BasicInputDialog(
+                    title = translated("Rename media"),
+                    initialValue = renameItem!!.originalFileName,
+                    onConfirm = { newName ->
+                        val item = renameItem!!
+                        renameItem = null
+                        val scope = MainScope()
+                        scope.launch {
+                            try {
+                                MediaApi.rename(item.key, newName)
+                                refresh()
+                            } catch (e: Throwable) {
+                                error = e.message ?: "Rename failed"
+                            }
+                        }
+                    },
+                    onCancel = { renameItem = null },
+                )
             }
         },
         actions = { DialogButton(onClick = onClose) { Translated("Close") } }

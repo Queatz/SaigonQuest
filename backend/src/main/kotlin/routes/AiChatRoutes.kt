@@ -120,11 +120,11 @@ fun Routing.configureAiChatRoutes() {
                                 appendLine("Respond concisely to the latest user message.")
                             },
                             userPrompt = userPrompt,
-                            temperature = 0.6,
+                            temperature = 1.2,
                         )
                         if (!assistant.isNullOrBlank()) {
                             sendAssistant(assistant)
-                            sessionId?.let { sid -> sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant)) }
+                            sessionId.let { sid -> sessions.appendMessage(sid, AiChatMessage(role = AiRole.Assistant, content = assistant)) }
                         }
                     }
                 }

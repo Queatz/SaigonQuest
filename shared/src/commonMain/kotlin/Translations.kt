@@ -1343,6 +1343,15 @@ vi: Chưa có phương tiện. Hãy tải lên phương tiện phía trên.
 Are you sure you want to delete this media?
 vi: Bạn có chắc muốn xóa phương tiện này không?
 
+Rename
+vi: Đổi tên
+
+New name
+vi: Tên mới
+
+Rename media
+vi: Đổi tên phương tiện
+
 Print your location
 vi: In vị trí của bạn
 

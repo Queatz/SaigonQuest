@@ -788,12 +788,30 @@ object Styles : StyleSheet() {
         color(Theme.colors.favorite)
     }
 
+    val mediaLibraryItemRenameOverlay by style {
+        position(Position.Absolute)
+        property("top", "6px")
+        property("right", "30px")
+        property("background", "transparent")
+        property("border", "none")
+        property("cursor", "pointer")
+        width(24.px)
+        height(24.px)
+        fontSize(14.px)
+        color(Theme.colors.textSecondary)
+
+        dark(self) {
+            color(Theme.colors.textSecondaryDark)
+        }
+    }
+
     val mediaLibraryItemActionsRow by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         width(100.percent)
         marginTop(6.px)
+        gap(4.px)
     }
 
     val mediaUploadArea by style {

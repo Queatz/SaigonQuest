@@ -17,6 +17,7 @@ import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.ImageDialog
 import main.components.BasicConfirmDialog
+import main.components.BasicInputDialog
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -67,6 +68,7 @@ fun MediaLibraryDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var previewUrl by remember { mutableStateOf<String?>(null) }
     var confirmDeleteFor by remember { mutableStateOf<UserMedia?>(null) }
+    var renameItem by remember { mutableStateOf<UserMedia?>(null) }
 
     fun imageUrlFor(path: String) = ContentApiConstants.CONTENT_BASE_URL + path
 
@@ -255,13 +257,31 @@ fun MediaLibraryDialog(
 
                             // Actions row
                             Div(attrs = {
-                                style {
-                                    display(DisplayStyle.Flex)
-                                    justifyContent(JustifyContent.SpaceBetween)
-                                    alignItems(AlignItems.Center)
-                                }
+                                classes(Styles.mediaLibraryItemActionsRow)
                             }) {
-                                SmallText(item.originalFileName)
+                                Div(attrs = {
+                                    style {
+                                        display(DisplayStyle.Flex)
+                                        alignItems(AlignItems.Center)
+                                        property("flex", "1")
+                                        property("min-width", "0")
+                                    }
+                                }) {
+                                    SmallText(item.originalFileName)
+                                }
+                                if (item.type == MediaType.Audio) {
+                                    Button(attrs = {
+                                        style {
+                                            property("background", "transparent")
+                                            property("border", "none")
+                                            property("cursor", "pointer")
+                                            fontSize(14.px)
+                                        }
+                                        onClick {
+                                            renameItem = item
+                                        }
+                                    }) { Text("✏️") }
+                                }
                                 Button(attrs = {
                                     classes(Styles.baseDialogButtonDangerPrimary)
                                     onClick {
@@ -302,6 +322,28 @@ fun MediaLibraryDialog(
                         }
                     },
                     onCancel = { confirmDeleteFor = null },
+                )
+            }
+
+            // Rename dialog
+            if (renameItem != null) {
+                BasicInputDialog(
+                    title = translated("Rename media"),
+                    initialValue = renameItem!!.originalFileName,
+                    onConfirm = { newName ->
+                        val item = renameItem!!
+                        renameItem = null
+                        val scope = MainScope()
+                        scope.launch {
+                            try {
+                                MediaApi.rename(item.key, newName)
+                                refresh()
+                            } catch (e: Throwable) {
+                                error = e.message ?: "Rename failed"
+                            }
+                        }
+                    },
+                    onCancel = { renameItem = null },
                 )
             }
         },

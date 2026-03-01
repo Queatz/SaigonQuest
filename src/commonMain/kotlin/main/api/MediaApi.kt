@@ -75,6 +75,19 @@ object MediaApi {
             throw Error("Failed to delete media: ${response.status}")
         }
     }
+
+    suspend fun rename(id: String, newName: String): UserMedia {
+        val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/media/$id/rename") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(RenameMediaRequest(newName = newName))
+        }
+        if (response.status.isSuccess()) {
+            return response.body()
+        } else {
+            throw Error(response.bodyAsText())
+        }
+    }
 }
 
 @Serializable
@@ -82,4 +95,9 @@ private data class CreateMediaRequest(
     val type: String,
     val path: String,
     val originalFileName: String,
+)
+
+@Serializable
+private data class RenameMediaRequest(
+    val newName: String,
 )
