@@ -305,43 +305,43 @@ fun InventoryDialog(onClose: () -> Unit) {
                 console.error("[DEBUG_LOG] handleDragStart: Error setting dataTransfer data", e)
             }
 
-            // Get the item to show its details in the log
-            val item = items[itemId]
+            // Use the correct helper to get the item from inventory item key, or look up as Item key
+            val item = InventoryState.getItemForInventoryItemKey(itemId) ?: items[itemId]
             if (item != null) {
                 console.log("[DEBUG_LOG] handleDragStart: Dragging item: ${item.title}, wearable=${item.wearable}")
             } else {
                 console.error("[DEBUG_LOG] handleDragStart: Item not found in items map for ID: $itemId")
             }
 
-            // Set a custom drag image (optional)
+            // Set a minimal custom drag image (sprite only, no background or text)
             try {
-                val dragImage = document.createElement("div") as HTMLElement
-                dragImage.style.width = "48px"
-                dragImage.style.height = "48px"
-                dragImage.style.backgroundColor = "rgba(255, 255, 255, 0.3)"
-                dragImage.style.borderRadius = "4px"
+                val dragIcon = document.createElement("div") as HTMLElement
+                dragIcon.style.position = "absolute"
+                dragIcon.style.top = "-1000px"
+                dragIcon.style.width = "32px"
+                dragIcon.style.height = "32px"
+                dragIcon.style.setProperty("pointer-events", "none")
 
-                // Add item title to drag image for better visibility
-                if (item != null) {
-                    dragImage.style.color = "white"
-                    dragImage.style.fontSize = "10px"
-                    dragImage.style.textAlign = "center"
-                    dragImage.style.padding = "2px"
-                    // Use property() instead of direct property access for CSS properties
-                    dragImage.style.setProperty("overflow", "hidden")
-                    dragImage.textContent = item.title
+                if (item != null && item.file.isNotEmpty()) {
+                    val url = "/raw/data/spritesheets/${item.file}.png"
+                    dragIcon.style.setProperty("background-image", "url(\"$url\")")
+                    dragIcon.style.setProperty("background-size", "320px 320px")
+                    val col = item.assetIndex % 10
+                    val row = item.assetIndex / 10
+                    dragIcon.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
+                    dragIcon.style.setProperty("background-repeat", "no-repeat")
                 }
 
-                document.body?.appendChild(dragImage)
-                event.dataTransfer.setDragImage(dragImage, 24, 24)
-                console.log("[DEBUG_LOG] handleDragStart: Custom drag image set")
+                document.body?.appendChild(dragIcon)
+                event.dataTransfer.setDragImage(dragIcon, 15, 15)
+                console.log("[DEBUG_LOG] handleDragStart: Minimal sprite drag image set")
 
-                // Remove the drag image element after it's been used
+                // Remove the drag icon after it's been used
                 window.setTimeout({
                     try {
-                        document.body?.removeChild(dragImage)
+                        document.body?.removeChild(dragIcon)
                     } catch (e: Throwable) {
-                        console.error("[DEBUG_LOG] handleDragStart: Error removing drag image", e)
+                        console.error("[DEBUG_LOG] handleDragStart: Error removing drag icon", e)
                     }
                 }, 0)
             } catch (e: Throwable) {
@@ -369,7 +369,7 @@ fun InventoryDialog(onClose: () -> Unit) {
 
                 // If we have a valid dragged item, check if it's wearable
                 if (itemId != null) {
-                    val item = items[itemId]
+                    val item = InventoryState.getItemForInventoryItemKey(itemId) ?: items[itemId]
                     if (item != null) {
                         if (item.wearable) {
                             // Visual feedback could be added here in the future
@@ -416,11 +416,11 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
 
             console.log("[DEBUG_LOG] handleDropOnCharacter: inventoryItemId=$inventoryItemId")
-
-            // Get the actual Item using the InventoryState helper method
-            val item = InventoryState.getItemForInventoryItemKey(inventoryItemId)
+            
+            // Get the actual Item using the InventoryState helper method, or try direct Item key
+            val item = InventoryState.getItemForInventoryItemKey(inventoryItemId) ?: items[inventoryItemId]
             if (item == null) {
-                console.error("[DEBUG_LOG] handleDropOnCharacter: Item not found for inventory item ID: $inventoryItemId")
+                console.error("[DEBUG_LOG] handleDropOnCharacter: Item not found for ID: $inventoryItemId")
                 console.log("[DEBUG_LOG] handleDropOnCharacter: Available inventory item mappings: ${InventoryState.inventoryItemToItemMap}")
                 console.log("[DEBUG_LOG] handleDropOnCharacter: Available items: ${items.keys.joinToString()}")
                 showFeedback("Error: Item not found", true)
@@ -649,7 +649,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     // Check if the dragged item is wearable before activating the drop target
                                     val itemId = draggedItemId
                                     if (itemId != null) {
-                                        val item = items[itemId]
+                                        val item = InventoryState.getItemForInventoryItemKey(itemId) ?: items[itemId]
                                         isDropTargetActive = item?.wearable == true
                                     }
                                 }
@@ -688,26 +688,23 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     hairStyle = user.hairStyle
                                 )
                             }
-
-                            // Show a hint message when a wearable item is being dragged over
-                            if (isDropTargetActive) {
-                                Div(
-                                    attrs = {
-                                        classes(InventoryStyles.characterDropHint)
-                                    }
-                                ) {
-                                    Translated("Drop to wear item")
-                                }
-                            }
                         }
 
                         // Instruction text
                         P(
                             attrs = {
-                                classes(InventoryStyles.instructionText)
+                                if (isDropTargetActive) {
+                                    classes(InventoryStyles.characterDropHint)
+                                } else {
+                                    classes(InventoryStyles.instructionText)
+                                }
                             }
                         ) {
-                            Translated("Drag wearable items here to equip them")
+                            if (isDropTargetActive) {
+                                Translated("Drop to wear item")
+                            } else {
+                                Translated("Drag wearable items here to equip them")
+                            }
                         }
                     }
 
@@ -753,10 +750,16 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 currentUser?.wornItems?.forEach { itemId ->
                                     val item = items[itemId]
                                     if (item != null) {
+                                        // Try to find the corresponding inventory item key if it exists in our map
+                                        val inventoryItemKey = InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
+
                                         Div(
                                             attrs = {
                                                 classes(InventoryStyles.wornItemCard)
                                                 onClick { handleRemoveWornItem(itemId, isDirectItemId = true) }
+                                                
+                                                // Make draggable and ensure draggedItemId is set
+                                                onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
                                             }
                                         ) {
                                             // Item icon
@@ -764,7 +767,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 onClick = { /* Handled by parent */ },
                                                 item = item,
                                                 isLoading = isLoading,
-                                                quantity = 1 // Worn items always have quantity 1
+                                                quantity = 1, // Worn items always have quantity 1
+                                                inventoryItemKey = inventoryItemKey,
                                             )
 
                                             // Item name

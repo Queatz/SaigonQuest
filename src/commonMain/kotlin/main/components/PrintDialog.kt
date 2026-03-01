@@ -108,7 +108,7 @@ fun generatePrintImage(
     onComplete: (String) -> Unit
 ) {
     // Strip player position from URL for display only
-    val displayUrl = url.split("?at=")[0]
+    val displayUrl = url.split("?")[0].trimEnd('/')
     
     // Use the original URL with player position for QR code
     val qrData = Qr.createQR(url, "gif")

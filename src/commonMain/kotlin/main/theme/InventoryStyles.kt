@@ -41,9 +41,9 @@ import org.jetbrains.compose.web.css.width
 object InventoryStyles : StyleSheet() {
     // Drop zone states for character renderer border/shadow
     val characterDropZoneActive by style {
-        property("border", "3px dashed")
+        property("border", "2px dashed")
         property("border-color", Theme.colors.accentInfoStrong.toString())
-        property("box-shadow", "0 0 10px ${Theme.colors.accentInfoBlueGlow}")
+        property("box-shadow", "0 0 12px ${Theme.colors.accentInfoBlueGlow}")
     }
 
     val characterDropZoneInactive by style {
@@ -57,17 +57,12 @@ object InventoryStyles : StyleSheet() {
 
     // Hint bubble over character when dragging wearable
     val characterDropHint by style {
-        position(Position.Absolute)
-        property("bottom", "8px")
-        backgroundColor(Theme.colors.overlayScrim)
-        color(Theme.colors.accentInfoStrong)
-        padding(4.px, 8.px)
-        borderRadius(4.px)
-        fontSize(12.px)
+        fontSize(14.px)
+        property("margin-top", "8px")
         property("text-align", "center")
+        color(Theme.colors.accentInfoStrong)
 
         dark(self) {
-            backgroundColor(Theme.colors.overlayScrimDark)
             color(Theme.colors.accentInfoBlueStrong)
         }
     }

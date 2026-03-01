@@ -208,6 +208,7 @@ tasks.named("jsProductionExecutableCompileSync") {
 }
 
 
+
 // Ensure Draco assets are prepared before packaging JS jar
 tasks.named("jsJar") {
     dependsOn("prepareDracoAssetsResources")

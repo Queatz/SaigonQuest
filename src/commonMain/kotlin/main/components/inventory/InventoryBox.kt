@@ -44,6 +44,9 @@ fun InventoryBox(
                 
                 // Add drag start event handler
                 onDragStart { event ->
+                    // Always set text/plain if we have an item
+                    event.dataTransfer?.setData("text/plain", inventoryItemKey ?: item.key)
+
                     // If we have inventory context, send InventoryDragPayload; otherwise fall back to Item
                     if (inventoryItemKey != null) {
                         val payload = InventoryDragPayload(
@@ -55,7 +58,7 @@ fun InventoryBox(
                         event.dataTransfer?.setData("application/json", json.encodeToString(InventoryDragPayload.serializer(), payload))
                         event.dataTransfer?.setData("application/x-data-type", DataType.INVENTORY_ITEM.name)
                     } else {
-                        console.error("[Inventory] inventoryItemKey is null")
+                        console.log("[DEBUG_LOG] [InventoryBox] inventoryItemKey is null, using item.key instead for text/plain")
                     }
                     
                     // Create a custom drag image (optional)
@@ -74,7 +77,8 @@ fun InventoryBox(
                         dragIcon.style.setProperty("background-size", "320px 320px")
                         val col = item.assetIndex % 10
                         val row = item.assetIndex / 10
-                        dragIcon.style.setProperty("background-position", "-${col * 32}px -${row * 32}px")
+                        dragIcon.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
+                        dragIcon.style.setProperty("background-repeat", "no-repeat")
                     }
 
                     document.body?.appendChild(dragIcon)
@@ -111,7 +115,8 @@ fun InventoryBox(
                                 preview.style.setProperty("background-size", "320px 320px")
                                 val col = item.assetIndex % 10
                                 val row = item.assetIndex / 10
-                                preview.style.setProperty("background-position", "-${col * 32}px -${row * 32}px")
+                                preview.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
+                                preview.style.setProperty("background-repeat", "no-repeat")
                             }
                         },
                     )

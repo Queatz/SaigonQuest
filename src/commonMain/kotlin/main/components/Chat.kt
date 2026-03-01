@@ -74,10 +74,7 @@ fun Chat(
         BasicAlertDialog(
             title = translated("Chat"),
             message = "${translated("Messages are kept for")} $retentionText",
-            onClose = { showInfoDialog = false },
-            headerActions = {
-                ChatBellButton(worldId = worldId)
-            }
+            onClose = { showInfoDialog = false }
         )
     }
 }
