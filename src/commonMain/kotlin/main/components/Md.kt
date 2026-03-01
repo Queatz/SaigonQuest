@@ -13,6 +13,7 @@ import main.theme.Styles
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLAudioElement
 import org.w3c.dom.HTMLSpanElement
 import kotlin.js.Json
 import kotlin.js.json
@@ -163,6 +164,32 @@ fun markdownToHtml(
     )
 }
 
+private fun applyAudioExclusivePlayBehavior(root: Element) {
+    try {
+        val nodeList = root.querySelectorAll("audio")
+        for (i in 0 until nodeList.length) {
+            val el = nodeList.item(i)
+            if (el is HTMLAudioElement) {
+                val already = el.getAttribute("data-exclusive-listener") != null
+                if (!already) {
+                    el.setAttribute("data-exclusive-listener", "1")
+                    el.addEventListener("play", { _ ->
+                        try {
+                            val all = window.document.querySelectorAll("audio")
+                            for (j in 0 until all.length) {
+                                val other = all.item(j)
+                                if (other != el && other is HTMLAudioElement) {
+                                    try { other.pause() } catch (_: Throwable) {}
+                                }
+                            }
+                        } catch (_: Throwable) {}
+                    })
+                }
+            }
+        }
+    } catch (_: Throwable) {}
+}
+
 @Composable
 fun Md(
     content: String,
@@ -182,6 +209,8 @@ fun Md(
 
         // After injection, attach load handlers to images so they fade in once ready
         applyImageLoadBehavior(container)
+        // Ensure only one audio plays at a time: when one starts, pause all others
+        applyAudioExclusivePlayBehavior(container)
     }
 
     Span(
