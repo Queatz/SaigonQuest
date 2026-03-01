@@ -154,9 +154,21 @@ object Styles : StyleSheet() {
     val richTextEditorToolbar by style {
         display(DisplayStyle.Flex)
         gap(8.px)
+        padding(4.px, 8.px)
         marginBottom(8.px)
         overflowX("auto")
         flexShrink(0)
+
+        position(Position.Sticky)
+        top(0.px)
+        backgroundColor(Theme.colors.background)
+        property("z-index", "10")
+        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
+
+        dark(self) {
+            backgroundColor(Theme.colors.backgroundDark)
+            property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtleDark}")
+        }
 
         child(self, selector("button")) style {
             flexShrink(0)

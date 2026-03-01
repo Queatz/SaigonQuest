@@ -307,6 +307,8 @@ class OcclusionManager(private val scene: Scene) {
         
         // Copy settings from original material to support alpha testing and correct culling
         if (original != null) {
+            mat.zOffset = original.zOffset
+            mat.zOffsetUnits = original.zOffsetUnits
             mat.backFaceCulling = original.backFaceCulling
             if (original is PBRMaterial) {
                 original.albedoTexture?.let { mat.diffuseTexture = it }
@@ -423,6 +425,8 @@ class OcclusionManager(private val scene: Scene) {
             customMaterial.alpha = originalMaterial.alpha
             customMaterial.fogEnabled = originalMaterial.fogEnabled
             customMaterial.disableLighting = originalMaterial.disableLighting
+            customMaterial.zOffset = originalMaterial.zOffset
+            customMaterial.zOffsetUnits = originalMaterial.zOffsetUnits
             customMaterial.backFaceCulling = originalMaterial.backFaceCulling
             customMaterial.needDepthPrePass = true
             customMaterial.useAlphaFromAlbedoTexture = originalMaterial.useAlphaFromAlbedoTexture

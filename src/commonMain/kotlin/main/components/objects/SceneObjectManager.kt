@@ -1320,7 +1320,6 @@ class SceneObjectManager(
                 val handle = worldObjectManager.createTextBillboard(
                     text = "\uD83D\uDCAC",
                     position = Vector3(node.position.x, node.position.y + offsetY, node.position.z),
-                    fontSize = 18,
                     textColor = "white",
                     backgroundColor = "#000000F0",
                 )

@@ -282,7 +282,7 @@ class WorldObjectManager(private val scene: Scene) {
     fun createTextBillboard(
         text: String,
         position: Vector3,
-        fontSize: Int = 24,
+        fontSize: Int = 32,
         textColor: String = "white",
         backgroundColor: String? = null,
         zOffset: Float = 0f,
@@ -329,7 +329,6 @@ class WorldObjectManager(private val scene: Scene) {
         return createTextBillboard(
             text = status,
             position = statusPosition,
-            fontSize = 18,
             textColor = "white",
             backgroundColor = "#000000F0", // Semi-transparent black background
             zOffset = 5f, // Pull towards camera so it renders in front
@@ -362,7 +361,6 @@ class WorldObjectManager(private val scene: Scene) {
             val handle = createTextBillboard(
                 text = "\uD83D\uDCAC",
                 position = Vector3(p.x, p.y + 0.5f, p.z),
-                fontSize = 18,
                 textColor = "white",
                 backgroundColor = "#000000F0",
             )

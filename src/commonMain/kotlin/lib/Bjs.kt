@@ -289,6 +289,21 @@ external class Scene(engine: Engine? = definedExternally) {
     fun removeMesh(mesh: AbstractMesh)
 
     /**
+     * Sets the rendering auto clear depth stencil state for a rendering group
+     * @param renderingGroupId The rendering group id
+     * @param autoClearDepthStencil Whether to auto clear depth stencil
+     * @param depth Whether to clear depth
+     * @param stencil Whether to clear stencil
+     */
+    fun setRenderingAutoClearDepthStencil(
+        renderingGroupId: Int,
+        autoClearDepthStencil: Boolean,
+        depth: Boolean = definedExternally,
+        stencil: Boolean = definedExternally
+    )
+
+
+    /**
      * Adds an animation group to the scene
      * @param animationGroup The animation group to add
      */

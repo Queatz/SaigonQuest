@@ -11,7 +11,7 @@ object PlayerUi {
     const val HUD_Y_OFFSET: Float = 1.1f
 
     // Common font size used for billboards
-    const val FONT_SIZE: Int = 18
+    const val FONT_SIZE: Int = 32
 
     // Colors for different HUD types
     const val CHAT_TEXT_COLOR: String = "black"

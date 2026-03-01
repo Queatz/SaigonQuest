@@ -92,7 +92,7 @@ class TextBillboard(
      */
     private fun calculateTextDimensions(): Triple<Float, Float, Float> {
         // Estimate the text width based on font size and text length
-        val estimatedTextWidth = _text.length * fontSize * 0.6f
+        val estimatedTextWidth = _text.length * fontSize * 0.75f
         val padding = fontSize * 0.2f
         val estimatedWidth = estimatedTextWidth + padding * 2
         val estimatedHeight = fontSize * 1.2f + padding * 2
@@ -126,7 +126,7 @@ class TextBillboard(
         )
         
         // Now create a plane with the same aspect ratio as the texture
-        val planeWidth = (estimatedWidth / 100f).coerceAtLeast(0.1f)
+        val planeWidth = (estimatedWidth / 200f).coerceAtLeast(0.1f)
         val planeHeight = planeWidth * aspectRatio
         
         planeMesh = MeshBuilder.CreatePlane(
@@ -158,8 +158,6 @@ class TextBillboard(
             
             // Enable transparency from the texture
             useAlphaFromDiffuseTexture = true
-
-            disableDepthWrite = true
             
             // Set transparency mode to MATERIAL_ALPHATESTANDBLEND
             transparencyMode = Material.MATERIAL_ALPHATESTANDBLEND
@@ -179,10 +177,6 @@ class TextBillboard(
         // Set billboard mode to make the text always face the camera
         planeMesh?.billboardMode = Mesh.BILLBOARDMODE_ALL
 
-        // TODO This breaks highlighting of the object
-        // Render on top of everything else
-//        planeMesh?.renderingGroupId = 1
-
         texture?.let { tex ->
             // Get the canvas context
             val context = tex.getContext()
@@ -198,10 +192,10 @@ class TextBillboard(
                 context.asDynamic().fillStyle = backgroundColor
                 
                 // Draw a rounded rectangle with 6px corner radius
-                val cornerRadius = 6.0
                 val width = textureWidth.toDouble()
                 val height = textureHeight.toDouble()
-                
+                val cornerRadius = height.coerceAtMost(width) / 2.0
+
                 // Begin a new path
                 context.beginPath()
                 
