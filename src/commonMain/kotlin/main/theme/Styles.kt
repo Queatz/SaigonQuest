@@ -70,6 +70,7 @@ import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.vw
 import org.jetbrains.compose.web.css.whiteSpace
 import org.jetbrains.compose.web.css.width
+import web.cssom.WhiteSpace
 
 object Styles : StyleSheet() {
     val md by style {
@@ -2060,6 +2061,7 @@ object Styles : StyleSheet() {
 
     val aiChatMessages by style {
         property("flex", "1 1 auto")
+        position(Position.Relative)
         overflowY("auto")
         padding(12.px)
         color(Theme.colors.onSurface)
@@ -2090,6 +2092,9 @@ object Styles : StyleSheet() {
     val aiChatSpinnerRow by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
+        gap(8.px)
+        color(Theme.colors.onSurfaceVariant)
+        whiteSpace("nowrap")
     }
 
     val aiChatInputRow by style {

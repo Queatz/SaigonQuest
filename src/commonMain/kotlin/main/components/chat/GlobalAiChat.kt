@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import main.components.AnimatedDots
 import main.components.Md
 import main.components.Translated
 import main.components.VoiceInput
@@ -15,6 +16,7 @@ import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.SMOOTH
 import org.w3c.dom.ScrollBehavior
@@ -41,7 +43,15 @@ fun GlobalAiChat() {
         scope.launch {
             awaitAnimationFrame()
             messagesEl?.let { el ->
-                el.scrollTo(ScrollToOptions(top = el.scrollHeight.toDouble(), behavior = ScrollBehavior.SMOOTH))
+                val lastChild = el.lastElementChild as? org.w3c.dom.HTMLElement
+                if (lastChild != null) {
+                    el.scrollTo(
+                        ScrollToOptions(
+                            top = lastChild.offsetTop.toDouble(),
+                            behavior = ScrollBehavior.SMOOTH,
+                        )
+                    )
+                }
             }
         }
     }
@@ -95,6 +105,10 @@ fun GlobalAiChat() {
                         message = null,
                         spinnerClass = Styles.aiChatLoadingSpinner,
                     )
+                    Span {
+                        Translated("Thinking")
+                        AnimatedDots()
+                    }
                 }
             }
         }

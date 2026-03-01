@@ -4,6 +4,7 @@ import debug.WebSocketDebug
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -32,8 +33,10 @@ object DeepSeekClient {
         install(ContentNegotiation) {
             json(appJson)
         }
-        engine {
-            requestTimeout = 120_000
+        install(HttpTimeout) {
+            requestTimeoutMillis = 120_000
+            connectTimeoutMillis = 60_000
+            socketTimeoutMillis = 120_000
         }
     }
 

@@ -2,6 +2,7 @@ package routes
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 import io.ktor.client.plugins.websocket.webSocket
@@ -47,6 +48,11 @@ fun Routing.configureVoiceRoutes() {
         val client = HttpClient(CIO) {
             install(ClientWebSockets)
             install(ContentNegotiation) { json(json) }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60_000
+                connectTimeoutMillis = 30_000
+                socketTimeoutMillis = 60_000
+            }
         }
 
         // Model optimized for streaming ASR; request a transcription session

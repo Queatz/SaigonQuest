@@ -2,6 +2,7 @@ package main.components.nodeeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -9,11 +10,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
+import main.api.DocApi
 import main.theme.NodeEditorStyles
 import main.utils.ellipsize
+import models.LogicNode
 import models.NodeCategory
 import models.nodeeditor.NodeData
 import models.nodeeditor.PortData
+import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.px
@@ -75,6 +79,30 @@ fun NodeElement(
     var pointerOffsetX by remember { mutableStateOf(0f) }
     var pointerOffsetY by remember { mutableStateOf(0f) }
     
+    // State for document title (if this is a Doc Content node)
+    var docTitle by remember(id) { mutableStateOf<String?>(null) }
+
+    // Get doc title for Doc Content nodes
+    LaunchedEffect(node.data) {
+        if (type is LogicNode.DocContent) {
+            val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
+            if (nodeData is PropertyBasedNodeData) {
+                val docId = nodeData.properties.find { it.key == PropertyKey.ID }?.value
+                if (!docId.isNullOrBlank()) {
+                    try {
+                        val doc = DocApi.getDoc(docId)
+                        docTitle = doc.title
+                    } catch (t: Throwable) {
+                        console.error("Failed to load doc title for NodeElement", t)
+                        docTitle = null
+                    }
+                } else {
+                    docTitle = null
+                }
+            }
+        }
+    }
+
     // Global event handlers for mouse move and mouse up
     val handleGlobalMouseMove = remember {
         { event: Event ->
@@ -338,12 +366,18 @@ fun NodeElement(
                     Div {
                         nodeData.properties.forEach { property ->
                             when (property.key) {
-                                PropertyKey.TEXT_CONTENT -> {
+                                PropertyKey.TEXT_CONTENT, PropertyKey.TITLE -> {
                                     Text(property.value.ellipsize())
                                 }
 
                                 PropertyKey.TARGET_WORLD_ID -> {
                                     Text("To \"${property.value}\"")
+                                }
+
+                                PropertyKey.ID -> {
+                                    if (type is LogicNode.DocContent) {
+                                        Text((docTitle ?: "...").ellipsize())
+                                    }
                                 }
 
                                 else -> Unit
