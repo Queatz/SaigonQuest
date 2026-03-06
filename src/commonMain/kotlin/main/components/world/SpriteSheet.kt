@@ -1,5 +1,7 @@
 package main.components.world
 
+import models.Sex
+
 /**
  * Represents a sprite sheet for character animations
  */
@@ -79,10 +81,10 @@ class SpriteSheet(
      * @param sex The sex of the player, which determines the sprite sheet to use
      */
     companion object {
-        fun createPlayerSpriteSheet(sex: models.Sex? = null): SpriteSheet {
+        fun createPlayerSpriteSheet(sex: Sex? = null): SpriteSheet {
             // Choose the appropriate sprite sheet based on the player's sex
             val imageUrl = when (sex) {
-                models.Sex.Girl -> "Player Girl Base Sprite Sheet"
+                Sex.Girl -> "Player Girl Base Sprite Sheet"
                 else -> "Player Boy Base Sprite Sheet"
             }
             
@@ -98,10 +100,10 @@ class SpriteSheet(
          * Creates a sprite sheet for the player's base based on body type and sex.
          * Body types: Skinny, Normal, Fat. Falls back to Normal when unknown.
          */
-        fun createPlayerSpriteSheetForBodyType(sex: models.Sex?, bodyType: String?): SpriteSheet {
+        fun createPlayerSpriteSheetForBodyType(sex: Sex?, bodyType: String?): SpriteSheet {
             val normalized = bodyType?.lowercase()?.trim()
             val fileName = when (sex) {
-                models.Sex.Girl -> when (normalized) {
+                Sex.Girl -> when (normalized) {
                     "skinny" -> "Player Skinny Girl Base Sprite Sheet"
                     "fat" -> "Player Fat Girl Base Sprite Sheet"
                     else -> "Player Girl Base Sprite Sheet" // Normal
@@ -125,18 +127,18 @@ class SpriteSheet(
          * Creates a sprite sheet for the player's hair based on the hair style.
          * Returns null if the style is unknown.
          */
-        fun createHairSpriteSheet(hairStyle: String?): SpriteSheet? {
+        fun createHairSpriteSheet(sex: Sex, hairStyle: String?): SpriteSheet? {
             if (hairStyle.isNullOrBlank()) return null
 
             val fileName = when (hairStyle) {
-                "Short" -> "Short Hair Sprite Sheet"
-                "Medium" -> "Medium Hair Sprite Sheet"
-                "Long" -> "Long Hair Sprite Sheet"
+                "Short" -> "short"
+                "Medium" -> "medium"
+                "Long" -> "long"
                 else -> return null
             }
 
             return SpriteSheet(
-                imageUrl = "/raw/data/spritesheets/$fileName.png",
+                imageUrl = "/raw/data/spritesheets/${sex.spriteSheetPath()}/hair/$fileName.png",
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
@@ -152,7 +154,7 @@ class SpriteSheet(
          * Returns null if inputs are unknown or blank.
          * Example filenames: "Blue Eyed Girl Base Sprite Sheet.png", "Brown Eyed Boy Base Sprite Sheet.png"
          */
-        fun createEyesSpriteSheet(eyeColor: String?, sex: models.Sex?): SpriteSheet? {
+        fun createEyesSpriteSheet(eyeColor: String?, sex: Sex?): SpriteSheet? {
             val color = when (eyeColor?.trim()?.lowercase()) {
                 "black" -> "Black"
                 "blue" -> "Blue"
@@ -162,12 +164,11 @@ class SpriteSheet(
                 else -> return null
             }
 
+            // Todo
             val sexText = when (sex) {
-                models.Sex.Girl -> "Girl"
-                models.Sex.Boy -> "Boy"
-                else -> return null
+                else -> "Boy"
             }
-            val fileName = "$color Eyed $sexText Base Sprite Sheet"
+            val fileName = "$color Eyed $sexText Sprite Sheet"
 
             return SpriteSheet(
                 imageUrl = "/raw/data/spritesheets/$fileName.png",
@@ -202,3 +203,5 @@ data class UVCoordinates(
     val uMin: Float,
     val vMin: Float
 )
+
+fun Sex.spriteSheetPath() = if (this == Sex.Girl) "female" else "male"

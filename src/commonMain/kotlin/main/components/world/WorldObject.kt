@@ -170,8 +170,6 @@ class Character(
         // Apply initial skin tone to the base mesh
         applySkinToneToBaseMesh()
 
-        // additionalSpriteSheets.clear()//TODO REMOVE
-
         // Create meshes for additional sprite sheets with increasing z-offset
         additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
             // Use a small z-offset to ensure proper layering (0.01 units per layer)
@@ -204,7 +202,6 @@ class Character(
 
         // Add all the new sprite sheets
         additionalSpriteSheets.addAll(spriteSheets)
-        // additionalSpriteSheets.clear()//TODO REMOVE
 
         // Set the flag to re-render on the next update
         needsRerender = true
@@ -444,7 +441,8 @@ class Character(
             var idx = 0
             for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = provided[idx++]
         } else {
-            val rv = floatArrayOf(0f, 0.0125f, 0.025f, 0.5f, 1f)
+            //val rv = floatArrayOf(0f, 0.0125f, 0.025f, 0.5f, 1f)
+            val rv = floatArrayOf(0f, 0f, 0f, 0f, 0f)
             for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = rv[j]
         }
         return if (flippedY) rows.reversed().toTypedArray() else rows

@@ -16,7 +16,6 @@ import lib.CustomMaterial
 import main.components.GraphicsSettings
 import main.components.SceneManager
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 /**
  * Manages occlusion for objects that obstruct the player's view.

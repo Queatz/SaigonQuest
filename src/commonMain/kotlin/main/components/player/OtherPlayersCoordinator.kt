@@ -27,6 +27,7 @@ import main.components.world.WorldObjectManager
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
+import models.Sex
 import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
@@ -477,7 +478,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             createOrUpdateUsernameBillboard(op, startPos)
                             // Apply full appearance (hair, eyes, worn) immediately so it doesn't wait for movement
                             try {
-                                val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+                                val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
                                 val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
                                 val itemsById = try {
                                     val ids = user.wornItems
@@ -495,7 +496,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             scheduleSpawnRetry(op, "createCharacter returned null (with user)")
                         }
                     } else {
-                        val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+                        val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
                         val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
                         val itemsById = try {
                             val ids = user.wornItems
@@ -541,7 +542,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
             // No base change: update only additional layers and skin tone
             op.profile = user
-            val hair = SpriteSheet.createHairSpriteSheet(user.hairStyle)
+            val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
             val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
             val itemsById = try {
                 val ids = user.wornItems

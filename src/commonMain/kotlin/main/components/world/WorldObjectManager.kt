@@ -14,6 +14,7 @@ import main.components.shadow.ShadowManager
 import models.User
 import models.WebSocketAction
 import models.ObjectTypingData
+import models.Sex
 
 /**
  * Manages world objects in a scene
@@ -201,7 +202,7 @@ class WorldObjectManager(private val scene: Scene) {
 
         // Create hair sprite sheet based on user's hair style (if available)
         val hairSpriteSheet = if (user != null) {
-            SpriteSheet.createHairSpriteSheet(hairStyle = user.hairStyle)
+            SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, hairStyle = user.hairStyle)
         } else null
         // Create eyes sprite sheet based on user's eye color and sex (if available)
         val eyesSpriteSheet = if (user != null) {

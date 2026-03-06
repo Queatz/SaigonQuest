@@ -92,6 +92,7 @@ fun CharacterCustomizationDialog(
                     classes(Styles.settingsSectionContainer)
                 }
             ) {
+                if (false) {
                 // Body Type
                 Div(
                     attrs = {
@@ -129,6 +130,7 @@ fun CharacterCustomizationDialog(
                                 Translated(option)
                             }
                         }
+                    }
                     }
                 }
 

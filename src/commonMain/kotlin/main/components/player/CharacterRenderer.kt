@@ -18,6 +18,7 @@ import main.components.inventory.InventoryState
 import main.components.world.Character
 import main.components.world.CharacterDirection
 import main.components.world.SpriteSheet
+import models.Sex
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.backgroundColor
@@ -119,7 +120,7 @@ fun CharacterRenderer(
 
     // React to hair and eye changes in realtime by updating additional sprite sheets
     DisposableEffect(hairStyle, eyeColor, wornItemSpriteSheets, additionalSpriteSheets, enableInventoryIntegration) {
-        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle) else null
+        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(InventoryState.currentUser?.sex ?: Sex.Boy, hairStyle = hairStyle) else null
         val eyesSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createEyesSpriteSheet(
             eyeColor = eyeColor,
             sex = InventoryState.currentUser?.sex,
@@ -230,7 +231,7 @@ fun CharacterRenderer(
         }
         
         // Create hair/eyes sprite sheets for preview if enabled
-        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(hairStyle = hairStyle) else null
+        val hairSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createHairSpriteSheet(InventoryState.currentUser?.sex ?: Sex.Boy, hairStyle = hairStyle) else null
         val eyesSpriteSheet = if (enableInventoryIntegration) SpriteSheet.createEyesSpriteSheet(
             eyeColor = eyeColor,
             sex = InventoryState.currentUser?.sex,
