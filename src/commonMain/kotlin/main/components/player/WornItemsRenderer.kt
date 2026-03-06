@@ -70,6 +70,15 @@ object WornItemsRenderer {
         }
 
         val weights = parseWeights(item.wearableWeights)
+        val sorting = when (item.wearableLocation ?: ItemWearableLocation.Body) {
+            ItemWearableLocation.Eyes -> 400
+            ItemWearableLocation.Hair -> 300
+            ItemWearableLocation.Neck -> 160
+            ItemWearableLocation.Ears -> 150
+            ItemWearableLocation.Body -> 50
+            ItemWearableLocation.Legs -> 40
+            ItemWearableLocation.Feet -> 30
+        }
 
         // Create a sprite sheet for the wearable item
         return SpriteSheet(
@@ -77,6 +86,7 @@ object WornItemsRenderer {
             cellWidthPx = 32,
             cellHeightPx = 48,
             columns = 8,
+            sorting = sorting,
             windEnabled = true,
             windWeights5x5 = weights,
             // Typical apparel (dresses, capes): pinned near top, free at bottom
@@ -93,6 +103,7 @@ object WornItemsRenderer {
             cellWidthPx = 32,
             cellHeightPx = 48,
             columns = 8,
+            sorting = 50,
             windEnabled = true,
             windFlipY = true,
             windIntensityScale = 0.05f,

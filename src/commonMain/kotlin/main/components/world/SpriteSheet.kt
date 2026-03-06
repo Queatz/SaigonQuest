@@ -11,6 +11,8 @@ class SpriteSheet(
     val cellHeightPx: Int,
     val columns: Int,
     val framesPerSecond: Float = 8f,
+    // Sorting: items with higher sorting values are rendered in front
+    val sorting: Int = 0,
     // Wind animation options (disabled by default)
     val windEnabled: Boolean = false,
     // 5x5 weights in row-major order (top-left -> bottom-right). Null -> use defaults.
@@ -142,6 +144,7 @@ class SpriteSheet(
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
+                sorting = 200,
                 windEnabled = true,
                 // Hair: pinned at root (top), strong at tips (bottom) -> flip Y
                 windFlipY = true,
@@ -175,6 +178,7 @@ class SpriteSheet(
                 cellWidthPx = 32,
                 cellHeightPx = 48,
                 columns = 8,
+                sorting = 100,
             )
         }
     }

@@ -731,8 +731,8 @@ class Character(
 
         // Apply depth bias for overlays only (pull towards camera, avoid depth write issues)
         if (zOffset != 0f) {
-            material.zOffset = -(zOffset / 10.0f)
-            material.zOffsetUnits = -(zOffset / 10.0f)
+            material.zOffset = -zOffset
+            material.zOffsetUnits = -zOffset
         }
 
         console.log("[ZOFFSET] zOffset=$zOffset name=$name")

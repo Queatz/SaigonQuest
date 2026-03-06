@@ -127,6 +127,7 @@ fun CharacterRenderer(
         ) else null
         val inventorySheets = if (enableInventoryIntegration) wornItemSpriteSheets else emptyList()
         val newAdditional = (listOfNotNull(hairSpriteSheet, eyesSpriteSheet) + additionalSpriteSheets + inventorySheets)
+            .sortedByDescending { it.sorting }
         characterRef?.updateSpriteSheets(newAdditional)
         onDispose { }
     }
@@ -256,7 +257,9 @@ fun CharacterRenderer(
                 isSitting -> main.components.world.PlayerActivity.Sit
                 else -> null
             },
-            additionalSpriteSheets = (listOfNotNull(eyesSpriteSheet, hairSpriteSheet) + additionalSpriteSheets + (if (enableInventoryIntegration) wornItemSpriteSheets else emptyList())).toMutableList()
+            additionalSpriteSheets = (listOfNotNull(hairSpriteSheet, eyesSpriteSheet) + additionalSpriteSheets + (if (enableInventoryIntegration) wornItemSpriteSheets else emptyList()))
+                .sortedByDescending { it.sorting }
+                .toMutableList()
         )
         // Initialize skin tone
         character.skinTone = skinTone

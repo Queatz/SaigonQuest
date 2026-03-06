@@ -213,8 +213,10 @@ class WorldObjectManager(private val scene: Scene) {
         } else null
 
         // Combine hair, eyes, any explicitly provided additional sprite sheets, and worn item sprite sheets
-        // Ordering: hair closest to base, then eyes, then additional, then worn items (e.g., hats) on top
-        val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets + listOfNotNull(hairSpriteSheet, eyesSpriteSheet)).toMutableList()
+        // Use sorting values to determine correct layering order (descending: front-to-back)
+        val combinedSpriteSheets = (additionalSpriteSheets + wornItemSpriteSheets + listOfNotNull(hairSpriteSheet, eyesSpriteSheet))
+            .sortedByDescending { it.sorting }
+            .toMutableList()
         
         val character = Character(
             spriteSheet = spriteSheet,
