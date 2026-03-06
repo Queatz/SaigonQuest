@@ -1668,6 +1668,7 @@ fun WorldEditContent(
                         isNumber = true,
                         min = 0f,
                         max = 1f,
+                        step = 0.001f,
                         onSubmit = { input ->
                             val parsed = input.toFloatOrNull()
                             if (parsed != null) {

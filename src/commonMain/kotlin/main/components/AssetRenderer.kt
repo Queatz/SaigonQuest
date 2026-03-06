@@ -6,10 +6,7 @@ import main.theme.Styles
 import models.AssetSearchResult
 import models.AssetType
 import org.jetbrains.compose.web.css.backgroundImage
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -30,12 +27,11 @@ fun AssetRenderer(
             )
         }
         AssetType.SpriteSheet -> {
-            // Render first 32x48 cell
+            // Render first 32x48 cell (bottom left)
             Div(attrs = {
                 classes(Styles.iconRenderer)
-                classes(main.theme.AssetStyles.assetSpriteSheetIcon)
+                classes(AssetStyles.assetSpriteSheetIcon)
                 style {
-                    backgroundColor(Color.transparent)
                     backgroundImage("url(\"/raw/data/spritesheets/${result.asset!!.file}.png\")")
                 }
             }) {}

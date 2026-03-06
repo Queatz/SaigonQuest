@@ -73,7 +73,7 @@ fun AdminItemsDialog(
                     Span { Translated("Cost") }
                     Span { Translated("Asset index") }
                     Span { Translated("Wearable") }
-                    Span {}
+                    Span { Translated("Actions") }
                 }
 
                 // List rows
@@ -86,7 +86,15 @@ fun AdminItemsDialog(
                         Span { Text(item.title.ifBlank { "(untitled)" }) }
                         Span { Text(item.cost.toString()) }
                         Span { Text(item.assetIndex.toString()) }
-                        Span { Text(if (item.wearable) translated("Yes") else translated("No")) }
+                        Span {
+                            if (item.wearable) {
+                                val sex = item.wearableSex?.name?.let { translated(it) } ?: "?"
+                                val location = item.wearableLocation?.name?.let { translated(it) } ?: "?"
+                                Text("${translated("Yes")} ($sex, $location)")
+                            } else {
+                                Text(translated("No"))
+                            }
+                        }
                         Div(attrs = { classes(Styles.adminItemsRowActions) }) {
                             Button(attrs = {
                                 classes(Styles.primaryButton)

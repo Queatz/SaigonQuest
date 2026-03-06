@@ -93,7 +93,7 @@ fun AssetBrowserDialog(
     BaseDialog(
         onClose = onClose,
         title = translated("Asset browser"),
-        maxWidth = "860px",
+        maxWidth = "80px",
         headerActions = {
             if (type == AssetType.Objects) {
                 Button(attrs = {

@@ -6,14 +6,14 @@ import kotlinx.coroutines.launch
 import main.api.BalanceApi
 import main.api.ItemApi
 import main.components.BaseDialog
-import main.components.BasicAlertDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.Translated
 import main.components.common.formatAmount
+import main.theme.InventoryStyles
 import main.theme.Styles
 import models.Item
-import org.jetbrains.compose.web.attributes.InputType
+import models.Sex
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.fontSize
@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.marginLeft
 
 @Composable
 fun MarketplaceDialog(
@@ -154,13 +155,47 @@ fun MarketplaceDialog(
                                 Div { ItemRenderer(item = item, size = 48) }
                                 // Details
                                 Div({ style { property("flex", "1") } }) {
-                                    H4(
+                                    Div(
                                         attrs = {
                                             style {
-                                                margin(0.px)
+                                                display(DisplayStyle.Flex)
+                                                alignItems(AlignItems.Center)
                                             }
                                         }
-                                    ) { Text(item.title) }
+                                    ) {
+                                        H4(
+                                            attrs = {
+                                                style {
+                                                    margin(0.px)
+                                                }
+                                            }
+                                        ) { Text(item.title) }
+
+                                        if (item.wearable) {
+                                            Div(
+                                                attrs = {
+                                                    classes(InventoryStyles.wearableChip)
+                                                    style { marginLeft(8.px) }
+                                                }
+                                            ) {
+                                                Translated("Wearable")
+                                            }
+
+                                            val sex = item.wearableSex ?: Sex.Boy
+                                            Div(
+                                                attrs = {
+                                                    classes(InventoryStyles.wearableChip)
+                                                    when (sex) {
+                                                        Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
+                                                        Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
+                                                    }
+                                                    style { marginLeft(4.px) }
+                                                }
+                                            ) {
+                                                Translated(sex.name)
+                                            }
+                                        }
+                                    }
                                     Div {
                                         Text(item.description)
                                     }

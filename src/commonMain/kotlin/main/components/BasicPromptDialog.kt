@@ -1,25 +1,13 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import main.theme.Styles
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.max
-import org.jetbrains.compose.web.attributes.min
 import org.jetbrains.compose.web.attributes.step
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.NumberInput
-import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.*
 
 /**
  * A basic prompt dialog that allows for text or number input with a default value.
@@ -40,7 +28,7 @@ fun BasicPromptDialog(
     isNumber: Boolean = false,
     min: Number? = null,
     max: Number? = null,
-    step: Number = 0.001,
+    step: Number = 1f,
     onSubmit: (String) -> Unit,
     onCancel: () -> Unit,
 ) {

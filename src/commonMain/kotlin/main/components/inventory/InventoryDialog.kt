@@ -896,13 +896,18 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                     Translated("Wearable")
                                                 }
 
+                                                val sex = item.wearableSex ?: models.Sex.Boy
                                                 Div(
                                                     attrs = {
                                                         classes(InventoryStyles.wearableChip)
+                                                        when (sex) {
+                                                            models.Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
+                                                            models.Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
+                                                        }
                                                         style { marginLeft(4.px) }
                                                     }
                                                 ) {
-                                                    Translated((item.wearableSex ?: models.Sex.Boy).name)
+                                                    Translated(sex.name)
                                                 }
                                             }
                                         }

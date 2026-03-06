@@ -39,8 +39,6 @@ import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginLeft
-import org.jetbrains.compose.web.css.marginRight
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.maxHeight
 import org.jetbrains.compose.web.css.maxWidth
@@ -50,7 +48,6 @@ import org.jetbrains.compose.web.css.mediaMinWidth
 import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.outline
-import org.jetbrains.compose.web.css.outlineColor
 import org.jetbrains.compose.web.css.overflow
 import org.jetbrains.compose.web.css.overflowX
 import org.jetbrains.compose.web.css.overflowY
@@ -70,7 +67,6 @@ import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.vw
 import org.jetbrains.compose.web.css.whiteSpace
 import org.jetbrains.compose.web.css.width
-import web.cssom.WhiteSpace
 
 object Styles : StyleSheet() {
     val md by style {
@@ -743,14 +739,6 @@ object Styles : StyleSheet() {
         borderRadius(8.px)
     }
 
-    val mediaLibraryItemPlaceholder by style {
-        height(100.px)
-        display(DisplayStyle.Flex)
-        alignItems(AlignItems.Center)
-        justifyContent(JustifyContent.Center)
-        marginBottom(6.px)
-    }
-
     val mediaLibraryItemFilename by style {
         position(Position.Absolute)
         bottom(4.px)
@@ -871,20 +859,6 @@ object Styles : StyleSheet() {
         dark(self) {
             backgroundColor(Theme.colors.errorDark)
             color(Theme.colors.onPrimaryDark)
-        }
-    }
-
-    val mediaLibraryItemSmallText by style {
-        fontSize(12.px)
-        color(Theme.colors.textSecondary)
-        property("overflow", "hidden")
-        property("text-overflow", "ellipsis")
-        property("white-space", "nowrap")
-        width(100.percent)
-        marginRight(8.px)
-
-        dark(self) {
-            color(Theme.colors.textSecondaryDark)
         }
     }
 
@@ -1375,7 +1349,9 @@ object Styles : StyleSheet() {
         property("grid-template-columns", "1fr 2fr")
         property("gap", "8px")
         fontSize(12.px)
+        fontWeight("bold")
         marginBottom(8.px)
+        padding(0.px, 8.px)
     }
 
     val assetsGridRow by style {
@@ -1399,7 +1375,9 @@ object Styles : StyleSheet() {
         property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
         property("gap", "8px")
         fontSize(12.px)
+        fontWeight("bold")
         marginBottom(8.px)
+        padding(0.px, 8.px)
     }
 
     val adminItemsGridRow by style {

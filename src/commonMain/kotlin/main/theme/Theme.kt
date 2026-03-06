@@ -60,6 +60,12 @@ object Theme {
         val accentWarnSoft = Color("rgba(255, 160, 80, 0.15)")
         val accentSuccessSoft = Color("rgba(160, 255, 80, 0.15)")
 
+        // Sex accents
+        val accentBoyStrong = Color("rgba(80, 160, 255, 0.9)")
+        val accentBoySoft = Color("rgba(80, 160, 255, 0.15)")
+        val accentGirlStrong = Color("rgba(255, 80, 160, 0.9)")
+        val accentGirlSoft = Color("rgba(255, 80, 160, 0.15)")
+
         // Toast backgrounds
         val toastSuccessBg = Color("rgba(0, 150, 0, 0.7)")
         val toastErrorBg = Color("rgba(255, 0, 0, 0.7)")

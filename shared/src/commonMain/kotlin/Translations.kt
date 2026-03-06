@@ -1861,6 +1861,9 @@ vi: Chân
 
 Feet
 vi: Bàn chân
+
+Wearable?
+vi: Có thể mặc không?
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

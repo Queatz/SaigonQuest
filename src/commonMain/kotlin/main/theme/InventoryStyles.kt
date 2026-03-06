@@ -157,12 +157,22 @@ object InventoryStyles : StyleSheet() {
 
     // Wearable chip/indicator
     val wearableChip by style {
-        margin(8.px)
+        margin(2.px, 4.px)
         padding(2.px, 6.px)
         backgroundColor(Theme.colors.accentInfoSoft)
         color(Theme.colors.accentInfoStrong)
         fontSize(10.px)
         borderRadius(4.px)
+    }
+
+    val wearableChipBoy by style {
+        backgroundColor(Theme.colors.accentBoySoft)
+        color(Theme.colors.accentBoyStrong)
+    }
+
+    val wearableChipGirl by style {
+        backgroundColor(Theme.colors.accentGirlSoft)
+        color(Theme.colors.accentGirlStrong)
     }
 
     // Item title

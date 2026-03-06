@@ -2,11 +2,11 @@ package main.theme
 
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.StyleSheet
+import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.backgroundPosition
 import org.jetbrains.compose.web.css.backgroundRepeat
 import org.jetbrains.compose.web.css.backgroundSize
 import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
@@ -55,10 +55,12 @@ object AssetStyles : StyleSheet() {
     val assetSpriteSheetIcon by style {
         width(32.px)
         height(48.px)
+        backgroundColor(Color.transparent)
         backgroundRepeat("no-repeat")
         // 32*8 x 48*8
         backgroundSize("256px 384px")
-        backgroundPosition("0px 0px")
+        // Index 0 starts at bottom left
+        backgroundPosition("0px -336px")
     }
 
     // Caption under each asset preview
