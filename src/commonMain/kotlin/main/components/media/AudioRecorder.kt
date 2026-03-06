@@ -26,6 +26,7 @@ fun AudioRecorder(
     onError: (String) -> Unit
 ) {
     var isRecording by remember { mutableStateOf(false) }
+    var isCancelled by remember { mutableStateOf(false) }
     var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
     val chunks = remember { mutableListOf<Blob>() }
     val scope = rememberCoroutineScope()
@@ -54,16 +55,18 @@ fun AudioRecorder(
                 }
 
                 recorder.onstop = {
-                    val blobProps = jso<BlobPropertyBag> {
-                        type = "audio/webm"
+                    if (!isCancelled) {
+                        val blobProps = jso<BlobPropertyBag> {
+                            type = "audio/webm"
+                        }
+                        val blob = Blob(chunks.toTypedArray(), blobProps.unsafeCast<org.w3c.files.BlobPropertyBag>())
+                        
+                        val fileProps = jso<FilePropertyBag> {
+                            type = "audio/webm"
+                        }
+                        val file = File(arrayOf(blob), "recorded-audio.webm", fileProps.unsafeCast<org.w3c.files.FilePropertyBag>())
+                        onUpload(file)
                     }
-                    val blob = Blob(chunks.toTypedArray(), blobProps.unsafeCast<org.w3c.files.BlobPropertyBag>())
-                    
-                    val fileProps = jso<FilePropertyBag> {
-                        type = "audio/webm"
-                    }
-                    val file = File(arrayOf(blob), "recorded-audio.webm", fileProps.unsafeCast<org.w3c.files.FilePropertyBag>())
-                    onUpload(file)
                     
                     // Stop all tracks to release the microphone
                     val tracks = stream.asDynamic().getTracks() as Array<dynamic>
@@ -75,6 +78,7 @@ fun AudioRecorder(
                 }
 
                 chunks.clear()
+                isCancelled = false
                 recorder.start()
                 mediaRecorder = recorder
                 isRecording = true
@@ -87,6 +91,15 @@ fun AudioRecorder(
 
     fun stopRecording() {
         if (!isRecording) return
+        isCancelled = false
+        mediaRecorder?.stop()
+        isRecording = false
+        MusicManager.stopRecording()
+    }
+
+    fun cancelRecording() {
+        if (!isRecording) return
+        isCancelled = true
         mediaRecorder?.stop()
         isRecording = false
         MusicManager.stopRecording()
@@ -113,6 +126,17 @@ fun AudioRecorder(
         }) {
             Text("🛑")
             Translated("Stop recording")
+        }
+
+        Button(attrs = {
+            classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
+            onClick { ev ->
+                ev.stopPropagation()
+                cancelRecording()
+            }
+        }) {
+            Text("🗑️")
+            Translated("Discard recording")
         }
     }
 }

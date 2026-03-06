@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.window.Dialog
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -29,6 +28,7 @@ import models.Inventory
 import models.Item
 import models.Sex
 import models.User
+import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.alignItems
@@ -44,6 +44,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLElement
 import utils.json
 
@@ -61,6 +62,7 @@ fun InventoryDialog(onClose: () -> Unit) {
     var showCreateItemDialog by remember { mutableStateOf(false) }
     var showMarketplaceDialog by remember { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<User?>(null) }
+    var searchText by remember { mutableStateOf("") }
 
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
@@ -506,6 +508,38 @@ fun InventoryDialog(onClose: () -> Unit) {
         }
     }
 
+    // Function to move an item to the top of the inventory
+    fun handleMoveToTop(itemId: String) {
+        console.log("[DEBUG_LOG] handleMoveToTop: itemId=$itemId")
+
+        val currentInventory = inventory ?: return
+        val currentOrder = currentInventory.itemOrder.toMutableList()
+
+        val index = currentOrder.indexOf(itemId)
+        if (index != -1 && index > 0) {
+            currentOrder.removeAt(index)
+            currentOrder.add(0, itemId)
+
+            // Update local state
+            inventory = currentInventory.copy(itemOrder = currentOrder)
+
+            // Save the updated order via API
+            coroutineScope.launch {
+                try {
+                    console.log("[DEBUG_LOG] Saving updated item order after move to top: $currentOrder")
+                    val updatedInventory = InventoryApi.updateInventoryItemOrder(currentOrder)
+                    console.log("[DEBUG_LOG] Successfully saved item order")
+                    InventoryState.inventory = updatedInventory
+                    showFeedback(str("Item moved to top"))
+                } catch (error: Throwable) {
+                    console.error("[DEBUG_LOG] Error saving item order", error)
+                    showFeedback(str("Failed to move to top"), true)
+                    inventory = currentInventory
+                }
+            }
+        }
+    }
+
     // Function to handle drop for reordering inventory (mouse-based)
     fun handleDrop(event: dynamic, targetItemId: String) {
         event.preventDefault()
@@ -548,20 +582,6 @@ fun InventoryDialog(onClose: () -> Unit) {
         )
     }
 
-    // Function to refresh inventory data
-    fun refreshInventory() {
-        // Use the shared inventory state to refresh data
-        InventoryState.refreshInventory(
-            coroutineScope = coroutineScope,
-            onSuccess = {
-                showFeedback(str("Inventory refreshed"))
-            },
-            onError = { message ->
-                showFeedback(str("Failed to refresh inventory") + ": " + message, true)
-            }
-        )
-    }
-
     BaseDialog(
         onClose = onClose,
         title = translated("Inventory"),
@@ -582,7 +602,6 @@ fun InventoryDialog(onClose: () -> Unit) {
         content = {
             Div(
                 attrs = {
-                    classes(InventoryStyles.dialogContent)
                 }
             ) {
                 // Render feedback message if present
@@ -812,7 +831,9 @@ fun InventoryDialog(onClose: () -> Unit) {
                         Translated("Inventory items")
                     }
 
-                    if (inventory?.itemOrder?.isEmpty() == true) {
+                    val itemOrder = inventory?.itemOrder ?: emptyList()
+
+                    if (itemOrder.isEmpty()) {
                         P(
                             attrs = {
                                 style {
@@ -823,8 +844,36 @@ fun InventoryDialog(onClose: () -> Unit) {
                             Translated("Your inventory is empty. Click '+ New' to create an item.")
                         }
                     } else {
+                        if (itemOrder.size > 10) {
+                            TextInput(
+                                value = searchText,
+                                attrs = {
+                                    classes(Styles.inputField)
+                                    placeholder(str("Search"))
+                                    onInput { ev -> searchText = ev.value }
+                                    style {
+                                        marginBottom(12.px)
+                                        property("width", "100%")
+                                        property("box-sizing", "border-box")
+                                    }
+                                }
+                            )
+                        }
+
+                        val moveTip = translated("Double click to move to top")
+
                         // Display inventory items
-                        inventory?.itemOrder?.forEach { itemId ->
+                        val filteredItemOrder = if (searchText.isEmpty()) {
+                            itemOrder
+                        } else {
+                            itemOrder.filter { itemId ->
+                                val item = InventoryState.getItemForInventoryItemKey(itemId)
+                                item?.title?.contains(searchText, ignoreCase = true) == true ||
+                                        item?.description?.contains(searchText, ignoreCase = true) == true
+                            }
+                        }
+
+                        filteredItemOrder.forEach { itemId ->
                             val item = InventoryState.getItemForInventoryItemKey(itemId)
                             if (item != null) {
                                 Div(
@@ -832,6 +881,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         classes(InventoryStyles.inventoryRow)
                                         // Make draggable
                                         attr("draggable", "true")
+                                        title(moveTip)
+                                        onDoubleClick { handleMoveToTop(itemId) }
                                         onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
                                         onDragOver { event -> handleDragOver(event.nativeEvent) }
                                         onDrop { event -> handleDrop(event.nativeEvent, itemId) }
@@ -896,13 +947,13 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                     Translated("Wearable")
                                                 }
 
-                                                val sex = item.wearableSex ?: models.Sex.Boy
+                                                val sex = item.wearableSex ?: Sex.Boy
                                                 Div(
                                                     attrs = {
                                                         classes(InventoryStyles.wearableChip)
                                                         when (sex) {
-                                                            models.Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
-                                                            models.Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
+                                                            Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
+                                                            Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
                                                         }
                                                         style { marginLeft(4.px) }
                                                     }

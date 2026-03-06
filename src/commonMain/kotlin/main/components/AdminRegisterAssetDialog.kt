@@ -16,6 +16,7 @@ import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Option
@@ -26,12 +27,15 @@ import org.jetbrains.compose.web.dom.TextInput
 /**
  * Dialog for registering a new asset.
  */
+private var lastSelectedAssetType: AssetType = AssetType.Items
+
 @Composable
 fun AdminRegisterAssetDialog(
     onClose: () -> Unit,
     onRegisterAsset: (Asset) -> Unit,
+    initialType: AssetType? = null,
 ) {
-    var selectedAssetType by remember { mutableStateOf(AssetType.Items) }
+    var selectedAssetType by remember { mutableStateOf(initialType ?: lastSelectedAssetType) }
     var assetFileName by remember { mutableStateOf("") }
 
     BaseDialog(
@@ -58,6 +62,7 @@ fun AdminRegisterAssetDialog(
                             val value = event.value
                             if (value != null) {
                                 selectedAssetType = AssetType.valueOf(value)
+                                lastSelectedAssetType = selectedAssetType
                             }
                         }
                     }
@@ -67,7 +72,7 @@ fun AdminRegisterAssetDialog(
                             value = type.name,
                             attrs = {
                                 if (type == selectedAssetType) {
-                                    attr("selected", "true")
+                                    selected()
                                 }
                             }
                         ) { Text(type.name) }

@@ -203,61 +203,11 @@ object InventoryStyles : StyleSheet() {
         }
     }
 
-    // Dialog content container
-    val dialogContent by style {
-        padding(16.px)
-        height(100.percent)
-        property("overflow-y", "auto")
-        position(Position.Relative)
-    }
-
-    // Centered text helper
-    val centerText by style {
-        property("text-align", "center")
-    }
-
     // Section container and title
     val sectionContainer by style {
         property("margin-bottom", "20px")
     }
 
-    val sectionTitle by style {
-        property("margin-bottom", "12px")
-        fontSize(18.px)
-    }
-
-    // Worn items list container
-    val wornItemsList by style {
-        display(DisplayStyle.Flex)
-        property("flex-direction", "row")
-        property("flex-wrap", "wrap")
-        property("gap", "8px")
-    }
-
-    // Worn item name text
-    val wornItemName by style {
-        fontSize(12.px)
-        property("margin-top", "4px")
-        property("text-align", "center")
-    }
-
-    // Item details area in row
-    val itemDetails by style {
-        flexGrow(1)
-        property("margin-left", "12px")
-    }
-
-    // Header row for title + chip
-    val itemHeaderRow by style {
-        display(DisplayStyle.Flex)
-        alignItems(AlignItems.Center)
-    }
-
-    // Action buttons row
-    val actionButtonsRow by style {
-        display(DisplayStyle.Flex)
-        property("gap", "8px")
-    }
     // Style for inventory box
     val inventoryBox by style {
         width(48.px)

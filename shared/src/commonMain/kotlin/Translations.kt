@@ -382,6 +382,9 @@ vi: Dài
 Cancel
 vi: Hủy
 
+Discard recording
+vi: Hủy bản ghi
+
 Save
 vi: Lưu
 
@@ -768,6 +771,15 @@ vi: Nhấp để gỡ
 
 Inventory items
 vi: Vật phẩm trong kho
+
+Double click to move to top
+vi: Nhấn đúp để chuyển lên đầu
+
+Item moved to top
+vi: Đã chuyển vật phẩm lên đầu
+
+Failed to move to top
+vi: Chuyển lên đầu thất bại
 
 Your inventory is empty. Click '+ New' to create an item.
 vi: Kho đồ của bạn trống. Nhấp '+ Mới' để tạo vật phẩm.

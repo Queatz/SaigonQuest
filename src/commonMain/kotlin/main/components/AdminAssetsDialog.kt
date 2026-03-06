@@ -221,6 +221,7 @@ fun AdminAssetsDialog(
     if (showRegisterAssetDialog) {
         AdminRegisterAssetDialog(
             onClose = { showRegisterAssetDialog = false },
+            initialType = selectedType,
             onRegisterAsset = { asset ->
                 scope.launch {
                     try {
