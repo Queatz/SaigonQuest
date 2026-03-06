@@ -18,8 +18,11 @@ import main.components.translated
 import main.theme.Styles
 import models.AssetType
 import models.Item
+import models.ItemWearableLocation
+import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.display
@@ -33,7 +36,9 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
+import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.TextInput
 
@@ -51,6 +56,8 @@ fun EditItemDialog(
     var assetIndex by remember { mutableStateOf(item.assetIndex.toString()) }
     var wearable by remember { mutableStateOf(item.wearable) }
     var wearableFile by remember { mutableStateOf(item.wearableFile ?: "") }
+    var wearableSex by remember { mutableStateOf(item.wearableSex ?: Sex.Boy) }
+    var wearableLocation by remember { mutableStateOf(item.wearableLocation ?: ItemWearableLocation.Body) }
     var customizeWeights by remember { mutableStateOf(!item.wearableWeights.isNullOrBlank()) }
 
     fun parseWeightsCsv(csv: String?): List<List<String>> {
@@ -141,6 +148,8 @@ fun EditItemDialog(
                     assetIndex = assetIndex.toInt(),
                     wearable = wearable,
                     wearableFile = if (wearable) wearableFile.trim() else null,
+                    wearableSex = if (wearable) wearableSex else null,
+                    wearableLocation = if (wearable) wearableLocation else null,
                     wearableWeights = if (wearable) weightsCsv else null,
                 ).also { it.key = item.key }
 
@@ -235,6 +244,40 @@ fun EditItemDialog(
             }
 
             if (wearable) {
+                // Wearable sex
+                Div(attrs = { style { marginBottom(16.px) } }) {
+                    Label(attrs = { style { display(DisplayStyle.Block); marginBottom(4.px) } }) { Translated("Sex") }
+                    Select(attrs = {
+                        classes(Styles.inputField)
+                        onInput { ev ->
+                            try {
+                                wearableSex = Sex.valueOf(ev.value ?: Sex.Boy.name)
+                            } catch (_: Throwable) {}
+                        }
+                    }) {
+                        Sex.entries.forEach { s ->
+                            Option(s.name, attrs = { if (s == wearableSex) selected() }) { Translated(s.name) }
+                        }
+                    }
+                }
+
+                // Wearable location
+                Div(attrs = { style { marginBottom(16.px) } }) {
+                    Label(attrs = { style { display(DisplayStyle.Block); marginBottom(4.px) } }) { Translated("Location") }
+                    Select(attrs = {
+                        classes(Styles.inputField)
+                        onInput { ev ->
+                            try {
+                                wearableLocation = ItemWearableLocation.valueOf(ev.value ?: ItemWearableLocation.Body.name)
+                            } catch (_: Throwable) {}
+                        }
+                    }) {
+                        ItemWearableLocation.entries.forEach { loc ->
+                            Option(loc.name, attrs = { if (loc == wearableLocation) selected() }) { Translated(loc.name) }
+                        }
+                    }
+                }
+
                 // Wearable asset (preview + browser)
                 Div(attrs = { style { marginBottom(16.px) } }) {
                     Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wearable asset") }

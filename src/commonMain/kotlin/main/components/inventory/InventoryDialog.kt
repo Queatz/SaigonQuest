@@ -27,6 +27,7 @@ import main.theme.Styles
 import main.utils.DataType
 import models.Inventory
 import models.Item
+import models.Sex
 import models.User
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -893,6 +894,15 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                     }
                                                 ) {
                                                     Translated("Wearable")
+                                                }
+
+                                                Div(
+                                                    attrs = {
+                                                        classes(InventoryStyles.wearableChip)
+                                                        style { marginLeft(4.px) }
+                                                    }
+                                                ) {
+                                                    Translated((item.wearableSex ?: models.Sex.Boy).name)
                                                 }
                                             }
                                         }

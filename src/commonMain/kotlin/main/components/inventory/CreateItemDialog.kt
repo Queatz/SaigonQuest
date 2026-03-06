@@ -24,8 +24,11 @@ import Translations.str
 import main.theme.Styles
 import models.InventoryItem
 import models.Item
+import models.ItemWearableLocation
+import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.color
@@ -39,10 +42,12 @@ import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.NumberInput
+import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
-import org.jetbrains.compose.web.dom.NumberInput
 
 /**
  * A dialog for creating new items.
@@ -63,6 +68,8 @@ fun CreateItemDialog(
     var assetIndex by remember { mutableStateOf("0") }
     var wearable by remember { mutableStateOf(false) }
     var wearableFile by remember { mutableStateOf("") }
+    var wearableSex by remember { mutableStateOf(Sex.Boy) }
+    var wearableLocation by remember { mutableStateOf(ItemWearableLocation.Body) }
     var customizeWeights by remember { mutableStateOf(false) }
     var weightGrid by remember { mutableStateOf(List(5) { List(5) { "" } }) }
     var showAssetBrowser by remember { mutableStateOf(false) }
@@ -213,6 +220,8 @@ fun CreateItemDialog(
                     assetIndex = assetIndex.toInt(),
                     wearable = wearable,
                     wearableFile = if (wearable) wearableFile.trim() else null,
+                    wearableSex = if (wearable) wearableSex else null,
+                    wearableLocation = if (wearable) wearableLocation else null,
                     wearableWeights = if (wearable) weightsCsv else null,
                 )
                 
@@ -423,6 +432,70 @@ fun CreateItemDialog(
             
             // Conditional wearable fields
             if (wearable) {
+                // Wearable sex
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginBottom(4.px)
+                            }
+                        }
+                    ) {
+                        Translated("Sex")
+                    }
+                    Select(attrs = {
+                        classes(Styles.inputField)
+                        onInput { ev ->
+                            try {
+                                wearableSex = Sex.valueOf(ev.value ?: Sex.Boy.name)
+                            } catch (_: Throwable) {}
+                        }
+                    }) {
+                        Sex.entries.forEach { s ->
+                            Option(s.name, attrs = { if (s == wearableSex) selected() }) { Translated(s.name) }
+                        }
+                    }
+                }
+
+                // Wearable location
+                Div(
+                    attrs = {
+                        style {
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Label(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginBottom(4.px)
+                            }
+                        }
+                    ) {
+                        Translated("Location")
+                    }
+                    Select(attrs = {
+                        classes(Styles.inputField)
+                        onInput { ev ->
+                            try {
+                                wearableLocation = ItemWearableLocation.valueOf(ev.value ?: ItemWearableLocation.Body.name)
+                            } catch (_: Throwable) {}
+                        }
+                    }) {
+                        ItemWearableLocation.entries.forEach { loc ->
+                            Option(loc.name, attrs = { if (loc == wearableLocation) selected() }) { Translated(loc.name) }
+                        }
+                    }
+                }
+
                 // Wearable File field + browser/preview
                 Div(
                     attrs = {

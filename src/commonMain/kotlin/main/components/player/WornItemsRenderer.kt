@@ -4,6 +4,7 @@ import main.components.world.CharacterDirection
 import main.components.world.SpriteSheet
 import main.components.world.spriteSheetPath
 import models.Item
+import models.ItemWearableLocation
 import models.Sex
 import models.User
 
@@ -29,14 +30,23 @@ object WornItemsRenderer {
     ): List<SpriteSheet> {
         if (user == null) return emptyList()
         val wornItemIds = user.wornItems
-        if (wornItemIds.isEmpty()) return listOf(createDefaultApparelSpriteSheet(user.sex ?: Sex.Boy))
 
         val wornItems: List<Item> = wornItemIds.mapNotNull { itemId -> resolver(itemId) }
 
         val wearableItems = wornItems.filter { item -> item.wearable && item.wearableFile != null }
-        val sheets = wearableItems.mapNotNull { item -> createSpriteSheetForWearableItem(item) }
 
-        return sheets.ifEmpty { listOf(createDefaultApparelSpriteSheet(user.sex ?: Sex.Boy)) }
+        val sheets = mutableListOf<SpriteSheet>()
+
+        // Check if there is anything worn at the Body location
+        val hasBodyWearable = wearableItems.any { (it.wearableLocation ?: ItemWearableLocation.Body) == ItemWearableLocation.Body }
+
+        if (!hasBodyWearable) {
+            sheets.add(createDefaultApparelSpriteSheet(user.sex ?: Sex.Boy))
+        }
+
+        sheets.addAll(wearableItems.mapNotNull { item -> createSpriteSheetForWearableItem(item) })
+
+        return sheets
     }
 
     /**

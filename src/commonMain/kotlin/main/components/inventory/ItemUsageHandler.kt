@@ -8,6 +8,8 @@ import main.api.WebSocketApi
 import main.api.updatePlayer
 import main.components.translated
 import models.Item
+import models.ItemWearableLocation
+import models.Sex
 import models.User
 
 /**
@@ -58,6 +60,14 @@ object ItemUsageHandler {
                     onError(str("You must be logged in to wear items"))
                     return
                 }
+
+                // Check if the item matches the user's sex
+                val itemSex = item.wearableSex ?: Sex.Boy
+                val userSex = currentUser.sex ?: Sex.Boy
+                if (itemSex != userSex) {
+                    onError(str("It doesn't fit."))
+                    return
+                }
                 
                 // Check if the item is already worn
                 val isWorn = currentUser.wornItems.contains(item.key)
@@ -104,6 +114,22 @@ object ItemUsageHandler {
                         try {
                             // Add to worn items
                             val updatedWornItems = currentUser.wornItems.toMutableList()
+                            
+                            // Remove all other worn items at the same location
+                            val itemLocation = item.wearableLocation ?: ItemWearableLocation.Body
+                            
+                            // Identify which items to remove based on their locations
+                            val itemsToRemove = updatedWornItems.filter { wornItemKey ->
+                                val wornItem = InventoryState.items[wornItemKey]
+                                if (wornItem != null) {
+                                    val wornLocation = wornItem.wearableLocation ?: ItemWearableLocation.Body
+                                    wornLocation == itemLocation
+                                } else {
+                                    false
+                                }
+                            }
+                            
+                            updatedWornItems.removeAll(itemsToRemove)
                             updatedWornItems.add(item.key)
 
                             // Update the user locally and on the server

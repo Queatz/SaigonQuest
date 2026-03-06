@@ -1825,6 +1825,42 @@ vi: Gửi
 
 Type a message…
 vi: Nhập tin nhắn…
+
+It doesn't fit.
+vi: Nó không vừa.
+
+Sex
+vi: Giới tính
+
+Location
+vi: Vị trí
+
+Boy
+vi: Nam
+
+Girl
+vi: Nữ
+
+Hair
+vi: Tóc
+
+Eyes
+vi: Mắt
+
+Ears
+vi: Tai
+
+Neck
+vi: Cổ
+
+Body
+vi: Thân
+
+Legs
+vi: Chân
+
+Feet
+vi: Bàn chân
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
