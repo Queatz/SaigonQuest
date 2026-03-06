@@ -184,6 +184,16 @@ class PlayerController(private val scene: Scene) {
     fun getPlayerHandle(): WorldObjectHandle? {
         return playerHandle
     }
+
+    /**
+     * Gets all meshes associated with the player character.
+     * 
+     * @return Array of player meshes
+     */
+    fun getPlayerMeshes(): Array<AbstractMesh> {
+        val node = playerHandle?.node ?: return emptyArray()
+        return node.getChildMeshes()
+    }
     
     fun getPlayerActivity(): PlayerActivity? {
         return playerActivity

@@ -834,6 +834,11 @@ fun SceneComponent(url: String) {
             onShowMessageDialog = { message ->
                 messageDialogText.value = message
                 showMessageDialog.value = true
+            },
+            onOpenInventory = {
+                coroutineScope.launch {
+                    requestPanel.emit(SidePanelState.Inventory)
+                }
             }
         )
 

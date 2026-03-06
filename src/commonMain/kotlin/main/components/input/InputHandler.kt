@@ -111,6 +111,7 @@ class InputHandler(
     private val cameraController: CameraController,
     private val onShowOtherPlayerDialog: ((username: String, isPlayer: Boolean) -> Unit)? = null,
     private val onShowMessageDialog: ((message: String) -> Unit)? = null,
+    private val onOpenInventory: (() -> Unit)? = null,
 ) {
     // Get the object manager from SceneManager
     private val objectManager: SceneObjectManager? = SceneManager.getObjectManager()
@@ -358,14 +359,26 @@ class InputHandler(
             pendingTapSingleJob = null
             // First, check if we double-tapped a player: show dialog
             run {
+                val ray = scene.createPickingRay(
+                    x = scene.pointerX,
+                    y = scene.pointerY,
+                    world = Matrix.Identity(),
+                    camera = cameraController.getCamera(),
+                )
+
+                // Local player check: open inventory
+                val localPlayerMeshes = playerController.getPlayerMeshes()
+                for (m in localPlayerMeshes) {
+                    val hit = ray.intersectsMesh(m)
+                    if (hit.pickedPoint != null) {
+                        openInventory()
+                        return
+                    }
+                }
+
+                // Other players check
                 val otherPlayersController = SceneManager.getOtherPlayersController()
                 if (otherPlayersController != null) {
-                    val ray = scene.createPickingRay(
-                        x = scene.pointerX,
-                        y = scene.pointerY,
-                        world = Matrix.Identity(),
-                        camera = cameraController.getCamera(),
-                    )
                     val meshes = otherPlayersController.getPlayerMeshes()
                     for (m in meshes) {
                         val hit = ray.intersectsMesh(m)
@@ -411,14 +424,29 @@ class InputHandler(
             }
             // First, check if we tapped a player: show dialog and do not move
             run {
+                val ray = scene.createPickingRay(
+                    x = scene.pointerX,
+                    y = scene.pointerY,
+                    world = Matrix.Identity(),
+                    camera = cameraController.getCamera(),
+                )
+
+                // Local player check: open inventory
+                val localPlayerMeshes = playerController.getPlayerMeshes()
+                for (m in localPlayerMeshes) {
+                    val hit = ray.intersectsMesh(m)
+                    if (hit.pickedPoint != null) {
+                        // Any explicit player interaction should cancel pending single-object tap
+                        pendingTapSingleJob?.cancel()
+                        pendingTapSingleJob = null
+                        openInventory()
+                        return
+                    }
+                }
+
+                // Other players check
                 val otherPlayersController = SceneManager.getOtherPlayersController()
                 if (otherPlayersController != null) {
-                    val ray = scene.createPickingRay(
-                        x = scene.pointerX,
-                        y = scene.pointerY,
-                        world = Matrix.Identity(),
-                        camera = cameraController.getCamera(),
-                    )
                     val meshes = otherPlayersController.getPlayerMeshes()
                     for (m in meshes) {
                         val hit = ray.intersectsMesh(m)
@@ -544,6 +572,34 @@ class InputHandler(
                 console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
                 objectManager.selectObject(closestObjectId)
                 return
+            }
+
+            // Check if we clicked on a player (local or other)
+            run {
+                val ray = pick.ray
+                
+                // Local player check
+                val localPlayerMeshes = playerController.getPlayerMeshes()
+                for (m in localPlayerMeshes) {
+                    val hit = ray.intersectsMesh(m)
+                    if (hit.pickedPoint != null) {
+                        objectManager?.deselectCurrentObject()
+                        return
+                    }
+                }
+                
+                // Other players check
+                val otherPlayersController = SceneManager.getOtherPlayersController()
+                if (otherPlayersController != null) {
+                    val playerMeshes = otherPlayersController.getPlayerMeshes()
+                    for (mesh in playerMeshes) {
+                        val hit = ray.intersectsMesh(mesh)
+                        if (hit.pickedPoint != null) {
+                            objectManager?.deselectCurrentObject()
+                            return
+                        }
+                    }
+                }
             }
 
             // If we didn't click on an object, check if we clicked on a world mesh
@@ -889,20 +945,34 @@ class InputHandler(
         )
         
         // First check for intersection with player meshes
-        val otherPlayersController = SceneManager.getOtherPlayersController()
         var isHoveringPlayer = false
-        
-        if (otherPlayersController != null) {
-            val playerMeshes = otherPlayersController.getPlayerMeshes()
-            
-            for (mesh in playerMeshes) {
-                val hit = ray.intersectsMesh(mesh)
-                if (hit.pickedPoint != null) {
-                    // We're hovering over a player, change cursor to pointer
-                    document.body?.style?.cursor = "pointer"
-                    isHoveringPlayer = true
-                    isHoveringOverPlayer = true
-                    break
+
+        // Local player check
+        val localPlayerMeshes = playerController.getPlayerMeshes()
+        for (m in localPlayerMeshes) {
+            val hit = ray.intersectsMesh(m)
+            if (hit.pickedPoint != null) {
+                document.body?.style?.cursor = "pointer"
+                isHoveringPlayer = true
+                isHoveringOverPlayer = true
+                break
+            }
+        }
+
+        if (!isHoveringPlayer) {
+            val otherPlayersController = SceneManager.getOtherPlayersController()
+            if (otherPlayersController != null) {
+                val playerMeshes = otherPlayersController.getPlayerMeshes()
+
+                for (mesh in playerMeshes) {
+                    val hit = ray.intersectsMesh(mesh)
+                    if (hit.pickedPoint != null) {
+                        // We're hovering over a player, change cursor to pointer
+                        document.body?.style?.cursor = "pointer"
+                        isHoveringPlayer = true
+                        isHoveringOverPlayer = true
+                        break
+                    }
                 }
             }
         }
@@ -965,7 +1035,18 @@ class InputHandler(
             camera = cameraController.getCamera()
         )
 
-        // 1) Player-click detection stays the same: do not move if we clicked another player
+        // 1) Player-click detection: do not move if we clicked a player (local or other)
+
+        // Local player check: open inventory
+        val localPlayerMeshes = playerController.getPlayerMeshes()
+        for (m in localPlayerMeshes) {
+            val hit = ray.intersectsMesh(m)
+            if (hit.pickedPoint != null) {
+                openInventory()
+                return
+            }
+        }
+
         val otherPlayersController = SceneManager.getOtherPlayersController()
         if (otherPlayersController != null) {
             val playerMeshes = otherPlayersController.getPlayerMeshes()
@@ -1037,6 +1118,11 @@ class InputHandler(
         return distance <= maxDistance
     }
     
+    private fun openInventory() {
+        console.log("[DEBUG_LOG] Opening inventory (local player clicked)")
+        onOpenInventory?.invoke()
+    }
+
     /**
      * Shows the dialog for interacting with another player
      * 
