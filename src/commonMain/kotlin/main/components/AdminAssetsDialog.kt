@@ -36,6 +36,7 @@ fun AdminAssetsDialog(
 ) {
     var assets by remember { mutableStateOf<List<Asset>>(emptyList()) }
     var assetCategories by remember { mutableStateOf<Map<String, Set<String>>>(emptyMap()) }
+    var assetTitles by remember { mutableStateOf<Map<String, Set<String>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -52,23 +53,31 @@ fun AdminAssetsDialog(
                 val fetchedAssets = AssetApi.getAllAssets()
                 assets = fetchedAssets
 
-                // Fetch categories
+                // Fetch categories and titles
                 val categoriesMap = mutableMapOf<String, MutableSet<String>>()
+                val titlesMap = mutableMapOf<String, MutableSet<String>>()
                 AssetType.entries.forEach { type ->
                     try {
                         val results = AssetItemApi.searchWithAsset(type, null, null)
                         results.forEach { result ->
                             val assetId = result.asset?.key
                             val cat = result.category
-                            if (assetId != null && !cat.isNullOrBlank()) {
-                                categoriesMap.getOrPut(assetId) { mutableSetOf() }.add(cat)
+                            val title = result.title
+                            if (assetId != null) {
+                                if (!cat.isNullOrBlank()) {
+                                    categoriesMap.getOrPut(assetId) { mutableSetOf() }.add(cat)
+                                }
+                                if (!title.isNullOrBlank()) {
+                                    titlesMap.getOrPut(assetId) { mutableSetOf() }.add(title)
+                                }
                             }
                         }
                     } catch (t: Throwable) {
-                        console.error("Failed to fetch categories for type $type", t)
+                        console.error("Failed to fetch categories and titles for type $type", t)
                     }
                 }
                 assetCategories = categoriesMap
+                assetTitles = titlesMap
             } catch (t: Throwable) {
                 console.error("Failed to load assets", t)
                 errorMessage = t.message
@@ -137,7 +146,8 @@ fun AdminAssetsDialog(
             val filteredAssets = assets.filter { asset ->
                 val matchesType = selectedType == null || asset.type == selectedType
                 val matchesSearch = searchQuery.isBlank() || asset.file.contains(searchQuery, ignoreCase = true) ||
-                        (assetCategories[asset.key]?.any { it.contains(searchQuery, ignoreCase = true) } == true)
+                        (assetCategories[asset.key]?.any { it.contains(searchQuery, ignoreCase = true) } == true) ||
+                        (assetTitles[asset.key]?.any { it.contains(searchQuery, ignoreCase = true) } == true)
                 matchesType && matchesSearch
             }
 
@@ -150,6 +160,7 @@ fun AdminAssetsDialog(
                         Span {} // Icon
                         Span { Translated("Type") }
                         Span { Translated("File") }
+                        Span { Translated("Title") }
                         Span { Translated("Categories") }
                         Span {} // Actions
                     }
@@ -175,6 +186,21 @@ fun AdminAssetsDialog(
                                     Translated("(untitled)")
                                 } else {
                                     Text(asset.file)
+                                }
+                            }
+                            val titles = assetTitles[asset.key] ?: emptySet()
+                            // Titles
+                            Span({
+                                style {
+                                    if (titles.isEmpty()) {
+                                        opacity(0.5f)
+                                    }
+                                }
+                            }) {
+                                if (titles.isEmpty()) {
+                                    Text("-")
+                                } else {
+                                    Text(titles.joinToString(", "))
                                 }
                             }
                             val cats = assetCategories[asset.key] ?: emptySet()

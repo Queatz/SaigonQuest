@@ -602,6 +602,7 @@ fun InventoryDialog(onClose: () -> Unit) {
         content = {
             Div(
                 attrs = {
+                    classes(InventoryStyles.dialogContent)
                 }
             ) {
                 // Render feedback message if present

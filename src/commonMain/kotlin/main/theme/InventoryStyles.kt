@@ -203,6 +203,11 @@ object InventoryStyles : StyleSheet() {
         }
     }
 
+    // Dialog content container
+    val dialogContent by style {
+        position(Position.Relative)
+    }
+
     // Section container and title
     val sectionContainer by style {
         property("margin-bottom", "20px")

@@ -58,9 +58,9 @@ object AssetStyles : StyleSheet() {
         backgroundColor(Color.transparent)
         backgroundRepeat("no-repeat")
         // 32*8 x 48*8
-        backgroundSize("256px 384px")
+        backgroundSize("256px 256px")
         // Index 0 starts at bottom left
-        backgroundPosition("0px -336px")
+        backgroundPosition("0px -208px")
     }
 
     // Caption under each asset preview

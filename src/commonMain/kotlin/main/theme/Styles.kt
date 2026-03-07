@@ -1322,7 +1322,7 @@ object Styles : StyleSheet() {
 
     val adminAssetsGridHeader by style {
         display(DisplayStyle.Grid)
-        property("grid-template-columns", "32px 100px 1.5fr 1fr 100px")
+        property("grid-template-columns", "32px 100px 1.2fr 1.2fr 1fr 100px")
         gap(12.px)
         fontSize(12.px)
         fontWeight("bold")
@@ -1332,7 +1332,7 @@ object Styles : StyleSheet() {
 
     val adminAssetsGridRow by style {
         display(DisplayStyle.Grid)
-        property("grid-template-columns", "32px 100px 1.5fr 1fr 100px")
+        property("grid-template-columns", "32px 100px 1.2fr 1.2fr 1fr 100px")
         gap(12.px)
         alignItems(AlignItems.Center)
         padding(8.px, 12.px)
