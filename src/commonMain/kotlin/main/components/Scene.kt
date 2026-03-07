@@ -115,7 +115,7 @@ fun SceneComponent(url: String) {
     val showOtherPlayerDialog = remember { mutableStateOf(false) }
     val otherPlayerUsername = remember { mutableStateOf("") }
     val otherPlayerIsPlayer = remember { mutableStateOf(false) }
-    val isCurrentUserPlayer = remember { mutableStateOf(true) } // Assume the current user is a player for now
+    val isCurrentUserPlayer = remember { mutableStateOf<Boolean?>(null) } // Assume the current user is unknown for now
     val otherPlayerFriendshipStatus = remember { mutableStateOf(FriendshipStatus.UNKNOWN) }
     val otherPlayerIsLoading = remember { mutableStateOf(false) }
     val otherPlayerErrorMessage = remember { mutableStateOf<String?>(null) }
@@ -314,6 +314,7 @@ fun SceneComponent(url: String) {
 
     // Loading screen or error message
     LoadingScreen(
+        showGoHome = currentWorld.value?.url?.isNotEmpty() ?: false,
         isLoaded = isLoaded.value,
         loadingFailed = loadingFailed.value,
         errorMessage = errorMessage.value,
@@ -555,7 +556,7 @@ fun SceneComponent(url: String) {
         OtherPlayerDialog(
             username = otherPlayerUsername.value,
             isPlayer = otherPlayerIsPlayer.value,
-            isCurrentUserPlayer = isCurrentUserPlayer.value,
+            isCurrentUserPlayer = isCurrentUserPlayer.value == true,
             friendshipStatus = otherPlayerFriendshipStatus.value,
             isLoading = otherPlayerIsLoading.value,
             errorMessage = otherPlayerErrorMessage.value,
@@ -893,6 +894,11 @@ fun SceneComponent(url: String) {
 
         // Load the world using coroutines
         coroutineScope.launch {
+            // Ensure the initial user session check completes first to avoid race conditions with tokens
+            while (isCurrentUserPlayer.value == null) {
+                delay(10)
+            }
+            
             try {
                 // Call the suspend function
                 val (worldMeshes, nodes) = worldLoader.loadWorld(url)

@@ -87,7 +87,7 @@ fun UserRequestsDialog(
 
     fun typeLabel(t: UserRequestType): String = when (t) {
         UserRequestType.Wearable -> str("Wearable item")
-        else -> t.name
+        else -> str(t.name)
     }
 
     fun handleSubmit() {

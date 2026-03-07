@@ -13,6 +13,9 @@ import lib.StandardMaterial
 import lib.Texture
 import lib.Scene
 import lib.TransformNode
+import kotlinx.browser.document
+import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLCanvasElement
 
 /**
  * A class for rendering 2D text in a 3D scene that always faces the camera.
@@ -29,7 +32,8 @@ import lib.TransformNode
  *     scene = scene,
  *     text = "Hello World",
  *     fontSize = 24,
- *     textColor = "white"
+ *     textColor = "white",
+ *     horizontalPadding = 16f
  * )
  * 
  * // Position the text billboard in the scene
@@ -46,7 +50,8 @@ import lib.TransformNode
  *     text = "Hello World",
  *     position = Vector3(0f, 2f, 0f),
  *     fontSize = 24,
- *     textColor = "white"
+ *     textColor = "white",
+ *     horizontalPadding = 16f
  * )
  * ```
  */
@@ -57,6 +62,7 @@ class TextBillboard(
     private val fontFamily: String = "Arial",
     private val textColor: String = "white",
     private val backgroundColor: String = "transparent",
+    private val horizontalPadding: Float = 16f,
     private val zOffset: Float = 0f,
 ) : WorldObject() {
     
@@ -91,11 +97,16 @@ class TextBillboard(
      * @return Triple of (estimatedWidth, estimatedHeight, aspectRatio)
      */
     private fun calculateTextDimensions(): Triple<Float, Float, Float> {
-        // Estimate the text width based on font size and text length
-        val estimatedTextWidth = _text.length * fontSize * 0.75f
-        val padding = fontSize * 0.2f
-        val estimatedWidth = estimatedTextWidth + padding * 2
-        val estimatedHeight = fontSize * 1.2f + padding * 2
+        // Use a scratch canvas to measure the text width accurately
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        val context = canvas.getContext("2d") as CanvasRenderingContext2D
+        context.font = "${fontSize}px ${fontFamily}"
+        val metrics = context.measureText(_text)
+        val textWidth = metrics.width.toFloat()
+
+        val verticalPadding = fontSize * 0.2f
+        val estimatedWidth = textWidth + horizontalPadding * 2
+        val estimatedHeight = fontSize * 1.2f + verticalPadding * 2
         val aspectRatio = estimatedHeight / estimatedWidth
         
         return Triple(estimatedWidth, estimatedHeight, aspectRatio)

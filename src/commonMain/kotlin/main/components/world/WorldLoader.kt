@@ -15,6 +15,7 @@ import lib.Scene
 import lib.SceneLoader
 import lib.Texture
 import lib.Vector3
+import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.components.SceneManager
@@ -360,7 +361,28 @@ class WorldLoader(private val scene: Scene) {
 
         try {
             // First load the world data from the API
-            val world = WorldApi.getWorldByUrl(url)
+            var world = try {
+                WorldApi.getWorldByUrl(url)
+            } catch (error: Throwable) {
+                // If unauthorized, attempt to refresh session and retry once
+                val isUnauthorized = when (error) {
+                    is ErrorResponse -> error.code == 401
+                    is ResponseException -> error.response.status.value == 401
+                    else -> false
+                }
+
+                if (isUnauthorized) {
+                    println("[INFO] Unauthorized world load, refreshing session...")
+                    try {
+                        UserApi.getCurrentUser(forceReload = true)
+                        WorldApi.getWorldByUrl(url)
+                    } catch (retryError: Throwable) {
+                        throw retryError
+                    }
+                } else {
+                    throw error
+                }
+            }
             
             // Store the world data
             currentWorld = world

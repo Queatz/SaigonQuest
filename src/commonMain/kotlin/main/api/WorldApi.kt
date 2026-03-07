@@ -49,7 +49,9 @@ object WorldApi {
      */
     suspend fun getWorld(id: String): World {
         try {
-            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$id")
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$id") {
+                ApiClient.addAuthHeader(this)
+            }
 
             if (response.status.isSuccess()) {
                 return response.body<World>()
@@ -199,7 +201,9 @@ object WorldApi {
      */
     suspend fun getWorldState(worldId: String): WorldStateSnapshot {
         try {
-            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$worldId/state")
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/$worldId/state") {
+                ApiClient.addAuthHeader(this)
+            }
             if (response.status.isSuccess()) {
                 return response.body<WorldStateSnapshot>()
             } else {

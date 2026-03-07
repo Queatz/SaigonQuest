@@ -280,6 +280,7 @@ class WorldObjectManager(private val scene: Scene) {
      * @param fontSize The font size (default: 24)
      * @param textColor The text color (default: white)
      * @param backgroundColor The background color (default: null, which means transparent). When a color is supplied, a rounded rectangle with 6px corner radius is rendered behind the text.
+     * @param horizontalPadding The horizontal padding in pixels (default: 16)
      * @return A handle to the created text billboard
      */
     fun createTextBillboard(
@@ -288,6 +289,7 @@ class WorldObjectManager(private val scene: Scene) {
         fontSize: Int = 32,
         textColor: String = "white",
         backgroundColor: String? = null,
+        horizontalPadding: Float = 16f,
         zOffset: Float = 0f,
     ): WorldObjectHandle? {
         val textBillboard = TextBillboard(
@@ -296,6 +298,7 @@ class WorldObjectManager(private val scene: Scene) {
             fontSize = fontSize,
             textColor = textColor,
             backgroundColor = backgroundColor ?: "transparent",
+            horizontalPadding = horizontalPadding,
             zOffset = zOffset,
         )
         textBillboard.position = position

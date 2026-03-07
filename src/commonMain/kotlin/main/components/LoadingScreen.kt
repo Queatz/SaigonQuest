@@ -25,6 +25,7 @@ import main.theme.Styles
  */
 @Composable
 fun LoadingScreen(
+    showGoHome: Boolean,
     isLoaded: Boolean,
     loadingFailed: Boolean,
     errorMessage: String,
@@ -95,15 +96,17 @@ fun LoadingScreen(
                     }
 
                     // Go back button
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            onClick {
-                                onNavigateHome()
+                    if (showGoHome) {
+                        Button(
+                            attrs = {
+                                classes(Styles.secondaryButton)
+                                onClick {
+                                    onNavigateHome()
+                                }
                             }
+                        ) {
+                            Translated("Go home")
                         }
-                    ) {
-                        Translated("Go home")
                     }
                 }
             } else {
