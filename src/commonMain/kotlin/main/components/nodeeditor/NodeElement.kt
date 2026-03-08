@@ -374,6 +374,10 @@ fun NodeElement(
                                     Text("To \"${property.value}\"")
                                 }
 
+                                PropertyKey.SOUND_URL -> {
+                                    Text("🎵 " + property.value.substringAfterLast('/').ellipsize())
+                                }
+
                                 PropertyKey.ID -> {
                                     if (type is LogicNode.DocContent) {
                                         Text((docTitle ?: "...").ellipsize())

@@ -344,6 +344,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Open a new AI chat session with custom system prompt and initial message"
     ) : LogicNode
+
+    /**
+     * PlaySound node - plays a sound for everyone in the world
+     */
+    @Serializable
+    data class PlaySound(
+        override val id: NodeId = NodeId.PlaySound,
+        override val label: String = "Play sound",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Plays a sound for everyone in the world"
+    ) : LogicNode
 }
 
 /**
@@ -386,6 +397,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.Ai(),
         LogicNode.IsObjectOwner(),
         LogicNode.AiChat(),
+        LogicNode.PlaySound(),
     )
 }
 

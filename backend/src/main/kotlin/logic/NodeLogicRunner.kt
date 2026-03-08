@@ -805,6 +805,14 @@ class NodeLogicRunner(
                 )
                 AiChatNodeRunner(context)
             }
+            NodeId.PlaySound -> {
+                WebSocketDebug.logMessage(
+                    "PLAY_SOUND_RUNNER_SELECTED",
+                    "Selected PlaySoundNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlaySoundNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

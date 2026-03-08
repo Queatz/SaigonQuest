@@ -67,6 +67,9 @@ enum class PropertyKey {
     // Dialogue Word Click properties
     WORD_CLICKED,
     CLICKED_WORD,
+
+    // PlaySound properties
+    SOUND_URL,
 }
 
 /**
@@ -809,6 +812,29 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            )
+        )
+
+        // PlaySound node properties
+        is LogicNode.PlaySound -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.SOUND_URL,
+                name = "Sound URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
             )
         )
     }

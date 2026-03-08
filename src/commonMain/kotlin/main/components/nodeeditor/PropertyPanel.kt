@@ -31,6 +31,9 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.dom.Audio
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.CheckboxInput
 import org.jetbrains.compose.web.dom.Div
@@ -376,6 +379,53 @@ fun PropertyPanel(
                                                     propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
                                             },
                                             filter = MediaType.Image,
+                                        )
+                                    }
+                                } else if (propDef.key == PropertyKey.SOUND_URL) {
+                                    val soundUrl = propertyValues[propDef.key] ?: ""
+                                    var showDialog by remember(nodeId) { mutableStateOf(false) }
+
+                                    if (soundUrl.isNotBlank()) {
+                                        Audio(attrs = {
+                                            attr("src", soundUrl)
+                                            attr("controls", "true")
+                                            style {
+                                                width(100.percent)
+                                            }
+                                        })
+                                    }
+
+                                    Div({
+                                        classes(NodeEditorStyles.propertyValue)
+                                        style {
+                                            property("display", "flex")
+                                            property("gap", "8px")
+                                        }
+                                    }) {
+                                        Button(attrs = {
+                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
+                                            onClick { showDialog = true }
+                                        }) { Translated(if (soundUrl.isBlank()) "Choose sound" else "Change sound") }
+
+                                        if (soundUrl.isNotBlank()) {
+                                            Button(attrs = {
+                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
+                                                onClick {
+                                                    propertyValues =
+                                                        propertyValues.edit { it[PropertyKey.SOUND_URL] = "" }
+                                                }
+                                            }) { Translated("Remove sound") }
+                                        }
+                                    }
+
+                                    if (showDialog) {
+                                        UploadMediaDialog(
+                                            onClose = { showDialog = false },
+                                            onSelect = { selectedUrl, _, _ ->
+                                                propertyValues =
+                                                    propertyValues.edit { it[PropertyKey.SOUND_URL] = selectedUrl }
+                                            },
+                                            filter = MediaType.Audio,
                                         )
                                     }
                                 } else if (propDef.key == PropertyKey.ITEM_ID) {

@@ -37,6 +37,7 @@ enum class WebSocketAction {
     INVENTORY_CHANGED,
     OPEN_CHAT,
     OPEN_AI_CHAT,
+    PLAY_SOUND,
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,

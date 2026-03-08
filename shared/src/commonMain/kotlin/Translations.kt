@@ -1885,6 +1885,24 @@ vi: Cập nhật ghi chú thất bại
 
 Error updating note
 vi: Lỗi khi cập nhật ghi chú
+
+Play sound
+vi: Phát âm thanh
+
+Sound URL
+vi: URL âm thanh
+
+Choose sound
+vi: Chọn âm thanh
+
+Change sound
+vi: Đổi âm thanh
+
+Remove sound
+vi: Xóa âm thanh
+
+Plays a sound for everyone in the world
+vi: Phát âm thanh cho mọi người trong thế giới
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

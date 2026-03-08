@@ -13,6 +13,7 @@ import lib.Scene
 import lib.configureBabylonDracoDecoder
 import lib.initializeBabylonJSLoaders
 import main.api.*
+import main.components.audio.SoundManager
 import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
 import main.components.input.InputHandler
@@ -1017,6 +1018,20 @@ fun SceneComponent(url: String) {
                             showOpenUrlDialog.value = true
                         } catch (e: Throwable) {
                             console.error("Error handling OPEN_URL message", e)
+                        }
+                    }
+
+                    // Set up PLAY_SOUND listener
+                    WebSocketApi.addListener(models.WebSocketAction.PLAY_SOUND) { message ->
+                        try {
+                            // Parse message as map
+                            val data = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
+                            val url = data["url"] ?: ""
+                            if (url.isNotBlank()) {
+                                SoundManager.playSound(url)
+                            }
+                        } catch (e: Throwable) {
+                            console.error("Error handling PLAY_SOUND message", e)
                         }
                     }
                 } else {

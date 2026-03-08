@@ -32,4 +32,5 @@ enum class NodeId {
     Ai,
     IsObjectOwner,
     AiChat,
+    PlaySound,
 }

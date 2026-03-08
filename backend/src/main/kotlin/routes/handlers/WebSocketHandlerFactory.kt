@@ -52,6 +52,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.INVENTORY_CHANGED -> NullHandler() // Server -> clients only
             WebSocketAction.OPEN_CHAT -> NullHandler() // Server -> clients only
             WebSocketAction.OPEN_AI_CHAT -> NullHandler() // Server -> clients only
+            WebSocketAction.PLAY_SOUND -> NullHandler() // Server -> clients only
             WebSocketAction.TAKE_ITEMS_CONFIRM -> TakeItemsConfirmHandler()
             WebSocketAction.FRIEND_STATUS_CHANGED -> NullHandler() // Server -> clients only
             WebSocketAction.FRIEND_REQUEST_CREATED -> NullHandler() // Server -> clients only
