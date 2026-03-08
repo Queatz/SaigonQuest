@@ -172,7 +172,7 @@ vi: Đăng xuất
 Are you sure you want to log out?
 vi: Bạn có chắc chắn muốn đăng xuất không?
 
-My Profile
+My profile
 vi: Trang cá nhân của tôi
 
 Set your status

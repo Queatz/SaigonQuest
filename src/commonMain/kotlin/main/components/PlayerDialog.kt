@@ -204,7 +204,7 @@ fun PlayerDialog(
     // Use the BaseDialog component
     BaseDialog(
         onClose = updateUserStatus,
-        title = translated("My Profile"),
+        title = translated("My profile"),
         content = {
             // Two-column container for responsive layout
             Div(
