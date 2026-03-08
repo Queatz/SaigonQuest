@@ -44,6 +44,13 @@ interface WorldObjectHandle {
         set(value) { node.scaling = value }
     
     /**
+     * The visibility of the object
+     */
+    var isVisible: Boolean
+        get() = node.isEnabled()
+        set(value) { node.setEnabled(value) }
+    
+    /**
      * Removes the object from the scene
      */
     fun remove()

@@ -66,6 +66,20 @@ open external class Node {
      * @return Array of child meshes
      */
     open fun getChildMeshes(directDescendantsOnly: Boolean? = definedExternally): Array<AbstractMesh>
+
+    /**
+     * Set the enabled state of the node
+     *
+     * @param value The enabled state
+     */
+    open fun setEnabled(value: Boolean)
+
+    /**
+     * Check if the node is enabled
+     *
+     * @return True if enabled, false otherwise
+     */
+    open fun isEnabled(): Boolean
 }
 
 /**

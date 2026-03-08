@@ -153,6 +153,9 @@ class SceneObjectManager(
                 
                 // Store the hovered object ID
                 hoveredObjectId = objectId
+
+                // Show status text for the hovered object
+                objectStatusTextHandles[objectId]?.isVisible = true
                 
                 // Change cursor to grab
                 document.body?.style?.cursor = "grab"
@@ -185,6 +188,9 @@ class SceneObjectManager(
                     
                     // Reset cursor
                     document.body?.style?.cursor = "default"
+
+                    // Hide status text for the unhovered object
+                    objectStatusTextHandles[objectId]?.isVisible = false
 
                 } catch (error: Throwable) {
                     console.error("[DEBUG_HIGHLIGHT] Error unhighlighting object", error)
@@ -1611,6 +1617,10 @@ class SceneObjectManager(
 
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
                     existingHandle.position = Vector3(0f, offsetY, 0f)
+                    
+                    // Ensure visibility is consistent with hover state
+                    existingHandle.isVisible = (objectId == hoveredObjectId)
+                    
                     console.log("[DEBUG_STATUS] Successfully updated status text position for object: $objectId")
                 } else {
                     // Create new status text
@@ -1623,6 +1633,10 @@ class SceneObjectManager(
                         // Store the handle for future updates
                         objectStatusTextHandles[objectId] = statusTextHandle
                         statusTextHandle.position = Vector3(0f, offsetY, 0f)
+                        
+                        // Set initial visibility based on hover state
+                        statusTextHandle.isVisible = (objectId == hoveredObjectId)
+                        
                         console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")
                         console.log("[DEBUG_STATUS] Total status text handles: ${objectStatusTextHandles.size}")
                     } else {
