@@ -542,7 +542,7 @@ class InputHandler(
 
                 // In observer mode, set the camera target to the point under the cursor when starting to rotate
                 // We skip this on wheel events because zoomToMouseLocation handles it automatically
-                if (GraphicsSettings.isObserverModeEnabled() && isNavigationStart) {
+                if (GraphicsSettings.isObserverModeEnabled() && isNavigationStart && (info.event.ctrlKey || info.event.shiftKey)) {
                     updateObserverTarget()
                 }
             }
@@ -782,6 +782,14 @@ class InputHandler(
                             // Check if the current user is the owner of the world before allowing object dragging
                             scope.launch {
                                 if (isWorldOwner()) {
+                                    // Check if the object is within reach before allowing object dragging
+                                    val clickPoint = objectClickPoint
+                                    if (clickPoint != null && !isPointWithinReach(clickPoint)) {
+                                        console.log("Object is too far to drag")
+                                        objectManager.deselectCurrentObject()
+                                        return@launch
+                                    }
+                                    
                                     // Disable camera inputs before starting drag
                                     if (cameraInputsEnabled) {
                                         disableCameraInputs()
@@ -836,7 +844,7 @@ class InputHandler(
                                 )
                             } catch (_: Throwable) { null }
 
-                            if (depthPoint != null) {
+                            if (depthPoint != null && isPointWithinReach(depthPoint)) {
                                 val success = objectManager.updateDragging(depthPoint)
                                 if (!success) {
                                     console.warn("Failed to update object position during drag (depth)")
@@ -882,7 +890,7 @@ class InputHandler(
                                 }
                             }
 
-                            if (closestPoint != null) {
+                            if (closestPoint != null && isPointWithinReach(closestPoint)) {
                                 val success = objectManager.updateDragging(closestPoint)
                                 if (!success) {
                                     console.warn("Failed to update object position during drag (ray)")
