@@ -38,5 +38,6 @@ data class Friend(
     @field:Indexed
     var lastWorldId: String = "",
     var lastWorldName: String = "",
-    var lastPosition: Position? = null
+    var lastPosition: Position? = null,
+    var note: String = ""
 ) : BaseModel()

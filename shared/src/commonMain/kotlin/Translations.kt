@@ -1876,6 +1876,15 @@ vi: Bàn chân
 
 Wearable?
 vi: Có thể mặc không?
+
+Add a note about this friend...
+vi: Thêm ghi chú về người bạn này...
+
+Failed to update note
+vi: Cập nhật ghi chú thất bại
+
+Error updating note
+vi: Lỗi khi cập nhật ghi chú
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

@@ -124,6 +124,27 @@ fun Routing.configureFriendRoutes() {
             
             call.respond(HttpStatusCode.OK)
         }
+        
+        // Update friend note
+        put("/friend/{friendId}/note") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@put
+            
+            val friendId = call.parameters["friendId"]
+                ?: return@put call.respond(HttpStatusCode.BadRequest, ErrorResponse("Friend ID is required"))
+            
+            @Serializable
+            data class NoteUpdateBody(val note: String)
+            
+            val body = call.receive<NoteUpdateBody>()
+            val success = friendRepository.updateNote(userId, friendId, body.note)
+            
+            if (success) {
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound, ErrorResponse("Friendship not found"))
+            }
+        }
 
         // Get online status for a set of friend IDs
         get("/friend/online") {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +54,9 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.attributes.placeholder
 import Translations.str
 import kotlinx.coroutines.delay
 import main.theme.Styles
@@ -390,6 +393,11 @@ fun FriendListItem(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showSendDialog by remember { mutableStateOf(false) }
     var friendUser by remember { mutableStateOf<models.User?>(null) }
+    
+    val coroutineScope = rememberCoroutineScope()
+    var editedNote by remember(friend.note) { mutableStateOf(friend.note) }
+    var isUpdatingNote by remember { mutableStateOf(false) }
+    val isNoteChanged = editedNote != friend.note
 
     LaunchedEffect(friend.friendId) {
         try {
@@ -481,52 +489,116 @@ fun FriendListItem(
             }
         }
         
-        // Buttons
+        // Friend Note
         Div(
             attrs = {
-                classes(FriendsStyles.buttonsRow)
+                classes(FriendsStyles.friendNoteContainer)
             }
         ) {
-            // Jump to friend button (only enabled if they have a world and position)
-            Button(
+            TextArea(
+                value = editedNote,
                 attrs = {
-                    classes(FriendsStyles.buttonJump)
-                    onClick {
-                        if (friend.lastWorldId.isNotEmpty()) {
-                            onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
-                        } else {
-                            console.log("[FRIEND] lastWorldId is null")
-                            onError(str("Unable to jump to your friend right now"))
+                    classes(Styles.inputField, FriendsStyles.friendNoteTextArea)
+                    onInput { editedNote = it.value }
+                    placeholder(str("Add a note about this friend..."))
+                }
+            )
+            
+            if (isNoteChanged) {
+                Div(
+                    attrs = {
+                        classes(FriendsStyles.buttonsRow)
+                    }
+                ) {
+                    Button(
+                        attrs = {
+                            classes(FriendsStyles.buttonSend)
+                            onClick {
+                                coroutineScope.launch {
+                                    isUpdatingNote = true
+                                    try {
+                                        val success = FriendApi.updateNote(friend.friendId, editedNote)
+                                        if (success) {
+                                            friend.note = editedNote
+                                        } else {
+                                            onError(str("Failed to update note"))
+                                        }
+                                    } catch (e: Throwable) {
+                                        onError(str("Error updating note"))
+                                    } finally {
+                                        isUpdatingNote = false
+                                    }
+                                }
+                            }
+                            if (isUpdatingNote) disabled()
+                        }
+                    ) {
+                        Translated("Update")
+                    }
+                    
+                    Button(
+                        attrs = {
+                            classes(FriendsStyles.buttonRemove)
+                            onClick {
+                                editedNote = friend.note
+                            }
+                            if (isUpdatingNote) disabled()
+                        }
+                    ) {
+                        Translated("Cancel")
+                    }
+                }
+            }
+        }
+
+        if(!isNoteChanged) {
+            // Buttons
+            Div(
+                attrs = {
+                    classes(FriendsStyles.buttonsRow)
+                }
+            ) {
+                // Jump to friend button (only enabled if they have a world and position)
+                Button(
+                    attrs = {
+                        classes(FriendsStyles.buttonJump)
+                        onClick {
+                            if (friend.lastWorldId.isNotEmpty()) {
+                                onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
+                            } else {
+                                console.log("[FRIEND] lastWorldId is null")
+                                onError(str("Unable to jump to your friend right now"))
+                            }
                         }
                     }
+                ) {
+                    Translated("Jump to Friend")
                 }
-            ) {
-                Translated("Jump to Friend")
-            }
-            
-            // Send VND button
-            Button(
-                attrs = {
-                    classes(FriendsStyles.buttonSend)
-                    onClick {
-                        showSendDialog = true
+
+                // Send VND button
+                Button(
+                    attrs = {
+                        classes(FriendsStyles.buttonSend)
+                        onClick {
+                            showSendDialog = true
+                        }
                     }
+                ) {
+                    Translated("Send VND")
                 }
-            ) {
-                Translated("Send VND")
-            }
-            
-            // Remove friend button
-            Button(
-                attrs = {
-                    classes(FriendsStyles.buttonRemove)
-                    onClick {
-                        // Show confirmation dialog instead of immediately removing
-                        showConfirmDialog = true
+
+                // Remove friend button
+                Button(
+                    attrs = {
+                        classes(FriendsStyles.buttonRemove)
+                        onClick {
+                            // Show confirmation dialog instead of immediately removing
+                            showConfirmDialog = true
+                        }
                     }
+                ) {
+                    Translated("Remove")
                 }
-            ) {
-                Translated("Remove")
             }
             
             // Confirmation dialog

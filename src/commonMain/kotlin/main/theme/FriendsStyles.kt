@@ -14,6 +14,7 @@ import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
+import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.overflow
@@ -84,7 +85,7 @@ object FriendsStyles : StyleSheet() {
         backgroundColor(Theme.colors.white04)
         borderRadius(8.px)
         border(1.px, LineStyle.Solid, Theme.colors.white08)
-        gap(16.px)
+        gap(8.px)
     }
 
     // Header row
@@ -152,6 +153,18 @@ object FriendsStyles : StyleSheet() {
         dark(self) {
             backgroundColor(Theme.colors.black70)
         }
+    }
+
+    val friendNoteContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(8.px)
+    }
+
+    val friendNoteTextArea by style {
+        property("resize", "vertical")
+        minHeight(60.px)
+        property("font-family", "inherit")
     }
     
     // Buttons row

@@ -164,4 +164,31 @@ class FriendRepository {
         
         ArangoConfig.db.query(query, Friend::class.java, bindVars).toList()
     }
+    
+    /**
+     * Update a friend's note
+     *
+     * @param userId The ID of the user who owns the record
+     * @param friendId The ID of the friend
+     * @param note The new note content
+     * @return True if successful
+     */
+    fun updateNote(userId: String, friendId: String, note: String): Boolean {
+        val query = """
+            FOR f IN @@collection
+            FILTER f.userId == @userId AND f.friendId == @friendId
+            UPDATE f WITH { note: @note } IN @@collection
+            RETURN NEW
+        """.trimIndent()
+        
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.FRIENDS_COLLECTION,
+            "userId" to userId,
+            "friendId" to friendId,
+            "note" to note
+        )
+        
+        val results = ArangoConfig.db.query(query, Friend::class.java, bindVars).toList()
+        return results.isNotEmpty()
+    }
 }

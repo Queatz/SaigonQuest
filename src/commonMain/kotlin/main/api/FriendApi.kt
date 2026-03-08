@@ -56,6 +56,27 @@ object FriendApi {
             return false
         }
     }
+
+    /**
+     * Update a friend's note
+     *
+     * @param friendId The ID of the friend
+     * @param note The new note content
+     * @return True if successful
+     */
+    suspend fun updateNote(friendId: String, note: String): Boolean {
+        try {
+            val response = ApiClient.httpClient.put("${ApiConstants.API_BASE_URL}/friend/$friendId/note") {
+                ApiClient.addAuthHeader(this)
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("note" to note))
+            }
+            return response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error updating friend note", e)
+            return false
+        }
+    }
     
     /**
      * Check if a friendship exists with another user
