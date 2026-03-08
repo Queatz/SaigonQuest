@@ -45,7 +45,7 @@ class CameraController(private val scene: Scene) {
     ).apply {
         // Set camera constraints
         updateConstraints()
-        this.targetScreenOffset = Vector2(0f, 0f)
+        this.targetScreenOffset = Vector2(0f, -1f)
 
         this.wheelPrecision = 5f
         this.zoomToMouseLocation = true
