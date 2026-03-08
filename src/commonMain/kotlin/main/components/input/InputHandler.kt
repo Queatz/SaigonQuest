@@ -608,8 +608,10 @@ class InputHandler(
             val player = playerController.getCollider()
             val moveCircle = playerController.getMoveCircle()
 
-            var clickedOnWorldMesh = false
+            // Deselect any currently selected object if we didn't click on an object
+            objectManager.deselectCurrentObject()
 
+            var clickedOnWorldMesh = false
             for (mesh in worldMeshes) {
                 // Skip player and move circle meshes
                 if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
@@ -619,11 +621,6 @@ class InputHandler(
                     clickedOnWorldMesh = true
                     break
                 }
-            }
-
-            if (clickedOnWorldMesh) {
-                // If we clicked on a world mesh, deselect any selected object
-                objectManager.deselectCurrentObject()
             }
 
             // We may have changed selection state above; recompute before deciding camera handling below
@@ -905,6 +902,9 @@ class InputHandler(
                     objectManager!!.endDragging()
                     isObjectDragging = false
                     draggingObjectId = null
+                    
+                    // Deselect the object after dragging to reset selection state
+                    objectManager.deselectCurrentObject()
                     
                     // Re-enable camera inputs
                     if (!cameraInputsEnabled) {

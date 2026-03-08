@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.*
 import main.theme.Styles
+import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
@@ -65,6 +66,14 @@ fun BasicPromptDialog(
 
                             step(step)
 
+                            autoFocus()
+
+                            ref {
+                                it.focus()
+
+                                onDispose { }
+                            }
+
                             onInput { event ->
                                 value = event.value.toString()
                             }
@@ -75,6 +84,14 @@ fun BasicPromptDialog(
                         value = value,
                         attrs = {
                             classes(Styles.inputField)
+
+                            autoFocus()
+
+                            ref {
+                                it.focus()
+
+                                onDispose { }
+                            }
 
                             onInput { event ->
                                 value = event.value

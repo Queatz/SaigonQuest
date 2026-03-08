@@ -177,6 +177,7 @@ object DepthPicking {
                     scene = scene
                 )
                 // Mirror critical camera parameters so unprojection math remains valid
+                try { depthCam.targetScreenOffset = active.targetScreenOffset } catch (_: Throwable) {}
                 try { depthCam.minZ = active.minZ } catch (_: Throwable) {}
                 try { depthCam.maxZ = active.maxZ } catch (_: Throwable) {}
                 try { depthCam.fov = active.fov } catch (_: Throwable) {}

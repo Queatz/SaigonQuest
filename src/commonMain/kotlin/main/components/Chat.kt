@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import main.components.chat.ChatBellButton
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -60,7 +61,13 @@ fun Chat(
         headerRight = {
             val text = retentionText
             if (text != null) {
-                Text(text)
+                Span(
+                    {
+                        title(text)
+                    }
+                ) {
+                    Text("⏲")
+                }
             }
         },
         onTitleClick = {
