@@ -126,6 +126,22 @@ fun WorldUI(
     // Map to store button refs for tutorial bubbles
     val buttonRefs = remember { mutableMapOf<String, HTMLElement>() }
 
+    // State for currently hovered button info for reuse of TutorialBubble
+    var hoveredButtonText by remember { mutableStateOf<String?>(null) }
+    var hoveredButtonElement by remember { mutableStateOf<HTMLElement?>(null) }
+
+    val fullscreenTitle = translated("Fullscreen")
+    val editWorldTitle = translated("Edit world")
+    val objectsTitle = translated("Objects")
+    val adminPanelTitle = translated("Admin panel")
+    val takeAPhotoTitle = translated("Take a photo")
+    val shareThisWorldTitle = translated("Share this world")
+    val friendsTitle = translated("Friends")
+    val docsTitle = translated("Docs")
+    val chatTitle = translated("Chat")
+    val notificationsTitle = translated("Notifications")
+    val myProfileTitle = translated("My profile")
+
 
     // State for current world
     var currentWorld by remember { mutableStateOf<World?>(null) }
@@ -622,7 +638,15 @@ fun WorldUI(
                     onClick = { toggleFullscreen() },
                     iconIndex = if (isFullscreen) 1 else 0, // 0: enter fullscreen, 1: exit fullscreen
                     badgeCount = 0,
-                    title = translated("Fullscreen")
+                    title = fullscreenTitle,
+                    onMouseEnter = {
+                        hoveredButtonText = fullscreenTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
 
                 // Edit world button - only visible if the current user is the owner of the world
@@ -631,7 +655,15 @@ fun WorldUI(
                         onClick = { togglePanel(SidePanelState.WorldEdit) },
                         iconIndex = 4, // 4: edit world
                         badgeCount = 0,
-                        title = translated("Edit world")
+                        title = editWorldTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = editWorldTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
                     )
 
                     // Objects button - only visible if the current user is the owner of the world
@@ -639,7 +671,15 @@ fun WorldUI(
                         onClick = { togglePanel(SidePanelState.ObjectsPanel) },
                         iconIndex = 5, // 5: edit objects
                         badgeCount = 0,
-                        title = translated("Objects")
+                        title = objectsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = objectsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
                     )
                 }
 
@@ -656,7 +696,15 @@ fun WorldUI(
                         iconIndex = 9, // Using a different icon index for admin
                         badgeCount = 0,
                         id = "adminButton",
-                        title = translated("Admin panel")
+                        title = adminPanelTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = adminPanelTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
                     )
                 }
 
@@ -675,7 +723,15 @@ fun WorldUI(
                     },
                     iconIndex = 19,
                     badgeCount = 0,
-                    title = translated("Take a photo"),
+                    title = takeAPhotoTitle,
+                    onMouseEnter = {
+                        hoveredButtonText = takeAPhotoTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
 
                 // QR code button (not part of the panel system)
@@ -690,8 +746,16 @@ fun WorldUI(
                     iconIndex = 6, // 6: share / qr code
                     badgeCount = 0,
                     id = "qrButton",
-                    title = translated("Share this world"),
-                    elementRef = { element -> buttonRefs["qrButton"] = element }
+                    title = shareThisWorldTitle,
+                    elementRef = { element -> buttonRefs["qrButton"] = element },
+                    onMouseEnter = {
+                        hoveredButtonText = shareThisWorldTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
 
                 if (currentUser?.isPlayer == true) {
@@ -700,7 +764,15 @@ fun WorldUI(
                         onClick = { togglePanel(SidePanelState.Friends) },
                         iconIndex = 3, // 3: friends
                         badgeCount = 0,
-                        title = translated("Friends")
+                        title = friendsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = friendsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
                     )
                 }
 
@@ -712,7 +784,15 @@ fun WorldUI(
                     badgeCount = worldDocsCount,
                     badgeIsSuccess = true,
                     id = "worldButton",
-                    title = translated("Docs"),
+                    title = docsTitle,
+                    onMouseEnter = {
+                        hoveredButtonText = docsTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
 
                 // Chat button
@@ -732,8 +812,16 @@ fun WorldUI(
                     badgeCount = unreadChatCount,
                     isChat = true,
                     id = "chatButton",
-                    title = translated("Chat"),
-                    elementRef = { element -> buttonRefs["chatButton"] = element }
+                    title = chatTitle,
+                    elementRef = { element -> buttonRefs["chatButton"] = element },
+                    onMouseEnter = {
+                        hoveredButtonText = chatTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
 
                 if (currentUser?.isPlayer == true) {
@@ -742,7 +830,15 @@ fun WorldUI(
                         onClick = { togglePanel(SidePanelState.Notifications) },
                         iconIndex = 2, // 2: notifications
                         badgeCount = unreadNotificationCount,
-                        title = translated("Notifications"),
+                        title = notificationsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = notificationsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
                     )
                 }
 
@@ -758,8 +854,16 @@ fun WorldUI(
                     iconIndex = 8, // 8: my profile
                     badgeCount = 0,
                     id = "profileButton",
-                    title = translated("My profile"),
-                    elementRef = { element -> buttonRefs["profileButton"] = element }
+                    title = myProfileTitle,
+                    elementRef = { element -> buttonRefs["profileButton"] = element },
+                    onMouseEnter = {
+                        hoveredButtonText = myProfileTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
                 )
             }
 
@@ -1056,6 +1160,24 @@ fun WorldUI(
         // Bottom text with copyright information
         BottomText()
         
+        // Hover bubble for CircleButtons
+        if (hoveredButtonText != null && hoveredButtonElement != null) {
+            val rect = hoveredButtonElement!!.getBoundingClientRect()
+            TutorialBubble(
+                text = hoveredButtonText!!,
+                positionValues = PositionValues(
+                    top = (rect.top + rect.height / 2).toInt(),
+                    right = (window.innerWidth - rect.left + 18).toInt(),
+                ),
+                onDismiss = {
+                    hoveredButtonText = null
+                    hoveredButtonElement = null
+                },
+                arrowDirection = ArrowDirection.RIGHT,
+                floatAmount = 0f // No floating for simple hover labels
+            )
+        }
+
         // Tutorial bubbles for non-player users - using the TutorialBubbleManager for more reusable code
         if (currentUser != null && !currentUser!!.isPlayer) {
             // Render tutorial bubbles using the TutorialBubbleManager with element refs

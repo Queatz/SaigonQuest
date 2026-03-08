@@ -1024,11 +1024,15 @@ fun SceneComponent(url: String) {
                     // Set up PLAY_SOUND listener
                     WebSocketApi.addListener(models.WebSocketAction.PLAY_SOUND) { message ->
                         try {
+                            console.log("[Scene] Received PLAY_SOUND message:", message)
                             // Parse message as map
                             val data = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
                             val url = data["url"] ?: ""
+                            console.log("[Scene] Parsed sound URL:", url)
                             if (url.isNotBlank()) {
                                 SoundManager.playSound(url)
+                            } else {
+                                console.warn("[Scene] PlaySound URL is blank")
                             }
                         } catch (e: Throwable) {
                             console.error("Error handling PLAY_SOUND message", e)

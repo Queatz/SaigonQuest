@@ -1889,8 +1889,8 @@ vi: Lỗi khi cập nhật ghi chú
 Play sound
 vi: Phát âm thanh
 
-Sound URL
-vi: URL âm thanh
+Sound
+vi: Âm thanh
 
 Choose sound
 vi: Chọn âm thanh

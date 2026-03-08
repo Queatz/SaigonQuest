@@ -30,15 +30,19 @@ fun CircleButton(
     badgeIsSuccess: Boolean = false,
     id: String? = null,
     title: String = "",
-    elementRef: ((HTMLElement) -> Unit)? = null
+    elementRef: ((HTMLElement) -> Unit)? = null,
+    onMouseEnter: ((HTMLElement) -> Unit)? = null,
+    onMouseLeave: ((HTMLElement) -> Unit)? = null
 ) {
     Div(
         attrs = {
             classes(Styles.circleButton)
             onClick { onClick() }
+            onMouseEnter { onMouseEnter?.invoke(it.target as HTMLElement) }
+            onMouseLeave { onMouseLeave?.invoke(it.target as HTMLElement) }
             style { opacity(opacity) }
             if (title.isNotBlank()) {
-                title(title)
+                attr("title", title)
             }
             id?.let { id(it) }
             if (elementRef != null) {

@@ -14,15 +14,17 @@ object SoundManager {
      * @param url The URL of the sound file to play.
      */
     fun playSound(url: String) {
-        if (!AudioSettings.isMusicEnabled()) {
-            console.log("[SoundManager] Skipping sound playback: Audio is disabled in settings.")
-            return
-        }
-
+        console.log("[SoundManager] playSound requested for URL: $url")
+        // Always play sounds regardless of music setting
+        // Music setting is specifically for background music
+        
         try {
             val audio = document.createElement("audio") as HTMLAudioElement
             audio.src = url
-            audio.play().catch { err ->
+            console.log("[SoundManager] Playing audio: $url")
+            audio.play().then {
+                console.log("[SoundManager] Audio playback started successfully: $url")
+            }.catch { err ->
                 console.warn("[SoundManager] Autoplay prevented or error playing sound: $err")
             }
         } catch (t: Throwable) {

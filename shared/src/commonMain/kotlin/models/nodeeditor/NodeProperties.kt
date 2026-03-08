@@ -825,7 +825,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
             NodePropertyDefinition(
                 key = PropertyKey.SOUND_URL,
-                name = "Sound URL",
+                name = "Sound",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
