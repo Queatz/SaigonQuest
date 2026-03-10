@@ -342,6 +342,13 @@ external class Scene(engine: Engine? = definedExternally) {
         onAnimationEnd: (() -> Unit)? = definedExternally
     ): dynamic
 
+    /**
+     * Stops all animations on a target
+     * @param target The target to stop animations on
+     * @param animationName Optional animation name to stop
+     */
+    fun stopAnimation(target: Any, animationName: String? = definedExternally)
+
     companion object {
         val FOGMODE_EXP2: Int
     }
@@ -1895,6 +1902,60 @@ external class AnimationGroup(name: String, scene: Scene? = definedExternally) {
     fun pause()
     fun restart()
 }
+
+external class Animation(
+    name: String,
+    targetProperty: String,
+    framePerSecond: Int,
+    dataType: Int,
+    loopMode: Int = definedExternally,
+    enableBlending: Boolean = definedExternally
+) {
+    fun setKeys(keys: Array<dynamic>)
+    fun setEasingFunction(easingFunction: EasingFunction)
+
+    companion object {
+        val ANIMATIONTYPE_FLOAT: Int
+        val ANIMATIONTYPE_VECTOR3: Int
+        val ANIMATIONTYPE_QUATERNION: Int
+        val ANIMATIONTYPE_MATRIX: Int
+        val ANIMATIONTYPE_COLOR3: Int
+        val ANIMATIONTYPE_COLOR4: Int
+        val ANIMATIONTYPE_SIZE: Int
+
+        val ANIMATIONLOOPMODE_RELATIVE: Int
+        val ANIMATIONLOOPMODE_CYCLE: Int
+        val ANIMATIONLOOPMODE_CONSTANT: Int
+
+        fun CreateAndStartAnimation(
+            name: String,
+            target: Any,
+            targetProperty: String,
+            framePerSecond: Int,
+            totalFrame: Int,
+            from: Any,
+            to: Any,
+            loopMode: Int = definedExternally,
+            easingFunction: EasingFunction? = definedExternally,
+            onAnimationEnd: (() -> Unit)? = definedExternally
+        ): dynamic
+    }
+}
+
+abstract external class EasingFunction {
+    fun setEasingMode(easingMode: Int)
+    fun getEasingMode(): Int
+
+    companion object {
+        val EASINGMODE_EASEIN: Int
+        val EASINGMODE_EASEOUT: Int
+        val EASINGMODE_EASEINOUT: Int
+    }
+}
+
+external class BounceEase(bounces: Int = definedExternally, bounciness: Float = definedExternally) : EasingFunction
+external class QuadraticEase : EasingFunction
+external class CubicEase : EasingFunction
 
 external class SceneLoader {
     companion object {

@@ -6,8 +6,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lib.AbstractMesh
+import lib.Animation
+import lib.BounceEase
 import lib.Color3
 import lib.CreateSphereOptions
+import lib.CubicEase
+import lib.EasingFunction
 import lib.HighlightLayer
 import lib.Mesh
 import lib.MeshBuilder
@@ -58,6 +62,7 @@ class SceneObjectManager(
     
     // Map of object IDs to their status text handles
     private val objectStatusTextHandles = mutableMapOf<String, WorldObjectHandle>()
+    private val objectStatusOffsets = mutableMapOf<String, Float>()
 
     // Cache last known status text to restore after typing ends
     private val objectStatusTexts = mutableMapOf<String, String>()
@@ -136,6 +141,9 @@ class SceneObjectManager(
      * @return true if the object was highlighted successfully, false otherwise
      */
     fun highlightObject(objectId: String): Boolean {
+        // If already hovered, no need to re-highlight
+        if (hoveredObjectId == objectId) return true
+
         // Remove highlight from previously hovered object
         unhighlightObject()
         
@@ -155,7 +163,7 @@ class SceneObjectManager(
                 hoveredObjectId = objectId
 
                 // Show status text for the hovered object
-                objectStatusTextHandles[objectId]?.isVisible = true
+                animateStatusText(objectId, true)
                 
                 // Change cursor to grab
                 document.body?.style?.cursor = "grab"
@@ -190,7 +198,7 @@ class SceneObjectManager(
                     document.body?.style?.cursor = "default"
 
                     // Hide status text for the unhovered object
-                    objectStatusTextHandles[objectId]?.isVisible = false
+                    animateStatusText(objectId, false)
 
                 } catch (error: Throwable) {
                     console.error("[DEBUG_HIGHLIGHT] Error unhighlighting object", error)
@@ -1293,6 +1301,7 @@ class SceneObjectManager(
             }
             // While typing is active, hide any existing status text immediately
             objectStatusTextHandles.remove(objectId)?.remove()
+            objectStatusOffsets.remove(objectId)
             val node = objectMeshes[objectId]
             if (node == null) {
                 // Retry shortly if the object/node is not ready yet
@@ -1458,6 +1467,25 @@ class SceneObjectManager(
         // Reset cursor
         document.body?.style?.cursor = "default"
         
+        // Clear maps
+        objectMeshes.clear()
+        objectStatusTextHandles.clear()
+        objectStatusOffsets.clear()
+        objectStatusTexts.clear()
+        objectTypingHandles.clear()
+        objectTypingTimeouts.values.forEach { window.clearTimeout(it) }
+        objectTypingTimeouts.clear()
+        objectModelSources.clear()
+        objectKinds.clear()
+        
+        // Reset state
+        hoveredObjectId = null
+        selectedObject = null
+        draggingObjectId = null
+        isDragging = false
+        dragStartPosition = null
+        dragClickOffset = null
+        
         console.log("Disposing SceneObjectManager resources")
     }
 
@@ -1499,6 +1527,18 @@ class SceneObjectManager(
     }
     
     /**
+     * Animates the status text for an object (slide up + zoom in + bounce)
+     * 
+     * @param objectId The ID of the object
+     * @param show Whether to show or hide the status text
+     */
+    private fun animateStatusText(objectId: String, show: Boolean) {
+        val handle = objectStatusTextHandles[objectId] ?: return
+        val offsetY = objectStatusOffsets[objectId] ?: handle.position.y
+        ObjectStatusAnimator.animateStatusText(objectId, handle, show, offsetY, scene)
+    }
+
+    /**
      * Helper method to handle object status text
      * 
      * This method handles the creation, updating, and removal of status text for an object.
@@ -1527,6 +1567,7 @@ class SceneObjectManager(
             if (objectTypingHandles.containsKey(objectId)) {
                 existingHandle?.remove()
                 objectStatusTextHandles.remove(objectId)
+                objectStatusOffsets.remove(objectId)
                 return
             }
             
@@ -1536,6 +1577,7 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] Removing status text for object: $objectId")
                     existingHandle.remove()
                     objectStatusTextHandles.remove(objectId)
+                    objectStatusOffsets.remove(objectId)
                     console.log("[DEBUG_STATUS] Successfully removed status text for object: $objectId")
                 } else {
                     console.log("[DEBUG_STATUS] No status text to remove for object: $objectId")
@@ -1595,6 +1637,7 @@ class SceneObjectManager(
                 
                 // Position the status text 0.5 units above the highest point (local offset so it follows during drag)
                 val offsetY = (highestY + 0.5f) - node.position.y
+                objectStatusOffsets[objectId] = offsetY
 
                 if (existingHandle != null) {
                     // If there's an existing handle, update its text (if changed) and ensure it is parented and positioned locally
@@ -1619,7 +1662,14 @@ class SceneObjectManager(
                     existingHandle.position = Vector3(0f, offsetY, 0f)
                     
                     // Ensure visibility is consistent with hover state
-                    existingHandle.isVisible = (objectId == hoveredObjectId)
+                    if (objectId == hoveredObjectId) {
+                        animateStatusText(objectId, true)
+                    } else {
+                        // Ensure it's hidden if not hovered
+                        if (existingHandle.isVisible) {
+                            animateStatusText(objectId, false)
+                        }
+                    }
                     
                     console.log("[DEBUG_STATUS] Successfully updated status text position for object: $objectId")
                 } else {
@@ -1635,7 +1685,12 @@ class SceneObjectManager(
                         statusTextHandle.position = Vector3(0f, offsetY, 0f)
                         
                         // Set initial visibility based on hover state
-                        statusTextHandle.isVisible = (objectId == hoveredObjectId)
+                        if (objectId == hoveredObjectId) {
+                            animateStatusText(objectId, true)
+                        } else {
+                            // Ensure it's hidden if not hovered
+                            statusTextHandle.isVisible = false
+                        }
                         
                         console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")
                         console.log("[DEBUG_STATUS] Total status text handles: ${objectStatusTextHandles.size}")

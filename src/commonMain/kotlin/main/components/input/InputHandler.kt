@@ -103,6 +103,40 @@ private fun pickUnderPointer(
     )
 }
 
+private fun pickLocalPlayer(
+    ray: Ray,
+    playerController: PlayerController,
+): Boolean {
+    val localPlayerMeshes = playerController.getPlayerMeshes()
+    for (m in localPlayerMeshes) {
+        val hit = ray.intersectsMesh(m)
+        if (hit.pickedPoint != null) {
+            return true
+        }
+    }
+    return false
+}
+
+private fun pickOtherPlayer(
+    ray: Ray,
+): Pair<String, Boolean>? {
+    val otherPlayersController = SceneManager.getOtherPlayersController() ?: return null
+    val playerMeshes = otherPlayersController.getPlayerMeshes()
+    for (mesh in playerMeshes) {
+        val hit = ray.intersectsMesh(mesh)
+        if (hit.pickedPoint != null) {
+            val userId = otherPlayersController.getUserIdForMesh(mesh)
+            if (userId != null) {
+                val data = otherPlayersController.getPlayerData(userId)
+                if (data != null) {
+                    return data
+                }
+            }
+        }
+    }
+    return null
+}
+
 private const val SLOP = 50
 
 class InputHandler(
@@ -367,32 +401,26 @@ class InputHandler(
                 )
 
                 // Local player check: open inventory
-                val localPlayerMeshes = playerController.getPlayerMeshes()
-                for (m in localPlayerMeshes) {
-                    val hit = ray.intersectsMesh(m)
-                    if (hit.pickedPoint != null) {
+                if (pickLocalPlayer(ray, playerController)) {
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
                         openInventory()
-                        return
+                        pendingTapSingleJob = null
                     }
+                    return
                 }
 
                 // Other players check
-                val otherPlayersController = SceneManager.getOtherPlayersController()
-                if (otherPlayersController != null) {
-                    val meshes = otherPlayersController.getPlayerMeshes()
-                    for (m in meshes) {
-                        val hit = ray.intersectsMesh(m)
-                        if (hit.pickedPoint != null) {
-                            val userId = otherPlayersController.getUserIdForMesh(m)
-                            if (userId != null) {
-                                val data = otherPlayersController.getPlayerData(userId)
-                                if (data != null) {
-                                    showOtherPlayerDialog(data.first, data.second)
-                                    return
-                                }
-                            }
-                        }
+                val otherPlayerData = pickOtherPlayer(ray)
+                if (otherPlayerData != null) {
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
+                        showOtherPlayerDialog(otherPlayerData.first, otherPlayerData.second)
+                        pendingTapSingleJob = null
                     }
+                    return
                 }
             }
 
@@ -432,38 +460,28 @@ class InputHandler(
                 )
 
                 // Local player check: open inventory
-                val localPlayerMeshes = playerController.getPlayerMeshes()
-                for (m in localPlayerMeshes) {
-                    val hit = ray.intersectsMesh(m)
-                    if (hit.pickedPoint != null) {
-                        // Any explicit player interaction should cancel pending single-object tap
-                        pendingTapSingleJob?.cancel()
-                        pendingTapSingleJob = null
+                if (pickLocalPlayer(ray, playerController)) {
+                    // Any explicit player interaction should cancel pending single-object tap
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
                         openInventory()
-                        return
+                        pendingTapSingleJob = null
                     }
+                    return
                 }
 
                 // Other players check
-                val otherPlayersController = SceneManager.getOtherPlayersController()
-                if (otherPlayersController != null) {
-                    val meshes = otherPlayersController.getPlayerMeshes()
-                    for (m in meshes) {
-                        val hit = ray.intersectsMesh(m)
-                        if (hit.pickedPoint != null) {
-                            val userId = otherPlayersController.getUserIdForMesh(m)
-                            if (userId != null) {
-                                val data = otherPlayersController.getPlayerData(userId)
-                                if (data != null) {
-                                    // Any explicit player interaction should cancel pending single-object tap
-                                    pendingTapSingleJob?.cancel()
-                                    pendingTapSingleJob = null
-                                    showOtherPlayerDialog(data.first, data.second)
-                                    return
-                                }
-                            }
-                        }
+                val otherPlayerData = pickOtherPlayer(ray)
+                if (otherPlayerData != null) {
+                    // Any explicit player interaction should cancel pending single-object tap
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
+                        showOtherPlayerDialog(otherPlayerData.first, otherPlayerData.second)
+                        pendingTapSingleJob = null
                     }
+                    return
                 }
             }
 
@@ -579,26 +597,15 @@ class InputHandler(
                 val ray = pick.ray
                 
                 // Local player check
-                val localPlayerMeshes = playerController.getPlayerMeshes()
-                for (m in localPlayerMeshes) {
-                    val hit = ray.intersectsMesh(m)
-                    if (hit.pickedPoint != null) {
-                        objectManager?.deselectCurrentObject()
-                        return
-                    }
+                if (pickLocalPlayer(ray, playerController)) {
+                    objectManager?.deselectCurrentObject()
+                    return
                 }
                 
                 // Other players check
-                val otherPlayersController = SceneManager.getOtherPlayersController()
-                if (otherPlayersController != null) {
-                    val playerMeshes = otherPlayersController.getPlayerMeshes()
-                    for (mesh in playerMeshes) {
-                        val hit = ray.intersectsMesh(mesh)
-                        if (hit.pickedPoint != null) {
-                            objectManager?.deselectCurrentObject()
-                            return
-                        }
-                    }
+                if (pickOtherPlayer(ray) != null) {
+                    objectManager?.deselectCurrentObject()
+                    return
                 }
             }
 
@@ -956,32 +963,18 @@ class InputHandler(
         var isHoveringPlayer = false
 
         // Local player check
-        val localPlayerMeshes = playerController.getPlayerMeshes()
-        for (m in localPlayerMeshes) {
-            val hit = ray.intersectsMesh(m)
-            if (hit.pickedPoint != null) {
-                document.body?.style?.cursor = "pointer"
-                isHoveringPlayer = true
-                isHoveringOverPlayer = true
-                break
-            }
+        if (pickLocalPlayer(ray, playerController)) {
+            document.body?.style?.cursor = "pointer"
+            isHoveringPlayer = true
+            isHoveringOverPlayer = true
         }
 
         if (!isHoveringPlayer) {
-            val otherPlayersController = SceneManager.getOtherPlayersController()
-            if (otherPlayersController != null) {
-                val playerMeshes = otherPlayersController.getPlayerMeshes()
-
-                for (mesh in playerMeshes) {
-                    val hit = ray.intersectsMesh(mesh)
-                    if (hit.pickedPoint != null) {
-                        // We're hovering over a player, change cursor to pointer
-                        document.body?.style?.cursor = "pointer"
-                        isHoveringPlayer = true
-                        isHoveringOverPlayer = true
-                        break
-                    }
-                }
+            if (pickOtherPlayer(ray) != null) {
+                // We're hovering over a player, change cursor to pointer
+                document.body?.style?.cursor = "pointer"
+                isHoveringPlayer = true
+                isHoveringOverPlayer = true
             }
         }
         
@@ -1045,32 +1038,14 @@ class InputHandler(
 
         // 1) Player-click detection: do not move if we clicked a player (local or other)
 
-        // Local player check: open inventory
-        val localPlayerMeshes = playerController.getPlayerMeshes()
-        for (m in localPlayerMeshes) {
-            val hit = ray.intersectsMesh(m)
-            if (hit.pickedPoint != null) {
-                openInventory()
-                return
-            }
+        // Local player check: do not move if we clicked on ourselves
+        if (pickLocalPlayer(ray, playerController)) {
+            return
         }
 
-        val otherPlayersController = SceneManager.getOtherPlayersController()
-        if (otherPlayersController != null) {
-            val playerMeshes = otherPlayersController.getPlayerMeshes()
-            for (mesh in playerMeshes) {
-                val hit = ray.intersectsMesh(mesh)
-                if (hit.pickedPoint != null) {
-                    val userId = otherPlayersController.getUserIdForMesh(mesh)
-                    if (userId != null) {
-                        val playerData = otherPlayersController.getPlayerData(userId)
-                        if (playerData != null) {
-                            showOtherPlayerDialog(playerData.first, playerData.second)
-                            return // Don't move the player
-                        }
-                    }
-                }
-            }
+        // Other players check: do not move if we clicked on another player
+        if (pickOtherPlayer(ray) != null) {
+            return
         }
 
         // 2) Depth-first targeting: if we can unproject a visible world point, use it directly

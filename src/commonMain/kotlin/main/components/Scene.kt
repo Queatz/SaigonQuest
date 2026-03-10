@@ -17,6 +17,7 @@ import main.components.audio.SoundManager
 import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
 import main.components.input.InputHandler
+import main.components.objects.IdleObjectHighlighter
 import main.components.objects.SceneObjectManager
 import main.components.player.FriendshipStatus
 import main.components.player.OtherPlayerDialog
@@ -676,6 +677,22 @@ fun SceneComponent(url: String) {
             worldObjectManager = worldObjectManager
         )
 
+        // ------- Idle highlighting state -------
+        val idleHighlighter = IdleObjectHighlighter(
+            objectManager = objectManager,
+            coroutineScope = coroutineScope
+        )
+
+        fun stopIdleHighlighting() {
+            if (idleHighlighter.isActive()) {
+                idleHighlighter.stop()
+            }
+        }
+
+        fun triggerIdleHighlighting() {
+            idleHighlighter.start()
+        }
+
         // ------- Screen saver state -------
         var lastInteractionTime = window.performance.now()
         var isScreenSaverActive = false
@@ -849,6 +866,9 @@ fun SceneComponent(url: String) {
             lastInteractionTime = window.performance.now()
             if (isScreenSaverActive) {
                 stopScreenSaver()
+            }
+            if (idleHighlighter.isActive()) {
+                stopIdleHighlighting()
             }
         }
 
@@ -1165,10 +1185,18 @@ fun SceneComponent(url: String) {
                 if (isScreenSaverActive) {
                     stopScreenSaver()
                 }
+                if (idleHighlighter.isActive()) {
+                    stopIdleHighlighting()
+                }
             } else {
                 // Check for inactivity
                 if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0 && document.activeElement == canvas) {
                     triggerScreenSaver()
+                }
+
+                // Idle highlighting starts after 15s of inactivity
+                if (!idleHighlighter.isActive() && (currentTime - lastInteractionTime) > 15_000.0 && document.activeElement == canvas) {
+                    triggerIdleHighlighting()
                 }
             }
 
@@ -1186,6 +1214,7 @@ fun SceneComponent(url: String) {
 
         // Clean up when the component is disposed
         onDispose {
+            stopIdleHighlighting()
             // Cancel the coroutine scope
             coroutineScope.cancel()
 
