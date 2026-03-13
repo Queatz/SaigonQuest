@@ -28,6 +28,7 @@ import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
 import models.Sex
+import models.User
 import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
@@ -478,14 +479,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             createOrUpdateUsernameBillboard(op, startPos)
                             // Apply full appearance (hair, eyes, worn) immediately so it doesn't wait for movement
                             try {
-                                val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
-                                val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-                                val itemsById = try {
-                                    val ids = user.wornItems
-                                    if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
-                                } catch (_: Throwable) { emptyMap() }
-                                val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
-                                val sheets = listOfNotNull(hair, eyes) + worn
+                                val sheets = fetchAppearanceSheets(user)
                                 op.additionalSpriteSheets = sheets
                                 op.skinTone = user.skinTone
                                 handle.updateAppearance(sheets, user.skinTone)
@@ -496,15 +490,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             scheduleSpawnRetry(op, "createCharacter returned null (with user)")
                         }
                     } else {
-                        val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
-                        val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-                        val itemsById = try {
-                            val ids = user.wornItems
-                            if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
-                        } catch (_: Throwable) { emptyMap() }
-                        val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
-                        val sheets = listOfNotNull(hair, eyes) + worn
-                        op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                            val sheets = fetchAppearanceSheets(user)
+                            op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
                         if (op.status.isBlank() && user.status.isNotBlank()) {
                             op.status = user.status
                             hud.setDesiredStatus(op.userId, op.status)
@@ -542,20 +529,25 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
             // No base change: update only additional layers and skin tone
             op.profile = user
-            val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
-            val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
-            val itemsById = try {
-                val ids = user.wornItems
-                if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
-            } catch (_: Throwable) { emptyMap() }
-            val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
-            val sheets = listOfNotNull(hair, eyes) + worn
+            val sheets = fetchAppearanceSheets(user)
             op.additionalSpriteSheets = sheets
             op.skinTone = user.skinTone
             op.handle?.updateAppearance(sheets, op.skinTone)
         } catch (t: Throwable) {
             console.error("OtherPlayersCoordinator: assembleAppearance failed for ${op.userId}", t)
         }
+    }
+
+    private suspend fun fetchAppearanceSheets(user: User): List<SpriteSheet> {
+        val hair = SpriteSheet.createHairSpriteSheet(user.sex ?: Sex.Boy, user.hairStyle)
+        val eyes = SpriteSheet.createEyesSpriteSheet(user.eyeColor, user.sex)
+        val itemsById = try {
+            val ids = user.wornItems
+            if (ids.isEmpty()) emptyMap() else ItemApi.getItemsByIds(ids).associateBy { it.key }
+        } catch (_: Throwable) { emptyMap() }
+        val worn = WornItemsRenderer.getWornItemSpriteSheetsForUser(user, itemsById)
+        // Ensure that additional sprite sheets are correctly sorted (front-to-back)
+        return (listOfNotNull(hair, eyes) + worn).sortedByDescending { it.sorting }
     }
 
     fun sendJoinEvent(pos: Vector3) {

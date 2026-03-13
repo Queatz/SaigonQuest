@@ -58,6 +58,7 @@ import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.attributes.placeholder
 import Translations.str
+import androidx.compose.runtime.key
 import kotlinx.coroutines.delay
 import main.theme.Styles
 import main.theme.FriendsStyles
@@ -336,37 +337,46 @@ fun FriendsContent() {
                 }
             ) {
                 friends.forEach { friend ->
-                    FriendListItem(
-                        friend = friend,
-                        isOnline = onlineMap[friend.friendId] == true,
-                        onJumpToFriend = { friendId, worldId, position ->
-                            jumpToFriend(
-                                router = router,
-                                friendId = friendId,
-                                worldId = worldId,
-                                position = position,
-                                onError = { errorMsg ->
-                                    console.log("[FEEDBACK] errorMsg=$errorMsg")
-                                    showFeedback(errorMsg, true)
+                    key(friend.friendId) {
+                        FriendListItem(
+                            friend = friend,
+                            isOnline = onlineMap[friend.friendId] == true,
+                            onJumpToFriend = { friendId, worldId, position ->
+                                jumpToFriend(
+                                    router = router,
+                                    friendId = friendId,
+                                    worldId = worldId,
+                                    position = position,
+                                    onError = { errorMsg ->
+                                        console.log("[FEEDBACK] errorMsg=$errorMsg")
+                                        showFeedback(errorMsg, true)
+                                    }
+                                )
+                            },
+                            onError = { errorMsg ->
+                                showFeedback(errorMsg, true)
+                            },
+                            onRemoveFriend = { friendId ->
+                                removeFriend(
+                                    friendId = friendId,
+                                    onSuccess = {
+                                        // Remove the friend from the list
+                                        friends = friends.filter { it.friendId != friendId }
+                                    },
+                                    onError = { errorMsg ->
+                                        showFeedback(errorMsg, true)
+                                    }
+                                )
+                            },
+                            onNoteUpdated = { updatedNote ->
+                                // Update locally immediately (optimistic)
+                                friends = friends.map { f ->
+                                    if (f.friendId == friend.friendId) f.copy(note = updatedNote) else f
                                 }
-                            )
-                        },
-                        onError = { errorMsg ->
-                            showFeedback(errorMsg, true)
-                        },
-                        onRemoveFriend = { friendId ->
-                            removeFriend(
-                                friendId = friendId,
-                                onSuccess = {
-                                    // Remove the friend from the list
-                                    friends = friends.filter { it.friendId != friendId }
-                                },
-                                onError = { errorMsg ->
-                                    showFeedback(errorMsg, true)
-                                }
-                            )
-                        }
-                    )
+                                refreshFriendsList()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -387,7 +397,8 @@ fun FriendListItem(
     isOnline: Boolean,
     onJumpToFriend: (String, String, Position?) -> Unit,
     onError: (String) -> Unit,
-    onRemoveFriend: (String) -> Unit
+    onRemoveFriend: (String) -> Unit,
+    onNoteUpdated: (String) -> Unit
 ) {
     // State to control the visibility of the confirmation dialog
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -519,7 +530,7 @@ fun FriendListItem(
                                     try {
                                         val success = FriendApi.updateNote(friend.friendId, editedNote)
                                         if (success) {
-                                            friend.note = editedNote
+                                            onNoteUpdated(editedNote)
                                         } else {
                                             onError(str("Failed to update note"))
                                         }

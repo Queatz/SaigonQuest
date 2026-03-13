@@ -231,10 +231,29 @@ fun ChatMessages(
                 pins.forEach { pin ->
                     val msg = messages.find { it.key == pin.messageId }
                     Div(attrs = { classes(Styles.chatMessageItem) }) {
-                        P(attrs = { classes(Styles.chatMessageText) }) {
-                            if (msg != null && !msg.deleted) {
-                                Md(msg.message)
-                            } else {
+                        if (msg != null) {
+                            // Username
+                            if (msg.senderType != ChatSenderType.SYSTEM) {
+                                Div(attrs = { classes(Styles.chatMessageHeader) }) {
+                                    Span(attrs = {
+                                        classes(Styles.chatMessageUsername)
+                                        if (msg.senderType == ChatSenderType.USER && msg.senderId == currentUserId.value) {
+                                            classes(Styles.chatMessageUsernameCurrentUser)
+                                        } else {
+                                            classes(Styles.chatMessageUsernameOtherUser)
+                                        }
+                                    }) {
+                                        Text(msg.senderName)
+                                    }
+                                }
+                            }
+
+                            MessageContent(message = msg)
+                        } else {
+                            P(attrs = {
+                                classes(Styles.chatMessageContent)
+                                classes(Styles.chatMessageContentDeleted)
+                            }) {
                                 Translated("Deleted")
                             }
                         }

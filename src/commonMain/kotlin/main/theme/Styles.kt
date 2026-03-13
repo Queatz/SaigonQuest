@@ -1140,12 +1140,19 @@ object Styles : StyleSheet() {
 
     val chatMessageHeader by style {
         display(DisplayStyle.Flex)
-        property("justify-content", "space-between")
+        justifyContent(JustifyContent.SpaceBetween)
+        flexWrap(FlexWrap.Wrap)
+        alignItems(AlignItems.Center)
+        gap(4.px)
         marginBottom(4.px)
     }
 
     val chatMessageUsername by style {
         fontWeight("bold")
+        flexGrow(1)
+        flexShrink(0)
+        maxWidth(100.percent)
+        property("word-break", "break-word")
     }
 
     val chatMessageUsernameCurrentUser by style { color(Theme.colors.accentInfo) }
@@ -1158,6 +1165,8 @@ object Styles : StyleSheet() {
         fontSize(14.px)
         textAlign("right")
         opacity(.5f)
+        flexShrink(0)
+        property("margin-left", "auto")
     }
 
     val endAmount by style {
@@ -1175,6 +1184,8 @@ object Styles : StyleSheet() {
         margin(0.px)
         color(Theme.colors.onBackground)
         dark(self) { color(Theme.colors.onBackgroundDark) }
+        flexGrow(1)
+        flexShrink(0)
     }
 
     val chatMessageContentDeleted by style {

@@ -78,6 +78,11 @@ class Character(
     var additionalSpriteSheets: MutableList<SpriteSheet> = mutableListOf(),
 ) : WorldObject() {
 
+    init {
+        // Ensure that additional sprite sheets are correctly sorted (front-to-back)
+        additionalSpriteSheets.sortByDescending { it.sorting }
+    }
+
     var skinTone: Float = 0.5f
         set(value) {
             field = value.coerceIn(0f, 1f)
@@ -200,8 +205,8 @@ class Character(
         // Clear the existing list
         additionalSpriteSheets.clear()
 
-        // Add all the new sprite sheets
-        additionalSpriteSheets.addAll(spriteSheets)
+        // Add all the new sprite sheets, sorted by descending sorting value (front-to-back)
+        additionalSpriteSheets.addAll(spriteSheets.sortedByDescending { it.sorting })
 
         // Set the flag to re-render on the next update
         needsRerender = true
