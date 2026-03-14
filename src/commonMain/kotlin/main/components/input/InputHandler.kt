@@ -391,40 +391,7 @@ class InputHandler(
             // Double-tap cancels any pending single-tap action
             pendingTapSingleJob?.cancel()
             pendingTapSingleJob = null
-            // First, check if we double-tapped a player: show dialog
-            run {
-                val ray = scene.createPickingRay(
-                    x = scene.pointerX,
-                    y = scene.pointerY,
-                    world = Matrix.Identity(),
-                    camera = cameraController.getCamera(),
-                )
-
-                // Local player check: open inventory
-                if (pickLocalPlayer(ray, playerController)) {
-                    pendingTapSingleJob?.cancel()
-                    pendingTapSingleJob = scope.launch {
-                        delay(tapDoubleClickThreshold)
-                        openInventory()
-                        pendingTapSingleJob = null
-                    }
-                    return
-                }
-
-                // Other players check
-                val otherPlayerData = pickOtherPlayer(ray)
-                if (otherPlayerData != null) {
-                    pendingTapSingleJob?.cancel()
-                    pendingTapSingleJob = scope.launch {
-                        delay(tapDoubleClickThreshold)
-                        showOtherPlayerDialog(otherPlayerData.first, otherPlayerData.second)
-                        pendingTapSingleJob = null
-                    }
-                    return
-                }
-            }
-
-            // Otherwise, double-tap on object: trigger edit if owner
+            // First, check if we double-tapped on object: trigger edit if owner
             val pick = pickUnderPointer(
                 scene = scene,
                 cameraController = cameraController,
@@ -439,29 +406,13 @@ class InputHandler(
                 }
                 return
             }
-        }
 
-        if (info.type == PointerEventTypes.POINTERTAP && objectManager != null) {
-            // Ignore tap actions right after a multi-touch camera gesture
-            if (isClickToMoveSuppressed()) {
-                console.log("[POINTER] Tap suppressed due to recent multi-touch gesture")
-                // Cancel any pending single-tap
-                pendingTapSingleJob?.cancel()
-                pendingTapSingleJob = null
-                return
-            }
-            // First, check if we tapped a player: show dialog and do not move
+            // Otherwise, double-tap on player: show dialog
             run {
-                val ray = scene.createPickingRay(
-                    x = scene.pointerX,
-                    y = scene.pointerY,
-                    world = Matrix.Identity(),
-                    camera = cameraController.getCamera(),
-                )
+                val ray = pick.ray
 
                 // Local player check: open inventory
                 if (pickLocalPlayer(ray, playerController)) {
-                    // Any explicit player interaction should cancel pending single-object tap
                     pendingTapSingleJob?.cancel()
                     pendingTapSingleJob = scope.launch {
                         delay(tapDoubleClickThreshold)
@@ -474,7 +425,6 @@ class InputHandler(
                 // Other players check
                 val otherPlayerData = pickOtherPlayer(ray)
                 if (otherPlayerData != null) {
-                    // Any explicit player interaction should cancel pending single-object tap
                     pendingTapSingleJob?.cancel()
                     pendingTapSingleJob = scope.launch {
                         delay(tapDoubleClickThreshold)
@@ -484,7 +434,18 @@ class InputHandler(
                     return
                 }
             }
+        }
 
+        if (info.type == PointerEventTypes.POINTERTAP && objectManager != null) {
+            // Ignore tap actions right after a multi-touch camera gesture
+            if (isClickToMoveSuppressed()) {
+                console.log("[POINTER] Tap suppressed due to recent multi-touch gesture")
+                // Cancel any pending single-tap
+                pendingTapSingleJob?.cancel()
+                pendingTapSingleJob = null
+                return
+            }
+            // First, check if we tapped on object or inventory item
             val pick = pickUnderPointer(
                 scene = scene,
                 cameraController = cameraController,
@@ -513,6 +474,36 @@ class InputHandler(
                     pendingTapSingleJob = null
                 }
                 return
+            }
+
+            // Otherwise, check if we tapped a player: show dialog and do not move
+            run {
+                val ray = pick.ray
+
+                // Local player check: open inventory
+                if (pickLocalPlayer(ray, playerController)) {
+                    // Any explicit player interaction should cancel pending single-object tap
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
+                        openInventory()
+                        pendingTapSingleJob = null
+                    }
+                    return
+                }
+
+                // Other players check
+                val otherPlayerData = pickOtherPlayer(ray)
+                if (otherPlayerData != null) {
+                    // Any explicit player interaction should cancel pending single-object tap
+                    pendingTapSingleJob?.cancel()
+                    pendingTapSingleJob = scope.launch {
+                        delay(tapDoubleClickThreshold)
+                        showOtherPlayerDialog(otherPlayerData.first, otherPlayerData.second)
+                        pendingTapSingleJob = null
+                    }
+                    return
+                }
             }
         }
 
@@ -585,10 +576,12 @@ class InputHandler(
                 objectManager = objectManager,
             )
 
-            // If we found an object, select it
-            pick.objectId?.let { closestObjectId ->
-                console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
-                objectManager.selectObject(closestObjectId)
+            // If we found an object or inventory item, handle it
+            if (pick.objectId != null || pick.inventoryItemId != null) {
+                pick.objectId?.let { closestObjectId ->
+                    console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
+                    objectManager.selectObject(closestObjectId)
+                }
                 return
             }
 
@@ -951,15 +944,34 @@ class InputHandler(
             return
         }
         
-        // Create a ray from the camera through the pointer position
-        val ray = scene.createPickingRay(
-            x = scene.pointerX,
-            y = scene.pointerY,
-            world = Matrix.Identity(),
-            camera = cameraController.getCamera()
+        // 1) Object check: prioritize objects/inventory items over players
+        val pick = pickUnderPointer(
+            scene = scene,
+            cameraController = cameraController,
+            objectManager = objectManager,
         )
-        
-        // First check for intersection with player meshes
+        val ray = pick.ray
+
+        if (pick.objectId != null || pick.inventoryItemId != null) {
+            // Reset player hover state
+            if (isHoveringOverPlayer) {
+                isHoveringOverPlayer = false
+                document.body?.style?.cursor = "default"
+            }
+
+            // Highlight the object
+            if (pick.objectId != null) {
+                console.log("[DEBUG_HOVER] Highlighting object: ${pick.objectId}")
+                objectManager.highlightObject(pick.objectId)
+            } else {
+                // If it's an inventory item, we don't highlight it for now, 
+                // but we still treat it as an object hover to skip player check
+                objectManager.unhighlightObject()
+            }
+            return
+        }
+
+        // 2) Player check: if no object is hovered, check for players
         var isHoveringPlayer = false
 
         // Local player check
@@ -978,49 +990,17 @@ class InputHandler(
             }
         }
         
-        // If not hovering over a player, check for objects
+        // If not hovering over a player either, reset everything
         if (!isHoveringPlayer) {
             // Reset player hover state
             if (isHoveringOverPlayer) {
                 isHoveringOverPlayer = false
-                // Only reset cursor if we were previously hovering over a player
-                // This allows the object manager to handle cursor for objects
                 document.body?.style?.cursor = "default"
             }
             
-            // Check for intersection with object meshes
-            var closestDistance = Float.MAX_VALUE
-            var closestObjectId: String? = null
-            
-            // Get the number of object meshes
-            val objectMeshes = objectManager.getObjectMeshes()
-            console.log("[DEBUG_HOVER] Checking ${objectMeshes.size} object meshes for hover")
-            
-            // Check each object mesh for intersection
-            for ((objectId, meshes) in objectMeshes) {
-                meshes.forEach { mesh ->
-                    val hit = ray.intersectsMesh(mesh)
-                    if (hit.pickedPoint != null) {
-                        val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                        if (distance < closestDistance) {
-                            closestDistance = distance
-                            closestObjectId = objectId
-                            console.log("[DEBUG_HOVER] Found intersection with object: $objectId at distance: $distance")
-                        }
-                    }
-                }
-            }
-            
-            // If we found an object, highlight it
-            if (closestObjectId != null) {
-                console.log("[DEBUG_HOVER] Highlighting object: $closestObjectId")
-                val success = objectManager.highlightObject(closestObjectId)
-                console.log("[DEBUG_HOVER] Highlight success: $success")
-            } else {
-                // If no object is hovered, remove any existing highlight
-                console.log("[DEBUG_HOVER] No object found, removing highlight")
-                objectManager.unhighlightObject()
-            }
+            // Remove any existing highlight
+            console.log("[DEBUG_HOVER] No object or player found, removing highlight")
+            objectManager.unhighlightObject()
         }
     }
     
@@ -1028,27 +1008,37 @@ class InputHandler(
      * Handles click-to-move functionality.
      */
     private fun handleClickToMove() {
-        // Create a ray from the camera through the clicked point (used for player-click detection and fallback)
-        val ray = scene.createPickingRay(
+        val pick = objectManager?.let {
+            pickUnderPointer(
+                scene = scene,
+                cameraController = cameraController,
+                objectManager = it,
+            )
+        }
+        val ray = pick?.ray ?: scene.createPickingRay(
             x = scene.pointerX,
             y = scene.pointerY,
             world = Matrix.Identity(),
             camera = cameraController.getCamera()
         )
 
-        // 1) Player-click detection: do not move if we clicked a player (local or other)
+        // 1) Object check: if we hit an object or inventory item, we prioritize it over players.
+        // If an object was hit, we skip the player-click suppression.
+        if (pick?.objectId == null && pick?.inventoryItemId == null) {
+            // 2) Player-click detection: do not move if we clicked a player (local or other)
 
-        // Local player check: do not move if we clicked on ourselves
-        if (pickLocalPlayer(ray, playerController)) {
-            return
+            // Local player check: do not move if we clicked on ourselves
+            if (pickLocalPlayer(ray, playerController)) {
+                return
+            }
+
+            // Other players check: do not move if we clicked on another player
+            if (pickOtherPlayer(ray) != null) {
+                return
+            }
         }
 
-        // Other players check: do not move if we clicked on another player
-        if (pickOtherPlayer(ray) != null) {
-            return
-        }
-
-        // 2) Depth-first targeting: if we can unproject a visible world point, use it directly
+        // 3) Depth-first targeting: if we can unproject a visible world point, use it directly
         scope.launch {
             try {
                 val depthPoint = DepthPicking.getVisibleWorldPointAt(
