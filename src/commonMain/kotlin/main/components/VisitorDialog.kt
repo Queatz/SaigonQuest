@@ -6,6 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import main.api.UserApi
 import main.theme.Styles
 import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
@@ -20,6 +23,7 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.PasswordInput
 import org.jetbrains.compose.web.dom.RadioInput
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 
@@ -39,6 +43,8 @@ fun VisitorDialog(
     var yearOfBirth by remember { mutableStateOf<Int?>(null) }
     var sex by remember { mutableStateOf<Sex?>(null) }
     var errorMessage by remember { mutableStateOf("") }
+    var currentLanguage by remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
+    val coroutineScope = remember { MainScope() }
     
     // Validation function
     fun validateAndSubmit() {
@@ -92,6 +98,45 @@ fun VisitorDialog(
         onClose = onClose,
         title = if (isLoginMode) translated("Log In") else translated("Create Account"),
         content = {
+            // Language switcher
+            Div(
+                attrs = {
+                    classes(Styles.settingsSectionContainer)
+                }
+            ) {
+                // Label
+                Span(
+                    attrs = {
+                        classes(Styles.settingsSectionLabel)
+                    }
+                ) {
+                    Translated("Language")
+                }
+
+                // Language switcher component
+                Div(
+                    attrs = {
+                        classes(Styles.settingsControlContainer)
+                    }
+                ) {
+                    LanguageSwitcher(
+                        onLanguageChange = { language ->
+                            currentLanguage = language
+                            
+                            // Update user language in the database
+                            coroutineScope.launch {
+                                try {
+                                    UserApi.updateUserLanguage(language)
+                                    console.log("[DEBUG_LOG] VisitorDialog: User language updated to: $language")
+                                } catch (e: Throwable) {
+                                    console.error("[DEBUG_LOG] VisitorDialog: Error updating user language", e)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+
             // Error message (if any)
             if (errorMessage.isNotEmpty()) {
                 Div(

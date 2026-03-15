@@ -31,6 +31,7 @@ import io.ktor.http.isSuccess
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
+import main.components.LanguageSettings
 import models.AuthResponse
 import models.ChangePasswordRequest
 import models.LanguageUpdateRequest
@@ -165,10 +166,10 @@ object UserApi {
         yearOfBirth: Int? = null,
         sex: Sex? = null
     ): User {
-        // Get the browser language
-        val browserLanguage = window.navigator.language.split("-").firstOrNull()
+        // Get the current language from settings
+        val language = LanguageSettings.getCurrentLanguage()
         
-        val request = UpgradeRequest(username, password, yearOfBirth, sex, browserLanguage)
+        val request = UpgradeRequest(username, password, yearOfBirth, sex, language)
         
         try {
             val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/user/upgrade") {
