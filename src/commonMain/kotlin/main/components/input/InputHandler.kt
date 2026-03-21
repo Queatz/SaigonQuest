@@ -82,15 +82,17 @@ private fun pickUnderPointer(
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
                 val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
-                if (isInventoryObj) {
-                    if (distance < closestDistance) {
+                if (distance < closestDistance) {
+                    if (isInventoryObj) {
                         closestDistance = distance
                         closestInventoryItemId = objectId
+                        closestObjectId = null
                         isInventoryItem = true
+                    } else if (!isInventoryItem) {
+                        closestDistance = distance
+                        closestObjectId = objectId
+                        closestInventoryItemId = null
                     }
-                } else if (!isInventoryItem && distance < closestDistance) {
-                    closestDistance = distance
-                    closestObjectId = objectId
                 }
             }
         }
@@ -960,16 +962,16 @@ class InputHandler(
             }
 
             // Highlight the object
-            if (pick.objectId != null) {
-                console.log("[DEBUG_HOVER] Highlighting object: ${pick.objectId}")
-                objectManager.highlightObject(pick.objectId)
-            } else {
-                // If it's an inventory item, we don't highlight it for now, 
-                // but we still treat it as an object hover to skip player check
-                objectManager.unhighlightObject()
+            val highlightId = pick.objectId ?: pick.inventoryItemId
+            if (highlightId != null) {
+                console.log("[DEBUG_HOVER] Highlighting: $highlightId")
+                objectManager.highlightObject(highlightId)
             }
             return
         }
+
+        // We're not hovering over an object, remove any existing highlight
+        objectManager.unhighlightObject()
 
         // 2) Player check: if no object is hovered, check for players
         var isHoveringPlayer = false
@@ -997,10 +999,6 @@ class InputHandler(
                 isHoveringOverPlayer = false
                 document.body?.style?.cursor = "default"
             }
-            
-            // Remove any existing highlight
-            console.log("[DEBUG_HOVER] No object or player found, removing highlight")
-            objectManager.unhighlightObject()
         }
     }
     

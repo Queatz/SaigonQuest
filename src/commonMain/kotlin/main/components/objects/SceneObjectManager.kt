@@ -19,6 +19,7 @@ import lib.Node
 import lib.PBRMaterial
 import lib.Scene
 import lib.TransformNode
+import lib.Vector2
 import lib.Vector3
 import main.components.GraphicsSettings
 import main.api.InventoryApi
@@ -151,12 +152,15 @@ class SceneObjectManager(
         val node = objectMeshes[objectId]
         if (node != null) {
             try {
-                // Get all child meshes from the node
-                val childMeshes = node.getChildMeshes(false)
+                // Get all meshes from the node (including the node itself if it's a mesh)
+                val allMeshes = node.getChildMeshes(false).toMutableList()
+                if (node is AbstractMesh) {
+                    allMeshes.add(node)
+                }
 
-                // Add each child mesh to the highlight layer
-                childMeshes.forEach { childMesh ->
-                    highlightLayer.addMesh(childMesh, Color3(1f, 1f, 0f), false)
+                // Add each mesh to the highlight layer
+                allMeshes.forEach { mesh ->
+                    highlightLayer.addMesh(mesh, Color3(1f, 1f, 0f), false)
                 }
                 
                 // Store the hovered object ID
@@ -186,12 +190,15 @@ class SceneObjectManager(
             val node = objectMeshes[objectId]
             if (node != null) {
                 try {
-                    // Get all child meshes from the node
-                    val childMeshes = node.getChildMeshes(false)
+                    // Get all meshes from the node (including the node itself if it's a mesh)
+                    val allMeshes = node.getChildMeshes(false).toMutableList()
+                    if (node is AbstractMesh) {
+                        allMeshes.add(node)
+                    }
 
-                    // Remove each child mesh from the highlight layer
-                    childMeshes.forEach { childMesh ->
-                        highlightLayer.removeMesh(childMesh)
+                    // Remove each mesh from the highlight layer
+                    allMeshes.forEach { mesh ->
+                        highlightLayer.removeMesh(mesh)
                     }
                     
                     // Reset cursor
@@ -1535,7 +1542,7 @@ class SceneObjectManager(
     private fun animateStatusText(objectId: String, show: Boolean) {
         val handle = objectStatusTextHandles[objectId] ?: return
         val offsetY = objectStatusOffsets[objectId] ?: handle.position.y
-        ObjectStatusAnimator.animateStatusText(objectId, handle, show, offsetY, scene)
+        ObjectStatusAnimator.animateStatusText(objectId, handle, show, Vector3(0f, offsetY, 0f), scene)
     }
 
     /**

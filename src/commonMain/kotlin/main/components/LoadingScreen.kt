@@ -44,6 +44,8 @@ fun LoadingScreen(
                 classes(OverlayStyles.loadingScreenContainer)
             }
         ) {
+            LoadingBackground()
+
             if (loadingFailed) {
                 // Error message when world loading fails
                 H2 {

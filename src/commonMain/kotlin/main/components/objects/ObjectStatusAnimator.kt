@@ -26,7 +26,7 @@ object ObjectStatusAnimator {
         objectId: String,
         handle: WorldObjectHandle,
         show: Boolean,
-        targetY: Float,
+        targetOffset: Vector3,
         scene: Scene
     ) {
         val node = handle.node
@@ -35,9 +35,9 @@ object ObjectStatusAnimator {
             // Only start show animation if not already fully visible at correct position
             val isVisible = handle.isVisible
             val isScaled = node.scaling.x > 0.99f
-            val isAtCorrectY = abs(node.position.y - targetY) < 0.01f
+            val isAtCorrectPosition = Vector3.Distance(node.position, targetOffset) < 0.01f
             
-            if (isVisible && isScaled && isAtCorrectY) return
+            if (isVisible && isScaled && isAtCorrectPosition) return
             
             // Stop any existing hide/show animation
             scene.stopAnimation(node, "statusScale")
@@ -48,7 +48,7 @@ object ObjectStatusAnimator {
             // If it was fully hidden, start from below and zero scale
             if (!isVisible || node.scaling.x < 0.01f) {
                 node.scaling = Vector3(0f, 0f, 0f)
-                node.position = Vector3(0f, targetY - 0.2f, 0f)
+                node.position = Vector3(targetOffset.x, targetOffset.y - 0.2f, targetOffset.z)
             }
             
             val bounce = BounceEase(2, 3f)
@@ -73,7 +73,7 @@ object ObjectStatusAnimator {
                 framePerSecond = 60,
                 totalFrame = 10,
                 from = node.position,
-                to = Vector3(0f, targetY, 0f),
+                to = targetOffset,
                 loopMode = Animation.ANIMATIONLOOPMODE_CONSTANT,
                 easingFunction = bounce,
             )
@@ -107,7 +107,7 @@ object ObjectStatusAnimator {
                 framePerSecond = 60,
                 totalFrame = 7,
                 from = node.position,
-                to = Vector3(0f, targetY - 0.2f, 0f),
+                to = Vector3(targetOffset.x, targetOffset.y - 0.2f, targetOffset.z),
                 loopMode = Animation.ANIMATIONLOOPMODE_CONSTANT,
                 easingFunction = ease,
                 onAnimationEnd = {

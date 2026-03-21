@@ -134,6 +134,16 @@ object OverlayStyles : StyleSheet() {
         boxSizing("border-box")
     }
 
+    val loadingScreenCanvas by style {
+        position(Position.Absolute)
+        top(0.px)
+        left(0.px)
+        width(100.percent)
+        height(100.percent)
+        property("z-index", "-1")
+        property("pointer-events", "none")
+    }
+
     val loadingScreenButtonContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Row)

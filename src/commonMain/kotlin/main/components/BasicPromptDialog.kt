@@ -7,6 +7,7 @@ import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
 
@@ -20,6 +21,8 @@ import org.jetbrains.compose.web.dom.*
  * @param step Step value for number input, defaults to 0.1
  * @param onSubmit Called with the entered value when the user confirms
  * @param onCancel Called when the user cancels or closes the dialog
+ * @param okLabel Label for the OK button
+ * @param cancelLabel Label for the Cancel button
  */
 @Composable
 fun BasicPromptDialog(
@@ -30,6 +33,8 @@ fun BasicPromptDialog(
     min: Number? = null,
     max: Number? = null,
     step: Number = 1f,
+    okLabel: String? = null,
+    cancelLabel: String? = null,
     onSubmit: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -99,6 +104,26 @@ fun BasicPromptDialog(
                         }
                     )
                 }
+
+                if (isNumber && max != null) {
+                    Div(
+                        attrs = {
+                            style {
+                                display(DisplayStyle.Block)
+                                marginTop(12.px)
+                            }
+                        }
+                    ) {
+                        DialogButton(
+                            onClick = {
+                                value = max.toString()
+                            },
+                            isPrimary = false,
+                        ) {
+                            Translated("All")
+                        }
+                    }
+                }
             }
         },
         actions = {
@@ -107,7 +132,11 @@ fun BasicPromptDialog(
                 onClick = onCancel,
                 isPrimary = false,
             ) {
-                Translated("Cancel")
+                if (cancelLabel != null) {
+                    Text(cancelLabel)
+                } else {
+                    Translated("Cancel")
+                }
             }
 
             // Ok button (primary)
@@ -115,7 +144,11 @@ fun BasicPromptDialog(
                 onClick = { onSubmit(value) },
                 isPrimary = true,
             ) {
-                Translated("Ok")
+                if (okLabel != null) {
+                    Text(okLabel)
+                } else {
+                    Translated("Ok")
+                }
             }
         }
     )

@@ -1296,6 +1296,7 @@ fun SceneComponent(url: String) {
             isNumber = true,
             min = 1,
             max = pd.maxQuantity,
+            okLabel = translated("Drop"),
             onSubmit = { value ->
                 val objectManager = SceneManager.getObjectManager()
                 val requested = value.toIntOrNull()
