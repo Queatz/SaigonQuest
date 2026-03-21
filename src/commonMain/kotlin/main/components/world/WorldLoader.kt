@@ -194,6 +194,36 @@ class WorldLoader(private val scene: Scene) {
         }
 
         /**
+         * Update the directional light intensity.
+         */
+        fun updateDirectionalLightIntensity(intensity: Float) {
+            try {
+                val light = currentDirectionalLight
+                if (light != null) {
+                    light.intensity = intensity
+                    println("[DEBUG] Updated directional light intensity to $intensity")
+                }
+            } catch (e: Throwable) {
+                println("[ERROR] Failed to update directional light intensity: ${e.message}")
+            }
+        }
+
+        /**
+         * Update the hemispheric light intensity.
+         */
+        fun updateHemisphericLightIntensity(intensity: Float) {
+            try {
+                val light = currentHemisphericLight
+                if (light != null) {
+                    light.intensity = intensity
+                    println("[DEBUG] Updated hemispheric light intensity to $intensity")
+                }
+            } catch (e: Throwable) {
+                println("[ERROR] Failed to update hemispheric light intensity: ${e.message}")
+            }
+        }
+
+        /**
          * Update the hemispheric light color using a hex string.
          */
         fun updateHemisphericLightColorHex(hexColor: String) {
@@ -412,9 +442,11 @@ class WorldLoader(private val scene: Scene) {
             } else {
                 // Indoor or invalid lat/lng: preserve existing behavior
                 setSceneBackgroundColor(world.backgroundColor)
+                updateHemisphericLightIntensity(world.backgroundColorIntensity)
                 updateDirectionalLightColorHex(
                     hexColor = world.directionalLightColor
                 )
+                updateDirectionalLightIntensity(world.directionalLightIntensity)
             }
 
             // Check if world file is specified
@@ -777,7 +809,9 @@ class WorldLoader(private val scene: Scene) {
                 moonLight = null
                 // Apply indoor lighting immediately
                 setSceneBackgroundColor(world.backgroundColor)
+                updateHemisphericLightIntensity(world.backgroundColorIntensity)
                 updateDirectionalLightColorHex(world.directionalLightColor)
+                updateDirectionalLightIntensity(world.directionalLightIntensity)
             }
         } catch (e: Throwable) {
             println("[ERROR] Failed to apply edited world lighting: ${e.message}")

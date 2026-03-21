@@ -18,7 +18,9 @@ data class World(
     var isOutdoors: Boolean = false, // to track ownership
     var latLng: List<Double>? = null, // to track time of day
     var backgroundColor: String = "#ffffff", // background color in hex format
+    var backgroundColorIntensity: Float = 1.0f, // background color intensity (used for hemispheric light)
     var directionalLightColor: String = "#ffffff", // directional light color in hex format
+    var directionalLightIntensity: Float = 1.0f, // directional light intensity
     var fogDensity: Float = 0.0f, // fog density (0.0 to 1.0), 0.0 means no fog
     var screenshot: String? = null, // URL (PNG) thumbnail of the world scene
     // Music settings

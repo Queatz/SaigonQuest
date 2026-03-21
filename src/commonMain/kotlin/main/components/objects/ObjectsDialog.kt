@@ -28,6 +28,7 @@ fun ObjectsDialog(
         objectManager = objectManager,
         currentWorld = currentWorld,
         isDialog = true,
+        onClose = onClose,
         content = { tabContent ->
             // Use BaseDialog for consistent styling and behavior
             BaseDialog(

@@ -52,6 +52,7 @@ fun ObjectsContent(
     objectManager: SceneObjectManager? = null,
     currentWorld: World?,
     isDialog: Boolean,
+    onClose: () -> Unit = {},
     content: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     // State for objects
@@ -84,7 +85,7 @@ fun ObjectsContent(
     }
 
     // Placement mode state
-    var isCreatePlacementActive by remember { mutableStateOf(false) }
+    var isCreatePlacementActive by remember { mutableStateOf(objectManager?.isCreatePlacementModeActive() ?: false) }
 
     // Load objects when the component is mounted
     LaunchedEffect(currentWorldId) {
@@ -274,6 +275,10 @@ fun ObjectsContent(
                                 isCreatePlacementActive = false
                             }
                         )
+                        // Close the side panel if we are on mobile (dialog mode)
+                        if (isDialog) {
+                            onClose()
+                        }
                     } else {
                         onOpenObjectEditor(true)
                     }

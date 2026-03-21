@@ -27,6 +27,7 @@ fun ObjectsPanel(
         objectManager = objectManager,
         currentWorld = currentWorld,
         isDialog = false,
+        onClose = onClose,
     ) { tabContent ->
         SimpleSidePanel(
             title = translated("Objects"),

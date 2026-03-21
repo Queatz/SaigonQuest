@@ -165,7 +165,9 @@ fun WorldEditContent(
     var file by remember { mutableStateOf(currentWorld?.file ?: "") }
     var assetId by remember { mutableStateOf(currentWorld?.assetId ?: "") }
     var backgroundColor by remember { mutableStateOf(currentWorld?.backgroundColor ?: "#ffffff") }
+    var backgroundColorIntensity by remember { mutableStateOf(currentWorld?.backgroundColorIntensity ?: 1.0f) }
     var directionalLightColor by remember { mutableStateOf(currentWorld?.directionalLightColor ?: "#ffffff") }
+    var directionalLightIntensity by remember { mutableStateOf(currentWorld?.directionalLightIntensity ?: 1.0f) }
     var fogDensity by remember { mutableStateOf(currentWorld?.fogDensity ?: 0.0f) }
     var screenshot by remember { mutableStateOf(currentWorld?.screenshot) }
     var isUploadingScreenshot by remember { mutableStateOf(false) }
@@ -216,7 +218,9 @@ fun WorldEditContent(
         assetId = currentWorld?.assetId ?: ""
         selectedWorldAssetTitle = null
         backgroundColor = currentWorld?.backgroundColor ?: "#ffffff"
+        backgroundColorIntensity = currentWorld?.backgroundColorIntensity ?: 1.0f
         directionalLightColor = currentWorld?.directionalLightColor ?: "#ffffff"
+        directionalLightIntensity = currentWorld?.directionalLightIntensity ?: 1.0f
         fogDensity = currentWorld?.fogDensity ?: 0.0f
         // Music
         musicUrl = currentWorld?.musicUrl
@@ -440,7 +444,9 @@ fun WorldEditContent(
                     ) else null
                 },
                 backgroundColor = backgroundColor,
+                backgroundColorIntensity = backgroundColorIntensity,
                 directionalLightColor = directionalLightColor,
+                directionalLightIntensity = directionalLightIntensity,
                 fogDensity = fogDensity,
                 screenshot = screenshot,
                 musicUrl = musicUrl,
@@ -476,7 +482,9 @@ fun WorldEditContent(
                     ) else null
                 },
                 backgroundColor = backgroundColor,
+                backgroundColorIntensity = backgroundColorIntensity,
                 directionalLightColor = directionalLightColor,
+                directionalLightIntensity = directionalLightIntensity,
                 fogDensity = fogDensity,
                 screenshot = screenshot,
                 musicUrl = musicUrl,
@@ -532,7 +540,9 @@ fun WorldEditContent(
                 isOutdoors = isOutdoors,
                 latLng = latLngList,
                 backgroundColor = backgroundColor,
+                backgroundColorIntensity = backgroundColorIntensity,
                 directionalLightColor = directionalLightColor,
+                directionalLightIntensity = directionalLightIntensity,
                 fogDensity = fogDensity,
             ) ?: return
             WorldLoader.notifyWorldEdited(previewWorld)
@@ -1101,7 +1111,9 @@ fun WorldEditContent(
                                 isOutdoors = isOutdoors,
                                 latLng = latLngList,
                                 backgroundColor = backgroundColor,
+                                backgroundColorIntensity = backgroundColorIntensity,
                                 directionalLightColor = directionalLightColor,
+                                directionalLightIntensity = directionalLightIntensity,
                                 fogDensity = fogDensity,
                                 musicUrl = musicUrl,
                                 musicTitle = musicTitle,
@@ -1120,7 +1132,9 @@ fun WorldEditContent(
                                 isOutdoors = isOutdoors,
                                 latLng = latLngList,
                                 backgroundColor = backgroundColor,
+                                backgroundColorIntensity = backgroundColorIntensity,
                                 directionalLightColor = directionalLightColor,
+                                directionalLightIntensity = directionalLightIntensity,
                                 fogDensity = fogDensity,
                                 // Access control (use current form values)
                                 allowAllVisitors = allowAllVisitors,
@@ -1504,6 +1518,86 @@ fun WorldEditContent(
                     Text(backgroundColor)
                 }
             }
+
+            // Background color intensity slider
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                        property("margin-top", "4px")
+                    }
+                }
+            ) {
+                var showIntensityPrompt by remember { mutableStateOf(false) }
+                RangeInput(
+                    value = backgroundColorIntensity,
+                    min = 0.0,
+                    max = 10.0,
+                    step = 0.1,
+                    attrs = {
+                        style {
+                            property("width", "200px")
+                            if (!fieldsEnabled) {
+                                property("opacity", "0.7")
+                                property("cursor", "not-allowed")
+                            }
+                        }
+                        if (!fieldsEnabled) {
+                            disabled()
+                        }
+                        onInput { event ->
+                            backgroundColorIntensity = event.value?.toFloat() ?: 1.0f
+                            val lat = latitude.toDoubleOrNull()
+                            val lon = longitude.toDoubleOrNull()
+                            val outdoorsRealtime =
+                                isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
+                            if (!outdoorsRealtime) {
+                                WorldLoader.updateHemisphericLightIntensity(backgroundColorIntensity)
+                            }
+                        }
+                    }
+                )
+                Div(
+                    attrs = {
+                        style {
+                            property("min-width", "40px")
+                            if (fieldsEnabled) {
+                                cursor("pointer")
+                            } else {
+                                property("opacity", "0.7")
+                                cursor("not-allowed")
+                            }
+                        }
+                        if (fieldsEnabled) {
+                            attr("title", str("Click to edit"))
+                            onClick { showIntensityPrompt = true }
+                        }
+                    }
+                ) {
+                    Text(backgroundColorIntensity.toString())
+                }
+                if (showIntensityPrompt) {
+                    BasicPromptDialog(
+                        title = translated("Intensity"),
+                        defaultValue = backgroundColorIntensity.toString(),
+                        isNumber = true,
+                        min = 0f,
+                        max = 10f,
+                        step = 0.1f,
+                        onSubmit = { input ->
+                            val parsed = input.toFloatOrNull()
+                            if (parsed != null) {
+                                backgroundColorIntensity = parsed.coerceAtLeast(0f)
+                                WorldLoader.updateHemisphericLightIntensity(backgroundColorIntensity)
+                            }
+                            showIntensityPrompt = false
+                        },
+                        onCancel = { showIntensityPrompt = false },
+                    )
+                }
+            }
         }
 
         // Directional Light Color field
@@ -1574,6 +1668,86 @@ fun WorldEditContent(
                     }
                 ) {
                     Text(directionalLightColor)
+                }
+            }
+
+            // Directional light intensity slider
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        property("gap", "8px")
+                        property("align-items", "center")
+                        property("margin-top", "4px")
+                    }
+                }
+            ) {
+                var showIntensityPrompt by remember { mutableStateOf(false) }
+                RangeInput(
+                    value = directionalLightIntensity,
+                    min = 0.0,
+                    max = 10.0,
+                    step = 0.1,
+                    attrs = {
+                        style {
+                            property("width", "200px")
+                            if (!fieldsEnabled) {
+                                property("opacity", "0.7")
+                                property("cursor", "not-allowed")
+                            }
+                        }
+                        if (!fieldsEnabled) {
+                            disabled()
+                        }
+                        onInput { event ->
+                            directionalLightIntensity = event.value?.toFloat() ?: 1.0f
+                            val lat = latitude.toDoubleOrNull()
+                            val lon = longitude.toDoubleOrNull()
+                            val outdoorsRealtime =
+                                isOutdoors && lat != null && lon != null && lat in -90.0..90.0 && lon in -180.0..180.0
+                            if (!outdoorsRealtime) {
+                                WorldLoader.updateDirectionalLightIntensity(directionalLightIntensity)
+                            }
+                        }
+                    }
+                )
+                Div(
+                    attrs = {
+                        style {
+                            property("min-width", "40px")
+                            if (fieldsEnabled) {
+                                cursor("pointer")
+                            } else {
+                                property("opacity", "0.7")
+                                cursor("not-allowed")
+                            }
+                        }
+                        if (fieldsEnabled) {
+                            attr("title", str("Click to edit"))
+                            onClick { showIntensityPrompt = true }
+                        }
+                    }
+                ) {
+                    Text(directionalLightIntensity.toString())
+                }
+                if (showIntensityPrompt) {
+                    BasicPromptDialog(
+                        title = translated("Intensity"),
+                        defaultValue = directionalLightIntensity.toString(),
+                        isNumber = true,
+                        min = 0f,
+                        max = 10f,
+                        step = 0.1f,
+                        onSubmit = { input ->
+                            val parsed = input.toFloatOrNull()
+                            if (parsed != null) {
+                                directionalLightIntensity = parsed.coerceAtLeast(0f)
+                                WorldLoader.updateDirectionalLightIntensity(directionalLightIntensity)
+                            }
+                            showIntensityPrompt = false
+                        },
+                        onCancel = { showIntensityPrompt = false },
+                    )
                 }
             }
         }

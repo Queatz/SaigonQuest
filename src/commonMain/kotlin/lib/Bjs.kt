@@ -908,6 +908,8 @@ external class PointerEvent {
     val altKey: Boolean
     val offsetX: Float
     val offsetY: Float
+    val button: Short
+    val pointerType: String
 }
 
 external class ActionManager(scene: Scene) {

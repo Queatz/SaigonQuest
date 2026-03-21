@@ -317,35 +317,6 @@ class InputHandler(
     private fun handlePointerEvent(info: PointerInfo) {
         onActivity?.invoke()
 
-        // Intercept events for object placement mode
-        if (objectManager?.isCreatePlacementModeActive() == true) {
-            val handled = when (info.type) {
-                PointerEventTypes.POINTERMOVE -> {
-                    objectManager.updateCreatePlacementPreview(scene.pointerX, scene.pointerY)
-                    true
-                }
-                PointerEventTypes.POINTERDOWN -> {
-                    // Only confirm on left-click on the canvas
-                    val mouseEvent = info.event as? MouseEvent
-                    if (mouseEvent != null && mouseEvent.button.toInt() == 0 && !mouseEvent.ctrlKey && !mouseEvent.shiftKey && !mouseEvent.altKey) {
-                        objectManager.confirmCreatePlacement(scene.pointerX, scene.pointerY)
-                    }
-                    true
-                }
-                PointerEventTypes.POINTERUP,
-                PointerEventTypes.POINTERTAP,
-                PointerEventTypes.POINTERDOUBLETAP -> true
-                else -> false
-            }
-            if (handled) return
-        }
-
-        // Check if an object is selected or being dragged
-        var isObjectSelected = objectManager?.getSelectedObject() != null
-        val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
-
-        console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
-
         // Track multi-touch pointer counts to suppress accidental moves after pinch/zoom
         run {
             val now = window.performance.now()
@@ -382,6 +353,38 @@ class InputHandler(
                 }
             }
         }
+
+        // Intercept events for object placement mode
+        val objectManager = this.objectManager
+        if (objectManager?.isCreatePlacementModeActive() == true) {
+            val handled = when (info.type) {
+                PointerEventTypes.POINTERMOVE,
+                PointerEventTypes.POINTERDOWN -> {
+                    objectManager.updateCreatePlacementPreview(scene.pointerX, scene.pointerY)
+                    true
+                }
+                PointerEventTypes.POINTERTAP -> {
+                    // Confirm on left-click or tap
+                    if (!isClickToMoveSuppressed()) {
+                        val event = info.event
+                        if (event.button.toInt() == 0 && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                            objectManager.confirmCreatePlacement(scene.pointerX, scene.pointerY)
+                        }
+                    }
+                    true
+                }
+                PointerEventTypes.POINTERUP,
+                PointerEventTypes.POINTERDOUBLETAP -> true
+                else -> false
+            }
+            if (handled) return
+        }
+
+        // Check if an object is selected or being dragged
+        var isObjectSelected = objectManager?.getSelectedObject() != null
+        val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
+
+        console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
 
         // Handle Babylon tap/double-tap events explicitly (touch & click)
         if (info.type == PointerEventTypes.POINTERDOUBLETAP && objectManager != null) {
