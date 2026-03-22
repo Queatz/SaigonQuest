@@ -76,6 +76,12 @@ vi: Hình ảnh của người chơi
 Allow multiple
 vi: Cho phép nhiều hình ảnh
 
+Confirm label
+vi: Nhãn nút xác nhận
+
+No images
+vi: Không có hình ảnh
+
 My Worlds
 vi: Thế giới của tôi
 

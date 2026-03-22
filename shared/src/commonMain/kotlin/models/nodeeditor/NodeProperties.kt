@@ -74,6 +74,7 @@ enum class PropertyKey {
     // PlayerImageInput properties
     ALLOW_MULTIPLE,
     IMAGE_MARKDOWN,
+    NO_IMAGES,
 
     // JoinList properties
     LIST_CONTENT,
@@ -877,8 +878,21 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 defaultValue = "false"
             ),
             NodePropertyDefinition(
+                key = PropertyKey.CONFIRM_LABEL,
+                name = "Confirm label",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Confirm"
+            ),
+            NodePropertyDefinition(
                 key = PropertyKey.NEXT,
                 name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO_IMAGES,
+                name = "No images",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             ),

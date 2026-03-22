@@ -399,13 +399,13 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge || node.nodeId == NodeId.IsObjectOwner) {
-                // For HasItem nodes, use the outputProperty to select the correct connection
+            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge || node.nodeId == NodeId.IsObjectOwner || node.nodeId == NodeId.PlayerImageInput) {
+                // For nodes that use outputProperty to select the correct connection
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
                 WebSocketDebug.logMessage(
-                    "HAS_ITEM_OUTPUT_PROPERTY",
-                    "Using output property: $outputProperty for node: ${node.id}",
+                    "NODE_OUTPUT_PROPERTY",
+                    "Using output property: $outputProperty for node: ${node.id} (${node.nodeId})",
                     context.session
                 )
 
@@ -426,8 +426,8 @@ class NodeLogicRunner(
                         )
 
                         when (outputProperty) {
-                            PropertyKey.YES -> connection.fromPort.endsWith("_out_0")
-                            PropertyKey.NO -> connection.fromPort.endsWith("_out_1")
+                            PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
+                            PropertyKey.NO, PropertyKey.NO_IMAGES -> connection.fromPort.endsWith("_out_1")
                             PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
                             else -> false
                         }

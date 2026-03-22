@@ -37,6 +37,7 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
@@ -64,6 +65,9 @@ fun DialogueBox(
     // State to track the current dialogue
     var currentDialogue by remember { mutableStateOf<DialogueData?>(null) }
 
+    // State to track if we're waiting for a new dialogue after a button click
+    var isWaiting by remember { mutableStateOf(false) }
+
     // Responsive helper
     val isMobile = rememberIsMobile()
     var textInput by remember { mutableStateOf("") }
@@ -83,6 +87,7 @@ fun DialogueBox(
         WebSocketApi.addDialogueListener { dialogueData ->
             console.log("DialogueBox: Received dialogue: ${dialogueData.text}")
             currentDialogue = dialogueData
+            isWaiting = false
         }
     }
 
@@ -140,9 +145,11 @@ fun DialogueBox(
                 }
 
                 onClick { event ->
+                    if (isWaiting) return@onClick
                     val target = event.target as? org.w3c.dom.HTMLElement ?: return@onClick
                     val word = target.getAttribute("data-word") ?: return@onClick
 
+                    isWaiting = true
                     val scope = MainScope()
                     scope.launch {
                         try {
@@ -155,6 +162,13 @@ fun DialogueBox(
                             )
                         } catch (e: Throwable) {
                             console.error("Error sending word click confirmation", e)
+                            isWaiting = false
+                        } finally {
+                            delay(500)
+                            if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
+                                currentDialogue = null
+                                isWaiting = false
+                            }
                         }
                     }
                 }
@@ -172,8 +186,10 @@ fun DialogueBox(
                                 classes(Styles.imagePreview)
                             })
                             Button(attrs = {
+                                if (isWaiting) disabled()
                                 classes(Styles.imageRemoveButton)
                                 onClick {
+                                    if (isWaiting) return@onClick
                                     uploadedImages = uploadedImages.filter { it != url }
                                 }
                             }) {
@@ -184,8 +200,12 @@ fun DialogueBox(
 
                     if (dialogue.allowMultipleImages || uploadedImages.isEmpty()) {
                         Button(attrs = {
+                            if (isWaiting) disabled()
                             classes(Styles.imageAddButton)
-                            onClick { showUploadDialog = true }
+                            onClick {
+                                if (isWaiting) return@onClick
+                                showUploadDialog = true
+                            }
                         }) {
                             Text("➕")
                             Text(translated("Add image"))
@@ -205,6 +225,7 @@ fun DialogueBox(
                     }
                 ) {
                     TextInput(textInput) {
+                        if (isWaiting) disabled()
                         if (!dialogue.placeholder.isNullOrBlank()) {
                             placeholder(dialogue.placeholder!!)
                         }
@@ -212,7 +233,8 @@ fun DialogueBox(
                         autoFocus()
                         onInput { ev -> textInput = ev.value }
                         onKeyDown { ev ->
-                            if (ev.key == "Enter") {
+                            if (ev.key == "Enter" && !isWaiting) {
+                                isWaiting = true
                                 val scope = MainScope()
                                 scope.launch {
                                     try {
@@ -221,9 +243,15 @@ fun DialogueBox(
                                         WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
                                     } catch (e: Throwable) {
                                         console.error("Error sending dialogue confirmation via Enter", e)
+                                        isWaiting = false
                                     } finally {
                                         textInput = ""
-                                        currentDialogue = null
+                                        
+                                        delay(500)
+                                        if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
+                                            currentDialogue = null
+                                            isWaiting = false
+                                        }
                                     }
                                 }
                             }
@@ -268,6 +296,9 @@ fun DialogueBox(
                 dialogue.buttons.forEachIndexed { index, buttonText ->
                     DialogButton(
                         onClick = {
+                            if (isWaiting) return@DialogButton
+                            isWaiting = true
+                            
                             val scope = MainScope()
                             scope.launch {
                                 try {
@@ -284,15 +315,22 @@ fun DialogueBox(
                                     )
                                 } catch (e: Throwable) {
                                     console.error("Error sending dialogue confirmation", e)
+                                    isWaiting = false
                                 } finally {
                                     // Reset
                                     textInput = ""
                                     uploadedImages = emptyList()
-                                    currentDialogue = null
+                                    
+                                    delay(500)
+                                    if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
+                                        currentDialogue = null
+                                        isWaiting = false
+                                    }
                                 }
                             }
                         },
-                        isPrimary = true
+                        isPrimary = true,
+                        isDisabled = isWaiting,
                     ) { Text(buttonText) }
                 }
             }
