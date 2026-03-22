@@ -14,8 +14,11 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.addDialogueListener
 import main.api.sendDialogueConfirmation
+import main.components.media.UploadMediaDialog
 import main.theme.Styles
+import main.theme.Theme
 import models.DialogueData
+import models.MediaType
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
@@ -40,6 +43,7 @@ import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.Button
 import org.w3c.dom.HTMLElement
 import web.animations.awaitAnimationFrame
 import web.cssom.HtmlAttributes.Companion.value
@@ -64,6 +68,9 @@ fun DialogueBox(
     val isMobile = rememberIsMobile()
     var textInput by remember { mutableStateOf("") }
     var inputEl by remember { mutableStateOf<HTMLElement?>(null) }
+    
+    var uploadedImages by remember { mutableStateOf(listOf<String>()) }
+    var showUploadDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
@@ -153,6 +160,40 @@ fun DialogueBox(
                 }
             }
 
+            if (dialogue.requiresImage) {
+                Div({
+                    classes(Styles.imageInputContainer)
+                }) {
+                    uploadedImages.forEach { url ->
+                        Div({
+                            classes(Styles.imagePreviewItem)
+                        }) {
+                            Img(src = url, attrs = {
+                                classes(Styles.imagePreview)
+                            })
+                            Button(attrs = {
+                                classes(Styles.imageRemoveButton)
+                                onClick {
+                                    uploadedImages = uploadedImages.filter { it != url }
+                                }
+                            }) {
+                                Text("×")
+                            }
+                        }
+                    }
+
+                    if (dialogue.allowMultipleImages || uploadedImages.isEmpty()) {
+                        Button(attrs = {
+                            classes(Styles.imageAddButton)
+                            onClick { showUploadDialog = true }
+                        }) {
+                            Text("➕")
+                            Text(translated("Add image"))
+                        }
+                    }
+                }
+            }
+
             if (dialogue.requiresInput) {
                 Div(
                     attrs = {
@@ -233,12 +274,20 @@ fun DialogueBox(
                                     val user = UserApi.getCurrentUser()
                                     val userId = user.key
                                     val inputText = if (dialogue.requiresInput) textInput else null
-                                    WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, index, inputText)
+                                    val imageUrls = if (dialogue.requiresImage) uploadedImages else null
+                                    WebSocketApi.sendDialogueConfirmation(
+                                        dialogueId = dialogue.dialogueId,
+                                        userId = userId,
+                                        buttonIndex = index,
+                                        inputText = inputText,
+                                        imageUrls = imageUrls
+                                    )
                                 } catch (e: Throwable) {
                                     console.error("Error sending dialogue confirmation", e)
                                 } finally {
                                     // Reset
                                     textInput = ""
+                                    uploadedImages = emptyList()
                                     currentDialogue = null
                                 }
                             }
@@ -249,4 +298,19 @@ fun DialogueBox(
             }
         }
     )
+
+    if (showUploadDialog) {
+        UploadMediaDialog(
+            onClose = { showUploadDialog = false },
+            onSelect = { url, _, _ ->
+                uploadedImages = if (dialogue.allowMultipleImages) {
+                    uploadedImages + url
+                } else {
+                    listOf(url)
+                }
+                showUploadDialog = false
+            },
+            filter = MediaType.Image
+        )
+    }
 }

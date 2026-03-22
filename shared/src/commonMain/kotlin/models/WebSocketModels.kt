@@ -127,6 +127,8 @@ data class DialogueData(
     val placeholder: String? = null, // Optional placeholder for the input
     val confirmLabel: String? = null, // Optional confirm button label override
     val clickableWords: Boolean = false, // If true, wrap words in clickable spans
+    val requiresImage: Boolean = false, // If true, show an image upload and return image URL(s) on confirm
+    val allowMultipleImages: Boolean = false, // If true, allow multiple image uploads
 )
 
 /**
@@ -140,7 +142,8 @@ data class DialogueConfirmation(
     val userId: String,
     val buttonIndex: Int = 0, // Index of the button that was clicked (0 is the default/first button)
     val inputText: String? = null, // Optional text provided by the user for input dialogues
-    val clickedWord: String? = null // Optional word that was clicked in the dialogue text
+    val clickedWord: String? = null, // Optional word that was clicked in the dialogue text
+    val imageUrls: List<String>? = null, // Optional image URLs provided by the user for image input dialogues
 )
 
 /**

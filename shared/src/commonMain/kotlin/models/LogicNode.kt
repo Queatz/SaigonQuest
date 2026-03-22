@@ -355,6 +355,28 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Plays a sound for everyone in the world"
     ) : LogicNode
+
+    /**
+     * PlayerImageInput node - prompts the player for image uploads
+     */
+    @Serializable
+    data class PlayerImageInput(
+        override val id: NodeId = NodeId.PlayerImageInput,
+        override val label: String = "Player image input",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Prompt player with a title, preview areas and confirm button"
+    ) : LogicNode
+
+    /**
+     * JoinList node - formats and joins a comma-separated list into a single string
+     */
+    @Serializable
+    data class JoinList(
+        override val id: NodeId = NodeId.JoinList,
+        override val label: String = "Join list",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Format and join a comma-separated list into a single string"
+    ) : LogicNode
 }
 
 /**
@@ -398,6 +420,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.IsObjectOwner(),
         LogicNode.AiChat(),
         LogicNode.PlaySound(),
+        LogicNode.PlayerImageInput(),
+        LogicNode.JoinList(),
     )
 }
 

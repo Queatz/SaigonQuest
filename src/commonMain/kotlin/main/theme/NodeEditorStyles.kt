@@ -1,5 +1,6 @@
 package main.theme
 
+import androidx.compose.ui.text.style.TextAlign
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -175,6 +176,7 @@ object NodeEditorStyles : StyleSheet() {
     val portLabel by style {
         color(Theme.colors.onBackground)
         fontSize(12.px)
+        textAlign("right")
 
         dark(self) {
             color(Theme.colors.onBackgroundDark)

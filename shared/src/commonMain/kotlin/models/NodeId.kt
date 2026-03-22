@@ -33,4 +33,6 @@ enum class NodeId {
     IsObjectOwner,
     AiChat,
     PlaySound,
+    PlayerImageInput,
+    JoinList,
 }

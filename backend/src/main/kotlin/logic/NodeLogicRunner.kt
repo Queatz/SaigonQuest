@@ -749,6 +749,14 @@ class NodeLogicRunner(
                 )
                 PlayerInputNodeRunner(context)
             }
+            NodeId.PlayerImageInput -> {
+                WebSocketDebug.logMessage(
+                    "PLAYER_IMAGE_INPUT_RUNNER_SELECTED",
+                    "Selected PlayerImageInputNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlayerImageInputNodeRunner(context)
+            }
             NodeId.StringTemplate -> {
                 WebSocketDebug.logMessage(
                     "STRING_TEMPLATE_RUNNER_SELECTED",
@@ -812,6 +820,14 @@ class NodeLogicRunner(
                     context.session
                 )
                 PlaySoundNodeRunner(context)
+            }
+            NodeId.JoinList -> {
+                WebSocketDebug.logMessage(
+                    "JOIN_LIST_RUNNER_SELECTED",
+                    "Selected JoinListNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                JoinListNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

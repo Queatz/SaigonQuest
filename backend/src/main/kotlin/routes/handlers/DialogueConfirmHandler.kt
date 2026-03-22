@@ -6,6 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import logic.DialogueNodeRunner
 import logic.PlayerInputNodeRunner
+import logic.PlayerImageInputNodeRunner
 import models.DialogueConfirmation
 import models.WebSocketAction
 import routes.WebSocketConnection
@@ -43,7 +44,8 @@ class DialogueConfirmHandler : WebSocketHandler {
             // Process the confirmation
             val processedDialogue = DialogueNodeRunner.processConfirmation(confirmation)
             val processedInput = if (!processedDialogue) PlayerInputNodeRunner.processConfirmation(confirmation) else false
-            val processed = processedDialogue || processedInput
+            val processedImageInput = if (!processedDialogue && !processedInput) PlayerImageInputNodeRunner.processConfirmation(confirmation) else false
+            val processed = processedDialogue || processedInput || processedImageInput
             
             if (processed) {
                 WebSocketDebug.logMessage("DIALOGUE_CONFIRM_PROCESSED", "dialogueId=${confirmation.dialogueId} buttonIndex=${confirmation.buttonIndex}", session)

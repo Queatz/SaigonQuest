@@ -182,6 +182,82 @@ object Styles : StyleSheet() {
         }
     }
 
+    val imageInputContainer by style {
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(12.px)
+        marginTop(16.px)
+        justifyContent(JustifyContent.Center)
+    }
+
+    val imagePreviewItem by style {
+        position(Position.Relative)
+        width(120.px)
+        height(120.px)
+        borderRadius(8.px)
+        overflow("hidden")
+        border(1.px, LineStyle.Solid, Theme.colors.outline)
+
+        dark(self) {
+            border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
+        }
+    }
+
+    val imagePreview by style {
+        width(100.percent)
+        height(100.percent)
+        property("object-fit", "cover")
+    }
+
+    val imageRemoveButton by style {
+        position(Position.Absolute)
+        top(4.px)
+        right(4.px)
+        width(24.px)
+        height(24.px)
+        borderRadius(12.px)
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        cursor("pointer")
+        fontSize(14.px)
+        fontWeight("bold")
+        property("z-index", "10")
+        border(0.px, LineStyle.None, Color("transparent"))
+
+        self + hover style {
+            backgroundColor(Theme.colors.errorDark)
+        }
+    }
+
+    val imageAddButton by style {
+        width(120.px)
+        height(120.px)
+        borderRadius(8.px)
+        border(2.px, LineStyle.Dashed, Theme.colors.outline)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        cursor("pointer")
+        backgroundColor(Color("transparent"))
+        gap(4.px)
+        color(Theme.colors.textSecondary)
+
+        dark(self) {
+            border(2.px, LineStyle.Dashed, Theme.colors.outlineDark)
+            color(Theme.colors.textSecondaryDark)
+        }
+
+        self + hover style {
+            backgroundColor(Theme.colors.white05)
+            property("border-color", Theme.colors.primary.toString())
+            color(Theme.colors.primary)
+        }
+    }
+
     val characterRendererContainer by style {
         display(DisplayStyle.Flex)
         property("flex-direction", "column")

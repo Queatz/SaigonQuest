@@ -70,6 +70,12 @@ vi: Xóa hình ảnh
 Add image
 vi: Thêm hình ảnh
 
+Player image input
+vi: Hình ảnh của người chơi
+
+Allow multiple
+vi: Cho phép nhiều hình ảnh
+
 My Worlds
 vi: Thế giới của tôi
 
@@ -1903,6 +1909,33 @@ vi: Xóa âm thanh
 
 Plays a sound for everyone in the world
 vi: Phát âm thanh cho mọi người trong thế giới
+
+Join list
+vi: Ghép danh sách
+
+List
+vi: Danh sách
+
+Template
+vi: Mẫu
+
+Separator
+vi: Phân cách
+
+Images (Markdown)
+vi: Hình ảnh (Markdown)
+
+Format and join a comma-separated list into a single string
+vi: Định dạng và ghép danh sách phân tách bằng dấu phẩy thành một chuỗi duy nhất
+
+String template
+vi: Mẫu chuỗi
+
+Format a template string by replacing placeholders like {name} with values
+vi: Định dạng chuỗi mẫu bằng cách thay thế các trình giữ chỗ như {name} bằng các giá trị
+
+Prompt player with a title, preview areas and confirm button
+vi: Nhắc người chơi bằng tiêu đề, khu vực xem trước và nút xác nhận
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

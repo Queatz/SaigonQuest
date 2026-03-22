@@ -70,6 +70,15 @@ enum class PropertyKey {
 
     // PlaySound properties
     SOUND_URL,
+
+    // PlayerImageInput properties
+    ALLOW_MULTIPLE,
+    IMAGE_MARKDOWN,
+
+    // JoinList properties
+    LIST_CONTENT,
+    ITEM_TEMPLATE,
+    ITEM_SEPARATOR,
 }
 
 /**
@@ -834,6 +843,86 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 key = PropertyKey.NEXT,
                 name = "Next",
                 type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // PlayerImageInput node properties
+        is LogicNode.PlayerImageInput -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Description",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ALLOW_MULTIPLE,
+                name = "Allow multiple",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "false"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.IMAGE_URL,
+                name = "Image",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.IMAGE_MARKDOWN,
+                name = "Images (Markdown)",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // JoinList node properties
+        is LogicNode.JoinList -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.LIST_CONTENT,
+                name = "List",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ITEM_TEMPLATE,
+                name = "Template",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "{item}"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ITEM_SEPARATOR,
+                name = "Separator",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ", "
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Text",
+                type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             )
         )
