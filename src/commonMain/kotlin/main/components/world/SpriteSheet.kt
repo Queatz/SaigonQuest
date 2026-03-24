@@ -21,6 +21,8 @@ class SpriteSheet(
     val windFlipY: Boolean = false,
     // Per-item amplitude scale (meters)
     val windIntensityScale: Float = .25f,
+    // Optional fallback image URL for when the primary image is loading
+    val fallbackUrl: String? = null,
     private val directionOrder: List<CharacterDirection> = listOf(
         CharacterDirection.S,
         CharacterDirection.SE,

@@ -707,10 +707,27 @@ class Character(
             override val hasAlpha = true
         })
         material.albedoColor = Color3(1f, 1f, 1f)
-        material.albedoTexture = texture
-        material.emissiveTexture = texture
         material.emissiveColor = Color3(1f, 1f, 1f)
         material.emissiveIntensity = .5f
+
+        val fallbackUrl = spriteSheet.fallbackUrl
+        if (fallbackUrl != null) {
+            val fallbackTexture = Texture(fallbackUrl, scene, object : TextureOptions {
+                override val samplingMode = Texture.NEAREST_SAMPLINGMODE
+                override val hasAlpha = true
+            })
+            material.albedoTexture = fallbackTexture
+            material.emissiveTexture = fallbackTexture
+
+            texture.onLoadObservable.addOnce {
+                material.albedoTexture = texture
+                material.emissiveTexture = texture
+                fallbackTexture.dispose()
+            }
+        } else {
+            material.albedoTexture = texture
+            material.emissiveTexture = texture
+        }
 
         // Enable transparency for the material
         material.backFaceCulling = false

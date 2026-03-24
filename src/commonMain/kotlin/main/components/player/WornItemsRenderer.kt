@@ -44,7 +44,8 @@ object WornItemsRenderer {
             sheets.add(createDefaultApparelSpriteSheet(user.sex ?: Sex.Boy))
         }
 
-        sheets.addAll(wearableItems.mapNotNull { item -> createSpriteSheetForWearableItem(item) })
+        val sex = user.sex ?: Sex.Boy
+        sheets.addAll(wearableItems.mapNotNull { item -> createSpriteSheetForWearableItem(item, sex) })
 
         return sheets
     }
@@ -53,9 +54,10 @@ object WornItemsRenderer {
      * Creates a sprite sheet for a wearable item
      * 
      * @param item The wearable item
+     * @param sex The sex of the user, for determining fallback
      * @return A sprite sheet for the wearable item, or null if the item is not wearable or has no wearableFile
      */
-    private fun createSpriteSheetForWearableItem(item: Item): SpriteSheet? {
+    private fun createSpriteSheetForWearableItem(item: Item, sex: Sex): SpriteSheet? {
         // Check if the item is wearable and has a wearableFile
         if (!item.wearable || item.wearableFile == null) return null
 
@@ -70,7 +72,8 @@ object WornItemsRenderer {
         }
 
         val weights = parseWeights(item.wearableWeights)
-        val sorting = when (item.wearableLocation ?: ItemWearableLocation.Body) {
+        val location = item.wearableLocation ?: ItemWearableLocation.Body
+        val sorting = when (location) {
             ItemWearableLocation.Eyes -> 400
             ItemWearableLocation.Hair -> 300
             ItemWearableLocation.Neck -> 160
@@ -79,6 +82,10 @@ object WornItemsRenderer {
             ItemWearableLocation.Legs -> 40
             ItemWearableLocation.Feet -> 30
         }
+
+        val fallbackUrl = if (location == ItemWearableLocation.Body) {
+            "/raw/data/spritesheets/${sex.spriteSheetPath()}/clothes/ao dai.png"
+        } else null
 
         // Create a sprite sheet for the wearable item
         return SpriteSheet(
@@ -92,6 +99,7 @@ object WornItemsRenderer {
             // Typical apparel (dresses, capes): pinned near top, free at bottom
             windFlipY = true,
             windIntensityScale = 0.05f,
+            fallbackUrl = fallbackUrl,
             directionOrder = directionOrder
         )
     }

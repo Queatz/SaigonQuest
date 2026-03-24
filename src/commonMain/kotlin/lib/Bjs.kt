@@ -498,6 +498,7 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
     var uScale: Float
     var vScale: Float
     var samplingMode: Int
+    val onLoadObservable: Observable<Texture>
 
     fun clone(): Texture
     fun dispose()
@@ -583,6 +584,7 @@ external class Engine(
 
 external class Observable<T> {
     fun add(callback: (T) -> Unit)
+    fun addOnce(callback: (T) -> Unit)
 }
 
 open external class ShadowGenerator(mapSize: Int, light: DirectionalLight) {
