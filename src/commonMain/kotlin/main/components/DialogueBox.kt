@@ -164,7 +164,7 @@ fun DialogueBox(
                             console.error("Error sending word click confirmation", e)
                             isWaiting = false
                         } finally {
-                            delay(500)
+                            delay(250)
                             if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                 currentDialogue = null
                                 isWaiting = false
@@ -247,7 +247,7 @@ fun DialogueBox(
                                     } finally {
                                         textInput = ""
                                         
-                                        delay(500)
+                                        delay(250)
                                         if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                             currentDialogue = null
                                             isWaiting = false
@@ -321,7 +321,7 @@ fun DialogueBox(
                                     textInput = ""
                                     uploadedImages = emptyList()
                                     
-                                    delay(500)
+                                    delay(250)
                                     if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                         currentDialogue = null
                                         isWaiting = false
