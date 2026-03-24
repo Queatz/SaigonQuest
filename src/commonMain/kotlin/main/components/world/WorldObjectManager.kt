@@ -501,6 +501,12 @@ class WorldObjectManager(private val scene: Scene) {
                     obj.text = text
                 }
             }
+
+            override fun triggerWindBoost(velocity: Vector3, durationSeconds: Float) {
+                if (obj is Character) {
+                    obj.triggerWindBoost(velocity, durationSeconds)
+                }
+            }
             
             override fun getMeshes(): Array<AbstractMesh> {
                 return node.getChildMeshes(false)

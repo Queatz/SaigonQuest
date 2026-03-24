@@ -21,6 +21,7 @@ import main.components.IconRenderer
 import main.components.AssetBrowserDialog
 import main.components.LabeledCheckbox
 import Translations.str
+import main.components.WeightsGridEditor
 import main.theme.Styles
 import models.InventoryItem
 import models.Item
@@ -588,10 +589,12 @@ fun CreateItemDialog(
                         }
                     ) { Translated("Wind weights (5x5)") }
 
-                    main.components.WeightsGridEditor(
+                    WeightsGridEditor(
                         grid = weightGrid,
                         onGridChange = { weightGrid = it },
                         showReset = true,
+                        backgroundUrl = if (wearable && wearableFile.isNotBlank()) "/raw/data/spritesheets/$wearableFile.png" else null,
+                        isWearable = wearable,
                     )
                 }
             }

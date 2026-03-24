@@ -93,6 +93,16 @@ interface WorldObjectHandle {
     fun updateText(text: String) {
         // Default implementation does nothing
     }
+
+    /**
+     * Triggers a temporary wind boost for this object.
+     * 
+     * @param velocity The velocity vector (meters/second) that caused the boost
+     * @param durationSeconds The duration of the boost in seconds
+     */
+    fun triggerWindBoost(velocity: Vector3, durationSeconds: Float = 0.5f) {
+        // Default implementation does nothing
+    }
     
     /**
      * Helper method to get all meshes for this object

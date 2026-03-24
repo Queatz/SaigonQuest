@@ -8,6 +8,7 @@ import main.components.attrs.touchDraggable
 import main.theme.InventoryStyles
 import main.utils.DataType
 import models.Item
+import models.Sex
 import org.jetbrains.compose.web.attributes.Draggable
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.Div
@@ -28,14 +29,23 @@ fun InventoryBox(
     isLoading: Boolean = false,
     quantity: Int = 0,
     inventoryItemKey: String? = null,
+    isWorn: Boolean = false,
+    sex: Sex? = null,
 ) {
     LaunchedEffect(item) {
-        console.log("[Inventory] item= $item, quantity= $quantity")
+        console.log("[Inventory] item= $item, quantity= $quantity, isWorn= $isWorn, sex= $sex")
     }
 
     Div(
         attrs = {
             classes(InventoryStyles.inventoryBox)
+            if (isWorn) {
+                when (sex) {
+                    Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                    Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                    else -> {}
+                }
+            }
             onClick { if (!isLoading) onClick() }
             
             // Add draggable attribute for items

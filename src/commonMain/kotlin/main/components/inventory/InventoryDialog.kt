@@ -790,6 +790,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 isLoading = isLoading,
                                                 quantity = 1, // Worn items always have quantity 1
                                                 inventoryItemKey = inventoryItemKey,
+                                                isWorn = true,
+                                                sex = currentUser?.sex,
                                             )
 
                                             // Item name
@@ -910,6 +912,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         isLoading = isLoading,
                                         quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
                                         inventoryItemKey = itemId,
+                                        isWorn = currentUser?.wornItems?.contains(item.key) == true,
+                                        sex = currentUser?.sex,
                                     )
 
                                     // Item details
@@ -917,7 +921,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         attrs = {
                                             style {
                                                 flexGrow(1)
-                                                marginLeft(12.px)
                                             }
                                         }
                                     ) {

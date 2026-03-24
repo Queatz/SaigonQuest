@@ -66,7 +66,7 @@ class InventoryObject(
         )
         
         // Set UV properties directly on the texture
-        texture.uScale = 0.1f  // For 10x10 sprite sheet
+        texture.uScale = 0.1f  // For 10x10 sprite sheet (320x320 / 32x32)
         texture.vScale = 0.1f
         texture.uOffset = (item.assetIndex % 10) * 0.1f
         texture.vOffset = (item.assetIndex / 10) * 0.1f

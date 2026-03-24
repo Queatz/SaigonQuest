@@ -31,6 +31,7 @@ import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.width
@@ -149,6 +150,7 @@ object InventoryStyles : StyleSheet() {
         borderRadius(12.px)
         alignItems(AlignItems.Center)
         cursor("grab")
+        gap(8.px)
 
         dark(self) {
             backgroundColor(Theme.colors.white12)
@@ -224,6 +226,7 @@ object InventoryStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         position(Position.Relative)
+        boxSizing("border-box")
         // Make box interactive
         property("pointer-events", "auto")
 
@@ -231,6 +234,14 @@ object InventoryStyles : StyleSheet() {
             backgroundColor(Theme.colors.surfaceVariantDark)
             border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
         }
+    }
+
+    val inventoryBoxWornBoy by style {
+        border(3.px, LineStyle.Solid, Theme.colors.accentBoyStrong)
+    }
+
+    val inventoryBoxWornGirl by style {
+        border(3.px, LineStyle.Solid, Theme.colors.accentGirlStrong)
     }
     
     // Style for inventory quantity indicator

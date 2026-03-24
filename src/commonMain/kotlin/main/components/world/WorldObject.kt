@@ -20,7 +20,8 @@ import lib.VertexData
 import main.components.SceneManager
 import main.components.world.effect.WindSystem
 import kotlin.js.asDynamic
-import kotlin.math.atan2
+import kotlin.math.abs
+import kotlin.math.pow
 
 /**
  * Base class for all objects that can be rendered in the world.
@@ -112,6 +113,33 @@ class Character(
     private val windEntries: MutableList<WindEntry> = mutableListOf()
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
+
+    // Local wind boost (negation of movement)
+    private var boostUntilTime: Float = 0f
+    private var boostStartTime: Float = 0f
+    private var boostDuration: Float = 0.5f
+    private var boostVector: Vector3 = Vector3(0f, 0f, 0f)
+
+    /** Trigger a temporary wind boost (e.g., when the character moves). */
+    fun triggerWindBoost(velocity: Vector3, durationSeconds: Float = 0.5f) {
+        // Store the negation of the velocity
+        boostVector = Vector3(-velocity.x, -velocity.y, -velocity.z)
+        boostDuration = durationSeconds.coerceAtLeast(0.001f)
+        val now = WindSystem.timeSeconds
+        boostStartTime = now
+        boostUntilTime = now + boostDuration
+    }
+
+    private fun getBoostInfluence(now: Float = WindSystem.timeSeconds): Float {
+        if (now > boostUntilTime) return 0f
+        val remaining = boostUntilTime - now
+        return (remaining / boostDuration).coerceIn(0f, 1f).pow(2f)
+    }
+
+    private fun getBoostVector(now: Float = WindSystem.timeSeconds): Vector3 {
+        val influence = getBoostInfluence(now)
+        return if (influence <= 0f) Vector3(0f, 0f, 0f) else boostVector.scale(influence)
+    }
 
     // The direction to display based on camera angle
     private var displayDirection: CharacterDirection = direction
@@ -439,14 +467,13 @@ class Character(
         }
     }
 
-    /** Build 5x5 weight grid (row-major). If provided weights (size==25) exist, use them; else default gradient. */
+    /** Compute a 5x5 weight grid (row-major). If provided weights exist, use them; else default gradient. */
     private fun buildWeights5x5(flippedY: Boolean, provided: FloatArray?): Array<FloatArray> {
         val rows: Array<FloatArray> = Array(5) { FloatArray(5) }
         if (provided != null && provided.size >= 25) {
             var idx = 0
             for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = provided[idx++]
         } else {
-            //val rv = floatArrayOf(0f, 0.0125f, 0.025f, 0.5f, 1f)
             val rv = floatArrayOf(0f, 0f, 0f, 0f, 0f)
             for (j in 0 until 5) for (i in 0 until 5) rows[j][i] = rv[j]
         }
@@ -454,8 +481,7 @@ class Character(
     }
 
     /**
-     * Sets all 5x5 wind weight uniforms (w0a/w0b .. w4a/w4b) on the effect and returns the rows used.
-     * This centralizes the uniform updates to follow SSOT.
+     * Sets all 5x5 wind weight uniforms on the effect and returns the rows used.
      */
     private fun applyWindWeightUniforms(
         effect: dynamic,
@@ -470,6 +496,58 @@ class Character(
         return rows5
     }
 
+    private data class WindState(
+        val windIntensity: Float,
+        val windDirLocal: Vector3,
+        val time: Float,
+        val outdoors: Boolean,
+    )
+
+    private fun calculateWindState(): WindState {
+        val camera = SceneManager.getCameraController()?.getCamera()
+        val forward = if (camera != null) {
+            val d = camera.target.subtract(camera.position).normalize()
+            Vector3(d.x, 0f, d.z).normalize()
+        } else Vector3(0f, 0f, -1f)
+
+        // For Y-billboards, the horizontal axis is exactly the camera's Right vector.
+        // In BabylonJS (left-handed), Right = Up x Forward.
+        // Up = (0, 1, 0), Forward = (fx, 0, fz) => Right = (fz, 0, -fx).
+        val right = Vector3(forward.z, 0f, -forward.x)
+
+        val outdoors = WorldLoader.isOutdoorsActive()
+        val intensity = WindSystem.getIntensity(outdoors)
+        val boostWorld = getBoostVector()
+        val totalWindWorld = WindSystem.direction.scale(intensity).add(boostWorld.scale(0.15f))
+
+        // Project world wind onto the billboard's horizontal axis for displacement.
+        // Use full magnitude for intensity to ensure fluttering even during head-on movement.
+        val windIntensity = totalWindWorld.length()
+        val windLocalX = Vector3.Dot(totalWindWorld, right)
+        val windDirLocal = if (windIntensity > 0.001f) {
+            Vector3(windLocalX / windIntensity, 0f, 0f)
+        } else {
+            Vector3(0f, 0f, 0f)
+        }
+
+        return WindState(
+            windIntensity = windIntensity,
+            windDirLocal = windDirLocal,
+            time = WindSystem.timeSeconds,
+            outdoors = outdoors,
+        )
+    }
+
+    private fun applyWindUniforms(effect: dynamic, sheet: SpriteSheet, state: WindState) {
+        effect.setVector3("windDirLocal", state.windDirLocal)
+        effect.setFloat("windIntensity", state.windIntensity)
+        effect.setFloat("time", state.time)
+        effect.setFloat("spatialFreq", WindSystem.spatialFreq)
+        effect.setFloat("temporalFreq", WindSystem.temporalFreq)
+        effect.setFloat("intensityScale", sheet.windIntensityScale)
+        applyWindWeightUniforms(effect, sheet.windFlipY, sheet.windWeights5x5)
+    }
+
     /** Configure custom shader code + uniforms for wind displacement. */
     private fun setupWindShader(material: PBRCustomMaterial, spriteSheet: SpriteSheet): Boolean {
         // Register 5x5 uniforms: each row split into vec3 (cols 0..2) and vec2 (cols 3..4)
@@ -477,45 +555,12 @@ class Character(
             material.AddUniform("w${ri}a", "vec3")
             material.AddUniform("w${ri}b", "vec2")
         }
-        console.log("[WIND] Registered 5x5 uniforms for material: ${material.name}")
         material.AddUniform("intensityScale", "float")
         material.AddUniform("windDirLocal", "vec3")
         material.AddUniform("windIntensity", "float")
         material.AddUniform("time", "float")
         material.AddUniform("spatialFreq", "float")
         material.AddUniform("temporalFreq", "float")
-
-        // Ensure static uniforms are applied when the material binds (baseline)
-        material.onBindObservable.add { _ ->
-            val effect = material.getEffect() ?: return@add Unit.also {
-                console.error("[WIND] effect is null (material=${material.name})")
-            }
-            try {
-                applyWindWeightUniforms(effect, spriteSheet.windFlipY, spriteSheet.windWeights5x5)
-                val outdoors = WorldLoader.isOutdoorsActive()
-                val intensity = WindSystem.getIntensity(outdoors)
-                // Drive base amplitude via intensityScale (sheet scale only; outdoors gating moved into windIntensity)
-                effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
-                // Set initial windDirLocal including decayed movement boost
-                val camera = SceneManager.getCameraController()?.getCamera()
-                val camDir = if (camera != null) {
-                    val d = camera.target.subtract(camera.position).normalize()
-                    Vector3(d.x, 0f, d.z).normalize()
-                } else Vector3(0f, 0f, -1f)
-                val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
-                val windLocal = WindSystem.rotateY(WindSystem.direction, -yaw)
-                val boostWorld = WindSystem.getBoostVector()
-                val boostLocal = WindSystem.rotateY(boostWorld, -yaw)
-                val windWithBoost = windLocal.add(boostLocal)
-                // Boost amplitude based on boost magnitude, even when indoors
-                val boostLen = boostLocal.length() * 10.0f
-                val windIntensity = intensity + boostLen
-                effect.setFloat("windIntensity", windIntensity)
-                effect.setVector3("windDirLocal", windWithBoost)
-            } catch (e: Throwable) {
-                console.error("[WIND] Failed to set baseline uniforms", e)
-            }
-        }
 
         // GPU displacement attempt using a late hook (if provided by runtime).
         try {
@@ -537,9 +582,10 @@ class Character(
                     float n = sin(dot(vec2(u01,v01), vec2(1.0, 0.0)) * spatialFreq + time * temporalFreq);
                     n += 0.5 * sin(dot(vec2(u01,v01), vec2(0.5, 0.866)) * spatialFreq * 0.7 + time * temporalFreq * 0.7);
                     float gust = n * 0.66;
-                    float amp = 4.0 * (windIntensity * (0.6 + 0.4 * gust) * intensityScale);
-                    float sgn = (windDirLocal.x >= 0.0) ? 1.0 : -1.0;
-                    positionUpdated.x += sgn * amp * w;
+                    float amp = 4.0 * windIntensity * intensityScale;
+                    float lean = windDirLocal.x * 0.6;
+                    float flutter = 0.4 * gust;
+                    positionUpdated.x += (lean + flutter) * amp * w;
                     """.trimIndent()
                 )
                 console.log("[WIND] Injected Vertex_Before_PositionUpdated hook for material: ${material.name}")
@@ -555,25 +601,7 @@ class Character(
 
     /** Update per-frame wind uniforms for all wind-enabled meshes. */
     private fun updateWindUniforms() {
-        val camera = main.components.SceneManager.getCameraController()?.getCamera()
-        val camDir = if (camera != null) {
-            val d = camera.target.subtract(camera.position).normalize()
-            Vector3(d.x, 0f, d.z).normalize()
-        } else Vector3(0f, 0f, -1f)
-
-        // Billboard yaw in radians (align local +Z to camera direction)
-        val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
-
-        // Rotate world wind into local (billboard) space and add decayed movement boost
-        val worldWind = WindSystem.direction
-        val windLocal = WindSystem.rotateY(worldWind, -yaw)
-        val boostWorld = WindSystem.getBoostVector()
-        val boostLocal = WindSystem.rotateY(boostWorld, -yaw)
-        val windWithBoost = windLocal.add(boostLocal)
-
-        val outdoors = WorldLoader.isOutdoorsActive()
-        val intensity = WindSystem.getIntensity(outdoors = outdoors)
-        val t = WindSystem.timeSeconds
+        val state = calculateWindState()
 
         windEntries.forEach { entry ->
             val m = entry.material
@@ -585,35 +613,21 @@ class Character(
                 if (entry.effectNullCount < 5 || entry.effectNullCount % 60 == 0) {
                     console.warn("[WIND] effect is null (material=${m.name}, nullCount=${entry.effectNullCount})")
                 }
-                // Mark GPU inactive so CPU fallback can take over next frames
                 entry.gpuActive = false
                 return@forEach
             }
-            effect.setVector3("windDirLocal", windWithBoost)
-            // Boost amplitude based on boost magnitude; apply even indoors
-            val boostLen = boostLocal.length() * 10.0f
-            val windIntensity = intensity + boostLen
-            effect.setFloat("windIntensity", windIntensity)
-            effect.setFloat("time", t)
-            effect.setFloat("spatialFreq", WindSystem.spatialFreq)
-            effect.setFloat("temporalFreq", WindSystem.temporalFreq)
-            // Also ensure static uniforms are set
-            // Set 5x5 rows as vec3+vec2 per row
-            val weights5 = applyWindWeightUniforms(effect, sheet.windFlipY, sheet.windWeights5x5)
-            effect.setFloat("intensityScale", sheet.windIntensityScale)
+
+            applyWindUniforms(effect, sheet, state)
 
             if (entry.debugLogCount < 2) {
                 console.log(
                     "[WIND] per-frame set (material=" + m.name +
                             ", gpuActive=" + entry.gpuActive +
-                            ", windLocalX=" + windWithBoost.x +
-                            ", boostLen=" + boostLen +
-                            ", windIntensity=" + windIntensity +
+                            ", windLocalX=" + state.windDirLocal.x +
+                            ", windIntensity=" + state.windIntensity +
                             ", intensityScale=" + (sheet.windIntensityScale) +
-                            ", outdoors=" + outdoors +
-                            ", w00=" + weights5[0][0] +
-                            ", w44=" + weights5[4][4] +
-                            ", time=" + t + ")"
+                            ", outdoors=" + state.outdoors +
+                            ", time=" + state.time + ")"
                 )
                 entry.debugLogCount += 1
             }
@@ -623,13 +637,11 @@ class Character(
                 val base = entry.basePositions
                 if (base.isNotEmpty()) {
                     val newPos = base.copyOf()
-                    // gust noise
-                    val p = 0.0f // no spatial variation for now
-                    val gust = kotlin.math.sin((p + t * WindSystem.temporalFreq).toDouble()).toFloat()
-                    // amplitude (3x) scaled by windIntensity (allows indoor boosts)
-                    val amp = 3.0f * windIntensity * (0.6f + 0.4f * gust) * sheet.windIntensityScale
-                    val dirSign = if (windWithBoost.x >= 0f) 1f else -1f
-                    // iterate all vertices; derive nearest 5x5 weight for any N x N grid
+                    val gust = kotlin.math.sin((state.time * WindSystem.temporalFreq).toDouble()).toFloat()
+                    val amp = 3.0f * state.windIntensity * sheet.windIntensityScale
+                    val lean = state.windDirLocal.x * 0.6f
+                    val flutter = 0.4f * (gust * 0.66f)
+                    val weights5 = buildWeights5x5(sheet.windFlipY, sheet.windWeights5x5)
                     val vertCount = base.size / 3
                     val n = kotlin.math.sqrt(vertCount.toDouble()).toInt().coerceAtLeast(1)
                     var vi = 0
@@ -640,23 +652,20 @@ class Character(
                             val w = weights5[rowIdx][colIdx]
 
                             // x displacement only (camera-space X via billboard local X)
-                            val dx = dirSign * amp * w
+                            val dx = (lean + flutter) * amp * w
                             newPos[vi] = base[vi] + dx
-                            // keep Y unchanged to avoid depth changes due to camera tilt
                             newPos[vi + 1] = base[vi + 1]
-                            // z unchanged
                             newPos[vi + 2] = base[vi + 2]
                             vi += 3
                         }
                     }
                     mesh.setVerticesData(VertexBuffer.PositionKind, newPos, true)
-                    console.log("[WIND] CPU fallback applied (material=${m.name}, amp=" + amp + ", dirSign=" + dirSign + ")")
+                    console.log("[WIND] CPU fallback applied (material=${m.name}, amp=" + amp + ", windLocalX=" + state.windDirLocal.x + ")")
                 }
             } catch (e: Throwable) {
                 console.error("[WIND] Failed to update vertex data", e)
                 entry.gpuActive = false
             }
-            // else: GPU hook present; CPU disabled entirely
         }
     }
 
@@ -786,37 +795,12 @@ class Character(
             )
             windEntries.add(entry)
 
-            // Bind-time uniform updates (dynamic + static) and GPU activation flag
+            // Bind-time uniform updates and GPU activation flag
             material.onBindObservable.add { _ ->
                 val effect = material.getEffect() ?: return@add
                 try {
-                    // Compute camera-local wind and velocity
-                    val camera = SceneManager.getCameraController()?.getCamera()
-                    val camDir = if (camera != null) {
-                        val d = camera.target.subtract(camera.position).normalize()
-                        Vector3(d.x, 0f, d.z).normalize()
-                    } else Vector3(0f, 0f, -1f)
-                    val yaw = atan2(camDir.x.toDouble(), camDir.z.toDouble()).toFloat()
-                    val windLocal = WindSystem.rotateY(WindSystem.direction, -yaw)
-                    val outdoors = WorldLoader.isOutdoorsActive()
-                    val intensity = WindSystem.getIntensity(outdoors = outdoors)
-                    val t = WindSystem.timeSeconds
-
-                    // Compute wind with decayed movement boost (camera-local)
-                    val boostWorld = WindSystem.getBoostVector()
-                    val boostLocal = WindSystem.rotateY(boostWorld, -yaw)
-                    val windWithBoost = windLocal.add(boostLocal)
-
-                    effect.setVector3("windDirLocal", windWithBoost)
-                    val boostLen = boostLocal.length()
-                    val windIntensity = intensity + boostLen
-                    effect.setFloat("windIntensity", windIntensity)
-                    effect.setFloat("time", t)
-                    effect.setFloat("spatialFreq", WindSystem.spatialFreq)
-                    effect.setFloat("temporalFreq", WindSystem.temporalFreq)
-                    // Static 5x5 weights (vec3 + vec2 per row)
-                    applyWindWeightUniforms(effect, spriteSheet.windFlipY, spriteSheet.windWeights5x5)
-                    effect.setFloat("intensityScale", spriteSheet.windIntensityScale)
+                    val state = calculateWindState()
+                    applyWindUniforms(effect, spriteSheet, state)
                     // Mark GPU active only if a GPU hook was successfully injected
                     entry.gpuActive = entry.hookPresent
                     entry.bindCount += 1

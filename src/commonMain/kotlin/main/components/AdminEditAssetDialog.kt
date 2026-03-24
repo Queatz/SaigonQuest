@@ -255,24 +255,10 @@ fun AdminEditAssetDialog(
                                     val def = List(5) { j -> List(5) { rv[j] } }
                                     weightGrid = def
                                     spriteItems = listOf(sItem.copy(weightsCsv = gridToCsv(def)))
-                                }
+                                },
+                                backgroundUrl = "/raw/data/spritesheets/${asset.file}.png",
+                                isWearable = true,
                             )
-
-                            // Preview based on current grid
-                            Label { Translated("Preview") }
-                            Div(attrs = { classes(Styles.weightsPreviewGrid) }) {
-                                for (j in 0 until 5) {
-                                    for (i in 0 until 5) {
-                                        val w = (weightGrid[j][i].toDoubleOrNull() ?: 0.0).coerceIn(0.0, 1.0)
-                                        val v = ((w * 255).toInt()).coerceIn(0, 255)
-                                        val color = "rgba($v, $v, $v, 0.9)"
-                                        Div(attrs = {
-                                            classes(Styles.weightsPreviewCell)
-                                            style { property("background-color", color) }
-                                        }) {}
-                                    }
-                                }
-                            }
                         }
                     }
                 }

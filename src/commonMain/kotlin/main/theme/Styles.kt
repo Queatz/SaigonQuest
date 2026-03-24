@@ -311,17 +311,19 @@ object Styles : StyleSheet() {
 
     val weightsPreviewGrid by style {
         display(DisplayStyle.Grid)
-        property("grid-template-columns", "repeat(5, 20px)")
-        property("grid-template-rows", "repeat(5, 20px)")
-        gap(4.px)
+        gap(0.px)
         marginBottom(8.px)
+        property("image-rendering", "pixelated")
     }
 
     val weightsPreviewCell by style {
-        width(20.px)
-        height(20.px)
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
         border(1.px, LineStyle.Solid, Theme.colors.white12)
-        borderRadius(2.px)
+        boxSizing("border-box")
+        fontSize(10.px)
+        property("user-select", "none")
     }
     val emoteButton by style {
         width(48.px)

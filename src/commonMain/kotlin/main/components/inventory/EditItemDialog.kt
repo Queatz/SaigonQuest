@@ -14,6 +14,7 @@ import main.components.DialogButton
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
 import main.components.Translated
+import main.components.WeightsGridEditor
 import main.components.translated
 import main.theme.Styles
 import models.AssetType
@@ -337,32 +338,13 @@ fun EditItemDialog(
                 if (customizeWeights) {
                     Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Wind weights (5x5)") }
 
-                    Div(attrs = { style { marginBottom(8.px) } }) {
-                        DialogButton(onClick = {
-                            val rv = listOf("0", "0.0125", "0.025", "0.5", "1")
-                            weightGrid = List(5) { j -> List(5) { rv[j] } }
-                        }, isPrimary = false) { Translated("Reset to defaults") }
-                    }
-
-                    Div(attrs = { style { display(DisplayStyle.Grid); property("grid-template-columns", "repeat(5, 64px)"); property("gap", "6px"); marginBottom(16.px) } }) {
-                        for (j in 0 until 5) {
-                            for (i in 0 until 5) {
-                                NumberInput(value = weightGrid[j][i].toDoubleOrNull(), attrs = {
-                                    classes(Styles.inputField)
-                                    onInput { ev ->
-                                        val v = ev.value?.toString() ?: ""
-                                        weightGrid = weightGrid.mapIndexed { r, row ->
-                                            if (r != j) row else row.mapIndexed { c, cell -> if (c == i) v else cell }
-                                        }
-                                    }
-                                    attr("min", "0")
-                                    attr("max", "1")
-                                    attr("step", "0.0125")
-                                    style { property("width", "64px"); property("padding", "4px") }
-                                })
-                            }
-                        }
-                    }
+                    WeightsGridEditor(
+                        grid = weightGrid,
+                        onGridChange = { weightGrid = it },
+                        showReset = true,
+                        backgroundUrl = if (wearable && wearableFile.isNotBlank()) "/raw/data/spritesheets/$wearableFile.png" else null,
+                        isWearable = wearable,
+                    )
                 }
             }
         },

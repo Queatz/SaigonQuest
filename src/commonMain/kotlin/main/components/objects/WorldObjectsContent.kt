@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.Translated
+import main.components.common.Spinner
+import main.components.translated
 import main.theme.EditorStyles
 import main.theme.Styles
 import models.Object
@@ -59,7 +61,7 @@ fun WorldObjectsContent(
         attrs = {
             classes(EditorStyles.worldObjectsContainer)
 
-            if (isDialog) {
+            if (!isDialog) {
                 style {
                     padding(16.px)
                 }
@@ -94,13 +96,7 @@ fun WorldObjectsContent(
 
         // Loading or error message
         if (isLoading) {
-            P(
-                attrs = {
-                    classes(EditorStyles.loadingMessage)
-                }
-            ) {
-                Translated("Loading objects...")
-            }
+            Spinner(message = translated("Loading objects..."))
         } else if (errorMessage.isNotEmpty()) {
             P(
                 attrs = {

@@ -75,8 +75,9 @@ class PlayerMovementEngine(
             // Cancel click-to-move
             stopMovement()
             isPlayerMoving = true
+            val velocity = moveDirection.scale(baseMovementSpeed * actualSpeedMultiplier)
             // Temporary wind boost while moving (extends 1s tail)
-            WindSystem.triggerMovementBoost(finalMoveDirection)
+            playerHandle.triggerWindBoost(velocity)
             // Stand if sitting
             if (getActivity() == PlayerActivity.Sit) {
                 setActivity(null)
@@ -112,9 +113,10 @@ class PlayerMovementEngine(
                 finalMoveDirection = Vector3(moveXZ.x, moveY, moveXZ.z)
                 // Use horizontal direction for facing
                 onMoveDirection(moveXZ)
+                val velocity = toTargetXZ.normalize().scale(baseMovementSpeed * actualSpeedMultiplier)
                 isPlayerMoving = true
                 // Temporary wind boost while moving-to-target as well
-                WindSystem.triggerMovementBoost(finalMoveDirection)
+                playerHandle.triggerWindBoost(velocity)
                 if (getActivity() == PlayerActivity.Sit) {
                     setActivity(null)
                 }

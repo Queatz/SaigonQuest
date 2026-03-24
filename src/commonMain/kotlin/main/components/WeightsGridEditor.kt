@@ -1,12 +1,11 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.NumberInput
+import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.Text
 import main.theme.Styles
-import web.cssom.AtRules.Companion.property
 
 /**
  * Reusable 5x5 numeric grid editor for wind weights (values in [0,1]).
@@ -14,6 +13,8 @@ import web.cssom.AtRules.Companion.property
  * - onGridChange: callback with updated grid when any cell changes
  * - showReset: whether to render a Reset to defaults button
  * - onReset: optional reset handler; if null and showReset=true, a default reset pattern is used
+ * - backgroundUrl: optional background image to overlay on (e.g. spritesheet)
+ * - isWearable: if true, uses 32x48 aspect ratio for the preview, else 32x32
  */
 @Composable
 fun WeightsGridEditor(
@@ -21,6 +22,8 @@ fun WeightsGridEditor(
     onGridChange: (List<List<String>>) -> Unit,
     showReset: Boolean = true,
     onReset: (() -> Unit)? = null,
+    backgroundUrl: String? = null,
+    isWearable: Boolean = false,
 ) {
     // Reset button row (optional)
     if (showReset) {
@@ -63,6 +66,63 @@ fun WeightsGridEditor(
                         onGridChange(newGrid)
                     }
                 )
+            }
+        }
+    }
+
+    // 5x5 Preview section
+    val cellWidth = 48
+    val cellHeight = if (isWearable) 72 else 48
+    val gridWidth = cellWidth * 5
+    val gridHeight = cellHeight * 5
+
+    Label { Translated("Preview") }
+    Div(attrs = {
+        classes(Styles.weightsPreviewGrid)
+        style {
+            property("grid-template-columns", "repeat(5, ${cellWidth}px)")
+            property("grid-template-rows", "repeat(5, ${cellHeight}px)")
+            property("width", "${gridWidth}px")
+            property("height", "${gridHeight}px")
+
+            if (backgroundUrl != null) {
+                backgroundImage("url(\"$backgroundUrl\")")
+                // Sprite sheets are 256x256 (8x8) for apparel, 320x320 (10x10) for icons.
+                // Sprites are 32px wide.
+                val spriteWidth = 32.0
+                val scale = gridWidth.toDouble() / spriteWidth
+                val columns = if (isWearable) 8 else 10
+                val sheetSize = (columns * spriteWidth) * scale
+                backgroundSize("${sheetSize}px ${sheetSize}px")
+
+                if (isWearable) {
+                    // Character/Wearable: index 0 (standing south) is at the bottom row (vMin=0 in BabylonJS)
+                    backgroundPosition("0 -${sheetSize - gridHeight}px")
+                } else {
+                    // Item: index 0 starts at bottom-left of the 10x10 grid
+                    backgroundPosition("0 -${sheetSize - gridHeight}px")
+                }
+            } else {
+                backgroundColor(Color("rgba(255,255,255,0.05)"))
+            }
+        }
+    }) {
+        for (j in 0 until 5) {
+            for (i in 0 until 5) {
+                val weightStr = grid[j][i]
+                val w = (weightStr.toDoubleOrNull() ?: 0.0).coerceIn(0.0, 1.0)
+                val v = (w * 255).toInt().coerceIn(0, 255)
+
+                Div(attrs = {
+                    classes(Styles.weightsPreviewCell)
+                    style {
+                        property("background-color", "rgba($v, $v, $v, ${if (backgroundUrl != null) 0.5 else 0.8})")
+                        color(if (v > 160) Color("black") else Color("white"))
+                        property("text-shadow", "0 0 2px ${if (v > 160) "white" else "black"}")
+                    }
+                }) {
+                    Text(weightStr.take(4))
+                }
             }
         }
     }

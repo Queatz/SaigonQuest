@@ -39,6 +39,7 @@ fun IconRenderer(
 
                 // Calculate position based on index
                 // Index 0 starts at bottom left, moving rightwards then upwards
+                // Sprite sheets are 320x320 and have a 10x10 grid of 32x32 sprites
                 val col = index % 10
                 val row = index / 10
 

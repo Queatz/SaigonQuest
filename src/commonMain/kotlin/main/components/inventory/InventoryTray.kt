@@ -179,7 +179,9 @@ fun InventoryTray(
                 item = item,
                 isLoading = InventoryState.isLoading && item == null && index < 4,
                 quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1,
-                inventoryItemKey = inventoryItemKey
+                inventoryItemKey = inventoryItemKey,
+                isWorn = item != null && currentUser?.wornItems?.contains(item.key) == true,
+                sex = currentUser?.sex,
             )
         }
         
@@ -188,7 +190,9 @@ fun InventoryTray(
             onClick = { onOpenInventory() },
             content = "➕",
             isLoading = false, // Never show loading for the dialog opener
-            quantity = 0 // No quantity for the dialog opener
+            quantity = 0, // No quantity for the dialog opener
+            isWorn = false,
+            sex = currentUser?.sex,
         )
     }
 }

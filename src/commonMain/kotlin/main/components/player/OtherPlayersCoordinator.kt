@@ -641,6 +641,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val moved = currentPos.add(direction)
             val newPosition = snapToGround(moved)
             handle.position = newPosition
+            
+            // Trigger wind boost for other player's movement (convert displacement to velocity)
+            val velocity = direction.scale(1.0f / deltaTime.toFloat())
+            handle.triggerWindBoost(velocity)
+            
             console.log("[OTHER] id=${op.userId} newPosition=$newPosition")
             hud.updateHudPosition(op.userId, newPosition)
             PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
