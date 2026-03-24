@@ -145,11 +145,9 @@ fun DialogueBox(
                 }
 
                 onClick { event ->
-                    if (isWaiting) return@onClick
                     val target = event.target as? org.w3c.dom.HTMLElement ?: return@onClick
                     val word = target.getAttribute("data-word") ?: return@onClick
 
-                    isWaiting = true
                     val scope = MainScope()
                     scope.launch {
                         try {
@@ -162,13 +160,6 @@ fun DialogueBox(
                             )
                         } catch (e: Throwable) {
                             console.error("Error sending word click confirmation", e)
-                            isWaiting = false
-                        } finally {
-                            delay(250)
-                            if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
-                                currentDialogue = null
-                                isWaiting = false
-                            }
                         }
                     }
                 }
@@ -247,7 +238,7 @@ fun DialogueBox(
                                     } finally {
                                         textInput = ""
                                         
-                                        delay(250)
+                                        delay(500)
                                         if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                             currentDialogue = null
                                             isWaiting = false
@@ -321,7 +312,7 @@ fun DialogueBox(
                                     textInput = ""
                                     uploadedImages = emptyList()
                                     
-                                    delay(250)
+                                    delay(500)
                                     if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                         currentDialogue = null
                                         isWaiting = false

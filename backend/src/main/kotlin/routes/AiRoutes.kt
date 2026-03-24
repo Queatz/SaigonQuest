@@ -14,7 +14,7 @@ import kotlinx.serialization.Serializable
 import models.AiPromptHistory
 import models.ErrorResponse
 import repository.AiHistoryRepository
-import services.DeepSeekClient
+import services.AiManager
 
 fun Routing.configureAiRoutes() {
     val historyRepo = AiHistoryRepository()
@@ -33,12 +33,11 @@ fun Routing.configureAiRoutes() {
                 }
 
                 // Preflight: ensure API key is configured to avoid opaque empty responses
-                val apiKey = System.getenv("DEEPSEEK_API_KEY") ?: System.getProperty("DEEPSEEK_API_KEY")
-                if (apiKey.isNullOrBlank()) {
+                if (!AiManager.isConfigured()) {
                     return@post call.respond(
                         HttpStatusCode.InternalServerError,
                         ErrorResponse(
-                            message = "AI integration not configured (missing DEEPSEEK_API_KEY)",
+                            message = "AI integration not configured (missing ${AiManager.getApiKeyName()})",
                             code = HttpStatusCode.InternalServerError.value,
                         )
                     )
@@ -46,7 +45,7 @@ fun Routing.configureAiRoutes() {
 
                 val sysPrompt = buildSystemPrompt(req.docContents, req.caretStart, req.caretEnd, req.docName)
 
-                val text = DeepSeekClient.promptText(
+                val text = AiManager.client.promptText(
                     systemPrompt = sysPrompt,
                     userPrompt = req.prompt,
                     temperature = 0.5,

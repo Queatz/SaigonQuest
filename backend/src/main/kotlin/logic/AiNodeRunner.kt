@@ -8,14 +8,13 @@ import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import routes.WebSocketMessage
 import routes.handlers.WebSocketUtils
-import services.DeepSeekClient
+import services.AiManager
 import utils.json
 
 /**
  * Runner for AI nodes
  *
- * Sends the provided system and user prompts to DeepSeek using the
- * Structured JSON API and emits the returned text to the string output.
+ * Sends the provided system and user prompts to the configured AI service
  *
  * This is a pure value node: no trigger input or output.
  */
@@ -40,7 +39,7 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
 
         WebSocketDebug.logMessage(
             "AI_NODE_CALL",
-            "Calling DeepSeek for node ${node.id}",
+            "Calling AI for node ${node.id}",
             context.session
         )
 
@@ -60,7 +59,7 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         }
 
         val text = try {
-            DeepSeekClient.promptText(
+            AiManager.client.promptText(
                 systemPrompt = systemPrompt,
                 userPrompt = userPrompt,
                 logSession = context.session,
@@ -90,7 +89,7 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         } else {
             WebSocketDebug.logMessage(
                 "AI_NODE_EMPTY",
-                "DeepSeek returned empty/null text for node ${node.id}",
+                "AI service returned empty/null text for node ${node.id}",
                 context.session
             )
             false

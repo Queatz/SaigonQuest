@@ -19,7 +19,6 @@ import kotlinx.serialization.json.Json
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
-import io.ktor.network.sockets.BoundDatagramSocket
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import utils.json as appJson
 
@@ -28,7 +27,7 @@ import utils.json as appJson
  *
  * Reads API key from environment variable `DEEPSEEK_API_KEY`.
  */
-object DeepSeekClient {
+object DeepSeekClient : AiClient {
     private val http: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(appJson)
@@ -95,14 +94,14 @@ object DeepSeekClient {
      * Call DeepSeek with the provided system and user prompts and return extracted text.
      * If the provider does not return valid JSON, falls back to raw content.
      */
-    suspend fun promptText(
+    override suspend fun promptText(
         systemPrompt: String,
         userPrompt: String,
-        logSession: DefaultWebSocketServerSession? = null,
-        temperature: Double? = null,
-        thinking: Boolean? = null,
-        reason: Boolean = false,
-        json: Boolean = false,
+        logSession: DefaultWebSocketServerSession?,
+        temperature: Double?,
+        thinking: Boolean?,
+        reason: Boolean,
+        json: Boolean,
     ): String? {
         val apiKey = System.getenv("DEEPSEEK_API_KEY")
             ?: System.getProperty("DEEPSEEK_API_KEY")

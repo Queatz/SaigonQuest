@@ -17,7 +17,7 @@ import models.AiChatSession
 import models.AiRole
 import repository.AiChatRepository
 import repository.UserRepository
-import services.DeepSeekClient
+import services.AiManager
 import utils.json
 
 fun Routing.configureAiChatRoutes() {
@@ -108,7 +108,7 @@ fun Routing.configureAiChatRoutes() {
                                 }
                             }
                         val userPrompt = last.content
-                        val assistant = DeepSeekClient.promptText(
+                        val assistant = AiManager.client.promptText(
                             systemPrompt = buildString {
                                 appendLine(systemPrompt)
                                 if (historyText.isNotBlank()) {
@@ -152,7 +152,7 @@ fun Routing.configureAiChatRoutes() {
                     }
                     val latestUser = event.text
 
-                    val assistant = DeepSeekClient.promptText(
+                    val assistant = AiManager.client.promptText(
                         systemPrompt = buildString {
                             appendLine(systemPrompt)
                             if (historyText.isNotBlank()) {
