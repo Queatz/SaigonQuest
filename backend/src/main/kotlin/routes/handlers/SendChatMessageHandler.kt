@@ -80,37 +80,56 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                 // --- Background Transcription ---
                 if (savedMessage.message.contains("![audio](")) {
                     val audioUrl = savedMessage.message.substringAfter("![audio](").substringBefore(")")
-                    if (audioUrl.isNotBlank() && AiManager.client is AlibabaAiClient) {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                val transcript = (AiManager.client as AlibabaAiClient).transcribe(audioUrl)
-                                if (!transcript.isNullOrBlank()) {
-                                    val updatedText = "${savedMessage.message}\n\n$transcript"
-                                    val updatedMessage = savedMessage.copy(
-                                        message = updatedText,
-                                        edited = true,
-                                    )
-                                    val successUpdate = chatRepository.updateMessage(
-                                        savedMessage.key,
-                                        updatedMessage,
-                                        savedMessage.senderId
-                                    )
+                    println("[DEBUG_LOG] Detected audio message: $audioUrl")
+                    
+                    if (audioUrl.isNotBlank()) {
+                        val client = AiManager.client
+                        println("[DEBUG_LOG] Using AI client: ${client::class.simpleName}")
+                        
+                        if (client is AlibabaAiClient) {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    println("[DEBUG_LOG] Starting async transcription for: $audioUrl")
+                                    val transcript = client.transcribe(audioUrl)
                                     
-                                    if (successUpdate != null) {
-                                        // Broadcast the update
-                                        val broadcastUpdate = WebSocketMessage(
-                                            action = WebSocketAction.UPDATE_CHAT_MESSAGE,
-                                            data = json.encodeToString(ChatMessage.serializer(), successUpdate)
+                                    if (!transcript.isNullOrBlank()) {
+                                        println("[DEBUG_LOG] Transcription successful: \"$transcript\"")
+                                        val updatedText = "${savedMessage.message}\n\n$transcript"
+                                        val updatedMessage = savedMessage.copy(
+                                            message = updatedText,
+                                            edited = true,
                                         )
-                                        val payloadUpdate = json.encodeToString(WebSocketMessage.serializer(), broadcastUpdate)
-                                        broadcastToWorldNoSession(worldId, payloadUpdate, activeConnections)
+                                        val successUpdate = chatRepository.updateMessage(
+                                            savedMessage.key,
+                                            updatedMessage,
+                                            savedMessage.senderId
+                                        )
+                                        
+                                        if (successUpdate != null) {
+                                            println("[DEBUG_LOG] Broadcasting updated chat message: ${successUpdate.key}")
+                                            // Broadcast the update
+                                            val broadcastUpdate = WebSocketMessage(
+                                                action = WebSocketAction.UPDATE_CHAT_MESSAGE,
+                                                data = json.encodeToString(ChatMessage.serializer(), successUpdate)
+                                            )
+                                            val payloadUpdate = json.encodeToString(WebSocketMessage.serializer(), broadcastUpdate)
+                                            broadcastToWorldNoSession(worldId, payloadUpdate, activeConnections)
+                                        } else {
+                                            println("[DEBUG_LOG] Failed to update chat message in DB.")
+                                        }
+                                    } else {
+                                        println("[DEBUG_LOG] Transcription returned null or blank.")
                                     }
+                                } catch (e: Throwable) {
+                                    println("[DEBUG_LOG] Async transcription failed: ${e.message}")
+                                    e.printStackTrace()
                                 }
-                            } catch (e: Throwable) {
-                                println("[DEBUG_LOG] Async transcription failed: ${e.message}")
-                                e.printStackTrace()
                             }
+                        } else {
+                            println("[DEBUG_LOG] AI client is NOT AlibabaAiClient, transcription skipped.")
                         }
+                    } else {
+                        println("[DEBUG_LOG] Audio URL is blank, transcription skipped.")
                     }
                 }
 

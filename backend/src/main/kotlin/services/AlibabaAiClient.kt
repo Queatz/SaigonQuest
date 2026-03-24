@@ -16,6 +16,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
@@ -32,7 +33,11 @@ import utils.json as appJson
 object AlibabaAiClient : AiClient {
     private val http: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
-            json(appJson)
+            json(Json {
+                encodeDefaults = false
+                ignoreUnknownKeys = true
+                isLenient = true
+            })
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 120_000
@@ -62,11 +67,11 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class AlibabaRequest(
-        val model: String = "qwen3.5-flash",
-        val messages: List<ChatMessage> = emptyList(),
-        val temperature: Double? = null,
+        val model: String,
+        val messages: List<ChatMessage>,
+        val temperature: Float? = null,
         @SerialName("max_tokens")
-        val maxTokens: Int? = 1024,
+        val maxTokens: Int? = null,
         @SerialName("response_format")
         val responseFormat: ResponseFormat? = null,
     )
@@ -84,20 +89,26 @@ object AlibabaAiClient : AiClient {
     @Serializable
     private data class AsrInput(
         @SerialName("file_urls")
-        val fileUrls: List<String> = emptyList(),
+        val fileUrls: List<String>,
         @SerialName("audio_urls")
-        val audioUrls: List<String> = emptyList(),
+        val audioUrls: List<String>,
     )
 
     @Serializable
     private data class AsrRequest(
-        val model: String = "fun-asr",
-        val input: AsrInput = AsrInput(),
+        val model: String,
+        val input: AsrInput,
         val parameters: Map<String, String> = emptyMap(),
     )
 
     @Serializable
-    private data class AsrSentence(
+    private data class AsrResultItem(
+        @SerialName("file_url")
+        val fileUrl: String? = null,
+        @SerialName("transcription_url")
+        val transcriptionUrl: String? = null,
+        @SerialName("subtask_status")
+        val subtaskStatus: String? = null,
         val transcription: String? = null,
         val text: String? = null,
     )
@@ -108,13 +119,33 @@ object AlibabaAiClient : AiClient {
         val taskId: String? = null,
         @SerialName("task_status")
         val taskStatus: String? = null,
-        val results: List<AsrSentence>? = null,
+        val results: List<AsrResultItem>? = null,
         val code: String? = null,
         val message: String? = null,
         @SerialName("error_code")
         val errorCode: String? = null,
         @SerialName("error_message")
         val errorMessage: String? = null,
+    )
+
+    @Serializable
+    private data class TranscriptionFileResult(
+        val text: String? = null,
+        val transcription: String? = null,
+        val sentences: List<TranscriptionSentence>? = null,
+        val transcripts: List<TranscriptionTranscript>? = null,
+    )
+
+    @Serializable
+    private data class TranscriptionTranscript(
+        val text: String? = null,
+        val sentences: List<TranscriptionSentence>? = null,
+    )
+
+    @Serializable
+    private data class TranscriptionSentence(
+        val text: String? = null,
+        val transcription: String? = null,
     )
 
     @Serializable
@@ -156,8 +187,9 @@ object AlibabaAiClient : AiClient {
 
         val body = AlibabaRequest(
             messages = messages,
-            temperature = temperature,
+            temperature = temperature?.toFloat(),
             model = "qwen3.5-flash",
+            maxTokens = 1024,
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
         )
 
@@ -223,22 +255,29 @@ object AlibabaAiClient : AiClient {
     }
 
     override suspend fun transcribe(audioUrl: String): String? {
+        println("[DEBUG_LOG] AlibabaAiClient.transcribe called with URL: $audioUrl")
+        
         val apiKey = System.getenv("ALIBABA_API_KEY")
             ?: System.getProperty("ALIBABA_API_KEY")
             ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
 
-        if (apiKey.isBlank()) return null
+        if (apiKey.isBlank()) {
+            println("[DEBUG_LOG] Alibaba API Key is blank, returning null")
+            return null
+        }
         
         val body = AsrRequest(
             model = "fun-asr",
             input = AsrInput(
                 fileUrls = listOf(audioUrl),
                 audioUrls = listOf(audioUrl)
-            )
+            ),
+            parameters = emptyMap()
         )
 
         return try {
             // 1. Submit transcription task
+            println("[DEBUG_LOG] Submitting transcription task to DashScope...")
             val submitResp: HttpResponse = http.post("https://dashscope-intl.aliyuncs.com/api/v1/services/audio/asr/transcription") {
                 header(HttpHeaders.Authorization, "Bearer $apiKey")
                 header("X-DashScope-Async", "enable")
@@ -248,7 +287,7 @@ object AlibabaAiClient : AiClient {
             
             if (!submitResp.status.isSuccess()) {
                 val errorBody = runCatching { submitResp.bodyAsText() }.getOrNull()
-                println("[DEBUG_LOG] Alibaba ASR submit error: ${submitResp.status} - $errorBody")
+                println("[DEBUG_LOG] Alibaba ASR submit HTTP error: ${submitResp.status} - $errorBody")
                 return null
             }
 
@@ -258,12 +297,18 @@ object AlibabaAiClient : AiClient {
                 println("[DEBUG_LOG] Alibaba ASR submit failed to get taskId. Code: ${submitData.code}, Message: ${submitData.message}")
                 return null
             }
+            
+            println("[DEBUG_LOG] Alibaba ASR task submitted successfully. taskId: $taskId")
 
             // 2. Poll for the result (max 60 seconds)
             var transcript: String? = null
             var attempts = 0
             while (attempts < 60) {
                 delay(1000)
+                if (attempts % 10 == 0) {
+                    println("[DEBUG_LOG] Polling for task result ($taskId), attempt $attempts/60...")
+                }
+                
                 val pollResp: HttpResponse = http.get("https://dashscope-intl.aliyuncs.com/api/v1/tasks/$taskId") {
                     header(HttpHeaders.Authorization, "Bearer $apiKey")
                 }
@@ -280,17 +325,56 @@ object AlibabaAiClient : AiClient {
                     if (pollData != null) {
                         val status = pollData.output?.taskStatus
                         if (status == "SUCCEEDED") {
+                            println("[DEBUG_LOG] Alibaba ASR task SUCCEEDED. Parsing results...")
                             val res = pollData.output.results?.firstOrNull()
                             transcript = res?.transcription ?: res?.text
-                            if (transcript == null) {
+
+                            if (transcript == null && !res?.transcriptionUrl.isNullOrBlank()) {
+                                val url = res.transcriptionUrl
+                                println("[DEBUG_LOG] Fetching transcription from URL: $url")
+                                try {
+                                    val fileResp: HttpResponse = http.get(url)
+                                    if (fileResp.status.isSuccess()) {
+                                        val fileRaw = fileResp.bodyAsText()
+                                        println("[DEBUG_LOG] Transcription file content: ${fileRaw.take(500)}")
+
+                                        val items = try {
+                                            appJson.decodeFromString<List<TranscriptionFileResult>>(fileRaw)
+                                        } catch (e: Throwable) {
+                                            null
+                                        }
+
+                                        if (!items.isNullOrEmpty()) {
+                                            transcript = items.mapNotNull { 
+                                                it.text ?: it.transcription ?: it.transcripts?.mapNotNull { t -> t.text }?.joinToString(" ") 
+                                            }.joinToString("\n").trim()
+                                        } else {
+                                            val singleItem = try {
+                                                appJson.decodeFromString<TranscriptionFileResult>(fileRaw)
+                                            } catch (e: Throwable) {
+                                                null
+                                            }
+                                            transcript = singleItem?.text ?: singleItem?.transcription ?: singleItem?.transcripts?.mapNotNull { it.text }?.joinToString(" ")
+                                        }
+                                    } else {
+                                        println("[DEBUG_LOG] Failed to fetch transcription file. Status: ${fileResp.status}")
+                                    }
+                                } catch (e: Throwable) {
+                                    println("[DEBUG_LOG] Error fetching/parsing transcription file: ${e.message}")
+                                }
+                            }
+
+                            if (transcript.isNullOrBlank()) {
                                 println("[DEBUG_LOG] Alibaba ASR task SUCCEEDED but no transcription found in results. Full: $pollRaw")
                             }
                             break
                         } else if (status == "FAILED" || status == "CANCELLED") {
-                            val errCode = pollData.output?.errorCode ?: pollData.output?.code ?: pollData.code
-                            val errMsg = pollData.output?.errorMessage ?: pollData.output?.message ?: pollData.message
+                            val errCode = pollData.output.errorCode ?: pollData.output.code ?: pollData.code
+                            val errMsg = pollData.output.errorMessage ?: pollData.output.message ?: pollData.message
                             println("[DEBUG_LOG] Alibaba ASR task $status. Code: $errCode, Message: $errMsg. Full: $pollRaw")
                             break
+                        } else {
+                            // Still processing or in queue
                         }
                     }
                 } else {
@@ -298,6 +382,10 @@ object AlibabaAiClient : AiClient {
                     println("[DEBUG_LOG] Alibaba ASR poll HTTP error: ${pollResp.status} - $pollError")
                 }
                 attempts++
+            }
+            
+            if (transcript == null && attempts >= 60) {
+                println("[DEBUG_LOG] Alibaba ASR polling timed out after 60 seconds for taskId: $taskId")
             }
             
             transcript?.trim()
