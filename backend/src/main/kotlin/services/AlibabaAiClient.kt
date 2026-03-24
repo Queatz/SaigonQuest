@@ -8,6 +8,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.get
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -19,6 +20,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import io.ktor.server.websocket.DefaultWebSocketServerSession
+import kotlinx.coroutines.delay
 import utils.json as appJson
 
 /**
@@ -41,14 +43,14 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class ChatMessage(
-        val role: String,
-        val content: String,
+        val role: String = "",
+        val content: String = "",
     )
 
     @Serializable
     private data class Choice(
         val index: Int? = null,
-        val message: ChatMessage,
+        val message: ChatMessage = ChatMessage(),
         @SerialName("finish_reason")
         val finishReason: String? = null,
     )
@@ -61,7 +63,7 @@ object AlibabaAiClient : AiClient {
     @Serializable
     private data class AlibabaRequest(
         val model: String = "qwen3.5-flash",
-        val messages: List<ChatMessage>,
+        val messages: List<ChatMessage> = emptyList(),
         val temperature: Double? = null,
         @SerialName("max_tokens")
         val maxTokens: Int? = 1024,
@@ -80,8 +82,53 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
+    private data class AsrInput(
+        @SerialName("file_urls")
+        val fileUrls: List<String> = emptyList(),
+        @SerialName("audio_urls")
+        val audioUrls: List<String> = emptyList(),
+    )
+
+    @Serializable
+    private data class AsrRequest(
+        val model: String = "fun-asr",
+        val input: AsrInput = AsrInput(),
+        val parameters: Map<String, String> = emptyMap(),
+    )
+
+    @Serializable
+    private data class AsrSentence(
+        val transcription: String? = null,
+        val text: String? = null,
+    )
+
+    @Serializable
+    private data class AsrTaskOutput(
+        @SerialName("task_id")
+        val taskId: String? = null,
+        @SerialName("task_status")
+        val taskStatus: String? = null,
+        val results: List<AsrSentence>? = null,
+        val code: String? = null,
+        val message: String? = null,
+        @SerialName("error_code")
+        val errorCode: String? = null,
+        @SerialName("error_message")
+        val errorMessage: String? = null,
+    )
+
+    @Serializable
+    private data class AsrTaskResponse(
+        val output: AsrTaskOutput? = null,
+        @SerialName("request_id")
+        val requestId: String? = null,
+        val message: String? = null,
+        val code: String? = null,
+    )
+
+    @Serializable
     private data class AiTextJson(
-        val text: String,
+        val text: String = "",
     )
 
     override suspend fun promptText(
@@ -171,6 +218,92 @@ object AlibabaAiClient : AiClient {
             }
         } catch (e: Throwable) {
             WebSocketDebug.logError("Alibaba call failed", e, logSession)
+            null
+        }
+    }
+
+    override suspend fun transcribe(audioUrl: String): String? {
+        val apiKey = System.getenv("ALIBABA_API_KEY")
+            ?: System.getProperty("ALIBABA_API_KEY")
+            ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
+
+        if (apiKey.isBlank()) return null
+        
+        val body = AsrRequest(
+            model = "fun-asr",
+            input = AsrInput(
+                fileUrls = listOf(audioUrl),
+                audioUrls = listOf(audioUrl)
+            )
+        )
+
+        return try {
+            // 1. Submit transcription task
+            val submitResp: HttpResponse = http.post("https://dashscope-intl.aliyuncs.com/api/v1/services/audio/asr/transcription") {
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                header("X-DashScope-Async", "enable")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+            
+            if (!submitResp.status.isSuccess()) {
+                val errorBody = runCatching { submitResp.bodyAsText() }.getOrNull()
+                println("[DEBUG_LOG] Alibaba ASR submit error: ${submitResp.status} - $errorBody")
+                return null
+            }
+
+            val submitData = submitResp.body<AsrTaskResponse>()
+            val taskId = submitData.output?.taskId
+            if (taskId.isNullOrBlank()) {
+                println("[DEBUG_LOG] Alibaba ASR submit failed to get taskId. Code: ${submitData.code}, Message: ${submitData.message}")
+                return null
+            }
+
+            // 2. Poll for the result (max 60 seconds)
+            var transcript: String? = null
+            var attempts = 0
+            while (attempts < 60) {
+                delay(1000)
+                val pollResp: HttpResponse = http.get("https://dashscope-intl.aliyuncs.com/api/v1/tasks/$taskId") {
+                    header(HttpHeaders.Authorization, "Bearer $apiKey")
+                }
+                
+                if (pollResp.status.isSuccess()) {
+                    val pollRaw = pollResp.bodyAsText()
+                    val pollData = try {
+                        appJson.decodeFromString<AsrTaskResponse>(pollRaw)
+                    } catch (e: Throwable) {
+                        println("[DEBUG_LOG] Alibaba ASR poll JSON parse error: ${e.message}. Raw: $pollRaw")
+                        null
+                    }
+                    
+                    if (pollData != null) {
+                        val status = pollData.output?.taskStatus
+                        if (status == "SUCCEEDED") {
+                            val res = pollData.output.results?.firstOrNull()
+                            transcript = res?.transcription ?: res?.text
+                            if (transcript == null) {
+                                println("[DEBUG_LOG] Alibaba ASR task SUCCEEDED but no transcription found in results. Full: $pollRaw")
+                            }
+                            break
+                        } else if (status == "FAILED" || status == "CANCELLED") {
+                            val errCode = pollData.output?.errorCode ?: pollData.output?.code ?: pollData.code
+                            val errMsg = pollData.output?.errorMessage ?: pollData.output?.message ?: pollData.message
+                            println("[DEBUG_LOG] Alibaba ASR task $status. Code: $errCode, Message: $errMsg. Full: $pollRaw")
+                            break
+                        }
+                    }
+                } else {
+                    val pollError = runCatching { pollResp.bodyAsText() }.getOrNull()
+                    println("[DEBUG_LOG] Alibaba ASR poll HTTP error: ${pollResp.status} - $pollError")
+                }
+                attempts++
+            }
+            
+            transcript?.trim()
+        } catch (e: Throwable) {
+            println("[DEBUG_LOG] Alibaba ASR exception: ${e.message}")
+            e.printStackTrace()
             null
         }
     }

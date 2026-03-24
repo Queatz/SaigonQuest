@@ -191,4 +191,6 @@ object DeepSeekClient : AiClient {
             null
         }
     }
+
+    override suspend fun transcribe(audioUrl: String): String? = null
 }

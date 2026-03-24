@@ -18,4 +18,10 @@ interface AiClient {
         reason: Boolean = false,
         json: Boolean = false,
     ): String?
+    /**
+     * Transcribe the provided audio URL and return the text.
+     */
+    suspend fun transcribe(
+        audioUrl: String,
+    ): String?
 }

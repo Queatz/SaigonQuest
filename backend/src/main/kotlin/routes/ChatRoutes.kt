@@ -7,6 +7,9 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.request.receive
+import services.AiManager
+import services.AlibabaAiClient
 import models.ChatMessage
 import models.ChatReadMarker
 import models.ErrorResponse
@@ -500,6 +503,38 @@ fun Routing.configureChatRoutes() {
                 val ok = chatRepository.deleteReadMarker(userId, worldId)
                 if (ok) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound,
                     ErrorResponse(message = "Visited world not found", code = HttpStatusCode.NotFound.value))
+            }
+        }
+
+        // Transcribe audio - requires authentication
+        authenticate {
+            post("/transcribe") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = auth.JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+
+                val body = call.receive<Map<String, String>>()
+                val audioUrl = body["audioUrl"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(message = "Missing audioUrl parameter", code = HttpStatusCode.BadRequest.value)
+                )
+
+                // Only Alibaba supports transcription in our setup
+                if (AiManager.client is AlibabaAiClient) {
+                    val text = AiManager.client.transcribe(audioUrl)
+                    if (text != null) {
+                        call.respond(mapOf("text" to text))
+                    } else {
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse(message = "Transcription failed", code = HttpStatusCode.InternalServerError.value)
+                        )
+                    }
+                } else {
+                    call.respond(
+                        HttpStatusCode.NotImplemented,
+                        ErrorResponse(message = "Transcription only supported by Alibaba provider", code = HttpStatusCode.NotImplemented.value)
+                    )
+                }
             }
         }
     }

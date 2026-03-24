@@ -14,6 +14,11 @@ import routes.WebSocketConnection
 import routes.WebSocketMessage
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import services.AiManager
+import services.AlibabaAiClient
 
 /**
  * Handler for SEND_CHAT_MESSAGE WebSocket messages
@@ -71,6 +76,43 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                 WebSocketDebug.logMessage("BROADCAST_CONTENT", broadcastMessageString, session)
                 
                 WebSocketUtils.broadcastToWorld(worldId, broadcastMessageString, activeConnections, session)
+
+                // --- Background Transcription ---
+                if (savedMessage.message.contains("![audio](")) {
+                    val audioUrl = savedMessage.message.substringAfter("![audio](").substringBefore(")")
+                    if (audioUrl.isNotBlank() && AiManager.client is AlibabaAiClient) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                val transcript = (AiManager.client as AlibabaAiClient).transcribe(audioUrl)
+                                if (!transcript.isNullOrBlank()) {
+                                    val updatedText = "${savedMessage.message}\n\n$transcript"
+                                    val updatedMessage = savedMessage.copy(
+                                        message = updatedText,
+                                        edited = true,
+                                    )
+                                    val successUpdate = chatRepository.updateMessage(
+                                        savedMessage.key,
+                                        updatedMessage,
+                                        savedMessage.senderId
+                                    )
+                                    
+                                    if (successUpdate != null) {
+                                        // Broadcast the update
+                                        val broadcastUpdate = WebSocketMessage(
+                                            action = WebSocketAction.UPDATE_CHAT_MESSAGE,
+                                            data = json.encodeToString(ChatMessage.serializer(), successUpdate)
+                                        )
+                                        val payloadUpdate = json.encodeToString(WebSocketMessage.serializer(), broadcastUpdate)
+                                        broadcastToWorldNoSession(worldId, payloadUpdate, activeConnections)
+                                    }
+                                }
+                            } catch (e: Throwable) {
+                                println("[DEBUG_LOG] Async transcription failed: ${e.message}")
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                }
 
                 // After broadcasting, send one-time "new chat" notifications to eligible users
                 try {

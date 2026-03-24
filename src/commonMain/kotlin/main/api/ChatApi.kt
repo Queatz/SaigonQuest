@@ -310,4 +310,17 @@ object ChatApi {
             false
         }
     }
+
+    suspend fun transcribe(audioUrl: String): String {
+        val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/chat/transcribe") {
+            ApiClient.addAuthHeader(this)
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("audioUrl" to audioUrl))
+        }
+        if (!response.status.isSuccess()) {
+            throw RuntimeException("Transcription failed: ${response.status}")
+        }
+        val body: Map<String, String> = response.body()
+        return body["text"] ?: throw RuntimeException("No transcription returned")
+    }
 }

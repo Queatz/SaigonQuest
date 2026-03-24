@@ -2145,6 +2145,15 @@ object Styles : StyleSheet() {
         property("transition", "transform 200ms ease-out")
     }
 
+    val aiChatOverlayFullscreen by style {
+        width(100.vw)
+        maxWidth(100.vw)
+        height(100.vh)
+        maxHeight(100.vh)
+        borderRadius(0.px)
+        property("transform", "translateX(-50%) translateY(0)")
+    }
+
     val aiChatMessages by style {
         property("flex", "1 1 auto")
         position(Position.Relative)
@@ -2192,6 +2201,13 @@ object Styles : StyleSheet() {
     }
 
     val aiChatInput by style { property("flex", "1 1 auto") }
+    val aiChatFullscreenToggle by style {
+        cursor("pointer")
+        opacity(0.7)
+        self + hover style {
+            opacity(1.0)
+        }
+    }
     val aiChatSend by style {}
 
     init {

@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
+import org.jetbrains.compose.web.attributes.AttrsScope
 import org.jetbrains.compose.web.css.backgroundImage
 import org.jetbrains.compose.web.css.backgroundPosition
 import org.jetbrains.compose.web.css.backgroundRepeat
@@ -10,6 +11,7 @@ import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.HTMLDivElement
 
 /**
  * Renders an icon from a sprite sheet based on its index.
@@ -24,12 +26,14 @@ fun IconRenderer(
     url: String,
     index: Int,
     size: Int = 32,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    attrs: (AttrsScope<HTMLDivElement>.() -> Unit)? = null,
 ) {
     Div(
         attrs = {
             classes(Styles.iconRenderer)
-            
+            attrs?.invoke(this)
+
             style {
                 // Override default size if needed
                 if (size != 32) {

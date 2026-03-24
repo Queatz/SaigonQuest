@@ -6,6 +6,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.components.AnimatedDots
+import main.components.IconRenderer
 import main.components.Md
 import main.components.Translated
 import main.components.VoiceInput
@@ -78,6 +79,7 @@ fun GlobalAiChat() {
     Div({
         classes(Styles.aiChatOverlay)
         if (visible) classes(Styles.aiChatOverlayOpen)
+        if (GlobalAiChatStore.isFullscreen) classes(Styles.aiChatOverlayFullscreen)
     }) {
         // Messages
         Div({
@@ -115,6 +117,13 @@ fun GlobalAiChat() {
 
         // Input row
         Div({ classes(Styles.aiChatInputRow) }) {
+            IconRenderer(
+                url = "raw/data/ui/ui.png",
+                index = if (GlobalAiChatStore.isFullscreen) 1 else 0,
+                size = 24,
+                onClick = { GlobalAiChatStore.toggleFullscreen() },
+                attrs = { classes(Styles.aiChatFullscreenToggle) }
+            )
             TextInput(GlobalAiChatStore.input) {
                 classes(Styles.inputField, Styles.aiChatInput)
                 placeholder(str("Type a message…"))

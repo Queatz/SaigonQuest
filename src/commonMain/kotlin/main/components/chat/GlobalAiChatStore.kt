@@ -30,6 +30,9 @@ object GlobalAiChatStore {
     var input by mutableStateOf("")
         private set
 
+    var isFullscreen by mutableStateOf(false)
+        private set
+
     private var sessionId: String? = null
     private var socket: WebSocket? = null
     var initialMessageCount by mutableStateOf(0)
@@ -50,6 +53,7 @@ object GlobalAiChatStore {
         initialMessageCount = initial.size
         isLoading = false
         input = ""
+        isFullscreen = false
 
         scope.launch { connectAndStart(system) }
     }
@@ -65,6 +69,8 @@ object GlobalAiChatStore {
     }
 
     fun setInput(value: String) { input = value }
+
+    fun toggleFullscreen() { isFullscreen = !isFullscreen }
 
     fun send(text: String) {
         val trimmed = text.trim()
