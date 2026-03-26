@@ -32,6 +32,7 @@ object ChatStore {
         val hasMore = mutableStateOf(true)
         val lastOlderLoadAtMs = mutableStateOf(0L)
         val lastMutation = mutableStateOf(ChatMutationType.ReplaceAll)
+        val lastMutatedMessageKey = mutableStateOf<String?>(null)
         val error = mutableStateOf<String?>(null)
     }
 
@@ -52,6 +53,7 @@ object ChatStore {
             state.messages.add(updated)
             state.messages.sortBy { it.timestamp }
         }
+        state.lastMutatedMessageKey.value = updated.key
         state.lastMutation.value = ChatMutationType.Update
     }
 
@@ -180,6 +182,7 @@ object ChatStore {
                     val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
                     // Ensure a state exists for this world, even if preload hasn't run yet
                     val st = states.getOrPut(chatMessage.worldId) { ChatState() }
+                    st.lastMutatedMessageKey.value = chatMessage.key
                     st.lastMutation.value = ChatMutationType.AppendNew
                     st.messages.add(chatMessage)
                     st.messages.sortBy { it.timestamp }

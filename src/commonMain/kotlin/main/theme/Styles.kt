@@ -568,6 +568,7 @@ object Styles : StyleSheet() {
         property("image-rendering", "pixelated")
         property("image-rendering", "-moz-crisp-edges")
         property("image-rendering", "crisp-edges")
+        flexShrink(0)
     }
 
     // moved to PanelStyles.kt

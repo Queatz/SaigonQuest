@@ -60,7 +60,15 @@ fun ChatMessages(
     val error = chatState.error.value
     val isOwner = chatState.isOwner.value
     val lastMutation = chatState.lastMutation.value
+    val lastMutatedMessageKey = chatState.lastMutatedMessageKey.value
     val pinnedIds = remember(pins) { pins.map { it.messageId }.toSet() }
+
+    val shouldScroll = remember(lastMutation, lastMutatedMessageKey, messages.size) {
+        val isAppend = (lastMutation == ChatStore.ChatMutationType.AppendNew)
+        val isUpdate = (lastMutation == ChatStore.ChatMutationType.Update)
+        val isLastMessageMutated = messages.lastOrNull()?.key == lastMutatedMessageKey
+        isAppend || (isUpdate && isLastMessageMutated)
+    }
 
     // State for selected message (for editing/deleting)
     var selectedMessage by remember { mutableStateOf<ChatMessage?>(null) }
@@ -140,18 +148,13 @@ fun ChatMessages(
         }
     }
 
-    // Smooth scroll only for newly appended messages (not when loading older history)
+    // Smooth scroll only for newly appended messages or updates to the last message (not when loading older history)
     var lastCount by remember { mutableStateOf(0) }
-    LaunchedEffect(messages.size, lastMutation) {
-        if (lastCount != 0 && messages.size > lastCount) {
-            val isAppend = (lastMutation == ChatStore.ChatMutationType.AppendNew)
-            lastCount = messages.size
-            if (isAppend && isNearBottom()) {
-                smoothScrollToBottom()
-            }
-        } else {
-            lastCount = messages.size
+    LaunchedEffect(messages.size, lastMutation, lastMutatedMessageKey) {
+        if (lastCount != 0 && shouldScroll && isNearBottom()) {
+            smoothScrollToBottom()
         }
+        lastCount = messages.size
     }
 
     // WebSocket listeners are handled globally by ChatStore
@@ -263,7 +266,7 @@ fun ChatMessages(
                             MessageAttachments(
                                 attachments = msg.attachments,
                                 onImageClick = { url -> imageDialogUrl = url },
-                                onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
+                                onImageLoaded = { if (shouldScroll && isNearBottom()) smoothScrollToBottom() },
                             )
                         }
 
@@ -386,7 +389,7 @@ fun ChatMessages(
                             }
                         },
                         onImageClick = { url -> imageDialogUrl = url },
-                        onImageLoaded = { if (lastMutation == ChatStore.ChatMutationType.AppendNew && isNearBottom()) smoothScrollToBottom() },
+                        onImageLoaded = { if (shouldScroll && isNearBottom()) smoothScrollToBottom() },
                     )
                 }
             }
