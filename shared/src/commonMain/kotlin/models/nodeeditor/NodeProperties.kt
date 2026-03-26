@@ -70,6 +70,7 @@ enum class PropertyKey {
 
     // PlaySound properties
     SOUND_URL,
+    PLAY_FOR_EVERYONE,
 
     // PlayerImageInput properties
     ALLOW_MULTIPLE,
@@ -839,6 +840,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.PLAY_FOR_EVERYONE,
+                name = "Play for everyone",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "true"
             ),
             NodePropertyDefinition(
                 key = PropertyKey.NEXT,

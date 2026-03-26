@@ -353,7 +353,7 @@ sealed interface LogicNode {
         override val id: NodeId = NodeId.PlaySound,
         override val label: String = "Play sound",
         override val category: NodeCategory = NodeCategory.Action,
-        override val description: String = "Plays a sound for everyone in the world"
+        override val description: String = "Plays a sound"
     ) : LogicNode
 
     /**

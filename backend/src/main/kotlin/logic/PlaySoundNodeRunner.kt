@@ -12,7 +12,7 @@ import utils.json
 /**
  * Runner for PlaySound nodes
  *
- * Plays a sound for everyone in the world.
+ * Plays a sound for everyone in the world or just the current user.
  */
 class PlaySoundNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
     override suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
@@ -35,21 +35,29 @@ class PlaySoundNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             nodeData.properties.find { it.key == PropertyKey.SOUND_URL }?.value?.trim().orEmpty()
         }
 
+        val playForEveryone = nodeData.properties.find { it.key == PropertyKey.PLAY_FOR_EVERYONE }?.value?.toBooleanStrictOrNull() ?: true
+
         if (soundUrl.isBlank()) {
             WebSocketDebug.logError("PlaySound: SOUND_URL is missing or blank", null, context.session)
             return false
         }
 
         try {
-            // Broadcast to world
+            // Broadcast to world or current user
             val broadcast = WebSocketMessage(
                 action = WebSocketAction.PLAY_SOUND,
                 data = json.encodeToString(mapOf("url" to soundUrl))
             )
             val broadcastStr = json.encodeToString(WebSocketMessage.serializer(), broadcast)
-            WebSocketUtils.broadcastToWorld(context.worldId, broadcastStr, context.activeConnections, context.session)
 
-            WebSocketDebug.logMessage("PLAY_SOUND_NODE_SUCCESS", "Broadcast play sound message to world ${context.worldId}", context.session)
+            if (playForEveryone) {
+                WebSocketUtils.broadcastToWorld(context.worldId, broadcastStr, context.activeConnections, context.session)
+                WebSocketDebug.logMessage("PLAY_SOUND_NODE_SUCCESS", "Broadcast play sound message to world ${context.worldId}", context.session)
+            } else {
+                WebSocketUtils.broadcastToUser(context.connection.userId, broadcastStr, context.activeConnections, context.session)
+                WebSocketDebug.logMessage("PLAY_SOUND_NODE_SUCCESS", "Send play sound message to current user ${context.connection.userId}", context.session)
+            }
+
             return true
         } catch (e: Throwable) {
             WebSocketDebug.logError("PlaySound: failed to broadcast message", e, context.session)

@@ -1913,8 +1913,11 @@ vi: Đổi âm thanh
 Remove sound
 vi: Xóa âm thanh
 
-Plays a sound for everyone in the world
-vi: Phát âm thanh cho mọi người trong thế giới
+Play for everyone
+vi: Phát cho mọi người
+
+Plays a sound
+vi: Phát âm thanh
 
 Join list
 vi: Ghép danh sách

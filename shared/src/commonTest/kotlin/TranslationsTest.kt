@@ -62,6 +62,30 @@ class TranslationsTest {
     }
 
     @Test
+    fun `test play for everyone translation`() {
+        // Arrange
+        Translations.setLanguage("vi")
+
+        // Act
+        val result = Translations.str("Play for everyone")
+
+        // Assert
+        assertEquals("Phát cho mọi người", result)
+    }
+
+    @Test
+    fun `test plays a sound translation`() {
+        // Arrange
+        Translations.setLanguage("vi")
+
+        // Act
+        val result = Translations.str("Plays a sound")
+
+        // Assert
+        assertEquals("Phát âm thanh", result)
+    }
+
+    @Test
     fun `test str returns the correct behavior for untranslated keys`() {
         // Arrange
         Translations.setLanguage("vi")
