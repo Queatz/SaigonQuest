@@ -8,6 +8,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.serialization.Serializable
@@ -104,16 +105,12 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                val audio = AiManager.client.tts(req.text)
-
-                if (audio == null) {
-                    return@post call.respond(
-                        HttpStatusCode.BadGateway,
-                        ErrorResponse(message = "Failed to generate audio", code = HttpStatusCode.BadGateway.value)
-                    )
+                call.respondBytesWriter(ContentType("audio", "l16")) {
+                    AiManager.client.ttsStream(req.text) { chunk ->
+                        writeFully(chunk)
+                        flush()
+                    }
                 }
-
-                call.respondBytes(audio, ContentType.Audio.MPEG)
             }
         }
     }

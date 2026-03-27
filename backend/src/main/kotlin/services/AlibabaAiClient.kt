@@ -176,15 +176,12 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class TtsParameters(
-        val voice: String = "longxiaoxia_v3",
-        val format: String = "mp3",
+        val voice: String = "longanqin_v3",
+        val format: String = "pcm",
         @SerialName("sample_rate")
-        val sampleRate: Int = 22050,
+        val sampleRate: Int = 24000,
         @SerialName("text_type")
         val textType: String = "PlainText",
-        val volume: Int = 50,
-        val rate: Double = 1.0,
-        val pitch: Double = 1.0,
     )
 
     @Serializable
@@ -194,35 +191,24 @@ object AlibabaAiClient : AiClient {
         val taskId: String,
         @SerialName("message_id")
         val messageId: String,
-        val streaming: String = "duplex",
+        val streaming: String = "out",
     )
 
     @Serializable
     private data class WsPayload(
         val model: String,
-        val input: TtsInput,
-        val parameters: TtsParameters,
         @SerialName("task_group")
         val taskGroup: String = "audio",
         val task: String = "tts",
         val function: String = "SpeechSynthesizer",
+        val input: TtsInput,
+        val parameters: TtsParameters,
     )
 
     @Serializable
     private data class WsRequest(
         val header: WsHeader,
         val payload: WsPayload,
-    )
-
-    @Serializable
-    private data class WsFinishPayload(
-        val input: Map<String, String> = emptyMap(),
-    )
-
-    @Serializable
-    private data class WsFinishRequest(
-        val header: WsHeader,
-        val payload: WsFinishPayload = WsFinishPayload(),
     )
 
     override suspend fun promptText(
@@ -460,18 +446,28 @@ object AlibabaAiClient : AiClient {
     }
 
     override suspend fun tts(text: String): ByteArray? {
+        val out = java.io.ByteArrayOutputStream()
+        val success = ttsStream(text) { chunk ->
+            out.write(chunk)
+        }
+        return if (success && out.size() > 0) out.toByteArray() else null
+    }
+
+    override suspend fun ttsStream(
+        text: String,
+        onChunk: suspend (ByteArray) -> Unit,
+    ): Boolean {
         val apiKey = System.getenv("ALIBABA_API_KEY")
             ?: System.getProperty("ALIBABA_API_KEY")
             ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
 
         if (apiKey.isBlank()) {
-            return null
+            return false
         }
 
         val taskId = java.util.UUID.randomUUID().toString().replace("-", "")
         val messageId = java.util.UUID.randomUUID().toString().replace("-", "")
-        
-        // We use cosyvoice-v3-flash and dashscope-intl as we are outside of China Mainland.
+
         val request = WsRequest(
             header = WsHeader(
                 action = "run-task",
@@ -485,10 +481,9 @@ object AlibabaAiClient : AiClient {
             )
         )
 
-        val out = java.io.ByteArrayOutputStream()
         var success = false
 
-        return try {
+        try {
             http.webSocket(
                 urlString = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference/",
                 request = {
@@ -497,22 +492,10 @@ object AlibabaAiClient : AiClient {
             ) {
                 send(Frame.Text(appJson.encodeToString(request)))
 
-                // After sending run-task, we must send finish-task to notify the server that input is complete
-                // when using streaming: duplex.
-                val finishMessageId = java.util.UUID.randomUUID().toString().replace("-", "")
-                val finishRequest = WsFinishRequest(
-                    header = WsHeader(
-                        action = "finish-task",
-                        taskId = taskId,
-                        messageId = finishMessageId
-                    )
-                )
-                send(Frame.Text(appJson.encodeToString(finishRequest)))
-
                 for (frame in incoming) {
                     when (frame) {
                         is Frame.Binary -> {
-                            out.write(frame.readBytes())
+                            onChunk(frame.readBytes())
                         }
                         is Frame.Text -> {
                             val textMsg = frame.readText()
@@ -529,11 +512,11 @@ object AlibabaAiClient : AiClient {
                     }
                 }
             }
-            if (success && out.size() > 0) out.toByteArray() else null
         } catch (e: Throwable) {
             println("[DEBUG_LOG] Alibaba TTS Ws exception: ${e.message}")
             e.printStackTrace()
-            null
+            return false
         }
+        return success
     }
 }

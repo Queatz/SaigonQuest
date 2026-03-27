@@ -10,6 +10,11 @@ import io.ktor.http.isSuccess
 import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.url
 import io.ktor.client.request.parameter
+import io.ktor.client.request.preparePost
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.readRemaining
+import kotlinx.io.readByteArray
 import kotlinx.serialization.Serializable
 import models.AiPromptHistory
 import models.ErrorResponse
@@ -89,6 +94,30 @@ object AiApi {
             val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
             val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
             throw Error(txt ?: "TTS request failed: HTTP ${resp.status.value}")
+        }
+    }
+
+    suspend fun generateTtsStream(text: String, onChunk: suspend (ByteArray) -> Unit) {
+        val request = ApiClient.httpClient.preparePost("${ApiConstants.API_BASE_URL}/ai/tts") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(AiTtsRequest(text = text))
+        }
+
+        request.execute { response ->
+            if (response.status.isSuccess()) {
+                val channel = response.bodyAsChannel()
+                while (!channel.isClosedForRead) {
+                    val packet = channel.readRemaining(8192)
+                    if (!packet.exhausted()) {
+                        onChunk(packet.readByteArray())
+                    }
+                }
+            } else {
+                val err = runCatching { response.body<ErrorResponse>() }.getOrNull()
+                val txt = err?.message ?: runCatching { response.bodyAsText() }.getOrNull()
+                throw Error(txt ?: "TTS request failed: HTTP ${response.status.value}")
+            }
         }
     }
 }

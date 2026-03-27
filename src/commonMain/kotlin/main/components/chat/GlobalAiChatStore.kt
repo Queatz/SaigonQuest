@@ -17,13 +17,14 @@ import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import main.api.AiApi
 import org.khronos.webgl.Int8Array
+import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.khronos.webgl.set
-import org.w3c.dom.HTMLAudioElement
-import org.w3c.dom.url.URL
-import org.w3c.files.Blob
-import org.w3c.files.BlobPropertyBag
+import lib.AudioContext
+import lib.AudioBufferSourceNode
+import kotlinx.coroutines.await
+import kotlinx.coroutines.delay
 
 object GlobalAiChatStore {
     private val scope = MainScope()
@@ -86,24 +87,74 @@ object GlobalAiChatStore {
 
     fun toggleFullscreen() { isFullscreen = !isFullscreen }
 
+    private var currentAudioContext: AudioContext? = null
+    private var lastScheduledEndTime: Double = 0.0
+    private var activeSources = mutableListOf<AudioBufferSourceNode>()
+
+    private fun stopSpeech() {
+        activeSources.forEach { it.stop() }
+        activeSources.clear()
+        speakingIndex = -1
+    }
+
+    private fun pcm16ToFloat32(byteArray: Int8Array): Float32Array {
+        val floatArray = Float32Array(byteArray.length / 2)
+        for (i in 0 until floatArray.length) {
+            val low = byteArray[i * 2].toInt() and 0xFF
+            val high = byteArray[i * 2 + 1].toInt()
+            val pcm = (high shl 8) or low
+            // Convert to Float (-1.0 to 1.0)
+            floatArray[i] = pcm.toShort().toFloat() / 32768f
+        }
+        return floatArray
+    }
+
     fun speak(index: Int) {
         val m = messages.getOrNull(index) ?: return
-        if (speakingIndex != -1) return // Already speaking someone else
+        if (speakingIndex != -1) {
+            if (speakingIndex == index) {
+                stopSpeech()
+                return
+            }
+            stopSpeech()
+        }
 
         scope.launch {
             speakingIndex = index
             try {
-                val bytes = AiApi.generateTts(m.content)
-                val uint8Array = Uint8Array(bytes.size)
-                for (i in bytes.indices) {
-                    uint8Array[i] = bytes[i]
+                val ctx = currentAudioContext ?: AudioContext()
+                currentAudioContext = ctx
+                
+                if (ctx.state == "suspended") {
+                    ctx.resume().await()
                 }
-                val blob = Blob(arrayOf(uint8Array), BlobPropertyBag(type = "audio/mpeg"))
-                val url = URL.createObjectURL(blob)
-                val audio = document.createElement("audio") as HTMLAudioElement
-                audio.src = url
-                audio.onended = { speakingIndex = -1 }
-                audio.play()
+
+                lastScheduledEndTime = ctx.currentTime
+                activeSources.clear()
+
+                AiApi.generateTtsStream(m.content) { chunk ->
+                    val floatData = pcm16ToFloat32(chunk.unsafeCast<Int8Array>())
+                    if (floatData.length == 0) return@generateTtsStream
+                    
+                    val buffer = ctx.createBuffer(1, floatData.length, 24000)
+                    buffer.copyToChannel(floatData, 0)
+                    
+                    val source = ctx.createBufferSource()
+                    source.buffer = buffer
+                    source.connect(ctx.destination)
+                    
+                    val startTime = if (lastScheduledEndTime > ctx.currentTime) lastScheduledEndTime else ctx.currentTime
+                    source.start(startTime)
+                    lastScheduledEndTime = startTime + buffer.duration
+                    activeSources.add(source)
+                    
+                    source.onended = {
+                        activeSources.remove(source)
+                        if (activeSources.isEmpty() && speakingIndex == index) {
+                            speakingIndex = -1
+                        }
+                    }
+                }
             } catch (t: Throwable) {
                 console.error("TTS failed:", t)
                 speakingIndex = -1
