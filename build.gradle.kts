@@ -1,8 +1,8 @@
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.3.10"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.10"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20"
     id("org.jetbrains.compose")
 }
 
@@ -158,22 +158,22 @@ kotlin {
                 implementation(compose.ui)
 
                 implementation("app.softwork:routing-compose:0.5.0")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2025.11.5")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2026.3.16")
 
                 implementation(npm("marked", "17.0.1"))
                 implementation(npm("qr", "0.5.2"))
-                implementation(npm("@babylonjs/core", "8.49.6"))
-                implementation(npm("@babylonjs/materials", "8.49.6"))
-                implementation(npm("@babylonjs/loaders", "8.49.6"))
-                implementation(npm("babylonjs-gltf2interface", "8.49.6"))
+                implementation(npm("@babylonjs/core", "9.0.0"))
+                implementation(npm("@babylonjs/materials", "9.0.0"))
+                implementation(npm("@babylonjs/loaders", "9.0.0"))
+                implementation(npm("babylonjs-gltf2interface", "9.0.0"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
 
                 // Ktor client
-                implementation("io.ktor:ktor-client-core:3.3.3")
-                implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("io.ktor:ktor-client-core:3.4.1")
+                implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
                 
                 // Add shared module dependency

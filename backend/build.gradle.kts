@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "2.3.10"
-    id("io.ktor.plugin") version "3.3.3"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("io.ktor.plugin") version "3.4.1"
     application
 }
 
@@ -27,26 +27,26 @@ dependencies {
     implementation(project(":shared"))
     
     // Ktor server
-    implementation("io.ktor:ktor-server-core:3.3.3")
-    implementation("io.ktor:ktor-server-netty:3.3.3")
-    implementation("io.ktor:ktor-server-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
-    implementation("io.ktor:ktor-server-cors:3.3.3")
-    implementation("io.ktor:ktor-server-websockets:3.3.3")
+    implementation("io.ktor:ktor-server-core:3.4.1")
+    implementation("io.ktor:ktor-server-netty:3.4.1")
+    implementation("io.ktor:ktor-server-content-negotiation:3.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+    implementation("io.ktor:ktor-server-cors:3.4.1")
+    implementation("io.ktor:ktor-server-websockets:3.4.1")
     
     // Ktor client (for external HTTP calls e.g., DeepSeek)
-    implementation("io.ktor:ktor-client-core:3.3.3")
-    implementation("io.ktor:ktor-client-cio:3.3.3")
-    implementation("io.ktor:ktor-client-websockets:3.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
+    implementation("io.ktor:ktor-client-core:3.4.1")
+    implementation("io.ktor:ktor-client-cio:3.4.1")
+    implementation("io.ktor:ktor-client-websockets:3.4.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
     
     // Ktor JWT Authentication
-    implementation("io.ktor:ktor-server-auth:3.3.3")
-    implementation("io.ktor:ktor-server-auth-jwt:3.3.3")
+    implementation("io.ktor:ktor-server-auth:3.4.1")
+    implementation("io.ktor:ktor-server-auth-jwt:3.4.1")
     
     // Auth0 JWT Library
-    implementation("com.auth0:java-jwt:4.4.0")
+    implementation("com.auth0:java-jwt:4.5.1")
     
     // ArangoDB - Latest version as required
     implementation("com.arangodb:arangodb-java-driver:7.25.0")
@@ -57,8 +57,8 @@ dependencies {
     implementation("org.glassfish:jakarta.json:2.0.1")
 
     // KotlinX Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     
     // Logging
