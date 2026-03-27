@@ -21,6 +21,12 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readBytes
+import io.ktor.websocket.readText
+import kotlinx.serialization.encodeToString
 import kotlinx.coroutines.delay
 import utils.json as appJson
 
@@ -32,9 +38,10 @@ import utils.json as appJson
  */
 object AlibabaAiClient : AiClient {
     private val http: HttpClient = HttpClient(CIO) {
+        install(ClientWebSockets)
         install(ContentNegotiation) {
             json(Json {
-                encodeDefaults = false
+                encodeDefaults = true
                 ignoreUnknownKeys = true
                 isLenient = true
             })
@@ -162,6 +169,62 @@ object AlibabaAiClient : AiClient {
         val text: String = "",
     )
 
+    @Serializable
+    private data class TtsInput(
+        val text: String,
+    )
+
+    @Serializable
+    private data class TtsParameters(
+        val voice: String = "longxiaoxia_v3",
+        val format: String = "mp3",
+        @SerialName("sample_rate")
+        val sampleRate: Int = 22050,
+        @SerialName("text_type")
+        val textType: String = "PlainText",
+        val volume: Int = 50,
+        val rate: Double = 1.0,
+        val pitch: Double = 1.0,
+    )
+
+    @Serializable
+    private data class WsHeader(
+        val action: String,
+        @SerialName("task_id")
+        val taskId: String,
+        @SerialName("message_id")
+        val messageId: String,
+        val streaming: String = "duplex",
+    )
+
+    @Serializable
+    private data class WsPayload(
+        val model: String,
+        val input: TtsInput,
+        val parameters: TtsParameters,
+        @SerialName("task_group")
+        val taskGroup: String = "audio",
+        val task: String = "tts",
+        val function: String = "SpeechSynthesizer",
+    )
+
+    @Serializable
+    private data class WsRequest(
+        val header: WsHeader,
+        val payload: WsPayload,
+    )
+
+    @Serializable
+    private data class WsFinishPayload(
+        val input: Map<String, String> = emptyMap(),
+    )
+
+    @Serializable
+    private data class WsFinishRequest(
+        val header: WsHeader,
+        val payload: WsFinishPayload = WsFinishPayload(),
+    )
+
     override suspend fun promptText(
         systemPrompt: String,
         userPrompt: String,
@@ -173,7 +236,7 @@ object AlibabaAiClient : AiClient {
     ): String? {
         val apiKey = System.getenv("ALIBABA_API_KEY")
             ?: System.getProperty("ALIBABA_API_KEY")
-            ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
+            ?: "sk-6c257c3e09b349bf81c631f31ef6679a" // CN: sk-ac963bed6f3e41acb2491a9e40549082
 
         if (apiKey.isBlank()) {
             WebSocketDebug.logError("Alibaba API key missing", null, logSession)
@@ -391,6 +454,84 @@ object AlibabaAiClient : AiClient {
             transcript?.trim()
         } catch (e: Throwable) {
             println("[DEBUG_LOG] Alibaba ASR exception: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    override suspend fun tts(text: String): ByteArray? {
+        val apiKey = System.getenv("ALIBABA_API_KEY")
+            ?: System.getProperty("ALIBABA_API_KEY")
+            ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
+
+        if (apiKey.isBlank()) {
+            return null
+        }
+
+        val taskId = java.util.UUID.randomUUID().toString().replace("-", "")
+        val messageId = java.util.UUID.randomUUID().toString().replace("-", "")
+        
+        // We use cosyvoice-v3-flash and dashscope-intl as we are outside of China Mainland.
+        val request = WsRequest(
+            header = WsHeader(
+                action = "run-task",
+                taskId = taskId,
+                messageId = messageId
+            ),
+            payload = WsPayload(
+                model = "cosyvoice-v3-flash",
+                input = TtsInput(text = text),
+                parameters = TtsParameters()
+            )
+        )
+
+        val out = java.io.ByteArrayOutputStream()
+        var success = false
+
+        return try {
+            http.webSocket(
+                urlString = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference/",
+                request = {
+                    header(HttpHeaders.Authorization, "Bearer $apiKey")
+                }
+            ) {
+                send(Frame.Text(appJson.encodeToString(request)))
+
+                // After sending run-task, we must send finish-task to notify the server that input is complete
+                // when using streaming: duplex.
+                val finishMessageId = java.util.UUID.randomUUID().toString().replace("-", "")
+                val finishRequest = WsFinishRequest(
+                    header = WsHeader(
+                        action = "finish-task",
+                        taskId = taskId,
+                        messageId = finishMessageId
+                    )
+                )
+                send(Frame.Text(appJson.encodeToString(finishRequest)))
+
+                for (frame in incoming) {
+                    when (frame) {
+                        is Frame.Binary -> {
+                            out.write(frame.readBytes())
+                        }
+                        is Frame.Text -> {
+                            val textMsg = frame.readText()
+                            if (textMsg.contains("task-finished")) {
+                                success = true
+                                break
+                            }
+                            if (textMsg.contains("task-failed") || textMsg.contains("error")) {
+                                println("[DEBUG_LOG] Alibaba TTS Ws error: $textMsg")
+                                break
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
+            if (success && out.size() > 0) out.toByteArray() else null
+        } catch (e: Throwable) {
+            println("[DEBUG_LOG] Alibaba TTS Ws exception: ${e.message}")
             e.printStackTrace()
             null
         }

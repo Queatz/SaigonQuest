@@ -39,9 +39,13 @@ import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.paddingTop
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
 import org.jetbrains.compose.web.dom.Button
@@ -75,7 +79,7 @@ fun DialogueBox(
     var inputEl by remember { mutableStateOf<HTMLElement?>(null) }
     
     var uploadedImages by remember { mutableStateOf(listOf<String>()) }
-    var uploadedAudios by remember { mutableStateOf(listOf<String>()) }
+    var uploadedAudios by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var uploadMediaType by remember { mutableStateOf<MediaType?>(null) }
 
     LaunchedEffect(currentDialogue) {
@@ -211,13 +215,30 @@ fun DialogueBox(
                 Div({
                     classes(Styles.imageInputContainer)
                 }) {
-                    uploadedAudios.forEach { url ->
+                    uploadedAudios.forEach { (url, name) ->
                         Div({
                             classes(Styles.imagePreviewItem)
                             style {
-                                width(280.px)
+                                width(320.px)
+                                property("height", "auto")
+                                padding(12.px)
+                                paddingTop(32.px)
+                                property("overflow", "visible")
+                                display(DisplayStyle.Flex)
+                                flexDirection(FlexDirection.Column)
+                                gap(8.px)
                             }
                         }) {
+                            P({
+                                style {
+                                    margin(0.px)
+                                    fontSize(14.px)
+                                    fontWeight("bold")
+                                    property("word-break", "break-all")
+                                }
+                            }) {
+                                Text(name)
+                            }
                             Audio(attrs = {
                                 attr("src", url)
                                 attr("controls", "true")
@@ -230,7 +251,7 @@ fun DialogueBox(
                                 classes(Styles.imageRemoveButton)
                                 onClick {
                                     if (isWaiting) return@onClick
-                                    uploadedAudios = uploadedAudios.filter { it != url }
+                                    uploadedAudios = uploadedAudios.filter { it.first != url }
                                 }
                             }) {
                                 Text("×")
@@ -346,7 +367,7 @@ fun DialogueBox(
                                     val userId = user.key
                                     val inputText = if (dialogue.requiresInput) textInput else null
                                     val imageUrls = if (dialogue.requiresImage) uploadedImages else null
-                                    val audioUrls = if (dialogue.requiresAudio) uploadedAudios else null
+                                    val audioUrls = if (dialogue.requiresAudio) uploadedAudios.map { it.first } else null
                                     WebSocketApi.sendDialogueConfirmation(
                                         dialogueId = dialogue.dialogueId,
                                         userId = userId,
@@ -384,7 +405,7 @@ fun DialogueBox(
         val currentType = uploadMediaType!!
         UploadMediaDialog(
             onClose = { uploadMediaType = null },
-            onSelect = { url, _, _ ->
+            onSelect = { url, _, name ->
                 if (currentType == MediaType.Image) {
                     uploadedImages = if (dialogue.allowMultipleImages) {
                         uploadedImages + url
@@ -393,9 +414,9 @@ fun DialogueBox(
                     }
                 } else if (currentType == MediaType.Audio) {
                     uploadedAudios = if (dialogue.allowMultipleAudio) {
-                        uploadedAudios + url
+                        uploadedAudios + (url to name)
                     } else {
-                        listOf(url)
+                        listOf(url to name)
                     }
                 }
                 uploadMediaType = null

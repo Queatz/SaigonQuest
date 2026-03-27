@@ -18,6 +18,7 @@ import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.SMOOTH
 import org.w3c.dom.ScrollBehavior
@@ -98,7 +99,25 @@ fun GlobalAiChat() {
                     AiRole.User -> Styles.aiChatMsgUser
                     AiRole.Assistant -> Styles.aiChatMsgAssistant
                 }
-                Div({ classes(Styles.aiChatMsg, roleClass) }) { Md(m.content) }
+                Div({ classes(Styles.aiChatMsg, roleClass) }) {
+                    Md(m.content)
+
+                    if (m.role == AiRole.Assistant) {
+                        Div({
+                            classes(Styles.aiChatSpeak)
+                            onClick { GlobalAiChatStore.speak(index) }
+                        }) {
+                            if (GlobalAiChatStore.speakingIndex == index) {
+                                Spinner(
+                                    message = null,
+                                    spinnerClass = Styles.aiChatLoadingSpinner,
+                                )
+                            } else {
+                                Span { Text("🔊") }
+                            }
+                        }
+                    }
+                }
             }
 
             if (GlobalAiChatStore.isLoading) {

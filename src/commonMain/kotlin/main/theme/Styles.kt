@@ -2183,6 +2183,19 @@ object Styles : StyleSheet() {
 
     val aiChatMsgAssistant by style {
         backgroundColor(Theme.colors.surface)
+        position(Position.Relative)
+        padding(12.px, 36.px, 12.px, 12.px)
+    }
+
+    val aiChatSpeak by style {
+        position(Position.Absolute)
+        top(8.px)
+        right(8.px)
+        cursor("pointer")
+        opacity(0.5)
+        self + hover style {
+            opacity(1.0)
+        }
     }
 
     val aiChatSpinnerRow by style {

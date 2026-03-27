@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlinx.browser.document
 import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
@@ -14,6 +15,15 @@ import models.AiChatServerEvent
 import models.AiRole
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
+import main.api.AiApi
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.get
+import org.khronos.webgl.set
+import org.w3c.dom.HTMLAudioElement
+import org.w3c.dom.url.URL
+import org.w3c.files.Blob
+import org.w3c.files.BlobPropertyBag
 
 object GlobalAiChatStore {
     private val scope = MainScope()
@@ -31,6 +41,9 @@ object GlobalAiChatStore {
         private set
 
     var isFullscreen by mutableStateOf(false)
+        private set
+
+    var speakingIndex by mutableStateOf(-1)
         private set
 
     private var sessionId: String? = null
@@ -64,6 +77,7 @@ object GlobalAiChatStore {
         sessionId = null
         isOpen = false
         isLoading = false
+        speakingIndex = -1
         messages = emptyList()
         input = ""
     }
@@ -71,6 +85,31 @@ object GlobalAiChatStore {
     fun setInput(value: String) { input = value }
 
     fun toggleFullscreen() { isFullscreen = !isFullscreen }
+
+    fun speak(index: Int) {
+        val m = messages.getOrNull(index) ?: return
+        if (speakingIndex != -1) return // Already speaking someone else
+
+        scope.launch {
+            speakingIndex = index
+            try {
+                val bytes = AiApi.generateTts(m.content)
+                val uint8Array = Uint8Array(bytes.size)
+                for (i in bytes.indices) {
+                    uint8Array[i] = bytes[i]
+                }
+                val blob = Blob(arrayOf(uint8Array), BlobPropertyBag(type = "audio/mpeg"))
+                val url = URL.createObjectURL(blob)
+                val audio = document.createElement("audio") as HTMLAudioElement
+                audio.src = url
+                audio.onended = { speakingIndex = -1 }
+                audio.play()
+            } catch (t: Throwable) {
+                console.error("TTS failed:", t)
+                speakingIndex = -1
+            }
+        }
+    }
 
     fun send(text: String) {
         val trimmed = text.trim()

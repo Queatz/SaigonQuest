@@ -30,6 +30,11 @@ object AiApi {
         val text: String,
     )
 
+    @Serializable
+    data class AiTtsRequest(
+        val text: String,
+    )
+
     suspend fun sendPrompt(
         prompt: String,
         docContents: String,
@@ -69,6 +74,21 @@ object AiApi {
         } else {
             val txt = runCatching { resp.bodyAsText() }.getOrNull()
             throw Error(txt ?: "Failed to load AI history: HTTP ${resp.status.value}")
+        }
+    }
+
+    suspend fun generateTts(text: String): ByteArray {
+        val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/tts") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(AiTtsRequest(text = text))
+        }
+        if (resp.status.isSuccess()) {
+            return resp.body()
+        } else {
+            val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
+            val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
+            throw Error(txt ?: "TTS request failed: HTTP ${resp.status.value}")
         }
     }
 }

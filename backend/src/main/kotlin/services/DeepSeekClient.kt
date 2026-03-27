@@ -193,4 +193,6 @@ object DeepSeekClient : AiClient {
     }
 
     override suspend fun transcribe(audioUrl: String): String? = null
+
+    override suspend fun tts(text: String): ByteArray? = null
 }

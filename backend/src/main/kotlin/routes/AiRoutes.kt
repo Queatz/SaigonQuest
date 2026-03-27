@@ -88,9 +88,41 @@ fun Routing.configureAiRoutes() {
                     }
                 call.respond(items)
             }
+
+            post("/tts") {
+                val req = try { call.receive<AiTtsRequest>() } catch (t: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request", code = HttpStatusCode.BadRequest.value, details = t.message)
+                    )
+                }
+
+                if (req.text.isBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Empty text", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                val audio = AiManager.client.tts(req.text)
+
+                if (audio == null) {
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = "Failed to generate audio", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                call.respondBytes(audio, ContentType.Audio.MPEG)
+            }
         }
     }
 }
+
+@Serializable
+data class AiTtsRequest(
+    val text: String,
+)
 
 @Serializable
 data class AiPromptRequest(

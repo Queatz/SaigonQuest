@@ -24,4 +24,10 @@ interface AiClient {
     suspend fun transcribe(
         audioUrl: String,
     ): String?
+    /**
+     * Synthesize speech for the provided text and return the binary audio data.
+     */
+    suspend fun tts(
+        text: String,
+    ): ByteArray?
 }
