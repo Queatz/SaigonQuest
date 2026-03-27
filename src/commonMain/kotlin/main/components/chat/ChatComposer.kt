@@ -3,7 +3,14 @@ package main.components.chat
 import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import lib.BlobPropertyBag
+import lib.FilePropertyBag
+import lib.MediaRecorder
 import main.api.*
+import main.components.Translated
+import main.components.audio.MusicManager
+import main.components.media.UploadMediaDialog
+import main.components.media.findMediaInClipboardEvent
 import main.theme.Styles
 import main.theme.Theme
 import models.MediaType
@@ -12,24 +19,17 @@ import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.*
+import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
-import org.w3c.files.File
 import org.w3c.files.Blob
-import lib.MediaRecorder
-import lib.BlobPropertyBag
-import lib.FilePropertyBag
-import web.navigator.navigator
+import org.w3c.files.File
 import web.mediadevices.getUserMedia
-import web.mediastreams.MediaStream
 import web.mediastreams.MediaStreamConstraints
 import web.mediastreams.MediaTrackConstraints
-import main.components.audio.MusicManager
-import org.w3c.dom.HTMLCanvasElement
-import main.components.Translated
-import main.components.media.UploadMediaDialog
-import main.components.media.findMediaInClipboardEvent
-import main.components.chat.RecordingPreview
+import web.navigator.navigator
 
 @Composable
 fun ChatComposer(

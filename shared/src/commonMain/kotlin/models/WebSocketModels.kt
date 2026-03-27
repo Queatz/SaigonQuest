@@ -129,6 +129,8 @@ data class DialogueData(
     val clickableWords: Boolean = false, // If true, wrap words in clickable spans
     val requiresImage: Boolean = false, // If true, show an image upload and return image URL(s) on confirm
     val allowMultipleImages: Boolean = false, // If true, allow multiple image uploads
+    val requiresAudio: Boolean = false, // If true, show an audio upload and return audio URL(s) on confirm
+    val allowMultipleAudio: Boolean = false, // If true, allow multiple audio uploads
 )
 
 /**
@@ -144,6 +146,7 @@ data class DialogueConfirmation(
     val inputText: String? = null, // Optional text provided by the user for input dialogues
     val clickedWord: String? = null, // Optional word that was clicked in the dialogue text
     val imageUrls: List<String>? = null, // Optional image URLs provided by the user for image input dialogues
+    val audioUrls: List<String>? = null, // Optional audio URLs provided by the user for audio input dialogues
 )
 
 /**

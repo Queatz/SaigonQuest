@@ -103,8 +103,11 @@ object MusicManager {
 
             if (targetUrl != null) {
                 val a = audio
-                // If already playing the correct track, don't interrupt it
+                // If already playing the correct track, update volume and don't interrupt it
                 if (a != null && a.src == targetUrl && !a.paused) {
+                    if (fadeIntervalId == null) {
+                        a.volume = AudioSettings.musicVolume()
+                    }
                     return
                 }
                 playUrl(targetUrl, fadeIn = true)
@@ -196,10 +199,10 @@ object MusicManager {
             }
             a.loop = true
             a.play().catch { err ->
-                console.warn("[MusicManager] Autoplay prevented or error starting audio: ${'$'}err")
+                console.warn("[MusicManager] Autoplay prevented or error starting audio: $err")
             }
-            if (fadeIn) fadeToVolume(1.0, durationMs = 1500)
-            else a.volume = 1.0
+            if (fadeIn) fadeToVolume(AudioSettings.musicVolume(), durationMs = 1500)
+            else a.volume = AudioSettings.musicVolume()
         } catch (t: Throwable) {
             console.error("[MusicManager] Failed to play url", t)
         }
@@ -231,9 +234,9 @@ object MusicManager {
                     a.src = url
                     a.volume = 0.0
                     a.play().catch { err ->
-                        console.warn("[MusicManager] Autoplay prevented or error starting audio: ${'$'}err")
+                        console.warn("[MusicManager] Autoplay prevented or error starting audio: $err")
                     }
-                    fadeToVolume(1.0, 1000)
+                    fadeToVolume(AudioSettings.musicVolume(), 1000)
                 }
             }, 50)
             fadeIntervalId = interval

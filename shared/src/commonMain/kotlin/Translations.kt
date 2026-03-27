@@ -70,8 +70,14 @@ vi: Xóa hình ảnh
 Add image
 vi: Thêm hình ảnh
 
+Add audio
+vi: Thêm âm thanh
+
 Player image input
 vi: Hình ảnh của người chơi
+
+Player audio input
+vi: Âm thanh của người chơi
 
 Allow multiple
 vi: Cho phép nhiều hình ảnh
@@ -81,6 +87,9 @@ vi: Nhãn nút xác nhận
 
 No images
 vi: Không có hình ảnh
+
+No audio
+vi: Không có âm thanh
 
 My Worlds
 vi: Thế giới của tôi
@@ -162,6 +171,9 @@ vi: Đồ họa đẹp
 
 Music
 vi: Âm nhạc
+
+Music volume
+vi: Âm lượng nhạc
 
 Night Music
 vi: Nhạc ban đêm

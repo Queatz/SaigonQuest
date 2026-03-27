@@ -34,5 +34,6 @@ enum class NodeId {
     AiChat,
     PlaySound,
     PlayerImageInput,
+    PlayerAudioInput,
     JoinList,
 }

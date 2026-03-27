@@ -77,6 +77,11 @@ enum class PropertyKey {
     IMAGE_MARKDOWN,
     NO_IMAGES,
 
+    // PlayerAudioInput properties
+    AUDIO_URL,
+    AUDIO_MARKDOWN,
+    NO_AUDIO,
+
     // JoinList properties
     LIST_CONTENT,
     ITEM_TEMPLATE,
@@ -913,6 +918,68 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.IMAGE_MARKDOWN,
                 name = "Images (Markdown)",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // PlayerAudioInput node properties
+        is LogicNode.PlayerAudioInput -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Description",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ALLOW_MULTIPLE,
+                name = "Allow multiple",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "false"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.CONFIRM_LABEL,
+                name = "Confirm label",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Confirm"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO_AUDIO,
+                name = "No audio",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.AUDIO_URL,
+                name = "Audio",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.AUDIO_MARKDOWN,
+                name = "Audio (Markdown)",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             )

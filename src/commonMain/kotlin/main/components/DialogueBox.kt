@@ -45,6 +45,7 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.dom.Br
 import org.jetbrains.compose.web.dom.TextInput
 import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.Audio
 import org.w3c.dom.HTMLElement
 import web.animations.awaitAnimationFrame
 import web.cssom.HtmlAttributes.Companion.value
@@ -74,7 +75,8 @@ fun DialogueBox(
     var inputEl by remember { mutableStateOf<HTMLElement?>(null) }
     
     var uploadedImages by remember { mutableStateOf(listOf<String>()) }
-    var showUploadDialog by remember { mutableStateOf(false) }
+    var uploadedAudios by remember { mutableStateOf(listOf<String>()) }
+    var uploadMediaType by remember { mutableStateOf<MediaType?>(null) }
 
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
@@ -195,11 +197,58 @@ fun DialogueBox(
                             classes(Styles.imageAddButton)
                             onClick {
                                 if (isWaiting) return@onClick
-                                showUploadDialog = true
+                                uploadMediaType = MediaType.Image
                             }
                         }) {
                             Text("➕")
                             Text(translated("Add image"))
+                        }
+                    }
+                }
+            }
+
+            if (dialogue.requiresAudio) {
+                Div({
+                    classes(Styles.imageInputContainer)
+                }) {
+                    uploadedAudios.forEach { url ->
+                        Div({
+                            classes(Styles.imagePreviewItem)
+                            style {
+                                width(280.px)
+                            }
+                        }) {
+                            Audio(attrs = {
+                                attr("src", url)
+                                attr("controls", "true")
+                                style {
+                                    width(100.percent)
+                                }
+                            })
+                            Button(attrs = {
+                                if (isWaiting) disabled()
+                                classes(Styles.imageRemoveButton)
+                                onClick {
+                                    if (isWaiting) return@onClick
+                                    uploadedAudios = uploadedAudios.filter { it != url }
+                                }
+                            }) {
+                                Text("×")
+                            }
+                        }
+                    }
+
+                    if (dialogue.allowMultipleAudio || uploadedAudios.isEmpty()) {
+                        Button(attrs = {
+                            if (isWaiting) disabled()
+                            classes(Styles.imageAddButton)
+                            onClick {
+                                if (isWaiting) return@onClick
+                                uploadMediaType = MediaType.Audio
+                            }
+                        }) {
+                            Text("➕")
+                            Text(translated("Add audio"))
                         }
                     }
                 }
@@ -297,12 +346,14 @@ fun DialogueBox(
                                     val userId = user.key
                                     val inputText = if (dialogue.requiresInput) textInput else null
                                     val imageUrls = if (dialogue.requiresImage) uploadedImages else null
+                                    val audioUrls = if (dialogue.requiresAudio) uploadedAudios else null
                                     WebSocketApi.sendDialogueConfirmation(
                                         dialogueId = dialogue.dialogueId,
                                         userId = userId,
                                         buttonIndex = index,
                                         inputText = inputText,
-                                        imageUrls = imageUrls
+                                        imageUrls = imageUrls,
+                                        audioUrls = audioUrls,
                                     )
                                 } catch (e: Throwable) {
                                     console.error("Error sending dialogue confirmation", e)
@@ -311,6 +362,7 @@ fun DialogueBox(
                                     // Reset
                                     textInput = ""
                                     uploadedImages = emptyList()
+                                    uploadedAudios = emptyList()
                                     
                                     delay(500)
                                     if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
@@ -328,18 +380,27 @@ fun DialogueBox(
         }
     )
 
-    if (showUploadDialog) {
+    if (uploadMediaType != null) {
+        val currentType = uploadMediaType!!
         UploadMediaDialog(
-            onClose = { showUploadDialog = false },
+            onClose = { uploadMediaType = null },
             onSelect = { url, _, _ ->
-                uploadedImages = if (dialogue.allowMultipleImages) {
-                    uploadedImages + url
-                } else {
-                    listOf(url)
+                if (currentType == MediaType.Image) {
+                    uploadedImages = if (dialogue.allowMultipleImages) {
+                        uploadedImages + url
+                    } else {
+                        listOf(url)
+                    }
+                } else if (currentType == MediaType.Audio) {
+                    uploadedAudios = if (dialogue.allowMultipleAudio) {
+                        uploadedAudios + url
+                    } else {
+                        listOf(url)
+                    }
                 }
-                showUploadDialog = false
+                uploadMediaType = null
             },
-            filter = MediaType.Image
+            filter = currentType
         )
     }
 }

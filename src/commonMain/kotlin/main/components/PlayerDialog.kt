@@ -45,6 +45,9 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.RangeInput
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.flexDirection
 
 /**
  * Dialog for player users to logout
@@ -62,6 +65,7 @@ fun PlayerDialog(
     val isLowGraphicsMode = remember { mutableStateOf(GraphicsSettings.isLowGraphicsModeEnabled()) }
     val isPrettyGraphics = remember { mutableStateOf(GraphicsSettings.isPrettyGraphicsEnabled()) }
     val isMusicEnabled = remember { mutableStateOf(AudioSettings.isMusicEnabled()) }
+    val musicVolume = remember { mutableStateOf(AudioSettings.musicVolume()) }
 
     // State to track current language
     val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
@@ -453,6 +457,20 @@ fun PlayerDialog(
                         },
                         id = "musicToggle",
                     )
+
+                    if (isMusicEnabled.value) {
+                        // Music volume slider
+                        SettingsSlider(
+                            label = translated("Music volume"),
+                            value = musicVolume.value,
+                            onValueChange = { newValue ->
+                                AudioSettings.setMusicVolume(newValue)
+                                musicVolume.value = newValue
+                            },
+                            disabled = !isMusicEnabled.value,
+                            id = "musicVolumeSlider",
+                        )
+                    }
 
                     // My worlds button or first-world CTA
                     run {

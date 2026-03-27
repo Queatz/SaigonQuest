@@ -757,6 +757,14 @@ class NodeLogicRunner(
                 )
                 PlayerImageInputNodeRunner(context)
             }
+            NodeId.PlayerAudioInput -> {
+                WebSocketDebug.logMessage(
+                    "PLAYER_AUDIO_INPUT_RUNNER_SELECTED",
+                    "Selected PlayerAudioInputNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlayerAudioInputNodeRunner(context)
+            }
             NodeId.StringTemplate -> {
                 WebSocketDebug.logMessage(
                     "STRING_TEMPLATE_RUNNER_SELECTED",

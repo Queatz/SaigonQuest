@@ -55,22 +55,8 @@ object NotificationStyles : StyleSheet() {
     
     val markAllAsReadContainer by style {
         display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.FlexEnd)
+        justifyContent(JustifyContent.Center)
         marginBottom(12.px)
-    }
-    
-    val markAllAsReadButton by style {
-        backgroundColor(Theme.colors.panelGlass)
-        color(Theme.colors.onBackground)
-        padding(8.px, 12.px)
-        borderRadius(4.px)
-        cursor("pointer")
-        property("border", "none")
-
-        dark(self) {
-            backgroundColor(Theme.colors.panelGlassDark)
-            color(Theme.colors.onBackgroundDark)
-        }
     }
     
     val loadingContainer by style {

@@ -368,6 +368,17 @@ sealed interface LogicNode {
     ) : LogicNode
 
     /**
+     * PlayerAudioInput node - prompts the player for audio uploads
+     */
+    @Serializable
+    data class PlayerAudioInput(
+        override val id: NodeId = NodeId.PlayerAudioInput,
+        override val label: String = "Player audio input",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Prompt player with a title, preview areas and confirm button"
+    ) : LogicNode
+
+    /**
      * JoinList node - formats and joins a comma-separated list into a single string
      */
     @Serializable
@@ -421,6 +432,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.AiChat(),
         LogicNode.PlaySound(),
         LogicNode.PlayerImageInput(),
+        LogicNode.PlayerAudioInput(),
         LogicNode.JoinList(),
     )
 }
