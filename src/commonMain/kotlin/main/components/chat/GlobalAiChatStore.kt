@@ -10,6 +10,7 @@ import main.api.AiApi
 import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
+import main.components.audio.MusicManager
 import models.AiChatClientEvent
 import models.AiChatMessageDto
 import models.AiChatServerEvent
@@ -112,6 +113,12 @@ object GlobalAiChatStore {
                 }
             }
         }
+        updateMusicManager()
+    }
+
+    private fun updateMusicManager() {
+        val shouldPauseMusic = speakingIndex != -1 && !isSpeechPaused
+        MusicManager.setIsAiSpeaking(shouldPauseMusic)
     }
 
     private fun togglePauseResume() {
@@ -124,6 +131,7 @@ object GlobalAiChatStore {
                 ctx.`suspend`().await()
                 isSpeechPaused = true
             }
+            updateMusicManager()
         }
     }
 
@@ -153,6 +161,7 @@ object GlobalAiChatStore {
             isSpeechLoading = true
             isSpeechPaused = false
             isFetchingSpeech = true
+            updateMusicManager()
             
             try {
                 val ctx = currentAudioContext ?: AudioContext()
@@ -189,6 +198,7 @@ object GlobalAiChatStore {
                         activeSources.remove(source)
                         if (!isFetchingSpeech && activeSources.isEmpty() && speakingIndex == index) {
                             speakingIndex = -1
+                            updateMusicManager()
                         }
                     }
                 }
@@ -200,6 +210,7 @@ object GlobalAiChatStore {
                 isFetchingSpeech = false
                 if (activeSources.isEmpty() && speakingIndex == index) {
                     speakingIndex = -1
+                    updateMusicManager()
                 }
             }
         }

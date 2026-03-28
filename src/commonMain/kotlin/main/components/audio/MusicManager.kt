@@ -26,6 +26,7 @@ object MusicManager {
     private var currentUrl: String? = null
     private val activeExternalMedia = mutableSetOf<HTMLMediaElement>()
     private var recordingCount = 0
+    private var isAiSpeaking = false
 
     init {
         // React to global audio setting changes
@@ -67,7 +68,7 @@ object MusicManager {
     }
 
     private fun shouldBePlaying(): Boolean {
-        return AudioSettings.isMusicEnabled() && activeExternalMedia.isEmpty() && recordingCount == 0
+        return AudioSettings.isMusicEnabled() && activeExternalMedia.isEmpty() && recordingCount == 0 && !isAiSpeaking
     }
 
     /**
@@ -85,6 +86,13 @@ object MusicManager {
     fun stopRecording() {
         recordingCount = (recordingCount - 1).coerceAtLeast(0)
         refreshPlayback()
+    }
+
+    fun setIsAiSpeaking(speaking: Boolean) {
+        if (this.isAiSpeaking != speaking) {
+            this.isAiSpeaking = speaking
+            refreshPlayback()
+        }
     }
 
     private fun refreshPlayback() {
