@@ -15,31 +15,12 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
-import kotlinx.serialization.Serializable
 import models.AiPromptHistory
+import models.AiPromptRequest
+import models.AiTtsRequest
 import models.ErrorResponse
 
 object AiApi {
-    @Serializable
-    data class AiPromptRequest(
-        val prompt: String,
-        val docContents: String,
-        val caretStart: Int,
-        val caretEnd: Int,
-        val docId: String? = null,
-        val docName: String? = null,
-    )
-
-    @Serializable
-    data class AiPromptResponse(
-        val text: String,
-    )
-
-    @Serializable
-    data class AiTtsRequest(
-        val text: String,
-    )
-
     suspend fun sendPrompt(
         prompt: String,
         docContents: String,
@@ -61,7 +42,7 @@ object AiApi {
             ))
         }
         if (resp.status.isSuccess()) {
-            return resp.body<AiPromptResponse>().text
+            return resp.bodyAsText()
         } else {
             val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
             val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()

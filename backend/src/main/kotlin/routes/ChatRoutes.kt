@@ -518,7 +518,7 @@ fun Routing.configureChatRoutes() {
                     ErrorResponse(message = "Missing audioUrl parameter", code = HttpStatusCode.BadRequest.value)
                 )
 
-                val client = AiManager.transcriptionClient
+                val client = AiManager.client
                 if (!AiManager.isConfigured(client)) {
                     return@post call.respond(
                         HttpStatusCode.InternalServerError,

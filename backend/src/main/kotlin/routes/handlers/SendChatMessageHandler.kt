@@ -83,7 +83,7 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
                     println("[DEBUG_LOG] Detected audio message: $audioUrl")
                     
                     if (audioUrl.isNotBlank()) {
-                        val client = AiManager.transcriptionClient
+                        val client = AiManager.client
                         println("[DEBUG_LOG] Using transcription client: ${client::class.simpleName}")
                         
                         CoroutineScope(Dispatchers.IO).launch {

@@ -4,24 +4,12 @@ package services
  * Manager to select the active AI client.
  */
 object AiManager {
-    private val provider = System.getenv("AI_PROVIDER") ?: System.getProperty("AI_PROVIDER") ?: "OPENAI"
-
-    val client: AiClient = when (provider.uppercase()) {
-        "DEEPSEEK" -> DeepSeekClient
-        "ALIBABA" -> AlibabaAiClient
-        "OPENAI" -> OpenAiClient
-        else -> OpenAiClient
-    }
-
-    /**
-     * Client for transcription (always Alibaba as per requirements).
-     */
-    val transcriptionClient: AiClient = AlibabaAiClient
+    val client: AiClient = AlibabaAiClient
 
     /**
      * Client for TTS (follows the main provider).
      */
-    val ttsClient: AiClient = client
+    val ttsClient: AiClient = OpenAiClient
 
     fun getApiKeyName(c: AiClient = client): String = when (c) {
         is DeepSeekClient -> "DEEPSEEK_API_KEY"

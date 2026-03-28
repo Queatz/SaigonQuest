@@ -9,10 +9,9 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.serialization.Serializable
 import models.AiPromptHistory
+import models.AiPromptRequest
+import models.AiTtsRequest
 import models.ErrorResponse
 import repository.AiHistoryRepository
 import services.AiManager
@@ -72,7 +71,7 @@ fun Routing.configureAiRoutes() {
                 )
                 runCatching { historyRepo.insert(entry) }
 
-                call.respond(AiPromptResponse(text = text))
+                call.respondText(text)
             }
 
             get("/history") {
@@ -105,12 +104,12 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                // Ensure TTS provider is configured
-                if (!AiManager.isConfigured(AiManager.ttsClient)) {
+                // Ensure transcription provider is configured
+                if (!AiManager.isConfigured(AiManager.client)) {
                     return@post call.respond(
                         HttpStatusCode.InternalServerError,
                         ErrorResponse(
-                            message = "TTS provider not configured (missing ${AiManager.getApiKeyName(AiManager.ttsClient)})",
+                            message = "TTS provider not configured (missing ${AiManager.getApiKeyName(AiManager.client)})",
                             code = HttpStatusCode.InternalServerError.value,
                         )
                     )
@@ -126,26 +125,6 @@ fun Routing.configureAiRoutes() {
         }
     }
 }
-
-@Serializable
-data class AiTtsRequest(
-    val text: String,
-)
-
-@Serializable
-data class AiPromptRequest(
-    val prompt: String,
-    val docContents: String,
-    val caretStart: Int,
-    val caretEnd: Int,
-    val docId: String? = null,
-    val docName: String? = null,
-)
-
-@Serializable
-data class AiPromptResponse(
-    val text: String,
-)
 
 private fun buildSystemPrompt(contents: String, caretStart: Int, caretEnd: Int, docName: String?): String {
     val caretSection = if (caretStart != caretEnd) {

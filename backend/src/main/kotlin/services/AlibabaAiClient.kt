@@ -75,7 +75,7 @@ object AlibabaAiClient : AiClient {
     private data class AlibabaRequest(
         val model: String,
         val messages: List<ChatMessage>,
-        val temperature: Float? = null,
+        val temperature: Double = 1.2,
         @SerialName("max_tokens")
         val maxTokens: Int? = null,
         @SerialName("response_format")
@@ -234,7 +234,7 @@ object AlibabaAiClient : AiClient {
 
         val body = AlibabaRequest(
             messages = messages,
-            temperature = temperature?.toFloat(),
+            temperature = temperature ?: 1.2,
             model = "qwen3.5-flash",
             maxTokens = 1024,
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
