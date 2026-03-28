@@ -344,63 +344,55 @@ class NodeLogicRunner(
                     }
                 }
 
-                // Pass 2: Traverse selected trigger branch
+                // Pass 2: Traverse selected trigger branches
                 val isWordClick = (eventData["isWordClick"] as? Boolean) ?: false
                 val buttonIndex = if (isWordClick) -1 else (eventData["buttonIndex"] as? Int) ?: 0
-                
-                val connection = if (isWordClick && node.nodeId == NodeId.Dialogue) {
-                    connections.find { it.fromPort.endsWith("_out_word_clicked") }
-                } else {
-                    // Get the button index from the event data (default to 0 if not present)
-                    WebSocketDebug.logMessage(
-                        "DIALOGUE_BUTTON_INDEX",
-                        "Using button index: $buttonIndex for node: ${node.id}",
-                        context.session
-                    )
 
-                    // Use the button index to select a connection
+                val matchingConnections = if (isWordClick && node.nodeId == NodeId.Dialogue) {
+                    connections.filter { it.fromPort.endsWith("_out_word_clicked") }
+                } else {
+                    // Use the button index to select connections
                     // Prefer dynamic dialogue outputs, but fall back to static outputs
-                    connections.find { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
-                        ?: connections.find { c -> c.fromPort.endsWith("_out_$buttonIndex") }
+                    val dynamic = connections.filter { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
+                    if (dynamic.isNotEmpty()) dynamic else connections.filter { c -> c.fromPort.endsWith("_out_$buttonIndex") }
                 }
 
-                if (connection != null) {
-                    WebSocketDebug.logMessage(
-                        "FOLLOWING_HAS_ITEM_CONNECTION",
-                        "Following connection from ${connection.from} to ${connection.to} for buttonIndex: $buttonIndex",
-                        context.session
-                    )
+                if (matchingConnections.isNotEmpty()) {
+                    coroutineScope {
+                        for (connection in matchingConnections) {
+                            WebSocketDebug.logMessage(
+                                "FOLLOWING_DIALOGUE_CONNECTION",
+                                "Following connection from ${connection.from} to ${connection.to} for buttonIndex: $buttonIndex",
+                                context.session
+                            )
 
-                    // Always propagate any value carried on this connection
-                    propagateValue(connection.fromPort, connection.toPort, eventData)
-
-                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                    if (targetNode != null) {
-                        WebSocketDebug.logMessage(
-                            "TARGET_NODE_FOUND",
-                            "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
-                            context.session
-                        )
-                        // Only traverse if this is a trigger connection
-                        if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData, executedNodes)
+                            val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
+                            if (targetNode != null) {
+                                // Only traverse if this is a trigger connection
+                                if (isTriggerConnection(node, connection.fromPort)) {
+                                    launch {
+                                        val branchEventData = eventData.toMutableMap()
+                                        val branchExecuted = executedNodes.toMutableSet()
+                                        // Propagate any value carried on this connection into the branch state
+                                        propagateValue(connection.fromPort, connection.toPort, branchEventData)
+                                        processNode(targetNode, branchEventData, branchExecuted)
+                                    }
+                                } else {
+                                    // If it's a value connection, ensure it's propagated
+                                    propagateValue(connection.fromPort, connection.toPort, eventData)
+                                }
+                            }
                         }
-                    } else {
-                        WebSocketDebug.logError(
-                            "Target node not found for connection: ${connection.from} -> ${connection.to}",
-                            null,
-                            context.session
-                        )
                     }
                 } else {
                     WebSocketDebug.logMessage(
-                        "NO_CONNECTION_FOR_OUTPUT_PROPERTY",
+                        "NO_CONNECTION_FOR_DIALOGUE_OUTPUT",
                         "No connection found for buttonIndex: $buttonIndex on node: ${node.id}",
                         context.session
                     )
                 }
-            } else if (node.nodeId == NodeId.HasItem || node.nodeId == NodeId.TakeItems || node.nodeId == NodeId.GiveItems || node.nodeId == NodeId.UserAge || node.nodeId == NodeId.IsObjectOwner || node.nodeId == NodeId.PlayerImageInput) {
-                // For nodes that use outputProperty to select the correct connection
+            } else if (node.nodeId in listOf(NodeId.HasItem, NodeId.TakeItems, NodeId.GiveItems, NodeId.UserAge, NodeId.IsObjectOwner, NodeId.PlayerImageInput, NodeId.PlayerAudioInput)) {
+                // For nodes that use outputProperty to select the correct branches
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
                 WebSocketDebug.logMessage(
@@ -409,81 +401,52 @@ class NodeLogicRunner(
                     context.session
                 )
 
-                // Find the connection that corresponds to the output property
-                val connection = if (connections.isNotEmpty()) {
-                    // Find the connection that matches the output property based on the sourcePortId in the connection id
-                    WebSocketDebug.logMessage(
-                        "CHECKING_CONNECTIONS",
-                        "Checking ${connections.size} connections for output property: $outputProperty",
-                        context.session
-                    )
-
-                    val matchingConnection = connections.find { connection ->
-                        WebSocketDebug.logMessage(
-                            "CHECKING_CONNECTIONS",
-                            "Checking connection for output property: $connection with fromPort=${connection.fromPort}",
-                            context.session
-                        )
+                val matchingConnections = if (outputProperty != null) {
+                    connections.filter { connection ->
+                        if (!isTriggerConnection(node, connection.fromPort)) return@filter false
 
                         when (outputProperty) {
                             PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
-                            PropertyKey.NO, PropertyKey.NO_IMAGES -> connection.fromPort.endsWith("_out_1")
+                            PropertyKey.NO, PropertyKey.NO_IMAGES, PropertyKey.NO_AUDIO -> connection.fromPort.endsWith("_out_1")
                             PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
                             else -> false
                         }
                     }
-
-                    if (matchingConnection != null) {
-                        WebSocketDebug.logMessage(
-                            "FOUND_MATCHING_CONNECTION",
-                            "Found connection matching output property $outputProperty: ${matchingConnection.id}",
-                            context.session
-                        )
-                        matchingConnection
-                    } else {
-                        WebSocketDebug.logError(
-                            "No connection found matching output property $outputProperty for HasItem node: ${node.id}",
-                            null,
-                            context.session
-                        )
-                        null
-                    }
                 } else {
-                    WebSocketDebug.logError("No connections found for HasItem node: ${node.id}", null, context.session)
-                    null
+                    emptyList()
                 }
 
-                if (connection != null) {
-                    WebSocketDebug.logMessage(
-                        "FOLLOWING_HAS_ITEM_CONNECTION",
-                        "Following connection from ${connection.from} to ${connection.to} for output property: $outputProperty",
-                        context.session
-                    )
+                if (matchingConnections.isNotEmpty()) {
+                    coroutineScope {
+                        for (connection in matchingConnections) {
+                            WebSocketDebug.logMessage(
+                                "FOLLOWING_CONDITION_CONNECTION",
+                                "Following connection from ${connection.from} to ${connection.to} for output property: $outputProperty",
+                                context.session
+                            )
 
-                    // Propagate any value carried on this connection
-                    propagateValue(connection.fromPort, connection.toPort, eventData)
-
-                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                    if (targetNode != null) {
-                        WebSocketDebug.logMessage(
-                            "TARGET_NODE_FOUND",
-                            "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
-                            context.session
-                        )
-                        if (isTriggerConnection(node, connection.fromPort)) {
-                            processNode(targetNode, eventData, executedNodes)
+                            val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
+                            if (targetNode != null) {
+                                launch {
+                                    val branchEventData = eventData.toMutableMap()
+                                    val branchExecuted = executedNodes.toMutableSet()
+                                    // Propagate any value carried on this connection into the branch state
+                                    propagateValue(connection.fromPort, connection.toPort, branchEventData)
+                                    processNode(targetNode, branchEventData, branchExecuted)
+                                }
+                            } else {
+                                WebSocketDebug.logError(
+                                    "Target node not found for connection: ${connection.from} -> ${connection.to}",
+                                    null,
+                                    context.session
+                                )
+                            }
                         }
-                    } else {
-                        WebSocketDebug.logError(
-                            "Target node not found for connection: ${connection.from} -> ${connection.to}",
-                            null,
-                            context.session
-                        )
                     }
                 } else {
                     WebSocketDebug.logMessage(
-                        "NO_CONNECTION_FOR_OUTPUT_PROPERTY",
-                        "No connection found for output property: $outputProperty on node: ${node.id}",
+                        "NO_CONNECTION_FOR_CONDITION_OUTPUT",
+                        "No connection found matching output property $outputProperty for node: ${node.id}",
                         context.session
                     )
                 }
