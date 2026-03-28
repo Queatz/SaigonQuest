@@ -105,8 +105,19 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
+                // Ensure TTS provider is configured
+                if (!AiManager.isConfigured(AiManager.ttsClient)) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(
+                            message = "TTS provider not configured (missing ${AiManager.getApiKeyName(AiManager.ttsClient)})",
+                            code = HttpStatusCode.InternalServerError.value,
+                        )
+                    )
+                }
+
                 call.respondBytesWriter(ContentType("audio", "l16")) {
-                    AiManager.client.ttsStream(req.text) { chunk ->
+                    AiManager.ttsClient.ttsStream(req.text) { chunk ->
                         writeFully(chunk)
                         flush()
                     }

@@ -518,21 +518,24 @@ fun Routing.configureChatRoutes() {
                     ErrorResponse(message = "Missing audioUrl parameter", code = HttpStatusCode.BadRequest.value)
                 )
 
-                // Only Alibaba supports transcription in our setup
-                if (AiManager.client is AlibabaAiClient) {
-                    val text = AiManager.client.transcribe(audioUrl)
-                    if (text != null) {
-                        call.respond(mapOf("text" to text))
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(message = "Transcription failed", code = HttpStatusCode.InternalServerError.value)
+                val client = AiManager.transcriptionClient
+                if (!AiManager.isConfigured(client)) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(
+                            message = "Transcription provider not configured (missing ${AiManager.getApiKeyName(client)})",
+                            code = HttpStatusCode.InternalServerError.value,
                         )
-                    }
+                    )
+                }
+
+                val text = client.transcribe(audioUrl)
+                if (text != null) {
+                    call.respond(mapOf("text" to text))
                 } else {
                     call.respond(
-                        HttpStatusCode.NotImplemented,
-                        ErrorResponse(message = "Transcription only supported by Alibaba provider", code = HttpStatusCode.NotImplemented.value)
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "Transcription failed", code = HttpStatusCode.InternalServerError.value)
                     )
                 }
             }

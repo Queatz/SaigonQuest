@@ -13,18 +13,28 @@ object AiManager {
         else -> OpenAiClient
     }
 
-    fun getApiKeyName(): String = when (client) {
+    /**
+     * Client for transcription (always Alibaba as per requirements).
+     */
+    val transcriptionClient: AiClient = AlibabaAiClient
+
+    /**
+     * Client for TTS (follows the main provider).
+     */
+    val ttsClient: AiClient = client
+
+    fun getApiKeyName(c: AiClient = client): String = when (c) {
         is DeepSeekClient -> "DEEPSEEK_API_KEY"
         is AlibabaAiClient -> "ALIBABA_API_KEY"
         is OpenAiClient -> "OPENAI_API_KEY"
         else -> "AI_API_KEY"
     }
 
-    fun isConfigured(): Boolean {
-        val keyName = getApiKeyName()
+    fun isConfigured(c: AiClient = client): Boolean {
+        val keyName = getApiKeyName(c)
         val key = System.getenv(keyName) ?: System.getProperty(keyName)
         // Alibaba client has a fallback key from the issue description, but we should still check if it's explicitly set or use the fallback
-        if (client is AlibabaAiClient) return true // It has a hardcoded fallback as per instructions
+        if (c is AlibabaAiClient) return true // It has a hardcoded fallback as per instructions
         return !key.isNullOrBlank()
     }
 }
