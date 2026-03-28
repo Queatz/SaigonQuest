@@ -26,7 +26,6 @@ import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readBytes
 import io.ktor.websocket.readText
-import kotlinx.serialization.encodeToString
 import kotlinx.coroutines.delay
 import utils.json as appJson
 
@@ -95,21 +94,19 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class AsrInput(
-        @SerialName("file_urls")
-        val fileUrls: List<String>,
-        @SerialName("audio_urls")
-        val audioUrls: List<String>,
+        @SerialName("file_url")
+        val fileUrl: String,
     )
 
     @Serializable
     private data class AsrRequest(
         val model: String,
         val input: AsrInput,
-        val parameters: Map<String, String> = emptyMap(),
+        val parameters: Map<String, List<String>> = emptyMap(),
     )
 
     @Serializable
-    private data class AsrResultItem(
+    internal data class AsrResultItem(
         @SerialName("file_url")
         val fileUrl: String? = null,
         @SerialName("transcription_url")
@@ -121,12 +118,13 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
-    private data class AsrTaskOutput(
+    internal data class AsrTaskOutput(
         @SerialName("task_id")
         val taskId: String? = null,
         @SerialName("task_status")
         val taskStatus: String? = null,
         val results: List<AsrResultItem>? = null,
+        val result: AsrResultItem? = null,
         val code: String? = null,
         val message: String? = null,
         @SerialName("error_code")
@@ -136,7 +134,7 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
-    private data class TranscriptionFileResult(
+    internal data class TranscriptionFileResult(
         val text: String? = null,
         val transcription: String? = null,
         val sentences: List<TranscriptionSentence>? = null,
@@ -144,19 +142,19 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
-    private data class TranscriptionTranscript(
+    internal data class TranscriptionTranscript(
         val text: String? = null,
         val sentences: List<TranscriptionSentence>? = null,
     )
 
     @Serializable
-    private data class TranscriptionSentence(
+    internal data class TranscriptionSentence(
         val text: String? = null,
         val transcription: String? = null,
     )
 
     @Serializable
-    private data class AsrTaskResponse(
+    internal data class AsrTaskResponse(
         val output: AsrTaskOutput? = null,
         @SerialName("request_id")
         val requestId: String? = null,
@@ -314,14 +312,17 @@ object AlibabaAiClient : AiClient {
             println("[DEBUG_LOG] Alibaba API Key is blank, returning null")
             return null
         }
-        
+
         val body = AsrRequest(
-            model = "fun-asr",
+            // 1. Switch to the Qwen3 async long-file transcription model
+            model = "qwen3-asr-flash-filetrans",
             input = AsrInput(
-                fileUrls = listOf(audioUrl),
-                audioUrls = listOf(audioUrl)
+                fileUrl = audioUrl,
             ),
-            parameters = emptyMap()
+            // 2. (Optional but Recommended) Pass a language hint for Vietnamese
+            parameters = mapOf(
+                "language_hints" to listOf("vi", "en")
+            )
         )
 
         return try {
@@ -375,7 +376,7 @@ object AlibabaAiClient : AiClient {
                         val status = pollData.output?.taskStatus
                         if (status == "SUCCEEDED") {
                             println("[DEBUG_LOG] Alibaba ASR task SUCCEEDED. Parsing results...")
-                            val res = pollData.output.results?.firstOrNull()
+                            val res = pollData.output.result ?: pollData.output.results?.firstOrNull()
                             transcript = res?.transcription ?: res?.text
 
                             if (transcript == null && !res?.transcriptionUrl.isNullOrBlank()) {
