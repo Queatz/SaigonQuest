@@ -18,6 +18,7 @@ external class AudioContext() {
     val currentTime: Double
     val state: String
     fun resume(): kotlin.js.Promise<Unit>
+    fun `suspend`(): kotlin.js.Promise<Unit>
     fun createMediaStreamSource(stream: MediaStream): MediaStreamAudioSourceNode
     fun createScriptProcessor(
         bufferSize: Int = definedExternally,

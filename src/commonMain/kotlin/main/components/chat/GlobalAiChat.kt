@@ -108,12 +108,18 @@ fun GlobalAiChat() {
                             onClick { GlobalAiChatStore.speak(index) }
                         }) {
                             if (GlobalAiChatStore.speakingIndex == index) {
-                                Spinner(
-                                    message = null,
-                                    spinnerClass = Styles.aiChatLoadingSpinner,
-                                )
+                                if (GlobalAiChatStore.isSpeechPaused) {
+                                    Span { Text("▶️") }
+                                } else if (GlobalAiChatStore.isSpeechLoading) {
+                                    Spinner(
+                                        message = null,
+                                        spinnerClass = Styles.aiChatLoadingSpinner,
+                                    )
+                                } else {
+                                    Span { Text("⏸️") }
+                                }
                             } else {
-                                Span { Text("🔊") }
+                                Span { Text("▶️") }
                             }
                         }
                     }

@@ -1,11 +1,12 @@
 package main.components.chat
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.browser.document
+import kotlinx.coroutines.*
+import lib.AudioBufferSourceNode
+import lib.AudioContext
+import main.api.AiApi
 import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
@@ -13,18 +14,12 @@ import models.AiChatClientEvent
 import models.AiChatMessageDto
 import models.AiChatServerEvent
 import models.AiRole
-import org.w3c.dom.MessageEvent
-import org.w3c.dom.WebSocket
-import main.api.AiApi
-import org.khronos.webgl.Int8Array
 import org.khronos.webgl.Float32Array
-import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.Int8Array
 import org.khronos.webgl.get
 import org.khronos.webgl.set
-import lib.AudioContext
-import lib.AudioBufferSourceNode
-import kotlinx.coroutines.await
-import kotlinx.coroutines.delay
+import org.w3c.dom.MessageEvent
+import org.w3c.dom.WebSocket
 
 object GlobalAiChatStore {
     private val scope = MainScope()
@@ -46,6 +41,15 @@ object GlobalAiChatStore {
 
     var speakingIndex by mutableStateOf(-1)
         private set
+
+    var isSpeechPaused by mutableStateOf(false)
+        private set
+
+    var isSpeechLoading by mutableStateOf(false)
+        private set
+
+    private var speechJob: Job? = null
+    private var isFetchingSpeech = false
 
     private var sessionId: String? = null
     private var socket: WebSocket? = null
@@ -78,7 +82,7 @@ object GlobalAiChatStore {
         sessionId = null
         isOpen = false
         isLoading = false
-        speakingIndex = -1
+        stopSpeech()
         messages = emptyList()
         input = ""
     }
@@ -92,9 +96,35 @@ object GlobalAiChatStore {
     private var activeSources = mutableListOf<AudioBufferSourceNode>()
 
     private fun stopSpeech() {
+        speechJob?.cancel()
+        speechJob = null
         activeSources.forEach { it.stop() }
         activeSources.clear()
         speakingIndex = -1
+        isSpeechPaused = false
+        isSpeechLoading = false
+        isFetchingSpeech = false
+        
+        currentAudioContext?.let { ctx ->
+            if (ctx.state == "suspended") {
+                scope.launch {
+                    try { ctx.resume().await() } catch (_: Throwable) {}
+                }
+            }
+        }
+    }
+
+    private fun togglePauseResume() {
+        val ctx = currentAudioContext ?: return
+        scope.launch {
+            if (ctx.state == "suspended") {
+                ctx.resume().await()
+                isSpeechPaused = false
+            } else {
+                ctx.`suspend`().await()
+                isSpeechPaused = true
+            }
+        }
     }
 
     private fun pcm16ToFloat32(byteArray: Int8Array): Float32Array {
@@ -111,16 +141,19 @@ object GlobalAiChatStore {
 
     fun speak(index: Int) {
         val m = messages.getOrNull(index) ?: return
-        if (speakingIndex != -1) {
-            if (speakingIndex == index) {
-                stopSpeech()
-                return
-            }
-            stopSpeech()
+        if (speakingIndex == index) {
+            togglePauseResume()
+            return
         }
+        
+        stopSpeech()
 
-        scope.launch {
+        speechJob = scope.launch {
             speakingIndex = index
+            isSpeechLoading = true
+            isSpeechPaused = false
+            isFetchingSpeech = true
+            
             try {
                 val ctx = currentAudioContext ?: AudioContext()
                 currentAudioContext = ctx
@@ -133,6 +166,10 @@ object GlobalAiChatStore {
                 activeSources.clear()
 
                 AiApi.generateTtsStream(m.content) { chunk ->
+                    while (isSpeechPaused) {
+                        delay(100)
+                    }
+                    isSpeechLoading = false
                     val floatData = pcm16ToFloat32(chunk.unsafeCast<Int8Array>())
                     if (floatData.length == 0) return@generateTtsStream
                     
@@ -150,14 +187,20 @@ object GlobalAiChatStore {
                     
                     source.onended = {
                         activeSources.remove(source)
-                        if (activeSources.isEmpty() && speakingIndex == index) {
+                        if (!isFetchingSpeech && activeSources.isEmpty() && speakingIndex == index) {
                             speakingIndex = -1
                         }
                     }
                 }
             } catch (t: Throwable) {
-                console.error("TTS failed:", t)
-                speakingIndex = -1
+                if (t !is CancellationException) {
+                    console.error("TTS failed:", t)
+                }
+            } finally {
+                isFetchingSpeech = false
+                if (activeSources.isEmpty() && speakingIndex == index) {
+                    speakingIndex = -1
+                }
             }
         }
     }
