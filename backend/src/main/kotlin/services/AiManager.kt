@@ -4,17 +4,19 @@ package services
  * Manager to select the active AI client.
  */
 object AiManager {
-    private val provider = System.getenv("AI_PROVIDER") ?: System.getProperty("AI_PROVIDER") ?: "ALIBABA"
+    private val provider = System.getenv("AI_PROVIDER") ?: System.getProperty("AI_PROVIDER") ?: "OPENAI"
 
     val client: AiClient = when (provider.uppercase()) {
         "DEEPSEEK" -> DeepSeekClient
         "ALIBABA" -> AlibabaAiClient
-        else -> AlibabaAiClient
+        "OPENAI" -> OpenAiClient
+        else -> OpenAiClient
     }
 
     fun getApiKeyName(): String = when (client) {
         is DeepSeekClient -> "DEEPSEEK_API_KEY"
         is AlibabaAiClient -> "ALIBABA_API_KEY"
+        is OpenAiClient -> "OPENAI_API_KEY"
         else -> "AI_API_KEY"
     }
 

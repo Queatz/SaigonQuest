@@ -72,28 +72,11 @@ fun Routing.configureVoiceRoutes() {
                             val size = bytes.size
                             browserBinaryCount++
                             if (browserBinaryCount <= 3) log.info("/ws/voice: browser -> server Binary $size bytes (sample #$browserBinaryCount)")
-//                            val ack = buildJsonObject {
-//                                put("type", JsonPrimitive("ack"))
-//                                put(
-//                                "ft",
-//                                JsonPrimitive("binary")
-//                            ); put("len", JsonPrimitive(size))
-//                            }.toString()
-//                            runCatching { this@webSocket.send(Frame.Text(ack)) }
                             frameCh.send(Frame.Binary(true, bytes))
                         }
 
                         is Frame.Text -> {
                             val text = frame.readText()
-//                            browserTextCount++
-//                            if (browserTextCount <= 3) log.info("/ws/voice: browser -> server Text: ${text.take(120)}")
-//                            val ack = buildJsonObject {
-//                                put("type", JsonPrimitive("ack")); put(
-//                                "ft",
-//                                JsonPrimitive("text")
-//                            ); put("len", JsonPrimitive(text.length))
-//                            }.toString()
-//                            runCatching { this@webSocket.send(Frame.Text(ack)) }
                             frameCh.send(Frame.Text(text))
                         }
 
