@@ -81,6 +81,7 @@ fun WorldUI(
     var isQrDialogOpen by remember { mutableStateOf(false) }
     var isAdminDialogOpen by remember { mutableStateOf(false) }
     var isWorldDocsDialogOpen by remember { mutableStateOf(false) }
+    var isVisitedWorldsDialogOpen by remember { mutableStateOf(false) }
     
     // State for print dialog
     var showPrintDialog by remember { mutableStateOf(false) }
@@ -140,6 +141,7 @@ fun WorldUI(
     val docsTitle = translated("Docs")
     val chatTitle = translated("Chat")
     val notificationsTitle = translated("Notifications")
+    val visitedWorldsTitle = translated("Visited worlds")
     val myProfileTitle = translated("My profile")
 
 
@@ -842,6 +844,24 @@ fun WorldUI(
                     )
                 }
 
+                // Visited worlds button
+                CircleButton(
+                    onClick = {
+                        isVisitedWorldsDialogOpen = true
+                    },
+                    iconIndex = 28, // 28: visited worlds
+                    badgeCount = 0,
+                    title = visitedWorldsTitle,
+                    onMouseEnter = {
+                        hoveredButtonText = visitedWorldsTitle
+                        hoveredButtonElement = it
+                    },
+                    onMouseLeave = {
+                        hoveredButtonText = null
+                        hoveredButtonElement = null
+                    }
+                )
+
                 // My profile button
                 CircleButton(
                     onClick = {
@@ -1082,6 +1102,20 @@ fun WorldUI(
             )
         }
         
+        // Visited worlds dialog
+        if (isVisitedWorldsDialogOpen) {
+            VisitedWorldsDialog(
+                onClose = { isVisitedWorldsDialogOpen = false },
+                onNavigate = { path ->
+                    val detail: dynamic = object {}
+                    detail.path = path
+                    detail.hardReload = false
+                    val evt = createCustomEvent("navigateWithFade", detail)
+                    window.dispatchEvent(evt)
+                }
+            )
+        }
+
         // Profile dialog
         if (currentPanel == SidePanelState.Profile && currentUser != null) {
             if (currentUser!!.isPlayer) {

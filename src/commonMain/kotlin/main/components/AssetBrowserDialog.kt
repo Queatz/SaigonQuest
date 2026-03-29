@@ -30,6 +30,7 @@ import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import models.UserRequestType
+import org.jetbrains.compose.web.attributes.autoFocus
 
 @Composable
 fun AssetBrowserDialog(
@@ -107,7 +108,9 @@ fun AssetBrowserDialog(
                 classes(main.theme.AssetStyles.assetDialogContent)
             }) {
                 // Filters row
-                Div(attrs = { classes(main.theme.AssetStyles.assetFiltersRow) }) {
+                Div(attrs = {
+                    classes(main.theme.AssetStyles.assetFiltersRow)
+                }) {
                     // Title search
                     Label { Translated("Title") }
                     TextInput(
@@ -115,8 +118,15 @@ fun AssetBrowserDialog(
                         attrs = {
                             classes(Styles.inputField)
                             placeholder(str("Search by title"))
+                            autoFocus()
                             onInput {
                                 titleQuery = it.value
+                            }
+
+                            ref {
+                                it.focus()
+
+                                onDispose { }
                             }
                         },
                     )
