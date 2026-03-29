@@ -164,6 +164,27 @@ fun markdownToHtml(
     )
 }
 
+/**
+ * Strips all markdown formatting and returns plain text.
+ * Useful for HUD billboards where we don't want to show markdown markers or media.
+ */
+fun stripMarkdown(content: String): String {
+    if (content.isBlank()) return ""
+
+    // We use a simplified version of markdownToHtml or just use it as is
+    // and then strip the HTML tags.
+    val html = markdownToHtml(content)
+
+    // Use a temporary element to extract text content
+    val div = window.document.createElement("div")
+    div.innerHTML = html
+
+    // Replace multiple whitespaces/newlines with a single space to keep it clean for HUD
+    return (div.textContent ?: "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+}
+
 private fun applyAudioExclusivePlayBehavior(root: Element) {
     try {
         val nodeList = root.querySelectorAll("audio")

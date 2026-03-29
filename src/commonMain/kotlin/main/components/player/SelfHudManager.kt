@@ -2,6 +2,7 @@ package main.components.player
 
 import kotlinx.browser.window
 import lib.Vector3
+import main.components.stripMarkdown
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 
@@ -48,14 +49,15 @@ class SelfHudManager {
     }
 
     fun showChat(basePosition: Vector3, message: String) {
-        if (message.isBlank()) return
+        val plainText = stripMarkdown(message)
+        if (plainText.isBlank()) return
 
         // remove existing chat and temporarily hide status
         clearChat()
         clearStatus()
 
         val m = manager ?: return
-        val text = PlayerUi.truncateChat(message)
+        val text = PlayerUi.truncateChat(plainText)
         chatMessageTextHandle = PlayerUiUtils.createHudBillboard(
             manager = m,
             text = text,

@@ -2,6 +2,7 @@ package main.components.player
 
 import kotlinx.browser.window
 import lib.Vector3
+import main.components.stripMarkdown
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 
@@ -108,9 +109,10 @@ class OtherPlayersHudManager(
 
     fun showChatMessage(userId: String, message: String) {
         if (userId == myUserIdProvider()) return
-        if (message.isBlank()) return
+        val plainText = stripMarkdown(message)
+        if (plainText.isBlank()) return
         val hud = getHud(userId)
-        val truncated = PlayerUi.truncateChat(message)
+        val truncated = PlayerUi.truncateChat(plainText)
         chatMessageTimeouts[userId]?.let { window.clearTimeout(it) }
         hud.chatMessage = truncated
         val timeoutId = window.setTimeout({
