@@ -19,6 +19,7 @@ import main.api.addUpdatePlayerListener
 import main.api.addUserJoinListener
 import main.api.addUserLeaveListener
 import main.api.sendUserJoin
+import main.components.world.effect.WaterRippleEffect
 import main.components.shadow.ShadowManager
 import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
@@ -642,6 +643,13 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val newPosition = snapToGround(moved)
             handle.position = newPosition
             
+            // Check for water ripples when moving
+            val now = window.performance.now()
+            if (now - op.lastRippleTime > 300) {
+                trySpawnWaterRipple(newPosition)
+                op.lastRippleTime = now
+            }
+
             // Trigger wind boost for other player's movement (convert displacement to velocity)
             val velocity = direction.scale(1.0f / deltaTime.toFloat())
             handle.triggerWindBoost(velocity)
@@ -655,6 +663,15 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 }
                 op.activity = PlayerActivity.Moving
             }
+        }
+    }
+
+    private fun trySpawnWaterRipple(position: Vector3) {
+        if (worldMeshes.isEmpty()) return
+        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(worldMeshes, position) ?: return
+        // Only spawn if player is actually in/at the water (within a reasonable distance from surface)
+        if (kotlin.math.abs(position.y - waterPoint.y) < 1.0f) {
+            WaterRippleEffect.create(scene, waterPoint)
         }
     }
 

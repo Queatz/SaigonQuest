@@ -20,6 +20,7 @@ data class Object(
     var rotation: Rotation = Rotation(), // Rotation in the 3D world
     var scale: Scale = Scale(), // Scale in the 3D world
     var status: String = "", // Status text to display above the object
+    var verticalOffset: Float = 0f, // Vertical offset applied during placement
     @field:Indexed
     var kind: ObjectKind = ObjectKind.World,
 ) : BaseModel()

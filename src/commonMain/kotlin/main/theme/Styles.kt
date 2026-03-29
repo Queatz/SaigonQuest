@@ -1322,6 +1322,19 @@ object Styles : StyleSheet() {
         property("margin-top", "4px")
     }
 
+    val formErrorBanner by style {
+        backgroundColor(Theme.colors.error)
+        color(Theme.colors.onPrimary)
+        padding(12.px, 16.px)
+        fontWeight("bold")
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+        property("flex-shrink", "0")
+        property("z-index", "10")
+        property("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
+    }
+
     val formErrorMessage by style {
         color(Theme.colors.error)
         marginBottom(16.px)

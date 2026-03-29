@@ -385,7 +385,10 @@ class WorldLoader(private val scene: Scene) {
      * @param url The URL of the world to load
      * @return The loaded world meshes and start nodes
      */
-    suspend fun loadWorld(url: String): Pair<Array<AbstractMesh>, Array<Node>> {
+    suspend fun loadWorld(
+        url: String,
+        onInfoLoaded: (World) -> Unit = {},
+    ): Pair<Array<AbstractMesh>, Array<Node>> {
         // Set up lighting for the scene
         setupLighting()
 
@@ -416,6 +419,7 @@ class WorldLoader(private val scene: Scene) {
             
             // Store the world data
             currentWorld = world
+            onInfoLoaded(world)
             // Expose outdoors flag for global systems
             currentWorldIsOutdoors = world.isOutdoors
 

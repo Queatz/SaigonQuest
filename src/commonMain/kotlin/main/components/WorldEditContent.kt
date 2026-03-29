@@ -348,13 +348,13 @@ fun WorldEditContent(
 
     // Determine ownership and edit permissions
     val isOwner = if (isEditing && currentUser != null) {
-        currentWorld?.userId == currentUser?.key
+        currentWorld.userId == currentUser?.key
     } else {
         // If creating a new world or user not loaded yet, default to true
         true
     }
     val canEditWorld = if (isEditing && currentUser != null) {
-        currentWorld?.canUserEdit(currentUser!!.key) == true
+        currentWorld.canUserEdit(currentUser!!.key)
     } else {
         true
     }
@@ -551,6 +551,18 @@ fun WorldEditContent(
         }
     }
 
+    // Error message banner (fixed at top)
+    if (errorMessage.isNotEmpty()) {
+        Div(
+            attrs = {
+                classes(Styles.formErrorBanner)
+            }
+        ) {
+            Text("⚠️ ")
+            Translated(errorMessage)
+        }
+    }
+
     // Form content
     Div(
         attrs = {
@@ -565,20 +577,6 @@ fun WorldEditContent(
             }
         }
     ) {
-        // Error message
-        if (errorMessage.isNotEmpty()) {
-            P(
-                attrs = {
-                    style {
-                        color(Color.red)
-                        margin(0.px)
-                    }
-                }
-            ) {
-                Translated(errorMessage)
-            }
-        }
-
         // Ownership message
         if (isEditing && !canEditWorld) {
             P(

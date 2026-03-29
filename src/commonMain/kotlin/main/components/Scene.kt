@@ -328,6 +328,7 @@ fun SceneComponent(url: String) {
         isNoAccess = isNoAccess.value,
         showClaimOption = showClaimOption.value,
         onRetry = { navigateWithFade(window.location.pathname, true) },
+        worldName = currentWorld.value?.title,
     )
 
     // Show world edit panel if requested
@@ -922,9 +923,14 @@ fun SceneComponent(url: String) {
             
             try {
                 // Call the suspend function
-                val (worldMeshes, nodes) = worldLoader.loadWorld(url)
+                val (worldMeshes, nodes) = worldLoader.loadWorld(
+                    url = url,
+                    onInfoLoaded = { world ->
+                        currentWorld.value = world
+                    }
+                )
 
-                // Store the current world
+                // Store the current world again to ensure consistency if it changed
                 currentWorld.value = worldLoader.getCurrentWorld()
                 if (currentWorld.value == null) {
                     loadingFailed.value = true

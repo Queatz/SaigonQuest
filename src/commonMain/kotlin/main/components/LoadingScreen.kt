@@ -1,5 +1,6 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -9,7 +10,6 @@ import org.jetbrains.compose.web.dom.Text
 import app.softwork.routingcompose.Router
 import main.api.UserApi
 import main.theme.OverlayStyles
-import main.components.Translated
 import main.theme.Styles
 
 /**
@@ -37,6 +37,7 @@ fun LoadingScreen(
     showClaimOption: Boolean,
     isNoAccess: Boolean,
     onRetry: () -> Unit,
+    worldName: String? = null,
 ) {
     if (!isLoaded && !showWorldEditPanel && !showLoginDialog) {
         Div(
@@ -114,7 +115,13 @@ fun LoadingScreen(
             } else {
                 // Normal loading message
                 Span {
-                    Translated("Loading Saigon.Quest world...")
+                    val displayedWorldName = if (worldName.isNullOrBlank()) {
+                        "Saigon.Quest"
+                    } else {
+                        worldName
+                    }
+                    Text(translated("Loading %s world...").replace("%s", displayedWorldName).replace("...", ""))
+                    AnimatedDots()
                 }
             }
         }

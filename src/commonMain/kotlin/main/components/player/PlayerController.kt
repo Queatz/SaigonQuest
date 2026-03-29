@@ -23,6 +23,7 @@ import main.api.WebSocketConnectionManager
 import main.api.updatePlayer
 import main.api.updatePlayerPosition
 import main.components.SceneManager
+import main.components.world.effect.WaterRippleEffect
 import main.components.inventory.InventoryState
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
@@ -74,6 +75,9 @@ class PlayerController(private val scene: Scene) {
     // Player position flow for sending position updates
     private val playerPositionFlow = MutableStateFlow<Vector3?>(null)
     
+    // Time tracking for water ripples
+    private var lastRippleTime = 0.0
+
     // Coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     
@@ -345,9 +349,28 @@ class PlayerController(private val scene: Scene) {
             handle.position = validPos
             hud.updateAllPositions(validPos)
             playerPositionFlow.value = validPos
+
+            // Check for water ripples when moving
+            val now = window.performance.now()
+            if (now - lastRippleTime > 300) {
+                trySpawnWaterRipple(validPos)
+                lastRippleTime = now
+            }
+
             return validPos
         }
         return null
+    }
+
+    /**
+     * Attempts to spawn a water ripple if the player is in water.
+     */
+    private fun trySpawnWaterRipple(position: Vector3) {
+        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(worldMeshes, position) ?: return
+        // Only spawn if player is actually in/at the water (within a reasonable distance from surface)
+        if (kotlin.math.abs(position.y - waterPoint.y) < 1.0f) {
+            WaterRippleEffect.create(scene, waterPoint)
+        }
     }
 
     /**

@@ -64,6 +64,7 @@ fun ObjectEditorDialog(
     var file by remember { mutableStateOf(objectModel?.file ?: "") }
     var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
     var status by remember { mutableStateOf(objectModel?.status ?: "") }
+    var verticalOffset by remember { mutableStateOf(objectModel?.verticalOffset ?: 0f) }
     var rotationYDeg by remember {
         mutableStateOf(
             ((objectModel?.rotation?.y ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
@@ -105,6 +106,7 @@ fun ObjectEditorDialog(
                 rotation = objectModel.rotation.copy(
                     y = rotationYDeg * kotlin.math.PI.toFloat() / 180f,
                 ),
+                verticalOffset = verticalOffset,
             )
         } else {
             // Create new object at the user's selected position if available; otherwise, fall back to player's current position
@@ -132,7 +134,8 @@ fun ObjectEditorDialog(
                 position = initialPosition,
                 rotation = Rotation(0f, rotationYDeg * kotlin.math.PI.toFloat() / 180f, 0f),
                 scale = Scale(1f, 1f, 1f),
-                status = status
+                status = status,
+                verticalOffset = verticalOffset
             )
         }
         
@@ -362,6 +365,40 @@ fun ObjectEditorDialog(
                         Text("${rotationYDeg.toInt()}°")
                     }
                 }
+
+                // Vertical offset field
+                Div {
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(16.px)
+                            }
+                        }
+                    ) {
+                        Translated("Vertical Offset")
+                    }
+                    RangeInput(
+                        value = verticalOffset,
+                        min = 0,
+                        max = 10,
+                        step = .1f,
+                        attrs = {
+                            classes(Styles.inputField)
+                            onInput { event ->
+                                verticalOffset = event.value?.toFloat()?.coerceIn(0f, 10f) ?: 0f
+                            }
+                        }
+                    )
+                    Div(
+                        attrs = {
+                            style {
+                                marginTop(8.px)
+                            }
+                        }
+                    ) {
+                        Text("${verticalOffset}")
+                    }
+                }
                 
                 // Logic Editor preview (disabled)
                 Div(
@@ -377,7 +414,8 @@ fun ObjectEditorDialog(
                                         title = title,
                                         file = file,
                                         collection = collection,
-                                        status = status
+                                        status = status,
+                                        verticalOffset = verticalOffset
                                     )
                                 } else {
                                     Object(

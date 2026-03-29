@@ -76,4 +76,25 @@ object WorldCollisionUtils {
             position.z,
         )
     }
+
+    fun getWaterSurfacePoint(
+        worldMeshes: Array<AbstractMesh>,
+        position: Vector3,
+    ): Vector3? {
+        val rayOrigin = Vector3(position.x, position.y + 10f, position.z)
+        val rayDirection = Vector3(0f, -1f, 0f)
+        val ray = Ray().also {
+            it.origin = rayOrigin
+            it.direction = rayDirection
+        }
+        val waterMeshes = worldMeshes.filter { it.isWater() }.toTypedArray()
+        if (waterMeshes.isEmpty()) return null
+
+        val hits = ray.intersectsMeshes(meshes = waterMeshes)
+        val bestHit = hits.filter { it.pickedPoint != null }
+            .minByOrNull { kotlin.math.abs(it.pickedPoint!!.y - position.y) }
+            ?: return null
+
+        return bestHit.pickedPoint
+    }
 }

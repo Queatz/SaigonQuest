@@ -78,6 +78,9 @@ class SceneObjectManager(
     // Tracks object kinds for quick lookup (World vs Inventory)
     private val objectKinds = mutableMapOf<String, ObjectKind>()
     
+    // Tracks vertical offset for each object (applied during dragging)
+    private val objectVerticalOffsets = mutableMapOf<String, Float>()
+    
     // Currently dragging object
     private var draggingObjectId: String? = null
     
@@ -544,10 +547,14 @@ class SceneObjectManager(
 
                 // Update the object with the new position and world ID
                 val updatedObj = obj.copy(
-                    position = position,
+                    position = Position(
+                        x = position.x,
+                        y = position.y + obj.verticalOffset,
+                        z = position.z
+                    ),
                     worldId = worldId
                 )
-                console.log("[DEBUG_DROP] Updated object with new position: (${updatedObj.position.x}, ${updatedObj.position.y}, ${updatedObj.position.z})")
+                console.log("[DEBUG_DROP] Updated object with new position: (${updatedObj.position.x}, ${updatedObj.position.y}, ${updatedObj.position.z}) (offset: ${obj.verticalOffset})")
                 
                 // Persist the object placement
                 try {
@@ -659,6 +666,8 @@ class SceneObjectManager(
     private fun createObjectPreferInventory(obj: Object) {
         // Track the kind for this object
         objectKinds[obj.key] = obj.kind
+        // Track vertical offset
+        objectVerticalOffsets[obj.key] = obj.verticalOffset
 
         if (obj.kind != ObjectKind.Inventory) {
             // Render as a regular world object (file/collection or fallback sphere)
@@ -1043,9 +1052,10 @@ class SceneObjectManager(
                 
                 // Apply the stored offset to the position
                 val offset = dragClickOffset ?: Vector3.Zero()
+                val verticalOffset = objectVerticalOffsets[draggingObjectId!!] ?: 0f
                 val adjustedPosition = Vector3(
                     position.x + offset.x,
-                    position.y + offset.y,
+                    position.y + offset.y + verticalOffset,
                     position.z + offset.z
                 )
                 
@@ -1217,8 +1227,9 @@ class SceneObjectManager(
                         existingNode.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
                         // Update status text as well
                         handleObjectStatusText(obj.key, obj.status, existingNode)
-                        // Update kind tracking just in case
+                        // Update kind and vertical offset tracking
                         objectKinds[obj.key] = obj.kind
+                        objectVerticalOffsets[obj.key] = obj.verticalOffset
                         console.log("Updated existing object: ${obj.key}")
                     }
                 } else {
@@ -1277,8 +1288,9 @@ class SceneObjectManager(
                         node.scaling = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
                         // Update status text as well
                         handleObjectStatusText(obj.key, obj.status, node)
-                        // Update kind tracking just in case
+                        // Update kind and vertical offset tracking
                         objectKinds[obj.key] = obj.kind
+                        objectVerticalOffsets[obj.key] = obj.verticalOffset
                         console.log("OBJECT_UPDATE applied in-place for ${obj.key}")
                     }
                 } else {
@@ -1479,6 +1491,7 @@ class SceneObjectManager(
         objectStatusTextHandles.clear()
         objectStatusOffsets.clear()
         objectStatusTexts.clear()
+        objectVerticalOffsets.clear()
         objectTypingHandles.clear()
         objectTypingTimeouts.values.forEach { window.clearTimeout(it) }
         objectTypingTimeouts.clear()

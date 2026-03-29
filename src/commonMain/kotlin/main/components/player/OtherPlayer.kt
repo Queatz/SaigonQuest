@@ -27,6 +27,7 @@ data class OtherPlayer(
     var skinTone: Float = 0.5f,
     var joinStartMs: Double? = null,
     var leaveStartMs: Double? = null,
+    var lastRippleTime: Double = 0.0,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

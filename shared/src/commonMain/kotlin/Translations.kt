@@ -244,6 +244,9 @@ vi: Thử lại
 Loading Saigon.Quest world...
 vi: Đang tải thế giới Saigon.Quest...
 
+Loading %s world...
+vi: Đang tải thế giới %s...
+
 Loading...
 vi: Đang tải...
 
@@ -696,6 +699,9 @@ vi: Văn bản hiển thị phía trên đối tượng
 
 Rotation
 vi: Xoay
+
+Vertical Offset
+vi: Độ cao
 
 Logic editor
 vi: Trình chỉnh sửa logic
@@ -1957,6 +1963,15 @@ vi: Định dạng chuỗi mẫu bằng cách thay thế các trình giữ chỗ
 
 Prompt player with a title, preview areas and confirm button
 vi: Nhắc người chơi bằng tiêu đề, khu vực xem trước và nút xác nhận
+
+You must be logged in to create a world
+vi: Bạn phải đăng nhập để tạo thế giới
+
+Invalid URL format. URLs can only contain letters, numbers, hyphens, and underscores.
+vi: Định dạng URL không hợp lệ. URL chỉ có thể chứa chữ cái, số, dấu gạch ngang và dấu gạch dưới.
+
+Please enter a positive number of days
+vi: Vui lòng nhập số ngày dương
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
