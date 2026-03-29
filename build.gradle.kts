@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization") version "2.3.20"
@@ -167,6 +166,7 @@ kotlin {
                 implementation(npm("@babylonjs/loaders", "9.0.0"))
                 implementation(npm("babylonjs-gltf2interface", "9.0.0"))
                 implementation(npm("shell-quote", "1.8.3")) // force version
+                implementation(devNpm("baseline-browser-mapping", "2.10.12"))
 
                 // Ktor client
                 implementation("io.ktor:ktor-client-core:3.4.1")

@@ -193,7 +193,7 @@ fun ChatComposer(
             style {
                 padding(16.px)
                 display(DisplayStyle.Flex)
-                alignItems(AlignItems.Center)
+                alignItems(AlignItems.Stretch)
                 property("gap", "8px")
                 property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
             }

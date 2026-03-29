@@ -1,24 +1,11 @@
 package main.components.nodeeditor
 
-import kotlinx.serialization.Serializable
 import models.LogicNode
+import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import models.nodeeditor.PropertyType
 import models.nodeeditor.PropertyValue
 import models.nodeeditor.getInputPropertyDefinitions
-
-/**
- * Base interface for all node data types
- */
-interface NodeDataType
-
-/**
- * Generic property-based node data class
- */
-@Serializable
-data class PropertyBasedNodeData(
-    val properties: List<PropertyValue> = emptyList()
-) : NodeDataType
 
 /**
  * Utility object for parsing and serializing node data
@@ -29,7 +16,7 @@ object NodeDataParser {
     /**
      * Parse node data from a JSON string based on LogicNode
      */
-    fun parseNodeData(node: LogicNode, dataString: String): NodeDataType {
+    fun parseNodeData(node: LogicNode, dataString: String): PropertyBasedNodeData {
         val defaultData = if (dataString.isBlank() || dataString == "{}") "{}" else dataString
         
         return try {
@@ -48,22 +35,14 @@ object NodeDataParser {
     /**
      * Serialize node data to a JSON string
      */
-    fun serializeNodeData(data: NodeDataType): String {
-        return when (data) {
-            is PropertyBasedNodeData -> json.encodeToString(PropertyBasedNodeData.serializer(), data)
-            else -> "{}"
-        }
+    fun serializeNodeData(data: PropertyBasedNodeData): String {
+        return json.encodeToString(PropertyBasedNodeData.serializer(), data)
     }
     
     /**
      * Get property value from node data
      */
-    fun getPropertyValue(nodeData: NodeDataType, key: PropertyKey): String {
-        return when (nodeData) {
-            is PropertyBasedNodeData -> {
-                nodeData.properties.find { it.key == key }?.value ?: ""
-            }
-            else -> ""
-        }
+    fun getPropertyValue(nodeData: PropertyBasedNodeData, key: PropertyKey): String {
+        return nodeData.properties.find { it.key == key }?.value ?: ""
     }
 }

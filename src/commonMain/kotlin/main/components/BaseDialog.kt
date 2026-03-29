@@ -132,6 +132,7 @@ fun BaseDialog(
     isFullHeight: Boolean = false,
     isFullWidth: Boolean = false,
     anchorToBottom: Boolean = false,
+    banner: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -251,6 +252,11 @@ fun BaseDialog(
                             }
                         }
                     }
+                }
+                
+                // Dialog banner (if provided)
+                if (banner != null) {
+                    banner()
                 }
                 
                 // Dialog content

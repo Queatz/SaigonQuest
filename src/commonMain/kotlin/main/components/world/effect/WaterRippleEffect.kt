@@ -49,8 +49,8 @@ object WaterRippleEffect {
         material.alpha = alphaValue
         mesh.material = material
         val delta = FrameDeltaTracker()
-        val expandSpeed = 1.2f
-        val fadeSpeed = 0.6f
+        val expandSpeed = 2.5f
+        val fadeSpeed = 2f
 
         var callback: (() -> Unit)? = null
         callback = {

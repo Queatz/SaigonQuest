@@ -1333,6 +1333,23 @@ object Styles : StyleSheet() {
         property("flex-shrink", "0")
         property("z-index", "10")
         property("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
+        borderRadius(16.px)
+        margin(16.px)
+    }
+
+    val formSuccessBanner by style {
+        backgroundColor(Theme.colors.success)
+        color(Theme.colors.onPrimary)
+        padding(12.px, 16.px)
+        fontWeight("bold")
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+        property("flex-shrink", "0")
+        property("z-index", "10")
+        property("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
+        borderRadius(16.px)
+        margin(16.px)
     }
 
     val formErrorMessage by style {
@@ -1540,6 +1557,7 @@ object Styles : StyleSheet() {
         width(100.percent)
         property("object-fit", "cover")
         borderRadius(8.px)
+        maxHeight(240.px)
         property("border", "1px solid ${Theme.colors.white20}")
     }
 

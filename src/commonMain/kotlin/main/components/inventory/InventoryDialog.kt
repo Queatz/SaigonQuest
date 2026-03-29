@@ -585,6 +585,21 @@ fun InventoryDialog(onClose: () -> Unit) {
     BaseDialog(
         onClose = onClose,
         title = translated("Inventory"),
+        banner = {
+            val message = feedbackMessage ?: if (errorMessage.isNotEmpty()) (translated("Error") + ": " + errorMessage) else null
+            val isError = feedbackMessage?.let { isErrorFeedback } ?: errorMessage.isNotEmpty()
+
+            message?.let { msg ->
+                Div(
+                    attrs = {
+                        classes(if (isError) Styles.formErrorBanner else Styles.formSuccessBanner)
+                    }
+                ) {
+                    Text(if (isError) "⚠️ " else "✅ ")
+                    Text(msg)
+                }
+            }
+        },
         actions = {
             DialogButton(
                 onClick = {
@@ -605,17 +620,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                     classes(InventoryStyles.dialogContent)
                 }
             ) {
-                // Render feedback message if present
-                feedbackMessage?.let { message ->
-                    Div(
-                        attrs = {
-                            classes(InventoryStyles.feedbackBase)
-                            classes(if (isErrorFeedback) InventoryStyles.feedbackError else InventoryStyles.feedbackSuccess)
-                        }
-                    ) {
-                        Text(message)
-                    }
-                }
                 if (isLoading) {
                     P(
                         attrs = {
@@ -625,14 +629,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                         }
                     ) {
                         Translated("Loading inventory...")
-                    }
-                } else if (errorMessage.isNotEmpty()) {
-                    P(
-                        attrs = {
-                            classes(InventoryStyles.errorText)
-                        }
-                    ) {
-                        Text(translated("Error") + ": " + errorMessage)
                     }
                 } else {
                     // Character renderer section

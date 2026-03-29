@@ -22,6 +22,7 @@ import main.theme.Styles
 import models.NodeCategory
 import models.MediaType
 import models.nodeeditor.NodeData
+import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyDirection
 import models.nodeeditor.PropertyKey
 import models.nodeeditor.PropertyType

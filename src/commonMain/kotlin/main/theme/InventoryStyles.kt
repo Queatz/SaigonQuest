@@ -95,27 +95,6 @@ object InventoryStyles : StyleSheet() {
         }
     }
 
-    // Feedback (toast) styles shown at top of dialog content
-    val feedbackBase by style {
-        position(Position.Absolute)
-        top(0.px)
-        left(50.percent)
-        property("transform", "translateX(-50%)")
-        padding(8.px, 12.px)
-        fontSize(14.px)
-        borderRadius(4.px)
-        property("z-index", "10")
-        opacity(0.9)
-    }
-
-    val feedbackSuccess by style {
-        backgroundColor(Theme.colors.toastSuccessBg)
-    }
-
-    val feedbackError by style {
-        backgroundColor(Theme.colors.toastErrorBg)
-    }
-
     // Inline error text color
     val errorText by style {
         color(Theme.colors.error)

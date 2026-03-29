@@ -72,33 +72,31 @@ fun NodeElement(
         currentX = node.x
         currentY = node.y
     }
-    
+
     // State for tracking drag operation
     var isDragging by remember { mutableStateOf(false) }
     // Pointer offset inside the node captured at drag start (in canvas coordinates)
     var pointerOffsetX by remember { mutableStateOf(0f) }
     var pointerOffsetY by remember { mutableStateOf(0f) }
-    
+
     // State for document title (if this is a Doc Content node)
     var docTitle by remember(id) { mutableStateOf<String?>(null) }
 
-    // Get doc title for Doc Content nodes
+    // Get doc title for Doc Content and Create Doc nodes
     LaunchedEffect(node.data) {
-        if (type is LogicNode.DocContent) {
+        if (type is LogicNode.DocContent || type is LogicNode.CreateDoc) {
             val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
-            if (nodeData is PropertyBasedNodeData) {
-                val docId = nodeData.properties.find { it.key == PropertyKey.ID }?.value
-                if (!docId.isNullOrBlank()) {
-                    try {
-                        val doc = DocApi.getDoc(docId)
-                        docTitle = doc.title
-                    } catch (t: Throwable) {
-                        console.error("Failed to load doc title for NodeElement", t)
-                        docTitle = null
-                    }
-                } else {
+            val docId = nodeData.properties.find { it.key == PropertyKey.ID }?.value
+            if (!docId.isNullOrBlank()) {
+                try {
+                    val doc = DocApi.getDoc(docId)
+                    docTitle = doc.title.ifBlank { "Selected doc" }
+                } catch (t: Throwable) {
+                    console.error("Failed to load doc title for NodeElement", t)
                     docTitle = null
                 }
+            } else {
+                docTitle = null
             }
         }
     }
@@ -119,7 +117,7 @@ fun NodeElement(
             }
         }
     }
-    
+
     val handleGlobalMouseUp = remember {
         { event: Event ->
             if (isDragging && event is MouseEvent) {
@@ -132,7 +130,7 @@ fun NodeElement(
     }
 
     var nodeElementRef by remember { mutableStateOf<HTMLElement?>(null) }
-    
+
     // Add/remove global event listeners when dragging state changes
     DisposableEffect(isDragging) {
         if (isDragging) {
@@ -140,27 +138,27 @@ fun NodeElement(
             document.addEventListener("mousemove", handleGlobalMouseMove)
             document.addEventListener("mouseup", handleGlobalMouseUp)
         }
-        
+
         // Cleanup function to remove event listeners
         onDispose {
             document.removeEventListener("mousemove", handleGlobalMouseMove)
             document.removeEventListener("mouseup", handleGlobalMouseUp)
         }
     }
-    
+
     // Determine node color class based on type category
-    val nodeColorClass = when(type.category) {
+    val nodeColorClass = when (type.category) {
         NodeCategory.Event -> NodeEditorStyles.eventNodeColor
         NodeCategory.Dialogue -> NodeEditorStyles.dialogueNodeColor
         NodeCategory.Action -> NodeEditorStyles.actionNodeColor
         NodeCategory.Input -> NodeEditorStyles.inputNodeColor
         else -> NodeEditorStyles.defaultNodeColor
     }
-    
+
     // Effect to register the node element with the controller
     DisposableEffect(nodeElementRef) {
         // Use a small delay to ensure the DOM element is rendered
-        if (nodeElementRef == null) return@DisposableEffect onDispose {  }
+        if (nodeElementRef == null) return@DisposableEffect onDispose { }
 
         val nodeElementRef = nodeElementRef
 
@@ -174,24 +172,24 @@ fun NodeElement(
             controller.unregisterNodeElement(id, nodeElementRef!!)
         }
     }
-    
+
     Div(
         attrs = {
             classes(NodeEditorStyles.nodeContainer)
             classes(nodeColorClass)
             classes(if (isSelected) NodeEditorStyles.nodeSelected else NodeEditorStyles.nodeUnselected)
             classes(if (isDragging) NodeEditorStyles.nodeDragging else NodeEditorStyles.nodeStatic)
-            
+
             style {
                 left(currentX.px)
                 top(currentY.px)
             }
-            
+
             onClick { event ->
                 onSelect()
                 event.stopPropagation()
             }
-            
+
             // Add mouse event handler for starting the drag operation
             onMouseDown { event ->
                 if (event.button.toInt() == 0) { // Left mouse button
@@ -211,7 +209,7 @@ fun NodeElement(
             // Note: We no longer need onMouseMove and onMouseUp handlers on the node element
             // as we now have global event listeners that handle these events at the document level.
             // This allows the drag operation to continue even when the mouse leaves the node element.
-            
+
             // Add node data attributes
             attr("data-node-id", id)
             attr("data-node-type", type.category.name)
@@ -351,7 +349,7 @@ fun NodeElement(
             Text(label)
         }
 
-         // Node description
+        // Node description
         Div(
             attrs = {
                 classes(NodeEditorStyles.nodeDescription)
@@ -361,37 +359,56 @@ fun NodeElement(
                 NodeDataParser.parseNodeData(node.type, node.data)
             }
 
-            when (nodeData) {
-                is PropertyBasedNodeData -> {
-                    Div {
-                        nodeData.properties.forEach { property ->
-                            when (property.key) {
-                                PropertyKey.TEXT_CONTENT, PropertyKey.TITLE -> {
-                                    Text(property.value.ellipsize())
+            Div {
+                nodeData.properties.forEach { property ->
+                    when (property.key) {
+                        PropertyKey.TEXT_CONTENT, PropertyKey.TITLE -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    Text((property.value).ellipsize())
                                 }
-
-                                PropertyKey.TARGET_WORLD_ID -> {
-                                    Text("To \"${property.value}\"")
-                                }
-
-                                PropertyKey.SOUND_URL -> {
-                                    Text("🎵 " + property.value.substringAfterLast('/').ellipsize())
-                                }
-
-                                PropertyKey.ID -> {
-                                    if (type is LogicNode.DocContent) {
-                                        Text((docTitle ?: "...").ellipsize())
-                                    }
-                                }
-
-                                else -> Unit
                             }
                         }
+
+                        PropertyKey.TARGET_WORLD_ID -> {
+                            Div {
+                                Text("To \"${property.value}\"")
+                            }
+                        }
+
+                        PropertyKey.SOUND_URL -> {
+                            Div {
+                                Text("🎵 " + property.value.substringAfterLast('/').ellipsize())
+                            }
+                        }
+
+                        PropertyKey.ITEM_ID -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    Text(property.value)
+                                }
+                            }
+                        }
+
+                        PropertyKey.ID -> {
+                            if (type is LogicNode.DocContent || type is LogicNode.CreateDoc) {
+                                Div {
+                                    val displayTitle = when {
+                                        docTitle != null -> docTitle
+                                        property.value.isBlank() -> if (type is LogicNode.CreateDoc) "None" else "Not selected"
+                                        else -> "..."
+                                    }
+                                    Text(displayTitle?.ellipsize().orEmpty())
+                                }
+                            }
+                        }
+
+                        else -> Unit
                     }
                 }
             }
         }
-        
+
         // Node content with inputs and outputs
         Div(
             attrs = {
@@ -416,7 +433,7 @@ fun NodeElement(
                     )
                 }
             }
-            
+
             // Divider if both inputs and outputs exist
             if (inputs.isNotEmpty() && outputs.isNotEmpty()) {
                 Div(
@@ -425,7 +442,7 @@ fun NodeElement(
                     }
                 )
             }
-            
+
             // Output ports
             outputs.forEach { port ->
                 key(port) {
