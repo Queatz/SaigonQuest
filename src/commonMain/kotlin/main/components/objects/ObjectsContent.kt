@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BasicConfirmDialog
 import main.components.translated
+import main.theme.Styles
 import models.Object
 import models.ObjectKind
 import models.Position
@@ -224,19 +225,8 @@ fun ObjectsContent(
     if (feedbackMessage.isNotEmpty()) {
         Div(
             attrs = {
-                style {
-                    position(CssPosition.Absolute)
-                    bottom(70.px)
-                    left(50.percent)
-                    property("transform", "translateX(-50%) translateY(-10px)")
-                    padding(8.px, 12.px)
-                    backgroundColor(if (isFeedbackError) rgba(255, 0, 0, 0.7) else rgba(0, 150, 0, 0.7))
-                    color(Color.white)
-                    fontSize(14.px)
-                    borderRadius(4.px)
-                    property("pointer-events", "none")
-                    opacity(0.9)
-                }
+                classes(Styles.feedbackMessage)
+                if (isFeedbackError) classes(Styles.feedbackError) else classes(Styles.feedbackSuccess)
             }
         ) {
             Text(feedbackMessage)

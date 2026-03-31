@@ -24,12 +24,14 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
+import org.jetbrains.compose.web.css.flexWrap
 
 object FriendsStyles : StyleSheet() {
     // Root container for FriendsContent
@@ -37,7 +39,7 @@ object FriendsStyles : StyleSheet() {
         property("flex-grow", "1")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        padding(16.px)
+        padding(0.px)
         height(100.percent)
         overflow("hidden")
         position(org.jetbrains.compose.web.css.Position.Relative)
@@ -49,17 +51,9 @@ object FriendsStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         property("flex-grow", "1")
+        padding(16.px)
     }
 
-    // Error container
-    val errorContainer by style {
-        display(DisplayStyle.Flex)
-        justifyContent(JustifyContent.Center)
-        alignItems(AlignItems.Center)
-        property("flex-grow", "1")
-        color(Theme.colors.error)
-        dark(self) { color(Theme.colors.errorDark) }
-    }
 
     // Empty state text
     val emptyText by style {
@@ -75,6 +69,7 @@ object FriendsStyles : StyleSheet() {
         gap(12.px)
         property("flex-grow", "1")
         overflowY("auto")
+        padding(16.px)
     }
 
     // Friend item card
@@ -171,6 +166,7 @@ object FriendsStyles : StyleSheet() {
     val buttonsRow by style {
         display(DisplayStyle.Flex)
         gap(8.px)
+        flexWrap(FlexWrap.Wrap)
     }
 
     // Button variants

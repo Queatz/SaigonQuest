@@ -1991,6 +1991,33 @@ vi: Hiện không thể mời bạn bè
 Invitation
 vi: Lời mời
 
+{name} invited you to join them at {world}
+vi: {name} đã mời bạn tham gia cùng họ tại {world}
+
+their world
+vi: thế giới của họ
+
+Loading friendship...
+vi: Đang tải trạng thái bạn bè...
+
+Not friends.
+vi: Chưa là bạn bè.
+
+Friend request sent.
+vi: Đã gửi yêu cầu kết bạn.
+
+Friend request received.
+vi: Đã nhận yêu cầu kết bạn.
+
+You're friends!
+vi: Các bạn đã là bạn bè!
+
+Add friend
+vi: Thêm bạn
+
+Ignore
+vi: Bỏ qua
+
 Doc content
 vi: Nội dung tài liệu
 

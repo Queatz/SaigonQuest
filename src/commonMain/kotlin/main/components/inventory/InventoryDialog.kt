@@ -4,6 +4,7 @@ import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -590,13 +591,15 @@ fun InventoryDialog(onClose: () -> Unit) {
             val isError = feedbackMessage?.let { isErrorFeedback } ?: errorMessage.isNotEmpty()
 
             message?.let { msg ->
-                Div(
-                    attrs = {
-                        classes(if (isError) Styles.formErrorBanner else Styles.formSuccessBanner)
+                key(msg) {
+                    Div(
+                        attrs = {
+                            classes(if (isError) Styles.formErrorBanner else Styles.formSuccessBanner)
+                        }
+                    ) {
+                        Text(if (isError) "⚠️ " else "✅ ")
+                        Text(msg)
                     }
-                ) {
-                    Text(if (isError) "⚠️ " else "✅ ")
-                    Text(msg)
                 }
             }
         },

@@ -181,7 +181,7 @@ private fun NotificationItem(
         Div(attrs = { classes(NotificationStyles.notificationHeader) }) {
             // Notification title
             H4(attrs = { classes(NotificationStyles.notificationTitle) }) {
-                Text(notification.title)
+                Text(str(notification.title))
             }
             
             // Timestamp
@@ -210,7 +210,16 @@ private fun NotificationItem(
         
         // Notification description
         P(attrs = { classes(NotificationStyles.notificationDescription) }) {
-            Text(notification.description)
+            if (notification.type == NotificationType.WORLD_INVITATION) {
+                val template = str("{name} invited you to join them at {world}")
+                val worldName = notification.worldName.ifBlank { str("their world") }
+                val message = template
+                    .replace("{name}", notification.otherUsername)
+                    .replace("{world}", worldName)
+                Text(message)
+            } else {
+                Text(notification.description)
+            }
         }
         
         // Notification type-specific content

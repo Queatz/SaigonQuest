@@ -13,6 +13,7 @@ import main.api.NotificationApi
 import main.components.player.FriendshipStatus
 import main.theme.NotificationStyles
 import models.Notification
+import main.components.Translated
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -79,11 +80,11 @@ fun FriendRequestNotificationContent(
         // Display the current friendship status
         P(attrs = { classes(NotificationStyles.friendRequestStatus) }) {
             when (friendshipStatus) {
-                FriendshipStatus.UNKNOWN -> Text("Loading friendship...")
-                FriendshipStatus.NOT_FRIENDS -> Text("Not friends.")
-                FriendshipStatus.REQUEST_SENT -> Text("Friend request sent.")
-                FriendshipStatus.REQUEST_RECEIVED -> Text("Friend request received.")
-                FriendshipStatus.FRIENDS -> Text("You're friends!")
+                FriendshipStatus.UNKNOWN -> Translated("Loading friendship...")
+                FriendshipStatus.NOT_FRIENDS -> Translated("Not friends.")
+                FriendshipStatus.REQUEST_SENT -> Translated("Friend request sent.")
+                FriendshipStatus.REQUEST_RECEIVED -> Translated("Friend request received.")
+                FriendshipStatus.FRIENDS -> Translated("You're friends!")
             }
         }
         
@@ -100,7 +101,7 @@ fun FriendRequestNotificationContent(
                         }
                     }
                 ) {
-                    Text("Add friend")
+                    Translated("Add friend")
                 }
                 
                 Button(
@@ -113,7 +114,7 @@ fun FriendRequestNotificationContent(
                         }
                     }
                 ) {
-                    Text("Ignore")
+                    Translated("Ignore")
                 }
             }
         }

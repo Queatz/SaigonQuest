@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -553,13 +554,15 @@ fun WorldEditContent(
 
     // Error message banner (fixed at top)
     if (errorMessage.isNotEmpty()) {
-        Div(
-            attrs = {
-                classes(Styles.formErrorBanner)
+        key(errorMessage) {
+            Div(
+                attrs = {
+                    classes(Styles.formErrorBanner)
+                }
+            ) {
+                Text("⚠️ ")
+                Translated(errorMessage)
             }
-        ) {
-            Text("⚠️ ")
-            Translated(errorMessage)
         }
     }
 

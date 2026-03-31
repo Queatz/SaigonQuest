@@ -123,7 +123,6 @@ class WorldObjectManager(private val scene: Scene) {
     // Proximity detection state
     private var lastProximityCheckMs: Double = 0.0
     private val enteredProximity = mutableSetOf<String>()
-    private val proximityRadiusSq: Float = 2f * 2f // 2-unit radius squared
     private val proximityIntervalMs: Double = 500.0
 
     fun update(deltaTime: Float) {
@@ -158,15 +157,19 @@ class WorldObjectManager(private val scene: Scene) {
             val distSq = dx * dx + dy * dy + dz * dz
 
             val wasInside = enteredProximity.contains(backendObjectId)
-            val isInside = distSq <= proximityRadiusSq
+            val isInside = distSq <= SceneManager.PROXIMITY_RADIUS_SQ
 
             if (isInside && !wasInside) {
                 // Entered radius: mark and send once
                 enteredProximity.add(backendObjectId)
                 WebSocketApi.userNearby(objectId = backendObjectId, isPlayer = isPlayer)
+                // Reveal status if it's nearby
+                SceneManager.getObjectManager()?.setObjectNearby(backendObjectId, true)
             } else if (!isInside && wasInside) {
                 // Exited radius: allow future re-entry to trigger again
                 enteredProximity.remove(backendObjectId)
+                // Hide status if it's no longer nearby
+                SceneManager.getObjectManager()?.setObjectNearby(backendObjectId, false)
             }
         }
     }

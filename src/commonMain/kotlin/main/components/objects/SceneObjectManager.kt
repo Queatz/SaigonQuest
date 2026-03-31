@@ -92,6 +92,9 @@ class SceneObjectManager(
     // Track hovered object
     private var hoveredObjectId: String? = null
     
+    // Track objects that are within proximity radius
+    private val nearbyObjectIds = mutableSetOf<String>()
+
     // Add a highlight layer for the outline effect
     private val highlightLayer = HighlightLayer("objectHighlightLayer", scene)
 
@@ -136,6 +139,27 @@ class SceneObjectManager(
 
     fun setShadowManager(shadowManager: ShadowManager) {
         this.shadowManager = shadowManager
+    }
+
+    /**
+     * Updates the proximity status of an object.
+     * When nearby, always show its status (without highlight).
+     *
+     * @param objectId The ID of the object
+     * @param isNearby Whether the player is nearby
+     */
+    fun setObjectNearby(objectId: String, isNearby: Boolean) {
+        if (isNearby) {
+            nearbyObjectIds.add(objectId)
+            // Reveal status if it's nearby
+            animateStatusText(objectId, true)
+        } else {
+            nearbyObjectIds.remove(objectId)
+            // Hide status only if it's no longer nearby AND not hovered
+            if (hoveredObjectId != objectId) {
+                animateStatusText(objectId, false)
+            }
+        }
     }
     
     /**
@@ -207,8 +231,10 @@ class SceneObjectManager(
                     // Reset cursor
                     document.body?.style?.cursor = "default"
 
-                    // Hide status text for the unhovered object
-                    animateStatusText(objectId, false)
+                    // Hide status text for the unhovered object, unless still nearby
+                    if (!nearbyObjectIds.contains(objectId)) {
+                        animateStatusText(objectId, false)
+                    }
 
                 } catch (error: Throwable) {
                     console.error("[DEBUG_HIGHLIGHT] Error unhighlighting object", error)
@@ -1497,6 +1523,7 @@ class SceneObjectManager(
         objectTypingTimeouts.clear()
         objectModelSources.clear()
         objectKinds.clear()
+        nearbyObjectIds.clear()
         
         // Reset state
         hoveredObjectId = null
@@ -1681,11 +1708,11 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
                     existingHandle.position = Vector3(0f, offsetY, 0f)
                     
-                    // Ensure visibility is consistent with hover state
-                    if (objectId == hoveredObjectId) {
+                    // Ensure visibility is consistent with hover or proximity state
+                    if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId)) {
                         animateStatusText(objectId, true)
                     } else {
-                        // Ensure it's hidden if not hovered
+                        // Ensure it's hidden if neither
                         if (existingHandle.isVisible) {
                             animateStatusText(objectId, false)
                         }
@@ -1704,11 +1731,11 @@ class SceneObjectManager(
                         objectStatusTextHandles[objectId] = statusTextHandle
                         statusTextHandle.position = Vector3(0f, offsetY, 0f)
                         
-                        // Set initial visibility based on hover state
-                        if (objectId == hoveredObjectId) {
+                        // Set initial visibility based on hover or proximity state
+                        if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId)) {
                             animateStatusText(objectId, true)
                         } else {
-                            // Ensure it's hidden if not hovered
+                            // Ensure it's hidden if neither
                             statusTextHandle.isVisible = false
                         }
                         

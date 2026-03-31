@@ -161,6 +161,8 @@ fun Routing.configureFriendRoutes() {
             val body = call.receive<WorldInvitationRequestBody>()
 
             val me = userRepository.getById(userId) ?: return@post call.respond(HttpStatusCode.NotFound)
+            val worldRepository = repository.WorldRepository()
+            val world = worldRepository.getById(body.worldId)
 
             // Check if they are friends
             if (!friendRepository.existsFriendship(userId, body.friendId)) {
@@ -172,10 +174,12 @@ fun Routing.configureFriendRoutes() {
                 Notification(
                     userId = body.friendId,
                     title = "Invitation",
-                    description = "${me.username} invited you to join them",
+                    description = "${me.username} invited you to join them at ${world?.title ?: "their world"}",
                     type = NotificationType.WORLD_INVITATION,
                     otherUserId = userId,
+                    otherUsername = me.username,
                     worldId = body.worldId,
+                    worldName = world?.title ?: "",
                     x = body.x,
                     y = body.y,
                     z = body.z

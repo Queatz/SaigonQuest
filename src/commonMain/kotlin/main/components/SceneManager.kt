@@ -29,6 +29,9 @@ object SceneManager {
     // The BabylonJS scene instance
     private var scene: Scene? = null
 
+    // Proximity radius squared for object detection (2-unit radius squared)
+    const val PROXIMITY_RADIUS_SQ: Float = 2f * 2f
+
     // Pending teleport position for the next scene load
     private var pendingTeleport: lib.Vector3? = null
 

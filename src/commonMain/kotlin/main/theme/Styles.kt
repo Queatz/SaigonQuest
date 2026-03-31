@@ -3,6 +3,7 @@ package main.theme
 import androidx.compose.ui.text.style.TextDecoration
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.AlignSelf
+import org.jetbrains.compose.web.css.AnimationFillMode
 import org.jetbrains.compose.web.css.AnimationTimingFunction
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -26,6 +27,7 @@ import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.duration
+import org.jetbrains.compose.web.css.fillMode
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
@@ -56,6 +58,7 @@ import org.jetbrains.compose.web.css.paddingTop
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.css.s
 import org.jetbrains.compose.web.css.selectors.CSSSelector
@@ -1133,6 +1136,23 @@ object Styles : StyleSheet() {
         100.percent { property("transform", "rotate(360deg)") }
     }
 
+    val bannerBounceWobble by keyframes {
+        0.percent {
+            property("transform", "scale(0.95) translateY(-10px)")
+            opacity(0)
+        }
+        40.percent {
+            property("transform", "scale(1.02) translateY(2px) rotate(1deg)")
+            opacity(1)
+        }
+        70.percent {
+            property("transform", "scale(0.98) translateY(-1px) rotate(-1deg)")
+        }
+        100.percent {
+            property("transform", "scale(1.0) translateY(0) rotate(0deg)")
+        }
+    }
+
     val chatLoadingSpinner by style {
         width(40.px)
         height(40.px)
@@ -1335,6 +1355,12 @@ object Styles : StyleSheet() {
         property("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
         borderRadius(16.px)
         margin(16.px)
+
+        animation(bannerBounceWobble) {
+            duration(0.3.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+            fillMode(AnimationFillMode.Forwards)
+        }
     }
 
     val formSuccessBanner by style {
@@ -1350,6 +1376,12 @@ object Styles : StyleSheet() {
         property("box-shadow", "0 2px 4px rgba(0,0,0,0.2)")
         borderRadius(16.px)
         margin(16.px)
+
+        animation(bannerBounceWobble) {
+            duration(0.3.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+            fillMode(AnimationFillMode.Forwards)
+        }
     }
 
     val formErrorMessage by style {
@@ -2254,6 +2286,29 @@ object Styles : StyleSheet() {
         }
     }
     val aiChatSend by style {}
+    
+    val feedbackMessage by style {
+        position(Position.Absolute)
+        bottom(70.px)
+        left(50.percent)
+        property("transform", "translateX(-50%) translateY(-10px)")
+        padding(8.px, 12.px)
+        color(Color.white)
+        fontSize(14.px)
+        borderRadius(16.px)
+        property("pointer-events", "none")
+        opacity(0.9)
+        property("z-index", "1000")
+        property("text-align", "center")
+    }
+
+    val feedbackError by style {
+        backgroundColor(rgba(255, 0, 0, 0.7))
+    }
+
+    val feedbackSuccess by style {
+        backgroundColor(rgba(0, 150, 0, 0.7))
+    }
 
     init {
         "body, html" style {
