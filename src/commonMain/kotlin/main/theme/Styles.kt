@@ -2303,11 +2303,11 @@ object Styles : StyleSheet() {
     }
 
     val feedbackError by style {
-        backgroundColor(rgba(255, 0, 0, 0.7))
+        backgroundColor(Theme.colors.toastErrorBg)
     }
 
     val feedbackSuccess by style {
-        backgroundColor(rgba(0, 150, 0, 0.7))
+        backgroundColor(Theme.colors.toastSuccessBg)
     }
 
     init {

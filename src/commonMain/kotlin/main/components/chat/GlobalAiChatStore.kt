@@ -40,6 +40,9 @@ object GlobalAiChatStore {
     var isFullscreen by mutableStateOf(false)
         private set
 
+    var stopVoiceRequest by mutableStateOf(false)
+        private set
+
     var speakingIndex by mutableStateOf(-1)
         private set
 
@@ -91,6 +94,14 @@ object GlobalAiChatStore {
     fun setInput(value: String) { input = value }
 
     fun toggleFullscreen() { isFullscreen = !isFullscreen }
+
+    fun requestStopVoice() {
+        stopVoiceRequest = true
+        scope.launch {
+            delay(100)
+            stopVoiceRequest = false
+        }
+    }
 
     private var currentAudioContext: AudioContext? = null
     private var lastScheduledEndTime: Double = 0.0

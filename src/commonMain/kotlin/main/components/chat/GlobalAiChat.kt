@@ -59,6 +59,7 @@ fun GlobalAiChat() {
     }
 
     fun closeWithAnimation() {
+        GlobalAiChatStore.requestStopVoice()
         scope.launch {
             visible = false
             awaitAnimationFrame()
@@ -158,6 +159,7 @@ fun GlobalAiChat() {
                     if (ev.key == "Enter") {
                         ev.preventDefault()
                         ev.stopPropagation()
+                        GlobalAiChatStore.requestStopVoice()
                         GlobalAiChatStore.send(GlobalAiChatStore.input)
                     } else if (ev.key == "Escape") {
                         ev.preventDefault()
@@ -174,6 +176,7 @@ fun GlobalAiChat() {
             // Voice input button (appends to input)
             VoiceInput(
                 small = true,
+                stopRequested = GlobalAiChatStore.stopVoiceRequest,
                 onText = { transcribed ->
                     val t = transcribed.trim()
                     if (t.isNotEmpty()) {
@@ -192,6 +195,7 @@ fun GlobalAiChat() {
                 classes(Styles.primaryButton, Styles.aiChatSend)
                 val isBlank = GlobalAiChatStore.input.isBlank()
                 onClick {
+                    GlobalAiChatStore.requestStopVoice()
                     if (!isBlank) {
                         GlobalAiChatStore.send(GlobalAiChatStore.input)
                     } else {

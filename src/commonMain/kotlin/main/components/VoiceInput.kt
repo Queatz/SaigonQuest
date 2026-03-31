@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ private data class VoiceTranscriptMessage(
 fun VoiceInput(
     small: Boolean = false,
     enabled: Boolean = true,
+    stopRequested: Boolean = false,
     onText: (String) -> Unit,
 ) {
     val scope = remember { MainScope() }
@@ -156,6 +158,12 @@ fun VoiceInput(
         flushPending = null
         isRecording = false
         MusicManager.stopRecording()
+    }
+
+    LaunchedEffect(stopRequested) {
+        if (stopRequested && isRecording) {
+            stopRecording()
+        }
     }
 
     DisposableEffect(Unit) {
