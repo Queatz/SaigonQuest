@@ -5,7 +5,6 @@ import lib.Mesh
 import lib.Ray
 import lib.Vector3
 import main.components.world.isSkybox
-import main.components.world.isStartPosition
 import main.components.world.isWater
 
 /**

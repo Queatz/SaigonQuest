@@ -146,6 +146,45 @@ fun Routing.configureFriendRoutes() {
             }
         }
 
+        // Invite friend to world
+        @Serializable
+        data class WorldInvitationRequestBody(
+            val friendId: String,
+            val worldId: String,
+            val x: Float,
+            val y: Float,
+            val z: Float
+        )
+        post("/friend/invite") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+            val body = call.receive<WorldInvitationRequestBody>()
+
+            val me = userRepository.getById(userId) ?: return@post call.respond(HttpStatusCode.NotFound)
+
+            // Check if they are friends
+            if (!friendRepository.existsFriendship(userId, body.friendId)) {
+                return@post call.respond(HttpStatusCode.Forbidden, ErrorResponse("You are not friends with this user"))
+            }
+
+            // Create notification for the friend
+            notificationRepository.create(
+                Notification(
+                    userId = body.friendId,
+                    title = "Invitation",
+                    description = "${me.username} invited you to join them",
+                    type = NotificationType.WORLD_INVITATION,
+                    otherUserId = userId,
+                    worldId = body.worldId,
+                    x = body.x,
+                    y = body.y,
+                    z = body.z
+                )
+            )
+
+            call.respond(HttpStatusCode.OK)
+        }
+
         // Get online status for a set of friend IDs
         get("/friend/online") {
             val principal = call.principal<JWTPrincipal>()

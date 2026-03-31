@@ -25,6 +25,15 @@ object NotificationApi {
         val description: String
     )
     
+    @Serializable
+    data class WorldInvitationRequest(
+        val friendId: String,
+        val worldId: String,
+        val x: Float,
+        val y: Float,
+        val z: Float
+    )
+    
     /**
      * Get notifications for the current user
      *
@@ -96,6 +105,30 @@ object NotificationApi {
             return response.status.isSuccess()
         } catch (e: Throwable) {
             console.error("Error marking all notifications as read", e)
+            return false
+        }
+    }
+
+    /**
+     * Send a world invitation to a friend
+     *
+     * @param friendId The ID of the friend to invite
+     * @param worldId The ID of the world to invite them to
+     * @param x The X coordinate
+     * @param y The Y coordinate
+     * @param z The Z coordinate
+     * @return True if successful
+     */
+    suspend fun sendWorldInvitation(friendId: String, worldId: String, x: Float, y: Float, z: Float): Boolean {
+        try {
+            val response = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/friend/invite") {
+                ApiClient.addAuthHeader(this)
+                contentType(ContentType.Application.Json)
+                setBody(WorldInvitationRequest(friendId, worldId, x, y, z))
+            }
+            return response.status.isSuccess()
+        } catch (e: Throwable) {
+            console.error("Error sending world invitation", e)
             return false
         }
     }

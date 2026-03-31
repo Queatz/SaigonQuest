@@ -46,6 +46,9 @@ class NotificationRepository {
                     worldId = createdNotification.worldId,
                     objectId = createdNotification.objectId,
                     otherUserId = createdNotification.otherUserId,
+                    x = createdNotification.x,
+                    y = createdNotification.y,
+                    z = createdNotification.z,
                     timestamp = createdNotification.timestamp
                 )
 

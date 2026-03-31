@@ -185,6 +185,17 @@ object FriendsStyles : StyleSheet() {
         dark(self) { backgroundColor(Theme.colors.primaryDark) }
     }
 
+    val buttonInvite by style {
+        padding(8.px, 12.px)
+        backgroundColor(Theme.colors.secondary)
+        color(Theme.colors.onSecondary)
+        property("border", "none")
+        borderRadius(16.px)
+        property("cursor", "pointer")
+        flexGrow(1)
+        dark(self) { backgroundColor(Theme.colors.secondaryDark); color(Theme.colors.onSecondary) }
+    }
+
     val buttonSend by style {
         padding(8.px, 12.px)
         backgroundColor(Theme.colors.success)

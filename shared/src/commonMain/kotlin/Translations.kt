@@ -1972,6 +1972,24 @@ vi: Định dạng URL không hợp lệ. URL chỉ có thể chứa chữ cái,
 
 Please enter a positive number of days
 vi: Vui lòng nhập số ngày dương
+
+Invite to me
+vi: Mời đến tôi
+
+Dismiss
+vi: Bỏ qua
+
+Invitation sent!
+vi: Đã gửi lời mời!
+
+Failed to send invitation
+vi: Không thể gửi lời mời
+
+Unable to invite friend right now
+vi: Hiện không thể mời bạn bè
+
+Invitation
+vi: Lời mời
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

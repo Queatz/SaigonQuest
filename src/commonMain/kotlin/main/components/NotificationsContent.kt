@@ -7,8 +7,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import app.softwork.routingcompose.Router
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import lib.Vector3
 import main.api.NotificationApi
+import main.api.WorldApi
+import main.components.world.WorldLoader
+import main.components.player.WorldCollisionUtils
 import main.theme.NotificationStyles
 import main.utils.TimeUtils
 import models.Notification
@@ -189,7 +197,7 @@ private fun NotificationItem(
                             Translated("Chat")
                         }
                     }
-                    NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED -> {
+                    NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED, NotificationType.WORLD_INVITATION -> {
                         Span(attrs = { classes(NotificationStyles.friendBadge) }) {
                             Translated("Friends")
                         }
@@ -209,6 +217,12 @@ private fun NotificationItem(
         when (notification.type) {
             NotificationType.FRIEND_REQUEST -> {
                 FriendRequestNotificationContent(
+                    notification = notification,
+                    onStatusChange = { refreshKey++ }
+                )
+            }
+            NotificationType.WORLD_INVITATION -> {
+                WorldInvitationNotificationContent(
                     notification = notification,
                     onStatusChange = { refreshKey++ }
                 )

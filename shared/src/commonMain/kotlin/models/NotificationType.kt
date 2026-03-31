@@ -51,4 +51,9 @@ enum class NotificationType {
      * Money received from another user (VND transfer)
      */
     VND_RECEIVED,
+
+    /**
+     * World invitation from a friend
+     */
+    WORLD_INVITATION,
 }

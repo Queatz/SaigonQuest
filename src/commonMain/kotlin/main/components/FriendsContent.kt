@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.DisposableEffect
 import lib.Vector3
 import main.api.FriendApi
+import main.api.NotificationApi
 import main.api.WorldApi
 import main.api.UserApi
 import main.api.WebSocketApi
@@ -356,6 +357,9 @@ fun FriendsContent() {
                             onError = { errorMsg ->
                                 showFeedback(errorMsg, true)
                             },
+                            onSuccess = { successMsg ->
+                                showFeedback(successMsg)
+                            },
                             onRemoveFriend = { friendId ->
                                 removeFriend(
                                     friendId = friendId,
@@ -397,6 +401,7 @@ fun FriendListItem(
     isOnline: Boolean,
     onJumpToFriend: (String, String, Position?) -> Unit,
     onError: (String) -> Unit,
+    onSuccess: (String) -> Unit,
     onRemoveFriend: (String) -> Unit,
     onNoteUpdated: (String) -> Unit
 ) {
@@ -584,6 +589,22 @@ fun FriendListItem(
                     }
                 ) {
                     Translated("Jump to Friend")
+                }
+
+                // Invite to me button
+                Button(
+                    attrs = {
+                        classes(FriendsStyles.buttonInvite)
+                        onClick {
+                            inviteToFriend(
+                                friendId = friend.friendId,
+                                onError = onError,
+                                onSuccess = onSuccess
+                            )
+                        }
+                    }
+                ) {
+                    Translated("Invite to me")
                 }
 
                 // Send VND button
@@ -783,6 +804,44 @@ private fun jumpToFriend(
             }
         } catch (e: Throwable) {
             console.error("Error jumping to friend", e)
+            onError("Error: ${e.message}")
+        }
+    }
+}
+
+/**
+ * Invite a friend to join the player's current world and position
+ */
+private fun inviteToFriend(
+    friendId: String,
+    onError: (String) -> Unit,
+    onSuccess: (String) -> Unit
+) {
+    CoroutineScope(Dispatchers.Default).launch {
+        try {
+            val pc = SceneManager.getPlayerController()
+            val handle = pc?.getPlayerHandle()
+            val world = WorldLoader.getActiveWorld()
+
+            if (pc != null && handle != null && world != null) {
+                val pos = handle.position
+                val success = NotificationApi.sendWorldInvitation(
+                    friendId = friendId,
+                    worldId = world.key,
+                    x = pos.x,
+                    y = pos.y,
+                    z = pos.z
+                )
+                if (success) {
+                    onSuccess(str("Invitation sent!"))
+                } else {
+                    onError(str("Failed to send invitation"))
+                }
+            } else {
+                onError(str("Unable to invite friend right now"))
+            }
+        } catch (e: Throwable) {
+            console.error("Error inviting friend", e)
             onError("Error: ${e.message}")
         }
     }

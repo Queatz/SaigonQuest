@@ -39,6 +39,9 @@ import models.annotations.CompositeIndexes
     var worldId: String = "",
     var objectId: String = "",
     var otherUserId: String = "",
+    var x: Float = 0f,
+    var y: Float = 0f,
+    var z: Float = 0f,
     @field:Indexed
     var timestamp: Instant = Clock.System.now()
 ) : BaseModel()

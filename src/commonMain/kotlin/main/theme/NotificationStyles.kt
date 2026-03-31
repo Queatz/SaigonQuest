@@ -215,6 +215,12 @@ object NotificationStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         gap(8.px)
     }
+
+    val worldInvitationActions by style {
+        display(DisplayStyle.Flex)
+        gap(8.px)
+        marginTop(12.px)
+    }
     
     val acceptButton by style {
         backgroundColor(Theme.colors.success)
