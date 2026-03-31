@@ -29,8 +29,33 @@ object SceneManager {
     // The BabylonJS scene instance
     private var scene: Scene? = null
 
+    // Pending teleport position for the next scene load
+    private var pendingTeleport: lib.Vector3? = null
+
     // Last known local player velocity in world space (per frame delta)
     private var playerVelocity: lib.Vector3? = null
+    
+    /**
+     * Sets the pending teleport position for the next scene load.
+     * 
+     * @param position The position to teleport to
+     */
+    fun setPendingTeleport(position: lib.Vector3?) {
+        pendingTeleport = position
+        println("[DEBUG] Pending teleport set to $position")
+    }
+    
+    /**
+     * Gets and clears the pending teleport position.
+     * 
+     * @return The pending teleport position, or null if none
+     */
+    fun getAndClearPendingTeleport(): lib.Vector3? {
+        val pos = pendingTeleport
+        pendingTeleport = null
+        if (pos != null) println("[DEBUG] Pending teleport consumed: $pos")
+        return pos
+    }
     
     /**
      * Sets the camera controller instance.

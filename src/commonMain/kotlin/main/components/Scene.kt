@@ -960,7 +960,12 @@ fun SceneComponent(url: String) {
                 otherPlayersController.setWorldMeshes(worldMeshes)
 
                 // Find a valid starting position for the player
-                val startPosition = playerController.findValidStartPosition()
+                val preferredStart = SceneManager.getAndClearPendingTeleport()
+                val startPosition = if (preferredStart != null) {
+                    playerController.findValidYPosition(preferredStart) ?: preferredStart
+                } else {
+                    playerController.findValidStartPosition()
+                }
 
                 // Create the player using the WorldObjectManager
                 playerController.createPlayer(startPosition, worldObjectManager)

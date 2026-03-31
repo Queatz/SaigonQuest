@@ -36,4 +36,5 @@ enum class NodeId {
     PlayerImageInput,
     PlayerAudioInput,
     JoinList,
+    OpenDoc,
 }

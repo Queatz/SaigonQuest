@@ -81,6 +81,7 @@ fun WorldUI(
     var isQrDialogOpen by remember { mutableStateOf(false) }
     var isAdminDialogOpen by remember { mutableStateOf(false) }
     var isWorldDocsDialogOpen by remember { mutableStateOf(false) }
+    var initialWorldDocId by remember { mutableStateOf<String?>(null) }
     var isVisitedWorldsDialogOpen by remember { mutableStateOf(false) }
     
     // State for print dialog
@@ -575,6 +576,20 @@ fun WorldUI(
         onDispose { WebSocketApi.removeListener(token) }
     }
     
+    // Listen for OPEN_DOC to open the WorldDocsDialog with a specific doc
+    DisposableEffect(Unit) {
+        val token = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_DOC) { msg ->
+            try {
+                val data = ApiClient.json.decodeFromString(models.OpenDocData.serializer(), msg.data)
+                initialWorldDocId = data.docId
+                isWorldDocsDialogOpen = true
+            } catch (e: Throwable) {
+                console.error("Failed to parse OPEN_DOC payload", e)
+            }
+        }
+        onDispose { WebSocketApi.removeListener(token) }
+    }
+
     // Listen for 'Copy to chat' requests to open Chat panel
     LaunchedEffect(Unit) {
         ChatComposerController.requests.collect { req ->
@@ -1045,7 +1060,11 @@ fun WorldUI(
                 worldName = currentWorld!!.title,
                 isOwner = currentWorld!!.canUserEdit(currentUser!!.key),
                 currentUserId = currentUser!!.key,
-                onClose = { isWorldDocsDialogOpen = false },
+                initialDocId = initialWorldDocId,
+                onClose = {
+                    isWorldDocsDialogOpen = false
+                    initialWorldDocId = null
+                },
             )
         }
 

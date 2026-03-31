@@ -260,7 +260,7 @@ fun PropertyPanel(
                                             placeholder = ""
                                         )
                                     }
-                                } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc)) {
+                                } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc || node.type is models.LogicNode.OpenDoc)) {
                                     val currentId = propertyValues[propDef.key] ?: ""
                                     var selectedDoc by remember(nodeId) { mutableStateOf<models.Doc?>(null) }
                                     var loadingDoc by remember(nodeId) { mutableStateOf(false) }

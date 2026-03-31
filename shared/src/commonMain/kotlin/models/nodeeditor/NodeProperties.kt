@@ -783,6 +783,29 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
         )
 
+        // OpenDoc node properties
+        is LogicNode.OpenDoc -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ID,
+                name = "Doc",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
         // AI node properties (pure value, no triggers)
         is LogicNode.Ai -> listOf(
             NodePropertyDefinition(

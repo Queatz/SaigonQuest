@@ -213,6 +213,17 @@ data class OpenUrlData(
 )
 
 /**
+ * Open doc data model
+ *
+ * This model is sent when an OpenDoc node is executed to open a doc for the user.
+ */
+@Serializable
+data class OpenDocData(
+    val userId: String,
+    val docId: String
+)
+
+/**
  * AI chat data model
  *
  * This model is sent when an AiChat node is executed to open an AI chat session.

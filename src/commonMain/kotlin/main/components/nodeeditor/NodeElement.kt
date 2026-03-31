@@ -82,9 +82,9 @@ fun NodeElement(
     // State for document title (if this is a Doc Content node)
     var docTitle by remember(id) { mutableStateOf<String?>(null) }
 
-    // Get doc title for Doc Content and Create Doc nodes
+    // Get doc title for Doc Content, Create Doc and Open Doc nodes
     LaunchedEffect(node.data) {
-        if (type is LogicNode.DocContent || type is LogicNode.CreateDoc) {
+        if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
             val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
             val docId = nodeData.properties.find { it.key == PropertyKey.ID }?.value
             if (!docId.isNullOrBlank()) {
@@ -391,7 +391,7 @@ fun NodeElement(
                         }
 
                         PropertyKey.ID -> {
-                            if (type is LogicNode.DocContent || type is LogicNode.CreateDoc) {
+                            if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
                                 Div {
                                     val displayTitle = when {
                                         docTitle != null -> docTitle

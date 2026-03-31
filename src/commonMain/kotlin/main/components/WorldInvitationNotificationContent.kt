@@ -89,8 +89,8 @@ private suspend fun acceptWorldInvitation(router: Router, notification: Notifica
         val targetWorld = WorldApi.getWorld(notification.worldId)
         
         // Generate random offset 1-3 units away in X and Z
-        val randomX = (kotlin.random.Random.nextFloat() * 2f + 1f) * (if (kotlin.random.Random.nextBoolean()) 1f else -1f)
-        val randomZ = (kotlin.random.Random.nextFloat() * 2f + 1f) * (if (kotlin.random.Random.nextBoolean()) 1f else -1f)
+        val randomX = (kotlin.random.Random.nextFloat() * .2f + .1f) * (if (kotlin.random.Random.nextBoolean()) 1f else -1f)
+        val randomZ = (kotlin.random.Random.nextFloat() * .2f + .1f) * (if (kotlin.random.Random.nextBoolean()) 1f else -1f)
         
         val targetPos = Vector3(
             notification.x + randomX,
@@ -98,33 +98,20 @@ private suspend fun acceptWorldInvitation(router: Router, notification: Notifica
             notification.z + randomZ
         )
         
-        // Navigate to the world
-        router.navigate("/${targetWorld.url}")
-        
-        // Polling loop to wait for player controller to be ready
-        CoroutineScope(Dispatchers.Default).launch {
-            var attempts = 0
-            while (attempts < 80) {
-                val pc = SceneManager.getPlayerController()
-                val handle = pc?.getPlayerHandle()
-                val scene = SceneManager.getScene()
-                if (pc != null && handle != null && scene != null) {
-                    val worldMeshes = pc.getWorldMeshes()
-                    val collider = pc.getCollider()
-                    
-                    val validPos = WorldCollisionUtils.findValidYPosition(
-                        worldMeshes = worldMeshes,
-                        collider = collider,
-                        moveCircle = null,
-                        position = targetPos
-                    )
-                    
-                    pc.teleportTo(validPos ?: targetPos)
-                    break
-                }
-                delay(100)
-                attempts++
+        val currentWorld = WorldLoader.getActiveWorld()
+        if (currentWorld?.key == notification.worldId) {
+            // Already in the target world, teleport immediately
+            val pc = SceneManager.getPlayerController()
+            if (pc != null) {
+                val validPos = pc.findValidYPosition(targetPos) ?: return
+                pc.teleportTo(validPos)
+                SceneManager.getCameraController()?.setInitialTargetPosition(validPos)
             }
+        } else {
+            // Store target position in SceneManager for the new scene to pick up
+            SceneManager.setPendingTeleport(targetPos)
+            // Navigate to the world
+            router.navigate("/${targetWorld.url}")
         }
     } catch (e: Throwable) {
         console.error("Error accepting world invitation", e)

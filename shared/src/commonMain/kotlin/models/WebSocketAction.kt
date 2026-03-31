@@ -37,6 +37,7 @@ enum class WebSocketAction {
     INVENTORY_CHANGED,
     OPEN_CHAT,
     OPEN_AI_CHAT,
+    OPEN_DOC,
     PLAY_SOUND,
 
     // Global, user-level events

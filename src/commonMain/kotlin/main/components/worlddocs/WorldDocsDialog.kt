@@ -54,6 +54,7 @@ fun WorldDocsDialog(
     isOwner: Boolean,
     currentUserId: String,
     onClose: () -> Unit,
+    initialDocId: String? = null,
 ) {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -118,11 +119,22 @@ fun WorldDocsDialog(
             loading = true
             error = null
             docs = DocApi.getDocTree(worldId)
-            selectedDocId = docs.firstOrNull()?.doc?.key
+            if (initialDocId != null) {
+                selectedDocId = initialDocId
+            } else {
+                selectedDocId = docs.firstOrNull()?.doc?.key
+            }
         } catch (t: Throwable) {
             error = t.message ?: "Error"
         } finally {
             loading = false
+        }
+    }
+
+    // Handle external updates to initialDocId
+    LaunchedEffect(initialDocId) {
+        if (initialDocId != null) {
+            selectedDocId = initialDocId
         }
     }
 
@@ -310,7 +322,7 @@ fun WorldDocsDialog(
                                                     ).all { ancestor -> ancestor.permissions.worldUsersCanEdit }
                                             )
                                 },
-                                expandPathToId = if (serverSearchIds != null) selectedDocId else null,
+                                expandPathToId = selectedDocId,
                                 showAddButtonForSelected = isOwner,
                                 onCreateChild = { parentId ->
                                     scope.launch {

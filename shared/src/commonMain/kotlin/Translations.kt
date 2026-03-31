@@ -1990,6 +1990,13 @@ vi: Hiện không thể mời bạn bè
 
 Invitation
 vi: Lời mời
+
+Doc content
+vi: Nội dung tài liệu
+
+Open doc
+vi: Mở tài liệu
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

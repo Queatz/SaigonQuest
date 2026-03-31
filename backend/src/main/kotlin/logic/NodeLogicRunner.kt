@@ -647,6 +647,15 @@ class NodeLogicRunner(
                 )
                 OpenUrlNodeRunner(context)
             }
+
+            NodeId.OpenDoc -> {
+                WebSocketDebug.logMessage(
+                    "OPEN_DOC_RUNNER_SELECTED",
+                    "Selected OpenDocNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                OpenDocNodeRunner(context)
+            }
             
             NodeId.ObjectNotification -> {
                 WebSocketDebug.logMessage(

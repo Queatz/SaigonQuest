@@ -388,6 +388,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Format and join a comma-separated list into a single string"
     ) : LogicNode
+
+    /**
+     * OpenDoc node - opens a WorldDocsDialog with a document pre-opened
+     */
+    @Serializable
+    data class OpenDoc(
+        override val id: NodeId = NodeId.OpenDoc,
+        override val label: String = "Open doc",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Open a doc"
+    ) : LogicNode
 }
 
 /**
@@ -434,6 +445,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.PlayerImageInput(),
         LogicNode.PlayerAudioInput(),
         LogicNode.JoinList(),
+        LogicNode.OpenDoc(),
     )
 }
 
