@@ -13,6 +13,7 @@ import org.jetbrains.compose.web.css.border
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
@@ -32,6 +33,8 @@ import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.css.top
 import org.jetbrains.compose.web.css.width
@@ -112,7 +115,7 @@ object InventoryStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         padding(8.px)
         backgroundColor(Theme.colors.white08)
-        borderRadius(4.px)
+        borderRadius(8.px)
         cursor("pointer")
 
         dark(self) {
@@ -138,7 +141,6 @@ object InventoryStyles : StyleSheet() {
 
     // Wearable chip/indicator
     val wearableChip by style {
-        margin(2.px, 4.px)
         padding(2.px, 6.px)
         backgroundColor(Theme.colors.accentInfoSoft)
         color(Theme.colors.accentInfoStrong)
@@ -266,5 +268,65 @@ object InventoryStyles : StyleSheet() {
         fontSize(16.px)
         letterSpacing(2.px)
         color(Theme.colors.loadingDots)
+    }
+
+    // Adaptive grid for inventory items
+    val inventoryGrid by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "repeat(auto-fill, minmax(160px, 1fr))")
+        gap(12.px)
+        maxWidth(100.percent)
+        width(800.px)
+    }
+
+    // Card-style tile for each inventory item
+    val inventoryCard by style {
+        display(DisplayStyle.Flex)
+        property("flex-direction", "column")
+        alignItems(AlignItems.Center)
+        padding(12.px)
+        borderRadius(12.px)
+        boxSizing("border-box")
+        backgroundColor(Theme.colors.white06)
+        property("box-shadow", "0 2px 6px rgba(0,0,0,0.08)")
+        minHeight(180.px)
+
+        dark(self) {
+            backgroundColor(Theme.colors.white12)
+            property("box-shadow", "0 2px 8px rgba(0,0,0,0.25)")
+        }
+    }
+
+    val inventoryCardTitle by style {
+        fontSize(14.px)
+        fontWeight("bold")
+        property("text-align", "center")
+        property("margin-top", "8px")
+        property("margin-bottom", "4px")
+    }
+
+    val inventoryCardChips by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        gap(6.px)
+        property("flex-wrap", "wrap")
+        property("margin-top", "4px")
+        property("margin-bottom", "8px")
+        property("min-height", "22px")
+        width(100.percent)
+    }
+
+    // Action bar anchored at the bottom of the tile
+    val inventoryCardActionBar by style {
+        width(100.percent)
+        property("margin-top", "auto")
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Stretch)
+    }
+
+    // Make contained button expand to full width inside the action bar
+    val inventoryCardActionButton by style {
+        width(100.percent)
     }
 }

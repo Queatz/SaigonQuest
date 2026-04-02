@@ -46,6 +46,7 @@ import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.Button
 import org.w3c.dom.HTMLElement
 import utils.json
 
@@ -496,13 +497,13 @@ fun InventoryDialog(onClose: () -> Unit) {
             coroutineScope.launch {
                 try {
                     console.log("[DEBUG_LOG] Saving updated item order: ${currentOrder}")
+                    console.log("[DEBUG_LOG] User token present: ${!main.api.UserApi.getToken().isNullOrEmpty()}")
                     val updatedInventory = InventoryApi.updateInventoryItemOrder(currentOrder)
                     console.log("[DEBUG_LOG] Successfully saved item order")
                     InventoryState.inventory = updatedInventory
-                    showFeedback("Item order updated")
                 } catch (error: Throwable) {
                     console.error("[DEBUG_LOG] Error saving item order", error)
-                    showFeedback("Failed to save item order", true)
+                    showFeedback("Failed to update item order", true)
                     inventory = currentInventory
                 }
             }
@@ -863,134 +864,107 @@ fun InventoryDialog(onClose: () -> Unit) {
                             }
                         }
 
-                        filteredItemOrder.forEach { itemId ->
-                            val item = InventoryState.getItemForInventoryItemKey(itemId)
-                            if (item != null) {
-                                Div(
-                                    attrs = {
-                                        classes(InventoryStyles.inventoryRow)
-                                        // Make draggable
-                                        attr("draggable", "true")
-                                        title(moveTip)
-                                        onDoubleClick { handleMoveToTop(itemId) }
-                                        onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
-                                        onDragOver { event -> handleDragOver(event.nativeEvent) }
-                                        onDrop { event -> handleDrop(event.nativeEvent, itemId) }
-                                        onTouchDrop { _, _, data, dataType ->
-                                            if (dataType == DataType.INVENTORY_ITEM) {
-                                                try {
-                                                    val payload =
-                                                        json.decodeFromString(InventoryDragPayload.serializer(), data)
-                                                    reorderItems(payload.inventoryItemKey, itemId)
-                                                } catch (e: Throwable) {
-                                                    console.error(
-                                                        "[DEBUG_LOG] onTouchDrop row: error decoding payload",
-                                                        e
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                ) {
-                                    // Use InventoryBox to render the item
-                                    InventoryBox(
-                                        onClick = { /* No action on click */ },
-                                        item = item,
-                                        isLoading = isLoading,
-                                        quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
-                                        inventoryItemKey = itemId,
-                                        isWorn = currentUser?.wornItems?.contains(item.key) == true,
-                                        sex = currentUser?.sex,
-                                    )
-
-                                    // Item details
-                                    Div(
-                                        attrs = {
-                                            style {
-                                                flexGrow(1)
-                                            }
-                                        }
-                                    ) {
-                                        // Item title with wearable indicator
+                        // Render as an adaptive grid of inventory tiles
+                        Div(
+                            attrs = {
+                                classes(InventoryStyles.inventoryGrid)
+                            }
+                        ) {
+                            filteredItemOrder.forEach { itemId ->
+                                key(itemId) {
+                                    val item = InventoryState.getItemForInventoryItemKey(itemId)
+                                    if (item != null) {
                                         Div(
                                             attrs = {
-                                                style {
-                                                    display(DisplayStyle.Flex)
-                                                    alignItems(AlignItems.Center)
+                                                classes(InventoryStyles.inventoryCard)
+                                                // Make draggable
+                                                attr("draggable", "true")
+                                                title(moveTip)
+                                                onDoubleClick { handleMoveToTop(itemId) }
+
+                                                // Capture drag start to remember the dragged inventory key for reordering
+                                                onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
+                                                onDragOver { event -> handleDragOver(event.nativeEvent) }
+                                                onDrop { event -> handleDrop(event.nativeEvent, itemId) }
+                                                onTouchDrop { _, _, data, dataType ->
+                                                    if (dataType == DataType.INVENTORY_ITEM) {
+                                                        try {
+                                                            val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                                            reorderItems(payload.inventoryItemKey, itemId)
+                                                        } catch (e: Throwable) {
+                                                            console.error("[DEBUG_LOG] onTouchDrop tile: error decoding payload", e)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         ) {
-                                            Div(
-                                                attrs = {
-                                                    classes(InventoryStyles.itemTitle)
-                                                }
-                                            ) {
+                                            // Item sprite box (draggable via InventoryBox)
+                                            InventoryBox(
+                                                onClick = { /* no-op in grid */ },
+                                                item = item,
+                                                isLoading = isLoading,
+                                                quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
+                                                inventoryItemKey = itemId,
+                                                isWorn = currentUser?.wornItems?.contains(item.key) == true,
+                                                sex = currentUser?.sex,
+                                            )
+
+                                            // Title
+                                            Div(attrs = { classes(InventoryStyles.inventoryCardTitle) }) {
                                                 Text(item.title)
                                             }
 
-                                            // Wearable indicator
-                                            if (item.wearable) {
-                                                Div(
-                                                    attrs = {
-                                                        classes(InventoryStyles.wearableChip)
-                                                    }
-                                                ) {
-                                                    Translated("Wearable")
-                                                }
-
-                                                val sex = item.wearableSex ?: Sex.Boy
-                                                Div(
-                                                    attrs = {
-                                                        classes(InventoryStyles.wearableChip)
-                                                        when (sex) {
-                                                            Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
-                                                            Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
-                                                        }
-                                                        style { marginLeft(4.px) }
-                                                    }
-                                                ) {
-                                                    Translated(sex.name)
-                                                }
-                                            }
-                                        }
-
-                                        // Item description
-                                        Div(
-                                            attrs = {
-                                                classes(InventoryStyles.descriptionText)
-                                            }
-                                        ) {
-                                            Text(item.description)
-                                        }
-                                    }
-
-                                    // Action buttons
-                                    Div(
-                                        attrs = {
-                                            style {
-                                                display(DisplayStyle.Flex)
-                                                property("gap", "8px")
-                                            }
-                                        }
-                                    ) {
-                                        // Use button
-                                        DialogButton(
-                                            onClick = {
+                                            // Chips: wearable + sex
+                                            Div(attrs = { classes(InventoryStyles.inventoryCardChips) }) {
                                                 if (item.wearable) {
-                                                    handleWearItem(itemId)
-                                                } else {
-                                                    handleUseItem(itemId)
+                                                    Div(attrs = { classes(InventoryStyles.wearableChip) }) {
+                                                        Translated("Wearable")
+                                                    }
+
+                                                    val sex = item.wearableSex ?: Sex.Boy
+                                                    Div(
+                                                        attrs = {
+                                                            classes(InventoryStyles.wearableChip)
+                                                            when (sex) {
+                                                                Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
+                                                                Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
+                                                            }
+                                                        }
+                                                    ) {
+                                                        Translated(sex.name)
+                                                    }
                                                 }
-                                            },
-                                            isPrimary = true
-                                        ) {
-                                            Translated(
-                                                when {
-                                                    item.wearable && currentUser?.wornItems?.any { it == item.key } == true -> "Take off"
-                                                    item.wearable -> "Wear"
-                                                    else -> "Use"
+                                            }
+
+                                            // Primary action bar at bottom
+                                            Div(attrs = { classes(InventoryStyles.inventoryCardActionBar) }) {
+                                                Button(
+                                                    attrs = {
+                                                        classes(Styles.baseDialogButtonPrimary)
+                                                        classes(InventoryStyles.inventoryCardActionButton)
+                                                        onClick {
+                                                            if (item.wearable) {
+                                                                if (currentUser?.wornItems?.any { it == item.key } == true) {
+                                                                    // Take off means reusing useItem handler for worn? Use handleRemoveWornItem by item key
+                                                                    handleRemoveWornItem(itemId, isDirectItemId = true)
+                                                                } else {
+                                                                    handleWearItem(itemId)
+                                                                }
+                                                            } else {
+                                                                handleUseItem(itemId)
+                                                            }
+                                                        }
+                                                    }
+                                                ) {
+                                                    Translated(
+                                                        when {
+                                                            item.wearable && currentUser?.wornItems?.any { it == item.key } == true -> "Take off"
+                                                            item.wearable -> "Wear"
+                                                            else -> "Use"
+                                                        }
+                                                    )
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                 }

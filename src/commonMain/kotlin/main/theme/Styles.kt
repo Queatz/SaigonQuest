@@ -267,12 +267,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         marginBottom(20.px)
         padding(16.px)
-        backgroundColor(Theme.colors.white20)
         property("border-radius", "8px")
-
-        dark(self) {
-            backgroundColor(Theme.colors.black20)
-        }
     }
 
     val characterRenderer by style {
