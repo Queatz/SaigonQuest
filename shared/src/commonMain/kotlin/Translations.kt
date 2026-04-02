@@ -1349,7 +1349,7 @@ vi: Nhấp hoặc thả phương tiện để tải lên
 Click or drop image to upload
 vi: Nhấp hoặc thả hình ảnh để tải lên
 
-Record audio
+Record
 vi: Ghi âm
 
 Stop recording

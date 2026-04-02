@@ -640,18 +640,6 @@ fun InventoryDialog(onClose: () -> Unit) {
                             classes(Styles.characterRendererContainer)
                         }
                     ) {
-                        // Title
-                        H3(
-                            attrs = {
-                                style {
-                                    marginBottom(12.px)
-                                    fontSize(18.px)
-                                }
-                            }
-                        ) {
-                            Translated("Your character")
-                        }
-
                         // Character renderer with drop zone
                         var isDropTargetActive by remember { mutableStateOf(false) }
 

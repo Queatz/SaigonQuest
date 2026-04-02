@@ -277,6 +277,15 @@ class InputHandler(
                 else -> { /* Ignore other keyboard events */ }
             }
         }
+        // Handle Space key for jumping
+        else if (key == " " || key == "spacebar") {
+            when (info.type) {
+                KeyboardEventTypes.KEYDOWN -> {
+                    playerController.jump(calculateMovementDirection())
+                }
+                else -> { /* Ignore other keyboard events */ }
+            }
+        }
         // Handle Z key for toggling sitting/standing
         else if (key == "z") {
             when (info.type) {

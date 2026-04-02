@@ -295,6 +295,16 @@ class PlayerController(private val scene: Scene) {
     fun stopMovement() { mover.stopMovement() }
 
     /**
+     * Triggers a jump for the player.
+     * 
+     * @param moveDirection The current movement direction to maintain while in the air
+     */
+    fun jump(moveDirection: Vector3) {
+        val handle = playerHandle ?: return
+        mover.jump(moveDirection, handle.position)
+    }
+
+    /**
      * Checks if a position is valid (has ground below).
      * 
      * @param position The position to check

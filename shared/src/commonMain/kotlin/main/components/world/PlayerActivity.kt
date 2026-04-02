@@ -6,5 +6,6 @@ package main.components.world
  */
 enum class PlayerActivity {
     Sit,
-    Moving
+    Moving,
+    Jump
 }
