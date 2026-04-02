@@ -1131,7 +1131,7 @@ fun SceneComponent(url: String) {
         // Set up the render loop
         scene.registerBeforeRender {
             // Graphics auto-leveling: track FPS and adjust settings if needed
-            if (graphicsAutoLevelingActive) {
+            if (graphicsAutoLevelingActive || false) { // Disable for now
                 val dtMs = scene.deltaTime.toDouble()
                 val fps = if (dtMs > 0.0 && dtMs < 1_000.0) 1_000.0 / dtMs else 0.0
 

@@ -80,9 +80,14 @@ object ItemUsageHandler {
                             val updatedWornItems = currentUser.wornItems.toMutableList()
                             updatedWornItems.remove(item.key)
                             
-                            // Update the user locally and on the server
-                            currentUser.wornItems = updatedWornItems
-                            val updatedUser = UserApi.updateUserWornItems(currentUser)
+                            // Create an updated user copy for optimistic update
+                            val updatedUserForOptimistic = currentUser.copy(wornItems = updatedWornItems)
+                            
+                            // Update the user on the server
+                            val updatedUser = UserApi.updateUserWornItems(updatedUserForOptimistic)
+                            
+                            // Update global state immediately
+                            InventoryState.currentUser = updatedUser
                             
                             // Broadcast the change to other players
                             WebSocketApi.updatePlayer(
@@ -91,7 +96,7 @@ object ItemUsageHandler {
                                 status = updatedUser.status
                             )
                             
-                            // Refresh inventory state to update CharacterRenderer
+                            // Refresh inventory state to ensure everything is in sync
                             InventoryState.refreshInventory(
                                 coroutineScope = coroutineScope,
                                 onSuccess = {
@@ -132,9 +137,17 @@ object ItemUsageHandler {
                             updatedWornItems.removeAll(itemsToRemove)
                             updatedWornItems.add(item.key)
 
-                            // Update the user locally and on the server
-                            currentUser.wornItems = updatedWornItems
-                            val updatedUser = UserApi.updateUserWornItems(currentUser)
+                            // Create an updated user copy for optimistic update
+                            val updatedUserForOptimistic = currentUser.copy(wornItems = updatedWornItems)
+                            
+                            // Update global state immediately for responsiveness
+                            InventoryState.currentUser = updatedUserForOptimistic
+
+                            // Update the user on the server
+                            val updatedUser = UserApi.updateUserWornItems(updatedUserForOptimistic)
+                            
+                            // Update global state again with server's response
+                            InventoryState.currentUser = updatedUser
 
                             // Broadcast the change to other players
                             WebSocketApi.updatePlayer(
@@ -143,7 +156,7 @@ object ItemUsageHandler {
                                 status = updatedUser.status
                             )
 
-                            // Refresh inventory state to update CharacterRenderer
+                            // Refresh inventory state to ensure everything is in sync
                             InventoryState.refreshInventory(
                                 coroutineScope = coroutineScope,
                                 onSuccess = {

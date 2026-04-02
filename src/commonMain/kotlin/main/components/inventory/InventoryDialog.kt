@@ -2,6 +2,7 @@ package main.components.inventory
 
 import Translations.str
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -55,20 +56,29 @@ import utils.json
  */
 @Composable
 fun InventoryDialog(onClose: () -> Unit) {
-    // State for inventory and items
-    var inventory by remember { mutableStateOf<Inventory?>(null) }
-    var items by remember { mutableStateOf<Map<String, Item>>(emptyMap()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf("") }
+    // Get state from shared InventoryState
+    val inventory = InventoryState.inventory
+    val items = InventoryState.items
+    val currentUser = InventoryState.currentUser
+    val isLoading = InventoryState.isLoading
+    
+    // Local UI state
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var showCreateItemDialog by remember { mutableStateOf(false) }
     var showMarketplaceDialog by remember { mutableStateOf(false) }
-    var currentUser by remember { mutableStateOf<User?>(null) }
     var searchText by remember { mutableStateOf("") }
-
+    
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
     var isErrorFeedback by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf(InventoryState.lastError ?: "") }
+    
+    // Update local error message when shared state changes
+    LaunchedEffect(InventoryState.lastError) {
+        if (InventoryState.lastError != null) {
+            errorMessage = InventoryState.lastError ?: ""
+        }
+    }
 
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -84,69 +94,40 @@ fun InventoryDialog(onClose: () -> Unit) {
         }
     }
 
-    // Load inventory, items, and user when the dialog is opened
+    // Load inventory data when the dialog is opened
     LaunchedEffect(Unit) {
-        isLoading = true
-        errorMessage = ""
-
         // Use the shared inventory state to load data
         InventoryState.loadInventory(
             coroutineScope = coroutineScope,
-            onSuccess = {
-                // Sync local state with shared state
-                inventory = InventoryState.inventory
-                items = InventoryState.items
-                currentUser = InventoryState.currentUser
-                isLoading = false
-
-                // Add WebSocket listener for player updates
-                if (currentUser != null) {
-                    WebSocketApi.addUpdatePlayerListener { updateData ->
-                        // Check if this is an update for another player
-                        if (updateData.userId != currentUser?.key) {
-                            // If we have the updated player's data in our current user, update it
-                            if (currentUser?.key == updateData.userId) {
-                                // Refresh the user data to get the updated worn items
-                                coroutineScope.launch {
-                                    try {
-                                        InventoryState.refreshInventory(coroutineScope)
-                                        currentUser = InventoryState.currentUser
-                                    } catch (error: Throwable) {
-                                        console.error("Error refreshing user data", error)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             onError = { message ->
                 console.error("Error loading inventory", message)
-                errorMessage = message
-                isLoading = false
                 showFeedback("Failed to load inventory", true)
             }
         )
     }
 
-    // Keep local state in sync with shared state
-    LaunchedEffect(
-        InventoryState.inventory,
-        InventoryState.items,
-        InventoryState.currentUser,
-        InventoryState.isLoading
-    ) {
-        inventory = InventoryState.inventory
-        items = InventoryState.items
-        currentUser = InventoryState.currentUser
-        isLoading = InventoryState.isLoading
-        if (InventoryState.lastError != null) {
-            errorMessage = InventoryState.lastError ?: ""
-        }
-    }
-
     // Note: WebSocket listeners will be cleaned up when the application is closed
     // or when the user navigates away from the page
+    DisposableEffect(Unit) {
+        val token = WebSocketApi.addUpdatePlayerListener { updateData ->
+            // Check if this is an update for the current user
+            if (updateData.userId == InventoryState.currentUser?.key) {
+                console.log("[DEBUG_LOG] InventoryDialog: Received UPDATE_PLAYER for current user, refreshing...")
+                // Refresh the user data to get the updated worn items
+                coroutineScope.launch {
+                    try {
+                        InventoryState.refreshInventory(coroutineScope)
+                    } catch (error: Throwable) {
+                        console.error("[DEBUG_LOG] InventoryDialog: Error refreshing user data from WebSocket update", error)
+                    }
+                }
+            }
+        }
+        onDispose {
+            console.log("[DEBUG_LOG] InventoryDialog: Removing UPDATE_PLAYER listener")
+            WebSocketApi.removeListener(token)
+        }
+    }
 
     // Function to handle using an item
     fun handleUseItem(inventoryItemId: String) {
@@ -268,7 +249,7 @@ fun InventoryDialog(onClose: () -> Unit) {
 
         // Check if the item is actually worn
         if (itemKey == null || currentUser?.wornItems?.contains(itemKey) != true) {
-            console.log("[DEBUG_LOG] handleRemoveWornItem: Item is not currently worn: ${item.title}")
+            console.log("[DEBUG_LOG] handleRemoveWornItem: Item is not currently worn: ${item.title}, itemKey=$itemKey")
             showFeedback("Item is not currently worn: ${item.title}", true)
             return
         }
@@ -490,8 +471,8 @@ fun InventoryDialog(onClose: () -> Unit) {
             val insertIndex = if (sourceIndex < targetIndex) targetIndex else targetIndex
             currentOrder.add(insertIndex, sourceItemId)
 
-            // Update local state
-            inventory = currentInventory.copy(itemOrder = currentOrder)
+            // Update shared state for immediate UI feedback
+            InventoryState.inventory = currentInventory.copy(itemOrder = currentOrder)
 
             // Save the updated order via API
             coroutineScope.launch {
@@ -504,7 +485,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                 } catch (error: Throwable) {
                     console.error("[DEBUG_LOG] Error saving item order", error)
                     showFeedback("Failed to update item order", true)
-                    inventory = currentInventory
+                    // Rollback on error
+                    InventoryState.inventory = currentInventory
                 }
             }
         }
@@ -522,8 +504,8 @@ fun InventoryDialog(onClose: () -> Unit) {
             currentOrder.removeAt(index)
             currentOrder.add(0, itemId)
 
-            // Update local state
-            inventory = currentInventory.copy(itemOrder = currentOrder)
+            // Update shared state for immediate UI feedback
+            InventoryState.inventory = currentInventory.copy(itemOrder = currentOrder)
 
             // Save the updated order via API
             coroutineScope.launch {
@@ -536,7 +518,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                 } catch (error: Throwable) {
                     console.error("[DEBUG_LOG] Error saving item order", error)
                     showFeedback(str("Failed to move to top"), true)
-                    inventory = currentInventory
+                    // Rollback on error
+                    InventoryState.inventory = currentInventory
                 }
             }
         }
@@ -945,8 +928,8 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                         onClick {
                                                             if (item.wearable) {
                                                                 if (currentUser?.wornItems?.any { it == item.key } == true) {
-                                                                    // Take off means reusing useItem handler for worn? Use handleRemoveWornItem by item key
-                                                                    handleRemoveWornItem(itemId, isDirectItemId = true)
+                                                                    // Take off by inventory item key
+                                                                    handleRemoveWornItem(itemId, isDirectItemId = false)
                                                                 } else {
                                                                     handleWearItem(itemId)
                                                                 }
