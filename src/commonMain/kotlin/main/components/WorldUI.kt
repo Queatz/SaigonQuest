@@ -775,24 +775,6 @@ fun WorldUI(
                     }
                 )
 
-                if (currentUser?.isPlayer == true) {
-                    // Friends button
-                    CircleButton(
-                        onClick = { togglePanel(SidePanelState.Friends) },
-                        iconIndex = 3, // 3: friends
-                        badgeCount = 0,
-                        title = friendsTitle,
-                        onMouseEnter = {
-                            hoveredButtonText = friendsTitle
-                            hoveredButtonElement = it
-                        },
-                        onMouseLeave = {
-                            hoveredButtonText = null
-                            hoveredButtonElement = null
-                        }
-                    )
-                }
-
                 CircleButton(
                     onClick = {
                         isWorldDocsDialogOpen = true
@@ -850,6 +832,24 @@ fun WorldUI(
                         title = notificationsTitle,
                         onMouseEnter = {
                             hoveredButtonText = notificationsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
+                    )
+                }
+
+                if (currentUser?.isPlayer == true) {
+                    // Friends button
+                    CircleButton(
+                        onClick = { togglePanel(SidePanelState.Friends) },
+                        iconIndex = 3, // 3: friends
+                        badgeCount = 0,
+                        title = friendsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = friendsTitle
                             hoveredButtonElement = it
                         },
                         onMouseLeave = {

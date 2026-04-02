@@ -381,6 +381,7 @@ object Styles : StyleSheet() {
         gap(12.px)
         property("overflow-y", "auto")
         property("z-index", "900")
+        property("pointer-events", "all")
         // Hide scrollbar but allow scrolling
         property("scrollbar-width", "none")
         property("-ms-overflow-style", "none")
