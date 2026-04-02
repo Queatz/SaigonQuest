@@ -607,7 +607,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                     classes(InventoryStyles.dialogContent)
                 }
             ) {
-                if (isLoading) {
+                if (isLoading && inventory == null) {
                     P(
                         attrs = {
                             style {

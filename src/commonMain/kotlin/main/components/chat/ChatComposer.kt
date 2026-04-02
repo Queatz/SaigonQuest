@@ -156,7 +156,10 @@ fun ChatComposer(
             }
         } else {
             if (isRecording) {
-                AudioRecorderUI(state = recorderState)
+                AudioRecorderUI(
+                    state = recorderState,
+                    isFullWidth = true
+                )
             } else {
                 if (messageText.isBlank()) {
                     Div(

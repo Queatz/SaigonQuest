@@ -134,6 +134,7 @@ fun AudioRecorderUI(
             gap(8.px)
             if (isFullWidth) {
                 width(100.percent)
+                flex(1)
             }
         }
         onClick { it.stopPropagation() }
