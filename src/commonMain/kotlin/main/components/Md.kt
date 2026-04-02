@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import js.uri.decodeURIComponent
 import kotlinx.browser.window
 import lib.marked
 import lib.marked.parse
@@ -86,6 +87,54 @@ internal fun ensureExtensionsRegistered() {
                 },
                 "renderer" to { token: Json ->
                     "<video src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></video>"
+                },
+            ),
+            json(
+                "name" to "item",
+                "level" to "inline",
+                "start" to { src: String -> src.indexOf("![item]") },
+                "tokenizer" to { src: String ->
+                    val rule = Regex("^!\\[item\\]\\((.*?)\\)")
+                    val match = rule.find(src)
+                    if (match != null) {
+                        json(
+                            "type" to "item",
+                            "raw" to match.value,
+                            "data" to match.groupValues[1].trim(),
+                        )
+                    } else {
+                        null
+                    }
+                },
+                "renderer" to { token: Json ->
+                    val raw = token["data"] as String
+                    val parts = raw.split("|")
+                    val file = parts.getOrNull(0) ?: ""
+                    val indexStr = parts.getOrNull(1) ?: "0"
+                    val titleEnc = parts.getOrNull(2) ?: ""
+                    val qtyStr = parts.getOrNull(3) ?: "1"
+                    val index = indexStr.toIntOrNull() ?: 0
+                    val qty = qtyStr.toIntOrNull() ?: 1
+                    val title = try {
+                         decodeURIComponent(titleEnc)
+                    } catch (e: dynamic) {
+                        titleEnc
+                    }
+                    // Compute sprite background
+                    val size = 48
+                    val col = index % 10
+                    val row = index / 10
+                    val posX = -(col * size)
+                    val posY = -((9 - row) * size)
+                    val safeTitle = title
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                    "<div class=\"md-item\" style='display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border-radius:8px;background:rgba(255,255,255,0.06);'>" +
+                        "<div class=\"md-item-icon\" style='width:${size}px;height:${size}px;background-image:url(\"/raw/data/spritesheets/${file}.png\");background-size:${size * 10}px ${size * 10}px;background-repeat:no-repeat;background-position:${posX}px ${posY}px;'></div>" +
+                        "<div class=\"md-item-qty\" style='font-size:12px;margin-top:4px;'>x${qty}</div>" +
+                        "<div class=\"md-item-title\" style='font-size:12px;text-align:center;opacity:0.9;'>${safeTitle}</div>" +
+                    "</div>"
                 },
             ),
         ),

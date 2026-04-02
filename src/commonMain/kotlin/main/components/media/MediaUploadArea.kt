@@ -68,31 +68,46 @@ fun MediaUploadArea(
                 else -> "Click or drop media to upload"
             })
             if (!uploading) {
-                Div(attrs = {
-                    classes(Styles.mediaUploadAreaActions)
-                }) {
-                    Button(attrs = {
-                        classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
-                        onClick { ev ->
-                            ev.stopPropagation()
-                            scope.launch {
-                                try {
-                                    val file = readMediaFromClipboard()
-                                    if (file != null) {
-                                        onUpload(file)
+                val recorderState = rememberAudioRecorderState(
+                    onUpload = { onUpload(it) },
+                    onError = { onError(it) }
+                )
+
+                if (recorderState.isRecording) {
+                    AudioRecorderUI(
+                        state = recorderState,
+                        isFullWidth = true,
+                        finishButtonText = "Done"
+                    )
+                } else {
+                    Div(attrs = {
+                        classes(Styles.mediaUploadAreaActions)
+                    }) {
+                        Button(attrs = {
+                            classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
+                            onClick { ev ->
+                                ev.stopPropagation()
+                                scope.launch {
+                                    try {
+                                        val file = readMediaFromClipboard()
+                                        if (file != null) {
+                                            onUpload(file)
+                                        }
+                                    } catch (t: Throwable) {
+                                        onError(t.message ?: "Paste failed")
                                     }
-                                } catch (t: Throwable) {
-                                    onError(t.message ?: "Paste failed")
                                 }
                             }
-                        }
-                    }) { Translated("Paste") }
+                        }) { Translated("Paste") }
 
-                    if (filter == MediaType.Audio) {
-                        AudioRecorder(
-                            onUpload = { onUpload(it) },
-                            onError = { onError(it) }
-                        )
+                        if (filter == MediaType.Audio) {
+                            AudioRecorder(
+                                onUpload = { onUpload(it) },
+                                onError = { onError(it) },
+                                state = recorderState,
+                                finishButtonText = "Done"
+                            )
+                        }
                     }
                 }
             }

@@ -13,6 +13,7 @@ import main.components.AiPromptDialog
 import main.components.AiPromptHistoryDialog
 import main.components.BasicPromptDialog
 import main.components.media.UploadMediaDialog
+import main.components.inventory.SelectItemDialog
 import main.components.translated
 import main.components.BasicAlertDialog
 import main.components.chat.MdEditable
@@ -80,6 +81,7 @@ fun RichTextEditor(
     var showUploadDialog by remember { mutableStateOf(false) }
     var showAudioUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
+    var showItemDialog by remember { mutableStateOf(false) }
     var showRawMd by remember { mutableStateOf(false) }
     // AI integration state
     var showAiDialog by remember { mutableStateOf(false) }
@@ -418,6 +420,10 @@ fun RichTextEditor(
             saveSelectionFromEl(force = true)
             showLinkDialog = true
         },
+        onInsertItemClick = {
+            saveSelectionFromEl(force = true)
+            showItemDialog = true
+        },
         onToggleRawMdClick = { showRawMd = !showRawMd },
         onVoiceInput = { text -> insertAtCursor(text) }
     )
@@ -527,6 +533,29 @@ fun RichTextEditor(
         } else {
             insertAtCursor("![image]($url)")
         }
+    }
+
+    if (showItemDialog) {
+        SelectItemDialog(
+            multiple = false,
+            useQuantities = true,
+            onConfirm = { list ->
+                val pair = list.firstOrNull()
+                if (pair != null) {
+                    val item = pair.first
+                    val qty = pair.second
+                    val safeTitle = item.title
+                        .replace("%", "%25")
+                        .replace("|", "%7C")
+                        .replace(")", "%29")
+                        .replace("(", "%28")
+                    val payload = "${item.file}|${item.assetIndex}|${safeTitle}|${qty}"
+                    insertAtCursor("![item](${payload})")
+                }
+                showItemDialog = false
+            },
+            onClose = { showItemDialog = false },
+        )
     }
 
     if (showUploadDialog) {

@@ -9,8 +9,7 @@ import lib.MediaRecorder
 import main.api.*
 import main.components.Translated
 import main.components.audio.MusicManager
-import main.components.media.UploadMediaDialog
-import main.components.media.findMediaInClipboardEvent
+import main.components.media.*
 import main.theme.Styles
 import main.theme.Theme
 import models.MediaType
@@ -47,13 +46,35 @@ fun ChatComposer(
     var shoutNext by remember { mutableStateOf(false) }
     var showRichEditorDialog by remember { mutableStateOf(false) }
     
-    var isRecording by remember { mutableStateOf(false) }
-    var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
-    var recordingChunks = remember { mutableListOf<Blob>() }
-    var isCancelled by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
     val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
+
+    val recorderState = rememberAudioRecorderState(
+        onUpload = { file ->
+            scope.launch {
+                try {
+                    val token = UserApi.getToken() ?: ""
+                    val record = ContentApi.upload(file, token)
+                    val audioUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
+                    
+                    val finalMessage = "![audio]($audioUrl)"
+
+                    WebSocketApi.sendChatMessage(worldId, finalMessage, shouted = shoutNext) { success ->
+                        if (success) {
+                            shoutNext = false
+                            // updateTypingStatus(false) is handled by LaunchedEffect on recorderState.isRecording below if needed
+                            // but we can also do it here
+                        }
+                    }
+                } catch (t: Throwable) {
+                    console.error("Failed to upload/send audio message", t)
+                }
+            }
+        },
+        onError = { console.error(it) }
+    )
+
+    val isRecording = recorderState.isRecording
 
     val updateTypingStatus = { newIsTyping: Boolean ->
         if (isTyping != newIsTyping) {
@@ -83,90 +104,6 @@ fun ChatComposer(
                 }
             }
         }
-    }
-
-    fun startRecording() {
-        MusicManager.startRecording()
-        scope.launch {
-            try {
-                val constraints = MediaStreamConstraints(
-                    audio = MediaTrackConstraints()
-                )
-                val stream = navigator.mediaDevices.getUserMedia(constraints)
-                val recorder = MediaRecorder(stream)
-
-                recorder.ondataavailable = { event ->
-                    recordingChunks.add(event.data)
-                }
-
-                recorder.onstop = {
-                    if (!isCancelled) {
-                        val blobProps = jso<BlobPropertyBag> {
-                            type = "audio/webm"
-                        }
-                        val blob = Blob(recordingChunks.toTypedArray(), blobProps.unsafeCast<org.w3c.files.BlobPropertyBag>())
-
-                        val fileProps = jso<FilePropertyBag> {
-                            type = "audio/webm"
-                        }
-                        val file = File(arrayOf(blob), "recorded-audio.webm", fileProps.unsafeCast<org.w3c.files.FilePropertyBag>())
-
-                        scope.launch {
-                            try {
-                                val token = UserApi.getToken() ?: ""
-                                val record = ContentApi.upload(file, token)
-                                val audioUrl = ContentApi.imageUrlFor(record.uploadedFilePath)
-                                
-                                val finalMessage = "![audio]($audioUrl)"
-
-                                WebSocketApi.sendChatMessage(worldId, finalMessage, shouted = shoutNext) { success ->
-                                    if (success) {
-                                        shoutNext = false
-                                        updateTypingStatus(false)
-                                    }
-                                }
-                            } catch (t: Throwable) {
-                                console.error("Failed to upload/send audio message", t)
-                            }
-                        }
-                    }
-
-                    val tracks = stream.asDynamic().getTracks() as Array<dynamic>
-                    tracks.forEach { it.stop() }
-                    mediaRecorder = null
-                    isRecording = false
-                    MusicManager.stopRecording()
-                }
-
-                recorder.onerror = {
-                    console.error("Recording error")
-                    isRecording = false
-                    MusicManager.stopRecording()
-                }
-
-                recordingChunks.clear()
-                isCancelled = false
-                recorder.start()
-                mediaRecorder = recorder
-                isRecording = true
-            } catch (t: Throwable) {
-                console.error("Failed to start recording", t)
-                MusicManager.stopRecording()
-                isRecording = false
-            }
-        }
-    }
-
-    fun stopRecording() {
-        if (!isRecording) return
-        isCancelled = false
-        mediaRecorder?.stop()
-    }
-
-    fun cancelRecording() {
-        if (!isRecording) return
-        isCancelled = true
-        mediaRecorder?.stop()
     }
 
     // Default emotes
@@ -219,31 +156,7 @@ fun ChatComposer(
             }
         } else {
             if (isRecording) {
-                Div(attrs = {
-                    classes(Styles.chatButton)
-                    onClick { cancelRecording() }
-                    title(str("Discard"))
-                }) {
-                    Text("🗑️")
-                }
-
-                RecordingPreview(isRecording = isRecording)
-
-                Button(
-                    attrs = {
-                        style {
-                            padding(8.px, 16.px)
-                            backgroundColor(Theme.colors.primary)
-                            color(Theme.colors.onPrimary)
-                            property("border", "0")
-                            borderRadius(8.px)
-                            cursor("pointer")
-                        }
-                        onClick { stopRecording() }
-                    }
-                ) {
-                    Translated("Send")
-                }
+                AudioRecorderUI(state = recorderState)
             } else {
                 if (messageText.isBlank()) {
                     Div(
@@ -304,7 +217,8 @@ fun ChatComposer(
                         attrs = {
                             title(str("Record"))
                             classes(Styles.chatButton)
-                            onClick { if (isAuthenticated) startRecording() }
+                            if (!isAuthenticated) classes(Styles.disabledAction)
+                            onClick { if (isAuthenticated) recorderState.start() }
                         }
                     ) {
                         Text("🎤")

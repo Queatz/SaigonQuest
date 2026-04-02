@@ -10,10 +10,10 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.api.UserApi
-import main.api.WebSocketApi
-import main.api.addDialogueListener
-import main.api.sendDialogueConfirmation
+import main.api.*
+import main.components.media.AudioRecorder
+import main.components.media.AudioRecorderUI
+import main.components.media.rememberAudioRecorderState
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import main.theme.Theme
@@ -260,16 +260,59 @@ fun DialogueBox(
                     }
 
                     if (dialogue.allowMultipleAudio || uploadedAudios.isEmpty()) {
-                        Button(attrs = {
-                            if (isWaiting) disabled()
-                            classes(Styles.imageAddButton)
-                            onClick {
-                                if (isWaiting) return@onClick
-                                uploadMediaType = MediaType.Audio
+                        val recorderState = rememberAudioRecorderState(
+                            onUpload = { file ->
+                                scope.launch {
+                                    try {
+                                        val token = UserApi.getToken() ?: ""
+                                        val record = ContentApi.upload(file, token)
+                                        val url = ContentApi.imageUrlFor(record.uploadedFilePath)
+                                        uploadedAudios = if (dialogue.allowMultipleAudio) {
+                                            uploadedAudios + (url to record.originalFileName)
+                                        } else {
+                                            listOf(url to record.originalFileName)
+                                        }
+                                    } catch (t: Throwable) {
+                                        console.error("Failed to upload recorded audio", t)
+                                    }
+                                }
+                            },
+                            onError = { console.error(it) }
+                        )
+
+                        if (recorderState.isRecording) {
+                            AudioRecorderUI(
+                                state = recorderState,
+                                isFullWidth = true,
+                                finishButtonText = "Done"
+                            )
+                        } else {
+                            Button(attrs = {
+                                if (isWaiting) disabled()
+                                classes(Styles.imageAddButton)
+                                onClick {
+                                    if (isWaiting) return@onClick
+                                    uploadMediaType = MediaType.Audio
+                                }
+                            }) {
+                                Text("➕")
+                                Text(translated("Add audio"))
                             }
-                        }) {
-                            Text("➕")
-                            Text(translated("Add audio"))
+
+                            AudioRecorder(
+                                onUpload = {},
+                                state = recorderState,
+                                buttonAttrs = {
+                                    if (isWaiting) classes(Styles.disabledAction)
+                                    classes(Styles.imageAddButton)
+                                },
+                                isEnabled = !isWaiting,
+                                buttonContent = {
+                                    Text("🎤 ")
+                                    Text(translated("Record"))
+                                },
+                                finishButtonText = "Done"
+                            )
                         }
                     }
                 }

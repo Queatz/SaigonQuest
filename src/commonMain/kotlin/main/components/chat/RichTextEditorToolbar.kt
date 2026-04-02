@@ -32,6 +32,7 @@ fun RichTextEditorToolbar(
     onInsertImageClick: () -> Unit,
     onInsertAudioClick: () -> Unit,
     onInsertLinkClick: () -> Unit,
+    onInsertItemClick: () -> Unit,
     onToggleRawMdClick: () -> Unit,
     onVoiceInput: (String) -> Unit,
 ) {
@@ -209,6 +210,15 @@ fun RichTextEditorToolbar(
                 index = 13,
                 size = 24,
             )
+        }
+        // Insert item button
+        ToolbarIconButton(
+            onClick = onInsertItemClick,
+            title = translated("Insert item"),
+            disabled = aiLoading,
+        ) {
+            // Fallback text label to avoid relying on unknown sprite index
+            Text("Item")
         }
 
         // Toggle raw MD textarea visibility

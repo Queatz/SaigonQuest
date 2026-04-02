@@ -1,4 +1,4 @@
-package main.components.chat
+package main.components.media
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
