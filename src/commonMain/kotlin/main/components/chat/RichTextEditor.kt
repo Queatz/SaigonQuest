@@ -1,45 +1,32 @@
 package main.components.chat
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import kotlinx.browser.document
 import kotlinx.coroutines.launch
 import main.api.AiApi
-import main.components.AiPromptDialog
-import main.components.AiPromptHistoryDialog
-import main.components.BasicPromptDialog
-import main.components.media.UploadMediaDialog
+import main.components.*
 import main.components.inventory.SelectItemDialog
-import main.components.translated
-import main.components.BasicAlertDialog
-import main.components.chat.MdEditable
+import main.components.media.UploadMediaDialog
 import main.theme.Styles
+import models.DocOperation
 import models.MediaType
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.AlignSelf
 import org.jetbrains.compose.web.css.alignSelf
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.maxWidth
+import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
-import kotlinx.browser.document
-import models.DocOperation
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.css.opacity
 
 /**
  * A reusable rich text (markdown) editor with toolbar and live preview.

@@ -131,13 +131,13 @@ fun SelectItemDialog(
                                     if (selected.containsKey(item.key)) {
                                         selected - item.key
                                     } else {
-                                        selected + (item.key to (item to 1))
+                                        selected + (item.key to (item to 0))
                                     }
                                 } else {
                                     if (isSelected) {
                                         emptyMap()
                                     } else {
-                                        mapOf(item.key to (item to 1))
+                                        mapOf(item.key to (item to 0))
                                     }
                                 }
                             }
@@ -161,10 +161,10 @@ fun SelectItemDialog(
                                             selected = if (isSelected) {
                                                 selected - item.key
                                             } else {
-                                                selected + (item.key to (item to 1))
+                                                selected + (item.key to (item to 0))
                                             }
                                         } else {
-                                            selected = mapOf(item.key to (item to 1))
+                                            selected = mapOf(item.key to (item to 0))
                                         }
                                     })
                                 }
@@ -188,15 +188,15 @@ fun SelectItemDialog(
                                     }) { Text(if (isSelected) translated("Clear") else translated("Select")) }
 
                                     if (useQuantities && isSelected) {
-                                        val current = selected[item.key] ?: (item to 1)
+                                        val current = selected[item.key] ?: (item to 0)
                                         // Quantity input
                                         NumberInput(
                                             value = current.second.toLong(),
-                                            min = 1,
+                                            min = 0,
                                             attrs = {
                                                 classes(Styles.inputField)
                                                 onInput { ev ->
-                                                    val v = (ev.value?.toLong() ?: 1L).coerceAtLeast(1L)
+                                                    val v = (ev.value?.toLong() ?: 0L).coerceAtLeast(0L)
                                                     selected = selected + (item.key to (item to v.toInt()))
                                                 }
 
