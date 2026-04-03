@@ -217,8 +217,11 @@ fun RichTextEditorToolbar(
             title = translated("Insert item"),
             disabled = aiLoading,
         ) {
-            // Fallback text label to avoid relying on unknown sprite index
-            Text("Item")
+            IconRenderer(
+                url = sheetUrl,
+                index = 16, // Item icon
+                size = 24,
+            )
         }
 
         // Toggle raw MD textarea visibility
