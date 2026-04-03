@@ -26,12 +26,14 @@ object PlayerUiUtils {
         text: String,
         basePosition: Vector3,
         textColor: String = PlayerUi.STATUS_TEXT_COLOR,
-        backgroundColor: String = PlayerUi.STATUS_BG_COLOR,
+        backgroundColor: String? = PlayerUi.STATUS_BG_COLOR,
+        fontSize: Int = PlayerUi.FONT_SIZE,
+        yOffset: Float = PlayerUi.HUD_Y_OFFSET,
     ): WorldObjectHandle? {
         return manager.createTextBillboard(
             text = text,
-            position = PlayerUi.hudPositionFor(basePosition),
-            fontSize = PlayerUi.FONT_SIZE,
+            position = PlayerUi.hudPositionFor(basePosition, yOffset),
+            fontSize = fontSize,
             textColor = textColor,
             backgroundColor = backgroundColor,
         )
@@ -41,7 +43,11 @@ object PlayerUiUtils {
         handle?.position = PlayerUi.usernamePositionFor(basePosition)
     }
 
-    fun updateHudBillboardPosition(handle: WorldObjectHandle?, basePosition: Vector3) {
-        handle?.position = PlayerUi.hudPositionFor(basePosition)
+    fun updateHudBillboardPosition(
+        handle: WorldObjectHandle?,
+        basePosition: Vector3,
+        yOffset: Float = PlayerUi.HUD_Y_OFFSET,
+    ) {
+        handle?.position = PlayerUi.hudPositionFor(basePosition, yOffset)
     }
 }

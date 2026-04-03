@@ -32,6 +32,9 @@ object SceneManager {
     // Proximity radius squared for object detection (2-unit radius squared)
     const val PROXIMITY_RADIUS_SQ: Float = 2f * 2f
 
+    // Interaction radius squared (1-unit radius squared, half of proximity radius)
+    const val INTERACTION_RADIUS_SQ: Float = 1f * 1f
+
     // Pending teleport position for the next scene load
     private var pendingTeleport: lib.Vector3? = null
 

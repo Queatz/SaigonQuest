@@ -16,6 +16,7 @@ class SelfHudManager {
     private var statusTextHandle: WorldObjectHandle? = null
     private var chatMessageTextHandle: WorldObjectHandle? = null
     private var chatMessageTimeoutId: Int? = null
+    private var chatYOffset: Float = PlayerUi.HUD_Y_OFFSET
 
     private var onChatCleared: (() -> Unit)? = null
 
@@ -58,12 +59,17 @@ class SelfHudManager {
 
         val m = manager ?: return
         val text = PlayerUi.truncateChat(plainText)
+        val isEmoji = PlayerUi.isEmojiOnly(text)
+        chatYOffset = if (isEmoji) PlayerUi.EMOJI_HUD_Y_OFFSET else PlayerUi.HUD_Y_OFFSET
+
         chatMessageTextHandle = PlayerUiUtils.createHudBillboard(
             manager = m,
             text = text,
             basePosition = basePosition,
-            textColor = PlayerUi.CHAT_TEXT_COLOR,
-            backgroundColor = PlayerUi.CHAT_BG_COLOR,
+            textColor = if (isEmoji) "white" else PlayerUi.CHAT_TEXT_COLOR,
+            backgroundColor = if (isEmoji) null else PlayerUi.CHAT_BG_COLOR,
+            fontSize = if (isEmoji) PlayerUi.EMOJI_ONLY_FONT_SIZE else PlayerUi.FONT_SIZE,
+            yOffset = chatYOffset,
         )
 
         chatMessageTimeoutId = window.setTimeout({
@@ -82,7 +88,7 @@ class SelfHudManager {
     fun updateAllPositions(basePosition: Vector3) {
         PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandle, basePosition)
         PlayerUiUtils.updateHudBillboardPosition(statusTextHandle, basePosition)
-        PlayerUiUtils.updateHudBillboardPosition(chatMessageTextHandle, basePosition)
+        PlayerUiUtils.updateHudBillboardPosition(chatMessageTextHandle, basePosition, chatYOffset)
     }
 
     fun dispose() {

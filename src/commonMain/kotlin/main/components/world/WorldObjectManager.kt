@@ -1,6 +1,7 @@
 package main.components.world
 
 import kotlinx.browser.window
+import kotlin.math.abs
 import lib.AbstractMesh
 import lib.Node
 import lib.Scene
@@ -127,11 +128,53 @@ class WorldObjectManager(private val scene: Scene) {
 
     fun update(deltaTime: Float) {
         objects.values.forEach { it.update(deltaTime) }
+
+        val anyAnimationsPlaying = try {
+            scene.animationGroups.any { it.isPlaying }
+        } catch (_: Throwable) {
+            false
+        }
+
         // Keep typing HUD billboards positioned above their objects
         typingHudHandles.forEach { (objectId, handle) ->
-            val node = SceneManager.getObjectManager()?.getObjectNodes()?.get(objectId) ?: return@forEach
+            val node = objectNodes[objectId] ?: return@forEach
+            
+            val objectMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+            
+            // For efficiency, only update based on bounding box if the object has active animations
+            val hasAnimations = node.animations.isNotEmpty() ||
+                                objectMeshes.any { it.animations.isNotEmpty() } ||
+                                anyAnimationsPlaying
+
             val p = node.position
-            handle.position = Vector3(p.x, p.y + 0.5f, p.z)
+            var highestY = p.y
+
+            if (hasAnimations) {
+                if (objectMeshes.isNotEmpty()) {
+                    var maxY = -1e9f
+                    var found = false
+                    objectMeshes.forEach { mesh ->
+                        try {
+                            // Exclude status billboards from bounding box calculation
+                            if (DepthPicking.isStatusBillboardMesh(mesh)) return@forEach
+
+                            val meshMaxY = mesh.getBoundingInfo().boundingBox.maximumWorld.y
+                            if (meshMaxY > maxY) {
+                                maxY = meshMaxY
+                                found = true
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                    if (found) highestY = maxY
+                }
+            }
+            
+            val expectedY = highestY + 0.5f
+            if (abs(expectedY - handle.position.y) > 0.001f || 
+                abs(p.x - handle.position.x) > 0.001f || 
+                abs(p.z - handle.position.z) > 0.001f) {
+                handle.position = Vector3(p.x, expectedY, p.z)
+            }
         }
 
         // Periodic proximity checks (performance-sensitive)
@@ -149,6 +192,10 @@ class WorldObjectManager(private val scene: Scene) {
 
         // Iterate over backend object nodes from the SceneObjectManager and check distance
         val backendNodes = SceneManager.getObjectManager()?.getObjectNodes() ?: return
+        
+        var closestInteractableId: String? = null
+        var minInteractableDistSq = SceneManager.INTERACTION_RADIUS_SQ
+
         backendNodes.forEach { (backendObjectId, node) ->
             val pos = node.position
             val dx = pos.x - playerPos.x
@@ -171,7 +218,18 @@ class WorldObjectManager(private val scene: Scene) {
                 // Hide status if it's no longer nearby
                 SceneManager.getObjectManager()?.setObjectNearby(backendObjectId, false)
             }
+
+            // Interaction check (range 1) - find the closest one
+            if (distSq <= SceneManager.INTERACTION_RADIUS_SQ) {
+                if (distSq < minInteractableDistSq) {
+                    minInteractableDistSq = distSq
+                    closestInteractableId = backendObjectId
+                }
+            }
         }
+
+        // Notify object manager about the closest interactable object
+        SceneManager.getObjectManager()?.setObjectInteractable(closestInteractableId)
     }
     
     /**

@@ -286,6 +286,18 @@ class InputHandler(
                 else -> { /* Ignore other keyboard events */ }
             }
         }
+        // Handle X key for interaction with the closest object
+        else if (key == "x") {
+            if (info.type == KeyboardEventTypes.KEYUP) {
+                val interactableId = objectManager?.getInteractableObjectId()
+                if (interactableId != null) {
+                    console.log("InputHandler: X key pressed, interacting with object $interactableId")
+                    objectManager.selectObject(interactableId)
+                    val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
+                    WebSocketApi.playerInteract(interactableId, isPlayer)
+                }
+            }
+        }
         // Handle Z key for toggling sitting/standing
         else if (key == "z") {
             when (info.type) {

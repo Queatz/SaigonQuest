@@ -257,6 +257,7 @@ fun SceneComponent(url: String) {
 
             onMouseMove {
                 hasFocus = true
+                canvasRef?.focus()
             }
         }
     )
@@ -1213,6 +1214,7 @@ fun SceneComponent(url: String) {
 
             // Update world objects
             worldObjectManager.update(scene.deltaTime)
+            objectManager.update(scene.deltaTime)
 
             // Update occlusion fading effect
             worldLoader.getOcclusionManager()?.update()

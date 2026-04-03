@@ -143,6 +143,11 @@ kotlin {
                 }
             }
         }
+        nodejs {
+            testTask {
+                useMocha()
+            }
+        }
         binaries.executable()
     }
     compilerOptions {
@@ -161,6 +166,7 @@ kotlin {
 
                 implementation(npm("marked", "17.0.1"))
                 implementation(npm("qr", "0.5.2"))
+                implementation(npm("emoji-regex", "10.4.0"))
                 implementation(npm("@babylonjs/core", "9.0.0"))
                 implementation(npm("@babylonjs/materials", "9.0.0"))
                 implementation(npm("@babylonjs/loaders", "9.0.0"))

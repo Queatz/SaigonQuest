@@ -2,6 +2,7 @@ package main.components.objects
 
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,6 +68,9 @@ class SceneObjectManager(
 
     // Cache last known status text to restore after typing ends
     private val objectStatusTexts = mutableMapOf<String, String>()
+    
+    // Tracks current displayed status text (including prefixes)
+    private val objectDisplayedStatusTexts = mutableMapOf<String, String>()
 
     // Typing indicator HUD per object ("💬" bubble) and its safety timeouts
     private val objectTypingHandles = mutableMapOf<String, WorldObjectHandle>()
@@ -91,6 +95,9 @@ class SceneObjectManager(
     
     // Track hovered object
     private var hoveredObjectId: String? = null
+    
+    // Track the closest interactable object (within INTERACTION_RADIUS_SQ)
+    private var interactableObjectId: String? = null
     
     // Track objects that are within proximity radius
     private val nearbyObjectIds = mutableSetOf<String>()
@@ -155,12 +162,75 @@ class SceneObjectManager(
             animateStatusText(objectId, true)
         } else {
             nearbyObjectIds.remove(objectId)
-            // Hide status only if it's no longer nearby AND not hovered
-            if (hoveredObjectId != objectId) {
+            // Hide status only if it's no longer nearby AND not hovered AND not interactable
+            if (hoveredObjectId != objectId && interactableObjectId != objectId) {
                 animateStatusText(objectId, false)
             }
         }
     }
+
+    /**
+     * Sets the current interactable object (the closest one within interaction radius).
+     * This object will be highlighted and its status text will be prefixed with "🆇 ".
+     *
+     * @param objectId The ID of the object, or null to clear
+     */
+    fun setObjectInteractable(objectId: String?) {
+        if (interactableObjectId == objectId) return
+
+        val previousId = interactableObjectId
+        interactableObjectId = objectId
+
+        // 1) Update previous interactable object
+        if (previousId != null) {
+            // Remove highlight if not hovered
+            if (previousId != hoveredObjectId) {
+                val node = objectMeshes[previousId]
+                if (node != null) {
+                    node.getChildMeshes(false).forEach { mesh ->
+                        highlightLayer.removeMesh(mesh)
+                    }
+                    if (node is AbstractMesh) highlightLayer.removeMesh(node)
+                }
+            }
+
+            // Restore status text (removes "🆇 " prefix)
+            val originalStatus = objectStatusTexts[previousId] ?: ""
+            val node = objectMeshes[previousId]
+            if (node != null) {
+                handleObjectStatusText(previousId, originalStatus, node)
+            }
+
+            // Hide status if neither hovered nor nearby nor interactable anymore
+            if (previousId != hoveredObjectId && !nearbyObjectIds.contains(previousId)) {
+                animateStatusText(previousId, false)
+            }
+        }
+
+        // 2) Update new interactable object
+        if (objectId != null) {
+            // Add highlight
+            val node = objectMeshes[objectId]
+            if (node != null) {
+                node.getChildMeshes(false).forEach { mesh ->
+                    highlightLayer.addMesh(mesh, Color3(1f, 1f, 0f), false)
+                }
+                if (node is AbstractMesh) highlightLayer.addMesh(node, Color3(1f, 1f, 0f), false)
+
+                // Update status text (adds "🆇 " prefix)
+                val status = objectStatusTexts[objectId] ?: ""
+                handleObjectStatusText(objectId, status, node)
+
+                // Ensure visibility
+                animateStatusText(objectId, true)
+            }
+        }
+    }
+
+    /**
+     * Gets the current interactable object ID.
+     */
+    fun getInteractableObjectId(): String? = interactableObjectId
     
     /**
      * Highlights an object with a white outline when hovered
@@ -231,8 +301,8 @@ class SceneObjectManager(
                     // Reset cursor
                     document.body?.style?.cursor = "default"
 
-                    // Hide status text for the unhovered object, unless still nearby
-                    if (!nearbyObjectIds.contains(objectId)) {
+                    // Hide status text for the unhovered object, unless still nearby or interactable
+                    if (!nearbyObjectIds.contains(objectId) && interactableObjectId != objectId) {
                         animateStatusText(objectId, false)
                     }
 
@@ -333,6 +403,11 @@ class SceneObjectManager(
                 unhighlightObject()
             }
             
+            // If this object is the current interactable, clear it
+            if (interactableObjectId == objectId) {
+                interactableObjectId = null
+            }
+            
             // If this object is selected, deselect it
             if (selectedObject == objectId) {
                 console.log("[DEBUG_REMOVE] Object is selected, deselecting: $objectId")
@@ -346,6 +421,8 @@ class SceneObjectManager(
                 statusTextHandle.remove()
                 objectStatusTextHandles.remove(objectId)
                 objectStatusTexts.remove(objectId)
+                objectDisplayedStatusTexts.remove(objectId)
+                objectStatusOffsets.remove(objectId)
                 console.log("[DEBUG_REMOVE] Successfully removed status text for object: $objectId")
             }
 
@@ -1354,7 +1431,7 @@ class SceneObjectManager(
                 return
             }
             // Find the highest Y among child meshes to place bubble above the object
-            val childMeshes = node.getChildMeshes(false)
+            val childMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
             var highestY = node.position.y
             if (childMeshes.isNotEmpty()) {
                 try {
@@ -1502,6 +1579,97 @@ class SceneObjectManager(
     /**
      * Disposes resources when the scene is destroyed
      */
+    fun update(deltaTime: Float) {
+        if (objectStatusTextHandles.isEmpty() && objectTypingHandles.isEmpty()) return
+
+        val anyAnimationGroupsPlaying = try {
+            scene.animationGroups.any { it.isPlaying }
+        } catch (_: Throwable) {
+            false
+        }
+
+        // Update status text positions
+        objectStatusTextHandles.forEach { (objectId, handle) ->
+            updateObjectFloatingUiPosition(
+                objectId,
+                handle,
+                anyAnimationGroupsPlaying,
+                isStatusText = true
+            )
+        }
+
+        // Update typing indicator positions
+        objectTypingHandles.forEach { (objectId, handle) ->
+            updateObjectFloatingUiPosition(
+                objectId,
+                handle,
+                anyAnimationGroupsPlaying,
+                isStatusText = false
+            )
+        }
+    }
+
+    /**
+     * Updates the position of a floating UI element (status text or typing indicator) 
+     * based on the object's current bounding box.
+     */
+    private fun updateObjectFloatingUiPosition(
+        objectId: String,
+        handle: WorldObjectHandle,
+        anyAnimationGroupsPlaying: Boolean,
+        isStatusText: Boolean
+    ) {
+        val node = objectMeshes[objectId] ?: return
+        
+        val childMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+        
+        // Check if the object has active animations
+        val hasAnimations = node.animations.isNotEmpty() ||
+                            childMeshes.any { it.animations.isNotEmpty() } ||
+                            anyAnimationGroupsPlaying
+
+        if (hasAnimations) {
+            if (childMeshes.isEmpty()) return
+
+            var maxY = -1e9f
+            var found = false
+
+            for (mesh in childMeshes) {
+                try {
+                    // Exclude status billboards from bounding box calculation
+                    if (DepthPicking.isStatusBillboardMesh(mesh)) continue
+
+                    val boundingInfo = mesh.getBoundingInfo()
+                    val meshMaxY = boundingInfo.boundingBox.maximumWorld.y
+                    if (meshMaxY > maxY) {
+                        maxY = meshMaxY
+                        found = true
+                    }
+                } catch (_: Throwable) {
+                    // Skip meshes with invalid bounding info
+                }
+            }
+
+            if (found) {
+                val offsetY = (maxY + 0.5f) - node.position.y
+                
+                // Only update if the change is significant to avoid unnecessary work
+                val currentOffsetY = if (isStatusText) {
+                    objectStatusOffsets[objectId] ?: 0f
+                } else {
+                    0.5f // Default offset for typing indicator
+                }
+
+                if (abs(offsetY - currentOffsetY) > 0.001f) {
+                    if (isStatusText) {
+                        objectStatusOffsets[objectId] = offsetY
+                    }
+                    handle.position = Vector3(0f, offsetY, 0f)
+                }
+            }
+        }
+    }
+
     fun dispose() {
         // Dispose the highlight layer
         highlightLayer.dispose()
@@ -1517,6 +1685,7 @@ class SceneObjectManager(
         objectStatusTextHandles.clear()
         objectStatusOffsets.clear()
         objectStatusTexts.clear()
+        objectDisplayedStatusTexts.clear()
         objectVerticalOffsets.clear()
         objectTypingHandles.clear()
         objectTypingTimeouts.values.forEach { window.clearTimeout(it) }
@@ -1524,6 +1693,7 @@ class SceneObjectManager(
         objectModelSources.clear()
         objectKinds.clear()
         nearbyObjectIds.clear()
+        interactableObjectId = null
         
         // Reset state
         hoveredObjectId = null
@@ -1610,26 +1780,37 @@ class SceneObjectManager(
             val previousStatus = objectStatusTexts[objectId] ?: ""
             objectStatusTexts[objectId] = status
 
+            // Prepend "🆇 " if it's the interactable object
+            val isInteractable = objectId == interactableObjectId
+            val displayedStatus = if (isInteractable) {
+                if (status.isBlank()) "🆇" else "🆇 $status"
+            } else {
+                status
+            }
+
             // If typing indicator is active, hide status text (typing has precedence)
             if (objectTypingHandles.containsKey(objectId)) {
                 existingHandle?.remove()
                 objectStatusTextHandles.remove(objectId)
                 objectStatusOffsets.remove(objectId)
+                objectDisplayedStatusTexts.remove(objectId)
                 return
             }
             
-            if (status.isBlank()) {
+            if (displayedStatus.isBlank()) {
                 // If status is blank, remove any existing status text
                 if (existingHandle != null) {
                     console.log("[DEBUG_STATUS] Removing status text for object: $objectId")
                     existingHandle.remove()
                     objectStatusTextHandles.remove(objectId)
                     objectStatusOffsets.remove(objectId)
+                    objectDisplayedStatusTexts.remove(objectId)
                     console.log("[DEBUG_STATUS] Successfully removed status text for object: $objectId")
                 } else {
                     console.log("[DEBUG_STATUS] No status text to remove for object: $objectId")
                 }
             } else {
+                // ... (rest of the logic)
                 // Create a WorldObjectHandle for the node
                 val objectHandle = object : WorldObjectHandle {
                     override val id: String = objectId
@@ -1649,7 +1830,7 @@ class SceneObjectManager(
                 }
 
                 // Get all child meshes of the node
-                val childMeshes = node.getChildMeshes(false)
+                val childMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
                 
                 // Find the highest Y point of all bounding boxes
                 var highestY = node.position.y
@@ -1687,13 +1868,13 @@ class SceneObjectManager(
                 objectStatusOffsets[objectId] = offsetY
 
                 if (existingHandle != null) {
-                    // If there's an existing handle, update its text (if changed) and ensure it is parented and positioned locally
-                    val prev = previousStatus.trim()
-                    val next = status.trim()
-                    if (prev != next) {
-                        console.log("[DEBUG_STATUS] Updating status text content for object: $objectId from '$prev' to '$next'")
+                    // If there's an existing handle, update its text (if changed)
+                    val prevDisplayed = objectDisplayedStatusTexts[objectId] ?: ""
+                    if (prevDisplayed != displayedStatus) {
+                        console.log("[DEBUG_STATUS] Updating status text content for object: $objectId from '$prevDisplayed' to '$displayedStatus'")
                         try {
-                            existingHandle.updateText(status)
+                            existingHandle.updateText(displayedStatus)
+                            objectDisplayedStatusTexts[objectId] = displayedStatus
                             console.log("[DEBUG_STATUS] Successfully updated status text content for object: $objectId")
                         } catch (e: Throwable) {
                             console.error("[DEBUG_STATUS] Error updating status text content for object: $objectId", e)
@@ -1708,8 +1889,8 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
                     existingHandle.position = Vector3(0f, offsetY, 0f)
                     
-                    // Ensure visibility is consistent with hover or proximity state
-                    if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId)) {
+                    // Ensure visibility is consistent with hover, proximity, or interactable state
+                    if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
                         animateStatusText(objectId, true)
                     } else {
                         // Ensure it's hidden if neither
@@ -1721,18 +1902,19 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] Successfully updated status text position for object: $objectId")
                 } else {
                     // Create new status text
-                    console.log("[DEBUG_STATUS] Creating new status text for object: $objectId with status: '$status'")
-                    val statusTextHandle = worldObjectManager.createObjectStatusText(objectHandle, status)
+                    console.log("[DEBUG_STATUS] Creating new status text for object: $objectId with status: '$displayedStatus'")
+                    val statusTextHandle = worldObjectManager.createObjectStatusText(objectHandle, displayedStatus)
 
                     if (statusTextHandle != null) {
                         // Parent to object so it moves with it automatically
                         try { statusTextHandle.node.parent = node } catch (_: Throwable) {}
                         // Store the handle for future updates
                         objectStatusTextHandles[objectId] = statusTextHandle
+                        objectDisplayedStatusTexts[objectId] = displayedStatus
                         statusTextHandle.position = Vector3(0f, offsetY, 0f)
                         
-                        // Set initial visibility based on hover or proximity state
-                        if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId)) {
+                        // Set initial visibility based on hover, proximity, or interactable state
+                        if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
                             animateStatusText(objectId, true)
                         } else {
                             // Ensure it's hidden if neither

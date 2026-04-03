@@ -131,8 +131,8 @@ internal fun ensureExtensionsRegistered() {
                         .replace("<", "&lt;")
                         .replace(">", "&gt;")
                         .replace("\"", "&quot;")
-                    "<div class=\"md-item\" contenteditable=\"false\" title=\"${safeTitle}\" style='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;border-radius:8px;background:rgba(255,255,255,0.06);width:4rem;height:6rem;box-sizing:border-box;flex-shrink:0;'>" +
-                        "<div class=\"md-item-icon\" style='width:${size}px;height:${size}px;background-image:url(\"/raw/data/spritesheets/${file}.png\");background-size:${size * 10}px ${size * 10}px;background-repeat:no-repeat;background-position:${posX}px ${posY}px;flex-shrink:0;'></div>" +
+                    "<div class=\"md-item\" contenteditable=\"false\" title=\"${safeTitle}\" style='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;border-radius:8px;background:rgba(255,255,255,0.06);width:4rem;height:6rem;flex-shrink:0;'>" +
+                        "<div class=\"md-item-icon\" style='width:${size}px;height:${size}px;background-image:url(\"/raw/data/spritesheets/${file}.png\");background-size:${size * 10}px ${size * 10}px;background-repeat:no-repeat;image-rendering: pixelated;background-position:${posX}px ${posY}px;flex-shrink:0;'></div>" +
                         (if (qty > 0) "<div class=\"md-item-qty\" style='font-size:12px;margin-top:4px;'>x${qty}</div>" else "") +
                         "<div class=\"md-item-title\" style='font-size:12px;text-align:center;opacity:0.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;'>${safeTitle}</div>" +
                     "</div>"

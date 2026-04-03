@@ -8,11 +8,13 @@ import lib.CreateIcoSphereOptions
 import lib.CreatePlaneOptions
 import lib.DirectionalLight
 import lib.HemisphericLight
+import lib.IShadowLight
 import lib.Mesh
 import lib.MeshBuilder
 import lib.PBRMaterial
 import lib.Scene
 import lib.SceneLoader
+import lib.ShadowGenerator
 import lib.Texture
 import lib.Vector3
 import main.api.UserApi
@@ -319,6 +321,9 @@ class WorldLoader(private val scene: Scene) {
     // Shadow manager for global shadow handling
     private var shadowManager: ShadowManager? = null
     
+    // List of shadow generators for point lights loaded from GLB
+    private val pointLightShadowGenerators = mutableListOf<lib.ShadowGenerator>()
+    
     // Occlusion manager for fading objects that obstruct the player's view
     private var occlusionManager: OcclusionManager? = null
 
@@ -344,6 +349,11 @@ class WorldLoader(private val scene: Scene) {
         println("[DEBUG] Setting up scene lighting")
         // Register this instance for edit notifications
         registerCurrentInstance(this)
+        
+        // Enable clustered lighting features for BabylonJS 9 performance
+        // This allows handling many lights and shadows efficiently in a single pass
+        scene.useClusteredForwardLighting = true
+        scene.useClusteredShadows = true
         
         // Add a hemispheric light for ambient lighting
         hemisphericLight = HemisphericLight(
@@ -643,6 +653,9 @@ class WorldLoader(private val scene: Scene) {
         
         println("[DEBUG] Configured $shadowCasterCount shadow casters and $shadowReceiverCount shadow receivers")
         
+        // Configure shadows for point lights loaded from the GLB
+        configurePointLightShadows(meshes)
+
         // Final shadow configuration check
         if (shadowCasterCount == 0) {
             println("[WARNING] No shadow casters configured! Shadows will not be visible.")
@@ -661,6 +674,40 @@ class WorldLoader(private val scene: Scene) {
             println("[DEBUG] - shadowMaxZ: ${light.shadowMaxZ}")
         } ?: run {
             println("[ERROR] Directional light is null! Shadows will not be visible.")
+        }
+    }
+    
+    /**
+     * Detects point lights in the scene and configures clustered shadows for them.
+     */
+    private fun configurePointLightShadows(meshes: Array<AbstractMesh>) {
+        // Clear previous point light shadow generators to avoid memory leaks
+        pointLightShadowGenerators.forEach { it.dispose() }
+        pointLightShadowGenerators.clear()
+        
+        scene.lights.forEach { light ->
+            // getTypeID() == 0 is PointLight in BabylonJS
+            if (light.getTypeID() == 0) {
+                val shadowLight = light as? IShadowLight
+                if (shadowLight != null) {
+                    println("[DEBUG] Found point light from GLB: ${light.name}. Configuring clustered shadows.")
+                    
+                    // Create a shadow generator for the point light
+                    // Map size 512 is generally enough for clustered point light shadows
+                    val sg = ShadowGenerator(512, shadowLight)
+                    
+                    // Enable clustered shadows for this generator
+                    sg.useClusteredShadows = true
+                    pointLightShadowGenerators.add(sg)
+                    
+                    // Add meshes as shadow casters
+                    meshes.forEach { m ->
+                        if (m.isVisible && !m.name.startsWith("__") && !m.isSkybox()) {
+                            sg.addShadowCaster(m)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -1135,6 +1182,10 @@ class WorldLoader(private val scene: Scene) {
         // Dispose of shadow manager
         shadowManager?.dispose()
         shadowManager = null
+        
+        // Dispose of point light shadow generators
+        pointLightShadowGenerators.forEach { it.dispose() }
+        pointLightShadowGenerators.clear()
         
         // Dispose of occlusion manager
         occlusionManager?.dispose()

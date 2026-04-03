@@ -80,21 +80,29 @@ open external class Node {
      * @return True if enabled, false otherwise
      */
     open fun isEnabled(): Boolean
+
+    /**
+     * Disposes of the node and all its resources
+     */
+    open fun dispose()
 }
 
 /**
  * A transform node is a node that can be used to transform other nodes in the scene
  * without rendering anything itself. It's useful as a container for other nodes.
  */
-external class TransformNode(name: String, scene: Scene? = definedExternally) : Node {
+open external class TransformNode(name: String, scene: Scene? = definedExternally) : Node {
     override var name: String
     override var parent: Node?
     override var position: Vector3
     override var rotation: Vector3
     override var scaling: Vector3
-    var rotationQuaternion: Quaternion?
+    open var rotationQuaternion: Quaternion?
 
     override var metadata: MeshMetadata?
+
+    open fun getWorldMatrix(): Matrix
+    open fun computeWorldMatrix(force: Boolean = definedExternally): Matrix
     
     /**
      * Gets all child meshes of this node
@@ -107,7 +115,7 @@ external class TransformNode(name: String, scene: Scene? = definedExternally) : 
     /**
      * Disposes of the transform node and all its resources
      */
-    fun dispose()
+    override fun dispose()
 }
 
 /**
@@ -128,14 +136,14 @@ external interface Gltf {
     var extras: dynamic
 }
 
-abstract external class AbstractMesh : Node {
+abstract external class AbstractMesh : TransformNode {
     var isVisible: Boolean
     var isPickable: Boolean
     override var position: Vector3
     var material: Material
     var receiveShadows: Boolean
     override var rotation: Vector3
-    var rotationQuaternion: Quaternion?
+    override var rotationQuaternion: Quaternion?
     var origin: Vector3
     override var scaling: Vector3
     var billboardMode: Int
@@ -147,6 +155,8 @@ abstract external class AbstractMesh : Node {
     var infiniteDistance: Boolean
     var checkCollisions: Boolean
     var renderingGroupId: Int
+
+    override fun getWorldMatrix(): Matrix
 
     /**
      * Tests if a ray intersects the mesh
@@ -161,7 +171,7 @@ abstract external class AbstractMesh : Node {
     fun clone(name: String): AbstractMesh
     fun registerInstancedBuffer(name: String, size: Int)
     fun addRotation(x: Float, y: Float, z: Float)
-    fun dispose()
+    override fun dispose()
     
     /**
      * Gets the bounding info of the mesh
@@ -213,7 +223,16 @@ external class Color4(
     fun asArray(): Array<Float>
 }
 
-external class DirectionalLight(name: String, direction: Vector3, scene: Scene) {
+external open class Light : Node {
+    open var intensity: Float
+    open var diffuse: Color3
+    open var includedOnlyMeshes: Array<AbstractMesh>
+    open var excludedMeshes: Array<AbstractMesh>
+    open fun getTypeID(): Int
+    override fun dispose()
+}
+
+external interface IShadowLight {
     var intensity: Float
     var diffuse: Color3
     var shadowMinZ: Float
@@ -222,16 +241,44 @@ external class DirectionalLight(name: String, direction: Vector3, scene: Scene) 
     var direction: Vector3
     var includedOnlyMeshes: Array<AbstractMesh>
     var excludedMeshes: Array<AbstractMesh>
+    fun getTypeID(): Int
     fun dispose()
 }
 
-external class HemisphericLight(name: String, direction: Vector3, scene: Scene) {
-    var diffuse: Color3
+external class DirectionalLight(name: String, direction: Vector3, scene: Scene) : Light, IShadowLight {
+    override var intensity: Float
+    override var diffuse: Color3
+    override var shadowMinZ: Float
+    override var shadowMaxZ: Float
+    override var position: Vector3
+    override var direction: Vector3
+    override var includedOnlyMeshes: Array<AbstractMesh>
+    override var excludedMeshes: Array<AbstractMesh>
+    override fun getTypeID(): Int
+    override fun dispose()
+}
+
+external class PointLight(name: String, position: Vector3, scene: Scene) : Light, IShadowLight {
+    override var intensity: Float
+    override var diffuse: Color3
+    override var shadowMinZ: Float
+    override var shadowMaxZ: Float
+    override var position: Vector3
+    override var direction: Vector3
+    override var includedOnlyMeshes: Array<AbstractMesh>
+    override var excludedMeshes: Array<AbstractMesh>
+    override fun getTypeID(): Int
+    override fun dispose()
+}
+
+external class HemisphericLight(name: String, direction: Vector3, scene: Scene) : Light {
+    override var diffuse: Color3
     var groundColor: Color3
-    var intensity: Float
-    var includedOnlyMeshes: Array<AbstractMesh>
-    var excludedMeshes: Array<AbstractMesh>
-    fun dispose()
+    override var intensity: Float
+    override var includedOnlyMeshes: Array<AbstractMesh>
+    override var excludedMeshes: Array<AbstractMesh>
+    override fun getTypeID(): Int
+    override fun dispose()
 }
 
 external class Scene(engine: Engine? = definedExternally) {
@@ -249,11 +296,19 @@ external class Scene(engine: Engine? = definedExternally) {
     val onPointerObservable: Observable<PointerInfo>
     
     var imageProcessingConfiguration: ImageProcessingConfiguration
+    
+    var useClusteredForwardLighting: Boolean
+    var useClusteredShadows: Boolean
 
     /**
      * List of all meshes in the scene
      */
     val meshes: Array<AbstractMesh>
+
+    /**
+     * List of all lights in the scene
+     */
+    val lights: Array<Light>
 
     /**
      * List of all cameras in the scene
@@ -587,13 +642,15 @@ external class Observable<T> {
     fun addOnce(callback: (T) -> Unit)
 }
 
-open external class ShadowGenerator(mapSize: Int, light: DirectionalLight) {
+open external class ShadowGenerator(mapSize: Int, light: IShadowLight) {
     fun addShadowCaster(mesh: AbstractMesh)
     fun removeShadowCaster(mesh: AbstractMesh)
     var useBlurCloseExponentialShadowMap: Boolean
     var useExponentialShadowMap: Boolean
     var useKernelBlur: Boolean
     var blurKernel: Int
+    var useClusteredShadows: Boolean
+    fun dispose()
 }
 
 /**
@@ -616,6 +673,13 @@ external class BoundingInfo {
     val boundingBox: BoundingBox
 
     /**
+     * Updates the bounding info with the given world matrix
+     *
+     * @param world The world matrix
+     */
+    fun update(world: Matrix)
+
+    /**
      * Checks if a point is inside the bounding box
      *
      * @param point The point to check
@@ -629,14 +693,24 @@ external class BoundingInfo {
  */
 external class BoundingBox {
     /**
-     * The minimum vector of the bounding box
+     * The minimum vector of the bounding box in local space
      */
     val minimum: Vector3
 
     /**
-     * The maximum vector of the bounding box
+     * The maximum vector of the bounding box in local space
      */
     val maximum: Vector3
+
+    /**
+     * The minimum vector of the bounding box in world space
+     */
+    val minimumWorld: Vector3
+
+    /**
+     * The maximum vector of the bounding box in world space
+     */
+    val maximumWorld: Vector3
 
     /**
      * Creates a new bounding box

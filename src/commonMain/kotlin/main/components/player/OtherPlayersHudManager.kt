@@ -19,6 +19,7 @@ class OtherPlayersHudManager(
         var chatMessage: String? = null,
         var chatExpiry: Double? = null,
         var isTyping: Boolean = false,
+        var currentYOffset: Float = PlayerUi.HUD_Y_OFFSET,
     )
     private enum class HudKind { Typing, Chat, Status, None }
 
@@ -46,7 +47,8 @@ class OtherPlayersHudManager(
     }
 
     fun updateHudPosition(userId: String, basePosition: Vector3) {
-        PlayerUiUtils.updateHudBillboardPosition(statusTextHandles[userId], basePosition)
+        val yOffset = hudStateByUser[userId]?.currentYOffset ?: PlayerUi.HUD_Y_OFFSET
+        PlayerUiUtils.updateHudBillboardPosition(statusTextHandles[userId], basePosition, yOffset)
     }
 
     private fun getHud(userId: String): HudState =
@@ -82,14 +84,22 @@ class OtherPlayersHudManager(
         statusTextHandles.remove(userId)
         if (kind == HudKind.None) { lastAppliedHud[userId] = HudKind.None to null; return }
 
-        val (textColor, bg) = when (kind) {
-            HudKind.Typing -> "white" to PlayerUi.STATUS_BG_COLOR
-            HudKind.Chat -> PlayerUi.CHAT_TEXT_COLOR to PlayerUi.CHAT_BG_COLOR
-            HudKind.Status -> PlayerUi.STATUS_TEXT_COLOR to PlayerUi.STATUS_BG_COLOR
+        val isEmoji = (kind == HudKind.Chat) && text != null && PlayerUi.isEmojiOnly(text)
+        hud.currentYOffset = if (isEmoji) PlayerUi.EMOJI_HUD_Y_OFFSET else PlayerUi.HUD_Y_OFFSET
+        val (textColor, bg) = when {
+            kind == HudKind.Typing -> "white" to PlayerUi.STATUS_BG_COLOR
+            isEmoji -> "white" to null
+            kind == HudKind.Chat -> PlayerUi.CHAT_TEXT_COLOR to PlayerUi.CHAT_BG_COLOR
             else -> PlayerUi.STATUS_TEXT_COLOR to PlayerUi.STATUS_BG_COLOR
         }
         val handle = PlayerUiUtils.createHudBillboard(
-            manager, text ?: "", position, textColor, bg
+            manager = manager,
+            text = text ?: "",
+            basePosition = position,
+            textColor = textColor,
+            backgroundColor = bg,
+            fontSize = if (isEmoji) PlayerUi.EMOJI_ONLY_FONT_SIZE else PlayerUi.FONT_SIZE,
+            yOffset = hud.currentYOffset,
         )
         if (handle != null) statusTextHandles[userId] = handle
         lastAppliedHud[userId] = kind to text

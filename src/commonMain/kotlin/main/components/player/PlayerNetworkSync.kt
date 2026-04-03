@@ -31,7 +31,11 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
                         try {
                             val user = UserApi.getCurrentUser()
                             if (chatMessage.senderType == models.ChatSenderType.USER && chatMessage.senderId == user.key) {
-                                onSelfChat(chatMessage.message)
+                                try {
+                                    onSelfChat(chatMessage.message)
+                                } catch (t: Throwable) {
+                                    console.error("PlayerNetworkSync: onSelfChat failed", t)
+                                }
                             }
                         } catch (t: Throwable) {
                             console.error("PlayerNetworkSync: getCurrentUser failed", t)

@@ -23,7 +23,7 @@ object DepthPicking {
 
     // Detects if a mesh belongs to a TextBillboard (player/object status, chat, typing, usernames)
     // These meshes should not contribute to depth picking.
-    private fun isStatusBillboardMesh(mesh: AbstractMesh): Boolean {
+    fun isStatusBillboardMesh(mesh: AbstractMesh): Boolean {
         return try {
             val n = mesh.name
             if (n.startsWith("text-plane-")) return true
