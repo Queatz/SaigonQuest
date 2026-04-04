@@ -196,8 +196,10 @@ fun WorldDocsDialog(
                     value = searchInput,
                     onInput = { searchInput = it },
                     placeholder = str("Search docs"),
-                    wrapperAttrs = {
-                        classes(WorldDocsStyles.searchInput)
+                    containerAttrs = {
+                        style {
+                            width(200.px)
+                        }
                     }
                 )
                 if (isOwner) {
@@ -380,8 +382,11 @@ fun WorldDocsDialog(
                                                 value = renameTitle,
                                                 onInput = { renameTitle = it },
                                                 placeholder = Translations.str("Title"),
-                                                wrapperAttrs = {
-                                                    classes(WorldDocsStyles.titleInput)
+                                                containerAttrs = {
+                                                    style {
+                                                        property("min-width", "200px")
+                                                        flexGrow(1)
+                                                    }
                                                 },
                                                 autoFocus = true,
                                                 attrs = {

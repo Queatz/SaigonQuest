@@ -332,10 +332,9 @@ fun DialogueBox(
                         value = textInput,
                         onInput = { textInput = it },
                         placeholder = dialogue.placeholder?.takeIf { it.isNotBlank() },
-                        wrapperAttrs = {
+                        containerAttrs = {
                             style {
                                 property("flex-grow", "1")
-                                width(0.px)
                             }
                         },
                         enabled = !isWaiting,

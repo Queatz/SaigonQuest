@@ -50,7 +50,6 @@ fun DialogInput(
 ) {
     Div(
         attrs = {
-            classes(Styles.formFieldContainer)
             if (!enabled) {
                 style {
                     property("opacity", "0.7")

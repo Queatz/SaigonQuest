@@ -90,7 +90,7 @@ fun WorldObjectsContent(
                 value = searchQuery,
                 onInput = { searchQuery = it },
                 placeholder = str("Search objects"),
-                wrapperAttrs = {
+                containerAttrs = {
                     classes(EditorStyles.worldObjectsSearchInput)
                 }
             )

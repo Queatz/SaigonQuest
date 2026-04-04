@@ -157,11 +157,8 @@ fun GlobalAiChat() {
                 value = GlobalAiChatStore.input,
                 onInput = { GlobalAiChatStore.setInput(it) },
                 placeholder = str("Type a message…"),
-                wrapperAttrs = {
+                containerAttrs = {
                     classes(Styles.aiChatInput)
-                    style {
-                        width(0.px)
-                    }
                 },
                 autoFocus = true,
                 attrs = {
