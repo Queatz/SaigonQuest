@@ -161,12 +161,11 @@ fun VisitorDialog(
                 ) {
                     Translated("Username")
                 }
-                TextInput(
+                DialogInput(
                     value = username,
+                    onInput = { username = it },
+                    placeholder = str("Enter username"),
                     attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Enter username"))
-                        onInput { username = it.value }
                         onKeyUp { event ->
                             if (event.key == "Enter") {
                                 validateAndSubmit()
@@ -189,12 +188,12 @@ fun VisitorDialog(
                 ) {
                     Translated("Password")
                 }
-                PasswordInput(
+                DialogInput(
                     value = password,
+                    onInput = { password = it },
+                    type = InputType.Password,
+                    placeholder = str("Enter password"),
                     attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Enter password"))
-                        onInput { password = it.value }
                         onKeyUp { event ->
                             if (event.key == "Enter") {
                                 validateAndSubmit()
@@ -227,14 +226,11 @@ fun VisitorDialog(
                     ) {
                         Translated("Confirm Password")
                     }
-                    Input(
+                    DialogInput(
+                        value = confirmPassword,
+                        onInput = { confirmPassword = it },
                         type = InputType.Password,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder(str("Re-enter password"))
-                            value(confirmPassword)
-                            onInput { confirmPassword = it.value }
-                        }
+                        placeholder = str("Re-enter password"),
                     )
                 }
             }

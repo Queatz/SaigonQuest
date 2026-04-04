@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.translated
 import Translations.str
+import main.components.DialogInput
 import main.components.Translated
 import main.theme.NodeEditorStyles
 import main.theme.Styles
@@ -87,13 +88,10 @@ fun NodeSidebar() {
         } else {
             // Search input
             Div {
-                TextInput(
+                DialogInput(
                     value = searchQuery,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search nodes"))
-                        onInput { ev -> searchQuery = ev.value }
-                    },
+                    onInput = { searchQuery = it },
+                    placeholder = str("Search nodes"),
                 )
             }
             

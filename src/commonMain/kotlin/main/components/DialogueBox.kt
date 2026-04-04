@@ -328,49 +328,55 @@ fun DialogueBox(
                         }
                     }
                 ) {
-                    TextInput(textInput) {
-                        if (isWaiting) disabled()
-                        if (!dialogue.placeholder.isNullOrBlank()) {
-                            placeholder(dialogue.placeholder!!)
-                        }
-                        classes(Styles.inputField)
-                        autoFocus()
-                        onInput { ev -> textInput = ev.value }
-                        onKeyDown { ev ->
-                            if (ev.key == "Enter" && !isWaiting) {
-                                isWaiting = true
-                                val scope = MainScope()
-                                scope.launch {
-                                    try {
-                                        val user = UserApi.getCurrentUser()
-                                        val userId = user.key
-                                        WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
-                                    } catch (e: Throwable) {
-                                        console.error("Error sending dialogue confirmation via Enter", e)
-                                        isWaiting = false
-                                    } finally {
-                                        textInput = ""
-                                        
-                                        delay(500)
-                                        if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
-                                            currentDialogue = null
+                    DialogInput(
+                        value = textInput,
+                        onInput = { textInput = it },
+                        placeholder = dialogue.placeholder?.takeIf { it.isNotBlank() },
+                        wrapperAttrs = {
+                            style {
+                                property("flex-grow", "1")
+                                width(0.px)
+                            }
+                        },
+                        attrs = {
+                            if (isWaiting) disabled()
+                            autoFocus()
+                            onKeyDown { ev ->
+                                if (ev.key == "Enter" && !isWaiting) {
+                                    isWaiting = true
+                                    val scope = MainScope()
+                                    scope.launch {
+                                        try {
+                                            val user = UserApi.getCurrentUser()
+                                            val userId = user.key
+                                            WebSocketApi.sendDialogueConfirmation(dialogue.dialogueId, userId, 0, textInput)
+                                        } catch (e: Throwable) {
+                                            console.error("Error sending dialogue confirmation via Enter", e)
                                             isWaiting = false
+                                        } finally {
+                                            textInput = ""
+
+                                            delay(500)
+                                            if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
+                                                currentDialogue = null
+                                                isWaiting = false
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        ref {
-                            it.focus()
-                            
-                            inputEl = it
-                            
-                            onDispose {
-                                inputEl = null
+                            ref {
+                                it.focus()
+
+                                inputEl = it
+
+                                onDispose {
+                                    inputEl = null
+                                }
                             }
                         }
-                    }
+                    )
 
                     // Voice input button - appends transcribed text to the end of textInput
                     VoiceInput(

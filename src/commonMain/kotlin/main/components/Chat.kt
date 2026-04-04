@@ -9,7 +9,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import main.components.chat.ChatBellButton
-import org.jetbrains.compose.web.dom.Span
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -61,8 +62,11 @@ fun Chat(
         headerRight = {
             val text = retentionText
             if (text != null) {
-                Span(
-                    {
+                DialogButton(
+                    onClick = { showInfoDialog = true },
+                    style = DialogButtonStyle.Secondary,
+                    small = true,
+                    attrs = {
                         title(text)
                     }
                 ) {

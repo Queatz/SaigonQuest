@@ -85,21 +85,16 @@ fun BasicPromptDialog(
                         }
                     )
                 } else {
-                    TextInput(
+                    DialogInput(
                         value = value,
+                        onInput = { value = it },
                         attrs = {
-                            classes(Styles.inputField)
-
                             autoFocus()
 
                             ref {
                                 it.focus()
 
                                 onDispose { }
-                            }
-
-                            onInput { event ->
-                                value = event.value
                             }
                         }
                     )

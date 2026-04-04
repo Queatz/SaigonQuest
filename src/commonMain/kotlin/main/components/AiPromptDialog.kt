@@ -1,22 +1,13 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.web.attributes.InputType
+import main.theme.Styles
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Text
-import main.theme.Styles
 import org.jetbrains.compose.web.dom.TextArea
-import org.jetbrains.compose.web.dom.TextInput
 import web.animations.awaitAnimationFrame
 
 /**

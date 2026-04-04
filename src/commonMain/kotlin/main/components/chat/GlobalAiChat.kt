@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import main.components.AnimatedDots
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.IconRenderer
 import main.components.Md
 import main.components.Translated
@@ -17,6 +18,7 @@ import main.theme.Styles
 import models.AiRole
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -151,28 +153,36 @@ fun GlobalAiChat() {
                 onClick = { GlobalAiChatStore.toggleFullscreen() },
                 attrs = { classes(Styles.aiChatFullscreenToggle) }
             )
-            TextInput(GlobalAiChatStore.input) {
-                classes(Styles.inputField, Styles.aiChatInput)
-                placeholder(str("Type a message…"))
-                autoFocus()
-                onInput { ev -> GlobalAiChatStore.setInput(ev.value) }
-                onKeyDown { ev ->
-                    if (ev.key == "Enter") {
-                        ev.preventDefault()
-                        ev.stopPropagation()
-                        GlobalAiChatStore.requestStopVoice()
-                        GlobalAiChatStore.send(GlobalAiChatStore.input)
-                    } else if (ev.key == "Escape") {
-                        ev.preventDefault()
-                        ev.stopPropagation()
-                        closeWithAnimation()
+            DialogInput(
+                value = GlobalAiChatStore.input,
+                onInput = { GlobalAiChatStore.setInput(it) },
+                placeholder = str("Type a message…"),
+                wrapperAttrs = {
+                    classes(Styles.aiChatInput)
+                    style {
+                        width(0.px)
+                    }
+                },
+                attrs = {
+                    autoFocus()
+                    onKeyDown { ev ->
+                        if (ev.key == "Enter") {
+                            ev.preventDefault()
+                            ev.stopPropagation()
+                            GlobalAiChatStore.requestStopVoice()
+                            GlobalAiChatStore.send(GlobalAiChatStore.input)
+                        } else if (ev.key == "Escape") {
+                            ev.preventDefault()
+                            ev.stopPropagation()
+                            closeWithAnimation()
+                        }
+                    }
+                    ref {
+                        it.focus()
+                        onDispose { }
                     }
                 }
-                ref {
-                    it.focus()
-                    onDispose { }
-                }
-            }
+            )
 
             // Voice input button (appends to input)
             VoiceInput(

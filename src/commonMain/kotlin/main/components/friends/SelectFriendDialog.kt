@@ -13,12 +13,13 @@ import main.api.FriendApi
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.Friend
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -92,13 +93,10 @@ fun SelectFriendDialog(
                     property("align-items", "center")
                 }
             }) {
-                TextInput(
+                DialogInput(
                     value = query,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search friends"))
-                        onInput { ev -> query = ev.value }
-                    }
+                    onInput = { query = it },
+                    placeholder = str("Search friends"),
                 )
             }
 
@@ -122,15 +120,16 @@ fun SelectFriendDialog(
                     }) {
                         filtered.forEach { f ->
                             val name = f.friendUsername.ifBlank { f.friendId }
-                            Div(attrs = {
-                                classes(Styles.clickable)
-                                style {
-                                    property("padding", "11px")
-                                    property("border", "1px solid rgba(255,255,255,0.1)")
-                                    property("border-radius", "8px")
+                            DialogButton(
+                                onClick = { onSelect(f) },
+                                style = DialogButtonStyle.Primary,
+                                attrs = {
+                                    style {
+                                        width(100.percent)
+                                        justifyContent(JustifyContent.Start)
+                                    }
                                 }
-                                onClick { onSelect(f) }
-                            }) {
+                            ) {
                                 Text(name)
                             }
                         }

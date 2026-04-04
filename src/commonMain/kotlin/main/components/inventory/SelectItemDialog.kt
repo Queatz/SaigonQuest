@@ -10,11 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ItemApi
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.Translated
-import main.components.translated
+import main.components.*
 import main.theme.Styles
 import models.Item
 import org.jetbrains.compose.web.attributes.InputType
@@ -95,13 +91,10 @@ fun SelectItemDialog(
                     property("align-items", "center")
                 }
             }) {
-                TextInput(
+                DialogInput(
                     value = query,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search by title"))
-                        onInput { query = it.value }
-                    }
+                    onInput = { query = it },
+                    placeholder = str("Search by title"),
                 )
             }
 

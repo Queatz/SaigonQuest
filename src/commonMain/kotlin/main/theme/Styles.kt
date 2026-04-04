@@ -679,6 +679,35 @@ object Styles : StyleSheet() {
         }
     }
 
+    val dialogInputField by style {
+        backgroundColor(Color.transparent)
+        property("border", "0")
+        property("outline", "none")
+        width(100.percent)
+        color(Theme.colors.onSurface)
+        padding(0.px)
+        fontSize(16.px)
+
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
+
+        property("box-sizing", "border-box")
+    }
+
+    val dialogInputWrapper by style {
+        property("border-width", "6px")
+        property("border-image-width", "6px")
+        property("border-style", "solid")
+        property("border-radius", "0")
+        property("box-shadow", "none")
+        padding(6.px, 18.px)
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        width(100.percent)
+        boxSizing("border-box")
+    }
+
     val objectEditorDialogLogicPreview by style {
         width(100.percent)
         height(200.px)
@@ -1967,6 +1996,7 @@ object Styles : StyleSheet() {
     // Emote popup & related UI
     val emoteTriggerWrapper by style {
         position(Position.Relative)
+        display(DisplayStyle.Flex)
         property("flex-shrink", "0")
     }
 

@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.Translated
 import main.components.common.Spinner
 import main.components.translated
@@ -84,14 +85,13 @@ fun WorldObjectsContent(
             }
         }
 
-        // Search input
         if (objects.size > 5) {
-            TextInput(
+            DialogInput(
                 value = searchQuery,
-                attrs = {
-                    classes(Styles.inputField, EditorStyles.worldObjectsSearchInput)
-                    placeholder(str("Search objects"))
-                    onInput { searchQuery = it.value }
+                onInput = { searchQuery = it },
+                placeholder = str("Search objects"),
+                wrapperAttrs = {
+                    classes(EditorStyles.worldObjectsSearchInput)
                 }
             )
         }

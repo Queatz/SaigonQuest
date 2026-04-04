@@ -1,52 +1,27 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import app.softwork.routingcompose.Router
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.api.UserApi
-import main.api.WebSocketApi
-import main.api.WorldApi
-import main.api.updatePlayer
-import main.api.updatePlayerStatus
+import main.api.*
+import main.components.SceneManager.getPlayerController
+import main.components.common.formatAmount
 import main.components.player.CharacterRenderer
+import main.components.world.PlayerActivity
+import main.httpClient
 import main.theme.Styles
-import main.components.AudioSettings
 import models.User
 import models.UserBalance
-import main.httpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
-import main.components.common.formatAmount
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import main.api.ApiConstants
-import main.components.SceneManager.getPlayerController
-import main.components.world.PlayerActivity
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
-import org.jetbrains.compose.web.dom.RangeInput
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.flexDirection
 
 /**
  * Dialog for player users to logout
@@ -274,13 +249,10 @@ fun PlayerDialog(
                         val placeholder = translated("Set your status")
 
                         // Status input field
-                        TextInput(
+                        DialogInput(
                             value = status.value,
-                            attrs = {
-                                classes(Styles.inputField)
-                                placeholder(placeholder)
-                                onInput { event -> status.value = event.value }
-                            }
+                            onInput = { status.value = it },
+                            placeholder = placeholder,
                         )
                     }
 

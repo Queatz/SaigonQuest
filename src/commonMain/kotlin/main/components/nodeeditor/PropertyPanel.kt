@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import main.api.ItemApi
 import main.api.DocApi
 import main.components.IconRenderer
+import main.components.DialogInput
 import main.components.Translated
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
@@ -171,12 +172,11 @@ fun PropertyPanel(
                 Translated("Label")
             }
 
-            TextInput(
+            DialogInput(
                 value = label,
+                onInput = { label = it },
                 attrs = {
-                    classes(NodeEditorStyles.propertyInput)
                     id("node-label")
-                    onInput { event -> label = event.value }
                 }
             )
         }
@@ -624,17 +624,16 @@ fun PropertyPanel(
                                     }
                                 } else {
                                     // Use Input for other string properties
-                                    TextInput(
+                                    DialogInput(
                                         value = propertyValues[propDef.key] ?: "",
-                                        attrs = {
-                                            classes(NodeEditorStyles.propertyInput)
-                                            id("prop-${propDef.key.name.lowercase()}")
-                                            onInput { event ->
-                                                propertyValues = propertyValues.edit {
-                                                    it[propDef.key] = event.value
-                                                }
+                                        onInput = { newValue ->
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = newValue
                                             }
-                                            placeholder(propDef.defaultValue)
+                                        },
+                                        placeholder = propDef.defaultValue,
+                                        attrs = {
+                                            id("prop-${propDef.key.name.lowercase()}")
                                         }
                                     )
                                 }
@@ -669,17 +668,16 @@ fun PropertyPanel(
                             }
 
                             PropertyType.VECTOR3 -> {
-                                TextInput(
+                                DialogInput(
                                     value = propertyValues[propDef.key] ?: "0,0,0",
-                                    attrs = {
-                                        classes(NodeEditorStyles.propertyInput)
-                                        id("prop-${propDef.key.name.lowercase()}")
-                                        onInput { event ->
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = event.value
-                                            }
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
                                         }
-                                        placeholder(str("x,y,z"))
+                                    },
+                                    placeholder = str("x,y,z"),
+                                    attrs = {
+                                        id("prop-${propDef.key.name.lowercase()}")
                                     }
                                 )
                             }
@@ -702,16 +700,15 @@ fun PropertyPanel(
 
                             else -> {
                                 // Default to text input for other types
-                                TextInput(
+                                DialogInput(
                                     value = propertyValues[propDef.key] ?: "",
-                                    attrs = {
-                                        classes(NodeEditorStyles.propertyInput)
-                                        id("prop-${propDef.key.name.lowercase()}")
-                                        onInput { event ->
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = event.value
-                                            }
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
                                         }
+                                    },
+                                    attrs = {
+                                        id("prop-${propDef.key.name.lowercase()}")
                                     }
                                 )
                             }
@@ -778,15 +775,10 @@ fun PropertyPanel(
                         classes(NodeEditorStyles.addButtonContainer)
                     }
                 ) {
-                    TextInput(
+                    DialogInput(
                         value = newButtonText,
-                        attrs = {
-                            classes(NodeEditorStyles.propertyInput)
-                            placeholder(str("New button text"))
-                            onInput { event ->
-                                newButtonText = event.value
-                            }
-                        }
+                        onInput = { newButtonText = it },
+                        placeholder = str("New button text"),
                     )
 
                     DialogButton(

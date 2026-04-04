@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BaseDialog
+import main.components.DialogInput
 import main.components.Translated
 import main.components.translated
 import main.theme.NodeEditorStyles
@@ -69,13 +70,12 @@ fun NodePickerDialog(
         content = {
             // Search input
             Div {
-                TextInput(
+                DialogInput(
                     value = searchQuery,
+                    onInput = { searchQuery = it },
+                    placeholder = str("Search nodes"),
                     attrs = {
-                        classes(Styles.inputField)
                         autoFocus()
-                        placeholder(str("Search nodes"))
-                        onInput { ev -> searchQuery = ev.value }
                         ref {
                             it.focus()
 

@@ -3,32 +3,25 @@ package main.components.chat
 import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
-import lib.BlobPropertyBag
-import lib.FilePropertyBag
-import lib.MediaRecorder
 import main.api.*
+import main.components.DialogButton
+import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.Translated
-import main.components.audio.MusicManager
-import main.components.media.*
+import main.components.media.AudioRecorderUI
+import main.components.media.UploadMediaDialog
+import main.components.media.findMediaInClipboardEvent
+import main.components.media.rememberAudioRecorderState
 import main.theme.Styles
 import main.theme.Theme
 import models.MediaType
 import models.chat.ImageAttachment
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
-import org.w3c.files.Blob
-import org.w3c.files.File
-import web.mediadevices.getUserMedia
-import web.mediastreams.MediaStreamConstraints
-import web.mediastreams.MediaTrackConstraints
-import web.navigator.navigator
 
 @Composable
 fun ChatComposer(
@@ -167,13 +160,11 @@ fun ChatComposer(
                             classes(Styles.emoteTriggerWrapper)
                         }
                     ) {
-                        Div(
-                            attrs = {
-                                classes(Styles.chatButton)
-                                if (!isAuthenticated) classes(Styles.disabledAction)
-                                if (showEmotePopup) classes(Styles.chatButtonSelected)
-                                onClick { if (isAuthenticated) showEmotePopup = !showEmotePopup }
-                            }
+                        DialogButton(
+                            onClick = { if (isAuthenticated) showEmotePopup = !showEmotePopup },
+                            style = if (showEmotePopup) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                            isDisabled = !isAuthenticated,
+                            small = true,
                         ) {
                             Text("😀")
                         }
@@ -206,59 +197,60 @@ fun ChatComposer(
                     }
 
                     if (isPlayer) {
-                        Div(
-                            attrs = {
-                                classes(Styles.chatButton)
-                                onClick { if (isAuthenticated) showUploadDialog = true }
-                            }
+                        DialogButton(
+                            onClick = { if (isAuthenticated) showUploadDialog = true },
+                            style = DialogButtonStyle.Secondary,
+                            isDisabled = !isAuthenticated,
+                            small = true,
                         ) {
                             Text("🖼️")
                         }
                     }
 
-                    Div(
+                    DialogButton(
+                        onClick = { if (isAuthenticated) recorderState.start() },
+                        style = DialogButtonStyle.Secondary,
+                        isDisabled = !isAuthenticated,
+                        small = true,
                         attrs = {
                             title(str("Record"))
-                            classes(Styles.chatButton)
-                            if (!isAuthenticated) classes(Styles.disabledAction)
-                            onClick { if (isAuthenticated) recorderState.start() }
                         }
                     ) {
                         Text("🎤")
                     }
                 } else {
-                    Div(
+                    DialogButton(
+                        onClick = { if (isAuthenticated) shoutNext = !shoutNext },
+                        style = if (shoutNext) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                        isDisabled = !isAuthenticated,
+                        small = true,
                         attrs = {
                             title(str("Shout"))
-                            classes(Styles.chatButton)
-                            if (shoutNext) classes(Styles.chatButtonSelected)
-                            onClick { if (isAuthenticated) shoutNext = !shoutNext }
                         }
                     ) {
                         Text("📣")
                     }
                 }
 
-                TextInput(
+                DialogInput(
                     value = messageText,
-                    attrs = {
-                        classes(Styles.inputField)
+                    onInput = { newValue ->
+                        messageText = newValue
+                        if (isAuthenticated && newValue.isNotEmpty()) {
+                            updateTypingStatus(true)
+                        } else if (newValue.isEmpty() && isTyping) {
+                            updateTypingStatus(false)
+                        }
+                    },
+                    placeholder = if (isAuthenticated) str("Message") else str("Sign in to chat"),
+                    wrapperAttrs = {
                         style {
                             width(0.px)
                             property("flex-grow", "1")
-                            property("border", "0")
                             opacity(if (isAuthenticated) 1.0 else 0.7)
                         }
-                        placeholder(if (isAuthenticated) str("Message") else str("Sign in to chat"))
-                        onInput {
-                            val newValue = it.value
-                            messageText = newValue
-                            if (isAuthenticated && newValue.isNotEmpty()) {
-                                updateTypingStatus(true)
-                            } else if (newValue.isEmpty() && isTyping) {
-                                updateTypingStatus(false)
-                            }
-                        }
+                    },
+                    attrs = {
                         autoFocus()
                         if (!isAuthenticated) disabled()
                         onKeyDown { event ->
@@ -303,52 +295,33 @@ fun ChatComposer(
                 )
 
                 if (messageText.isBlank()) {
-                    Button(
-                        attrs = {
-                            style {
-                                padding(8.px, 12.px)
-                                backgroundColor(Theme.colors.primary)
-                                color(Theme.colors.onPrimary)
-                                property("border", "0")
-                                borderRadius(8.px)
-                                cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                                opacity(if (isAuthenticated) 1.0 else 0.5)
-                            }
-                            if (!isAuthenticated) disabled()
-                            onClick { if (isAuthenticated) showRichEditorDialog = true }
-                        }
+                    DialogButton(
+                        onClick = { if (isAuthenticated) showRichEditorDialog = true },
+                        style = DialogButtonStyle.Primary,
+                        isDisabled = !isAuthenticated,
+                        small = true,
                     ) {
                         Text("📝")
                     }
                 } else {
-                    Button(
-                        attrs = {
-                            style {
-                                padding(8.px, 16.px)
-                                backgroundColor(Theme.colors.primary)
-                                color(Theme.colors.onPrimary)
-                                property("border", "0")
-                                borderRadius(8.px)
-                                cursor(if (isAuthenticated && messageText.isNotEmpty()) "pointer" else "not-allowed")
-                                opacity(if (isAuthenticated && messageText.isNotEmpty()) 1.0 else 0.5)
-                            }
-                            if (!isAuthenticated) disabled()
-                            onClick {
-                                if (isAuthenticated && messageText.isNotEmpty()) {
-                                    val currentMessage = messageText
-                                    WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
-                                        if (success) {
-                                            messageText = ""
-                                            shoutNext = false
-                                            updateTypingStatus(false)
-                                            scope.launch {
-                                                try { ChatApi.markMessagesAsRead(worldId) } catch (_: Throwable) {}
-                                            }
+                    DialogButton(
+                        onClick = {
+                            if (isAuthenticated && messageText.isNotEmpty()) {
+                                val currentMessage = messageText
+                                WebSocketApi.sendChatMessage(worldId, currentMessage, shouted = shoutNext) { success ->
+                                    if (success) {
+                                        messageText = ""
+                                        shoutNext = false
+                                        updateTypingStatus(false)
+                                        scope.launch {
+                                            try { ChatApi.markMessagesAsRead(worldId) } catch (_: Throwable) {}
                                         }
                                     }
                                 }
                             }
-                        }
+                        },
+                        style = DialogButtonStyle.Primary,
+                        isDisabled = !isAuthenticated || messageText.isEmpty(),
                     ) {
                         Translated("Send")
                     }
@@ -399,12 +372,13 @@ fun ChatComposer(
                         }
                     },
                     actions = {
-                        Div(
+                        DialogButton(
+                            onClick = { if (isAuthenticated) shoutNext = !shoutNext },
+                            style = if (shoutNext) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                            isDisabled = !isAuthenticated,
+                            small = true,
                             attrs = {
                                 title(str("Shout"))
-                                classes(Styles.chatButton)
-                                if (shoutNext) classes(Styles.chatButtonSelected)
-                                onClick { if (isAuthenticated) shoutNext = !shoutNext }
                             }
                         ) {
                             Text("📣")

@@ -2,50 +2,25 @@ package main.components.worlddocs
 
 import Translations
 import Translations.str
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.DocApi
-import main.components.BaseDialog
-import main.components.BasicConfirmDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.IconRenderer
-import main.components.Translated
+import main.components.*
 import main.components.chat.ChatComposerController
 import main.theme.Styles
 import main.theme.WorldDocsStyles
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
-import models.Doc
 import models.DocTree
 import org.jetbrains.compose.web.attributes.autoFocus
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.flexGrow
-import org.jetbrains.compose.web.css.flexShrink
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 import org.w3c.dom.HTMLInputElement
 import web.animations.awaitAnimationFrame
-import kotlinx.browser.window
-import main.components.translated
 
 @Composable
 fun WorldDocsDialog(
@@ -217,11 +192,14 @@ fun WorldDocsDialog(
             }
 
             Div(attrs = { classes(WorldDocsStyles.headerBar) }) {
-                TextInput(value = searchInput) {
-                    classes(WorldDocsStyles.searchInput)
-                    onInput { ev -> searchInput = ev.value }
-                    placeholder(str("Search docs"))
-                }
+                DialogInput(
+                    value = searchInput,
+                    onInput = { searchInput = it },
+                    placeholder = str("Search docs"),
+                    wrapperAttrs = {
+                        classes(WorldDocsStyles.searchInput)
+                    }
+                )
                 if (isOwner) {
                 DialogButton(
                     style = DialogButtonStyle.Primary,
@@ -398,29 +376,34 @@ fun WorldDocsDialog(
                                                 }
                                             }
                                         ) {
-                                            TextInput(value = renameTitle) {
-                                                classes(WorldDocsStyles.titleInput)
-                                                onInput { ev -> renameTitle = ev.value }
-                                                placeholder(Translations.str("Title"))
-                                                autoFocus()
+                                            DialogInput(
+                                                value = renameTitle,
+                                                onInput = { renameTitle = it },
+                                                placeholder = Translations.str("Title"),
+                                                wrapperAttrs = {
+                                                    classes(WorldDocsStyles.titleInput)
+                                                },
+                                                attrs = {
+                                                    autoFocus()
 
-                                                onKeyDown { ev ->
-                                                    if (ev.key == "Enter") {
-                                                        ev.preventDefault()
-                                                        saveTitle()
+                                                    onKeyDown { ev ->
+                                                        if (ev.key == "Enter") {
+                                                            ev.preventDefault()
+                                                            saveTitle()
+                                                        }
+                                                    }
+
+                                                    ref {
+                                                        titleInputEl = it
+                                                        scope.launch {
+                                                            delay(100)
+                                                            awaitAnimationFrame()
+                                                            it.focus()
+                                                        }
+                                                        onDispose { titleInputEl = null }
                                                     }
                                                 }
-
-                                                ref {
-                                                    titleInputEl = it
-                                                    scope.launch {
-                                                        delay(100)
-                                                        awaitAnimationFrame()
-                                                        it.focus()
-                                                    }
-                                                    onDispose { titleInputEl = null }
-                                                }
-                                            }
+                                            )
                                             // Collaborators indicator just under the title input
                                             if (collaborators.isNotEmpty()) {
                                                 PresenceIndicator(users = collaborators)

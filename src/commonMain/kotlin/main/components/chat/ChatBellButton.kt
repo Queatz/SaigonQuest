@@ -12,8 +12,9 @@ import kotlinx.coroutines.launch
 import main.api.ChatApi
 import main.api.UserApi
 import main.components.BasicConfirmDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -53,29 +54,18 @@ fun ChatBellButton(worldId: String) {
         }
     }
 
-    // Bell button UI
-    Button(
+    DialogButton(
+        onClick = {
+            if (isAuthenticated) {
+                willSubscribe = !isSubscribed
+                showSubscriptionDialog = true
+            }
+        },
+        style = DialogButtonStyle.Secondary,
+        isDisabled = !isAuthenticated,
+        small = true,
         attrs = {
             title(str(if (isSubscribed) "Subscribed" else "Not subscribed"))
-            style {
-                width(36.px)
-                height(36.px)
-                backgroundColor(rgba(255, 255, 255, 0.1))
-                borderRadius(8.px)
-                display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.Center)
-                alignItems(AlignItems.Center)
-                cursor(if (isAuthenticated) "pointer" else "not-allowed")
-                opacity(if (isAuthenticated) 1.0 else 0.5)
-                property("border", "0")
-                property("padding", "0")
-            }
-            onClick {
-                if (isAuthenticated) {
-                    willSubscribe = !isSubscribed
-                    showSubscriptionDialog = true
-                }
-            }
         }
     ) {
         Text(if (isSubscribed) "🔔" else "🔕")

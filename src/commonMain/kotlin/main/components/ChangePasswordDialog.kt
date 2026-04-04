@@ -10,8 +10,6 @@ import main.api.UserApi
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.Br
-import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -68,43 +66,31 @@ fun ChangePasswordDialog(
             }
 
             // Current password
-            Div(attrs = { classes(Styles.formFieldContainer) }) {
-                Input(
-                    type = InputType.Password,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Current Password"))
-                        value(current.value)
-                        onInput { ev -> current.value = ev.value }
-                    }
-                )
-            }
+            DialogInput(
+                type = InputType.Password,
+                placeholder = str("Current Password"),
+                value = current.value,
+                onInput = { current.value = it },
+                wrapperAttrs = { classes(Styles.formFieldContainer) }
+            )
 
             // New password
-            Div(attrs = { classes(Styles.formFieldContainer) }) {
-                Input(
-                    type = InputType.Password,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("New Password"))
-                        value(next.value)
-                        onInput { ev -> next.value = ev.value }
-                    }
-                )
-            }
+            DialogInput(
+                type = InputType.Password,
+                placeholder = str("New Password"),
+                value = next.value,
+                onInput = { next.value = it },
+                wrapperAttrs = { classes(Styles.formFieldContainer) }
+            )
 
             // Repeat new password
-            Div(attrs = { classes(Styles.formFieldContainer) }) {
-                Input(
-                    type = InputType.Password,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Repeat New Password"))
-                        value(repeat.value)
-                        onInput { ev -> repeat.value = ev.value }
-                    }
-                )
-            }
+            DialogInput(
+                type = InputType.Password,
+                placeholder = str("Repeat New Password"),
+                value = repeat.value,
+                onInput = { repeat.value = it },
+                wrapperAttrs = { classes(Styles.formFieldContainer) }
+            )
         },
         actions = {
             DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Cancel") }
