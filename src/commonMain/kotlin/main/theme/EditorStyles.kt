@@ -11,19 +11,12 @@ object EditorStyles : StyleSheet() {
         minHeight(0.px)
     }
     
-    val createObjectButton by style {
-        backgroundColor(Theme.colors.primary)
-        color(Theme.colors.onPrimary)
-        property("border", "0")
-        borderRadius(16.px)
-        padding(8.px, 16.px)
-        marginRight(8.px)
-        cursor("pointer")
-        fontSize(14.px)
-        margin(0.px, 0.px, 16.px, 0.px)
-    }
 
     val worldObjectsSearchInput by style {
+        marginBottom(16.px)
+    }
+    
+    val createObjectButton by style {
         marginBottom(16.px)
     }
     
@@ -75,33 +68,4 @@ object EditorStyles : StyleSheet() {
         gap(8.px)
     }
     
-    val locateButton by style {
-        backgroundColor(Theme.colors.primary)
-        color(Theme.colors.onPrimary)
-        property("border", "0")
-        borderRadius(16.px)
-        padding(4.px, 8.px)
-        cursor("pointer")
-        fontSize(12.px)
-    }
-    
-    val editButton by style {
-        backgroundColor(Theme.colors.success)
-        color(Theme.colors.onPrimary)
-        property("border", "0")
-        borderRadius(16.px)
-        padding(4.px, 8.px)
-        cursor("pointer")
-        fontSize(12.px)
-    }
-
-    val removeButton by style {
-        backgroundColor(Theme.colors.error)
-        color(Theme.colors.onPrimary)
-        property("border", "0")
-        borderRadius(16.px)
-        padding(4.px, 8.px)
-        cursor("pointer")
-        fontSize(12.px)
-    }
 }

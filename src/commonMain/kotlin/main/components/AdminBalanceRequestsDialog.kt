@@ -68,7 +68,7 @@ fun AdminBalanceRequestsDialog(
         maxWidth = "720px",
         showCloseButton = true,
         headerActions = {
-            DialogButton(onClick = { showHistory = true }, isPrimary = false) { Translated("View history") }
+            DialogButton(onClick = { showHistory = true }, style = DialogButtonStyle.Secondary) { Translated("View history") }
         },
         content = {
             error?.let { e -> P { Text("Error: $e") } }

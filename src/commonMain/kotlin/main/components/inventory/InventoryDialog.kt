@@ -19,6 +19,7 @@ import main.api.WebSocketApi
 import main.api.addUpdatePlayerListener
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.attrs.onTouchDrop
 import main.components.player.CharacterRenderer
@@ -597,7 +598,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             }
             DialogButton(
                 onClick = { showMarketplaceDialog = true },
-                isPrimary = true,
+                style = DialogButtonStyle.Good,
                 color = "rgb(53, 134, 36)"
             ) { Text("🛍️ "); Translated("Go to market") }
         },
@@ -921,22 +922,22 @@ fun InventoryDialog(onClose: () -> Unit) {
 
                                             // Primary action bar at bottom
                                             Div(attrs = { classes(InventoryStyles.inventoryCardActionBar) }) {
-                                                Button(
-                                                    attrs = {
-                                                        classes(Styles.baseDialogButtonPrimary)
-                                                        classes(InventoryStyles.inventoryCardActionButton)
-                                                        onClick {
-                                                            if (item.wearable) {
-                                                                if (currentUser?.wornItems?.any { it == item.key } == true) {
-                                                                    // Take off by inventory item key
-                                                                    handleRemoveWornItem(itemId, isDirectItemId = false)
-                                                                } else {
-                                                                    handleWearItem(itemId)
-                                                                }
+                                                DialogButton(
+                                                    onClick = {
+                                                        if (item.wearable) {
+                                                            if (currentUser?.wornItems?.any { it == item.key } == true) {
+                                                                // Take off by inventory item key
+                                                                handleRemoveWornItem(itemId, isDirectItemId = false)
                                                             } else {
-                                                                handleUseItem(itemId)
+                                                                handleWearItem(itemId)
                                                             }
+                                                        } else {
+                                                            handleUseItem(itemId)
                                                         }
+                                                    },
+                                                    style = DialogButtonStyle.Primary,
+                                                    attrs = {
+                                                        classes(InventoryStyles.inventoryCardActionButton)
                                                     }
                                                 ) {
                                                     Translated(

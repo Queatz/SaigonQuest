@@ -40,7 +40,6 @@ import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -242,14 +241,14 @@ fun PlayerDialog(
                         )
                         
                         // Add customize character button
-                        Button(
+                        DialogButton(
+                            onClick = {
+                                showCustomizationDialog.value = true
+                            },
+                            style = DialogButtonStyle.Secondary,
                             attrs = {
-                                classes(Styles.secondaryButton)
                                 style {
                                     marginTop(8.px)
-                                }
-                                onClick { 
-                                    showCustomizationDialog.value = true
                                 }
                             }
                         ) {
@@ -375,11 +374,9 @@ fun PlayerDialog(
                             }
                         }
                     }
-                    Button(
-                        attrs = {
-                            classes(Styles.primaryButton)
-                            onClick { showBalanceDialog.value = true }
-                        }
+                    DialogButton(
+                        onClick = { showBalanceDialog.value = true },
+                        style = DialogButtonStyle.Primary
                     ) {
                         Translated("Deposit / Withdraw")
                     }
@@ -474,20 +471,18 @@ fun PlayerDialog(
                     run {
                         val hasWorlds = myWorldsCountState.value?.let { it > 0 } ?: true
                         if (hasWorlds) {
-                            Button(
-                                attrs = {
-                                    classes(Styles.primaryButton)
-                                    onClick { showMyWorldsDialog.value = true }
-                                }
+                            DialogButton(
+                                onClick = { showMyWorldsDialog.value = true },
+                                style = DialogButtonStyle.Primary
                             ) {
                                 Translated("My Worlds")
                             }
                         } else {
-                            Button(
+                            DialogButton(
+                                onClick = { showMyWorldsDialog.value = true },
+                                style = DialogButtonStyle.Primary,
                                 attrs = {
-                                    classes(Styles.primaryButton)
                                     style { marginTop(8.px) }
-                                    onClick { showMyWorldsDialog.value = true }
                                 }
                             ) {
                                 Text("🎉 ")
@@ -498,23 +493,22 @@ fun PlayerDialog(
                     }
 
                     // Media library button
-                    Button(
+                    DialogButton(
+                        onClick = { showMediaLibraryDialog.value = true },
+                        style = DialogButtonStyle.Secondary,
                         attrs = {
-                            classes(Styles.secondaryButton)
                             style { marginTop(8.px) }
-                            onClick { showMediaLibraryDialog.value = true }
                         }
                     ) {
                         Translated("Media Library")
                     }
 
-
                     // Settings button
-                    Button(
+                    DialogButton(
+                        onClick = { showSettingsDialog.value = true },
+                        style = DialogButtonStyle.Secondary,
                         attrs = {
-                            classes(Styles.secondaryButton)
                             style { marginTop(8.px) }
-                            onClick { showSettingsDialog.value = true }
                         }
                     ) {
                         Translated("Settings")
@@ -524,20 +518,20 @@ fun PlayerDialog(
 
                     var playerActivity by remember { mutableStateOf(getPlayerController()?.getPlayerActivity()) }
 
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            style { marginTop(8.px) }
-                            onClick {
-                                try {
-                                    getPlayerController()?.toggleSitting()
-                                    playerActivity = getPlayerController()?.getPlayerActivity()
-                                    onClose()
-                                    console.log("PlayerDialog: Toggled sitting/standing from dialog")
-                                } catch (e: Throwable) {
-                                    console.error("PlayerDialog: Failed to toggle sitting/standing", e)
-                                }
+                    DialogButton(
+                        onClick = {
+                            try {
+                                getPlayerController()?.toggleSitting()
+                                playerActivity = getPlayerController()?.getPlayerActivity()
+                                onClose()
+                                console.log("PlayerDialog: Toggled sitting/standing from dialog")
+                            } catch (e: Throwable) {
+                                console.error("PlayerDialog: Failed to toggle sitting/standing", e)
                             }
+                        },
+                        style = DialogButtonStyle.Secondary,
+                        attrs = {
+                            style { marginTop(8.px) }
                         }
                     ) {
                         Translated(if (playerActivity == PlayerActivity.Sit) "Stand" else "Sit")
@@ -634,7 +628,7 @@ fun PlayerDialog(
             // Close button
             DialogButton(
                 onClick = updateUserStatus,
-                isPrimary = false
+                style = DialogButtonStyle.Secondary
             ) {
                 Translated("Close")
             }

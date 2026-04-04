@@ -71,7 +71,7 @@ fun ImageDialog(
                         }
                     }
                 },
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
                 isDisabled = copied,
             ) {
                 Translated(
@@ -81,7 +81,7 @@ fun ImageDialog(
 
             DialogButton(
                 onClick = onClose,
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) { Translated("Close") }
         }
     )

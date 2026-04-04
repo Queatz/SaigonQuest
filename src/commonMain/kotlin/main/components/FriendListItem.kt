@@ -156,39 +156,41 @@ fun FriendListItem(
                         classes(FriendsStyles.buttonsRow)
                     }
                 ) {
-                    Button(
-                        attrs = {
-                            classes(FriendsStyles.buttonSend)
-                            onClick {
-                                coroutineScope.launch {
-                                    isUpdatingNote = true
-                                    try {
-                                        val success = FriendApi.updateNote(friend.friendId, editedNote)
-                                        if (success) {
-                                            onNoteUpdated(editedNote)
-                                        } else {
-                                            onError(str("Failed to update note"))
-                                        }
-                                    } catch (e: Throwable) {
-                                        onError(str("Error updating note"))
-                                    } finally {
-                                        isUpdatingNote = false
+                    DialogButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                isUpdatingNote = true
+                                try {
+                                    val success = FriendApi.updateNote(friend.friendId, editedNote)
+                                    if (success) {
+                                        onNoteUpdated(editedNote)
+                                    } else {
+                                        onError(str("Failed to update note"))
                                     }
+                                } catch (e: Throwable) {
+                                    onError(str("Error updating note"))
+                                } finally {
+                                    isUpdatingNote = false
                                 }
                             }
-                            if (isUpdatingNote) disabled()
+                        },
+                        style = DialogButtonStyle.Alt,
+                        isDisabled = isUpdatingNote,
+                        attrs = {
+                            // No custom classes needed here
                         }
                     ) {
                         Translated("Update")
                     }
                     
-                    Button(
+                    DialogButton(
+                        onClick = {
+                            editedNote = friend.note
+                        },
+                        style = DialogButtonStyle.Danger,
+                        isDisabled = isUpdatingNote,
                         attrs = {
-                            classes(FriendsStyles.buttonRemove)
-                            onClick {
-                                editedNote = friend.note
-                            }
-                            if (isUpdatingNote) disabled()
+                            // No custom classes needed here
                         }
                     ) {
                         Translated("Cancel")
@@ -205,58 +207,62 @@ fun FriendListItem(
                 }
             ) {
                 // Jump to friend button (only enabled if they have a world and position)
-                Button(
-                    attrs = {
-                        classes(FriendsStyles.buttonJump)
-                        onClick {
-                            if (friend.lastWorldId.isNotEmpty()) {
-                                onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
-                            } else {
-                                console.log("[FRIEND] lastWorldId is null")
-                                onError(str("Unable to jump to your friend right now"))
-                            }
+                DialogButton(
+                    onClick = {
+                        if (friend.lastWorldId.isNotEmpty()) {
+                            onJumpToFriend(friend.friendId, friend.lastWorldId, friend.lastPosition)
+                        } else {
+                            console.log("[FRIEND] lastWorldId is null")
+                            onError(str("Unable to jump to your friend right now"))
                         }
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        // No custom classes needed here
                     }
                 ) {
                     Translated("Jump to Friend")
                 }
 
                 // Invite to me button
-                Button(
+                DialogButton(
+                    onClick = {
+                        inviteToFriend(
+                            friendId = friend.friendId,
+                            onError = onError,
+                            onSuccess = onSuccess
+                        )
+                    },
+                    style = DialogButtonStyle.Secondary,
                     attrs = {
-                        classes(FriendsStyles.buttonInvite)
-                        onClick {
-                            inviteToFriend(
-                                friendId = friend.friendId,
-                                onError = onError,
-                                onSuccess = onSuccess
-                            )
-                        }
+                        // No custom classes needed here
                     }
                 ) {
                     Translated("Invite to me")
                 }
 
                 // Send VND button
-                Button(
+                DialogButton(
+                    onClick = {
+                        showSendDialog = true
+                    },
+                    style = DialogButtonStyle.Alt,
                     attrs = {
-                        classes(FriendsStyles.buttonSend)
-                        onClick {
-                            showSendDialog = true
-                        }
+                        // No custom classes needed here
                     }
                 ) {
                     Translated("Send VND")
                 }
 
                 // Remove friend button
-                Button(
+                DialogButton(
+                    onClick = {
+                        // Show confirmation dialog instead of immediately removing
+                        showConfirmDialog = true
+                    },
+                    style = DialogButtonStyle.Danger,
                     attrs = {
-                        classes(FriendsStyles.buttonRemove)
-                        onClick {
-                            // Show confirmation dialog instead of immediately removing
-                            showConfirmDialog = true
-                        }
+                        // No custom classes needed here
                     }
                 ) {
                     Translated("Remove")

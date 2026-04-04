@@ -7,6 +7,8 @@ import main.components.audio.MusicManager
 import lib.MediaRecorder
 import lib.BlobPropertyBag
 import lib.FilePropertyBag
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.theme.Styles
 import main.theme.Theme
@@ -139,33 +141,28 @@ fun AudioRecorderUI(
         }
         onClick { it.stopPropagation() }
     }) {
-        Div(attrs = {
-            classes(Styles.chatButton)
-            onClick {
-                it.stopPropagation()
+        DialogButton(
+            onClick = {
                 state.cancel()
+            },
+            style = DialogButtonStyle.Danger,
+            attrs = {
+                onClick { it.stopPropagation() }
+                title(str("Discard"))
             }
-            title(str("Discard"))
-        }) {
+        ) {
             Text("🗑️")
         }
 
         RecordingPreview(isRecording = state.isRecording)
 
-        Button(
+        DialogButton(
+            onClick = {
+                state.stop()
+            },
+            style = DialogButtonStyle.Primary,
             attrs = {
-                style {
-                    padding(8.px, 16.px)
-                    backgroundColor(Theme.colors.primary)
-                    color(Theme.colors.onPrimary)
-                    property("border", "0")
-                    borderRadius(8.px)
-                    cursor("pointer")
-                }
-                onClick {
-                    it.stopPropagation()
-                    state.stop()
-                }
+                onClick { it.stopPropagation() }
             }
         ) {
             Text(str(finishButtonText))
@@ -201,14 +198,17 @@ fun AudioRecorder(
                 buttonContent()
             }
         } else {
-            Button(attrs = {
-                classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
-                if (!isEnabled) disabled()
-                onClick { ev ->
-                    ev.stopPropagation()
+            DialogButton(
+                onClick = {
                     if (isEnabled) state.start()
+                },
+                style = DialogButtonStyle.Secondary,
+                isDisabled = !isEnabled,
+                attrs = {
+                    classes(Styles.mediaRecorderButton)
+                    onClick { ev -> ev.stopPropagation() }
                 }
-            }) {
+            ) {
                 buttonContent()
             }
         }

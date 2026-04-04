@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Md
 import main.components.Translated
 import main.components.translated
@@ -75,7 +76,7 @@ fun ChatMessageDialog(
             actions = {
                 DialogButton(
                     onClick = onClose,
-                    isPrimary = true
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated("Close")
                 }
@@ -223,7 +224,7 @@ fun ChatMessageDialog(
                         }
                         onClose()
                     },
-                    isPrimary = true
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated("Update")
                 }
@@ -239,7 +240,7 @@ fun ChatMessageDialog(
                         onDelete()
                         onClose()
                     },
-                    isPrimary = true
+                    style = DialogButtonStyle.Danger
                 ) {
                     Translated("Delete")
                 }
@@ -247,7 +248,8 @@ fun ChatMessageDialog(
                 // Normal mode actions
                 if (isOwner || isCurrentUser) {
                     DialogButton(
-                        onClick = { showDeleteConfirmation = true }
+                        onClick = { showDeleteConfirmation = true },
+                        style = DialogButtonStyle.Danger
                     ) {
                         Translated("Delete")
                     }
@@ -268,7 +270,7 @@ fun ChatMessageDialog(
                 }
                 DialogButton(
                     onClick = onClose,
-                    isPrimary = true
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated("Close")
                 }

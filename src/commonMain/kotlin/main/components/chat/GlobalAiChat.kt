@@ -6,6 +6,8 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.components.AnimatedDots
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.IconRenderer
 import main.components.Md
 import main.components.Translated
@@ -15,7 +17,6 @@ import main.theme.Styles
 import models.AiRole
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -191,18 +192,22 @@ fun GlobalAiChat() {
                 },
             )
 
-            Button({
-                classes(Styles.primaryButton, Styles.aiChatSend)
-                val isBlank = GlobalAiChatStore.input.isBlank()
-                onClick {
+            DialogButton(
+                onClick = {
                     GlobalAiChatStore.requestStopVoice()
-                    if (!isBlank) {
+                    if (GlobalAiChatStore.input.isNotBlank()) {
                         GlobalAiChatStore.send(GlobalAiChatStore.input)
                     } else {
                         closeWithAnimation()
                     }
+                },
+                style = DialogButtonStyle.Primary,
+                attrs = {
+                    classes(Styles.aiChatSend)
                 }
-            }) { Translated(if (GlobalAiChatStore.input.isEmpty()) "Close" else "Send") }
+            ) {
+                Translated(if (GlobalAiChatStore.input.isEmpty()) "Close" else "Send")
+            }
         }
     }
 }

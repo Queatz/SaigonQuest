@@ -97,10 +97,10 @@ fun AdminAssetsDialog(
     val allTypesLabel = translated("All types")
 
     val headerActions: @Composable () -> Unit = {
-        Button(attrs = {
-            classes(Styles.baseDialogButtonPrimary)
-            onClick { showRegisterAssetDialog = true }
-        }) { Translated("Register new asset") }
+        DialogButton(
+            onClick = { showRegisterAssetDialog = true },
+            style = DialogButtonStyle.Primary
+        ) { Translated("Register new asset") }
     }
 
     BaseDialog(
@@ -226,13 +226,13 @@ fun AdminAssetsDialog(
                                     }
                                 }
                             ) {
-                                Button(attrs = {
-                                    classes(Styles.baseDialogButtonSecondary)
-                                    onClick {
+                                DialogButton(
+                                    onClick = {
                                         selectedAsset = asset
                                         showEditDialog = true
-                                    }
-                                }) { Translated("Edit") }
+                                    },
+                                    style = DialogButtonStyle.Secondary
+                                ) { Translated("Edit") }
                             }
                         }
                     }

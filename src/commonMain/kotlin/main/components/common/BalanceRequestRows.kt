@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
-import main.components.DialogButtonDanger
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -74,10 +74,9 @@ fun PendingRequestRow(
             }
         }
 
-        // Actions (cancel)
         if (request.status == UserBalanceChangeStatus.Received && onCancel != null) {
             Div({ classes(Styles.requestActions) }) {
-                DialogButtonDanger(onClick = { showConfirmCancel = true }) { Translated("Cancel request") }
+                DialogButton(onClick = { showConfirmCancel = true }, style = DialogButtonStyle.Danger) { Translated("Cancel request") }
             }
         }
 
@@ -178,8 +177,8 @@ fun AdminRequestRow(
 
         // Actions
         Div({ classes(Styles.requestActions) }) {
-            DialogButtonDanger(onClick = onDeny) { Translated("Deny") }
-            DialogButton(onClick = onApprove, isPrimary = true) { Translated("Approve") }
+            DialogButton(onClick = onDeny, style = DialogButtonStyle.Danger) { Translated("Deny") }
+            DialogButton(onClick = onApprove, style = DialogButtonStyle.Primary) { Translated("Approve") }
         }
     }
 }

@@ -75,19 +75,19 @@ fun AdminDialog(
                 // Asset actions
                 DialogButton(
                     onClick = { showAssetsDialog = true },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Translated("Manage assets") }
 
                 // Manage items
                 DialogButton(
                     onClick = { showItemsDialog = true },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Translated("Manage items") }
 
                 // System notification
                 DialogButton(
                     onClick = { showSendNotificationDialog = true },
-                    isPrimary = false,
+                    style = DialogButtonStyle.Secondary,
                 ) { Translated("Send system notification") }
 
                 // Balance requests section
@@ -107,7 +107,7 @@ fun AdminDialog(
                             showBalanceRequestsDialog = true
                         }
                     },
-                    isPrimary = ((pendingCount ?: 0) > 0)
+                    style = if ((pendingCount ?: 0) > 0) DialogButtonStyle.Primary else DialogButtonStyle.Secondary
                 ) {
                     Translated("Pending balance requests")
                 }
@@ -122,7 +122,7 @@ fun AdminDialog(
                             showUserRequestsDialog = true
                         }
                     },
-                    isPrimary = false,
+                    style = DialogButtonStyle.Secondary,
                 ) {
                     Translated("Pending user requests")
                 }

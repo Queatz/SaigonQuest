@@ -152,77 +152,77 @@ fun AdminUserRequestsDialog(
                                 ) {
                                     val busy = actionBusyId == r.key
                                     if (r.status != UserRequestStatus.InReview) {
-                                        Button(attrs = {
-                                            classes(Styles.baseDialogButtonSecondary)
-                                            if (busy) disabled()
-                                            onClick {
+                                        DialogButton(
+                                            onClick = {
                                                 actionBusyId = r.key
                                                 scope.launch {
                                                     try { UserRequestApi.updateStatus(r.key, UserRequestStatus.InReview) } finally {
                                                         actionBusyId = null; load()
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Mark in review") }
+                                            },
+                                            style = DialogButtonStyle.Secondary,
+                                            isDisabled = busy
+                                        ) { Translated("Mark in review") }
                                     }
 
                                     if (r.status != UserRequestStatus.Approved) {
-                                        Button(attrs = {
-                                            classes(Styles.baseDialogButtonSecondary)
-                                            if (busy) disabled()
-                                            onClick {
+                                        DialogButton(
+                                            onClick = {
                                                 actionBusyId = r.key
                                                 scope.launch {
                                                     try { UserRequestApi.updateStatus(r.key, UserRequestStatus.Approved) } finally {
                                                         actionBusyId = null; load()
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Approve") }
+                                            },
+                                            style = DialogButtonStyle.Secondary,
+                                            isDisabled = busy
+                                        ) { Translated("Approve") }
                                     }
 
                                     if (r.status != UserRequestStatus.Declined) {
-                                        Button(attrs = {
-                                            classes(Styles.baseDialogButtonSecondary)
-                                            if (busy) disabled()
-                                            onClick {
+                                        DialogButton(
+                                            onClick = {
                                                 actionBusyId = r.key
                                                 scope.launch {
                                                     try { UserRequestApi.updateStatus(r.key, UserRequestStatus.Declined, note = note) } finally {
                                                         actionBusyId = null; load()
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Decline") }
+                                            },
+                                            style = DialogButtonStyle.Secondary,
+                                            isDisabled = busy
+                                        ) { Translated("Decline") }
                                     }
 
                                     if (r.status != UserRequestStatus.Completed) {
-                                        Button(attrs = {
-                                            classes(Styles.baseDialogButtonSecondary)
-                                            if (busy) disabled()
-                                            onClick {
+                                        DialogButton(
+                                            onClick = {
                                                 actionBusyId = r.key
                                                 scope.launch {
                                                     try { UserRequestApi.updateStatus(r.key, UserRequestStatus.Completed) } finally {
                                                         actionBusyId = null; load()
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Mark completed") }
+                                            },
+                                            style = DialogButtonStyle.Secondary,
+                                            isDisabled = busy
+                                        ) { Translated("Mark completed") }
                                     }
 
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonSecondary)
-                                        if (busy) disabled()
-                                        onClick {
+                                    DialogButton(
+                                        onClick = {
                                             actionBusyId = r.key
                                             scope.launch {
                                                 try { if (note.isNotBlank()) UserRequestApi.addNote(r.key, note) } finally {
                                                     actionBusyId = null; load()
                                                 }
                                             }
-                                        }
-                                    }) { Translated("Add note") }
+                                        },
+                                        style = DialogButtonStyle.Secondary,
+                                        isDisabled = busy
+                                    ) { Translated("Add note") }
                                 }
                             }
                         }

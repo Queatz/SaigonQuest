@@ -436,7 +436,7 @@ fun DialogueBox(
                                 }
                             }
                         },
-                        isPrimary = true,
+                        style = DialogButtonStyle.Primary,
                         isDisabled = isWaiting,
                     ) { Text(buttonText) }
                 }

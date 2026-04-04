@@ -635,12 +635,12 @@ fun WorldEditContent(
                                 Text(ownerNames[oid] ?: oid)
                             }
                             if (isOwner) {
-                                Button(attrs = {
-                                    classes(Styles.secondaryButton)
-                                    onClick {
+                                DialogButton(
+                                    onClick = {
                                         ownerIdPendingRemoval = oid
-                                    }
-                                }) {
+                                    },
+                                    style = DialogButtonStyle.Secondary
+                                ) {
                                     Translated("Remove owner")
                                 }
                             }
@@ -655,10 +655,10 @@ fun WorldEditContent(
                 // Add owner controls (primary owner only)
                 if (isOwner) {
                     Div(attrs = { style { display(DisplayStyle.Flex); property("gap", "8px") } }) {
-                        Button(attrs = {
-                            classes(Styles.primaryButton)
-                            onClick { showOwnerPicker = true }
-                        }) {
+                        DialogButton(
+                            onClick = { showOwnerPicker = true },
+                            style = DialogButtonStyle.Primary
+                        ) {
                             Translated("Add owner")
                         }
                     }
@@ -881,17 +881,15 @@ fun WorldEditContent(
         }
 
         // File field
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onClick {
+        DialogButton(
+            onClick = {
                 if (fieldsEnabled) {
                     showWorldAssetBrowser = true
                 }
-            }
-            if (!fieldsEnabled) {
-                disabled()
-            }
-        }) {
+            },
+            style = DialogButtonStyle.Primary,
+            isDisabled = !fieldsEnabled
+        ) {
             Translated("Browse asset")
         }
         P(attrs = {
@@ -926,34 +924,30 @@ fun WorldEditContent(
             }
 
             Div(attrs = { classes(Styles.requestActions) }) {
-                Button(
-                    attrs = {
-                        classes(Styles.primaryButton)
-                        if (!fieldsEnabled || isUploadingScreenshot) disabled()
-                        onClick {
-                            if (!fieldsEnabled || isUploadingScreenshot) return@onClick
-                            coroutineScope.launch {
-                                isUploadingScreenshot = true
-                                try {
-                                    val url = main.utils.ScreenshotUtils.captureAndUploadWorldScreenshot(title)
-                                    screenshot = url
-                                } catch (t: Throwable) {
-                                    console.error("Failed to capture/upload screenshot", t)
-                                } finally {
-                                    isUploadingScreenshot = false
-                                }
-                            }
+            DialogButton(
+                onClick = {
+                    if (!fieldsEnabled || isUploadingScreenshot) return@DialogButton
+                    coroutineScope.launch {
+                        isUploadingScreenshot = true
+                        try {
+                            val url = main.utils.ScreenshotUtils.captureAndUploadWorldScreenshot(title)
+                            screenshot = url
+                        } catch (t: Throwable) {
+                            console.error("Failed to capture/upload screenshot", t)
+                        } finally {
+                            isUploadingScreenshot = false
                         }
                     }
-                ) { Translated(if (screenshot.isNullOrBlank()) "Set screenshot from scene" else if (isUploadingScreenshot) "Uploading..." else "Change screenshot") }
+                },
+                style = DialogButtonStyle.Primary,
+                isDisabled = !fieldsEnabled || isUploadingScreenshot
+            ) { Translated(if (screenshot.isNullOrBlank()) "Set screenshot from scene" else if (isUploadingScreenshot) "Uploading..." else "Change screenshot") }
 
                 if (!screenshot.isNullOrBlank()) {
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            if (!fieldsEnabled) disabled()
-                            onClick { if (fieldsEnabled) screenshot = null }
-                        }
+                    DialogButton(
+                        onClick = { if (fieldsEnabled) screenshot = null },
+                        style = DialogButtonStyle.Secondary,
+                        isDisabled = !fieldsEnabled
                     ) { Translated("Remove") }
                 }
             }
@@ -980,21 +974,17 @@ fun WorldEditContent(
 
             // Day/Default music controls
             Div(attrs = { classes(Styles.requestActions) }) {
-                Button(
-                    attrs = {
-                        classes(Styles.primaryButton)
-                        if (!fieldsEnabled) disabled()
-                        onClick { if (fieldsEnabled) showMusicDialog = true }
-                    }
+                DialogButton(
+                    onClick = { if (fieldsEnabled) showMusicDialog = true },
+                    style = DialogButtonStyle.Primary,
+                    isDisabled = !fieldsEnabled
                 ) { Translated(if (musicUrl.isNullOrBlank()) "Set music" else "Change music") }
 
                 if (!musicUrl.isNullOrBlank()) {
-                    Button(
-                        attrs = {
-                            classes(Styles.secondaryButton)
-                            if (!fieldsEnabled) disabled()
-                            onClick { if (fieldsEnabled) { musicUrl = null; musicTitle = null } }
-                        }
+                    DialogButton(
+                        onClick = { if (fieldsEnabled) { musicUrl = null; musicTitle = null } },
+                        style = DialogButtonStyle.Secondary,
+                        isDisabled = !fieldsEnabled
                     ) { Translated("Remove") }
                 }
             }
@@ -1019,21 +1009,17 @@ fun WorldEditContent(
                     }
                 ) { Translated("Night Music") }
                 Div(attrs = { classes(Styles.requestActions) }) {
-                    Button(
-                        attrs = {
-                            classes(Styles.primaryButton)
-                            if (!fieldsEnabled) disabled()
-                            onClick { if (fieldsEnabled) showNightMusicDialog = true }
-                        }
+                    DialogButton(
+                        onClick = { if (fieldsEnabled) showNightMusicDialog = true },
+                        style = DialogButtonStyle.Primary,
+                        isDisabled = !fieldsEnabled
                     ) { Translated(if (nightMusicUrl.isNullOrBlank()) "Set night music" else "Change night music") }
                 
                     if (!nightMusicUrl.isNullOrBlank()) {
-                        Button(
-                            attrs = {
-                                classes(Styles.secondaryButton)
-                                if (!fieldsEnabled) disabled()
-                                onClick { if (fieldsEnabled) { nightMusicUrl = null; nightMusicTitle = null } }
-                            }
+                        DialogButton(
+                            onClick = { if (fieldsEnabled) { nightMusicUrl = null; nightMusicTitle = null } },
+                            style = DialogButtonStyle.Secondary,
+                            isDisabled = !fieldsEnabled
                         ) { Translated("Remove") }
                     }
                 }
@@ -1328,11 +1314,11 @@ fun WorldEditContent(
                         property("align-items", "center")
                     }
                 }) {
-                    Button(attrs = {
-                        classes(Styles.baseDialogButtonPrimary)
-                        if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
-                        onClick { showAccessItemBrowser = true }
-                    }) { Translated("Select item") }
+                    DialogButton(
+                        onClick = { showAccessItemBrowser = true },
+                        style = DialogButtonStyle.Primary,
+                        isDisabled = !fieldsEnabled || allowAllVisitors || allowAllPlayers
+                    ) { Translated("Select item") }
 
                     P(attrs = {
                         style {
@@ -1356,11 +1342,11 @@ fun WorldEditContent(
                     }
 
                     if (allowHoldersOfItemId!!.isNotBlank()) {
-                        Button(attrs = {
-                            classes(Styles.baseDialogButtonSecondary)
-                            if (!fieldsEnabled || allowAllVisitors || allowAllPlayers) disabled()
-                            onClick { allowHoldersOfItemId = null }
-                        }) { Translated("Clear") }
+                        DialogButton(
+                            onClick = { allowHoldersOfItemId = null },
+                            style = DialogButtonStyle.Secondary,
+                            isDisabled = !fieldsEnabled || allowAllVisitors || allowAllPlayers
+                        ) { Translated("Clear") }
                     }
                 }
 
@@ -1871,13 +1857,13 @@ fun WorldEditContent(
                     }
                 }
             ) {
-                Button(
+                DialogButton(
+                    onClick = { showDeleteConfirm = true },
+                    style = DialogButtonStyle.Danger,
                     attrs = {
-                        classes(Styles.baseDialogButtonDangerPrimary)
                         style {
                             property("width", "100%")
                         }
-                        onClick { showDeleteConfirm = true }
                     }
                 ) { Translated("Delete world") }
             }
@@ -1896,13 +1882,13 @@ fun WorldEditContent(
                     actions = {
                         DialogButton(
                             onClick = { if (!isDeleting) showDeleteConfirm = false },
-                            isPrimary = false,
+                            style = DialogButtonStyle.Secondary,
                             isDisabled = isDeleting,
                         ) { Translated("Cancel") }
 
-                        DialogButtonDanger(
+                        DialogButton(
                             onClick = {
-                                if (isDeleting) return@DialogButtonDanger
+                                if (isDeleting) return@DialogButton
                                 isDeleting = true
                                 deleteError = null
                                 coroutineScope.launch {
@@ -1918,7 +1904,9 @@ fun WorldEditContent(
                                         deleteError = t.message ?: str("An error occurred")
                                     }
                                 }
-                            }
+                            },
+                            style = DialogButtonStyle.Danger,
+                            isDisabled = isDeleting,
                         ) { Translated("Delete") }
                     }
                 )
@@ -1977,17 +1965,15 @@ fun WorldEditContent(
         }
     ) {
         // Cancel button
-        Button(
+        DialogButton(
+            onClick = {
+                restoreOriginalState()
+                onClose()
+            },
+            style = DialogButtonStyle.Secondary,
             attrs = {
-                classes(Styles.baseDialogButtonSecondary)
-
                 style {
                     flexGrow(1)
-                }
-
-                onClick {
-                    restoreOriginalState()
-                    onClose()
                 }
             }
         ) {
@@ -1995,32 +1981,26 @@ fun WorldEditContent(
         }
 
         // Save button
-        Button(
+        DialogButton(
+            onClick = {
+                if (!isSubmitting && fieldsEnabled) {
+                    if (isCreating) {
+                        showConfirmPurchase = true
+                    } else {
+                        handleSubmit()
+                    }
+                }
+            },
+            style = DialogButtonStyle.Primary,
+            isDisabled = run {
+                val price = worldBasePrice
+                val bal = myBalance
+                val insufficient = isCreating && price != null && bal != null && bal < price
+                !fieldsEnabled || isSubmitting || insufficient
+            },
             attrs = {
-                classes(Styles.baseDialogButtonPrimary)
-
                 style {
                     flexGrow(1)
-                }
-
-                // Only allow clicking if not submitting and fields are enabled
-                onClick {
-                    if (!isSubmitting && fieldsEnabled) {
-                        if (isCreating) {
-                            showConfirmPurchase = true
-                        } else {
-                            handleSubmit()
-                        }
-                    }
-                }
-                // Disable button if fields are disabled, submitting, or insufficient funds
-                run {
-                    val price = worldBasePrice
-                    val bal = myBalance
-                    val insufficient = isCreating && price != null && bal != null && bal < price
-                    if (!fieldsEnabled || isSubmitting || insufficient) {
-                        disabled()
-                    }
                 }
             }
         ) {

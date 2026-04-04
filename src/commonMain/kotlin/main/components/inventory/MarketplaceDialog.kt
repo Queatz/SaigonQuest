@@ -8,6 +8,7 @@ import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.common.formatAmount
 import main.theme.InventoryStyles
@@ -95,13 +96,13 @@ fun MarketplaceDialog(
             }
 
             // Request new item and wearable type buttons
-            Button(attrs = {
-                classes(Styles.baseDialogButtonSecondary)
-                onClick {
+            DialogButton(
+                onClick = {
                     requestType = UserRequestType.Item
                     showRequestTypeDialog = true
-                }
-            }) { Text("💡 "); Translated("Request new item type") }
+                },
+                style = DialogButtonStyle.Secondary
+            ) { Text("💡 "); Translated("Request new item type") }
         },
         content = {
             // Search row
@@ -213,10 +214,10 @@ fun MarketplaceDialog(
                                         property("align-items", "center")
                                     }
                                 }) {
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonPrimary)
-                                        onClick { buyingItem = item }
-                                    }) { Translated("Buy") }
+                                    DialogButton(
+                                        onClick = { buyingItem = item },
+                                        style = DialogButtonStyle.Primary
+                                    ) { Translated("Buy") }
                                 }
                             }
                         }

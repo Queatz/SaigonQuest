@@ -23,6 +23,8 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.TextInput
 import models.UserRequestType
 import main.components.UserRequestsDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import org.jetbrains.compose.web.dom.Button
 
 /**
@@ -66,10 +68,10 @@ fun NodeSidebar() {
     ) {
         // Entry button to request new node type
         Div {
-            Button(attrs = {
-                classes(Styles.baseDialogButtonSecondary)
-                onClick { showRequestsDialog = true }
-            }) { Text("💡 "); Translated("Request new node type") }
+            DialogButton(
+                onClick = { showRequestsDialog = true },
+                style = DialogButtonStyle.Secondary
+            ) { Text("💡 "); Translated("Request new node type") }
         }
 
         if (isLoading) {

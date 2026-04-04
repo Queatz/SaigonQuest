@@ -118,7 +118,7 @@ fun BasicPromptDialog(
                             onClick = {
                                 value = max.toString()
                             },
-                            isPrimary = false,
+                            style = DialogButtonStyle.Secondary,
                         ) {
                             Translated("All")
                         }
@@ -130,7 +130,7 @@ fun BasicPromptDialog(
             // Cancel button (secondary)
             DialogButton(
                 onClick = onCancel,
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
             ) {
                 if (cancelLabel != null) {
                     Text(cancelLabel)
@@ -142,7 +142,7 @@ fun BasicPromptDialog(
             // Ok button (primary)
             DialogButton(
                 onClick = { onSubmit(value) },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) {
                 if (okLabel != null) {
                     Text(okLabel)

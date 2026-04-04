@@ -77,9 +77,9 @@ fun SendVndDialog(
                         }
                     }
                 }
-                DialogButton(onClick = { showUpload = true }, isPrimary = true) { Translated("Add image") }
+                DialogButton(onClick = { showUpload = true }, style = DialogButtonStyle.Primary) { Translated("Add image") }
                 if (attachments.isNotEmpty()) {
-                    DialogButtonDanger(onClick = { attachments = emptyList() }) { Translated("Remove image") }
+                    DialogButton(onClick = { attachments = emptyList() }, style = DialogButtonStyle.Danger) { Translated("Remove image") }
                 }
             }
 
@@ -115,7 +115,7 @@ fun SendVndDialog(
                         }
                     }
                 },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
                 isDisabled = !canSend,
             ) {
                 if (sending) Translated("Sending...") else Translated("Send VND")

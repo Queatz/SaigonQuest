@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.DocApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -50,17 +51,6 @@ fun SelectDocDialog(
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<Doc?>(null) }
 
-    fun flatten(tree: List<DocTree>): List<Doc> {
-        val list = mutableListOf<Doc>()
-        fun walk(nodes: List<DocTree>) {
-            nodes.forEach { n ->
-                list.add(n.doc)
-                if (n.children.isNotEmpty()) walk(n.children)
-            }
-        }
-        walk(tree)
-        return list
-    }
 
     fun loadDocs() {
         isLoading = true
@@ -68,7 +58,7 @@ fun SelectDocDialog(
         scope.launch {
             try {
                 val tree = DocApi.getDocTree(worldId)
-                docs = flatten(tree)
+                docs = WorldDocsUtils.flatten(tree)
             } catch (t: Throwable) {
                 console.error("Failed to load docs", t)
                 errorMessage = t.message ?: "Failed to load docs"
@@ -166,12 +156,12 @@ fun SelectDocDialog(
             if (confirmButtonLabel != null) {
                 DialogButton(
                     onClick = { selected?.let { onSelect(it) } },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Text(confirmButtonLabel) }
             } else if (onSelectNew != null) {
                 DialogButton(
                     onClick = { onSelectNew() },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Translated("New doc") }
             }
         }

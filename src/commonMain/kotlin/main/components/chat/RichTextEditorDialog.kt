@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.IconRenderer
 import main.components.Translated
 import main.components.translated
@@ -90,7 +91,7 @@ fun RichTextEditorDialog(
             ) { Translated("Cancel") }
             DialogButton(
                 onClick = { if (text.isNotBlank()) onSend(text) },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) { Text(confirmButtonText) }
         }
     )

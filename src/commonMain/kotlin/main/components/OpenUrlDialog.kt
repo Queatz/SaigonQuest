@@ -30,7 +30,7 @@ fun OpenUrlDialog(
             // Cancel button
             DialogButton(
                 onClick = onCancel,
-                isPrimary = false
+                style = DialogButtonStyle.Secondary
             ) {
                 Translated("Cancel")
             }
@@ -38,7 +38,7 @@ fun OpenUrlDialog(
             // Open URL button
             DialogButton(
                 onClick = onConfirm,
-                isPrimary = true
+                style = DialogButtonStyle.Primary
             ) {
                 Translated("Open URL")
             }

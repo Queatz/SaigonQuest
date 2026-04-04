@@ -38,19 +38,11 @@ object PanelStyles : StyleSheet() {
         bottom(1.cssRem)
         right(1.cssRem)
         width(320.px)
-        borderRadius(1.cssRem)
-        backgroundColor(Theme.colors.panelGlass)
-        color(Theme.colors.onBackground)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("pointer-events", "auto")
         property("backdrop-filter", "blur(8px)")
         property("-webkit-backdrop-filter", "blur(8px)")
-
-        dark(self) {
-            backgroundColor(Theme.colors.panelGlassDark)
-            color(Theme.colors.onBackgroundDark)
-        }
     }
 
     val panelHeader by style {

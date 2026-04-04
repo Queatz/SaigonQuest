@@ -577,16 +577,8 @@ object Styles : StyleSheet() {
         width(90.percent)
         property("max-width", "400px")
         height(80.vh)
-        backgroundColor(Theme.colors.surface)
-        color(Theme.colors.onSurface)
-        borderRadius(16.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceDark)
-            color(Theme.colors.onSurfaceDark)
-        }
     }
 
     val panelContent by style {
@@ -598,16 +590,9 @@ object Styles : StyleSheet() {
 
     // Base dialog styles (for the new BaseDialog component)
     val baseDialogContainer by style {
-        backgroundColor(Theme.colors.surface)
-        borderRadius(16.px)
-        property("box-shadow", "0 6px 24px ${Theme.colors.shadowLight}")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         overflowY("auto")
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceDark)
-        }
     }
 
     val baseDialogHeader by style {
@@ -615,9 +600,6 @@ object Styles : StyleSheet() {
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         padding(16.px)
-        property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtle}")
-
-        dark(self) { property("border-bottom", "1px solid ${Theme.colors.panelBorderSubtleDark}") }
     }
 
     val baseDialogTitle by style {
@@ -644,16 +626,13 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.FlexEnd)
         property("gap", "8px")
-        property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
-        dark(self) { property("border-top", "1px solid ${Theme.colors.panelBorderSubtleDark}") }
     }
 
     val baseDialogButtonPrimary by style {
-        padding(8.px, 16.px)
+        padding(6.px, 18.px)
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        property("border-radius", "16px")
         property("cursor", "pointer")
         fontWeight("bold")
 
@@ -663,11 +642,10 @@ object Styles : StyleSheet() {
     }
 
     val baseDialogButtonSecondary by style {
-        padding(8.px, 16.px)
+        padding(6.px, 18.px)
         backgroundColor(Color.transparent)
-        color(Theme.colors.primary)
+        color(Theme.colors.onPrimary)
         property("border", "1px solid ${Theme.colors.primary}")
-        property("border-radius", "16px")
         property("cursor", "pointer")
         fontWeight("bold")
 
@@ -678,13 +656,38 @@ object Styles : StyleSheet() {
 
     // Button variants
     val baseDialogButtonDangerPrimary by style {
-        padding(8.px, 16.px)
+        padding(6.px, 18.px)
         backgroundColor(Theme.colors.error)
         color(Theme.colors.onPrimary)
         property("border", "0")
-        borderRadius(16.px)
         property("cursor", "pointer")
         fontWeight("bold")
+    }
+
+    val framedBorder by style {
+        property("border-style", "solid")
+        property("border-width", "6px")
+        property("border-image-source", "url(\"/raw/data/ui/borders/wooden.png\")")
+        property("border-image-slice", "4")
+        property("border-image-repeat", "repeat")
+        property("border-image-width", "12px")
+        property("image-rendering", "pixelated")
+
+        property("background-image", "url(\"/raw/data/ui/backgrounds/whitestone.png\")")
+        property("background-repeat", "repeat")
+        property("background-size", "48px 48px")
+        property("background-clip", "padding-box")
+        property("background-origin", "padding-box")
+
+        dark(self) {
+            property("background-image", "url(\"/raw/data/ui/backgrounds/chalkboard.png\")")
+        }
+
+        backgroundColor(Color.transparent)
+        borderRadius(0.px)
+        property("box-shadow", "none")
+        boxSizing("border-box")
+        padding(6.px)
     }
 
     // Common style for input elements with box-sizing: border-box
@@ -2310,7 +2313,7 @@ object Styles : StyleSheet() {
         "body, html" style {
             margin(0.cssRem)
             padding(0.cssRem)
-            property("font-family", "'Ysabeau Infant', sans-serif")
+            property("font-family", "'Grenze Gotisch', sans-serif")
             property("-webkit-font-smoothing", "antialiased")
             property("-moz-osx-font-smoothing", "grayscale")
             minHeight(100.vh)

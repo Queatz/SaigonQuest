@@ -386,7 +386,7 @@ fun VisitorDialog(
                 // Primary action button
                 DialogButton(
                     onClick = { validateAndSubmit() },
-                    isPrimary = true
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated(if (isLoginMode) "Log In" else "Create Account")
                 }
@@ -399,7 +399,8 @@ fun VisitorDialog(
                         // Reset sensitive fields when switching modes
                         password = ""
                         confirmPassword = ""
-                    }
+                    },
+                    style = DialogButtonStyle.Secondary
                 ) {
                     Translated(if (isLoginMode) "Create Account" else "Log In")
                 }

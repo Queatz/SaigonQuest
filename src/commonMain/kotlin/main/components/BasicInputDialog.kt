@@ -55,13 +55,13 @@ fun BasicInputDialog(
         actions = {
             DialogButton(
                 onClick = onCancel,
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
             ) {
                 Text(cancelLabel)
             }
             DialogButton(
                 onClick = { onConfirm(value) },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) {
                 Text(confirmLabel)
             }

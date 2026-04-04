@@ -81,7 +81,7 @@ fun AiPromptHistoryDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = true) { Translated("Close") }
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Primary) { Translated("Close") }
         }
     )
 }

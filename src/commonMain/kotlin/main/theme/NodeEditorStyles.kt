@@ -442,16 +442,12 @@ object NodeEditorStyles : StyleSheet() {
         }
     }
 
-    val removeButton by style { backgroundColor(Theme.colors.error) }
-
     val addButtonContainer by style {
         display(DisplayStyle.Flex)
         property("gap", "8px")
         marginTop(8.px)
     }
 
-    val addButton by style { backgroundColor(Theme.colors.success) }
-    
     // Connection preview styles
     val connectionPreviewCursor by style {
         position(Position.Absolute)

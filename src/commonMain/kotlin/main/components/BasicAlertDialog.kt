@@ -29,7 +29,7 @@ fun BasicAlertDialog(
         actions = {
             DialogButton(
                 onClick = onConfirm,
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) {
                 Translated("Okay")
             }

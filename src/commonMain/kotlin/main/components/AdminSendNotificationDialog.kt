@@ -85,7 +85,7 @@ fun AdminSendNotificationDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = false) { Translated("Close") }
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Close") }
             DialogButton(
                 onClick = {
                     if (notificationTitle.isNotBlank() && notificationMessage.isNotBlank()) {
@@ -107,7 +107,7 @@ fun AdminSendNotificationDialog(
                         }
                     }
                 },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) { Translated("Send notification") }
         }
     )

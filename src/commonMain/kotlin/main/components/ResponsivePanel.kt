@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.components.IconRenderer
 import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
@@ -33,7 +34,7 @@ fun ResponsivePanel(
                 onClick { onClose() }
             }
         ) {
-            Div(
+            FramedBorder(
                 attrs = {
                     classes(Styles.dialogContainer)
                     onClick { it.stopPropagation() }
@@ -71,7 +72,11 @@ fun ResponsivePanel(
                                 onClick { onClose() }
                             }
                         ) {
-                            Text("✖️")
+                            IconRenderer(
+                                url = "raw/data/ui/ui.png",
+                                index = 20,
+                                size = 24,
+                            )
                         }
                     }
                 }

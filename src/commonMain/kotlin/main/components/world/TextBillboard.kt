@@ -59,7 +59,7 @@ class TextBillboard(
     private val scene: Scene,
     text: String = "",
     private val fontSize: Int = 32,
-    private val fontFamily: String = "Arial",
+    private val fontFamily: String = "Grenze Gotisch",
     private val textColor: String = "white",
     private val backgroundColor: String = "transparent",
     private val horizontalPadding: Float = 16f,

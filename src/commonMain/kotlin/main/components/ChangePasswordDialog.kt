@@ -107,8 +107,8 @@ fun ChangePasswordDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = false) { Translated("Cancel") }
-            DialogButton(onClick = { if (!saving.value) submit() }, isPrimary = true) {
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Cancel") }
+            DialogButton(onClick = { if (!saving.value) submit() }, style = DialogButtonStyle.Primary) {
                 Text(if (saving.value) translated("Loading...") else translated("Save"))
             }
         }

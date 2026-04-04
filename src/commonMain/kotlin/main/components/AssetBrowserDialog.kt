@@ -97,10 +97,10 @@ fun AssetBrowserDialog(
         maxWidth = "800px",
         headerActions = {
             if (type == AssetType.Objects) {
-                Button(attrs = {
-                    classes(Styles.baseDialogButtonSecondary)
-                    onClick { showRequestsDialog = true }
-                }) { Text("💡 "); Translated("Request new object type") }
+                DialogButton(
+                    onClick = { showRequestsDialog = true },
+                    style = DialogButtonStyle.Secondary
+                ) { Text("💡 "); Translated("Request new object type") }
             }
         },
         content = {
@@ -170,13 +170,13 @@ fun AssetBrowserDialog(
                                     }
                                 ) {
                                     AssetRenderer(result = r)
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonPrimary)
-                                        onClick {
+                                    DialogButton(
+                                        onClick = {
                                             onSelect(r)
                                             onClose()
-                                        }
-                                    }) { Translated("Select") }
+                                        },
+                                        style = DialogButtonStyle.Primary
+                                    ) { Translated("Select") }
                                 }
                             }
                         }

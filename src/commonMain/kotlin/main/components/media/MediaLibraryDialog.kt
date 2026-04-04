@@ -15,6 +15,7 @@ import main.api.MediaApi
 import main.api.UserApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.ImageDialog
 import main.components.BasicConfirmDialog
 import main.components.BasicInputDialog
@@ -47,7 +48,6 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.textAlign
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Audio
 import org.jetbrains.compose.web.dom.Video
@@ -222,23 +222,8 @@ fun MediaLibraryDialog(
                             }
 
                             // Favorite toggle overlay
-                            Button(attrs = {
-                                style {
-                                    property("position", "absolute")
-                                    property("top", "6px")
-                                    property("right", "6px")
-                                    property("background", "transparent")
-                                    property("border", "none")
-                                    property("cursor", "pointer")
-                                    width(24.px)
-                                    height(24.px)
-                                    fontSize(18.px)
-                                    if (item.favorite) {
-                                        color(Color("#ffee00"))
-                                    }
-                                }
-                                onClick {
-                                    it.stopPropagation()
+                            DialogButton(
+                                onClick = {
                                     val scope = MainScope()
                                     scope.launch {
                                         try {
@@ -252,8 +237,22 @@ fun MediaLibraryDialog(
                                             error = t.message ?: "Failed to update favorite"
                                         }
                                     }
+                                },
+                                attrs = {
+                                    onClick { it.stopPropagation() }
+                                    style {
+                                        property("position", "absolute")
+                                        property("top", "6px")
+                                        property("right", "6px")
+                                        width(24.px)
+                                        height(24.px)
+                                        fontSize(18.px)
+                                        if (item.favorite) {
+                                            color(Color("#ffee00"))
+                                        }
+                                    }
                                 }
-                            }) { Text(if (item.favorite) "★" else "☆") }
+                            ) { Text(if (item.favorite) "★" else "☆") }
 
                             // Actions row
                             Div(attrs = {
@@ -270,24 +269,24 @@ fun MediaLibraryDialog(
                                     SmallText(item.originalFileName)
                                 }
                                 if (item.type == MediaType.Audio) {
-                                    Button(attrs = {
-                                        style {
-                                            property("background", "transparent")
-                                            property("border", "none")
-                                            property("cursor", "pointer")
-                                            fontSize(14.px)
-                                        }
-                                        onClick {
+                                    DialogButton(
+                                        onClick = {
                                             renameItem = item
+                                        },
+                                        style = DialogButtonStyle.Secondary,
+                                        attrs = {
+                                            style {
+                                                fontSize(14.px)
+                                            }
                                         }
-                                    }) { Text("✏️") }
+                                    ) { Text("✏️") }
                                 }
-                                Button(attrs = {
-                                    classes(Styles.baseDialogButtonDangerPrimary)
-                                    onClick {
+                                DialogButton(
+                                    onClick = {
                                         confirmDeleteFor = item
-                                    }
-                                }) { Translated("Delete") }
+                                    },
+                                    style = DialogButtonStyle.Danger
+                                ) { Translated("Delete") }
                             }
                         }
                     }

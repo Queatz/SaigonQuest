@@ -101,7 +101,7 @@ fun AdminRegisterAssetDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = false) { Translated("Close") }
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Close") }
             DialogButton(
                 onClick = {
                     if (assetFileName.isNotBlank()) {
@@ -113,7 +113,7 @@ fun AdminRegisterAssetDialog(
                         onClose()
                     }
                 },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) { Translated("Register asset") }
         }
     )

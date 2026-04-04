@@ -3,6 +3,7 @@ package main.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import kotlinx.browser.window
+import main.components.IconRenderer
 import main.theme.NotificationStyles
 import models.NotificationData
 import org.jetbrains.compose.web.dom.Div
@@ -98,7 +99,11 @@ fun NotificationLayout(
                     }
                 }
             ) {
-                Text("✖️")
+                IconRenderer(
+                    url = "raw/data/ui/ui.png",
+                    index = 20,
+                    size = 24,
+                )
             }
         }
     }

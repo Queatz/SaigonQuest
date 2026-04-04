@@ -32,7 +32,7 @@ fun BasicConfirmDialog(
             // No button (secondary)
             DialogButton(
                 onClick = onCancel,
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
             ) {
                 Translated("No")
             }
@@ -40,7 +40,7 @@ fun BasicConfirmDialog(
             // Yes button (primary)
             DialogButton(
                 onClick = onConfirm,
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) {
                 Translated("Yes")
             }

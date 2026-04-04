@@ -589,6 +589,9 @@ vi: Không có tiêu đề
 Locate
 vi: Định vị
 
+Duplicate
+vi: Nhân bản
+
 Failed to load objects
 vi: Không thể tải đối tượng
 

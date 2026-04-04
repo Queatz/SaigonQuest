@@ -52,10 +52,10 @@ fun AdminEditAssetDialog(
         onClose = onClose,
         title = translated("Edit asset"),
         headerActions = {
-            Button(attrs = {
-                classes(Styles.baseDialogButtonSecondary)
-                onClick { showDeleteConfirm = true }
-            }) { Translated("Delete") }
+            DialogButton(
+                onClick = { showDeleteConfirm = true },
+                style = DialogButtonStyle.Danger
+            ) { Translated("Delete") }
         },
         content = {
             if (errorMessage.isNotEmpty()) {
@@ -160,13 +160,13 @@ fun AdminEditAssetDialog(
                             )
                             // Remove definition for this cell
                             Div {
-                                Button(attrs = {
-                                    classes(Styles.baseDialogButtonSecondary)
-                                    onClick {
+                                DialogButton(
+                                    onClick = {
                                         itemCells = itemCells.filterNot { it.index == idx }
                                         selectedCellIndex = null
-                                    }
-                                }) { Translated("Delete") }
+                                    },
+                                    style = DialogButtonStyle.Danger
+                                ) { Translated("Delete") }
                             }
                         }
                         P { Text("Cells configured: ${itemCells.size}") }
@@ -364,10 +364,8 @@ fun AdminEditAssetDialog(
                                     objectItems.none { it.collection == name }
                                 }
                                 if (remaining.isNotEmpty()) {
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonPrimary)
-                                        style { marginTop(8.px) }
-                                        onClick {
+                                    DialogButton(
+                                        onClick = {
                                             val newItems = remaining.map { name ->
                                                 ObjectAssetItem(
                                                     assetId = asset.key,
@@ -383,8 +381,10 @@ fun AdminEditAssetDialog(
                                                 objectItems
                                             }
                                             objectItems = base + newItems
-                                        }
-                                    }) { Translated("Add all remaining collections") }
+                                        },
+                                        style = DialogButtonStyle.Primary,
+                                        attrs = { style { marginTop(8.px) } }
+                                    ) { Translated("Add all remaining collections") }
                                 }
                             }
                         }
@@ -424,9 +424,8 @@ fun AdminEditAssetDialog(
                                     }
                                 )
                                 Div {
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonSecondary)
-                                        onClick {
+                                    DialogButton(
+                                        onClick = {
                                             objectItems = objectItems.filterIndexed { i, _ -> i != idx }
                                             if (objectItems.isEmpty()) {
                                                 objectItems = listOf(
@@ -438,17 +437,17 @@ fun AdminEditAssetDialog(
                                                     )
                                                 )
                                             }
-                                        }
-                                    }) { Translated("Delete") }
+                                        },
+                                        style = DialogButtonStyle.Danger
+                                    ) { Translated("Delete") }
                                 }
                             }
                         }
 
                         // Add row
                         Div {
-                            Button(attrs = {
-                                classes(Styles.baseDialogButtonPrimary)
-                                onClick {
+                            DialogButton(
+                                onClick = {
                                     val next = ""
                                     objectItems = objectItems + ObjectAssetItem(
                                         assetId = asset.key,
@@ -456,15 +455,16 @@ fun AdminEditAssetDialog(
                                         category = "",
                                         collection = next,
                                     )
-                                }
-                            }) { Translated("Add") }
+                                },
+                                style = DialogButtonStyle.Primary
+                            ) { Translated("Add") }
                         }
                     }
                 }
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = false) { Translated("Close") }
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Close") }
             DialogButton(
                 onClick = {
                     if (isSaving) return@DialogButton
@@ -487,7 +487,7 @@ fun AdminEditAssetDialog(
                         }
                     }
                 },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
             ) { Translated("Save") }
         }
     )

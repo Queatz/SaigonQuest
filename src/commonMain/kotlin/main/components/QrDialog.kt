@@ -139,7 +139,7 @@ fun QrDialog(
             // Close button as an action
             DialogButton(
                 onClick = onClose,
-                isPrimary = false
+                style = DialogButtonStyle.Secondary
             ) {
                 Translated("Close")
             }

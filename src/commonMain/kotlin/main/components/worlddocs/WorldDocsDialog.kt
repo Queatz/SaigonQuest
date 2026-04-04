@@ -17,6 +17,7 @@ import main.api.DocApi
 import main.components.BaseDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.IconRenderer
 import main.components.Translated
 import main.components.chat.ChatComposerController
@@ -37,7 +38,6 @@ import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.flexShrink
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
@@ -138,7 +138,7 @@ fun WorldDocsDialog(
         }
     }
 
-    val flatDocs = remember(docs) { docs.flatMap { flatten(it) } }
+    val flatDocs = remember(docs) { docs.flatMap { WorldDocsUtils.flatten(it) } }
     val selectedDoc = flatDocs.firstOrNull { it.key == selectedDocId }
 
     // Local edited content for currently selected doc (freshest value from editor)
@@ -183,10 +183,10 @@ fun WorldDocsDialog(
         isFullWidth = true,
         isFullscreen = isFullscreen,
         headerActions = {
-            Button(attrs = {
-                classes(Styles.textButton)
-                onClick { toggleFullscreen() }
-            }) {
+            DialogButton(
+                onClick = { toggleFullscreen() },
+                style = DialogButtonStyle.Secondary,
+            ) {
                 IconRenderer(
                     url = "raw/data/ui/ui.png",
                     index = if (isFullscreen) 1 else 0,
@@ -211,7 +211,7 @@ fun WorldDocsDialog(
                     isOwner || (
                             currentUserId != "Anonymous" &&
                                     doc.permissions.worldUsersCanEdit &&
-                                    ancestorsOf(docs, doc.key).all { anc -> anc.permissions.worldUsersCanEdit }
+                                    WorldDocsUtils.ancestorsOf(docs, doc.key).all { anc -> anc.permissions.worldUsersCanEdit }
                             )
                 }
             }
@@ -223,37 +223,37 @@ fun WorldDocsDialog(
                     placeholder(str("Search docs"))
                 }
                 if (isOwner) {
-                    Button(attrs = {
-                        classes(Styles.primaryButton)
-                        onClick {
-                            scope.launch {
-                                val result = runCatching {
-                                    DocApi.createDoc(
-                                        worldId = worldId,
-                                        title = str("New doc"),
-                                        parentId = null,
-                                    )
-                                }
-                                result.onSuccess { created ->
-                                    docs = docs + DocTree(doc = created, children = emptyList())
-                                    selectedDocId = created.key
-                                    renameTitle = created.title
-                                    requestFocusOnTitle = true
-                                    error = null
-                                    // Notify listeners that world docs changed (for counts)
-                                    val detail: dynamic = object {}
-                                    detail.worldId = worldId
-                                    val evt = createCustomEvent("worldDocsChanged", detail)
-                                    window.dispatchEvent(evt)
-                                }
-                                result.onFailure { t ->
-                                    error = t.message
-                                }
+                DialogButton(
+                    style = DialogButtonStyle.Primary,
+                    onClick = {
+                        scope.launch {
+                            val result = runCatching {
+                                DocApi.createDoc(
+                                    worldId = worldId,
+                                    title = str("New doc"),
+                                    parentId = null,
+                                )
+                            }
+                            result.onSuccess { created ->
+                                docs = docs + DocTree(doc = created, children = emptyList())
+                                selectedDocId = created.key
+                                renameTitle = created.title
+                                requestFocusOnTitle = true
+                                error = null
+                                // Notify listeners that world docs changed (for counts)
+                                val detail: dynamic = object {}
+                                detail.worldId = worldId
+                                val evt = createCustomEvent("worldDocsChanged", detail)
+                                window.dispatchEvent(evt)
+                            }
+                            result.onFailure { t ->
+                                error = t.message
                             }
                         }
-                    }) {
-                        Translated("Create doc")
                     }
+                ) {
+                    Translated("Create doc")
+                }
                 }
                 Div(
                     attrs = {
@@ -293,8 +293,8 @@ fun WorldDocsDialog(
                         Div(attrs = { classes(WorldDocsStyles.leftPanel) }) {
                             val filteredDocs = when {
                                 search.isBlank() -> docs
-                                serverSearchIds != null -> docs.mapNotNull { filterTreeByIds(it, serverSearchIds!!) }
-                                else -> docs.mapNotNull { filterTree(it, search) }
+                                serverSearchIds != null -> docs.mapNotNull { WorldDocsUtils.filterTreeByIds(it, serverSearchIds!!) }
+                                else -> docs.mapNotNull { WorldDocsUtils.filterTree(it, search) }
                             }
                             DocTreeView(
                                 docs = filteredDocs,
@@ -316,7 +316,7 @@ fun WorldDocsDialog(
                                     isOwner || (
                                             currentUserId != "Anonymous" &&
                                                     d.permissions.worldUsersCanEdit &&
-                                                    ancestorsOf(
+                                                    WorldDocsUtils.ancestorsOf(
                                                         docs,
                                                         d.key
                                                     ).all { ancestor -> ancestor.permissions.worldUsersCanEdit }
@@ -354,7 +354,7 @@ fun WorldDocsDialog(
                         // Right: editor/viewer
                         Div(attrs = { classes(WorldDocsStyles.rightPanel) }) {
                             if (selectedDoc != null) {
-                                val ancestors = ancestorsOf(docs, selectedDoc.key)
+                                val ancestors = WorldDocsUtils.ancestorsOf(docs, selectedDoc.key)
                                 val canEditDoc = isOwner || (
                                         currentUserId != "Anonymous" &&
                                                 selectedDoc.permissions.worldUsersCanEdit &&
@@ -383,7 +383,7 @@ fun WorldDocsDialog(
                                                         )
                                                     }
                                                     result.onSuccess { updated ->
-                                                        docs = docs.map { updateNode(it, updated) }
+                                                        docs = docs.map { WorldDocsUtils.updateNode(it, updated) }
                                                     }
                                                     result.onFailure { t -> error = t.message }
                                                 }
@@ -427,126 +427,126 @@ fun WorldDocsDialog(
                                             }
                                         }
                                         val trimmed = renameTitle.trim()
-                                        if (trimmed != selectedDoc.title) {
-                                            Button(attrs = {
-                                                classes(Styles.primaryButton)
-                                                if (trimmed.isBlank()) disabled()
-                                                onClick {
-                                                    saveTitle()
-                                                }
-                                            }) { Translated("Save") }
-                                        }
+                                        DialogButton(
+                                            style = DialogButtonStyle.Primary,
+                                            isDisabled = trimmed.isBlank(),
+                                            onClick = {
+                                                saveTitle()
+                                            }
+                                        ) { Translated("Save") }
                                     }
 
                                     if (isOwner) {
                                         // History button
-                                        Button(attrs = {
-                                            classes(Styles.secondaryButton)
-                                            onClick { showHistoryDialog = true }
-                                        }) {
+                                        DialogButton(
+                                            onClick = { showHistoryDialog = true }
+                                        ) {
                                             Translated("History")
                                         }
 
-                                        // Delete
-                                        val selectedNode = docs.firstNotNullOfOrNull { findNode(it, selectedDoc.key) }
+                                        val selectedNode = docs.firstNotNullOfOrNull { WorldDocsUtils.findNode(it, selectedDoc.key) }
                                         val hasChildren = selectedNode?.children?.isNotEmpty() == true
-                                        Button(attrs = {
-                                            classes(Styles.secondaryButton)
-                                            if (hasChildren) {
-                                                disabled()
-                                                attr("title", str("Cannot delete: this doc has children"))
+                                        DialogButton(
+                                            style = DialogButtonStyle.Danger,
+                                            isDisabled = hasChildren,
+                                            attrs = {
+                                                if (hasChildren) {
+                                                    title(str("Cannot delete: this doc has children"))
+                                                }
+                                            },
+                                            onClick = {
+                                                showDeleteConfirm = true
                                             }
-                                            onClick {
-                                                if (!hasChildren) showDeleteConfirm = true
-                                            }
-                                        }) { Translated("Delete") }
+                                        ) { Translated("Delete") }
                                     }
 
                                     // Move up/down among siblings (editors and owners)
                                     if (canEditDoc) {
-                                        val siblings = siblingsOf(docs, selectedDoc.parentId)
+                                        val siblings = WorldDocsUtils.siblingsOf(docs, selectedDoc.parentId)
                                         val idx = siblings.indexOfFirst { it.key == selectedDoc.key }
                                         val canMoveUp = idx > 0
                                         val canMoveDown = idx >= 0 && idx < siblings.lastIndex
 
-                                        Button(attrs = {
-                                            classes(Styles.secondaryButton)
-                                            if (!canMoveUp) disabled()
-                                            title(str("[Ctrl] Move to top"))
-                                            onClick { event ->
+                                        DialogButton(
+                                            isDisabled = !canMoveUp,
+                                            attrs = {
+                                                title(str("[Ctrl] Move to top"))
                                                 if (canMoveUp) {
-                                                    scope.launch {
-                                                        val newIdx = if (event.ctrlKey) {
-                                                            // Move all the way to the top
-                                                            val first = siblings.first()
-                                                            newIndex(before = null, after = first.orderIndex)
-                                                        } else {
-                                                            val prev = siblings[idx - 1]
-                                                            val beforePrev =
-                                                                if (idx - 2 >= 0) siblings[idx - 2].orderIndex else null
-                                                            newIndex(beforePrev, prev.orderIndex)
+                                                    onClick { event ->
+                                                        scope.launch {
+                                                            val newIdx = if (event.ctrlKey) {
+                                                                // Move all the way to the top
+                                                                val first = siblings.first()
+                                                                WorldDocsUtils.newIndex(before = null, after = first.orderIndex)
+                                                            } else {
+                                                                val prev = siblings[idx - 1]
+                                                                val beforePrev =
+                                                                    if (idx - 2 >= 0) siblings[idx - 2].orderIndex else null
+                                                                WorldDocsUtils.newIndex(beforePrev, prev.orderIndex)
+                                                            }
+                                                            val res = runCatching {
+                                                                DocApi.moveDoc(
+                                                                    selectedDoc.key,
+                                                                    selectedDoc.parentId,
+                                                                    newIdx
+                                                                )
+                                                            }
+                                                            res.onSuccess {
+                                                                // Reload tree for consistent ordering
+                                                                val refreshed = runCatching { DocApi.getDocTree(worldId) }
+                                                                refreshed.onSuccess { docs = it }
+                                                                refreshed.onFailure { t -> error = t.message }
+                                                            }
+                                                            res.onFailure { t -> error = t.message }
                                                         }
-                                                        val res = runCatching {
-                                                            DocApi.moveDoc(
-                                                                selectedDoc.key,
-                                                                selectedDoc.parentId,
-                                                                newIdx
-                                                            )
-                                                        }
-                                                        res.onSuccess {
-                                                            // Reload tree for consistent ordering
-                                                            val refreshed = runCatching { DocApi.getDocTree(worldId) }
-                                                            refreshed.onSuccess { docs = it }
-                                                            refreshed.onFailure { t -> error = t.message }
-                                                        }
-                                                        res.onFailure { t -> error = t.message }
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Move up") }
+                                            },
+                                            onClick = {}
+                                        ) { Translated("Move up") }
 
-                                        Button(attrs = {
-                                            classes(Styles.secondaryButton)
-                                            if (!canMoveDown) disabled()
-                                            title(str("[Ctrl] Move to bottom"))
-                                            onClick { event ->
+                                        DialogButton(
+                                            isDisabled = !canMoveDown,
+                                            attrs = {
+                                                title(str("[Ctrl] Move to bottom"))
                                                 if (canMoveDown) {
-                                                    scope.launch {
-                                                        val newIdx = if (event.ctrlKey) {
-                                                            // Move all the way to the bottom
-                                                            val last = siblings.last()
-                                                            newIndex(before = last.orderIndex, after = null)
-                                                        } else {
-                                                            val next = siblings[idx + 1]
-                                                            val afterNext =
-                                                                if (idx + 2 <= siblings.lastIndex) siblings[idx + 2].orderIndex else null
-                                                            newIndex(next.orderIndex, afterNext)
+                                                    onClick { event ->
+                                                        scope.launch {
+                                                            val newIdx = if (event.ctrlKey) {
+                                                                // Move all the way to the bottom
+                                                                val last = siblings.last()
+                                                                WorldDocsUtils.newIndex(before = last.orderIndex, after = null)
+                                                            } else {
+                                                                val next = siblings[idx + 1]
+                                                                val afterNext =
+                                                                    if (idx + 2 <= siblings.lastIndex) siblings[idx + 2].orderIndex else null
+                                                                WorldDocsUtils.newIndex(next.orderIndex, afterNext)
+                                                            }
+                                                            val res = runCatching {
+                                                                DocApi.moveDoc(
+                                                                    selectedDoc.key,
+                                                                    selectedDoc.parentId,
+                                                                    newIdx
+                                                                )
+                                                            }
+                                                            res.onSuccess {
+                                                                val refreshed = runCatching { DocApi.getDocTree(worldId) }
+                                                                refreshed.onSuccess { docs = it }
+                                                                refreshed.onFailure { t -> error = t.message }
+                                                            }
+                                                            res.onFailure { t -> error = t.message }
                                                         }
-                                                        val res = runCatching {
-                                                            DocApi.moveDoc(
-                                                                selectedDoc.key,
-                                                                selectedDoc.parentId,
-                                                                newIdx
-                                                            )
-                                                        }
-                                                        res.onSuccess {
-                                                            val refreshed = runCatching { DocApi.getDocTree(worldId) }
-                                                            refreshed.onSuccess { docs = it }
-                                                            refreshed.onFailure { t -> error = t.message }
-                                                        }
-                                                        res.onFailure { t -> error = t.message }
                                                     }
                                                 }
-                                            }
-                                        }) { Translated("Move down") }
+                                            },
+                                            onClick = {}
+                                        ) { Translated("Move down") }
 
-                                        // Move to another parent
-                                        Button(attrs = {
-                                            classes(Styles.secondaryButton)
-                                            onClick {
+                                        DialogButton(
+                                            onClick = {
                                                 showMoveDialog = true
                                             }
-                                        }) { Translated("Move") }
+                                        ) { Translated("Move") }
                                     }
                                 }
 
@@ -556,7 +556,7 @@ fun WorldDocsDialog(
                                         isEditable = true,
                                         currentUserId = currentUserId,
                                         onUpdated = { updated ->
-                                            docs = docs.map { updateNode(it, updated) }
+                                            docs = docs.map { WorldDocsUtils.updateNode(it, updated) }
                                             // Keep local edited content in sync with server-updated content
                                             if (updated.key == selectedDoc.key) {
                                                 editedContent = updated.content
@@ -592,7 +592,7 @@ fun WorldDocsDialog(
                         scope.launch {
                             val result = runCatching { DocApi.deleteDoc(id) }
                             result.onSuccess {
-                                docs = removeNode(docs, id)
+                                docs = WorldDocsUtils.removeNode(docs, id)
                                 selectedDocId = docs.firstOrNull()?.doc?.key
                                 // Notify listeners that world docs changed (for counts)
                                 val detail: dynamic = object {}
@@ -611,7 +611,7 @@ fun WorldDocsDialog(
             DialogButton(onClick = onClose) { Translated("Close") }
             if (selectedDoc != null) {
                 DialogButton(
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                     onClick = {
                         val content = editedContent
                         ChatComposerController.openRichEditor(
@@ -627,7 +627,7 @@ fun WorldDocsDialog(
 
     // History dialog
     if (showHistoryDialog && selectedDoc != null) {
-        val ancestors = ancestorsOf(docs, selectedDoc.key)
+        val ancestors = WorldDocsUtils.ancestorsOf(docs, selectedDoc.key)
         val canRestore = isOwner || (
                 currentUserId != "Anonymous" &&
                         selectedDoc.permissions.worldUsersCanEdit &&
@@ -643,7 +643,7 @@ fun WorldDocsDialog(
     // Move dialog
     if (showMoveDialog && selectedDoc != null) {
         // Exclude moving into itself or any of its descendants
-        val selectedNode = docs.firstNotNullOfOrNull { findNode(it, selectedDoc.key) }
+        val selectedNode = docs.firstNotNullOfOrNull { WorldDocsUtils.findNode(it, selectedDoc.key) }
         val excludeIds: Set<String> = buildSet {
             fun walk(node: DocTree?) {
                 if (node == null) return
@@ -660,9 +660,9 @@ fun WorldDocsDialog(
                 val movingId = selectedDoc.key
                 scope.launch {
                     // Compute new order index to append as last child of the target parent
-                    val targetNode = docs.firstNotNullOfOrNull { findNode(it, targetParent.key) }
+                    val targetNode = docs.firstNotNullOfOrNull { WorldDocsUtils.findNode(it, targetParent.key) }
                     val lastChildOrder = targetNode?.children?.maxByOrNull { it.doc.orderIndex }?.doc?.orderIndex
-                    val idx = newIndex(before = lastChildOrder, after = null)
+                    val idx = WorldDocsUtils.newIndex(before = lastChildOrder, after = null)
                     val res = runCatching { DocApi.moveDoc(movingId, targetParent.key, idx) }
                     res.onSuccess {
                         val refreshed = runCatching { DocApi.getDocTree(worldId) }
@@ -684,98 +684,3 @@ fun WorldDocsDialog(
     }
 }
 
-private fun flatten(node: DocTree): List<Doc> = listOf(node.doc) + node.children.flatMap { flatten(it) }
-
-private fun updateNode(node: DocTree, updated: Doc): DocTree {
-    return if (node.doc.key == updated.key) {
-        node.copy(doc = updated)
-    } else {
-        node.copy(children = node.children.map { updateNode(it, updated) })
-    }
-}
-
-private fun findNode(node: DocTree, id: String): DocTree? {
-    if (node.doc.key == id) return node
-    for (child in node.children) {
-        val found = findNode(child, id)
-        if (found != null) return found
-    }
-    return null
-}
-
-private fun removeNode(list: List<DocTree>, id: String): List<DocTree> {
-    fun removeFrom(node: DocTree): DocTree? {
-        if (node.doc.key == id) return null
-        val newChildren = node.children.mapNotNull { removeFrom(it) }
-        return node.copy(children = newChildren)
-    }
-    return list.mapNotNull { removeFrom(it) }
-}
-
-private fun filterTree(node: DocTree, query: String): DocTree? {
-    if (query.isBlank()) return node
-    val childMatches = node.children.mapNotNull { filterTree(it, query) }
-    val selfMatches = node.doc.title.contains(query, ignoreCase = true)
-    return if (selfMatches || childMatches.isNotEmpty()) node.copy(children = childMatches) else null
-}
-
-private fun filterTreeByIds(node: DocTree, ids: Set<String>): DocTree? {
-    val childMatches = node.children.mapNotNull { filterTreeByIds(it, ids) }
-    val selfMatches = node.doc.key in ids
-    return if (selfMatches || childMatches.isNotEmpty()) node.copy(children = childMatches) else null
-}
-
-private fun siblingsOf(forest: List<DocTree>, parentId: String?): List<Doc> {
-    fun findById(node: DocTree, id: String): DocTree? {
-        if (node.doc.key == id) return node
-        for (c in node.children) {
-            val found = findById(c, id)
-            if (found != null) return found
-        }
-        return null
-    }
-
-    val siblings: List<Doc> = if (parentId == null) {
-        forest.map { it.doc }
-    } else {
-        val parent = forest.asSequence().mapNotNull { findById(it, parentId) }.firstOrNull()
-        parent?.children?.map { it.doc } ?: emptyList()
-    }
-    return siblings.sortedBy { it.orderIndex }
-}
-
-private fun newIndex(before: Double?, after: Double?): Double = when {
-    before == null && after == null -> 0.0
-    before == null -> after!! - 1.0
-    after == null -> before + 1.0
-    else -> (before + after) / 2.0
-}
-
-
-// Ancestors utility for permission inheritance on the client
-private fun ancestorsOf(forest: List<DocTree>, id: String): List<Doc> {
-    // Find the node in the forest
-    fun findById(node: DocTree, needle: String): DocTree? {
-        if (node.doc.key == needle) return node
-        for (c in node.children) {
-            val found = findById(c, needle)
-            if (found != null) return found
-        }
-        return null
-    }
-
-    val startDoc = forest.asSequence().mapNotNull { findById(it, id) }.firstOrNull()?.doc
-        ?: return emptyList()
-    val result = mutableListOf<Doc>()
-    var parentId = startDoc.parentId
-    while (parentId != null) {
-        val parent = forest.asSequence().mapNotNull { findById(it, parentId!!) }.firstOrNull()
-        if (parent != null) {
-            result += parent.doc
-            parentId = parent.doc.parentId
-        } else {
-            break
-        }
-    }
-    return result
-}

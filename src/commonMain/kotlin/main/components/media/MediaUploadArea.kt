@@ -2,6 +2,8 @@ package main.components.media
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.theme.Styles
 import models.MediaType
@@ -83,10 +85,8 @@ fun MediaUploadArea(
                     Div(attrs = {
                         classes(Styles.mediaUploadAreaActions)
                     }) {
-                        Button(attrs = {
-                            classes(Styles.baseDialogButtonSecondary, Styles.mediaRecorderButton)
-                            onClick { ev ->
-                                ev.stopPropagation()
+                        DialogButton(
+                            onClick = {
                                 scope.launch {
                                     try {
                                         val file = readMediaFromClipboard()
@@ -97,8 +97,13 @@ fun MediaUploadArea(
                                         onError(t.message ?: "Paste failed")
                                     }
                                 }
+                            },
+                            style = DialogButtonStyle.Secondary,
+                            attrs = {
+                                classes(Styles.mediaRecorderButton)
+                                onClick { ev -> ev.stopPropagation() }
                             }
-                        }) { Translated("Paste") }
+                        ) { Translated("Paste") }
 
                         if (filter == MediaType.Audio) {
                             AudioRecorder(

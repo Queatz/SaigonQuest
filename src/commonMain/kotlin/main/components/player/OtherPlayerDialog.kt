@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import main.components.BaseDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.UserStatusBars
 import main.components.SendVndDialog
@@ -107,7 +108,7 @@ fun OtherPlayerDialog(
                         FriendshipStatus.UNKNOWN -> {
                             DialogButton(
                                 onClick = {},
-                                isPrimary = true
+                                style = DialogButtonStyle.Primary
                             ) {
                                 Translated("Checking friendship status...")
                             }
@@ -115,7 +116,7 @@ fun OtherPlayerDialog(
                         FriendshipStatus.NOT_FRIENDS -> {
                             DialogButton(
                                 onClick = { if (!isLoading) onAddFriend() },
-                                isPrimary = true
+                                style = DialogButtonStyle.Primary
                             ) {
                                 if (isLoading) {
                                     Translated("Sending request...")
@@ -127,7 +128,7 @@ fun OtherPlayerDialog(
                         FriendshipStatus.REQUEST_SENT -> {
                             DialogButton(
                                 onClick = {},
-                                isPrimary = true
+                                style = DialogButtonStyle.Primary
                             ) {
                                 Translated("Friend request sent")
                             }
@@ -135,7 +136,7 @@ fun OtherPlayerDialog(
                         FriendshipStatus.REQUEST_RECEIVED -> {
                             DialogButton(
                                 onClick = { if (!isLoading) onAddFriend() },
-                                isPrimary = true
+                                style = DialogButtonStyle.Primary
                             ) {
                                 if (isLoading) {
                                     Translated("Accepting request...")
@@ -148,7 +149,7 @@ fun OtherPlayerDialog(
                             // Send VND button
                             DialogButton(
                                 onClick = { if (!isLoading) showSendVnd = true },
-                                isPrimary = true
+                                style = DialogButtonStyle.Primary
                             ) {
                                 if (isLoading) {
                                     Translated("Sending...")
@@ -160,7 +161,7 @@ fun OtherPlayerDialog(
                             // Remove friend button
                             DialogButton(
                                 onClick = { if (!isLoading) showConfirmRemove = true },
-                                isPrimary = false
+                                style = DialogButtonStyle.Secondary
                             ) {
                                 if (isLoading) {
                                     Translated("Removing friend...")
@@ -191,7 +192,7 @@ fun OtherPlayerDialog(
             // Close button in footer
             DialogButton(
                 onClick = { onClose() },
-                isPrimary = true
+                style = DialogButtonStyle.Primary
             ) {
                 Translated("Close")
             }

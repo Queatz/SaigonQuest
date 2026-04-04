@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import main.api.DocApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.translated
 import main.components.BasicConfirmDialog

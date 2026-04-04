@@ -1,6 +1,7 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.components.IconRenderer
 import main.theme.PanelStyles
 import main.theme.Styles
 import org.jetbrains.compose.web.css.*
@@ -23,7 +24,7 @@ fun SimpleSidePanel(
     onTitleClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    Div(
+    FramedBorder(
         attrs = {
             classes(PanelStyles.sidePanel)
         }
@@ -60,7 +61,11 @@ fun SimpleSidePanel(
                         onClick { onClose() }
                     }
                 ) {
-                    Text("✖️")
+                    IconRenderer(
+                        url = "raw/data/ui/ui.png",
+                        index = 20,
+                        size = 24,
+                    )
                 }
             }
         }

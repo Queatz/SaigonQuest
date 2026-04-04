@@ -39,7 +39,7 @@ fun WeightsGridEditor(
                         onGridChange(def)
                     }
                 },
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
             ) { Translated("Reset to defaults") }
         }
     }

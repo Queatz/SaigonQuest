@@ -267,7 +267,7 @@ fun CharacterCustomizationDialog(
             // Cancel button
             DialogButton(
                 onClick = onClose,
-                isPrimary = false
+                style = DialogButtonStyle.Secondary
             ) {
                 Translated("Cancel")
             }
@@ -278,7 +278,7 @@ fun CharacterCustomizationDialog(
                     saveCustomizations()
                     onClose()
                 },
-                isPrimary = true
+                style = DialogButtonStyle.Primary
             ) {
                 Translated("Save")
             }

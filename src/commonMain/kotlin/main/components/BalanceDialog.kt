@@ -204,10 +204,11 @@ fun BalanceDialog(
                             }
                         }
                     }
-                    DialogButton(onClick = { showUpload = true }, isPrimary = true) { Translated("Add image") }
+                    DialogButton(onClick = { showUpload = true }, style = DialogButtonStyle.Primary) { Translated("Add image") }
                     if (attachments.isNotEmpty()) {
-                        DialogButtonDanger(
-                            onClick = { attachments = emptyList() }
+                        DialogButton(
+                            onClick = { attachments = emptyList() },
+                            style = DialogButtonStyle.Danger
                         ) { Translated("Remove image") }
                     }
                 }
@@ -220,7 +221,7 @@ fun BalanceDialog(
 
                 // Submit
                 Div({ classes(Styles.formButtonsContainer) }) {
-                    DialogButton(onClick = { if (!submitting) submitNonce++ }, isPrimary = true) {
+                    DialogButton(onClick = { if (!submitting) submitNonce++ }, style = DialogButtonStyle.Primary) {
                         Text(if (submitting) translated("Submitting...") else translated("Submit"))
                     }
                 }
@@ -232,7 +233,7 @@ fun BalanceDialog(
                 BalanceEventRow(item = h)
             }
             onViewAll?.let {
-                DialogButton(onClick = it, isPrimary = false) { Translated("View all") }
+                DialogButton(onClick = it, style = DialogButtonStyle.Secondary) { Translated("View all") }
             }
 
             if (showUpload) {

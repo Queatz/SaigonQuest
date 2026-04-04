@@ -62,7 +62,7 @@ fun BottomText() {
             actions = {
                 DialogButton(
                     onClick = { showAbout = false },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Translated("Close") }
             },
         )

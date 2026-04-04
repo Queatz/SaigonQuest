@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.common.Spinner
 import main.components.translated
@@ -12,7 +14,6 @@ import main.theme.EditorStyles
 import main.theme.Styles
 import models.Object
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -69,10 +70,11 @@ fun WorldObjectsContent(
         }
     ) {
         // Create object button
-        Button(
+        DialogButton(
+            onClick = { onCreateObject() },
+            style = DialogButtonStyle.Primary,
             attrs = {
                 classes(EditorStyles.createObjectButton)
-                onClick { onCreateObject() }
             }
         ) {
             if (isCreatePlacementActive) {
@@ -162,7 +164,11 @@ fun ObjectItem(
                 classes(EditorStyles.objectTitle)
             }
         ) {
-            Text(obj.title.takeIf { it.isNotEmpty() } ?: "Untitled")
+            if (obj.title.isNotEmpty()) {
+                Text(obj.title)
+            } else {
+                Translated("Untitled")
+            }
             if (obj.status.isNotBlank()) {
                 Span(
                     attrs = {
@@ -182,43 +188,35 @@ fun ObjectItem(
             }
         ) {
             // Locate button
-            Button(
-                attrs = {
-                    classes(EditorStyles.locateButton)
-                    onClick { onLocate(obj.key) }
-                }
+            DialogButton(
+                onClick = { onLocate(obj.key) },
+                style = DialogButtonStyle.Primary,
             ) {
-                Text("Locate")
+                Translated("Locate")
             }
 
             // Edit button
-            Button(
-                attrs = {
-                    classes(EditorStyles.editButton)
-                    onClick { onEdit(obj.key) }
-                }
+            DialogButton(
+                onClick = { onEdit(obj.key) },
+                style = DialogButtonStyle.Secondary,
             ) {
-                Text("Edit")
+                Translated("Edit")
             }
 
             // Duplicate button
-            Button(
-                attrs = {
-                    classes(EditorStyles.editButton)
-                    onClick { onDuplicate(obj.key) }
-                }
+            DialogButton(
+                onClick = { onDuplicate(obj.key) },
+                style = DialogButtonStyle.Secondary,
             ) {
-                Text("Duplicate")
+                Translated("Duplicate")
             }
 
             // Remove button
-            Button(
-                attrs = {
-                    classes(EditorStyles.removeButton)
-                    onClick { onRemove(obj.key) }
-                }
+            DialogButton(
+                onClick = { onRemove(obj.key) },
+                style = DialogButtonStyle.Danger,
             ) {
-                Text("Remove")
+                Translated("Remove")
             }
         }
     }

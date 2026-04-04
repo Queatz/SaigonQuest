@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import main.api.WorldApi
 import main.theme.Styles
 import models.World
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -47,7 +46,7 @@ fun MyWorldsDialog(
             if (worlds.isNotEmpty()) {
                 DialogButton(
                     onClick = { showNewWorldPrompt = true },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) { Translated("New world") }
             }
         },
@@ -76,25 +75,26 @@ fun MyWorldsDialog(
                         // Primary call-to-action
                         DialogButton(
                             onClick = { showNewWorldPrompt = true },
-                            isPrimary = true,
+                            style = DialogButtonStyle.Primary,
                         ) { Translated("New world") }
                     }
                 }
                 else -> {
                     Div(attrs = { classes(Styles.formGroup) }) {
                         worlds.forEach { world ->
-                            Button(
+                            DialogButton(
+                                onClick = {
+                                    // Close dialog then navigate to the selected world's URL
+                                    onClose()
+                                    val path = if (world.url.isEmpty()) "/" else "/${world.url}"
+                                    onNavigate(path)
+                                },
+                                style = DialogButtonStyle.Secondary,
                                 attrs = {
                                     classes(
                                         Styles.requestRow,
                                         Styles.clickable,
                                     )
-                                    onClick {
-                                        // Close dialog then navigate to the selected world's URL
-                                        onClose()
-                                        val path = if (world.url.isEmpty()) "/" else "/${world.url}"
-                                        onNavigate(path)
-                                    }
                                 }
                             ) {
                                 // Thumbnail

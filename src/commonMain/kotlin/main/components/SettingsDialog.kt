@@ -4,9 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import main.theme.Styles
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -28,28 +26,26 @@ fun SettingsDialog(
         content = {
             // Hide UI button
 
-            Button(
-                attrs = {
-                    classes(Styles.primaryButton)
-                    onClick {
-                        onShowUI(!showUI)
-                        onClose()
-                    }
-                }
+            DialogButton(
+                onClick = {
+                    onShowUI(!showUI)
+                    onClose()
+                },
+                style = DialogButtonStyle.Primary,
             ) {
                 if (!showUI) Translated("Show UI") else Translated("Hide UI")
             }
 
             // Wide Angle
-            Button(
+            DialogButton(
+                onClick = {
+                    wideAngle.value = !wideAngle.value
+                    GraphicsSettings.setWideAngle(wideAngle.value)
+                },
+                style = DialogButtonStyle.Primary,
                 attrs = {
-                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
-                    }
-                    onClick {
-                        wideAngle.value = !wideAngle.value
-                        GraphicsSettings.setWideAngle(wideAngle.value)
                     }
                 }
             ) {
@@ -57,15 +53,15 @@ fun SettingsDialog(
             }
 
             // Observer Mode
-            Button(
+            DialogButton(
+                onClick = {
+                    observerMode.value = !observerMode.value
+                    GraphicsSettings.setObserverMode(observerMode.value)
+                },
+                style = DialogButtonStyle.Primary,
                 attrs = {
-                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
-                    }
-                    onClick {
-                        observerMode.value = !observerMode.value
-                        GraphicsSettings.setObserverMode(observerMode.value)
                     }
                 }
             ) {
@@ -73,41 +69,41 @@ fun SettingsDialog(
             }
 
             // Always show QR code
-            Button(
+            DialogButton(
+                onClick = {
+                    alwaysShowQr.value = !alwaysShowQr.value
+                    GraphicsSettings.setAlwaysShowQr(alwaysShowQr.value)
+                },
+                style = DialogButtonStyle.Primary,
                 attrs = {
-                    classes(Styles.primaryButton)
                     style { marginTop(16.px) }
-                    onClick {
-                        alwaysShowQr.value = !alwaysShowQr.value
-                        GraphicsSettings.setAlwaysShowQr(alwaysShowQr.value)
-                    }
                 }
             ) {
                 Text("${translated("Always show QR code")}: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
             }
 
             // Change Password
-            Button(
+            DialogButton(
+                onClick = { showChangePassword.value = true },
+                style = DialogButtonStyle.Primary,
                 attrs = {
-                    classes(Styles.primaryButton)
                     style {
                         marginTop(16.px)
                     }
-                    onClick { showChangePassword.value = true }
                 }
             ) {
                 Translated("Change Password")
             }
 
             // Logout button
-            Button(
+            DialogButton(
+                onClick = {
+                    showLogoutDialog.value = true
+                },
+                style = DialogButtonStyle.Alt,
                 attrs = {
-                    classes(Styles.logoutButton)
                     style {
                         marginTop(16.px)
-                    }
-                    onClick {
-                        showLogoutDialog.value = true
                     }
                 }
             ) {
@@ -133,7 +129,7 @@ fun SettingsDialog(
             }
         },
         actions = {
-            DialogButton(onClick = onClose, isPrimary = false) {
+            DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) {
                 Translated("Close")
             }
         }

@@ -168,49 +168,4 @@ object FriendsStyles : StyleSheet() {
         gap(8.px)
         flexWrap(FlexWrap.Wrap)
     }
-
-    // Button variants
-    val buttonJump by style {
-        padding(8.px, 12.px)
-        backgroundColor(Theme.colors.primary)
-        color(Theme.colors.onPrimary)
-        property("border", "none")
-        borderRadius(16.px)
-        property("cursor", "pointer")
-        flexGrow(1)
-        dark(self) { backgroundColor(Theme.colors.primaryDark) }
-    }
-
-    val buttonInvite by style {
-        padding(8.px, 12.px)
-        backgroundColor(Theme.colors.secondary)
-        color(Theme.colors.onSecondary)
-        property("border", "none")
-        borderRadius(16.px)
-        property("cursor", "pointer")
-        flexGrow(1)
-        dark(self) { backgroundColor(Theme.colors.secondaryDark); color(Theme.colors.onSecondary) }
-    }
-
-    val buttonSend by style {
-        padding(8.px, 12.px)
-        backgroundColor(Theme.colors.success)
-        color(Theme.colors.onPrimary)
-        property("border", "none")
-        borderRadius(16.px)
-        property("cursor", "pointer")
-        flexGrow(1)
-        dark(self) { backgroundColor(Theme.colors.successDark) }
-    }
-
-    val buttonRemove by style {
-        padding(8.px, 12.px)
-        backgroundColor(Color.transparent)
-        border(1.px, LineStyle.Solid, Theme.colors.error)
-        color(Theme.colors.error)
-        borderRadius(16.px)
-        flexShrink(0)
-        property("cursor", "pointer")
-        dark(self) { border(1.px, LineStyle.Solid, Theme.colors.errorDark); color(Theme.colors.errorDark) }
-    }
 }

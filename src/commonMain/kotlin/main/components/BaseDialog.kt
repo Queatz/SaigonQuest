@@ -2,15 +2,11 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.theme.OverlayStyles
 import main.theme.Styles
-import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.AlignItems
@@ -168,7 +164,7 @@ fun BaseDialog(
             }
         ) {
             // Dialog content
-            Div(
+            FramedBorder(
                 attrs = {
                     classes(Styles.baseDialogContainer)
                     style {
@@ -177,6 +173,8 @@ fun BaseDialog(
                             property("width", "100%")
                             property("height", "100vh")
                             property("border-radius", "0")
+                            // Note: we might want to skip the frame for actual fullscreen
+                            // but for now we follow the instruction to apply it to all dialogs
                         } else {
                             // Apply regular styling
                             if (isFullHeight) {
@@ -190,7 +188,7 @@ fun BaseDialog(
                                 maxHeight("calc(100vh - 64px)")
                                 property("width", "100%")
                                 property("max-width", "100vw")
-                                property("border-radius", "16px 16px 0 0")
+                                property("border-radius", "0")
                                 property("margin-bottom", "env(safe-area-inset-bottom)")
                             } else {
                                 property("max-width", maxWidth)
@@ -247,7 +245,11 @@ fun BaseDialog(
                                         onClick { onClose() }
                                     }
                                 ) {
-                                    Text("✖️")
+                                IconRenderer(
+                                    url = "raw/data/ui/ui.png",
+                                    index = 20,
+                                    size = 24,
+                                )
                                 }
                             }
                         }
@@ -295,57 +297,3 @@ fun BaseDialog(
     }
 }
 
-/**
- * A reusable dialog button component with consistent styling.
- *
- * @param onClick Callback when the button is clicked
- * @param isPrimary Whether this is a primary button (default: false)
- * @param isDisabled Whether this button is disabled (default: false)
- * @param color The color of the button (default: null)
- * @param content The content of the button
- */
-@Composable
-fun DialogButton(
-    onClick: () -> Unit,
-    isPrimary: Boolean = false,
-    isDisabled: Boolean = false,
-    color: String? = null,
-    content: @Composable () -> Unit
-) {
-    Button(
-        attrs = {
-            if (isPrimary) {
-                classes(Styles.baseDialogButtonPrimary)
-            } else {
-                classes(Styles.baseDialogButtonSecondary)
-            }
-
-            if (color != null) {
-                style {
-                    backgroundColor(Color(color))
-                }
-            }
-
-            if (isDisabled) {
-                disabled()
-            }
-
-            onClick { onClick() }
-        }
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun DialogButtonDanger(
-    onClick: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    Button(
-        attrs = {
-            classes(Styles.baseDialogButtonDangerPrimary)
-            onClick { onClick() }
-        }
-    ) { content() }
-}

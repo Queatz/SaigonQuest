@@ -237,13 +237,13 @@ fun UserRequestsDialog(
             val titleValid = title.length in 3..80
             val contentValid = content.length in 10..2000
             val canSubmit = (titleValid && contentValid && (fee ?: Long.MAX_VALUE) <= (balance ?: Long.MAX_VALUE))
-            Button(attrs = {
-                classes(Styles.baseDialogButtonPrimary)
-                if (!canSubmit || loading) disabled()
-                onClick {
+            DialogButton(
+                onClick = {
                     showConfirmPurchase = true
-                }
-            }) { Translated("Submit request") }
+                },
+                style = DialogButtonStyle.Primary,
+                isDisabled = !canSubmit || loading
+            ) { Translated("Submit request") }
 
             if (error != null) {
                 P(attrs = { classes(Styles.formErrorMessage) }) { Text(error!!) }

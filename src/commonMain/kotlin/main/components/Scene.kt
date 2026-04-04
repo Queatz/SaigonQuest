@@ -1279,7 +1279,7 @@ fun SceneComponent(url: String) {
             actions = {
                 DialogButton(
                     onClick = { showMessageDialog.value = false },
-                    isPrimary = false,
+                    style = DialogButtonStyle.Secondary,
                 ) {
                     Translated("Close")
                 }
@@ -1291,7 +1291,7 @@ fun SceneComponent(url: String) {
                             requestPanel.emit(SidePanelState.Profile)
                         }
                     },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) {
                     Translated("Log in")
                 }

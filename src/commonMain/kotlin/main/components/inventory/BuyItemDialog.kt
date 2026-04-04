@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.common.formatAmount
 import main.theme.Styles
@@ -103,7 +104,7 @@ fun BuyItemDialog(
             DialogButton(onClick = onClose) { Translated("Close") }
             DialogButton(
                 onClick = { confirmOpen = true },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
                 isDisabled = insufficient || loading
             ) { if (loading) Translated("Loading...") else Translated("Buy") }
         }
@@ -123,7 +124,7 @@ fun BuyItemDialog(
                         confirmOpen = false
                         doBuy()
                     },
-                    isPrimary = true,
+                    style = DialogButtonStyle.Primary,
                 ) {
                     Translated("Buy")
                     Text(" ")

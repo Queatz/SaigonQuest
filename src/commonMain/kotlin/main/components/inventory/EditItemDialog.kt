@@ -11,6 +11,7 @@ import main.api.ItemApi
 import main.components.AssetBrowserDialog
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
 import main.components.Translated
@@ -221,7 +222,7 @@ fun EditItemDialog(
 
                 DialogButton(
                     onClick = { showAssetBrowser = true },
-                    isPrimary = false,
+                    style = DialogButtonStyle.Secondary,
                 ) { Translated("Browse assets") }
             }
 
@@ -307,7 +308,7 @@ fun EditItemDialog(
                     // Browse button for wearable sprite sheet
                     DialogButton(
                         onClick = { showWearableBrowser = true },
-                        isPrimary = false,
+                        style = DialogButtonStyle.Secondary,
                     ) { Translated("Browse assets") }
 
                     if (wearableFileError.isNotEmpty()) {
@@ -350,7 +351,7 @@ fun EditItemDialog(
         },
         actions = {
             DialogButton(onClick = onClose) { Translated("Cancel") }
-            DialogButton(onClick = { handleSubmit() }, isPrimary = true) {
+            DialogButton(onClick = { handleSubmit() }, style = DialogButtonStyle.Primary) {
                 if (isSubmitting) Translated("Saving...") else Translated("Save")
             }
         }

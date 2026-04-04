@@ -12,6 +12,7 @@ import main.api.MediaApi
 import main.api.ContentApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.BasicInputDialog
 import main.components.Translated
 import main.components.translated

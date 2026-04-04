@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.IconRenderer
 import main.components.Translated
 import main.components.rememberIsMobile
@@ -347,7 +348,7 @@ fun LogicEditorDialog(
                 // Save button
                 DialogButton(
                     onClick = { if (!isSubmitting) handleSubmit() },
-                    isPrimary = true
+                    style = DialogButtonStyle.Primary
                 ) {
                     Text(if (isSubmitting) translated("Saving...") else translated("Save"))
                 }

@@ -50,7 +50,7 @@ fun ScreenshotDialog(
             }
             DialogButton(
                 onClick = onSendToChat,
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
                 isDisabled = isSending,
             ) {
                 Translated("Send to chat")

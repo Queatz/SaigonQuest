@@ -36,7 +36,7 @@ fun AiPromptDialog(
         onClose = onCancel,
         title = title,
         headerActions = {
-            DialogButton(onClick = onOpenHistory, isPrimary = false) {
+            DialogButton(onClick = onOpenHistory, style = DialogButtonStyle.Secondary) {
                 Translated("History")
             }
         },
@@ -63,11 +63,11 @@ fun AiPromptDialog(
         actions = {
             DialogButton(
                 onClick = onCancel,
-                isPrimary = false,
+                style = DialogButtonStyle.Secondary,
             ) { Translated("Cancel") }
             DialogButton(
                 onClick = { if (prompt.trim().isNotEmpty()) onSubmit() },
-                isPrimary = true,
+                style = DialogButtonStyle.Primary,
                 isDisabled = prompt.trim().isBlank(),
             ) { Translated("Send") }
         }

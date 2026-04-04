@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.theme.Styles
 import models.AssetType
 import models.Object
@@ -161,15 +163,16 @@ fun ObjectEditorDialog(
     val footerActions = @Composable {
         // Remove button (only when editing)
         if (isEditing) {
-            DialogButtonDanger(
-                onClick = {
-                    if (!isSubmitting && !isDeleting) {
-                        showConfirmRemove = true
+                    DialogButton(
+                        onClick = {
+                            if (!isSubmitting && !isDeleting) {
+                                showConfirmRemove = true
+                            }
+                        },
+                        style = DialogButtonStyle.Danger
+                    ) {
+                        Text(if (isDeleting) "Removing..." else "Remove")
                     }
-                }
-            ) {
-                Text(if (isDeleting) "Removing..." else "Remove")
-            }
         }
         
         // Spacer could be handled by CSS; buttons will align according to Styles
@@ -177,7 +180,7 @@ fun ObjectEditorDialog(
         // Cancel button
         DialogButton(
             onClick = { if (!isSubmitting && !isDeleting) onClose() },
-            isPrimary = false,
+            style = DialogButtonStyle.Secondary,
             isDisabled = isSubmitting || isDeleting
         ) {
             Text("Cancel")
@@ -186,7 +189,7 @@ fun ObjectEditorDialog(
         // Save button
         DialogButton(
             onClick = { if (!isSubmitting && !isDeleting) handleSubmit() },
-            isPrimary = true,
+            style = DialogButtonStyle.Primary,
             isDisabled = isSubmitting || isDeleting
         ) {
             Text(if (isSubmitting) "Saving..." else "Save")
@@ -260,15 +263,15 @@ fun ObjectEditorDialog(
                         Translated("Asset")
                     }
                     Div {
-                        Button(attrs = {
-                            classes(Styles.baseDialogButtonPrimary)
-
-                            style {
-                                marginBottom(8.px)
+                        DialogButton(
+                            onClick = { showCollectionBrowser = true },
+                            style = DialogButtonStyle.Primary,
+                            attrs = {
+                                style {
+                                    marginBottom(8.px)
+                                }
                             }
-
-                            onClick { showCollectionBrowser = true }
-                        }) {
+                        ) {
                             Translated("Browse")
                         }
                     }

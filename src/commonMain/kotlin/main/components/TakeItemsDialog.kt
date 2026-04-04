@@ -79,7 +79,7 @@ fun TakeItemsDialog() {
                     WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, false)
                     prompt = null
                 }
-            }, isPrimary = false) { Translated("Decline") }
+            }, style = DialogButtonStyle.Secondary) { Translated("Decline") }
 
             DialogButton(onClick = {
                 val scope = MainScope()
@@ -88,7 +88,7 @@ fun TakeItemsDialog() {
                     WebSocketApi.sendTakeItemsConfirmation(current.requestId, user.key, true)
                     prompt = null
                 }
-            }, isPrimary = true) {
+            }, style = DialogButtonStyle.Primary) {
                 if (current.isReceiving) {
                     Translated("Take items")
                 } else {

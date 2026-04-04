@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -179,13 +180,15 @@ fun SelectItemDialog(
                                         property("align-items", "center")
                                     }
                                 }) {
-                                    Button(attrs = {
-                                        classes(Styles.baseDialogButtonPrimary)
-                                        onClick {
-                                            it.stopPropagation()
+                                    DialogButton(
+                                        onClick = {
                                             toggleSelected()
+                                        },
+                                        style = DialogButtonStyle.Primary,
+                                        attrs = {
+                                            onClick { it.stopPropagation() }
                                         }
-                                    }) { Text(if (isSelected) translated("Clear") else translated("Select")) }
+                                    ) { Text(if (isSelected) translated("Clear") else translated("Select")) }
 
                                     if (useQuantities && isSelected) {
                                         val current = selected[item.key] ?: (item to 0)
@@ -220,7 +223,7 @@ fun SelectItemDialog(
                 val result = selected.values.toList()
                 onConfirm(result)
                 onClose()
-            }, isPrimary = true) { Translated("Confirm") }
+            }, style = DialogButtonStyle.Primary) { Translated("Confirm") }
         }
     )
 }

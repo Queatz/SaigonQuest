@@ -13,7 +13,6 @@ import main.theme.Styles
 import models.VisitedWorld
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -118,21 +117,21 @@ fun VisitedWorldsDialog(
                                 }
 
                                 // Remove visited world
-                                Button(
-                                    attrs = {
-                                        classes(Styles.secondaryButton)
-                                        style { marginTop(4.px) }
-                                        onClick { event ->
-                                            try {
-                                                event.stopPropagation()
-                                                val worldId = vw.world.key
-                                                if (worldId.isNotEmpty()) {
-                                                    confirmWorldId = worldId
-                                                }
-                                            } catch (t: Throwable) {
-                                                console.error("Failed to initiate remove visited world", t)
+                                DialogButton(
+                                    onClick = {
+                                        try {
+                                            val worldId = vw.world.key
+                                            if (worldId.isNotEmpty()) {
+                                                confirmWorldId = worldId
                                             }
+                                        } catch (t: Throwable) {
+                                            console.error("Failed to initiate remove visited world", t)
                                         }
+                                    },
+                                    style = DialogButtonStyle.Secondary,
+                                    attrs = {
+                                        style { marginTop(4.px) }
+                                        onClick { it.stopPropagation() }
                                     }
                                 ) { Translated("Remove") }
                             }

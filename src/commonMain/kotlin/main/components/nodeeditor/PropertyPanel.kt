@@ -10,15 +10,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.ItemApi
 import main.api.DocApi
+import main.components.IconRenderer
 import main.components.Translated
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
 import main.components.media.UploadMediaDialog
 import main.components.chat.RichTextEditorDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.translated
 import main.components.LabeledCheckbox
 import main.theme.NodeEditorStyles
-import main.theme.Styles
 import models.NodeCategory
 import models.MediaType
 import models.nodeeditor.NodeData
@@ -35,8 +37,6 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.dom.Audio
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.CheckboxInput
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Img
@@ -241,10 +241,10 @@ fun PropertyPanel(
                                             padding(0.px)
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showRichEditorDialog = true }
-                                        }) { Translated("Rich editor") }
+                                        DialogButton(
+                                            onClick = { showRichEditorDialog = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated("Rich editor") }
                                     }
 
                                     if (showRichEditorDialog) {
@@ -306,20 +306,20 @@ fun PropertyPanel(
                                             property("gap", "8px")
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showSelect = true }
-                                        }) { Translated(if (currentId.isBlank()) "Select doc" else "Change") }
+                                        DialogButton(
+                                            onClick = { showSelect = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated(if (currentId.isBlank()) "Select doc" else "Change") }
 
                                         if (currentId.isNotBlank()) {
-                                            Button(attrs = {
-                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                                onClick {
+                                            DialogButton(
+                                                onClick = {
                                                     propertyValues = propertyValues.edit {
                                                         it[PropertyKey.ID] = ""
                                                     }
-                                                }
-                                            }) { Translated("Clear") }
+                                                },
+                                                style = DialogButtonStyle.Danger
+                                            ) { Translated("Clear") }
                                         }
                                     }
 
@@ -356,19 +356,19 @@ fun PropertyPanel(
                                             property("gap", "8px")
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showDialog = true }
-                                        }) { Translated(if (imageUrl.isBlank()) "Choose image" else "Change image") }
+                                        DialogButton(
+                                            onClick = { showDialog = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated(if (imageUrl.isBlank()) "Choose image" else "Change image") }
 
                                         if (imageUrl.isNotBlank()) {
-                                            Button(attrs = {
-                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                                onClick {
+                                            DialogButton(
+                                                onClick = {
                                                     propertyValues =
                                                         propertyValues.edit { it[PropertyKey.IMAGE_URL] = "" }
-                                                }
-                                            }) { Translated("Remove image") }
+                                                },
+                                                style = DialogButtonStyle.Danger
+                                            ) { Translated("Remove image") }
                                         }
                                     }
 
@@ -403,19 +403,19 @@ fun PropertyPanel(
                                             property("gap", "8px")
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showDialog = true }
-                                        }) { Translated(if (soundUrl.isBlank()) "Choose sound" else "Change sound") }
+                                        DialogButton(
+                                            onClick = { showDialog = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated(if (soundUrl.isBlank()) "Choose sound" else "Change sound") }
 
                                         if (soundUrl.isNotBlank()) {
-                                            Button(attrs = {
-                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                                onClick {
+                                            DialogButton(
+                                                onClick = {
                                                     propertyValues =
                                                         propertyValues.edit { it[PropertyKey.SOUND_URL] = "" }
-                                                }
-                                            }) { Translated("Remove sound") }
+                                                },
+                                                style = DialogButtonStyle.Danger
+                                            ) { Translated("Remove sound") }
                                         }
                                     }
 
@@ -479,20 +479,20 @@ fun PropertyPanel(
                                             property("gap", "8px")
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showSelect = true }
-                                        }) { Translated("Select item") }
+                                        DialogButton(
+                                            onClick = { showSelect = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated("Select item") }
 
                                         if (currentId.isNotBlank()) {
-                                            Button(attrs = {
-                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                                onClick {
+                                            DialogButton(
+                                                onClick = {
                                                     propertyValues = propertyValues.edit {
                                                         it[PropertyKey.ITEM_ID] = ""
                                                     }
-                                                }
-                                            }) { Translated("Clear") }
+                                                },
+                                                style = DialogButtonStyle.Danger
+                                            ) { Translated("Clear") }
                                         }
                                     }
 
@@ -588,21 +588,21 @@ fun PropertyPanel(
                                             property("gap", "8px")
                                         }
                                     }) {
-                                        Button(attrs = {
-                                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                                            onClick { showSelect = true }
-                                        }) { Translated("Select items") }
+                                        DialogButton(
+                                            onClick = { showSelect = true },
+                                            style = DialogButtonStyle.Primary
+                                        ) { Translated("Select items") }
 
                                         if (!itemsCsv.isBlank()) {
-                                            Button(attrs = {
-                                                classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                                onClick {
+                                            DialogButton(
+                                                onClick = {
                                                     propertyValues = propertyValues.edit {
                                                         it[PropertyKey.ITEMS] = ""
                                                         it[PropertyKey.QUANTITIES] = ""
                                                     }
-                                                }
-                                            }) { Translated("Clear") }
+                                                },
+                                                style = DialogButtonStyle.Danger
+                                            ) { Translated("Clear") }
                                         }
                                     }
 
@@ -750,20 +750,22 @@ fun PropertyPanel(
 
                             // Only show remove button if there's more than one button
                             if (buttons.size > 1) {
-                                Button(
-                                    attrs = {
-                                        classes(NodeEditorStyles.removeButton, Styles.primaryButton)
-                                        onClick {
-                                            // Remove this button
-                                            val updatedButtons = buttons.toMutableList()
-                                            updatedButtons.removeAt(index)
-                                            propertyValues = propertyValues.edit {
-                                                it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
-                                            }
+                                DialogButton(
+                                    onClick = {
+                                        // Remove this button
+                                        val updatedButtons = buttons.toMutableList()
+                                        updatedButtons.removeAt(index)
+                                        propertyValues = propertyValues.edit {
+                                            it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
                                         }
-                                    }
+                                    },
+                                    style = DialogButtonStyle.Danger
                                 ) {
-                                    Text("✖️")
+                                    IconRenderer(
+                                        url = "raw/data/ui/ui.png",
+                                        index = 20,
+                                        size = 24,
+                                    )
                                 }
                             }
                         }
@@ -787,21 +789,19 @@ fun PropertyPanel(
                         }
                     )
 
-                    Button(
-                        attrs = {
-                            classes(NodeEditorStyles.addButton, Styles.primaryButton)
-                            onClick {
-                                if (newButtonText.isNotEmpty()) {
-                                    // Add new button
-                                    val updatedButtons = buttons.toMutableList()
-                                    updatedButtons.add(newButtonText)
-                                    propertyValues = propertyValues.edit {
-                                        it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
-                                    }
-                                    newButtonText = ""
+                    DialogButton(
+                        onClick = {
+                            if (newButtonText.isNotEmpty()) {
+                                // Add new button
+                                val updatedButtons = buttons.toMutableList()
+                                updatedButtons.add(newButtonText)
+                                propertyValues = propertyValues.edit {
+                                    it[PropertyKey.BUTTONS] = updatedButtons.joinToString(",")
                                 }
+                                newButtonText = ""
                             }
-                        }
+                        },
+                        style = DialogButtonStyle.Primary
                     ) {
                         Translated("Add")
                     }

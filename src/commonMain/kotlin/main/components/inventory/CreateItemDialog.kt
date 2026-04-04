@@ -15,6 +15,7 @@ import main.api.AssetItemApi
 import models.AssetType
 import main.components.BaseDialog
 import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.translated
 import main.components.IconRenderer
@@ -379,7 +380,7 @@ fun CreateItemDialog(
 
                 DialogButton(
                     onClick = { showAssetBrowser = true },
-                    isPrimary = false,
+                    style = DialogButtonStyle.Secondary,
                 ) { Translated("Browse assets") }
             }
 
@@ -541,7 +542,7 @@ fun CreateItemDialog(
                     // Browse button for wearable sprite sheet
                     DialogButton(
                         onClick = { showWearableBrowser = true },
-                        isPrimary = false,
+                        style = DialogButtonStyle.Secondary,
                     ) { Translated("Browse assets") }
                     
                     if (wearableFileError.isNotEmpty()) {
@@ -623,7 +624,7 @@ fun CreateItemDialog(
             // Create button
             DialogButton(
                 onClick = { handleSubmit() },
-                isPrimary = true
+                style = DialogButtonStyle.Primary
             ) {
                 if (isSubmitting) {
                     Translated("Creating...")
