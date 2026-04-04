@@ -109,8 +109,6 @@ object OverlayStyles : StyleSheet() {
         property("z-index", "2500")
         property("pointer-events", "auto")
         property("transition", "opacity 250ms ease, backdrop-filter 250ms ease, -webkit-backdrop-filter 250ms ease")
-        property("backdrop-filter", "blur(8px)")
-        property("-webkit-backdrop-filter", "blur(8px)")
         opacity(1)
     }
 
@@ -169,8 +167,8 @@ object OverlayStyles : StyleSheet() {
         property("z-index", "1000")
         property("pointer-events", "auto")
 
-        property("backdrop-filter", "blur(16px)")  // Initial state
-        property("-webkit-backdrop-filter", "blur(16px)")  // Initial state
+        property("backdrop-filter", "brightness(50%) saturate(75%) blur(3px)")  // Initial state
+        property("-webkit-backdrop-filter", "brightness(50%) saturate(75%) blur(3px)")  // Initial state
         property("isolation", "isolate")
         property("contain", "layout paint size")
     }

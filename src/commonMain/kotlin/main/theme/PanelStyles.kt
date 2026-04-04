@@ -41,8 +41,6 @@ object PanelStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         property("pointer-events", "auto")
-        property("backdrop-filter", "blur(8px)")
-        property("-webkit-backdrop-filter", "blur(8px)")
     }
 
     val panelHeader by style {
