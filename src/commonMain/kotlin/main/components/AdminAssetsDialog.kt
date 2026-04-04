@@ -1,34 +1,17 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.AssetApi
 import main.api.AssetItemApi
 import main.theme.Styles
 import models.Asset
 import models.AssetType
-import main.components.Translated
-import main.components.translated
-import main.components.IconRenderer
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Option
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun AdminAssetsDialog(
@@ -231,7 +214,7 @@ fun AdminAssetsDialog(
                                         selectedAsset = asset
                                         showEditDialog = true
                                     },
-                                    style = DialogButtonStyle.Secondary
+                                    style = DialogButtonStyle.Primary
                                 ) { Translated("Edit") }
                             }
                         }

@@ -10,8 +10,6 @@ import main.components.Translated
 import main.components.translated
 import main.theme.Styles
 import models.Item
-import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -47,10 +45,10 @@ fun AdminItemsDialog(
     LaunchedEffect(Unit) { loadItems() }
 
     val headerActions: @Composable () -> Unit = {
-        Button(attrs = {
-            classes(Styles.primaryButton)
-            onClick { showCreateItemDialog = true }
-        }) { Translated("New") }
+        DialogButton(
+            style = DialogButtonStyle.Primary,
+            onClick = { showCreateItemDialog = true }
+        ) { Translated("New") }
     }
 
     BaseDialog(
@@ -97,10 +95,10 @@ fun AdminItemsDialog(
                             }
                         }
                         Div(attrs = { classes(Styles.adminItemsRowActions) }) {
-                            Button(attrs = {
-                                classes(Styles.primaryButton)
-                                onClick { editingItem = item }
-                            }) { Translated("Edit") }
+                            DialogButton(
+                                style = DialogButtonStyle.Primary,
+                                onClick = { editingItem = item }
+                            ) { Translated("Edit") }
                         }
                     }
                 }

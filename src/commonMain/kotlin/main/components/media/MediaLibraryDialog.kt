@@ -1,11 +1,6 @@
 package main.components.media
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
@@ -13,48 +8,12 @@ import kotlinx.coroutines.launch
 import main.api.ContentApiConstants
 import main.api.MediaApi
 import main.api.UserApi
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.ImageDialog
-import main.components.BasicConfirmDialog
-import main.components.BasicInputDialog
-import main.components.Translated
-import main.components.translated
+import main.components.*
 import main.theme.Styles
 import models.MediaType
 import models.UserMedia
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.marginRight
-import org.jetbrains.compose.web.css.maxHeight
-import org.jetbrains.compose.web.css.minHeight
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Audio
-import org.jetbrains.compose.web.dom.Video
-import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.dom.*
 import org.w3c.fetch.RequestInit
 import org.w3c.files.File
 
@@ -222,8 +181,23 @@ fun MediaLibraryDialog(
                             }
 
                             // Favorite toggle overlay
-                            DialogButton(
-                                onClick = {
+                            Button(attrs = {
+                                style {
+                                    property("position", "absolute")
+                                    property("top", "6px")
+                                    property("right", "6px")
+                                    property("background", "transparent")
+                                    property("border", "none")
+                                    property("cursor", "pointer")
+                                    width(24.px)
+                                    height(24.px)
+                                    fontSize(18.px)
+                                    if (item.favorite) {
+                                        color(Color("#ffee00"))
+                                    }
+                                }
+                                onClick {
+                                    it.stopPropagation()
                                     val scope = MainScope()
                                     scope.launch {
                                         try {
@@ -237,22 +211,8 @@ fun MediaLibraryDialog(
                                             error = t.message ?: "Failed to update favorite"
                                         }
                                     }
-                                },
-                                attrs = {
-                                    onClick { it.stopPropagation() }
-                                    style {
-                                        property("position", "absolute")
-                                        property("top", "6px")
-                                        property("right", "6px")
-                                        width(24.px)
-                                        height(24.px)
-                                        fontSize(18.px)
-                                        if (item.favorite) {
-                                            color(Color("#ffee00"))
-                                        }
-                                    }
                                 }
-                            ) { Text(if (item.favorite) "★" else "☆") }
+                            }) { Text(if (item.favorite) "★" else "☆") }
 
                             // Actions row
                             Div(attrs = {
