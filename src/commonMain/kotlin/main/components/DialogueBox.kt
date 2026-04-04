@@ -1,59 +1,22 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.*
 import main.components.media.AudioRecorder
 import main.components.media.AudioRecorderUI
-import main.components.media.rememberAudioRecorderState
 import main.components.media.UploadMediaDialog
+import main.components.media.rememberAudioRecorderState
 import main.theme.Styles
-import main.theme.Theme
 import models.DialogueData
 import models.MediaType
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.fontWeight
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.paddingTop
-import org.jetbrains.compose.web.dom.Br
-import org.jetbrains.compose.web.dom.TextInput
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Audio
+import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.HTMLElement
 import web.animations.awaitAnimationFrame
-import web.cssom.HtmlAttributes.Companion.value
-import kotlin.invoke
 
 /**
  * DialogueBox component
@@ -334,7 +297,7 @@ fun DialogueBox(
                         placeholder = dialogue.placeholder?.takeIf { it.isNotBlank() },
                         containerAttrs = {
                             style {
-                                property("flex-grow", "1")
+                                flexGrow(1)
                             }
                         },
                         enabled = !isWaiting,

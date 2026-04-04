@@ -1,12 +1,6 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.BalanceApi
 import main.components.common.BalanceEventRow
@@ -14,21 +8,8 @@ import main.components.common.PendingRequestRow
 import main.components.common.formatAmount
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
-import models.CreateBalanceChangeRequest
-import models.UserBalance
-import models.UserBalanceChangeRequest
-import models.UserBalanceChangeStatus
-import models.UserBalanceChangeType
-import models.UserBalanceHistory
-import models.MediaType
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.Img
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.NumberInput
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
+import models.*
+import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun BalanceDialog(
@@ -181,8 +162,13 @@ fun BalanceDialog(
                     }
                 )
 
-                Label(attrs = { classes(Styles.formLabel) }) { Translated("Notes") }
-                TextArea(value = notes, attrs = { classes(Styles.inputField); onInput { notes = it.value } })
+                DialogInput(
+                    value = notes,
+                    onInput = { notes = it },
+                    label = "Notes",
+                    placeholder = translated("Optional notes..."),
+                    multiline = true,
+                )
 
                 // Attachments
                 Div({ classes(Styles.formGroup) }) {

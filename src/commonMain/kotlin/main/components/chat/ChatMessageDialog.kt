@@ -1,38 +1,18 @@
 package main.components.chat
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import Translations.str
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.DocApi
-import Translations.str
-import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.delay
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.Md
-import main.components.Translated
-import main.components.translated
+import main.components.*
 import main.components.worlddocs.SelectDocDialog
 import main.theme.Styles
 import models.ChatMessage
 import models.chat.ImageAttachment
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -166,17 +146,12 @@ fun ChatMessageDialog(
         content = {
             if (isEditing) {
                 // Edit message form
-                Div {
-                    val editPlaceholder = translated("Edit your message")
-                    TextArea(
-                        value = editedText,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder(editPlaceholder)
-                            onInput { editedText = it.value }
-                        }
-                    )
-                }
+                DialogInput(
+                    value = editedText,
+                    onInput = { editedText = it },
+                    placeholder = translated("Edit your message"),
+                    multiline = true,
+                )
             } else if (showDeleteConfirmation) {
                 // Delete confirmation
                 P(

@@ -60,9 +60,12 @@ fun SendVndDialog(
                 }
             )
 
-            // Optional note
-            Label(attrs = { classes(Styles.formLabel) }) { Translated("Note (optional)") }
-            TextArea(value = note, attrs = { classes(Styles.inputField); onInput { note = it.value } })
+            DialogInput(
+                value = note,
+                onInput = { note = it },
+                label = "Note (optional)",
+                multiline = true,
+            )
 
             // Optional attachment
             Div({ classes(Styles.formGroup) }) {

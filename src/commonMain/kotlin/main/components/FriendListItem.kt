@@ -141,12 +141,13 @@ fun FriendListItem(
                 classes(FriendsStyles.friendNoteContainer)
             }
         ) {
-            TextArea(
+            DialogInput(
                 value = editedNote,
+                onInput = { editedNote = it },
+                placeholder = str("Add a note about this friend..."),
+                multiline = true,
                 attrs = {
-                    classes(Styles.inputField, FriendsStyles.friendNoteTextArea)
-                    onInput { editedNote = it.value }
-                    placeholder(str("Add a note about this friend..."))
+                    classes(FriendsStyles.friendNoteTextArea)
                 }
             )
             

@@ -18,14 +18,12 @@ import models.CreateUserRequestDto
 import models.UserRequest
 import models.UserRequestType
 import org.jetbrains.compose.web.attributes.autoFocus
-import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Option
@@ -33,7 +31,6 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 import org.jetbrains.compose.web.dom.TextInput
 import web.animations.awaitAnimationFrame
 
@@ -179,15 +176,13 @@ fun UserRequestsDialog(
                 }
             }
 
-            Div {
-                Label { Translated("Description") }
-                TextArea(
-                    value = content,
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { content = it.value }
-                    },
-                )
+            DialogInput(
+                value = content,
+                onInput = { content = it },
+                label = "Description",
+                placeholder = translated("Tell us more about your request..."),
+                multiline = true,
+            ) {
                 val ce = contentError
                 if (ce != null) {
                     P(attrs = { classes(Styles.formErrorMessage) }) { Text(ce) }

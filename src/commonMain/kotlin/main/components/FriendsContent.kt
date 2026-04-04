@@ -264,7 +264,7 @@ fun FriendsContent() {
     // Friends content
     Div(
         attrs = {
-            classes(main.theme.FriendsStyles.friendsContentRoot)
+            classes(FriendsStyles.friendsContentRoot)
         }
     ) {
         // Banner feedback/error message
