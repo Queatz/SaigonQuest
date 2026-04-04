@@ -14,8 +14,6 @@ import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
 import main.components.audio.MusicManager
-import main.theme.Styles
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.WebSocket
 import web.mediadevices.getUserMedia
@@ -29,7 +27,6 @@ import org.khronos.webgl.Int16Array
 import org.khronos.webgl.get
 import org.khronos.webgl.set
 import lib.AudioContext
-import org.jetbrains.compose.web.attributes.disabled
 
 @Serializable
 private data class VoiceControlMessage(
@@ -172,105 +169,94 @@ fun VoiceInput(
         }
     }
 
-    Button(
-        attrs = {
-            classes(Styles.voiceButton)
+    DialogButton(
+        onClick = {
+            if (isRecording) {
+                stopRecording()
+            } else {
+                MusicManager.startRecording()
+                scope.launch {
+                    runCatching {
+                        // Request microphone
+                        val constraints = MediaStreamConstraints(
+                            audio = MediaTrackConstraints()
+                        )
+                        val stream = navigator.mediaDevices.getUserMedia(constraints)
+                        mediaStream = stream
 
-            if (small) {
-                classes(Styles.voiceButtonSmall)
-            }
+                        // Connect WebSocket to backend proxy
+                        val user = UserApi.getCurrentUser()
+                        val wsUrl = "${ApiConstants.API_BASE_URL}/ws/voice?language=${user.language}"
+                        allowReconnect = true
+                        reconnectAttempts = 0
+                        connectSocket(wsUrl)
 
-            if (!enabled) {
-                disabled()
-                classes(Styles.disabledAction)
-            }
+                        // Web Audio fallback (Firefox compatible): AudioContext + ScriptProcessorNode
+                        val ctx = AudioContext()
+                        audioContext = ctx
+                        val src = ctx.createMediaStreamSource(stream)
+                        sourceNode = src
+                        val proc = ctx.createScriptProcessor(
+                            2048,
+                            1,
+                            1,
+                        )
+                        processorNode = proc
 
-            onClick {
-                if (isRecording) {
-                    stopRecording()
-                } else {
-                    MusicManager.startRecording()
-                    scope.launch {
-                        runCatching {
-                            // Request microphone
-                            val constraints = MediaStreamConstraints(
-                                audio = MediaTrackConstraints()
-                            )
-                            val stream = navigator.mediaDevices.getUserMedia(constraints)
-                            mediaStream = stream
-
-                            // Connect WebSocket to backend proxy
-                            val token = UserApi.getToken() ?: ""
-                            val user = UserApi.getCurrentUser()
-                            val wsUrl = "${ApiConstants.API_BASE_URL}/ws/voice?language=${user.language}"
-                            allowReconnect = true
-                            reconnectAttempts = 0
-                            connectSocket(wsUrl)
-
-                            // Web Audio fallback (Firefox compatible): AudioContext + ScriptProcessorNode
-                            val ctx = AudioContext()
-                            audioContext = ctx
-                            val src = ctx.createMediaStreamSource(stream)
-                            sourceNode = src
-                            val proc = ctx.createScriptProcessor(
-                                2048,
-                                1,
-                                1,
-                            )
-                            processorNode = proc
-
-                            // Accumulate PCM16 chunks to ~100 ms before sending
-                            val chunks = mutableListOf<Int16Array>()
-                            var bytesAccum = 0
-                            fun flushIfReady(force: Boolean = false) {
-                                if (bytesAccum == 0) return
-                                if (!force && bytesAccum < 640) return
-                                val totalSamples = bytesAccum / 2
-                                val merged = Int16Array(totalSamples)
-                                var offset = 0
-                                for (c in chunks) {
-                                    merged.set(c, offset)
-                                    offset += c.length
-                                }
-                                chunks.clear()
-                                bytesAccum = 0
-                                try {
-                                    socket?.send(merged.buffer)
-                                } catch (t: Throwable) {
-                                    console.error("VoiceInput: failed to send binary audio", t)
-                                }
+                        // Accumulate PCM16 chunks to ~100 ms before sending
+                        val chunks = mutableListOf<Int16Array>()
+                        var bytesAccum = 0
+                        fun flushIfReady(force: Boolean = false) {
+                            if (bytesAccum == 0) return
+                            if (!force && bytesAccum < 640) return
+                            val totalSamples = bytesAccum / 2
+                            val merged = Int16Array(totalSamples)
+                            var offset = 0
+                            for (c in chunks) {
+                                merged.set(c, offset)
+                                offset += c.length
                             }
-                            // Expose a flush callback so we can force-send pending audio before stopping
-                            flushPending = { flushIfReady(true) }
-
-                            val inRate = ctx.sampleRate.toInt()
-                            proc.onaudioprocess = { ev ->
-                                try {
-                                    val input = ev.inputBuffer
-                                    val ch0 = input.getChannelData(0)
-                                    val resampled = resampleTo24k(ch0, inRate)
-                                    val pcm16 = floatToPcm16(resampled)
-                                    chunks.add(pcm16)
-                                    bytesAccum += pcm16.length * 2
-                                    flushIfReady(false)
-                                } catch (t: Throwable) {
-                                    console.error("VoiceInput: onaudioprocess error", t)
-                                }
+                            chunks.clear()
+                            bytesAccum = 0
+                            try {
+                                socket?.send(merged.buffer)
+                            } catch (t: Throwable) {
+                                console.error("VoiceInput: failed to send binary audio", t)
                             }
-
-                            // Build graph; connect to destination to keep processor active
-                            src.connect(proc)
-                            proc.connect(ctx.destination)
-
-                            isRecording = true
-                        }.onFailure {
-                            console.error("VoiceInput: failed to start recording", it)
-                            stopRecording()
                         }
+                        // Expose a flush callback so we can force-send pending audio before stopping
+                        flushPending = { flushIfReady(true) }
+
+                        val inRate = ctx.sampleRate.toInt()
+                        proc.onaudioprocess = { ev ->
+                            try {
+                                val input = ev.inputBuffer
+                                val ch0 = input.getChannelData(0)
+                                val resampled = resampleTo24k(ch0, inRate)
+                                val pcm16 = floatToPcm16(resampled)
+                                chunks.add(pcm16)
+                                bytesAccum += pcm16.length * 2
+                                flushIfReady(false)
+                            } catch (t: Throwable) {
+                                console.error("VoiceInput: onaudioprocess error", t)
+                            }
+                        }
+
+                        // Build graph; connect to destination to keep processor active
+                        src.connect(proc)
+                        proc.connect(ctx.destination)
+
+                        isRecording = true
+                    }.onFailure {
+                        console.error("VoiceInput: failed to start recording", it)
+                        stopRecording()
                     }
                 }
             }
-        }
+        },
+        style = if (isRecording) DialogButtonStyle.Danger else DialogButtonStyle.Good,
+        isDisabled = !enabled,
+        small = small,
     ) {
         if (isRecording) Text("🛑") else Text("🎙️")
     }

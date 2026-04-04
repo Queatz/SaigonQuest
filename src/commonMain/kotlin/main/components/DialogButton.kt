@@ -22,6 +22,7 @@ enum class DialogButtonStyle {
  * @param onClick Callback when the button is clicked
  * @param style The style of the button (default: Secondary)
  * @param isDisabled Whether this button is disabled (default: false)
+ * @param small Whether this button is small (default: false)
  * @param color The color of the button (default: null)
  * @param attrs Additional attributes for the button container
  * @param content The content of the button
@@ -31,6 +32,7 @@ fun DialogButton(
     onClick: () -> Unit,
     style: DialogButtonStyle = DialogButtonStyle.Secondary,
     isDisabled: Boolean = false,
+    small: Boolean = false,
     color: String? = null,
     attrs: AttrBuilderContext<HTMLDivElement>? = null,
     content: @Composable () -> Unit
@@ -62,9 +64,15 @@ fun DialogButton(
 
             // Ensure the framed border stays visible despite button class defaults
             style {
-                padding(6.px, 18.px)
-                property("border-width", "6px")
-                property("border-image-width", "6px")
+                if (small) {
+                    padding(2.px, 8.px)
+                    property("border-width", "4px")
+                    property("border-image-width", "4px")
+                } else {
+                    padding(6.px, 18.px)
+                    property("border-width", "6px")
+                    property("border-image-width", "6px")
+                }
                 property("border-style", "solid")
                 property("border-radius", "0")
                 property("box-shadow", "none")
