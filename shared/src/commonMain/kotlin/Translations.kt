@@ -256,6 +256,9 @@ vi: Đang tải…
 Error loading world
 vi: Lỗi tải thế giới
 
+Oh no! Failed to load world.
+vi: Chết! Không thể tải thế giới.
+
 No world found
 vi: Không tìm thấy thế giới
 

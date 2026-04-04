@@ -1,6 +1,7 @@
 package main.components.world
 
 import io.ktor.client.plugins.ResponseException
+import Translations.str
 import kotlinx.coroutines.suspendCancellableCoroutine
 import lib.AbstractMesh
 import lib.Color3
@@ -29,7 +30,6 @@ import kotlin.math.PI
 import kotlin.math.*
 import kotlinx.browser.window
 import lib.Node
-import lib.TransformNode
 import models.ErrorResponse
 
 /**
@@ -496,7 +496,7 @@ class WorldLoader(private val scene: Scene) {
                     },
                     onError = { _, message, exception ->
                         // Resume the coroutine with an exception
-                        continuation.resumeWithException(Exception("Error loading model: $message. $exception"))
+                        continuation.resumeWithException(Throwable(str("Oh no! Failed to load world.")))
                     }
                 )
                 
