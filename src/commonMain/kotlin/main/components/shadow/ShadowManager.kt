@@ -5,6 +5,7 @@ import lib.CascadedShadowGenerator
 import lib.Color3
 import lib.DirectionalLight
 import lib.Scene
+import lib.ShadowGenerator
 import lib.Vector3
 import kotlin.js.Console
 
@@ -21,8 +22,11 @@ class ShadowManager(
     private val scene: Scene,
     private val light: DirectionalLight
 ) {
-    // The shadow generator instance
+    // The main shadow generator instance (directional light)
     private val shadowGenerator: CascadedShadowGenerator
+    
+    // List of point light shadow generators (from GLB files)
+    private val pointLightShadowGenerators = mutableListOf<ShadowGenerator>()
     
     // Shadow map size (power of 2, higher = better quality but lower performance)
     private val shadowMapSize = 384
@@ -78,8 +82,8 @@ class ShadowManager(
         // Configure shadow generator properties
         shadowGenerator.apply {
             lambda = .667f
-            bias = 0.0125f
-            normalBias = 0.005f
+            bias = 0.005f  // Reduced bias for better contact shadows with PCF
+            normalBias = 0.01f // Adjust for PCF
             
             // Enable transparent shadows
             transparencyShadow = true
@@ -90,8 +94,14 @@ class ShadowManager(
             // Set shadow max Z to match light
             shadowMaxZ = light.shadowMaxZ
             
+            // Apply soft shadow settings
+            applySoftShadowSettings(this)
+            
             // Split the frustum for cascaded shadows
             splitFrustum()
+            
+            // Set cascade blend percentage to soften transitions
+            cascadeBlendPercentage = 0.1f
         }
         
         println("[DEBUG] Shadow generator configured with enhanced settings:")
@@ -99,6 +109,27 @@ class ShadowManager(
         println("[DEBUG] - normalBias: ${shadowGenerator.normalBias}")
         println("[DEBUG] - lambda: ${shadowGenerator.lambda}")
         println("[DEBUG] - shadowMaxZ: ${shadowGenerator.shadowMaxZ}")
+        println("[DEBUG] - usePercentageCloserFiltering: ${shadowGenerator.usePercentageCloserFiltering}")
+        println("[DEBUG] - filteringQuality: ${shadowGenerator.filteringQuality}")
+    }
+    
+    /**
+     * Applies soft shadow settings to a shadow generator.
+     * Uses Percentage Closer Filtering (PCF) for a balance of performance and quality.
+     * 
+     * @param generator The shadow generator to configure
+     */
+    private fun applySoftShadowSettings(generator: ShadowGenerator) {
+        // Use PCF for soft shadows
+        generator.usePercentageCloserFiltering = true
+        generator.filteringQuality = ShadowGenerator.FILTERINGQUALITY_MEDIUM
+        
+        // Alternatively, PCSS (Contact Hardening Shadows) can be used for even softer, more realistic shadows:
+        generator.useContactHardeningShadow = true
+        generator.contactHardeningLightSizeUVRatio = 0.05f
+        
+        // Set darkness to make shadows less harsh (0.0 = fully dark, 1.0 = fully lit)
+        // generator.darkness = 0.2f
     }
     
     /**
@@ -112,13 +143,16 @@ class ShadowManager(
             return
         }
         
-        // Add to shadow generator
+        // Add to main shadow generator
         shadowGenerator.addShadowCaster(mesh)
+        
+        // Add to all point light shadow generators
+        pointLightShadowGenerators.forEach { it.addShadowCaster(mesh) }
         
         // Add to tracking list
         shadowCasters.add(mesh)
         
-        println("[DEBUG] Added shadow caster: ${mesh.name}")
+        println("[DEBUG] Added shadow caster: ${mesh.name} to main and ${pointLightShadowGenerators.size} point light generators")
     }
     
     /**
@@ -144,13 +178,44 @@ class ShadowManager(
             return
         }
         
-        // Remove from shadow generator
+        // Remove from main shadow generator
         shadowGenerator.removeShadowCaster(mesh)
+        
+        // Remove from all point light shadow generators
+        pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
         
         // Remove from tracking list
         shadowCasters.remove(mesh)
         
         println("[DEBUG] Removed shadow caster: ${mesh.name}")
+    }
+    
+    /**
+     * Registers a point light shadow generator.
+     * 
+     * @param generator The point light shadow generator to register
+     */
+    fun addPointLightShadowGenerator(generator: ShadowGenerator) {
+        // Apply consistent soft shadow settings
+        applySoftShadowSettings(generator)
+        
+        pointLightShadowGenerators.add(generator)
+        
+        // Add all existing shadow casters to this new generator
+        shadowCasters.forEach { mesh ->
+            generator.addShadowCaster(mesh)
+        }
+        
+        println("[DEBUG] Registered point light shadow generator and added ${shadowCasters.size} existing casters")
+    }
+    
+    /**
+     * Clears all point light shadow generators.
+     */
+    fun clearPointLightShadowGenerators() {
+        pointLightShadowGenerators.forEach { it.dispose() }
+        pointLightShadowGenerators.clear()
+        println("[DEBUG] Cleared all point light shadow generators")
     }
     
     /**
@@ -207,13 +272,13 @@ class ShadowManager(
      * Cleans up the shadow generator and clears the shadow casters list.
      */
     fun dispose() {
-        // The shadow generator doesn't have a dispose method in our wrapper,
-        // but we should remove all references to allow garbage collection
-        
-        // Remove all shadow casters
+        // Remove all shadow casters from main generator
         shadowCasters.forEach { mesh ->
             shadowGenerator.removeShadowCaster(mesh)
         }
+        
+        // Dispose and clear point light shadow generators
+        clearPointLightShadowGenerators()
         
         // Clear shadow casters list
         shadowCasters.clear()

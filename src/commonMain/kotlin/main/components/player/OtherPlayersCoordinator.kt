@@ -20,7 +20,6 @@ import main.api.addUserJoinListener
 import main.api.addUserLeaveListener
 import main.api.sendUserJoin
 import main.components.world.effect.WaterRippleEffect
-import main.components.shadow.ShadowManager
 import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
@@ -42,7 +41,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     // Managers – must be set before initialize()
     lateinit var worldObjectManager: WorldObjectManager
-    var shadowManager: ShadowManager? = null
     var httpWorldIdOverride: String? = null
     var myUserId: String? = null
 
@@ -68,10 +66,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     fun setWorldObjectManager(manager: WorldObjectManager) {
         worldObjectManager = manager
-    }
-
-    fun setShadowManager(manager: ShadowManager) {
-        shadowManager = manager
     }
 
     fun setHttpWorldId(id: String) {
@@ -384,14 +378,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         // Success: clear retry state
         clearSpawnRetry(op.userId)
 
-        // Shadows
-        shadowManager?.let { mgr ->
-            handle.node.getChildMeshes().forEach { mesh ->
-                mgr.addShadowCaster(mesh)
-                mgr.configureShadowReceiver(mesh)
-            }
-        }
-
         // HUD (only apply non-blank status to avoid clearing an earlier set value)
         if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)
         // Username billboard
@@ -468,12 +454,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             op.profile = user
                             // Success: clear retry state
                             spawnRetryCounts.remove(op.userId)
-                            shadowManager?.let { mgr ->
-                                handle.node.getChildMeshes().forEach { mesh ->
-                                    mgr.addShadowCaster(mesh)
-                                    mgr.configureShadowReceiver(mesh)
-                                }
-                            }
+                            
                             // Prefer server status if available
                             if (user.status.isNotBlank()) op.status = user.status
                             if (op.status.isNotBlank()) hud.setDesiredStatus(op.userId, op.status)

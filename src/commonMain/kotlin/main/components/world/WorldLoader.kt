@@ -321,9 +321,6 @@ class WorldLoader(private val scene: Scene) {
     // Shadow manager for global shadow handling
     private var shadowManager: ShadowManager? = null
     
-    // List of shadow generators for point lights loaded from GLB
-    private val pointLightShadowGenerators = mutableListOf<lib.ShadowGenerator>()
-    
     // Occlusion manager for fading objects that obstruct the player's view
     private var occlusionManager: OcclusionManager? = null
 
@@ -682,8 +679,7 @@ class WorldLoader(private val scene: Scene) {
      */
     private fun configurePointLightShadows(meshes: Array<AbstractMesh>) {
         // Clear previous point light shadow generators to avoid memory leaks
-        pointLightShadowGenerators.forEach { it.dispose() }
-        pointLightShadowGenerators.clear()
+        shadowManager?.clearPointLightShadowGenerators()
         
         scene.lights.forEach { light ->
             // getTypeID() == 0 is PointLight in BabylonJS
@@ -698,14 +694,9 @@ class WorldLoader(private val scene: Scene) {
                     
                     // Enable clustered shadows for this generator
                     sg.useClusteredShadows = true
-                    pointLightShadowGenerators.add(sg)
                     
-                    // Add meshes as shadow casters
-                    meshes.forEach { m ->
-                        if (m.isVisible && !m.name.startsWith("__") && !m.isSkybox()) {
-                            sg.addShadowCaster(m)
-                        }
-                    }
+                    // Register with shadow manager so it can add players/objects later
+                    shadowManager?.addPointLightShadowGenerator(sg)
                 }
             }
         }
@@ -1182,10 +1173,6 @@ class WorldLoader(private val scene: Scene) {
         // Dispose of shadow manager
         shadowManager?.dispose()
         shadowManager = null
-        
-        // Dispose of point light shadow generators
-        pointLightShadowGenerators.forEach { it.dispose() }
-        pointLightShadowGenerators.clear()
         
         // Dispose of occlusion manager
         occlusionManager?.dispose()

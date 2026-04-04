@@ -55,7 +55,7 @@ class WorldObjectManager(private val scene: Scene) {
         
         // Add shadow support if shadow manager is available
         shadowManager?.let { manager ->
-            // Get all meshes for this object
+            // Get all meshes for this object (recursive to catch character layers)
             val meshes = handle.getMeshes()
             
             // Skip shadow casting for text billboards (they shouldn't cast shadows)
@@ -69,7 +69,7 @@ class WorldObjectManager(private val scene: Scene) {
                 println("[SHADOW_DEBUG] Added shadow support for object ${obj.id} with ${meshes.size} meshes")
             }
         } ?: run {
-            println("[SHADOW_DEBUG] Shadow Manager is nullw")
+            println("[SHADOW_DEBUG] Shadow Manager is null")
         }
         
         // Return the handle
@@ -83,7 +83,16 @@ class WorldObjectManager(private val scene: Scene) {
      */
     fun removeObject(objectId: String) {
         val obj = objects[objectId] ?: return
+        val node = objectNodes[objectId]
         
+        // Remove from shadow manager if node exists
+        node?.let { n ->
+            shadowManager?.let { manager ->
+                val meshes = n.getChildMeshes(false)
+                meshes.forEach { manager.removeShadowCaster(it) }
+            }
+        }
+
         // Dispose the object's resources
         obj.dispose()
         
@@ -554,6 +563,13 @@ class WorldObjectManager(private val scene: Scene) {
                     }
                     // Force render to reflect changes immediately
                     try { obj.update(0f, null) } catch (_: Throwable) {}
+
+                    // Re-register meshes for shadows after they've been recreated
+                    shadowManager?.let { manager ->
+                        val meshes = getMeshes()
+                        manager.addShadowCasters(meshes)
+                        manager.configureShadowReceivers(meshes)
+                    }
                 }
             }
 

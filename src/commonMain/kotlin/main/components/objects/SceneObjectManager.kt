@@ -434,6 +434,12 @@ class SceneObjectManager(
             val node = objectMeshes[objectId]
             if (node != null) {
                 console.log("[DEBUG_REMOVE] Removing node for object: $objectId")
+                
+                // Remove from shadow manager
+                node.getChildMeshes().forEach { mesh ->
+                    shadowManager?.removeShadowCaster(mesh)
+                }
+
                 (node as? TransformNode)?.dispose()
                 objectMeshes.remove(objectId)
                 console.log("[DEBUG_REMOVE] Successfully removed node for object: $objectId")

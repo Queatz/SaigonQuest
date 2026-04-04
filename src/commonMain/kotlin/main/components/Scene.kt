@@ -1089,11 +1089,6 @@ fun SceneComponent(url: String) {
                 // Initialize other players controller for multiplayer
                 otherPlayersController.initialize()
 
-                // Set the shadow manager in the OtherPlayersController
-                worldLoader.getShadowManager()?.let { shadowManager ->
-                    otherPlayersController.setShadowManager(shadowManager)
-                    println("[DEBUG] Shadow manager set in OtherPlayersController")
-                }
 
                 // Only mark as loaded if world loaded successfully (no API fallback/error)
                 if (!loadingFailed.value) {

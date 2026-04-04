@@ -3,7 +3,6 @@ package main.components.player
 import lib.AbstractMesh
 import lib.Scene
 import lib.Vector3
-import main.components.shadow.ShadowManager
 import main.components.world.WorldObjectManager
 
 /**
@@ -22,10 +21,6 @@ class OtherPlayersController(scene: Scene) {
 
     fun refreshCurrentUserId() {
         coordinator.refreshCurrentUserId()
-    }
-
-    fun setShadowManager(manager: ShadowManager) {
-        coordinator.setShadowManager(manager)
     }
 
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {

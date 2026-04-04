@@ -192,6 +192,8 @@ external class CascadedShadowGenerator(
     var stabilizeCascades: Boolean
     var shadowMaxZ: Float
     var autoCalcDepthBounds: Boolean
+    var numCascades: Int
+    var cascadeBlendPercentage: Float
 
     fun splitFrustum()
 }
@@ -647,10 +649,23 @@ open external class ShadowGenerator(mapSize: Int, light: IShadowLight) {
     fun removeShadowCaster(mesh: AbstractMesh)
     var useBlurCloseExponentialShadowMap: Boolean
     var useExponentialShadowMap: Boolean
+    var useBlurExponentialShadowMap: Boolean
     var useKernelBlur: Boolean
     var blurKernel: Int
     var useClusteredShadows: Boolean
+    var usePercentageCloserFiltering: Boolean
+    var filteringQuality: Int
+    var useContactHardeningShadow: Boolean
+    var contactHardeningLightSizeUVRatio: Float
+    var usePoissonSampling: Boolean
+    var darkness: Float
     fun dispose()
+    
+    companion object {
+        val FILTERINGQUALITY_LOW: Int
+        val FILTERINGQUALITY_MEDIUM: Int
+        val FILTERINGQUALITY_HIGH: Int
+    }
 }
 
 /**

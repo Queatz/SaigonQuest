@@ -1,28 +1,18 @@
 package main.components.objects
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.DialogInput
-import main.components.Translated
+import Translations.str
+import androidx.compose.runtime.*
+import main.components.*
 import main.components.common.Spinner
-import main.components.translated
 import main.theme.EditorStyles
 import main.theme.Styles
 import models.Object
-import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
-import Translations.str
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.px
 
 /**
  * Content for the World tab - lists all objects in the world with locate, edit, and remove functionality.
