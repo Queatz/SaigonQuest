@@ -23,10 +23,8 @@ fun RecordingPreview(
             style {
                 property("flex-grow", "1")
                 height(40.px)
-                backgroundColor(rgba(255, 255, 255, 0.05))
-                borderRadius(20.px)
+                minWidth(120.px)
                 margin(0.px, 8.px)
-                property("box-shadow", "inset 0 0 10px rgba(255, 255, 255, 0.05)")
                 boxSizing("border-box")
             }
             ref { el ->
@@ -70,9 +68,6 @@ fun RecordingPreview(
 
                                     ctx.lineCap = CanvasLineCap.ROUND
 
-                                    // Glow effect
-                                    ctx.shadowBlur = 12.0
-
                                     for (i in 0 until barCount) {
                                         val x = horizontalPadding + i * (barWidth + barGap) + barWidth / 2.0
 
@@ -97,8 +92,24 @@ fun RecordingPreview(
                                         val alpha = 0.9 * envelope
                                         val color = "hsla($hue, 85%, 65%, .9)"
 
+                                        // 1. Draw dark shadow pass
+                                        ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"
+                                        ctx.shadowBlur = 4.0
+                                        ctx.shadowColor = "rgba(0, 0, 0, 0.8)"
+                                        ctx.shadowOffsetX = 2.0
+                                        ctx.shadowOffsetY = 2.0
+
+                                        ctx.beginPath()
+                                        ctx.moveTo(x, centerY - amplitude / 2.0)
+                                        ctx.lineTo(x, centerY + amplitude / 2.0)
+                                        ctx.stroke()
+
+                                        // 2. Draw colored bar with glow pass
                                         ctx.strokeStyle = color
+                                        ctx.shadowBlur = 12.0
                                         ctx.shadowColor = color
+                                        ctx.shadowOffsetX = 0.0
+                                        ctx.shadowOffsetY = 0.0
 
                                         ctx.beginPath()
                                         ctx.moveTo(x, centerY - amplitude / 2.0)
