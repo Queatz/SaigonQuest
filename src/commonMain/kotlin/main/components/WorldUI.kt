@@ -30,6 +30,7 @@ import main.api.ObjectApi
 import main.api.PushApi
 import main.api.WebSocketApi
 import main.api.WorldApi
+import main.theme.Dimens
 import main.components.inventory.InventoryTray
 import main.components.worlddocs.WorldDocsDialog
 import main.theme.Styles
@@ -642,9 +643,9 @@ fun WorldUI(
                     style {
                         // Adjust right position when any side panel is open on desktop
                         if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
-                            right(360.px) // 20px original padding + 320px panel width
+                            right(Dimens.layoutShift)
                         } else {
-                            right(20.px)
+                            right(Dimens.uiBaseMargin)
                         }
                     }
                 }
@@ -919,9 +920,9 @@ fun WorldUI(
                     style {
                         // Adjust right position when any side panel is open on desktop
                         if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
-                            right(360.px) // 20px original padding + 320px panel width
+                            right(Dimens.layoutShift)
                         } else {
-                            right(20.px)
+                            right(Dimens.uiBaseMargin)
                         }
                     }
                 }

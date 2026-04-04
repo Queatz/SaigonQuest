@@ -338,9 +338,9 @@ fun DialogueBox(
                                 width(0.px)
                             }
                         },
+                        enabled = !isWaiting,
+                        autoFocus = true,
                         attrs = {
-                            if (isWaiting) disabled()
-                            autoFocus()
                             onKeyDown { ev ->
                                 if (ev.key == "Enter" && !isWaiting) {
                                     isWaiting = true

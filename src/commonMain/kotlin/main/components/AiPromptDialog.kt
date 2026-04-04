@@ -5,9 +5,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.theme.Styles
-import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.TextArea
+import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
 
 /**
@@ -32,13 +31,11 @@ fun AiPromptDialog(
             }
         },
         content = {
-            Div {
-                TextArea(
-                    value = prompt,
-                    attrs = {
-                    classes(Styles.inputField)
-                    onInput { onPromptChange(it.value) }
-                    autoFocus()
+            DialogInput(
+                value = prompt,
+                onInput = onPromptChange,
+                multiline = true,
+                attrs = {
                     ref {
                         scope.launch {
                             delay(100)
@@ -48,8 +45,8 @@ fun AiPromptDialog(
 
                         onDispose { }
                     }
-                })
-            }
+                }
+            )
         },
         actions = {
             DialogButton(

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import kotlinx.browser.window
 import main.components.IconRenderer
+import main.theme.Dimens
 import main.theme.NotificationStyles
 import models.NotificationData
 import org.jetbrains.compose.web.dom.Div
@@ -48,7 +49,7 @@ fun NotificationLayout(
             // Adjust position when side panel is open on desktop
             if (isLayoutAdjustmentNeeded(currentPanel, isMobile)) {
                 style {
-                    property("transform", "translateX(-180px)") // Half of the panel width (360px)
+                    property("transform", "translateX(-${Dimens.LAYOUT_SHIFT_PX / 2}px)") // Half of the shift
                 }
             }
         }

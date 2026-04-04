@@ -9,7 +9,6 @@ import main.components.inventory.InventoryDialog
 import main.components.nodeeditor.LogicEditorDialog
 import main.components.objects.ObjectsDialog
 import main.components.objects.ObjectsPanel
-import main.utils.PathUtils
 import models.Object
 import models.World
 

@@ -8,6 +8,7 @@ import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
+import main.components.DialogInput
 import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.common.formatAmount
@@ -15,7 +16,6 @@ import main.theme.InventoryStyles
 import main.theme.Styles
 import models.Item
 import models.Sex
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.margin
@@ -113,13 +113,10 @@ fun MarketplaceDialog(
                     alignItems(AlignItems.Center)
                 }
             }) {
-                TextInput(
+                DialogInput(
                     value = query,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search items"))
-                        onInput { query = it.value }
-                    },
+                    onInput = { query = it },
+                    placeholder = str("Search items")
                 )
             }
 

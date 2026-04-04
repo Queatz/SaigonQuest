@@ -163,8 +163,8 @@ fun GlobalAiChat() {
                         width(0.px)
                     }
                 },
+                autoFocus = true,
                 attrs = {
-                    autoFocus()
                     onKeyDown { ev ->
                         if (ev.key == "Enter") {
                             ev.preventDefault()

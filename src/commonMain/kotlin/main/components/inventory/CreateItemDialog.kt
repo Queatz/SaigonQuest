@@ -20,6 +20,7 @@ import main.components.Translated
 import main.components.translated
 import main.components.IconRenderer
 import main.components.AssetBrowserDialog
+import main.components.DialogInput
 import main.components.LabeledCheckbox
 import Translations.str
 import main.components.WeightsGridEditor
@@ -42,14 +43,12 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 
 /**
  * A dialog for creating new items.
@@ -269,36 +268,12 @@ fun CreateItemDialog(
             }
             
             // Title field
-            Div(
-                attrs = {
-                    style {
-                        marginBottom(16.px)
-                    }
-                }
+            DialogInput(
+                label = "Title",
+                value = title,
+                onInput = { title = it },
+                placeholder = translated("Enter item title"),
             ) {
-                Label(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Block)
-
-                            marginBottom(4.px)
-                        }
-                    }
-                ) {
-                    Translated("Title")
-                }
-                
-                val titlePlaceholder = translated("Enter item title")
-                Input(
-                    type = InputType.Text,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(titlePlaceholder)
-                        value(title)
-                        onInput { title = it.value }
-                    }
-                )
-                
                 if (titleError.isNotEmpty()) {
                     P(
                         attrs = {
@@ -315,38 +290,18 @@ fun CreateItemDialog(
             }
             
             // Description field
-            Div(
+            DialogInput(
+                label = "Description",
+                value = description,
+                onInput = { description = it },
+                placeholder = translated("Enter item description"),
+                multiline = true,
                 attrs = {
                     style {
-                        marginBottom(16.px)
+                        height(80.px)
                     }
                 }
-            ) {
-                Label(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Block)
-
-                            marginBottom(4.px)
-                        }
-                    }
-                ) {
-                    Translated("Description")
-                }
-                
-                val descriptionPlaceholder = translated("Enter item description")
-                TextArea(
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(descriptionPlaceholder)
-                        value(description)
-                        onInput { description = it.value }
-                        style {
-                            height(80.px)
-                        }
-                    }
-                )
-            }
+            )
             
             // Asset selection
             Div(

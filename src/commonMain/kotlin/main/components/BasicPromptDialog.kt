@@ -53,15 +53,15 @@ fun BasicPromptDialog(
                 }
             }
             // Input field
-            Div(
-                attrs = {
-                    style {
-                        display(DisplayStyle.Block)
-                        marginBottom(12.px)
+            if (isNumber) {
+                Div(
+                    attrs = {
+                        style {
+                            display(DisplayStyle.Block)
+                            marginBottom(12.px)
+                        }
                     }
-                }
-            ) {
-                if (isNumber) {
+                ) {
                     NumberInput(
                         value = value.toDoubleOrNull(),
                         min = min,
@@ -84,41 +84,40 @@ fun BasicPromptDialog(
                             }
                         }
                     )
-                } else {
-                    DialogInput(
-                        value = value,
-                        onInput = { value = it },
-                        attrs = {
-                            autoFocus()
 
-                            ref {
-                                it.focus()
-
-                                onDispose { }
+                    if (max != null) {
+                        Div(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Block)
+                                    marginTop(12.px)
+                                }
                             }
-                        }
-                    )
-                }
-
-                if (isNumber && max != null) {
-                    Div(
-                        attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                marginTop(12.px)
-                            }
-                        }
-                    ) {
-                        DialogButton(
-                            onClick = {
-                                value = max.toString()
-                            },
-                            style = DialogButtonStyle.Secondary,
                         ) {
-                            Translated("All")
+                            DialogButton(
+                                onClick = {
+                                    value = max.toString()
+                                },
+                                style = DialogButtonStyle.Secondary,
+                            ) {
+                                Translated("All")
+                            }
                         }
                     }
                 }
+            } else {
+                DialogInput(
+                    value = value,
+                    onInput = { value = it },
+                    autoFocus = true,
+                    attrs = {
+                        ref {
+                            it.focus()
+
+                            onDispose { }
+                        }
+                    }
+                )
             }
         },
         actions = {

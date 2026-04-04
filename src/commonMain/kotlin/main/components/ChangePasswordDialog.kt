@@ -70,8 +70,7 @@ fun ChangePasswordDialog(
                 type = InputType.Password,
                 placeholder = str("Current Password"),
                 value = current.value,
-                onInput = { current.value = it },
-                wrapperAttrs = { classes(Styles.formFieldContainer) }
+                onInput = { current.value = it }
             )
 
             // New password
@@ -79,8 +78,7 @@ fun ChangePasswordDialog(
                 type = InputType.Password,
                 placeholder = str("New Password"),
                 value = next.value,
-                onInput = { next.value = it },
-                wrapperAttrs = { classes(Styles.formFieldContainer) }
+                onInput = { next.value = it }
             )
 
             // Repeat new password
@@ -88,8 +86,7 @@ fun ChangePasswordDialog(
                 type = InputType.Password,
                 placeholder = str("Repeat New Password"),
                 value = repeat.value,
-                onInput = { repeat.value = it },
-                wrapperAttrs = { classes(Styles.formFieldContainer) }
+                onInput = { repeat.value = it }
             )
         },
         actions = {

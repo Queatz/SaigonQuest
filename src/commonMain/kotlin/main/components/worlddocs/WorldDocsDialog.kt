@@ -383,9 +383,8 @@ fun WorldDocsDialog(
                                                 wrapperAttrs = {
                                                     classes(WorldDocsStyles.titleInput)
                                                 },
+                                                autoFocus = true,
                                                 attrs = {
-                                                    autoFocus()
-
                                                     onKeyDown { ev ->
                                                         if (ev.key == "Enter") {
                                                             ev.preventDefault()
@@ -394,7 +393,7 @@ fun WorldDocsDialog(
                                                     }
 
                                                     ref {
-                                                        titleInputEl = it
+                                                        titleInputEl = it as HTMLInputElement
                                                         scope.launch {
                                                             delay(100)
                                                             awaitAnimationFrame()

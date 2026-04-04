@@ -1,36 +1,15 @@
 package main.components.inventory
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import Translations.str
+import androidx.compose.runtime.*
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import Translations.str
 import main.components.SidePanelState
 import main.components.isLayoutAdjustmentNeeded
+import main.theme.Dimens
 import main.theme.Styles
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.bottom
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.left
-import org.jetbrains.compose.web.css.opacity
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.position
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.events.Event
@@ -120,8 +99,8 @@ fun InventoryTray(
             style {
                 // Compute dynamic horizontal shift to avoid overlapping the bottom-right CircleButtons
                 // Bottom-right column width ~48px, base right inset 20px; when a side panel is open on desktop,
-                // the bottom-right column is shifted to right(340px)
-                val rightOffsetPx = if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) 360 else 20
+                // the bottom-right column is shifted to right(${Dimens.LAYOUT_SHIFT_PX}px)
+                val rightOffsetPx = if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) Dimens.LAYOUT_SHIFT_PX else Dimens.UI_BASE_MARGIN_PX
                 val bottomRightButtonWidthPx = 48
                 val extraPaddingPx = 10 // breathing room so they never touch
                 val reservedRightSpacePx = rightOffsetPx + bottomRightButtonWidthPx + extraPaddingPx
@@ -129,7 +108,7 @@ fun InventoryTray(
 
                 // Adjust left position when any side panel is open on desktop
                 if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
-                    // Center in the remaining space (excluding the 360px side panel), then shift by half of the
+                    // Center in the remaining space (excluding the side panel), then shift by half of the
                     // reserved right space to keep clear of the CircleButtons column
                     property("left", "calc(50% - 2rem - ${shiftPx}px)")
                 } else {

@@ -149,90 +149,56 @@ fun VisitorDialog(
             }
             
             // Username input
-            Div(
+            DialogInput(
+                label = "Username",
+                value = username,
+                onInput = { username = it },
+                placeholder = str("Enter username"),
                 attrs = {
-                    classes(Styles.formFieldContainer)
-                }
-            ) {
-                Label(
-                    attrs = {
-                        classes(Styles.formLabel)
-                    }
-                ) {
-                    Translated("Username")
-                }
-                DialogInput(
-                    value = username,
-                    onInput = { username = it },
-                    placeholder = str("Enter username"),
-                    attrs = {
-                        onKeyUp { event ->
-                            if (event.key == "Enter") {
-                                validateAndSubmit()
-                            }
+                    onKeyUp { event ->
+                        if (event.key == "Enter") {
+                            validateAndSubmit()
                         }
                     }
-                )
-            }
+                }
+            )
             
             // Password input
-            Div(
+            DialogInput(
+                label = "Password",
+                value = password,
+                onInput = { password = it },
+                type = InputType.Password,
+                placeholder = str("Enter password"),
                 attrs = {
-                    classes(Styles.formFieldContainer)
-                }
-            ) {
-                Label(
-                    attrs = {
-                        classes(Styles.formLabel)
+                    onKeyUp { event ->
+                        if (event.key == "Enter") {
+                            validateAndSubmit()
+                        }
                     }
-                ) {
-                    Translated("Password")
-                }
-                DialogInput(
-                    value = password,
-                    onInput = { password = it },
-                    type = InputType.Password,
-                    placeholder = str("Enter password"),
-                    attrs = {
-                        onKeyUp { event ->
-                            if (event.key == "Enter") {
-                                validateAndSubmit()
+                },
+                content = {
+                    if (!isLoginMode) {
+                        Div(
+                            attrs = {
+                                classes(Styles.formHelpText)
                             }
+                        ) {
+                            Translated("Password must be at least 8 characters")
                         }
-                    }
-                )
-                if (!isLoginMode) {
-                    Div(
-                        attrs = {
-                            classes(Styles.formHelpText)
-                        }
-                    ) {
-                        Translated("Password must be at least 8 characters")
                     }
                 }
-            }
+            )
 
             // Confirm Password input (only in registration mode)
             if (!isLoginMode) {
-                Div(
-                    attrs = {
-                        classes(Styles.formFieldContainer)
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            classes(Styles.formLabel)
-                        }
-                    ) {
-                        Translated("Confirm Password")
-                    }
-                    DialogInput(
-                        value = confirmPassword,
-                        onInput = { confirmPassword = it },
-                        type = InputType.Password,
-                        placeholder = str("Re-enter password"),
-                    )
-                }
+                DialogInput(
+                    label = "Confirm Password",
+                    value = confirmPassword,
+                    onInput = { confirmPassword = it },
+                    type = InputType.Password,
+                    placeholder = str("Re-enter password"),
+                )
             }
             
             // Year of Birth dropdown (only in registration mode)

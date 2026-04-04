@@ -52,9 +52,9 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 import app.softwork.routingcompose.Router
 import main.components.world.LatLngPicker3D
+import main.components.DialogInput
 import Translations.str
 import main.components.friends.SelectFriendDialog
 import models.Item
@@ -698,177 +698,47 @@ fun WorldEditContent(
         }
 
         // Title field
-        Div(
-            attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "4px")
-                }
-            }
-        ) {
-            Label(
-                attrs = {
-                    style {
-
-                        fontSize(14.px)
-                    }
-                }
-            ) {
-                Translated("Title")
-            }
-
-            Input(
-                type = InputType.Text,
-                attrs = {
-                    classes(Styles.inputField)
-                    style {
-                        if (!fieldsEnabled) {
-                            property("opacity", "0.7")
-                            property("cursor", "not-allowed")
-                        }
-                    }
-                    value(title)
-                    if (fieldsEnabled) {
-                        onInput { event -> title = event.value }
-                    }
-                    placeholder("Enter world title")
-                    if (!fieldsEnabled) {
-                        attr("disabled", "true")
-                    }
-                }
-            )
-        }
+        DialogInput(
+            label = "Title",
+            value = title,
+            onInput = { title = it },
+            placeholder = "Enter world title",
+            enabled = fieldsEnabled,
+        )
 
         // Subtitle field
-        Div(
-            attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "4px")
-                }
-            }
-        ) {
-            Label(
-                attrs = {
-                    style {
-
-                        fontSize(14.px)
-                    }
-                }
-            ) {
-                Translated("Subtitle")
-            }
-
-            Input(
-                type = InputType.Text,
-                attrs = {
-                    classes(Styles.inputField)
-                    style {
-                        if (!fieldsEnabled) {
-                            property("opacity", "0.7")
-                            property("cursor", "not-allowed")
-                        }
-                    }
-                    value(subtitle)
-                    if (fieldsEnabled) {
-                        onInput { event -> subtitle = event.value }
-                    }
-                    placeholder(str("Enter world subtitle"))
-                    if (!fieldsEnabled) {
-                        attr("disabled", "true")
-                    }
-                }
-            )
-        }
+        DialogInput(
+            label = "Subtitle",
+            value = subtitle,
+            onInput = { subtitle = it },
+            placeholder = str("Enter world subtitle"),
+            enabled = fieldsEnabled,
+        )
 
         // Description field
-        Div(
+        DialogInput(
+            label = "Description",
+            value = description,
+            onInput = { description = it },
+            placeholder = str("Enter world description"),
+            enabled = fieldsEnabled,
+            multiline = true,
             attrs = {
                 style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "4px")
+                    height(100.px)
+                    property("resize", "vertical")
                 }
             }
-        ) {
-            Label(
-                attrs = {
-                    style {
-
-                        fontSize(14.px)
-                    }
-                }
-            ) {
-                Translated("Description")
-            }
-
-            TextArea(
-                attrs = {
-                    classes(Styles.inputField)
-                    style {
-                        height(100.px)
-                        property("resize", "vertical")
-                        if (!fieldsEnabled) {
-                            property("opacity", "0.7")
-                            property("cursor", "not-allowed")
-                        }
-                    }
-                    value(description)
-                    if (fieldsEnabled) {
-                        onInput { event -> description = event.value }
-                    }
-                    placeholder(str("Enter world description"))
-                    if (!fieldsEnabled) {
-                        attr("disabled", "true")
-                    }
-                }
-            )
-        }
+        )
 
         // URL field
-        Div(
-            attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    property("gap", "4px")
-                }
-            }
-        ) {
-            Label(
-                attrs = {
-                    style {
-
-                        fontSize(14.px)
-                    }
-                }
-            ) {
-                Translated("URL")
-            }
-
-            Input(
-                type = InputType.Text,
-                attrs = {
-                    classes(Styles.inputField)
-                    style {
-                        if (!fieldsEnabled) {
-                            property("opacity", "0.7")
-                            property("cursor", "not-allowed")
-                        }
-                    }
-                    value(url)
-                    if (fieldsEnabled) {
-                        onInput { event -> url = event.value }
-                    }
-                    placeholder(str("Enter external URL"))
-                    if (!fieldsEnabled) {
-                        attr("disabled", "true")
-                    }
-                }
-            )
-        }
+        DialogInput(
+            label = "URL",
+            value = url,
+            onInput = { url = it },
+            placeholder = str("Enter external URL"),
+            enabled = fieldsEnabled,
+        )
         Label(
             attrs = {
                 style {

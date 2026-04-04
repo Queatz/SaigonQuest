@@ -1299,7 +1299,7 @@ object Styles : StyleSheet() {
     // Image attachments inside chat messages
     val chatImageAttachment by style {
         display(DisplayStyle.Block)
-        maxWidth(360.px)
+        maxWidth(Dimens.chatImageMaxWidth)
         width(100.percent)
         property("height", "auto")
         borderRadius(6.px)

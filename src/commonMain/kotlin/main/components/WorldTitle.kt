@@ -3,6 +3,7 @@ package main.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import main.components.isLayoutAdjustmentNeeded
+import main.theme.Dimens
 import models.World
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
@@ -52,8 +53,8 @@ fun WorldTitle(
                 top(20.px)
                 // Adjust left position when any side panel is open on desktop
                 if (isLayoutAdjustmentNeeded(currentPanel, isMobile.value)) {
-                    // Center in the remaining space (excluding the 360px side panel)
-                    property("left", "calc(50% - 180px)")
+                    // Center in the remaining space (excluding the side panel)
+                    property("left", "calc(50% - ${Dimens.LAYOUT_SHIFT_PX / 2}px)")
                 } else {
                     left(50.percent)
                 }

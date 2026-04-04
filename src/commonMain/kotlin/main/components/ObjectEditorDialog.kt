@@ -12,6 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import main.api.ObjectApi
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.theme.Styles
 import models.AssetType
 import models.Object
@@ -75,8 +76,8 @@ fun ObjectEditorDialog(
                 n
             }
         )
+
     }
-    
     // Asset browser dialog toggle
     var showCollectionBrowser by remember { mutableStateOf(false) }
     
@@ -223,26 +224,17 @@ fun ObjectEditorDialog(
                 }
                 
                 // Title field
-                Div {
-                    Div(
-                        attrs = {
-                            style {
-                                marginTop(16.px)
-                            }
+                DialogInput(
+                    label = "Title",
+                    value = title,
+                    onInput = { title = it },
+                    placeholder = "Object title",
+                    containerAttrs = {
+                        style {
+                            marginTop(16.px)
                         }
-                    ) {
-                        Text("Title")
                     }
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("Object title")
-                            value(title)
-                            onInput { event -> title = event.value }
-                        }
-                    )
-                }
+                )
                 
                 // Asset field
                 Div(
@@ -290,26 +282,17 @@ fun ObjectEditorDialog(
                 }
 
                 // Status field
-                Div {
-                    Div(
-                        attrs = {
-                            style {
-                                marginTop(16.px)
-                            }
+                DialogInput(
+                    label = "Status",
+                    value = status,
+                    onInput = { status = it },
+                    placeholder = "Text displayed above object",
+                    containerAttrs = {
+                        style {
+                            marginTop(16.px)
                         }
-                    ) {
-                        Text("Status")
                     }
-                    Input(
-                        type = InputType.Text,
-                        attrs = {
-                            classes(Styles.inputField)
-                            placeholder("Text displayed above object")
-                            value(status)
-                            onInput { event -> status = event.value }
-                        }
-                    )
-                }
+                )
                 
                 // Z rotation field
                 Div {

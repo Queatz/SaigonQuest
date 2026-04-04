@@ -5,6 +5,9 @@ import main.theme.Styles
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.value
+import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.dom.Input
 
 /**
@@ -22,27 +25,40 @@ fun DecimalNumberInput(
     placeholder: String? = null,
     onChange: (String) -> Unit,
 ) {
-    Input(
-        type = InputType.Text,
+    FramedBorder(
+        borderImage = "/raw/data/ui/borders/input.png",
+        backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+        darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
         attrs = {
-            classes(Styles.inputField)
-            placeholder?.let { placeholder(it) }
-            if (!enabled) {
-                disabled()
-            }
-            // Hint mobile keyboards to show a numeric keypad with decimal
-            attr("inputmode", "decimal")
-            // Controlled value as string to preserve transient states
-            value(value)
-            // Accept only valid partial decimal numbers
-            onInput { event ->
-                val next = event.value
-                if (isValidPartialDecimal(next)) {
-                    onChange(next)
-                }
+            classes(Styles.dialogInputWrapper)
+            style {
+                // Ensure it takes full width of its flex parent
+                width(100.percent)
             }
         }
-    )
+    ) {
+        Input(
+            type = InputType.Text,
+            attrs = {
+                classes(Styles.dialogInputField)
+                placeholder?.let { placeholder(it) }
+                if (!enabled) {
+                    disabled()
+                }
+                // Hint mobile keyboards to show a numeric keypad with decimal
+                attr("inputmode", "decimal")
+                // Controlled value as string to preserve transient states
+                value(value)
+                // Accept only valid partial decimal numbers
+                onInput { event ->
+                    val next = event.value
+                    if (isValidPartialDecimal(next)) {
+                        onChange(next)
+                    }
+                }
+            }
+        )
+    }
 }
 
 private fun isValidPartialDecimal(text: String): Boolean {

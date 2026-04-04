@@ -12,6 +12,7 @@ import main.components.AssetBrowserDialog
 import main.components.BaseDialog
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
 import main.components.Translated
@@ -35,14 +36,11 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.TextArea
-import org.jetbrains.compose.web.dom.TextInput
 
 @Composable
 fun EditItemDialog(
@@ -175,34 +173,28 @@ fun EditItemDialog(
             }
 
             // Title
-            Div(attrs = { style { marginBottom(16.px) } }) {
-                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Title") }
-                val titlePlaceholder = translated("Enter item title")
-                TextInput(
-                    value = title,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(titlePlaceholder)
-                        onInput { title = it.value }
-                    }
-                )
+            DialogInput(
+                label = "Title",
+                value = title,
+                onInput = { title = it },
+                placeholder = translated("Enter item title"),
+            ) {
                 if (titleError.isNotEmpty()) {
                     P(attrs = { style { color(rgba(255, 100, 100, 0.9)); fontSize(12.px); marginTop(4.px) } }) { Translated(titleError) }
                 }
             }
 
             // Description
-            Div(attrs = { style { marginBottom(16.px) } }) {
-                Label(attrs = { style { display(DisplayStyle.Block); ; marginBottom(4.px) } }) { Translated("Description") }
-                val descriptionPlaceholder = translated("Enter item description")
-                TextArea(attrs = {
-                    classes(Styles.inputField)
-                    placeholder(descriptionPlaceholder)
-                    value(description)
-                    onInput { description = it.value }
+            DialogInput(
+                label = "Description",
+                value = description,
+                onInput = { description = it },
+                placeholder = translated("Enter item description"),
+                multiline = true,
+                attrs = {
                     style { height(80.px) }
-                })
-            }
+                }
+            )
 
             // Asset selection
             Div(attrs = { style { marginBottom(16.px) } }) {

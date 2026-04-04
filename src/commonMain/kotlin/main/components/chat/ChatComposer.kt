@@ -126,6 +126,8 @@ fun ChatComposer(
                 alignItems(AlignItems.Stretch)
                 property("gap", "8px")
                 property("border-top", "1px solid rgba(255, 255, 255, 0.2)")
+                width(100.percent)
+                boxSizing("border-box")
             }
         }
     ) {
@@ -202,6 +204,11 @@ fun ChatComposer(
                             style = DialogButtonStyle.Secondary,
                             isDisabled = !isAuthenticated,
                             small = true,
+                            attrs = {
+                                style {
+                                    flexShrink(0)
+                                }
+                            },
                         ) {
                             Text("🖼️")
                         }
@@ -214,6 +221,9 @@ fun ChatComposer(
                         small = true,
                         attrs = {
                             title(str("Record"))
+                            style {
+                                flexShrink(0)
+                            }
                         }
                     ) {
                         Text("🎤")
@@ -226,6 +236,9 @@ fun ChatComposer(
                         small = true,
                         attrs = {
                             title(str("Shout"))
+                            style {
+                                flexShrink(0)
+                            }
                         }
                     ) {
                         Text("📣")
@@ -243,16 +256,22 @@ fun ChatComposer(
                         }
                     },
                     placeholder = if (isAuthenticated) str("Message") else str("Sign in to chat"),
-                    wrapperAttrs = {
+                    enabled = isAuthenticated,
+                    containerAttrs = {
                         style {
                             width(0.px)
-                            property("flex-grow", "1")
+                            flexGrow(1)
+                            flexShrink(0)
+                            marginBottom(0.px)
+                        }
+                    },
+                    wrapperAttrs = {
+                        style {
                             opacity(if (isAuthenticated) 1.0 else 0.7)
                         }
                     },
                     attrs = {
-                        autoFocus()
-                        if (!isAuthenticated) disabled()
+                        attr("autofocus", "true")
                         onKeyDown { event ->
                             if (event.key == "Enter") {
                                 event.preventDefault()
@@ -288,7 +307,7 @@ fun ChatComposer(
                             }
                         }
                         ref { element ->
-                            chatInputRef.value = element
+                            chatInputRef.value = element as? org.w3c.dom.HTMLInputElement
                             onDispose { chatInputRef.value = null }
                         }
                     }
@@ -300,6 +319,11 @@ fun ChatComposer(
                         style = DialogButtonStyle.Primary,
                         isDisabled = !isAuthenticated,
                         small = true,
+                        attrs = {
+                            style {
+                                flexShrink(0)
+                            }
+                        },
                     ) {
                         Text("📝")
                     }
@@ -322,6 +346,11 @@ fun ChatComposer(
                         },
                         style = DialogButtonStyle.Primary,
                         isDisabled = !isAuthenticated || messageText.isEmpty(),
+                        attrs = {
+                            style {
+                                flexShrink(0)
+                            }
+                        },
                     ) {
                         Translated("Send")
                     }

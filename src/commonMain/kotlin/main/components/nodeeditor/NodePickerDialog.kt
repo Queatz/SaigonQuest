@@ -74,8 +74,8 @@ fun NodePickerDialog(
                     value = searchQuery,
                     onInput = { searchQuery = it },
                     placeholder = str("Search nodes"),
+                    autoFocus = true,
                     attrs = {
-                        autoFocus()
                         ref {
                             it.focus()
 
