@@ -106,6 +106,10 @@ fun DialogInput(
                         if (!enabled) {
                             attr("disabled", "true")
                         }
+
+                        if (autoFocus) {
+                            autoFocus()
+                        }
                         (attrs as? AttrBuilderContext<HTMLInputElement>)?.invoke(this)
                     }
                 )

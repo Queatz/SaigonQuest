@@ -17,21 +17,15 @@ import main.theme.Styles
 import models.CreateUserRequestDto
 import models.UserRequest
 import models.UserRequestType
-import org.jetbrains.compose.web.attributes.autoFocus
-import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 import web.animations.awaitAnimationFrame
 
 @Composable
@@ -129,47 +123,31 @@ fun UserRequestsDialog(
         title = str("User requests"),
         maxWidth = "600px",
         content = {
-            Div {
-                Label { Translated("Type") }
-                Select(attrs = {
-                    classes(Styles.inputField)
-                    onInput { ev ->
-                        val v = ev.value ?: type.name
-                        type = try { UserRequestType.valueOf(v) } catch (_: Throwable) { type }
-                    }
-                }) {
-                    for (t in UserRequestType.entries) {
-                        Option(
-                            value = t.name,
-                            attrs = {
-                                if (t == type) selected()
-                            },
-                        ) { Text(typeLabel(t)) }
+            DialogSelect(
+                options = UserRequestType.entries.map { it.name to typeLabel(it) },
+                value = type.name,
+                onInput = { v ->
+                    type = try { UserRequestType.valueOf(v) } catch (_: Throwable) { type }
+                },
+                label = "Type",
+            )
+
+            DialogInput(
+                value = title,
+                onInput = { title = it },
+                label = "Title",
+                autoFocus = true,
+                attrs = {
+                    ref {
+                        scope.launch {
+                            delay(100)
+                            awaitAnimationFrame()
+                            it.focus()
+                        }
+                        onDispose {}
                     }
                 }
-            }
-
-            Div {
-                Label { Translated("Title") }
-                TextInput(
-                    value = title,
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput {
-                            title = it.value
-                        }
-                        autoFocus()
-                        ref {
-                            scope.launch {
-                                delay(100)
-                                awaitAnimationFrame()
-                                it.focus()
-                            }
-                            
-                            onDispose {}
-                        }
-                    },
-                )
+            ) {
                 val te = titleError
                 if (te != null) {
                     P(attrs = { classes(Styles.formErrorMessage) }) { Text(te) }

@@ -7,11 +7,9 @@ import main.api.AssetItemApi
 import main.theme.Styles
 import models.Asset
 import models.AssetType
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.selected
+import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.textAlign
-import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun AdminAssetsDialog(
@@ -97,33 +95,25 @@ fun AdminAssetsDialog(
 
             // Search and filter
             Div(attrs = { classes(Styles.adminAssetsHeaderBar) }) {
-                TextInput(
+                DialogInput(
                     value = searchQuery,
-                    attrs = {
-                        classes(Styles.inputField, Styles.adminAssetsSearchInput)
-                        placeholder(searchPlaceholder)
-                        onInput { searchQuery = it.value }
+                    onInput = { searchQuery = it },
+                    placeholder = searchPlaceholder,
+                    containerAttrs = {
+                        classes(Styles.adminAssetsSearchInput)
                     }
                 )
 
-                Select(
-                    attrs = {
-                        classes(Styles.inputField, Styles.adminAssetsTypeFilter)
-                        onChange { ev ->
-                            selectedType = AssetType.entries.firstOrNull { it.name == ev.value }
-                        }
+                DialogSelect(
+                    options = listOf("" to allTypesLabel) + AssetType.entries.map { it.name to it.name },
+                    value = selectedType?.name ?: "",
+                    onInput = { v ->
+                        selectedType = AssetType.entries.firstOrNull { it.name == v }
+                    },
+                    containerAttrs = {
+                        classes(Styles.adminAssetsTypeFilter)
                     }
-                ) {
-                    Option(value = "") { Text(allTypesLabel) }
-                    AssetType.entries.forEach { type ->
-                        Option(
-                            value = type.name,
-                            attrs = {
-                                if (type == selectedType) selected()
-                            }
-                        ) { Text(type.name) }
-                    }
-                }
+                )
             }
 
             val filteredAssets = assets.filter { asset ->

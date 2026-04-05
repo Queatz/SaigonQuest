@@ -35,8 +35,8 @@ object Theme {
         val overlayScrimDark = Color("rgba(0, 0, 0, 0)")
 
         // Translucent panel backgrounds (glass effect)
-        val panelGlass = Color("rgba(255, 255, 255, 0.95)")
-        val panelGlassDark = Color("rgba(0, 0, 0, 0.95)")
+        val panelGlass = Color("rgba(255, 255, 255, 0.5)")
+        val panelGlassDark = Color("rgba(0, 0, 0, 0.5)")
 
         // Text roles beyond primary
         val textSecondary = Color("#666666")

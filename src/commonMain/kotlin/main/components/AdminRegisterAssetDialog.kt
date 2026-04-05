@@ -16,13 +16,7 @@ import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.attributes.selected
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Option
-import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
+import org.jetbrains.compose.web.dom.*
 
 /**
  * Dialog for registering a new asset.
@@ -44,61 +38,32 @@ fun AdminRegisterAssetDialog(
         showCloseButton = true,
         content = {
             // Asset type selection
-            Div(
-                attrs = {
+            DialogSelect(
+                options = AssetType.entries.map { it.name to it.name },
+                value = selectedAssetType.name,
+                onInput = { v ->
+                    selectedAssetType = AssetType.valueOf(v)
+                    lastSelectedAssetType = selectedAssetType
+                },
+                label = "Asset type",
+                containerAttrs = {
                     style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        width(100.percent)
                         marginBottom(16.px)
                     }
                 }
-            ) {
-                Translated("Asset type")
-                Select(
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { event ->
-                            val value = event.value
-                            if (value != null) {
-                                selectedAssetType = AssetType.valueOf(value)
-                                lastSelectedAssetType = selectedAssetType
-                            }
-                        }
-                    }
-                ) {
-                    AssetType.entries.forEach { type ->
-                        Option(
-                            value = type.name,
-                            attrs = {
-                                if (type == selectedAssetType) {
-                                    selected()
-                                }
-                            }
-                        ) { Text(type.name) }
-                    }
-                }
-            }
+            )
+
             // Asset filename input
-            Div(
-                attrs = {
+            DialogInput(
+                value = assetFileName,
+                onInput = { assetFileName = it },
+                label = "File name (without extension)",
+                containerAttrs = {
                     style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                        width(100.percent)
                         marginBottom(16.px)
                     }
                 }
-            ) {
-                Translated("File name (without extension)")
-                TextInput(
-                    value = assetFileName,
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { event -> assetFileName = event.value }
-                    }
-                )
-            }
+            )
         },
         actions = {
             DialogButton(onClick = onClose, style = DialogButtonStyle.Secondary) { Translated("Close") }

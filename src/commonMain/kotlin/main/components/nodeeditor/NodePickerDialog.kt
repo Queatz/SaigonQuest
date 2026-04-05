@@ -11,17 +11,20 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ObjectApi
 import main.components.BaseDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.DialogInput
 import main.components.Translated
 import main.components.translated
 import main.theme.NodeEditorStyles
-import main.theme.Styles
 import models.LogicNode
 import models.NodeCategory
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.fontSize
@@ -31,7 +34,6 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog that lets the user search and select a logic node type.
@@ -131,16 +133,18 @@ fun NodePickerDialog(
                             }
 
                             nodes.forEach { node ->
-                                // Reuse the draggable item styling for consistent look, but use click to select
-                                Div(
+                                DialogButton(
+                                    onClick = {
+                                        onSelect(node)
+                                        onClose()
+                                    },
                                     attrs = {
-                                        classes(NodeEditorStyles.draggableItem)
-                                        tabIndex(0)
-                                        onClick {
-                                            onSelect(node)
-                                            onClose()
+                                        style {
+                                            flexDirection(FlexDirection.Column)
+                                            alignItems(AlignItems.FlexStart)
                                         }
-                                    }
+                                    },
+                                    style = DialogButtonStyle.Primary,
                                 ) {
                                     Div { Text(node.label) }
                                     if (node.description.isNotBlank()) {
@@ -164,7 +168,7 @@ fun NodePickerDialog(
         },
         actions = {
             // Only a cancel/close button is needed; selection is immediate on click
-            main.components.DialogButton(onClick = onClose) { Translated("Cancel") }
+            DialogButton(onClick = onClose) { Translated("Cancel") }
         }
     )
 }

@@ -15,21 +15,17 @@ import main.theme.Styles
 import models.UserRequest
 import models.UserRequestStatus
 import models.UserRequestType
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Option
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.keywords.auto
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun AdminUserRequestsDialog(
@@ -75,25 +71,18 @@ fun AdminUserRequestsDialog(
 
     val headerActions: @Composable () -> Unit = {
         // Status filter
-        Div {
-            Select(attrs = {
-                classes(Styles.inputField)
-                onInput { ev ->
-                    val v = ev.value ?: ""
-                    selectedStatus = if (v.isBlank()) null else try { UserRequestStatus.valueOf(v) } catch (_: Throwable) { selectedStatus }
-                }
-            }) {
-                Option(value = "") { Translated("All") }
-                for (s in UserRequestStatus.entries) {
-                    Option(
-                        value = s.name,
-                        attrs = {
-                            if (s == selectedStatus) selected()
-                        }
-                    ) { Text(statusLabel(s)) }
+        DialogSelect(
+            options = listOf("" to translated("All")) + UserRequestStatus.entries.map { it.name to statusLabel(it) },
+            value = selectedStatus?.name ?: "",
+            onInput = { v ->
+                selectedStatus = if (v.isBlank()) null else try { UserRequestStatus.valueOf(v) } catch (_: Throwable) { selectedStatus }
+            },
+            containerAttrs = {
+                style {
+                    width(auto)
                 }
             }
-        }
+        )
     }
 
     BaseDialog(
@@ -129,13 +118,12 @@ fun AdminUserRequestsDialog(
                             // Actions
                             Span {
                                 // Inline note input used for decline/add note
-                                TextInput(
+                                DialogInput(
                                     value = note,
-                                    attrs = {
-                                        classes(Styles.inputField)
-                                        onInput { ev ->
-                                            noteInputs = noteInputs.toMutableMap().also { m -> m[r.key] = ev.value }
-                                        }
+                                    onInput = { v ->
+                                        noteInputs = noteInputs.toMutableMap().also { m -> m[r.key] = v }
+                                    },
+                                    containerAttrs = {
                                         style {
                                             marginBottom(8.px)
                                         }

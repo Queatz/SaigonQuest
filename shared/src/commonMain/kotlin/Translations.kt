@@ -1,6 +1,57 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Quests
+vi: Nhiệm vụ
+
+Quest Designer
+vi: Nhà thiết kế nhiệm vụ
+
+Quest title
+vi: Tiêu đề nhiệm vụ
+
+Quest description
+vi: Mô tả nhiệm vụ
+
+Quest events
+vi: Sự kiện nhiệm vụ
+
+Add quest event
+vi: Thêm sự kiện nhiệm vụ
+
+Event ID
+vi: Mã sự kiện
+
+Event label
+vi: Nhãn sự kiện
+
+Player quest status
+vi: Trạng thái nhiệm vụ của người chơi
+
+Trigger quest event
+vi: Kích hoạt sự kiện nhiệm vụ
+
+On quest event
+vi: Khi có sự kiện nhiệm vụ
+
+Start quest
+vi: Bắt đầu nhiệm vụ
+
+Set player quest state
+vi: Đặt trạng thái nhiệm vụ người chơi
+
+Get player quest state
+vi: Lấy trạng thái nhiệm vụ người chơi
+
+Set global quest state
+vi: Đặt trạng thái nhiệm vụ chung
+
+Get global quest state
+vi: Lấy trạng thái nhiệm vụ chung
+
+Complete quest
+vi: Hoàn thành nhiệm vụ
+
 Thinking
 vi: Đang suy nghĩ
 
@@ -241,11 +292,8 @@ vi: Về trang chủ
 Retry
 vi: Thử lại
 
-Loading Saigon.Quest world...
-vi: Đang tải thế giới Saigon.Quest...
-
-Loading %s world...
-vi: Đang tải thế giới %s...
+Entering %s ...
+vi: Vào %s...
 
 Loading...
 vi: Đang tải...

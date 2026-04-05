@@ -116,11 +116,11 @@ fun LoadingScreen(
                 // Normal loading message
                 Span {
                     val displayedWorldName = if (worldName.isNullOrBlank()) {
-                        "Saigon.Quest"
+                        "Saigon Quest"
                     } else {
                         worldName
                     }
-                    Text(translated("Loading %s world...").replace("%s", displayedWorldName).replace("...", ""))
+                    Text(translated("Entering %s...").replace("%s", displayedWorldName).replace("...", ""))
                     AnimatedDots()
                 }
             }
