@@ -233,20 +233,7 @@ fun PlayerDialog(
                     }
                     
                     // Status input
-                    Div(
-                        attrs = {
-                            classes(Styles.settingsSectionContainer)
-                        }
-                    ) {
-                        // Label
-                        Span(
-                            attrs = {
-                                classes(Styles.settingsSectionLabel)
-                            }
-                        ) {
-                            Translated("Status")
-                        }
-
+                    SettingsSection(label = "Status") {
                         val placeholder = translated("Set your status")
 
                         // Status input field
@@ -258,20 +245,7 @@ fun PlayerDialog(
                     }
 
                     // Health, mind, spirit bars
-                    Div(
-                        attrs = {
-                            classes(Styles.settingsSectionContainer)
-                        }
-                    ) {
-                        // Label
-                        Span(
-                            attrs = {
-                                classes(Styles.settingsSectionLabel)
-                            }
-                        ) {
-                            Translated("Health")
-                        }
-
+                    SettingsSection(label = "Health") {
                         UserStatusBars(
                             health = healthState.value,
                             mind = mindState.value,
@@ -355,20 +329,7 @@ fun PlayerDialog(
                     }
 
                     // Language switcher
-                    Div(
-                        attrs = {
-                            classes(Styles.settingsSectionContainer)
-                        }
-                    ) {
-                        // Label
-                        Span(
-                            attrs = {
-                                classes(Styles.settingsSectionLabel)
-                            }
-                        ) {
-                            Translated("Language")
-                        }
-
+                    SettingsSection(label = "Language") {
                         // Language switcher component
                         Div(
                             attrs = {

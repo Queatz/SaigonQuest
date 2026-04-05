@@ -21,9 +21,10 @@ fun RecordingPreview(
     Canvas(
         attrs = {
             style {
-                property("flex-grow", "1")
+                flexGrow(1)
+                flexShrink(1)
                 height(40.px)
-                minWidth(120.px)
+                width(120.px)
                 margin(0.px, 8.px)
                 boxSizing("border-box")
             }

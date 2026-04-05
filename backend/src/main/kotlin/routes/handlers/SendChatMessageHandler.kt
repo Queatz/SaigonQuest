@@ -2,16 +2,20 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.websocket.*
 import models.ChatMessage
 import models.ChatSenderType
 import models.Notification
 import models.NotificationType
+import models.UserEmojiHistory
 import models.WebSocketAction
 import repository.ChatRepository
 import repository.NotificationRepository
+import repository.UserEmojiHistoryRepository
 import repository.WorldRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
+import utils.EmojiUtils
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
@@ -64,6 +68,29 @@ class SendChatMessageHandler(private val chatRepository: ChatRepository) : WebSo
             try {
                 val savedMessage = chatRepository.saveMessage(sanitized)
                 WebSocketDebug.logMessage("SAVED", "Message saved with ID: ${savedMessage.key}", session)
+                
+                // Record emoji history if it's emoji-only from a user
+                if (sanitized.senderType == ChatSenderType.USER) {
+                    val userId = sanitized.senderId
+                    if (EmojiUtils.isEmojiOnly(sanitized.message)) {
+                        try {
+                            val historyRepository = UserEmojiHistoryRepository()
+                            historyRepository.recordEmoji(userId, sanitized.message)
+                            
+                            // Send updated history back to the user via WebSocket
+                            val updatedHistory = historyRepository.getByUserId(userId)
+                            if (updatedHistory != null) {
+                                val historyMessage = WebSocketMessage(
+                                    action = WebSocketAction.UPDATE_EMOJI_HISTORY,
+                                    data = json.encodeToString(UserEmojiHistory.serializer(), updatedHistory)
+                                )
+                                session.send(Frame.Text(json.encodeToString(WebSocketMessage.serializer(), historyMessage)))
+                            }
+                        } catch (e: Throwable) {
+                            WebSocketDebug.logError("Error recording emoji history", e, session)
+                        }
+                    }
+                }
                 
                 // Broadcast message to all clients in the same world
                 val broadcastMessage = WebSocketMessage(

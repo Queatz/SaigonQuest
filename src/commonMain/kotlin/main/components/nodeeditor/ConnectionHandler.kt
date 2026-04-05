@@ -17,6 +17,7 @@ import main.utils.getBoundingClientRectSafe
 import main.utils.rememberElementPositionTracker
 import models.nodeeditor.Connection
 import models.nodeeditor.PortType
+import org.jetbrains.compose.web.css.rgba
 import web.animations.awaitAnimationFrame
 
 /**
@@ -205,7 +206,8 @@ fun RenderConnection(
                         targetX = targetX,
                         targetY = targetY,
                         isSelected = isSelected,
-                        connectionId = connectionId
+                        connectionId = connectionId,
+                        color = getNodeColor(sourceNode.type.category)
                     )
                 } else null
             } else null
@@ -222,7 +224,7 @@ fun RenderConnection(
             isSelected = data.isSelected,
             onClick = { controller.selectConnection(connection) },
             connectionId = data.connectionId,
-            color = if (isDark) Theme.colors.white70 else Theme.colors.black30
+            color = data.color
         )
     }
 }
@@ -236,7 +238,8 @@ private data class ConnectionData(
     val targetX: Float,
     val targetY: Float,
     val isSelected: Boolean,
-    val connectionId: String
+    val connectionId: String,
+    val color: org.jetbrains.compose.web.css.CSSColorValue
 )
 
 /**
@@ -246,11 +249,16 @@ private data class ConnectionData(
  */
 @Composable
 fun RenderConnectionPreview(controller: NodeEditorController) {
+    val startNodeId = controller.connectionStartNode
+    val startNode = startNodeId?.let { controller.nodes[it] }
+    val color = startNode?.let { getNodeColor(it.type.category) } ?: rgba(100, 200, 255, 0.8)
+
     ConnectionPreview(
         sourceX = controller.connectionStartX,
         sourceY = controller.connectionStartY,
         currentX = controller.connectionCurrentX,
         currentY = controller.connectionCurrentY,
         isValidTarget = controller.potentialTargetPort != null,
+        color = color,
     )
 }

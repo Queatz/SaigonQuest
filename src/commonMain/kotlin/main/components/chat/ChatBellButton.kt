@@ -63,7 +63,6 @@ fun ChatBellButton(worldId: String) {
         },
         style = DialogButtonStyle.Secondary,
         isDisabled = !isAuthenticated,
-        small = true,
         attrs = {
             title(str(if (isSubscribed) "Subscribed" else "Not subscribed"))
         }

@@ -473,7 +473,7 @@ object WebSocketApi {
     fun sendMessage(message: WebSocketMessage): Boolean {
         if (!_isConnected) {
             console.warn("[MOVEMENT] Cannot send message: WebSocket not connected")
-            _lastError = "WebSocket not connected"
+            _lastError = "Disconnected."
             return false
         }
         

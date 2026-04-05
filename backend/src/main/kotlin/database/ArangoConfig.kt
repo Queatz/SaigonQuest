@@ -115,6 +115,7 @@ object CollectionsConfig {
     const val QUESTS_COLLECTION = "quests"
     const val QUEST_STATES_COLLECTION = "quest_states"
     const val PLAYER_QUEST_STATES_COLLECTION = "player_quest_states"
+    const val USER_EMOJI_HISTORY_COLLECTION = "user_emoji_history"
     
     // World docs collection
     const val DOCS_COLLECTION = "docs"
@@ -162,6 +163,7 @@ object CollectionsConfig {
         DOCS_COLLECTION to CollectionSpec(documentOptions(), models.Doc::class.java),
         DOC_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.DocHistory::class.java),
         AI_PROMPT_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.AiPromptHistory::class.java),
+        USER_EMOJI_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.UserEmojiHistory::class.java),
     )
 
     fun initializeCollections(database: ArangoDatabase) {

@@ -138,25 +138,19 @@ fun AdminEditAssetDialog(
                             val idx = selectedCellIndex!!
                             val current = ensureCellItem(idx)
                             Label { Text("Selected cell #$idx") }
-                            Label { Translated("Title") }
-                            TextInput(
+                            DialogInput(
                                 value = current.title,
-                                attrs = {
-                                    classes(Styles.inputField)
-                                    onInput { ev ->
-                                        itemCells = itemCells.map { if (it.index == idx) it.copy(title = ev.value) else it }
-                                    }
-                                }
+                                onInput = { newVal ->
+                                    itemCells = itemCells.map { if (it.index == idx) it.copy(title = newVal) else it }
+                                },
+                                label = "Title"
                             )
-                            Label { Translated("Category") }
-                            TextInput(
+                            DialogInput(
                                 value = current.category,
-                                attrs = {
-                                    classes(Styles.inputField)
-                                    onInput { ev ->
-                                        itemCells = itemCells.map { if (it.index == idx) it.copy(category = ev.value) else it }
-                                    }
-                                }
+                                onInput = { newVal ->
+                                    itemCells = itemCells.map { if (it.index == idx) it.copy(category = newVal) else it }
+                                },
+                                label = "Category"
                             )
                             // Remove definition for this cell
                             Div {
@@ -194,25 +188,19 @@ fun AdminEditAssetDialog(
                             attrs = { classes(Styles.spriteSheetPreview) }
                         )
                         // Simple editors for title and category
-                        Label { Translated("Title") }
-                        TextInput(
+                        DialogInput(
                             value = sItem.title,
-                            attrs = {
-                                classes(Styles.inputField)
-                                onInput { ev ->
-                                    spriteItems = listOf(sItem.copy(title = ev.value))
-                                }
-                            }
+                            onInput = { newVal ->
+                                spriteItems = listOf(sItem.copy(title = newVal))
+                            },
+                            label = "Title"
                         )
-                        Label { Translated("Category") }
-                        TextInput(
+                        DialogInput(
                             value = sItem.category,
-                            attrs = {
-                                classes(Styles.inputField)
-                                onInput { ev ->
-                                    spriteItems = listOf(sItem.copy(category = ev.value))
-                                }
-                            }
+                            onInput = { newVal ->
+                                spriteItems = listOf(sItem.copy(category = newVal))
+                            },
+                            label = "Category"
                         )
                         // Toggle for custom weights
                         LabeledCheckbox(
@@ -277,25 +265,19 @@ fun AdminEditAssetDialog(
                     Div(attrs = { style { padding(8.px); gap(8.px); display(DisplayStyle.Flex); flexDirection(FlexDirection.Column) } }) {
                         P { Translated("World preview") }
                         BasicSceneRenderer(filename = asset.file)
-                        Label { Translated("Title") }
-                        TextInput(
+                        DialogInput(
                             value = wItem.title,
-                            attrs = {
-                                classes(Styles.inputField)
-                                onInput { ev ->
-                                    worldItems = listOf(wItem.copy(title = ev.value))
-                                }
-                            }
+                            onInput = { newVal ->
+                                worldItems = listOf(wItem.copy(title = newVal))
+                            },
+                            label = "Title"
                         )
-                        Label { Translated("Category") }
-                        TextInput(
+                        DialogInput(
                             value = wItem.category,
-                            attrs = {
-                                classes(Styles.inputField)
-                                onInput { ev ->
-                                    worldItems = listOf(wItem.copy(category = ev.value))
-                                }
-                            }
+                            onInput = { newVal ->
+                                worldItems = listOf(wItem.copy(category = newVal))
+                            },
+                            label = "Category"
                         )
                     }
                 }
@@ -392,36 +374,26 @@ fun AdminEditAssetDialog(
                         // Rows
                         for ((idx, obj) in objectItems.withIndex()) {
                             Div(attrs = { style { display(DisplayStyle.Flex); flexDirection(FlexDirection.Column); gap(6.px) } }) {
-                                Label { Translated("Collection") }
-                                TextInput(
+                                DialogInput(
                                     value = obj.collection,
-                                    attrs = {
-                                        classes(Styles.inputField)
-                                        onInput { ev ->
-                                            val v = ev.value
-                                            objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(collection = v) else old }
-                                        }
-                                    }
+                                    onInput = { v ->
+                                        objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(collection = v) else old }
+                                    },
+                                    label = "Collection"
                                 )
-                                Label { Translated("Title") }
-                                TextInput(
+                                DialogInput(
                                     value = obj.title,
-                                    attrs = {
-                                        classes(Styles.inputField)
-                                        onInput { ev ->
-                                            objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(title = ev.value) else old }
-                                        }
-                                    }
+                                    onInput = { newVal ->
+                                        objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(title = newVal) else old }
+                                    },
+                                    label = "Title"
                                 )
-                                Label { Translated("Category") }
-                                TextInput(
+                                DialogInput(
                                     value = obj.category,
-                                    attrs = {
-                                        classes(Styles.inputField)
-                                        onInput { ev ->
-                                            objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(category = ev.value) else old }
-                                        }
-                                    }
+                                    onInput = { newVal ->
+                                        objectItems = objectItems.mapIndexed { i, old -> if (i == idx) old.copy(category = newVal) else old }
+                                    },
+                                    label = "Category"
                                 )
                                 Div {
                                     DialogButton(

@@ -21,11 +21,9 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.PasswordInput
 import org.jetbrains.compose.web.dom.RadioInput
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog for visitor users to register or login
@@ -99,20 +97,7 @@ fun VisitorDialog(
         title = if (isLoginMode) translated("Log In") else translated("Create Account"),
         content = {
             // Language switcher
-            Div(
-                attrs = {
-                    classes(Styles.settingsSectionContainer)
-                }
-            ) {
-                // Label
-                Span(
-                    attrs = {
-                        classes(Styles.settingsSectionLabel)
-                    }
-                ) {
-                    Translated("Language")
-                }
-
+            SettingsSection(label = "Language") {
                 // Language switcher component
                 Div(
                     attrs = {

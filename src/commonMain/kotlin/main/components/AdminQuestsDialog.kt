@@ -26,6 +26,7 @@ fun AdminQuestsDialog(
     var editState by remember { mutableStateOf<QuestState?>(null) }
     var editPlayerState by remember { mutableStateOf<PlayerQuestState?>(null) }
     val scope = rememberCoroutineScope()
+    val isMobile by rememberIsMobile()
 
     LaunchedEffect(Unit) {
         try {
@@ -60,12 +61,17 @@ fun AdminQuestsDialog(
                 attrs = {
                     style {
                         display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Row)
+                        flexDirection(if (isMobile) FlexDirection.Column else FlexDirection.Row)
                         gap(16.px)
-                        height(500.px)
-                        width(800.px)
-                        maxWidth(90.vw)
-                        maxHeight(70.vh)
+                        if (isMobile) {
+                            width(100.percent)
+                            property("height", "auto")
+                        } else {
+                            height(500.px)
+                            width(800.px)
+                        }
+                        maxWidth(if (isMobile) 95.vw else 90.vw)
+                        maxHeight(if (isMobile) 90.vh else 70.vh)
                     }
                 }
             ) {
@@ -73,13 +79,19 @@ fun AdminQuestsDialog(
                 Div(
                     attrs = {
                         style {
-                            width(30.percent)
+                            width(if (isMobile) 100.percent else 30.percent)
+                            if (isMobile) {
+                                maxHeight(200.px)
+                                property("border-bottom", "1px solid #444")
+                                paddingBottom(8.px)
+                            } else {
+                                property("border-right", "1px solid #444")
+                                paddingRight(8.px)
+                            }
                             overflowY("auto")
                             display(DisplayStyle.Flex)
                             flexDirection(FlexDirection.Column)
                             gap(8.px)
-                            property("border-right", "1px solid #444")
-                            paddingRight(8.px)
                         }
                     }
                 ) {
@@ -109,11 +121,16 @@ fun AdminQuestsDialog(
                 Div(
                     attrs = {
                         style {
-                            width(70.percent)
+                            width(if (isMobile) 100.percent else 70.percent)
                             overflowY("auto")
+                            overflowX("auto")
                             display(DisplayStyle.Flex)
                             flexDirection(FlexDirection.Column)
                             gap(16.px)
+                            if (isMobile) {
+                                flex(1)
+                                property("min-height", "0")
+                            }
                         }
                     }
                 ) {

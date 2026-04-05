@@ -45,5 +45,11 @@ kotlin {
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
             }
         }
+
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("emoji-regex", "10.4.0"))
+            }
+        }
     }
 }

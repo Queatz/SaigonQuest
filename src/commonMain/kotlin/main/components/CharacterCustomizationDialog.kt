@@ -75,11 +75,7 @@ fun CharacterCustomizationDialog(
             }
 
             // Customization options
-            Div(
-                attrs = {
-                    classes(Styles.settingsSectionContainer)
-                }
-            ) {
+            SettingsSection {
                 if (false) {
                     // Body Type
                     DialogSelect(

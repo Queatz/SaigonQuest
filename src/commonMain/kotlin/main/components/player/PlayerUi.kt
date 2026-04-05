@@ -34,5 +34,5 @@ object PlayerUi {
         return message.take(takeCount) + "…"
     }
 
-    fun isEmojiOnly(text: String): Boolean = PlayerUiJs.isEmojiOnly(text)
+    fun isEmojiOnly(text: String): Boolean = utils.EmojiUtils.isEmojiOnly(text)
 }

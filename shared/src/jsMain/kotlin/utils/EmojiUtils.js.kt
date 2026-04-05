@@ -1,8 +1,9 @@
-package main.components.player
+package utils
 
 import lib.emojiRegex
+import kotlin.js.RegExp
 
-actual object PlayerUiJs {
+actual object EmojiUtils {
     actual fun isEmojiOnly(text: String): Boolean {
         if (text.isBlank()) return false
         

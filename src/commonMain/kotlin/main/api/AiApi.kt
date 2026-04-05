@@ -50,7 +50,7 @@ object AiApi {
         }
     }
 
-    suspend fun getHistory(limit: Int = 50): List<AiPromptHistory> {
+    suspend fun getHistory(limit: Int = 20): List<AiPromptHistory> {
         val resp = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/ai/history") {
             ApiClient.addAuthHeader(this)
             parameter("limit", limit)

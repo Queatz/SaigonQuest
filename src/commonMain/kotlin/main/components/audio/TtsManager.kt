@@ -79,6 +79,10 @@ object TtsManager {
 
     fun speak(text: String, onEnd: () -> Unit = {}) {
         stop()
+        if (text.isBlank()) {
+            onEnd()
+            return
+        }
 
         speechJob = scope.launch {
             isSpeaking = true

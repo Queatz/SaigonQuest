@@ -17,6 +17,7 @@ import org.jetbrains.compose.web.dom.Div
  * @param currentX Current X coordinate of the mouse
  * @param currentY Current Y coordinate of the mouse
  * @param isValidTarget Whether there is a valid target port under the cursor
+ * @param color The base color for the connection preview (usually the color of the source node)
  * @param thickness Thickness of the preview connection
  * @param isInConnectionLayer Whether this preview is being rendered in the separate connection layer
  */
@@ -27,13 +28,14 @@ fun ConnectionPreview(
     currentX: Float,
     currentY: Float,
     isValidTarget: Boolean = false,
+    color: org.jetbrains.compose.web.css.CSSColorValue = rgba(100, 200, 255, 0.8),
     thickness: Float = 2f
 ) {
-    // Determine color based on whether there's a valid target
-    val color = if (isValidTarget) {
+    // Determine the actual color based on whether there's a valid target
+    val actualColor = if (isValidTarget) {
         rgba(0, 255, 100, 0.8)
     } else {
-        rgba(100, 200, 255, 0.8)
+        color
     }
     
     // Use the same bezier curve as the regular connection
@@ -42,7 +44,7 @@ fun ConnectionPreview(
         sourceY = sourceY,
         targetX = currentX,
         targetY = currentY,
-        color = color,
+        color = actualColor,
         thickness = thickness,
     )
     
@@ -55,7 +57,8 @@ fun ConnectionPreview(
                 // Center the dot on the port position
                 left((sourceX - 6).px)
                 top((sourceY - 6).px)
-                backgroundColor(color)
+                backgroundColor(actualColor)
+                property("box-shadow", "0 0 8px $actualColor")
             }
         }
     )
@@ -78,8 +81,8 @@ fun ConnectionPreview(
                 
                 // Dynamic styles that depend on the color variable
                 backgroundColor(rgba(255, 255, 255, 0.2))
-                property("border-color", color.toString())
-                property("box-shadow", "0 0 12px $color")
+                property("border-color", actualColor.toString())
+                property("box-shadow", "0 0 12px $actualColor")
             }
         }
     )

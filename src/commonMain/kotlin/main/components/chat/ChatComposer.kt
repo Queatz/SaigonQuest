@@ -4,6 +4,7 @@ import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.*
+import main.components.player.PlayerUi
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
@@ -15,7 +16,10 @@ import main.components.media.rememberAudioRecorderState
 import main.theme.Styles
 import main.theme.Theme
 import models.MediaType
+import models.UserEmojiHistory
+import models.WebSocketAction
 import models.chat.ImageAttachment
+import utils.json
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.*
@@ -42,6 +46,34 @@ fun ChatComposer(
     
     val scope = rememberCoroutineScope()
     val chatInputRef = remember { mutableStateOf<HTMLInputElement?>(null) }
+    
+    var userEmojiHistory by remember { mutableStateOf<List<String>>(emptyList()) }
+    
+    DisposableEffect(isAuthenticated) {
+        var token: main.api.ListenerToken? = null
+        if (isAuthenticated) {
+            scope.launch {
+                try {
+                    val history = UserEmojiHistoryApi.getHistory()
+                    userEmojiHistory = history.emojis
+                } catch (e: Throwable) {
+                    console.error("Failed to load emoji history", e)
+                }
+            }
+            
+            token = WebSocketApi.addListenerWithToken(WebSocketAction.UPDATE_EMOJI_HISTORY) { message ->
+                try {
+                    val history = utils.json.decodeFromString(UserEmojiHistory.serializer(), message.data)
+                    userEmojiHistory = history.emojis
+                } catch (e: Throwable) {
+                    console.error("Failed to decode emoji history update", e)
+                }
+            }
+        }
+        onDispose {
+            token?.let { WebSocketApi.removeListener(it) }
+        }
+    }
 
     val recorderState = rememberAudioRecorderState(
         onUpload = { file ->
@@ -107,6 +139,12 @@ fun ChatComposer(
             "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
             "👍", "👎", "👏", "🙌", "🤝", "👋", "🤘", "✌️", "🤞", "🤟"
         )
+    }
+
+    val displayEmotes = remember(userEmojiHistory, defaultEmotes) {
+        val historyPart = userEmojiHistory.take(20)
+        val defaultPart = defaultEmotes.filter { it !in historyPart.toSet() }
+        (historyPart + defaultPart).take(20)
     }
 
     LaunchedEffect(chatInputRef) {
@@ -180,14 +218,16 @@ fun ChatComposer(
                                         onClick { e -> e.stopPropagation() }
                                     }
                                 ) {
-                                    defaultEmotes.forEach { emote ->
+                                    displayEmotes.forEach { emote ->
                                         Div(
                                             attrs = {
                                                 classes(Styles.emoteButton)
                                                 onClick { e ->
                                                     e.stopPropagation()
                                                     WebSocketApi.sendChatMessage(worldId, emote, shouted = shoutNext) { success ->
-                                                        if (success) shoutNext = false
+                                                        if (success) {
+                                                            shoutNext = false
+                                                        }
                                                     }
                                                     showEmotePopup = false
                                                 }
@@ -401,7 +441,6 @@ fun ChatComposer(
                                     updateTypingStatus(false)
                                     scope.launch { try { ChatApi.markMessagesAsRead(worldId) } catch (_: Throwable) {} }
                                 }
-                                showRichEditorDialog = false
                             }
                         }
                     },

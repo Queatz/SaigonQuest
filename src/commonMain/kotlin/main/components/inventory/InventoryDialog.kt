@@ -790,12 +790,11 @@ fun InventoryDialog(onClose: () -> Unit) {
                         }
                     } else {
                         if (itemOrder.size > 10) {
-                            TextInput(
+                            DialogInput(
                                 value = searchText,
-                                attrs = {
-                                    classes(Styles.inputField)
-                                    placeholder(str("Search"))
-                                    onInput { ev -> searchText = ev.value }
+                                onInput = { searchText = it },
+                                placeholder = str("Search"),
+                                containerAttrs = {
                                     style {
                                         marginBottom(12.px)
                                         property("width", "100%")

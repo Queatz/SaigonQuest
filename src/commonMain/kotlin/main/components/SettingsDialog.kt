@@ -36,78 +36,84 @@ fun SettingsDialog(
                 if (!showUI) Translated("Show UI") else Translated("Hide UI")
             }
 
-            // Wide Angle
-            DialogButton(
-                onClick = {
-                    wideAngle.value = !wideAngle.value
-                    GraphicsSettings.setWideAngle(wideAngle.value)
-                },
-                style = DialogButtonStyle.Primary,
-                attrs = {
-                    style {
-                        marginTop(16.px)
+            // Camera settings
+            SettingsSection(label = "Camera") {
+                // Wide Angle
+                DialogButton(
+                    onClick = {
+                        wideAngle.value = !wideAngle.value
+                        GraphicsSettings.setWideAngle(wideAngle.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
                     }
+                ) {
+                    Text("${translated("Wide angle")}: ${if (wideAngle.value) translated("On") else translated("Off")}")
                 }
-            ) {
-                Text("${translated("Wide angle")}: ${if (wideAngle.value) translated("On") else translated("Off")}")
+
+                // Observer Mode
+                DialogButton(
+                    onClick = {
+                        observerMode.value = !observerMode.value
+                        GraphicsSettings.setObserverMode(observerMode.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                ) {
+                    Text("${translated("Observer mode")}: ${if (observerMode.value) translated("On") else translated("Off")}")
+                }
             }
 
-            // Observer Mode
-            DialogButton(
-                onClick = {
-                    observerMode.value = !observerMode.value
-                    GraphicsSettings.setObserverMode(observerMode.value)
-                },
-                style = DialogButtonStyle.Primary,
-                attrs = {
-                    style {
-                        marginTop(16.px)
+            // Account settings
+            SettingsSection(label = "Account") {
+                // Always show QR code
+                DialogButton(
+                    onClick = {
+                        alwaysShowQr.value = !alwaysShowQr.value
+                        GraphicsSettings.setAlwaysShowQr(alwaysShowQr.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style { marginTop(16.px) }
                     }
+                ) {
+                    Text("${translated("Always show QR code")}: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
                 }
-            ) {
-                Text("${translated("Observer mode")}: ${if (observerMode.value) translated("On") else translated("Off")}")
-            }
 
-            // Always show QR code
-            DialogButton(
-                onClick = {
-                    alwaysShowQr.value = !alwaysShowQr.value
-                    GraphicsSettings.setAlwaysShowQr(alwaysShowQr.value)
-                },
-                style = DialogButtonStyle.Primary,
-                attrs = {
-                    style { marginTop(16.px) }
-                }
-            ) {
-                Text("${translated("Always show QR code")}: ${if (alwaysShowQr.value) translated("On") else translated("Off")}")
-            }
-
-            // Change Password
-            DialogButton(
-                onClick = { showChangePassword.value = true },
-                style = DialogButtonStyle.Primary,
-                attrs = {
-                    style {
-                        marginTop(16.px)
+                // Change Password
+                DialogButton(
+                    onClick = { showChangePassword.value = true },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
                     }
+                ) {
+                    Translated("Change Password")
                 }
-            ) {
-                Translated("Change Password")
-            }
 
-            // Logout button
-            DialogButton(
-                onClick = {
-                    showLogoutDialog.value = true
-                },
-                style = DialogButtonStyle.Alt,
-                attrs = {
-                    style {
-                        marginTop(16.px)
+                // Logout button
+                DialogButton(
+                    onClick = {
+                        showLogoutDialog.value = true
+                    },
+                    style = DialogButtonStyle.Alt,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
                     }
+                ) {
+                    Translated("Log Out")
                 }
-            ) {
-                Translated("Log Out")
             }
 
             if (showChangePassword.value) {

@@ -324,7 +324,6 @@ object Styles : StyleSheet() {
         property("user-select", "none")
     }
     val emoteButton by style {
-        width(48.px)
         height(48.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
@@ -1809,10 +1808,12 @@ object Styles : StyleSheet() {
         padding(8.px)
         marginBottom(16.px)
         borderRadius(4.px)
+        alignItems(AlignItems.Stretch)
     }
 
     val settingsSectionLabel by style {
         padding(8.px)
+        textAlign("center")
         color(Theme.colors.onSurfaceVariant)
         dark(self) { color(Theme.colors.onBackgroundDark) }
     }
@@ -1828,14 +1829,9 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
-        padding(8.px)
         marginBottom(16.px)
-        backgroundColor(Theme.colors.surfaceVariant)
-        borderRadius(16.px)
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-        }
+        backgroundColor(Color.transparent)
+        borderRadius(0.px)
     }
 
     val graphicsToggleLabel by style {
@@ -2033,7 +2029,7 @@ object Styles : StyleSheet() {
         position(Position.Absolute)
         bottom(45.px)
         left(0.px)
-        width(250.px)
+        width(280.px)
         padding(8.px)
         backgroundColor(Theme.colors.surface)
         borderRadius(8.px)

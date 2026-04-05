@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import main.theme.Styles
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 
 /**
@@ -21,9 +22,31 @@ fun SettingsToggle(
     id: String? = null
 ) {
     // Container for the toggle and label
-    Div(
+    FramedBorder(
+        borderImage = "/raw/data/ui/borders/button_secondary.png",
+        backgroundImage = "/raw/data/ui/backgrounds/button_secondary.png",
         attrs = {
             classes(Styles.graphicsToggleContainer)
+            classes(Styles.baseDialogButtonSecondary)
+
+            // Ensure the framed border stays visible and behaves like a button
+            style {
+                padding(6.px, 18.px)
+                property("border-width", "6px")
+                property("border-image-width", "6px")
+                property("border-style", "solid")
+                property("border-radius", "0")
+                property("box-shadow", "none")
+                display(DisplayStyle.Flex)
+                justifyContent(JustifyContent.SpaceBetween)
+                alignItems(AlignItems.Center)
+                property("cursor", "pointer")
+                property("user-select", "none")
+            }
+
+            onClick {
+                onCheckedChange(!checked)
+            }
         }
     ) {
         // Label

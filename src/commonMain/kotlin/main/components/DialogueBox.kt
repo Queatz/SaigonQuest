@@ -61,7 +61,10 @@ fun DialogueBox(
             isWaiting = false
 
             if (AudioSettings.isSpeakDialogueEnabled()) {
-                TtsManager.speak(stripMarkdown(dialogueData.text))
+                val stripped = stripMarkdown(dialogueData.text)
+                if (stripped.isNotBlank()) {
+                    TtsManager.speak(stripped)
+                }
             }
         }
     }

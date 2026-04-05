@@ -17,11 +17,14 @@ import models.ChangePasswordRequest
 import models.ErrorResponse
 import models.LanguageUpdateRequest
 import models.LoginRequest
+import models.RecordEmojiRequest
 import models.StatusUpdateRequest
 import models.UpgradeRequest
 import models.UserCustomizationRequest
+import models.UserEmojiHistory
 import models.VisitorRequest
 import models.WornItemsRequest
+import repository.UserEmojiHistoryRepository
 import repository.UserRepository
 
 fun Routing.configureUserRoutes() {
@@ -331,6 +334,30 @@ fun Routing.configureUserRoutes() {
                 val token = JwtConfig.generateToken(updatedUser.key)
                 updatedUser.token = token
                 call.respond(HttpStatusCode.OK, AuthResponse(updatedUser, token))
+            }
+
+            // Get user emoji history - requires authentication
+            get("/emoji-history") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                
+                val historyRepository = UserEmojiHistoryRepository()
+                val history = historyRepository.getByUserId(userId) ?: UserEmojiHistory(userId = userId)
+                
+                call.respond(HttpStatusCode.OK, history)
+            }
+            
+            // Record emoji - requires authentication
+            post("/record-emoji") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                
+                val request = call.receive<RecordEmojiRequest>()
+                
+                val historyRepository = UserEmojiHistoryRepository()
+                historyRepository.recordEmoji(userId, request.emoji)
+                
+                call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
             }
         }
     }

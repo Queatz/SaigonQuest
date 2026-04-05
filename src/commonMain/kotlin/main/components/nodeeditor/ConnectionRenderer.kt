@@ -37,7 +37,7 @@ fun BezierConnection(
     targetX: Float,
     targetY: Float,
     color: CSSColorValue = Theme.colors.white70,
-    thickness: Float = 3f,
+    thickness: Float = 4f,
     isSelected: Boolean = false,
     onClick: (() -> Unit)? = null,
     connectionId: String? = null,
@@ -52,7 +52,7 @@ fun BezierConnection(
     
     // Determine the color and thickness based on selection state
     val actualColor = if (isSelected) rgba(100, 200, 255, 0.9) else color
-    val actualThickness = if (isSelected) max(thickness, 4f) else thickness
+    val actualThickness = if (isSelected) max(thickness, 6f) else thickness
     
     // Generate a unique ID for the SVG container
     var containerRef by remember { mutableStateOf<HTMLDivElement?>(null) }

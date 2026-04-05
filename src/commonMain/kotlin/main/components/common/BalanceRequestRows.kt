@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.DialogInput
 import main.components.Translated
 import main.components.translated
 import main.theme.Styles
@@ -20,7 +21,6 @@ import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 
 @Composable
 fun PendingRequestRow(
@@ -165,14 +165,10 @@ fun AdminRequestRow(
         }
 
         // Decision note input
-        Label { Text("Note") }
-        TextInput(
+        DialogInput(
             value = noteValue,
-            attrs = {
-                classes(Styles.inputField)
-                onInput { onNoteChange(it.value)
-                }
-            }
+            onInput = { onNoteChange(it) },
+            label = "Note"
         )
 
         // Actions

@@ -21,7 +21,6 @@ import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 import models.UserRequestType
 import main.components.UserRequestsDialog
 import main.components.DialogButton

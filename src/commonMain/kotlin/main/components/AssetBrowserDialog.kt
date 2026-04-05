@@ -24,7 +24,6 @@ import org.jetbrains.compose.web.dom.Text
 import Translations.str
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.dom.TextInput
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.display
@@ -112,23 +111,20 @@ fun AssetBrowserDialog(
                     classes(main.theme.AssetStyles.assetFiltersRow)
                 }) {
                     // Title search
-                    Label { Translated("Title") }
-                    TextInput(
+                    DialogInput(
                         value = titleQuery,
+                        onInput = {
+                            titleQuery = it
+                        },
+                        label = "Title",
+                        placeholder = str("Search by title"),
+                        autoFocus = true,
                         attrs = {
-                            classes(Styles.inputField)
-                            placeholder(str("Search by title"))
-                            autoFocus()
-                            onInput {
-                                titleQuery = it.value
-                            }
-
                             ref {
                                 it.focus()
-
                                 onDispose { }
                             }
-                        },
+                        }
                     )
 
                     // Category select

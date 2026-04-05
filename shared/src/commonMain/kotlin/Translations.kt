@@ -2150,6 +2150,14 @@ vi: Nội dung tài liệu
 Open doc
 vi: Mở tài liệu
 
+Camera
+vi: Camera
+
+Account
+vi: Tài khoản
+
+Disconnected.
+vi: Đã ngắt kết nối.
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

@@ -18,7 +18,6 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * Dialog to send a system notification (optionally targeted by username).
@@ -50,38 +49,26 @@ fun AdminSendNotificationDialog(
                 }
             ) {
                 // Target username input (leave blank to broadcast)
-                Div(attrs = { style { marginBottom(8.px) } }) {
-                    Translated("Target username (leave blank to broadcast)")
-                    TextInput(
-                        value = targetUsername,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> targetUsername = event.value }
-                        }
-                    )
-                }
+                DialogInput(
+                    value = targetUsername,
+                    onInput = { targetUsername = it },
+                    label = "Target username (leave blank to broadcast)",
+                    containerAttrs = { style { marginBottom(8.px) } }
+                )
                 // Notification title input
-                Div(attrs = { style { marginBottom(8.px) } }) {
-                    Translated("Title")
-                    TextInput(
-                        value = notificationTitle,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> notificationTitle = event.value }
-                        }
-                    )
-                }
+                DialogInput(
+                    value = notificationTitle,
+                    onInput = { notificationTitle = it },
+                    label = "Title",
+                    containerAttrs = { style { marginBottom(8.px) } }
+                )
                 // Notification message input
-                Div(attrs = { style { marginBottom(8.px) } }) {
-                    Translated("Message")
-                    TextInput(
-                        value = notificationMessage,
-                        attrs = {
-                            classes(Styles.inputField)
-                            onInput { event -> notificationMessage = event.value }
-                        }
-                    )
-                }
+                DialogInput(
+                    value = notificationMessage,
+                    onInput = { notificationMessage = it },
+                    label = "Message",
+                    containerAttrs = { style { marginBottom(8.px) } }
+                )
             }
         },
         actions = {

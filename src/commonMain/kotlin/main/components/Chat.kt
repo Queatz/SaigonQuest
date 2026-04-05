@@ -65,12 +65,11 @@ fun Chat(
                 DialogButton(
                     onClick = { showInfoDialog = true },
                     style = DialogButtonStyle.Secondary,
-                    small = true,
                     attrs = {
                         title(text)
                     }
                 ) {
-                    Text("⏲")
+                    Text("⏳")
                 }
             }
         },

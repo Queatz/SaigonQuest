@@ -13,7 +13,6 @@ import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * SelectDocDialog
@@ -77,13 +76,10 @@ fun SelectDocDialog(
             Div(attrs = {
                 classes(WorldDocsStyles.selectDocToolbar)
             }) {
-                TextInput(
+                DialogInput(
                     value = query,
-                    attrs = {
-                        classes(Styles.inputField)
-                        placeholder(str("Search docs"))
-                        onInput { ev -> query = ev.value }
-                    }
+                    onInput = { query = it },
+                    placeholder = str("Search docs")
                 )
             }
 
