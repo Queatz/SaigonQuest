@@ -78,7 +78,10 @@ fun Chat(
             showInfoDialog = true
         },
     ) {
-        ChatContent(worldId = worldId)
+        ChatContent(
+            worldId = worldId,
+            isDialog = isMobile,
+        )
     }
 
     if (showInfoDialog) {

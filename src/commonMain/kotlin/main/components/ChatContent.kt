@@ -24,7 +24,7 @@ import org.jetbrains.compose.web.dom.Div
  * @param worldId The ID of the world to get messages for
  */
 @Composable
-fun ChatContent(worldId: String) {
+fun ChatContent(worldId: String, isDialog: Boolean = false) {
     var isAuthenticated by remember { mutableStateOf(false) }
     var isPlayer by remember { mutableStateOf(false) }
     var isWebSocketConnected by remember { mutableStateOf(false) }
@@ -104,7 +104,8 @@ fun ChatContent(worldId: String) {
             isAuthenticated = isAuthenticated,
             isPlayer = isPlayer,
             isWebSocketConnected = isWebSocketConnected,
-            lastError = lastError
+            lastError = lastError,
+            isDialog = isDialog,
         )
     }
 }

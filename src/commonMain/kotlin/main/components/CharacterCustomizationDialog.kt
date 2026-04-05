@@ -19,20 +19,8 @@ import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.marginLeft
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.Option
-import org.jetbrains.compose.web.dom.Select
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.selected
-import org.jetbrains.compose.web.dom.RangeInput
-import web.cssom.HtmlAttributes.Companion.selected
-import web.cssom.HtmlAttributes.Companion.value
-import web.html.HtmlTagName.option
 
 /**
  * Dialog for customizing player character appearance
@@ -93,45 +81,18 @@ fun CharacterCustomizationDialog(
                 }
             ) {
                 if (false) {
-                // Body Type
-                Div(
-                    attrs = {
-                        style {
-                            marginTop(16.px)
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            classes(Styles.settingsSectionLabel)
-                        }
-                    ) {
-                        Translated("Body")
-                    }
-                    
-                    Select(
-                        attrs = {
-                            classes(Styles.inputField)
-                            attr("value", bodyType)
-                            onChange { event -> 
-                                event.target.value?.let { bodyType = it }
+                    // Body Type
+                    DialogSelect(
+                        label = "Body",
+                        options = listOf("Skinny", "Normal", "Fat").map { it to it },
+                        value = bodyType,
+                        onInput = { bodyType = it },
+                        containerAttrs = {
+                            style {
+                                marginTop(16.px)
                             }
-                        }
-                    ) {
-                        listOf("Skinny", "Normal", "Fat").forEach { option ->
-                            Option(
-                                value = option,
-                                attrs = {
-                                    if (option == bodyType) {
-                                        attr("selected", "true")
-                                    }
-                                }
-                            ) {
-                                Translated(option)
-                            }
-                        }
-                    }
-                    }
+                        },
+                    )
                 }
 
                 // Skin Tone
@@ -183,84 +144,32 @@ fun CharacterCustomizationDialog(
                 }
 
                 // Eye Color
-                Div(
-                    attrs = {
+                DialogSelect(
+                    label = "Eyes",
+                    options = listOf("Black", "Blue", "Brown", "Green", "Gray").map { it to it },
+                    value = eyeColor,
+                    onInput = { eyeColor = it },
+                    containerAttrs = {
                         style {
                             marginTop(16.px)
                         }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            classes(Styles.settingsSectionLabel)
-                        }
-                    ) {
-                        Translated("Eyes")
-                    }
-                    
-                    Select(
-                        attrs = {
-                            classes(Styles.inputField)
-                            attr("value", eyeColor)
-                            onChange { event -> 
-                                event.target.value?.let { eyeColor = it }
-                            }
-                        }
-                    ) {
-                        listOf("Black", "Blue", "Brown", "Green", "Gray").forEach { option ->
-                            Option(
-                                value = option,
-                                attrs = {
-                                    if (option == eyeColor) {
-                                        attr("selected", "true")
-                                    }
-                                }
-                            ) {
-                                Translated(option)
-                            }
-                        }
-                    }
-                }
+                    },
+                )
 
                 // Hair Style
-                Div(
-                    attrs = {
+                DialogSelect(
+                    label = "Hair",
+                    options = listOf("None", "Short", "Medium", "Long").map { 
+                        (if (it == "None") "" else it) to it 
+                    },
+                    value = hairStyle,
+                    onInput = { hairStyle = it },
+                    containerAttrs = {
                         style {
                             marginTop(16.px)
                         }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            classes(Styles.settingsSectionLabel)
-                        }
-                    ) {
-                        Translated("Hair")
-                    }
-                    
-                    Select(
-                        attrs = {
-                            classes(Styles.inputField)
-                            attr("value", hairStyle)
-                            onChange { event -> 
-                                event.target.value?.let { hairStyle = it }
-                            }
-                        }
-                    ) {
-                        listOf("None", "Short", "Medium", "Long").forEach { option ->
-                            Option(
-                                value = if (option == "None") "" else option,
-                                attrs = {
-                                    if (option == hairStyle) {
-                                        selected()
-                                    }
-                                }
-                            ) {
-                                Translated(option)
-                            }
-                        }
-                    }
-                }
+                    },
+                )
             }
         },
         actions = {

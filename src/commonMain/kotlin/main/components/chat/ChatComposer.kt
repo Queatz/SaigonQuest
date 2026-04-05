@@ -29,7 +29,8 @@ fun ChatComposer(
     isAuthenticated: Boolean,
     isPlayer: Boolean,
     isWebSocketConnected: Boolean,
-    lastError: String?
+    lastError: String?,
+    isDialog: Boolean = false,
 ) {
     var initialRichText by remember { mutableStateOf("") }
     var messageText by remember { mutableStateOf("") }
@@ -157,41 +158,43 @@ fun ChatComposer(
                 )
             } else {
                 if (messageText.isBlank()) {
-                    Div(
-                        attrs = {
-                            classes(Styles.emoteTriggerWrapper)
-                        }
-                    ) {
-                        DialogButton(
-                            onClick = { if (isAuthenticated) showEmotePopup = !showEmotePopup },
-                            style = if (showEmotePopup) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
-                            isDisabled = !isAuthenticated,
-                            small = true,
+                    if (!isDialog) {
+                        Div(
+                            attrs = {
+                                classes(Styles.emoteTriggerWrapper)
+                            }
                         ) {
-                            Text("😀")
-                        }
-
-                        if (showEmotePopup && isAuthenticated) {
-                            Div(
-                                attrs = {
-                                    classes(Styles.emotePopupContainer)
-                                    onClick { e -> e.stopPropagation() }
-                                }
+                            DialogButton(
+                                onClick = { if (isAuthenticated) showEmotePopup = !showEmotePopup },
+                                style = if (showEmotePopup) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                                isDisabled = !isAuthenticated,
+                                small = true,
                             ) {
-                                defaultEmotes.forEach { emote ->
-                                    Div(
-                                        attrs = {
-                                            classes(Styles.emoteButton)
-                                            onClick { e ->
-                                                e.stopPropagation()
-                                                WebSocketApi.sendChatMessage(worldId, emote, shouted = shoutNext) { success ->
-                                                    if (success) shoutNext = false
+                                Text("😀")
+                            }
+
+                            if (showEmotePopup && isAuthenticated) {
+                                Div(
+                                    attrs = {
+                                        classes(Styles.emotePopupContainer)
+                                        onClick { e -> e.stopPropagation() }
+                                    }
+                                ) {
+                                    defaultEmotes.forEach { emote ->
+                                        Div(
+                                            attrs = {
+                                                classes(Styles.emoteButton)
+                                                onClick { e ->
+                                                    e.stopPropagation()
+                                                    WebSocketApi.sendChatMessage(worldId, emote, shouted = shoutNext) { success ->
+                                                        if (success) shoutNext = false
+                                                    }
+                                                    showEmotePopup = false
                                                 }
-                                                showEmotePopup = false
                                             }
+                                        ) {
+                                            Text(emote)
                                         }
-                                    ) {
-                                        Text(emote)
                                     }
                                 }
                             }
@@ -314,18 +317,20 @@ fun ChatComposer(
                 )
 
                 if (messageText.isBlank()) {
-                    DialogButton(
-                        onClick = { if (isAuthenticated) showRichEditorDialog = true },
-                        style = DialogButtonStyle.Primary,
-                        isDisabled = !isAuthenticated,
-                        small = true,
-                        attrs = {
-                            style {
-                                flexShrink(0)
-                            }
-                        },
-                    ) {
-                        Text("📝")
+                    if (!isDialog) {
+                        DialogButton(
+                            onClick = { if (isAuthenticated) showRichEditorDialog = true },
+                            style = DialogButtonStyle.Primary,
+                            isDisabled = !isAuthenticated,
+                            small = true,
+                            attrs = {
+                                style {
+                                    flexShrink(0)
+                                }
+                            },
+                        ) {
+                            Text("📝")
+                        }
                     }
                 } else {
                     DialogButton(

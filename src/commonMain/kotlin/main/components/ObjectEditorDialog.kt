@@ -328,13 +328,12 @@ fun ObjectEditorDialog(
                         }
                     ) {
                         listOf(0, 90, 180, 270).forEach { deg ->
-                            Button(
+                            DialogButton(
+                                onClick = { rotationYDeg = deg.toFloat() },
                                 attrs = {
-                                    classes(Styles.secondaryButton)
                                     style {
                                         flex(1)
                                     }
-                                    onClick { rotationYDeg = deg.toFloat() }
                                 }
                             ) {
                                 Text("$deg°")
