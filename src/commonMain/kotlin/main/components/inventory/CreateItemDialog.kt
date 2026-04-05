@@ -21,6 +21,7 @@ import main.components.translated
 import main.components.IconRenderer
 import main.components.AssetBrowserDialog
 import main.components.DialogInput
+import main.components.DialogSelect
 import main.components.LabeledCheckbox
 import Translations.str
 import main.components.WeightsGridEditor
@@ -31,7 +32,6 @@ import models.ItemWearableLocation
 import models.Sex
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.color
@@ -44,10 +44,7 @@ import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.NumberInput
-import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -341,34 +338,12 @@ fun CreateItemDialog(
 
             
             // Cost field
-            Div(
-                attrs = {
-                    style {
-                        marginBottom(16.px)
-                    }
-                }
-            ) {
-                Label(
-                    attrs = {
-                        style {
-                            display(DisplayStyle.Block)
-
-                            marginBottom(4.px)
-                        }
-                    }
-                ) {
-                    Translated("Cost (VND)")
-                }
-
-                NumberInput(
-                    value = cost,
-                    min = 0,
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { cost = it.value?.toLong() ?: 0L }
-                    }
-                )
-            }
+            DialogInput(
+                label = "Cost (VND)",
+                value = cost.toString(),
+                onInput = { cost = it.toLongOrNull() ?: 0L },
+                containerAttrs = { style { marginBottom(16.px) } },
+            )
             
             
             // Wearable checkbox
@@ -390,68 +365,30 @@ fun CreateItemDialog(
             // Conditional wearable fields
             if (wearable) {
                 // Wearable sex
-                Div(
-                    attrs = {
-                        style {
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                marginBottom(4.px)
-                            }
-                        }
-                    ) {
-                        Translated("Sex")
-                    }
-                    Select(attrs = {
-                        classes(Styles.inputField)
-                        onInput { ev ->
-                            try {
-                                wearableSex = Sex.valueOf(ev.value ?: Sex.Boy.name)
-                            } catch (_: Throwable) {}
-                        }
-                    }) {
-                        Sex.entries.forEach { s ->
-                            Option(s.name, attrs = { if (s == wearableSex) selected() }) { Translated(s.name) }
-                        }
-                    }
-                }
+                DialogSelect(
+                    label = "Sex",
+                    value = wearableSex.name,
+                    options = Sex.entries.map { it.name to translated(it.name) },
+                    onInput = {
+                        try {
+                            wearableSex = Sex.valueOf(it)
+                        } catch (_: Throwable) {}
+                    },
+                    containerAttrs = { style { marginBottom(16.px) } },
+                )
 
                 // Wearable location
-                Div(
-                    attrs = {
-                        style {
-                            marginBottom(16.px)
-                        }
-                    }
-                ) {
-                    Label(
-                        attrs = {
-                            style {
-                                display(DisplayStyle.Block)
-                                marginBottom(4.px)
-                            }
-                        }
-                    ) {
-                        Translated("Location")
-                    }
-                    Select(attrs = {
-                        classes(Styles.inputField)
-                        onInput { ev ->
-                            try {
-                                wearableLocation = ItemWearableLocation.valueOf(ev.value ?: ItemWearableLocation.Body.name)
-                            } catch (_: Throwable) {}
-                        }
-                    }) {
-                        ItemWearableLocation.entries.forEach { loc ->
-                            Option(loc.name, attrs = { if (loc == wearableLocation) selected() }) { Translated(loc.name) }
-                        }
-                    }
-                }
+                DialogSelect(
+                    label = "Location",
+                    value = wearableLocation.name,
+                    options = ItemWearableLocation.entries.map { it.name to translated(it.name) },
+                    onInput = {
+                        try {
+                            wearableLocation = ItemWearableLocation.valueOf(it)
+                        } catch (_: Throwable) {}
+                    },
+                    containerAttrs = { style { marginBottom(16.px) } },
+                )
 
                 // Wearable File field + browser/preview
                 Div(

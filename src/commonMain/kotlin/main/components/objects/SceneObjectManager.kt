@@ -213,9 +213,9 @@ class SceneObjectManager(
             val node = objectMeshes[objectId]
             if (node != null) {
                 node.getChildMeshes(false).forEach { mesh ->
-                    highlightLayer.addMesh(mesh, Color3(1f, 1f, 0f), false)
+                    highlightLayer.addMesh(mesh, Color3(.25f, .5f, 1f), false)
                 }
-                if (node is AbstractMesh) highlightLayer.addMesh(node, Color3(1f, 1f, 0f), false)
+                if (node is AbstractMesh) highlightLayer.addMesh(node, Color3(.25f, .5f, 1f), false)
 
                 // Update status text (adds "🆇 " prefix)
                 val status = objectStatusTexts[objectId] ?: ""
@@ -257,7 +257,7 @@ class SceneObjectManager(
 
                 // Add each mesh to the highlight layer
                 allMeshes.forEach { mesh ->
-                    highlightLayer.addMesh(mesh, Color3(1f, 1f, 0f), false)
+                    highlightLayer.addMesh(mesh, Color3(.25f, .5f, 1f), false)
                 }
                 
                 // Store the hovered object ID
@@ -612,6 +612,9 @@ class SceneObjectManager(
                 objectModelSources[obj.key] = Pair("", "")
                 // Track object kind
                 objectKinds[obj.key] = ObjectKind.Inventory
+
+                // Handle status text
+                handleObjectStatusText(obj.key, obj.status, node)
 
                 node.getChildMeshes().also { meshes ->
                     console.log("[DEBUG_ITEM] Adding shadows: ${meshes}")
@@ -1441,13 +1444,22 @@ class SceneObjectManager(
             var highestY = node.position.y
             if (childMeshes.isNotEmpty()) {
                 try {
-                    var maxY = childMeshes[0].getBoundingInfo().maximum.y + childMeshes[0].position.y + node.position.y
-                    for (i in 1 until childMeshes.size) {
-                        val m = childMeshes[i]
-                        val my = m.getBoundingInfo().maximum.y + m.position.y + node.position.y
-                        if (my > maxY) maxY = my
+                    if (node is TransformNode) {
+                        node.computeWorldMatrix(true)
                     }
-                    highestY = maxY
+
+                    var maxY = -1e9f
+                    var found = false
+
+                    for (mesh in childMeshes) {
+                        mesh.computeWorldMatrix(true)
+                        val meshMaxY = mesh.getBoundingInfo().boundingBox.maximumWorld.y
+                        if (meshMaxY > maxY) {
+                            maxY = meshMaxY
+                            found = true
+                        }
+                    }
+                    if (found) highestY = maxY
                 } catch (_: Throwable) {
                     highestY = node.position.y
                 }
@@ -1640,11 +1652,16 @@ class SceneObjectManager(
             var maxY = -1e9f
             var found = false
 
+            if (node is TransformNode) {
+                node.computeWorldMatrix(true)
+            }
+
             for (mesh in childMeshes) {
                 try {
                     // Exclude status billboards from bounding box calculation
                     if (DepthPicking.isStatusBillboardMesh(mesh)) continue
 
+                    mesh.computeWorldMatrix(true)
                     val boundingInfo = mesh.getBoundingInfo()
                     val meshMaxY = boundingInfo.boundingBox.maximumWorld.y
                     if (meshMaxY > maxY) {
@@ -1843,23 +1860,30 @@ class SceneObjectManager(
                 
                 if (childMeshes.isNotEmpty()) {
                     try {
-                        // Initialize with the first mesh's maximum Y
-                        var maxY = childMeshes[0].getBoundingInfo().maximum.y + childMeshes[0].position.y + node.position.y
+                        if (node is TransformNode) {
+                            node.computeWorldMatrix(true)
+                        }
                         
-                        // Check all other meshes
-                        for (i in 1 until childMeshes.size) {
-                            val mesh = childMeshes[i]
+                        var maxY = -1e9f
+                        var found = false
+                        
+                        // Check all meshes
+                        for (mesh in childMeshes) {
+                            mesh.computeWorldMatrix(true)
                             val boundingInfo = mesh.getBoundingInfo()
-                            val meshMaxY = boundingInfo.maximum.y + mesh.position.y + node.position.y
+                            val meshMaxY = boundingInfo.boundingBox.maximumWorld.y
                             
                             if (meshMaxY > maxY) {
                                 maxY = meshMaxY
+                                found = true
                             }
                         }
                         
                         // Use the highest point found
-                        highestY = maxY
-                        console.log("[DEBUG_STATUS] Highest Y point of bounding boxes: $highestY")
+                        if (found) {
+                            highestY = maxY
+                            console.log("[DEBUG_STATUS] Highest Y point of bounding boxes: $highestY")
+                        }
                     } catch (e: Throwable) {
                         console.error("[DEBUG_STATUS] Error finding highest Y point: ${e.message}")
                         // Fall back to node position if there's an error

@@ -45,13 +45,13 @@ class CameraController(private val scene: Scene) {
     ).apply {
         // Set camera constraints
         updateConstraints()
-        this.targetScreenOffset = Vector2(0f, -1f)
+        this.targetScreenOffset = Vector2(0f, -.75f)
 
         this.wheelPrecision = 5f
         this.zoomToMouseLocation = true
         this.wheelDeltaPercentage = 0.01f
         // Set a narrow FOV (default is ~0.8 radians/45 degrees)
-        this.fov = 0.5f // ~28 degrees - narrower telephoto-like view
+        this.fov = 0.25f // ~28 degrees - narrower telephoto-like view
         this.minZ = 0.1f
         this.maxZ = 500f
 
@@ -514,7 +514,7 @@ class CameraController(private val scene: Scene) {
                         if (depthOfFieldEnabled) {
                             // Configure depth of field settings
                             depthOfField.focalLength = 120f
-                            depthOfField.fStop = 1.4f
+                            depthOfField.fStop = 1f
                             depthOfField.focusDistance = 10_000f
                             depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
                             println("[DEBUG] Depth of field settings configured successfully")

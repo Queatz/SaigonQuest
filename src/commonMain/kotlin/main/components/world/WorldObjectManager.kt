@@ -5,6 +5,7 @@ import kotlin.math.abs
 import lib.AbstractMesh
 import lib.Node
 import lib.Scene
+import lib.TransformNode
 import lib.Vector3
 import main.api.ApiClient
 import main.api.UserApi
@@ -160,6 +161,10 @@ class WorldObjectManager(private val scene: Scene) {
 
             if (hasAnimations) {
                 if (objectMeshes.isNotEmpty()) {
+                    if (node is TransformNode) {
+                        node.computeWorldMatrix(true)
+                    }
+
                     var maxY = -1e9f
                     var found = false
                     objectMeshes.forEach { mesh ->
@@ -167,6 +172,7 @@ class WorldObjectManager(private val scene: Scene) {
                             // Exclude status billboards from bounding box calculation
                             if (DepthPicking.isStatusBillboardMesh(mesh)) return@forEach
 
+                            mesh.computeWorldMatrix(true)
                             val meshMaxY = mesh.getBoundingInfo().boundingBox.maximumWorld.y
                             if (meshMaxY > maxY) {
                                 maxY = meshMaxY
@@ -429,14 +435,41 @@ class WorldObjectManager(private val scene: Scene) {
             window.setTimeout({ setObjectTyping(objectId, isTyping) }, 50)
             return
         }
+        
+        val objectMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
         val p = node.position
+        var highestY = p.y
+        
+        if (objectMeshes.isNotEmpty()) {
+            try {
+                if (node is TransformNode) {
+                    node.computeWorldMatrix(true)
+                }
+
+                var maxY = -1e9f
+                var found = false
+                objectMeshes.forEach { mesh ->
+                    try {
+                        mesh.computeWorldMatrix(true)
+                        val meshMaxY = mesh.getBoundingInfo().boundingBox.maximumWorld.y
+                        if (meshMaxY > maxY) {
+                            maxY = meshMaxY
+                            found = true
+                        }
+                    } catch (_: Throwable) {}
+                }
+                if (found) highestY = maxY
+            } catch (_: Throwable) {}
+        }
+        
+        val targetY = highestY + 0.5f
         val existing = typingHudHandles[objectId]
         if (existing != null) {
-            existing.position = Vector3(p.x, p.y + 0.5f, p.z)
+            existing.position = Vector3(p.x, targetY, p.z)
         } else {
             val handle = createTextBillboard(
                 text = "\uD83D\uDCAC",
-                position = Vector3(p.x, p.y + 0.5f, p.z),
+                position = Vector3(p.x, targetY, p.z),
                 textColor = "white",
                 backgroundColor = "#000000F0",
             )

@@ -45,8 +45,6 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
-import org.jetbrains.compose.web.dom.TextInput
 
 /**
  * A panel for editing node properties.
@@ -216,19 +214,19 @@ fun PropertyPanel(
                                 ) {
                                     var showRichEditorDialog by remember(nodeId, propDef.key) { mutableStateOf(false) }
 
-                                    // Use TextArea for text content
-                                    TextArea(
+                                    // Use DialogInput with multiline for text content
+                                    DialogInput(
                                         value = propertyValues[propDef.key] ?: "",
-                                        attrs = {
-                                            classes(NodeEditorStyles.propertyTextArea)
-                                            id("prop-${propDef.key.name.lowercase()}")
-                                            onInput { event ->
-                                                propertyValues = propertyValues.edit {
-                                                    it[propDef.key] = event.value
-                                                }
+                                        onInput = { newValue ->
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = newValue
                                             }
+                                        },
+                                        multiline = true,
+                                        placeholder = str("Enter text"),
+                                        attrs = {
+                                            id("prop-${propDef.key.name.lowercase()}")
                                             attr("rows", "4")
-                                            placeholder(str("Enter text"))
                                         }
                                     )
 

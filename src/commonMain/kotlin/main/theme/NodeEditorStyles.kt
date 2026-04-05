@@ -401,25 +401,6 @@ object NodeEditorStyles : StyleSheet() {
         }
     }
     
-    val propertyTextArea by style {
-        width(100.percent)
-        padding(8.px)
-        backgroundColor(Theme.colors.surfaceVariant)
-        color(Theme.colors.onSurfaceVariant )
-        property("border", "1px solid ${Theme.colors.outlineDark}")
-        borderRadius(4.px)
-        outline("none")
-        fontSize(14.px)
-        property("resize", "vertical")
-        property("min-height", "80px")
-        boxSizing("border-box")
-        borderRadius(12.px)
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-            color(Theme.colors.onSurfaceVariantDark)
-        }
-    }
     
     // Button management styles
     val buttonList by style {
