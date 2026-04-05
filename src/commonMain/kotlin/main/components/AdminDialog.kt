@@ -42,6 +42,7 @@ fun AdminDialog(
     var showUserRequestsDialog by remember { mutableStateOf(false) }
     var showItemsDialog by remember { mutableStateOf(false) }
     var showAssetsDialog by remember { mutableStateOf(false) }
+    var showQuestsDialog by remember { mutableStateOf(false) }
 
     var pendingCount by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
@@ -83,6 +84,12 @@ fun AdminDialog(
                     onClick = { showItemsDialog = true },
                     style = DialogButtonStyle.Primary,
                 ) { Translated("Manage items") }
+
+                // Manage quests
+                DialogButton(
+                    onClick = { showQuestsDialog = true },
+                    style = DialogButtonStyle.Primary,
+                ) { Translated("Manage Quests") }
 
                 // System notification
                 DialogButton(
@@ -174,6 +181,12 @@ fun AdminDialog(
     if (showUserRequestsDialog) {
         AdminUserRequestsDialog(
             onClose = { showUserRequestsDialog = false },
+        )
+    }
+
+    if (showQuestsDialog) {
+        AdminQuestsDialog(
+            onClose = { showQuestsDialog = false },
         )
     }
 }

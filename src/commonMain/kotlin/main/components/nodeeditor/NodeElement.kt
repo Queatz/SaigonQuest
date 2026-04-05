@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.api.DocApi
+import main.api.QuestApi
 import main.theme.NodeEditorStyles
 import main.utils.ellipsize
 import models.LogicNode
@@ -82,6 +83,9 @@ fun NodeElement(
     // State for document title (if this is a Doc Content node)
     var docTitle by remember(id) { mutableStateOf<String?>(null) }
 
+    // State for quest name (if this node has a Quest ID)
+    var questName by remember(id) { mutableStateOf<String?>(null) }
+
     // Get doc title for Doc Content, Create Doc and Open Doc nodes
     LaunchedEffect(node.data) {
         if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
@@ -98,6 +102,23 @@ fun NodeElement(
             } else {
                 docTitle = null
             }
+        }
+    }
+
+    // Get quest name
+    LaunchedEffect(node.data) {
+        val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
+        val questId = nodeData.properties.find { it.key == PropertyKey.QUEST_ID }?.value
+        if (!questId.isNullOrBlank()) {
+            try {
+                val quest = QuestApi.getQuest(questId)
+                questName = quest.name.ifBlank { "Selected quest" }
+            } catch (t: Throwable) {
+                console.error("Failed to load quest name for NodeElement", t)
+                questName = null
+            }
+        } else {
+            questName = null
         }
     }
 
@@ -152,6 +173,7 @@ fun NodeElement(
         NodeCategory.Dialogue -> NodeEditorStyles.dialogueNodeColor
         NodeCategory.Action -> NodeEditorStyles.actionNodeColor
         NodeCategory.Input -> NodeEditorStyles.inputNodeColor
+        NodeCategory.Quest -> NodeEditorStyles.questNodeColor
         else -> NodeEditorStyles.defaultNodeColor
     }
 
@@ -399,6 +421,43 @@ fun NodeElement(
                                         else -> "..."
                                     }
                                     Text(displayTitle?.ellipsize().orEmpty())
+                                }
+                            }
+                        }
+
+                        PropertyKey.QUEST_ID -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    val displayQuest = when {
+                                        questName != null -> questName
+                                        property.value.isBlank() -> "Not selected"
+                                        else -> "..."
+                                    }
+                                    Text("Quest: ${displayQuest?.ellipsize().orEmpty()}")
+                                }
+                            }
+                        }
+
+                        PropertyKey.QUEST_STATE_ID -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    Text("State: ${property.value}")
+                                }
+                            }
+                        }
+
+                        PropertyKey.VALUE -> {
+                            if (property.value.isNotBlank() && (type is LogicNode.UpdateQuestState || type is LogicNode.UpdatePlayerQuestState)) {
+                                Div {
+                                    Text("To: ${property.value}")
+                                }
+                            }
+                        }
+
+                        PropertyKey.OPERATOR, PropertyKey.MATH_OPERATOR -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    Text("Op: ${property.value}")
                                 }
                             }
                         }

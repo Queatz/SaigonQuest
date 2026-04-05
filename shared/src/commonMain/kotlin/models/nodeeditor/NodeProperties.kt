@@ -86,6 +86,18 @@ enum class PropertyKey {
     LIST_CONTENT,
     ITEM_TEMPLATE,
     ITEM_SEPARATOR,
+
+    // Quest properties
+    QUEST_ID,
+    QUEST_STATE_ID,
+    VALUE,
+
+    // Logic/Math properties
+    OPERATOR,
+    MATH_OPERATOR,
+    A,
+    B,
+    RESULT,
 }
 
 /**
@@ -115,7 +127,9 @@ enum class PropertyType {
     VECTOR3,
     COLOR,
     ENUM,
-    TRIGGER // Special type for execution flow
+    TRIGGER, // Special type for execution flow
+    QUEST,
+    QUEST_STATE,
 }
 
 /**
@@ -137,7 +151,8 @@ data class NodePropertyDefinition(
     val type: PropertyType,
     val direction: PropertyDirection,
     val defaultValue: String = "",
-    val description: String = ""
+    val description: String = "",
+    val options: List<String> = emptyList()
 )
 
 /**
@@ -1035,6 +1050,185 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 key = PropertyKey.TEXT,
                 name = "Text",
                 type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // QuestState node properties
+        is LogicNode.QuestState -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_STATE_ID,
+                name = "State",
+                type = PropertyType.QUEST_STATE,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // PlayerQuestState node properties
+        is LogicNode.PlayerQuestState -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_STATE_ID,
+                name = "State",
+                type = PropertyType.QUEST_STATE,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // UpdateQuestState node properties
+        is LogicNode.UpdateQuestState -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_STATE_ID,
+                name = "State",
+                type = PropertyType.QUEST_STATE,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // UpdatePlayerQuestState node properties
+        is LogicNode.UpdatePlayerQuestState -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_STATE_ID,
+                name = "State",
+                type = PropertyType.QUEST_STATE,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // CompareValue node properties
+        is LogicNode.CompareValue -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.A,
+                name = "A",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.B,
+                name = "B",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.OPERATOR,
+                name = "Operator",
+                type = PropertyType.ENUM,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Equals",
+                options = listOf("Equals", "Greater than", "Less than")
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Yes",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "No",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+        // Math node properties
+        is LogicNode.Math -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.A,
+                name = "A",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.B,
+                name = "B",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MATH_OPERATOR,
+                name = "Operator",
+                type = PropertyType.ENUM,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Add",
+                options = listOf("Add", "Subtract", "Multiply", "Divide")
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.RESULT,
+                name = "Result",
+                type = PropertyType.NUMBER,
                 direction = PropertyDirection.OUTPUT
             )
         )

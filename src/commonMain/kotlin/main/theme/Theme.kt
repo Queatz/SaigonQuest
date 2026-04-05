@@ -131,6 +131,7 @@ object Theme {
         val nodeDialogue = Color("rgba(60, 179, 113, 0.8)")
         val nodeAction = Color("rgba(178, 34, 34, 0.8)")
         val nodeInput = Color("rgba(128, 0, 128, 0.8)")
+        val nodeQuest = Color("rgba(34, 139, 34, 0.8)")
         val nodeDefault = Color("rgba(100, 100, 100, 0.8)")
     }
 }

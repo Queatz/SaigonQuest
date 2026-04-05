@@ -183,7 +183,6 @@ fun GlobalAiChat() {
 
             // Voice input button (appends to input)
             VoiceInput(
-                small = true,
                 stopRequested = GlobalAiChatStore.stopVoiceRequest,
                 onText = { transcribed ->
                     val t = transcribed.trim()

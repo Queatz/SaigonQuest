@@ -174,6 +174,10 @@ allowing the project to remain maintainable as it grows.
 - **Styling**: Use the theme system defined in `main/theme` for consistent styling.
 - **CSS**: Define colors in `src/commonMain/kotlin/main/theme/Theme.kt`. Do not use CSS vars.
 
+## Testing Guidelines
+
+ - Always run tests in headless mode
+
 ## Git Guidelines
 
  - DO NOT commit any files

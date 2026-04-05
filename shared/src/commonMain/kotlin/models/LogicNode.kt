@@ -9,7 +9,8 @@ enum class NodeCategory {
     Event,
     Action,
     Dialogue,
-    Input
+    Input,
+    Quest
 }
 
 /**
@@ -399,6 +400,72 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Open a doc"
     ) : LogicNode
+
+    /**
+     * QuestState node - reads the global quest state value
+     */
+    @Serializable
+    data class QuestState(
+        override val id: NodeId = NodeId.QuestState,
+        override val label: String = "Quest state",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Reads the global quest state value"
+    ) : LogicNode
+
+    /**
+     * PlayerQuestState node - reads the player-local quest state value
+     */
+    @Serializable
+    data class PlayerQuestState(
+        override val id: NodeId = NodeId.PlayerQuestState,
+        override val label: String = "Player quest state",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Reads the player-local quest state value"
+    ) : LogicNode
+
+    /**
+     * UpdateQuestState node - updates the global quest state value
+     */
+    @Serializable
+    data class UpdateQuestState(
+        override val id: NodeId = NodeId.UpdateQuestState,
+        override val label: String = "Update quest state",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Updates the global quest state value"
+    ) : LogicNode
+
+    /**
+     * UpdatePlayerQuestState node - updates the player-local quest state value
+     */
+    @Serializable
+    data class UpdatePlayerQuestState(
+        override val id: NodeId = NodeId.UpdatePlayerQuestState,
+        override val label: String = "Update player quest state",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Updates the player-local quest state value"
+    ) : LogicNode
+
+    /**
+     * CompareValue node - compares two values
+     */
+    @Serializable
+    data class CompareValue(
+        override val id: NodeId = NodeId.CompareValue,
+        override val label: String = "Compare value",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Compares two values (Equals, Greater than, Less than)"
+    ) : LogicNode
+
+    /**
+     * Math node - performs arithmetic operations
+     */
+    @Serializable
+    data class Math(
+        override val id: NodeId = NodeId.Math,
+        override val label: String = "Math",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Performs arithmetic operations (Add, Subtract, Multiply, Divide)"
+    ) : LogicNode
 }
 
 /**
@@ -446,6 +513,12 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.PlayerAudioInput(),
         LogicNode.JoinList(),
         LogicNode.OpenDoc(),
+        LogicNode.QuestState(),
+        LogicNode.PlayerQuestState(),
+        LogicNode.UpdateQuestState(),
+        LogicNode.UpdatePlayerQuestState(),
+        LogicNode.CompareValue(),
+        LogicNode.Math(),
     )
 }
 

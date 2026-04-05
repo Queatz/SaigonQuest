@@ -1,6 +1,66 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Select quest
+vi: Chọn nhiệm vụ
+
+Select quest...
+vi: Chọn nhiệm vụ...
+
+Create new quest
+vi: Tạo nhiệm vụ mới
+
+Quest name
+vi: Tên nhiệm vụ
+
+Select state
+vi: Chọn trạng thái
+
+Select state...
+vi: Chọn trạng thái...
+
+Create new state
+vi: Tạo trạng thái mới
+
+State name
+vi: Tên trạng thái
+
+Initial value
+vi: Giá trị ban đầu
+
+Manage Quests
+vi: Quản lý nhiệm vụ
+
+Delete Quest
+vi: Xóa nhiệm vụ
+
+Global States
+vi: Trạng thái chung
+
+No global states defined.
+vi: Không có trạng thái chung nào được định nghĩa.
+
+Reset
+vi: Đặt lại
+
+No player states found.
+vi: Không tìm thấy trạng thái người chơi nào.
+
+Select a quest to see details
+vi: Chọn một nhiệm vụ để xem chi tiết
+
+User ID
+vi: Mã người dùng
+
+Are you sure you want to delete this quest and all its states?
+vi: Bạn có chắc chắn muốn xóa nhiệm vụ này và tất cả các trạng thái của nó không?
+
+Are you sure you want to delete this global state?
+vi: Bạn có chắc chắn muốn xóa trạng thái chung này không?
+
+Are you sure you want to reset this player state?
+vi: Bạn có chắc chắn muốn đặt lại trạng thái người chơi này không?
+
 Quests
 vi: Nhiệm vụ
 
@@ -538,6 +598,15 @@ vi: Xóa
 Edit
 vi: Chỉnh sửa
 
+Edit global state
+vi: Chỉnh sửa trạng thái chung
+
+Edit player state
+vi: Chỉnh sửa trạng thái người chơi
+
+Edit value for
+vi: Chỉnh sửa giá trị cho
+
 Update
 vi: Cập nhật
 
@@ -900,6 +969,9 @@ vi: Hành động
 
 Dialogues
 vi: Hội thoại
+
+Speak dialogues
+vi: Đọc lời thoại ra
 
 Events
 vi: Sự kiện

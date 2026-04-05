@@ -128,6 +128,7 @@ fun NodePickerDialog(
                                         NodeCategory.Dialogue -> translated("Dialogues")
                                         NodeCategory.Event -> translated("Events")
                                         NodeCategory.Input -> translated("Inputs")
+                                        NodeCategory.Quest -> translated("Quests")
                                     },
                                 )
                             }

@@ -78,7 +78,7 @@ fun DialogSelect(
                             if (optValue == value) selected()
                         }
                     ) {
-                        Text(optLabel)
+                        Translated(optLabel)
                     }
                 }
             }

@@ -37,4 +37,10 @@ enum class NodeId {
     PlayerAudioInput,
     JoinList,
     OpenDoc,
+    QuestState,
+    PlayerQuestState,
+    UpdateQuestState,
+    UpdatePlayerQuestState,
+    CompareValue,
+    Math,
 }

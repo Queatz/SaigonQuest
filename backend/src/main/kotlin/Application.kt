@@ -25,6 +25,7 @@ import routes.configureUserRoutes
 import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
 import routes.configurePushRoutes
+import routes.configureQuestRoutes
 import routes.configureAuthRoutes
 import routes.configureAiChatRoutes
 import routes.configureMediaRoutes
@@ -96,6 +97,7 @@ fun Application.module() {
         configureCostsRoutes()
         configureUserRequestRoutes()
         configureDocRoutes()
+        configureQuestRoutes()
         configureAiRoutes()
         configureWebSocketRoutes()
         configureVoiceRoutes()

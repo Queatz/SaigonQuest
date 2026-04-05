@@ -96,11 +96,9 @@ fun NotificationsContent(
         // Mark all as read button (only show if there are unread notifications)
         if (notifications.any { !it.isRead }) {
             Div(attrs = { classes(NotificationStyles.markAllAsReadContainer) }) {
-                Button(
-                    attrs = {
-                        classes(Styles.primaryButton)
-                        onClick { markAllAsRead() }
-                    }
+                DialogButton(
+                    onClick = { markAllAsRead() },
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated("Mark all as read")
                 }

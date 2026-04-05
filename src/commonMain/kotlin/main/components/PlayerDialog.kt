@@ -40,6 +40,7 @@ fun PlayerDialog(
     val isPrettyGraphics = remember { mutableStateOf(GraphicsSettings.isPrettyGraphicsEnabled()) }
     val isMusicEnabled = remember { mutableStateOf(AudioSettings.isMusicEnabled()) }
     val musicVolume = remember { mutableStateOf(AudioSettings.musicVolume()) }
+    val isSpeakDialogueEnabled = remember { mutableStateOf(AudioSettings.isSpeakDialogueEnabled()) }
 
     // State to track current language
     val currentLanguage = remember { mutableStateOf(LanguageSettings.getCurrentLanguage()) }
@@ -425,6 +426,17 @@ fun PlayerDialog(
                         id = "musicToggle",
                     )
 
+                    // Speak dialogues toggle
+                    SettingsToggle(
+                        label = translated("Speak dialogues"),
+                        checked = isSpeakDialogueEnabled.value,
+                        onCheckedChange = { newValue ->
+                            AudioSettings.setSpeakDialogueEnabled(newValue)
+                            isSpeakDialogueEnabled.value = newValue
+                        },
+                        id = "speakDialogueToggle",
+                    )
+
                     if (isMusicEnabled.value) {
                         // Music volume slider
                         SettingsSlider(
@@ -590,8 +602,8 @@ fun PlayerDialog(
 
             if (showBalanceHistoryDialog.value) {
                 BalanceHistoryDialog(
-                    baseUrl = main.api.ApiConstants.API_BASE_URL,
-                    bearerToken = main.api.UserApi.getToken() ?: "",
+                    baseUrl = ApiConstants.API_BASE_URL,
+                    bearerToken = UserApi.getToken() ?: "",
                     onClose = { showBalanceHistoryDialog.value = false }
                 )
             }

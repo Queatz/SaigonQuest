@@ -92,6 +92,8 @@ object NodeEditorStyles : StyleSheet() {
     
     val inputNodeColor by style { backgroundColor(Theme.colors.nodeInput) }
     
+    val questNodeColor by style { backgroundColor(Theme.colors.nodeQuest) }
+    
     val defaultNodeColor by style { backgroundColor(Theme.colors.nodeDefault) }
     
     // Node header

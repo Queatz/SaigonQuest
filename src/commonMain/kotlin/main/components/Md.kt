@@ -221,9 +221,13 @@ fun markdownToHtml(
 fun stripMarkdown(content: String): String {
     if (content.isBlank()) return ""
 
+    // Strip images and media first: ![alt](url)
+    val mediaRegex = Regex("!\\[.*?\\]\\(.*?\\)")
+    val contentWithoutMedia = content.replace(mediaRegex, "")
+
     // We use a simplified version of markdownToHtml or just use it as is
     // and then strip the HTML tags.
-    val html = markdownToHtml(content)
+    val html = markdownToHtml(contentWithoutMedia)
 
     // Use a temporary element to extract text content
     val div = window.document.createElement("div")

@@ -112,6 +112,9 @@ object CollectionsConfig {
     const val WORLD_ASSET_ITEMS_COLLECTION = "world_asset_items"
     const val OBJECT_ASSET_ITEMS_COLLECTION = "object_asset_items"
     const val AI_CHAT_SESSIONS_COLLECTION = "ai_chat_sessions"
+    const val QUESTS_COLLECTION = "quests"
+    const val QUEST_STATES_COLLECTION = "quest_states"
+    const val PLAYER_QUEST_STATES_COLLECTION = "player_quest_states"
     
     // World docs collection
     const val DOCS_COLLECTION = "docs"
@@ -153,6 +156,9 @@ object CollectionsConfig {
         WORLD_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.WorldAssetItem::class.java),
         OBJECT_ASSET_ITEMS_COLLECTION to CollectionSpec(documentOptions(), models.ObjectAssetItem::class.java),
         AI_CHAT_SESSIONS_COLLECTION to CollectionSpec(documentOptions(), models.AiChatSession::class.java),
+        QUESTS_COLLECTION to CollectionSpec(documentOptions(), models.Quest::class.java),
+        QUEST_STATES_COLLECTION to CollectionSpec(documentOptions(), models.QuestState::class.java),
+        PLAYER_QUEST_STATES_COLLECTION to CollectionSpec(documentOptions(), models.PlayerQuestState::class.java),
         DOCS_COLLECTION to CollectionSpec(documentOptions(), models.Doc::class.java),
         DOC_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.DocHistory::class.java),
         AI_PROMPT_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.AiPromptHistory::class.java),

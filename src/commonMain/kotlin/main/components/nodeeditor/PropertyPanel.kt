@@ -12,6 +12,7 @@ import main.api.ItemApi
 import main.api.DocApi
 import main.components.IconRenderer
 import main.components.DialogInput
+import main.components.DialogSelect
 import main.components.Translated
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
@@ -69,19 +70,15 @@ fun PropertyPanel(
     // Get property definitions for this node type
     val propertyDefinitions = remember(nodeId) { node.type.getPropertyDefinitions() }
 
-    // Create a map to store property values
-    var propertyValues by remember(nodeId) { mutableStateOf(mapOf<PropertyKey, String>()) }
-
-    // Initialize property values from node data
-    LaunchedEffect(nodeId, propertyDefinitions) {
-        propertyDefinitions.forEach { propDef ->
-            if (propDef.type != PropertyType.TRIGGER) {
-                val value = NodeDataParser.getPropertyValue(nodeData, propDef.key)
-                propertyValues = propertyValues.edit {
-                    it[propDef.key] = value.ifEmpty { propDef.defaultValue }
+    // Create a map to store property values, initialized from node data
+    var propertyValues by remember(nodeId) {
+        mutableStateOf(
+            propertyDefinitions.filter { it.type != PropertyType.TRIGGER }
+                .associate { propDef ->
+                    val value = NodeDataParser.getPropertyValue(nodeData, propDef.key)
+                    propDef.key to value.ifEmpty { propDef.defaultValue }
                 }
-            }
-        }
+        )
     }
 
     // Auto-update when propertyValues changes
@@ -148,6 +145,7 @@ fun PropertyPanel(
                     NodeCategory.Event -> translated("Event")
                     NodeCategory.Dialogue -> translated("Dialogue")
                     NodeCategory.Input -> translated("Input")
+                    NodeCategory.Quest -> translated("Quest")
                 }
                 Text(typeString)
                 Text(" • ")
@@ -691,6 +689,45 @@ fun PropertyPanel(
                                             propertyValues = propertyValues.edit {
                                                 it[propDef.key] = event.value
                                             }
+                                        }
+                                    }
+                                )
+                            }
+
+                            PropertyType.ENUM -> {
+                                DialogSelect(
+                                    options = propDef.options.map { it to it },
+                                    value = propertyValues[propDef.key] ?: propDef.defaultValue,
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
+                                        }
+                                    },
+                                    label = null
+                                )
+                            }
+
+                            PropertyType.QUEST -> {
+                                QuestPropertySelector(
+                                    value = propertyValues[propDef.key] ?: "",
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
+                                            // Reset state ID when quest changes
+                                            it[PropertyKey.QUEST_STATE_ID] = ""
+                                        }
+                                    }
+                                )
+                            }
+
+                            PropertyType.QUEST_STATE -> {
+                                val questId = propertyValues[PropertyKey.QUEST_ID] ?: ""
+                                QuestStatePropertySelector(
+                                    questId = questId,
+                                    value = propertyValues[propDef.key] ?: "",
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
                                         }
                                     }
                                 )

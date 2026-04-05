@@ -391,7 +391,7 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId in listOf(NodeId.HasItem, NodeId.TakeItems, NodeId.GiveItems, NodeId.UserAge, NodeId.IsObjectOwner, NodeId.PlayerImageInput, NodeId.PlayerAudioInput)) {
+            } else if (node.nodeId in listOf(NodeId.HasItem, NodeId.TakeItems, NodeId.GiveItems, NodeId.UserAge, NodeId.IsObjectOwner, NodeId.PlayerImageInput, NodeId.PlayerAudioInput, NodeId.CompareValue)) {
                 // For nodes that use outputProperty to select the correct branches
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -808,6 +808,54 @@ class NodeLogicRunner(
                     context.session
                 )
                 JoinListNodeRunner(context)
+            }
+            NodeId.QuestState -> {
+                WebSocketDebug.logMessage(
+                    "QUEST_STATE_RUNNER_SELECTED",
+                    "Selected QuestStateNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                QuestStateNodeRunner(context)
+            }
+            NodeId.PlayerQuestState -> {
+                WebSocketDebug.logMessage(
+                    "PLAYER_QUEST_STATE_RUNNER_SELECTED",
+                    "Selected PlayerQuestStateNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlayerQuestStateNodeRunner(context)
+            }
+            NodeId.UpdateQuestState -> {
+                WebSocketDebug.logMessage(
+                    "UPDATE_QUEST_STATE_RUNNER_SELECTED",
+                    "Selected UpdateQuestStateNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                UpdateQuestStateNodeRunner(context)
+            }
+            NodeId.UpdatePlayerQuestState -> {
+                WebSocketDebug.logMessage(
+                    "UPDATE_PLAYER_QUEST_STATE_RUNNER_SELECTED",
+                    "Selected UpdatePlayerQuestStateNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                UpdatePlayerQuestStateNodeRunner(context)
+            }
+            NodeId.CompareValue -> {
+                WebSocketDebug.logMessage(
+                    "COMPARE_VALUE_RUNNER_SELECTED",
+                    "Selected CompareValueNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                CompareValueNodeRunner(context)
+            }
+            NodeId.Math -> {
+                WebSocketDebug.logMessage(
+                    "MATH_RUNNER_SELECTED",
+                    "Selected MathNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                MathNodeRunner(context)
             }
             // Add more node runners as needed
             else -> {

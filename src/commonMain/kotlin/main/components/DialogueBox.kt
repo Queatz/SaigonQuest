@@ -5,6 +5,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.*
+import main.components.audio.TtsManager
 import main.components.media.AudioRecorder
 import main.components.media.AudioRecorderUI
 import main.components.media.UploadMediaDialog
@@ -48,6 +49,7 @@ fun DialogueBox(
     LaunchedEffect(currentDialogue) {
         if (currentDialogue == null) {
             onClose()
+            TtsManager.stop()
         }
     }
 
@@ -57,6 +59,10 @@ fun DialogueBox(
             console.log("DialogueBox: Received dialogue: ${dialogueData.text}")
             currentDialogue = dialogueData
             isWaiting = false
+
+            if (AudioSettings.isSpeakDialogueEnabled()) {
+                TtsManager.speak(stripMarkdown(dialogueData.text))
+            }
         }
     }
 
@@ -318,7 +324,7 @@ fun DialogueBox(
                                         } finally {
                                             textInput = ""
 
-                                            delay(500)
+                                            delay(150)
                                             if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                                 currentDialogue = null
                                                 isWaiting = false
@@ -396,7 +402,7 @@ fun DialogueBox(
                                     uploadedImages = emptyList()
                                     uploadedAudios = emptyList()
                                     
-                                    delay(500)
+                                    delay(150)
                                     if (isWaiting && currentDialogue?.dialogueId == dialogue.dialogueId) {
                                         currentDialogue = null
                                         isWaiting = false
