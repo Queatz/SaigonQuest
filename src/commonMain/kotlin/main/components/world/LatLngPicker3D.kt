@@ -27,11 +27,14 @@ import lib.PBRMaterial
 import lib.TextureOptions
 import lib.CreateTubeOptions
 import lib.DefaultRenderingPipeline
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.pointerevents.PointerEvent
+import web.cssom.PropertyName.Companion.aspectRatio
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.random.Random
@@ -66,8 +69,8 @@ fun LatLngPicker3D(
         attrs = {
             // Minimal inline sizing per project patterns in editor forms
             style {
-                property("width", "320px")
-                property("height", "240px")
+                width(100.percent)
+                property("aspect-ratio", "16 / 9")
             }
         }
     ) {

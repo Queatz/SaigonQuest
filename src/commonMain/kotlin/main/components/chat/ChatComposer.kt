@@ -1,10 +1,23 @@
 package main.components.chat
 
 import Translations.str
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.api.*
-import main.components.player.PlayerUi
+import main.api.ChatApi
+import main.api.ContentApi
+import main.api.UserApi
+import main.api.UserEmojiHistoryApi
+import main.api.WebSocketApi
+import main.api.sendChatMessage
+import main.api.sendTypingStatus
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
@@ -14,15 +27,31 @@ import main.components.media.UploadMediaDialog
 import main.components.media.findMediaInClipboardEvent
 import main.components.media.rememberAudioRecorderState
 import main.theme.Styles
-import main.theme.Theme
 import models.MediaType
 import models.UserEmojiHistory
 import models.WebSocketAction
 import models.chat.ImageAttachment
-import utils.json
-import org.jetbrains.compose.web.attributes.autoFocus
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
+import org.jetbrains.compose.web.css.boxSizing
+import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
+import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.marginBottom
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.rgb
+import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLInputElement
@@ -38,7 +67,7 @@ fun ChatComposer(
 ) {
     var initialRichText by remember { mutableStateOf("") }
     var messageText by remember { mutableStateOf("") }
-    var showEmotePopup by remember { mutableStateOf(false) }
+    var showEmotePopup by remember(messageText.isBlank()) { mutableStateOf(false) }
     var isTyping by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
     var shoutNext by remember { mutableStateOf(false) }
@@ -116,7 +145,7 @@ fun ChatComposer(
     // Typing timeout coroutine
     LaunchedEffect(isTyping) {
         if (isTyping) {
-            kotlinx.coroutines.delay(5000)
+            delay(5000)
             updateTypingStatus(false)
         }
     }
@@ -149,7 +178,7 @@ fun ChatComposer(
 
     LaunchedEffect(chatInputRef) {
         try {
-            kotlinx.coroutines.delay(100)
+            delay(100)
             chatInputRef.value?.focus()
         } catch (e: Throwable) {
             console.error("Error focusing chat input", e)

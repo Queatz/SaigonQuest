@@ -1657,10 +1657,6 @@ object Styles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         padding(12.px)
-        property("border-radius", "8px")
-        backgroundColor(Theme.colors.white04)
-        property("border", "1px solid ${Theme.colors.white08}")
-        marginBottom(10.px)
         property("gap", "8px")
     }
 

@@ -387,17 +387,6 @@ fun PlayerDialog(
                         id = "musicToggle",
                     )
 
-                    // Speak dialogues toggle
-                    SettingsToggle(
-                        label = translated("Speak dialogues"),
-                        checked = isSpeakDialogueEnabled.value,
-                        onCheckedChange = { newValue ->
-                            AudioSettings.setSpeakDialogueEnabled(newValue)
-                            isSpeakDialogueEnabled.value = newValue
-                        },
-                        id = "speakDialogueToggle",
-                    )
-
                     if (isMusicEnabled.value) {
                         // Music volume slider
                         SettingsSlider(
@@ -411,6 +400,17 @@ fun PlayerDialog(
                             id = "musicVolumeSlider",
                         )
                     }
+
+                    // Speak dialogues toggle
+                    SettingsToggle(
+                        label = translated("Speak dialogues"),
+                        checked = isSpeakDialogueEnabled.value,
+                        onCheckedChange = { newValue ->
+                            AudioSettings.setSpeakDialogueEnabled(newValue)
+                            isSpeakDialogueEnabled.value = newValue
+                        },
+                        id = "speakDialogueToggle",
+                    )
 
                     // My worlds button or first-world CTA
                     run {

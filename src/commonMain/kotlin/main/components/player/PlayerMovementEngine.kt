@@ -217,7 +217,7 @@ class PlayerMovementEngine(
             var finalPos = tryMove(newPos)
 
             // If blocked, try sliding movement (X-only or Z-only)
-            if (finalPos == null && !isJumping && finalMoveDirection.length() > 0.001f) {
+            if (finalPos == null && finalMoveDirection.length() > 0.001f) {
                 val moveX = Vector3(finalMoveDirection.x, 0f, 0f)
                 val moveZ = Vector3(0f, 0f, finalMoveDirection.z)
 
@@ -226,6 +226,11 @@ class PlayerMovementEngine(
                 val secondMove = if (firstMove == moveX) moveZ else moveX
 
                 finalPos = tryMove(currentPos.add(firstMove)) ?: tryMove(currentPos.add(secondMove))
+            }
+
+            // If still blocked and jumping, at least allow vertical movement (falling/rising) at current XZ
+            if (finalPos == null && isJumping) {
+                finalPos = tryMove(currentPos)
             }
 
             if (finalPos != null) {
