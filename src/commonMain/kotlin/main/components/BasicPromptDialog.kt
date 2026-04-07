@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.*
 import main.theme.Styles
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.autoFocus
 import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.css.DisplayStyle
@@ -53,71 +54,49 @@ fun BasicPromptDialog(
                 }
             }
             // Input field
-            if (isNumber) {
-                Div(
-                    attrs = {
+            DialogInput(
+                value = value,
+                onInput = { value = it },
+                type = if (isNumber) InputType.Number else InputType.Text,
+                min = min,
+                max = max,
+                step = step,
+                autoFocus = true,
+                attrs = {
+                    ref {
+                        it.focus()
+
+                        onDispose { }
+                    }
+                },
+                containerAttrs = {
+                    if (isNumber) {
                         style {
                             display(DisplayStyle.Block)
                             marginBottom(12.px)
                         }
                     }
-                ) {
-                    NumberInput(
-                        value = value.toDoubleOrNull(),
-                        min = min,
-                        max = max,
+                }
+            ) {
+                if (isNumber && max != null) {
+                    Div(
                         attrs = {
-                            classes(Styles.inputField)
-
-                            step(step)
-
-                            autoFocus()
-
-                            ref {
-                                it.focus()
-
-                                onDispose { }
-                            }
-
-                            onInput { event ->
-                                value = event.value.toString()
+                            style {
+                                display(DisplayStyle.Block)
+                                marginTop(12.px)
                             }
                         }
-                    )
-
-                    if (max != null) {
-                        Div(
-                            attrs = {
-                                style {
-                                    display(DisplayStyle.Block)
-                                    marginTop(12.px)
-                                }
-                            }
+                    ) {
+                        DialogButton(
+                            onClick = {
+                                value = max.toString()
+                            },
+                            style = DialogButtonStyle.Secondary,
                         ) {
-                            DialogButton(
-                                onClick = {
-                                    value = max.toString()
-                                },
-                                style = DialogButtonStyle.Secondary,
-                            ) {
-                                Translated("All")
-                            }
+                            Translated("All")
                         }
                     }
                 }
-            } else {
-                DialogInput(
-                    value = value,
-                    onInput = { value = it },
-                    autoFocus = true,
-                    attrs = {
-                        ref {
-                            it.focus()
-
-                            onDispose { }
-                        }
-                    }
-                )
             }
         },
         actions = {

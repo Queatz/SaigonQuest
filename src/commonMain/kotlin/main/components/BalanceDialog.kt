@@ -9,6 +9,7 @@ import main.components.common.formatAmount
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.*
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.dom.*
 
 @Composable
@@ -152,14 +153,12 @@ fun BalanceDialog(
                     }) { Translated("Withdraw") }
                 }
 
-                Label(attrs = { classes(Styles.formLabel) }) { Translated("Amount (VND)") }
-                NumberInput(
-                    value = amount,
+                DialogInput(
+                    value = amount.toString(),
+                    onInput = { amount = it.toLongOrNull() ?: 0L },
+                    label = "Amount (VND)",
+                    type = InputType.Number,
                     min = 1,
-                    attrs = {
-                        classes(Styles.inputField)
-                        onInput { amount = it.value?.toLong() ?: 0L }
-                    }
                 )
 
                 DialogInput(

@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import main.theme.Styles
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.autoFocus
+import org.jetbrains.compose.web.attributes.min
+import org.jetbrains.compose.web.attributes.max
+import org.jetbrains.compose.web.attributes.step
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.value
 import org.jetbrains.compose.web.css.*
@@ -39,10 +42,13 @@ fun DialogInput(
     onInput: (String) -> Unit,
     label: String? = null,
     placeholder: String? = null,
-    type: InputType<String> = InputType.Text,
+    type: InputType<*> = InputType.Text,
     enabled: Boolean = true,
     multiline: Boolean = false,
     autoFocus: Boolean = false,
+    min: Number? = null,
+    max: Number? = null,
+    step: Number? = null,
     attrs: AttrBuilderContext<out HTMLElement>? = null,
     wrapperAttrs: AttrBuilderContext<HTMLDivElement>? = null,
     containerAttrs: AttrBuilderContext<HTMLDivElement>? = null,
@@ -97,12 +103,15 @@ fun DialogInput(
                 )
             } else {
                 Input(
-                    type = type,
+                    type = type as InputType<Any?>,
                     attrs = {
                         classes(Styles.dialogInputField)
                         if (placeholder != null) placeholder(placeholder)
                         value(value)
-                        onInput { onInput(it.value) }
+                        onInput {
+                            val target = it.nativeEvent.target as HTMLInputElement
+                            onInput(target.value)
+                        }
                         if (!enabled) {
                             attr("disabled", "true")
                         }
@@ -110,6 +119,11 @@ fun DialogInput(
                         if (autoFocus) {
                             autoFocus()
                         }
+
+                        min?.let { min(it.toString()) }
+                        max?.let { max(it.toString()) }
+                        step?.let { step(it) }
+
                         (attrs as? AttrBuilderContext<HTMLInputElement>)?.invoke(this)
                     }
                 )

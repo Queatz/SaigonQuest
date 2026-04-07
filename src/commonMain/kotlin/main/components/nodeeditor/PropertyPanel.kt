@@ -8,23 +8,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import main.api.ItemApi
 import main.api.DocApi
-import main.components.IconRenderer
+import main.api.ItemApi
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.DialogInput
 import main.components.DialogSelect
+import main.components.IconRenderer
+import main.components.LabeledCheckbox
 import main.components.Translated
+import main.components.chat.RichTextEditorDialog
 import main.components.inventory.ItemRenderer
 import main.components.inventory.SelectItemDialog
 import main.components.media.UploadMediaDialog
-import main.components.chat.RichTextEditorDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
 import main.components.translated
-import main.components.LabeledCheckbox
 import main.theme.NodeEditorStyles
-import models.NodeCategory
 import models.MediaType
+import models.NodeCategory
 import models.nodeeditor.NodeData
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyDirection
@@ -33,18 +33,16 @@ import models.nodeeditor.PropertyType
 import models.nodeeditor.PropertyValue
 import models.nodeeditor.getPropertyDefinitions
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.dom.Audio
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -636,16 +634,16 @@ fun PropertyPanel(
                             }
 
                             PropertyType.NUMBER -> {
-                                NumberInput(
-                                    value = propertyValues[propDef.key]?.toFloatOrNull() ?: 0.0f,
-                                    attrs = {
-                                        classes(NodeEditorStyles.propertyInput)
-                                        id("prop-${propDef.key.name.lowercase()}")
-                                        onInput { event ->
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = event.value.toString()
-                                            }
+                                DialogInput(
+                                    value = propertyValues[propDef.key] ?: "0",
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
                                         }
+                                    },
+                                    type = InputType.Number,
+                                    attrs = {
+                                        id("prop-${propDef.key.name.lowercase()}")
                                     }
                                 )
                             }

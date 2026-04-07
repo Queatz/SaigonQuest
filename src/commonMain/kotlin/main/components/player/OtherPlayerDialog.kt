@@ -172,6 +172,7 @@ fun OtherPlayerDialog(
                             if (showConfirmRemove) {
                                 BasicConfirmDialog(
                                     message = "${str("Are you sure you want to remove")} $username ${str("from your friends list?")}",
+                                    positiveStyle = DialogButtonStyle.Danger,
                                     onConfirm = {
                                         if (!isLoading) {
                                             onRemoveFriend()

@@ -23,6 +23,7 @@ import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.letterSpacing
 import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.minWidth
+import org.jetbrains.compose.web.css.keywords.auto
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.position
@@ -114,13 +115,8 @@ object InventoryStyles : StyleSheet() {
         property("flex-direction", "column")
         alignItems(AlignItems.Center)
         padding(8.px)
-        backgroundColor(Theme.colors.white08)
-        borderRadius(8.px)
-        cursor("pointer")
-
-        dark(self) {
-            backgroundColor(Theme.colors.white12)
-        }
+        cursor("grab")
+        width(auto) // Override Styles.dialogInputWrapper width(100.percent)
     }
 
     // Inventory list row
@@ -128,15 +124,9 @@ object InventoryStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         padding(12.px)
         property("margin-bottom", "8px")
-        backgroundColor(Theme.colors.white06)
-        borderRadius(12.px)
         alignItems(AlignItems.Center)
         cursor("grab")
         gap(8.px)
-
-        dark(self) {
-            backgroundColor(Theme.colors.white12)
-        }
     }
 
     // Wearable chip/indicator
@@ -200,9 +190,6 @@ object InventoryStyles : StyleSheet() {
     val inventoryBox by style {
         width(48.px)
         height(48.px)
-        backgroundColor(Theme.colors.surfaceVariant)
-        border(1.px, LineStyle.Solid, Theme.colors.outline)
-        borderRadius(8.px)
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
@@ -210,19 +197,17 @@ object InventoryStyles : StyleSheet() {
         boxSizing("border-box")
         // Make box interactive
         property("pointer-events", "auto")
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-            border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
-        }
+        
+        // Use a smaller padding than the default FramedBorder/DialogInput for these small boxes
+        padding(2.px)
     }
 
     val inventoryBoxWornBoy by style {
-        border(3.px, LineStyle.Solid, Theme.colors.accentBoyStrong)
+        property("box-shadow", "inset 0 0 0 3px ${Theme.colors.accentBoyStrong}")
     }
 
     val inventoryBoxWornGirl by style {
-        border(3.px, LineStyle.Solid, Theme.colors.accentGirlStrong)
+        property("box-shadow", "inset 0 0 0 3px ${Theme.colors.accentGirlStrong}")
     }
     
     // Style for inventory quantity indicator
@@ -285,16 +270,8 @@ object InventoryStyles : StyleSheet() {
         property("flex-direction", "column")
         alignItems(AlignItems.Center)
         padding(12.px)
-        borderRadius(12.px)
         boxSizing("border-box")
-        backgroundColor(Theme.colors.white06)
-        property("box-shadow", "0 2px 6px rgba(0,0,0,0.08)")
-        minHeight(180.px)
-
-        dark(self) {
-            backgroundColor(Theme.colors.white12)
-            property("box-shadow", "0 2px 8px rgba(0,0,0,0.25)")
-        }
+        cursor("grab")
     }
 
     val inventoryCardTitle by style {

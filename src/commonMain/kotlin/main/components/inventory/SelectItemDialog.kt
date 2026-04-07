@@ -10,22 +10,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import main.api.ItemApi
-import main.components.*
+import main.components.BaseDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
+import main.components.DialogInput
+import main.components.Translated
+import main.components.translated
 import main.theme.Styles
 import models.Item
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.min
-import org.jetbrains.compose.web.attributes.step
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
-import org.jetbrains.compose.web.dom.NumberInput
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
-import web.cssom.AtRules.Companion.property
 
 /**
  * SelectItemDialog
@@ -185,19 +183,16 @@ fun SelectItemDialog(
                                     if (useQuantities && isSelected) {
                                         val current = selected[item.key] ?: (item to 0)
                                         // Quantity input
-                                        NumberInput(
-                                            value = current.second.toLong(),
+                                        DialogInput(
+                                            value = current.second.toString(),
+                                            onInput = { str ->
+                                                val v = (str.toLongOrNull() ?: 0L).coerceAtLeast(0L)
+                                                selected = selected + (item.key to (item to v.toInt()))
+                                            },
+                                            type = InputType.Number,
                                             min = 0,
                                             attrs = {
-                                                classes(Styles.inputField)
-                                                onInput { ev ->
-                                                    val v = (ev.value?.toLong() ?: 0L).coerceAtLeast(0L)
-                                                    selected = selected + (item.key to (item to v.toInt()))
-                                                }
-
-                                                onClick {
-                                                    it.stopPropagation()
-                                                }
+                                                onClick { it.stopPropagation() }
                                             }
                                         )
                                         Label { Translated("Quantity") }

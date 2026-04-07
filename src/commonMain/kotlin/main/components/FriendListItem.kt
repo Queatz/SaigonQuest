@@ -274,6 +274,7 @@ fun FriendListItem(
             if (showConfirmDialog) {
                 BasicConfirmDialog(
                     message = "${str("Are you sure you want to remove")} ${friend.friendUsername} ${str("from your friends list?")}",
+                    positiveStyle = DialogButtonStyle.Danger,
                     onConfirm = {
                         // Only remove friend if user confirms
                         onRemoveFriend(friend.friendId)

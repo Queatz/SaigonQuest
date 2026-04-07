@@ -4,10 +4,8 @@ import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.ItemApi
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.Translated
+import main.components.*
+import main.components.inventory.ItemRenderer
 import main.components.common.formatAmount
 import main.theme.Styles
 import models.Item
@@ -77,16 +75,14 @@ fun BuyItemDialog(
                 }
             }) {
                 Label { Translated("Quantity") }
-                NumberInput(
-                    value = quantity,
-                    attrs = {
-                        classes(Styles.inputField)
-                        min("1")
-                        onInput { evt ->
-                            val v = evt.value?.toInt() ?: 1
-                            quantity = if (v < 1) 1 else v
-                        }
-                    }
+                DialogInput(
+                    value = quantity.toString(),
+                    onInput = {
+                        val v = it.toIntOrNull() ?: 1
+                        quantity = if (v < 1) 1 else v
+                    },
+                    type = InputType.Number,
+                    min = 1,
                 )
 
                 Label { Translated("Per item") }

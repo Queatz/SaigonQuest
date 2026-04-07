@@ -10,6 +10,7 @@ import main.api.InventoryApi
 import main.api.WebSocketApi
 import main.api.addUpdatePlayerListener
 import main.components.*
+import main.components.attrs.touchDraggable
 import main.components.attrs.onTouchDrop
 import main.components.player.CharacterRenderer
 import main.theme.InventoryStyles
@@ -17,6 +18,7 @@ import main.theme.Styles
 import main.utils.DataType
 import models.Sex
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.Draggable
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.HTMLElement
@@ -498,10 +500,39 @@ fun InventoryDialog(onClose: () -> Unit) {
 
     // Function to handle drop for reordering inventory (mouse-based)
     fun handleDrop(event: dynamic, targetItemId: String) {
-        event.preventDefault()
-        val sourceItemId = draggedItemId ?: return
-        reorderItems(sourceItemId, targetItemId)
-        draggedItemId = null
+        try {
+            event.preventDefault()
+            
+            // Try to get itemId from dataTransfer first
+            var sourceItemId: String? = null
+            try {
+                sourceItemId = event.dataTransfer.getData("text/plain") as String?
+                if (sourceItemId == null || sourceItemId == "null" || sourceItemId.isEmpty()) {
+                    sourceItemId = null
+                }
+                console.log("[DEBUG_LOG] handleDrop reorder: Got sourceItemId from dataTransfer: $sourceItemId")
+            } catch (e: Throwable) {
+                console.error("[DEBUG_LOG] handleDrop reorder: Error getting data from dataTransfer", e)
+            }
+            
+            // Fallback to local state
+            if (sourceItemId == null) {
+                sourceItemId = draggedItemId
+                console.log("[DEBUG_LOG] handleDrop reorder: Fallback to draggedItemId: $sourceItemId")
+            }
+            
+            if (sourceItemId != null && sourceItemId != targetItemId) {
+                console.log("[DEBUG_LOG] handleDrop reorder: Reordering source $sourceItemId to target $targetItemId")
+                reorderItems(sourceItemId, targetItemId)
+            } else {
+                console.log("[DEBUG_LOG] handleDrop reorder: No reordering needed (same or missing IDs)")
+            }
+            
+            draggedItemId = null
+        } catch (e: Throwable) {
+            console.error("[DEBUG_LOG] handleDrop reorder: Unexpected error", e)
+            draggedItemId = null
+        }
     }
 
     // Show Create Item Dialog if needed
@@ -716,13 +747,55 @@ fun InventoryDialog(onClose: () -> Unit) {
                                         // Try to find the corresponding inventory item key if it exists in our map
                                         val inventoryItemKey = InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
 
-                                        Div(
+                                        FramedBorder(
+                                            borderImage = "/raw/data/ui/borders/input.png",
+                                            backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                            darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
                                             attrs = {
+                                                classes(Styles.dialogInputWrapper)
                                                 classes(InventoryStyles.wornItemCard)
-                                                onClick { handleRemoveWornItem(itemId, isDirectItemId = true) }
                                                 
+                                                // Move worn border highlight here
+                                                when (currentUser?.sex) {
+                                                    Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                                                    Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                                                    else -> {}
+                                                }
+                                                
+                                                onClick { handleRemoveWornItem(itemId, isDirectItemId = true) }
+
                                                 // Make draggable and ensure draggedItemId is set
-                                                onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
+                                                draggable(Draggable.True)
+                                                onDragStart { event -> handleDragStart(event.nativeEvent, inventoryItemKey ?: itemId) }
+                                                onDragEnd { draggedItemId = null }
+
+                                                // Touch drag support for worn items
+                                                touchDraggable(
+                                                    dataProvider = {
+                                                        val payload = InventoryDragPayload(
+                                                            inventoryItemKey = inventoryItemKey ?: itemId,
+                                                            itemKey = item.key,
+                                                            quantity = 1,
+                                                            inventoryId = null,
+                                                        )
+                                                        json.encodeToString(InventoryDragPayload.serializer(), payload)
+                                                    },
+                                                    dataType = DataType.INVENTORY_ITEM,
+                                                    previewBuilder = { preview ->
+                                                        preview.style.width = "32px"
+                                                        preview.style.height = "32px"
+                                                        preview.style.setProperty("pointer-events", "none")
+                                                        if (item.file.isNotEmpty()) {
+                                                            val url = "/raw/data/spritesheets/${item.file}.png"
+                                                            preview.style.setProperty("background-image", "url(\"$url\")")
+                                                            preview.style.setProperty("background-size", "320px 320px")
+                                                            val col = item.assetIndex % 10
+                                                            val row = item.assetIndex / 10
+                                                            preview.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
+                                                            preview.style.setProperty("background-repeat", "no-repeat")
+                                                        }
+                                                    }
+                                                )
                                             }
                                         ) {
                                             // Item icon
@@ -732,8 +805,10 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 isLoading = isLoading,
                                                 quantity = 1, // Worn items always have quantity 1
                                                 inventoryItemKey = inventoryItemKey,
-                                                isWorn = true,
+                                                isWorn = false, // Disable worn highlight in the box itself
                                                 sex = currentUser?.sex,
+                                                useBorder = false, // Remove the 2nd framed border (inner)
+                                                draggable = false,
                                             )
 
                                             // Item name
@@ -827,25 +902,72 @@ fun InventoryDialog(onClose: () -> Unit) {
                                 key(itemId) {
                                     val item = InventoryState.getItemForInventoryItemKey(itemId)
                                     if (item != null) {
-                                        Div(
+                                        val isWorn = currentUser?.wornItems?.contains(item.key) == true
+                                        FramedBorder(
+                                            borderImage = "/raw/data/ui/borders/input.png",
+                                            backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                            darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
                                             attrs = {
+                                                classes(Styles.dialogInputWrapper)
                                                 classes(InventoryStyles.inventoryCard)
+
+                                                if (isWorn) {
+                                                    when (currentUser?.sex) {
+                                                        Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                                                        Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                                                        else -> {}
+                                                    }
+                                                }
+
                                                 // Make draggable
-                                                attr("draggable", "true")
+                                                draggable(Draggable.True)
                                                 title(moveTip)
                                                 onDoubleClick { handleMoveToTop(itemId) }
 
                                                 // Capture drag start to remember the dragged inventory key for reordering
                                                 onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
+                                                onDragEnd { draggedItemId = null }
                                                 onDragOver { event -> handleDragOver(event.nativeEvent) }
                                                 onDrop { event -> handleDrop(event.nativeEvent, itemId) }
+                                                
+                                                // Touch drag support for inventory items
+                                                touchDraggable(
+                                                    dataProvider = {
+                                                        val payload = InventoryDragPayload(
+                                                            inventoryItemKey = itemId,
+                                                            itemKey = item.key,
+                                                            quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
+                                                            inventoryId = null,
+                                                        )
+                                                        json.encodeToString(InventoryDragPayload.serializer(), payload)
+                                                    },
+                                                    dataType = DataType.INVENTORY_ITEM,
+                                                    previewBuilder = { preview ->
+                                                        preview.style.width = "32px"
+                                                        preview.style.height = "32px"
+                                                        preview.style.setProperty("pointer-events", "none")
+                                                        if (item.file.isNotEmpty()) {
+                                                            val url = "/raw/data/spritesheets/${item.file}.png"
+                                                            preview.style.setProperty("background-image", "url(\"$url\")")
+                                                            preview.style.setProperty("background-size", "320px 320px")
+                                                            val col = item.assetIndex % 10
+                                                            val row = item.assetIndex / 10
+                                                            preview.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
+                                                            preview.style.setProperty("background-repeat", "no-repeat")
+                                                        }
+                                                    }
+                                                )
                                                 onTouchDrop { _, _, data, dataType ->
                                                     if (dataType == DataType.INVENTORY_ITEM) {
                                                         try {
-                                                            val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                                            val payload =
+                                                                json.decodeFromString(InventoryDragPayload.serializer(), data)
                                                             reorderItems(payload.inventoryItemKey, itemId)
                                                         } catch (e: Throwable) {
-                                                            console.error("[DEBUG_LOG] onTouchDrop tile: error decoding payload", e)
+                                                            console.error(
+                                                                "[DEBUG_LOG] onTouchDrop tile: error decoding payload",
+                                                                e
+                                                            )
                                                         }
                                                     }
                                                 }
@@ -858,8 +980,10 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 isLoading = isLoading,
                                                 quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
                                                 inventoryItemKey = itemId,
-                                                isWorn = currentUser?.wornItems?.contains(item.key) == true,
+                                                isWorn = false,
                                                 sex = currentUser?.sex,
+                                                useBorder = false,
+                                                draggable = false,
                                             )
 
                                             // Title

@@ -20,6 +20,8 @@ fun BasicConfirmDialog(
     onDismiss: () -> Unit = onCancel,
     title: String? = translated("Confirm"),
     headerActions: (@Composable () -> Unit)? = null,
+    positiveStyle: DialogButtonStyle = DialogButtonStyle.Primary,
+    negativeStyle: DialogButtonStyle = DialogButtonStyle.Secondary,
 ) {
     BaseDialog(
         onClose = onDismiss,
@@ -32,7 +34,7 @@ fun BasicConfirmDialog(
             // No button (secondary)
             DialogButton(
                 onClick = onCancel,
-                style = DialogButtonStyle.Secondary,
+                style = negativeStyle,
             ) {
                 Translated("No")
             }
@@ -40,7 +42,7 @@ fun BasicConfirmDialog(
             // Yes button (primary)
             DialogButton(
                 onClick = onConfirm,
-                style = DialogButtonStyle.Primary,
+                style = positiveStyle,
             ) {
                 Translated("Yes")
             }

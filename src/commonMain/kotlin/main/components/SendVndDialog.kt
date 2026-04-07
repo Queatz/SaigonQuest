@@ -8,6 +8,7 @@ import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.UserBalance
 import models.MediaType
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.dom.*
 
 @Composable
@@ -49,15 +50,12 @@ fun SendVndDialog(
             // Current balance
             P { Text("${translated("Your balance")}: ${formatAmount(currentBalance)} ${translated("VND")}") }
 
-            // Amount input
-            Label(attrs = { classes(Styles.formLabel) }) { Translated("Amount (VND)") }
-            NumberInput(
-                value = amountInput,
+            DialogInput(
+                value = amountInput.toString(),
+                onInput = { amountInput = it.toLongOrNull() ?: 0L },
+                label = "Amount (VND)",
+                type = InputType.Number,
                 min = 1,
-                attrs = {
-                    classes(Styles.inputField)
-                    onInput { amountInput = it.value?.toLong() ?: 0L }
-                }
             )
 
             DialogInput(

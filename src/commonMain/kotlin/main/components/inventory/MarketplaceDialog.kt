@@ -10,6 +10,7 @@ import main.components.BasicConfirmDialog
 import main.components.DialogButton
 import main.components.DialogInput
 import main.components.DialogButtonStyle
+import main.components.FramedBorder
 import main.components.Translated
 import main.components.common.formatAmount
 import main.theme.InventoryStyles
@@ -18,6 +19,7 @@ import models.Item
 import models.Sex
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.*
@@ -28,7 +30,6 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.marginLeft
 
 @Composable
 fun MarketplaceDialog(
@@ -129,91 +130,93 @@ fun MarketplaceDialog(
                 filtered.isEmpty() -> P { Translated("No results") }
                 else -> {
                     Div({
+                        classes(InventoryStyles.inventoryGrid)
                         style {
-                            property("display", "grid")
-                            property("grid-template-columns", "repeat(auto-fill, minmax(260px, 1fr))")
-                            property("gap", "12px")
                             property("margin-top", "12px")
                             property("max-height", "55vh")
                             property("overflow-y", "auto")
                         }
                     }) {
                         filtered.forEach { item ->
-                            Div({
-                                style {
-                                    property("padding", "12px")
-                                    property("border", "1px solid rgba(255,255,255,0.1)")
-                                    property("border-radius", "8px")
-                                    property("display", "flex")
-                                    alignItems("center")
-                                    property("gap", "10px")
+                            FramedBorder(
+                                borderImage = "/raw/data/ui/borders/input.png",
+                                backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
+                                attrs = {
+                                    classes(Styles.dialogInputWrapper)
+                                    classes(InventoryStyles.inventoryCard)
                                 }
-                            }) {
+                            ) {
                                 // Icon
-                                Div { ItemRenderer(item = item, size = 48) }
-                                // Details
-                                Div({ style { property("flex", "1") } }) {
-                                    Div(
-                                        attrs = {
-                                            style {
-                                                display(DisplayStyle.Flex)
-                                                alignItems(AlignItems.Center)
-                                            }
+                                InventoryBox(
+                                    onClick = { /* Buying handled by button */ },
+                                    item = item,
+                                    isLoading = false,
+                                    useBorder = false,
+                                )
+
+                                // Title
+                                Div(attrs = { classes(InventoryStyles.inventoryCardTitle) }) {
+                                    Text(item.title)
+                                }
+
+                                // Chips: wearable + sex
+                                Div(attrs = { classes(InventoryStyles.inventoryCardChips) }) {
+                                    if (item.wearable) {
+                                        Div(attrs = { classes(InventoryStyles.wearableChip) }) {
+                                            Translated("Wearable")
                                         }
-                                    ) {
-                                        H4(
+
+                                        val sex = item.wearableSex ?: Sex.Boy
+                                        Div(
                                             attrs = {
-                                                style {
-                                                    margin(0.px)
+                                                classes(InventoryStyles.wearableChip)
+                                                when (sex) {
+                                                    Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
+                                                    Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
                                                 }
                                             }
-                                        ) { Text(item.title) }
-
-                                        if (item.wearable) {
-                                            Div(
-                                                attrs = {
-                                                    classes(InventoryStyles.wearableChip)
-                                                    style { marginLeft(8.px) }
-                                                }
-                                            ) {
-                                                Translated("Wearable")
-                                            }
-
-                                            val sex = item.wearableSex ?: Sex.Boy
-                                            Div(
-                                                attrs = {
-                                                    classes(InventoryStyles.wearableChip)
-                                                    when (sex) {
-                                                        Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
-                                                        Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
-                                                    }
-                                                    style { marginLeft(4.px) }
-                                                }
-                                            ) {
-                                                Translated(sex.name)
-                                            }
+                                        ) {
+                                            Translated(sex.name)
                                         }
-                                    }
-                                    Div {
-                                        Text(item.description)
-                                    }
-                                    P {
-                                        B { Translated("Cost") }
-                                        Text(": ")
-                                        Text(formatAmount(item.cost))
-                                        Text(" VND")
                                     }
                                 }
-                                // Buy
-                                Div({
-                                    style {
-                                        property("display", "flex")
-                                        property("align-items", "center")
+
+                                // Description
+                                Div(
+                                    attrs = {
+                                        classes(InventoryStyles.descriptionText)
+                                        style {
+                                            property("text-align", "center")
+                                            property("margin-bottom", "8px")
+                                        }
                                     }
-                                }) {
+                                ) {
+                                    Text(item.description)
+                                }
+
+                                // Cost
+                                P(
+                                    attrs = {
+                                        style {
+                                            margin(0.px)
+                                            fontSize(14.px)
+                                            fontWeight("bold")
+                                        }
+                                    }
+                                ) {
+                                    Text(formatAmount(item.cost))
+                                    Text(" VND")
+                                }
+
+                                // Buy button at bottom
+                                Div(attrs = { classes(InventoryStyles.inventoryCardActionBar) }) {
                                     DialogButton(
                                         onClick = { buyingItem = item },
-                                        style = DialogButtonStyle.Primary
+                                        style = DialogButtonStyle.Primary,
+                                        attrs = {
+                                            classes(InventoryStyles.inventoryCardActionButton)
+                                        }
                                     ) { Translated("Buy") }
                                 }
                             }
