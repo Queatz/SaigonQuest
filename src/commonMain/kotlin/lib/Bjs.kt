@@ -1735,6 +1735,11 @@ external class HighlightLayer(name: String, scene: Scene) {
     var innerGlow: Boolean
 
     /**
+     * Main texture ratio for the highlight
+     */
+    var mainTextureRatio: Float
+
+    /**
     * Add a mesh to the highlight layer with a specific color
      * 
      * @param mesh The mesh to highlight
@@ -1768,6 +1773,43 @@ external class HighlightLayer(name: String, scene: Scene) {
     
     /**
      * Dispose the highlight layer
+     */
+    fun dispose()
+}
+
+/**
+ * The SelectionOutlineLayer is used to draw an outline around meshes.
+ */
+external class SelectionOutlineLayer(name: String, scene: Scene) {
+    /**
+     * Color of the outline
+     */
+    var outlineColor: Color3
+    
+    /**
+     * Width of the outline
+     */
+    var outlineThickness: Float
+
+    /**
+     * Main texture ratio for the outline
+     */
+    var mainTextureRatio: Float
+
+    /**
+    * Add a mesh to the selection outline layer
+     * 
+     * @param mesh The mesh to outline
+     */
+    fun addSelection(mesh: AbstractMesh)
+    
+    /**
+     * Clear all selected meshes from the selection outline layer
+     */
+    fun clearSelection()
+
+    /**
+     * Dispose the selection outline layer
      */
     fun dispose()
 }

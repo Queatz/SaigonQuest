@@ -7,20 +7,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lib.AbstractMesh
-import lib.Animation
-import lib.BounceEase
 import lib.Color3
 import lib.CreateSphereOptions
-import lib.CubicEase
-import lib.EasingFunction
-import lib.HighlightLayer
-import lib.Mesh
+import lib.SelectionOutlineLayer
 import lib.MeshBuilder
 import lib.Node
 import lib.PBRMaterial
 import lib.Scene
 import lib.TransformNode
-import lib.Vector2
 import lib.Vector3
 import main.components.GraphicsSettings
 import main.api.InventoryApi
@@ -102,8 +96,8 @@ class SceneObjectManager(
     // Track objects that are within proximity radius
     private val nearbyObjectIds = mutableSetOf<String>()
 
-    // Add a highlight layer for the outline effect
-    private val highlightLayer = HighlightLayer("objectHighlightLayer", scene)
+    // Add a selection outline layer for the outline effect
+    private val selectionOutlineLayer = SelectionOutlineLayer("objectSelectionOutlineLayer", scene)
 
     private var shadowManager: ShadowManager? = null
     
@@ -111,35 +105,16 @@ class SceneObjectManager(
     private val assetManager = ObjectAssetManager(scene)
     
     init {
-        // Configure the highlight layer for white outline
-        highlightLayer.intensity = 1.5f  // Increased intensity for more visible effect
-        if (GraphicsSettings.isLowGraphicsModeEnabled()) {
-            highlightLayer.blurHorizontalSize = 1f / 3f
-            highlightLayer.blurVerticalSize = 1f / 3f
-        } else {
-            highlightLayer.blurHorizontalSize = 1f
-            highlightLayer.blurVerticalSize = 1f
-        }
-
-        // Set additional properties if available
-        try {
-            // Set the outer glow color to a bright, high-contrast color
-            highlightLayer.outerGlow = true
-            
-            // Set the inner glow color to false to create only an outline
-            highlightLayer.innerGlow = false
-            
-        } catch (e: Throwable) {
-            console.log("[DEBUG_HIGHLIGHT] Could not set additional properties: ${e.message}")
-        }
+        // Configure the selection outline layer
+        selectionOutlineLayer.outlineThickness = 3.0f
+        selectionOutlineLayer.outlineColor = Color3.White()
 
         GraphicsSettings.addObserver {
+            // Update outline thickness based on graphics mode if needed
             if (GraphicsSettings.isLowGraphicsModeEnabled()) {
-                highlightLayer.blurHorizontalSize = 1f / 3f
-                highlightLayer.blurVerticalSize = 1f / 3f
+                selectionOutlineLayer.outlineThickness = 2.0f
             } else {
-                highlightLayer.blurHorizontalSize = 1f
-                highlightLayer.blurVerticalSize = 1f
+                selectionOutlineLayer.outlineThickness = 3.0f
             }
         }
     }
@@ -183,17 +158,6 @@ class SceneObjectManager(
 
         // 1) Update previous interactable object
         if (previousId != null) {
-            // Remove highlight if not hovered
-            if (previousId != hoveredObjectId) {
-                val node = objectMeshes[previousId]
-                if (node != null) {
-                    node.getChildMeshes(false).forEach { mesh ->
-                        highlightLayer.removeMesh(mesh)
-                    }
-                    if (node is AbstractMesh) highlightLayer.removeMesh(node)
-                }
-            }
-
             // Restore status text (removes "🆇 " prefix)
             val originalStatus = objectStatusTexts[previousId] ?: ""
             val node = objectMeshes[previousId]
@@ -209,14 +173,8 @@ class SceneObjectManager(
 
         // 2) Update new interactable object
         if (objectId != null) {
-            // Add highlight
             val node = objectMeshes[objectId]
             if (node != null) {
-                node.getChildMeshes(false).forEach { mesh ->
-                    highlightLayer.addMesh(mesh, Color3(.25f, .5f, 1f), false)
-                }
-                if (node is AbstractMesh) highlightLayer.addMesh(node, Color3(.25f, .5f, 1f), false)
-
                 // Update status text (adds "🆇 " prefix)
                 val status = objectStatusTexts[objectId] ?: ""
                 handleObjectStatusText(objectId, status, node)
@@ -225,6 +183,9 @@ class SceneObjectManager(
                 animateStatusText(objectId, true)
             }
         }
+
+        // Update selection outline
+        updateSelectionOutline()
     }
 
     /**
@@ -255,14 +216,12 @@ class SceneObjectManager(
                     allMeshes.add(node)
                 }
 
-                // Add each mesh to the highlight layer
-                allMeshes.forEach { mesh ->
-                    highlightLayer.addMesh(mesh, Color3(.25f, .5f, 1f), false)
-                }
-                
                 // Store the hovered object ID
                 hoveredObjectId = objectId
 
+                // Update selection outline
+                updateSelectionOutline()
+                
                 // Show status text for the hovered object
                 animateStatusText(objectId, true)
                 
@@ -293,11 +252,6 @@ class SceneObjectManager(
                         allMeshes.add(node)
                     }
 
-                    // Remove each mesh from the highlight layer
-                    allMeshes.forEach { mesh ->
-                        highlightLayer.removeMesh(mesh)
-                    }
-                    
                     // Reset cursor
                     document.body?.style?.cursor = "default"
 
@@ -312,6 +266,41 @@ class SceneObjectManager(
             } else {
             }
             hoveredObjectId = null
+            updateSelectionOutline()
+        }
+    }
+    
+    /**
+     * Updates the selection outline layer by clearing it and re-adding all meshes for the currently
+     * hovered and interactable objects. This is a workaround since SelectionOutlineLayer does not
+     * have a public removeSelection method.
+     */
+    private fun updateSelectionOutline() {
+        selectionOutlineLayer.clearSelection()
+
+        // 1. Add interactable object highlight
+        interactableObjectId?.let { id ->
+            val node = objectMeshes[id]
+            if (node != null) {
+                node.getChildMeshes(false).forEach { mesh ->
+                    selectionOutlineLayer.addSelection(mesh)
+                }
+                if (node is AbstractMesh) selectionOutlineLayer.addSelection(node)
+            }
+        }
+
+        // 2. Add hovered object highlight
+        hoveredObjectId?.let { id ->
+            // Avoid re-adding if it's the same as interactable
+            if (id != interactableObjectId) {
+                val node = objectMeshes[id]
+                if (node != null) {
+                    node.getChildMeshes(false).forEach { mesh ->
+                        selectionOutlineLayer.addSelection(mesh)
+                    }
+                    if (node is AbstractMesh) selectionOutlineLayer.addSelection(node)
+                }
+            }
         }
     }
     
@@ -406,6 +395,7 @@ class SceneObjectManager(
             // If this object is the current interactable, clear it
             if (interactableObjectId == objectId) {
                 interactableObjectId = null
+                updateSelectionOutline()
             }
             
             // If this object is selected, deselect it
@@ -1267,12 +1257,11 @@ class SceneObjectManager(
         this.worldMeshes = meshes
         this.skybox = meshes.find { it.isSkybox() }
         
-        // Exclude all world meshes from highlighting to avoid unwanted outline effects
-        // on the environment when highlighting interactive objects.
+        // SelectionOutlineLayer does not support exclusions as it only renders what is explicitly selected.
         if (false) {
             meshes.forEach { mesh ->
                 try {
-                    highlightLayer.addExcludedMesh(mesh)
+                    // selectionOutlineLayer.addExcludedMesh(mesh)
                 } catch (e: Throwable) {
                     console.warn("Failed to exclude mesh from highlighting: ${mesh.name}")
                 }
@@ -1297,11 +1286,7 @@ class SceneObjectManager(
      * Excludes a mesh from the highlight layer to avoid unwanted outline effects.
      */
     fun excludeMeshFromHighlight(mesh: AbstractMesh) {
-        try {
-            highlightLayer.addExcludedMesh(mesh)
-        } catch (e: Throwable) {
-            console.warn("Failed to exclude mesh from highlighting: ${mesh.name}")
-        }
+        // SelectionOutlineLayer does not support exclusions as it only renders what is explicitly selected.
     }
 
     /**
@@ -1694,8 +1679,8 @@ class SceneObjectManager(
     }
 
     fun dispose() {
-        // Dispose the highlight layer
-        highlightLayer.dispose()
+        // Dispose the selection outline layer
+        selectionOutlineLayer.dispose()
         
         // Dispose the asset manager
         assetManager.dispose()
