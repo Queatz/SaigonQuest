@@ -68,17 +68,6 @@ fun WinScreen(
             gap(32.px)
         }
     }) {
-        H1({
-            style {
-                fontSize(48.px)
-                color(Theme.colors.primary)
-                property("text-shadow", "2px 2px 4px rgba(0,0,0,0.5)")
-                property("letter-spacing", "2px")
-            }
-        }) {
-            Text(translated("Victory!"))
-        }
-        
         FramedBorder(
             attrs = {
                 style {
@@ -104,7 +93,7 @@ fun WinScreen(
                     property("letter-spacing", "1px")
                 }
             }) {
-                Text(translated("Quest Results"))
+                Text(translated("Quest results"))
             }
 
             Div({

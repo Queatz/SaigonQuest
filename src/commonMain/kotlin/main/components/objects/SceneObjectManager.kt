@@ -492,6 +492,9 @@ class SceneObjectManager(
     // Create a coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     
+    // Constants
+    private val Z_FIGHTING_BUFFER = 0.005f
+    
     // JSON parser
     private val json = utils.json
     
@@ -750,7 +753,7 @@ class SceneObjectManager(
         // Slight Y offset to avoid z-fighting with ground
         val finalPosition = Vector3(
             basePoint.x,
-            basePoint.y + 0.125f,
+            basePoint.y + Z_FIGHTING_BUFFER,
             basePoint.z
         )
         return Position(
@@ -1106,7 +1109,7 @@ class SceneObjectManager(
                     // The offset is the difference between the object's position and the click point
                     dragClickOffset = Vector3(
                         node.position.x - clickPoint.x,
-                        node.position.y - clickPoint.y,
+                        0f, // Ignore vertical offset from grab point to ensure the object stays at its target vertical height (on the ground/surface)
                         node.position.z - clickPoint.z
                     )
                     console.log("Calculated drag offset: (${dragClickOffset!!.x}, ${dragClickOffset!!.y}, ${dragClickOffset!!.z})")
@@ -1157,7 +1160,7 @@ class SceneObjectManager(
                 val verticalOffset = objectVerticalOffsets[draggingObjectId!!] ?: 0f
                 val adjustedPosition = Vector3(
                     position.x + offset.x,
-                    position.y + offset.y + verticalOffset,
+                    position.y + Z_FIGHTING_BUFFER + verticalOffset, // Apply ground height + z-fighting buffer + target vertical offset, ignore vertical grab offset
                     position.z + offset.z
                 )
                 

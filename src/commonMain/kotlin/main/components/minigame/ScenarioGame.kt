@@ -2,17 +2,14 @@ package main.components.minigame
 
 import androidx.compose.runtime.*
 import kotlinx.browser.window
-import main.api.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import main.components.audio.SoundManager
-import main.theme.Theme
 import models.*
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.css.*
-import main.theme.Styles
 import main.components.FramedBorder
 import main.components.translated
-import org.jetbrains.compose.web.attributes.InputType
-import org.w3c.dom.events.MouseEvent
 
 @Composable
 fun ScenarioGame(
@@ -23,16 +20,30 @@ fun ScenarioGame(
     val heroItem = config.items.find { it.image != null && it.hotspot == null }
     val targets = remember { config.items.filter { it.hotspot != null } }
     
-    var currentTargetIndex by remember { mutableStateOf(0) }
-    val currentTarget = targets.getOrNull(currentTargetIndex)
+    val matchedTargets = remember { mutableStateListOf<Int>() }
+    val currentTargetIndex = targets.indices.find { !matchedTargets.contains(it) } ?: -1
+    val currentPromptTarget = targets.getOrNull(currentTargetIndex)
     
     var startTime by remember { mutableStateOf<Double?>(null) }
+    var mousePos by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+
+    val isInsideHotspot = { x: Double, y: Double, hotspot: Hotspot ->
+        val dx = x - hotspot.x
+        val dy = y - hotspot.y
+        kotlin.math.sqrt(dx * dx + dy * dy) <= hotspot.radius
+    }
+
     var totalAttempts by remember { mutableStateOf(0) }
     var successCount by remember { mutableStateOf(0) }
     
-    val matchedTargets = remember { mutableStateListOf<Int>() }
-
+    val scope = rememberCoroutineScope()
     var winResult by remember { mutableStateOf<MinigameResult?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            SoundManager.stopAllSounds()
+        }
+    }
 
     if (winResult != null) {
         WinScreen(winResult!!, onComplete)
@@ -42,7 +53,7 @@ fun ScenarioGame(
     Div({
         classes(MinigameStyles.gameContainer)
     }) {
-        currentTarget?.let { target ->
+        currentPromptTarget?.let { target ->
             H3 { 
                 Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
             }
@@ -62,8 +73,9 @@ fun ScenarioGame(
                         property("object-fit", "contain")
                     }
                     onClick { event ->
+                        if (matchedTargets.size >= targets.size) return@onClick
+                        
                         if (startTime == null) startTime = window.performance.now()
-                        if (currentTarget == null) return@onClick
                         
                         val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onClick
                         val clickX = (event.clientX - rect.left) / rect.width
@@ -71,50 +83,81 @@ fun ScenarioGame(
                         
                         totalAttempts++
                         
-                        val hotspot = currentTarget.hotspot!!
-                        val dx = clickX - hotspot.x
-                        val dy = clickY - hotspot.y
-                        val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+                        val isHit = currentTargetIndex != -1 && isInsideHotspot(clickX, clickY, targets[currentTargetIndex].hotspot!!)
                         
-                        if (distance <= hotspot.radius) {
+                        if (isHit) {
+                            val clickedIndex = currentTargetIndex
                             // Success!
                             successCount++
-                            matchedTargets.add(currentTargetIndex)
-                            currentTargetIndex++
+                            matchedTargets.add(clickedIndex)
                             
+                            val clickedTarget = targets[clickedIndex]
                             // Play success sound or item audio
-                            currentTarget.audio?.let { SoundManager.playSound(it) }
+                            clickedTarget.audio?.let { SoundManager.playSound(it) }
                             
-                            if (currentTargetIndex >= targets.size) {
+                            if (matchedTargets.size >= targets.size) {
                                 val endTime = window.performance.now()
-                                val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
-                                winResult = MinigameResult(
-                                    minigameId = config.minigameId,
-                                    userId = "",
-                                    type = MinigameType.Scenario,
-                                    reflex = reflex,
-                                    accuracy = accuracy,
-                                    completed = true
-                                )
+                                scope.launch {
+                                    delay(1000)
+                                    val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
+                                    winResult = MinigameResult(
+                                        minigameId = config.minigameId,
+                                        type = MinigameType.Scenario,
+                                        reflex = reflex,
+                                        accuracy = accuracy,
+                                        completed = true
+                                    )
+                                }
                             }
                         }
+                    }
+                    onMouseMove { event ->
+                        val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onMouseMove
+                        val mouseX = (event.clientX - rect.left) / rect.width
+                        val mouseY = (event.clientY - rect.top) / rect.height
+                        mousePos = mouseX to mouseY
+                    }
+                    onMouseLeave {
+                        mousePos = null
                     }
                 })
             }
 
-            // Optional: show matched hotspots
-            matchedTargets.forEach { index ->
+            // Show matched hotspots or hovered hotspots
+            targets.indices.forEach { index ->
                 val target = targets[index]
                 val hotspot = target.hotspot!!
-                Div({
-                    classes(MinigameStyles.hotspotIndicator)
-                    style {
-                        left((hotspot.x * 100).percent)
-                        top((hotspot.y * 100).percent)
-                        width((hotspot.radius * 2 * 100).percent)
-                        property("aspect-ratio", "1 / 1")
+                val isMatched = matchedTargets.contains(index)
+                
+                val isHovered = mousePos?.let { (mx, my) ->
+                    isInsideHotspot(mx, my, hotspot)
+                } ?: false
+
+                if (isMatched || isHovered) {
+                    Div({
+                        classes(MinigameStyles.hotspotIndicator)
+                        style {
+                            left((hotspot.x * 100).percent)
+                            top((hotspot.y * 100).percent)
+                            width((hotspot.radius * 2 * 100).percent)
+                            property("aspect-ratio", "1 / 1")
+                            property("pointer-events", "none")
+                        }
+                    }) {
+                        if (isMatched) {
+                            target.image?.let { url ->
+                                Img(src = url, attrs = {
+                                    style {
+                                        width(100.percent)
+                                        height(100.percent)
+                                        property("object-fit", "cover")
+                                        borderRadius(50.percent)
+                                    }
+                                })
+                            }
+                        }
                     }
-                })
+                }
             }
         }
     }

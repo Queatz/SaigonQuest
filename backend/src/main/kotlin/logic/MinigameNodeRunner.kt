@@ -47,7 +47,7 @@ class MinigameNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         fun outKey(key: PropertyKey) = "${node.id}_out_${key.name.lowercase()}"
         
         fun getInput(key: PropertyKey): String? =
-            (eventData[inKey(key)] as? String)?.takeIf { it.isNotBlank() }
+            eventData[inKey(key)]?.toString()?.takeIf { it.isNotBlank() }
                 ?: nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
 
         val typeStr = getInput(PropertyKey.MINIGAME_TYPE) ?: "Flashcards"
@@ -95,11 +95,17 @@ class MinigameNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
 
             if (result != null) {
                 WebSocketDebug.logMessage("MINIGAME_RESULT_RECEIVED", "minigameId=$minigameId reflex=${result.reflex} accuracy=${result.accuracy}", context.session)
-                eventData[outKey(PropertyKey.REFLEX)] = result.reflex
-                eventData[outKey(PropertyKey.ACCURACY)] = result.accuracy
                 
-                // Trigger the 'Complete' output port
-                context.logicRunner?.triggerBranch(node.id, outKey(PropertyKey.COMPLETE), eventData)
+                // Set outputs to both the named key and the indexed port for compatibility
+                val reflexStr = result.reflex.toString()
+                val accuracyStr = result.accuracy.toString()
+                
+                eventData[outKey(PropertyKey.REFLEX)] = reflexStr
+                eventData["${node.id}_out_1"] = reflexStr
+                
+                eventData[outKey(PropertyKey.ACCURACY)] = accuracyStr
+                eventData["${node.id}_out_2"] = accuracyStr
+                
                 return true
             } else {
                 WebSocketDebug.logMessage("MINIGAME_TIMEOUT", "minigameId=$minigameId", context.session)

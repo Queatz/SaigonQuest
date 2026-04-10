@@ -23,13 +23,7 @@ class MinigameResultHandler : WebSocketHandler {
         try {
             WebSocketDebug.logMessage("MINIGAME_RESULT_RECEIVED", "Processing minigame result", session)
             
-            val result = json.decodeFromString<MinigameResult>(message.data)
-            
-            // Verify that the user ID matches the connection
-            if (result.userId != connection.userId) {
-                WebSocketDebug.logError("User ID mismatch in minigame result", null, session)
-                return
-            }
+            val result = json.decodeFromString<MinigameResult>(message.data).copy(userId = connection.userId)
             
             val processed = MinigameNodeRunner.processResult(result)
             

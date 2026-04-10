@@ -8,6 +8,8 @@ import main.components.AudioSettings
  * Global sound manager for one-shot sound effects.
  */
 object SoundManager {
+    private val activeSounds = mutableSetOf<HTMLAudioElement>()
+
     /**
      * Play a one-shot sound from a URL.
      * 
@@ -21,14 +23,38 @@ object SoundManager {
         try {
             val audio = document.createElement("audio") as HTMLAudioElement
             audio.src = url
+            activeSounds.add(audio)
+            
+            audio.onended = {
+                activeSounds.remove(audio)
+                null
+            }
+            
             console.log("[SoundManager] Playing audio: $url")
             audio.play().then {
                 console.log("[SoundManager] Audio playback started successfully: $url")
             }.catch { err ->
+                activeSounds.remove(audio)
                 console.warn("[SoundManager] Autoplay prevented or error playing sound: $err")
             }
         } catch (t: Throwable) {
             console.error("[SoundManager] Failed to play sound from URL: $url", t)
         }
+    }
+
+    /**
+     * Stop all sounds currently playing through the SoundManager.
+     */
+    fun stopAllSounds() {
+        console.log("[SoundManager] Stopping all sounds (${activeSounds.size} active)")
+        activeSounds.forEach { 
+            try {
+                it.pause()
+                it.currentTime = 0.0
+            } catch (t: Throwable) {
+                console.warn("[SoundManager] Failed to stop an audio element", t)
+            }
+        }
+        activeSounds.clear()
     }
 }

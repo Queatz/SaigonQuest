@@ -17,7 +17,6 @@ import main.theme.Styles
 import models.Item
 import models.TakeItemsPrompt
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text

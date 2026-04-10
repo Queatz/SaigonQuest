@@ -11,7 +11,6 @@ import main.components.world.WorldLoader
 import main.theme.NotificationStyles
 import main.theme.Styles
 import models.Notification
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.attributes.disabled
@@ -37,41 +36,35 @@ fun WorldInvitationNotificationContent(
         }
     ) {
         if (!localIsRead) {
-            Button(
-                attrs = {
-                    classes(NotificationStyles.acceptButton)
-                    onClick {
-                        it.stopPropagation()
-                        if (isProcessing) return@onClick
-                        isProcessing = true
-                        scope.launch {
-                            acceptWorldInvitation(router, notification)
-                            localIsRead = true
-                            onStatusChange()
-                            isProcessing = false
-                        }
+            DialogButton(
+                style = DialogButtonStyle.Good,
+                isDisabled = isProcessing,
+                onClick = {
+                    if (isProcessing) return@DialogButton
+                    isProcessing = true
+                    scope.launch {
+                        acceptWorldInvitation(router, notification)
+                        localIsRead = true
+                        onStatusChange()
+                        isProcessing = false
                     }
-                    if (isProcessing) disabled()
                 }
             ) {
                 Translated("Accept")
             }
 
-            Button(
-                attrs = {
-                    classes(NotificationStyles.rejectButton)
-                    onClick {
-                        it.stopPropagation()
-                        if (isProcessing) return@onClick
-                        isProcessing = true
-                        scope.launch {
-                            NotificationApi.markAsRead(notification.key)
-                            localIsRead = true
-                            onStatusChange()
-                            isProcessing = false
-                        }
+            DialogButton(
+                style = DialogButtonStyle.Secondary,
+                isDisabled = isProcessing,
+                onClick = {
+                    if (isProcessing) return@DialogButton
+                    isProcessing = true
+                    scope.launch {
+                        NotificationApi.markAsRead(notification.key)
+                        localIsRead = true
+                        onStatusChange()
+                        isProcessing = false
                     }
-                    if (isProcessing) disabled()
                 }
             ) {
                 Translated("Dismiss")

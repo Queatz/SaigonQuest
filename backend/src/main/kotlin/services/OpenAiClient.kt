@@ -80,7 +80,7 @@ object OpenAiClient : AiClient {
     private data class TtsRequest(
         val model: String = "tts-1",
         val input: String,
-        val voice: String = "alloy",
+        val voice: String = "ash",
     )
 
     @Serializable

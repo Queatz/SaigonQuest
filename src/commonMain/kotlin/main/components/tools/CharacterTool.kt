@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.components.DialogButton
+import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.player.CharacterRenderer
 import main.components.rememberDarkMode
@@ -34,7 +36,6 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
@@ -113,10 +114,10 @@ fun CharacterToolPage() {
             H3 { Translated("Character tool") }
 
             // Common settings (collapsed section)
-            Button(attrs = {
-                classes(Styles.secondaryButton)
-                onClick { settingsExpanded = !settingsExpanded }
-            }) {
+            DialogButton(
+                style = DialogButtonStyle.Secondary,
+                onClick = { settingsExpanded = !settingsExpanded }
+            ) {
                 Text(if (settingsExpanded) "\u25BC " else "\u25B6 ")
                 Translated("Sprite sheet settings")
             }
@@ -223,30 +224,34 @@ fun CharacterToolPage() {
                 }) {
                     Translated("Overlay")
                     Text(" ${index + 1}")
-                    Button(attrs = { classes(Styles.primaryButton) ; onClick {
-                        URL.revokeObjectURL(ls.blobUrl)
-                        overlays.removeAt(index)
-                    } }) { Translated("Remove") }
+                    DialogButton(
+                        style = DialogButtonStyle.Danger,
+                        onClick = {
+                            URL.revokeObjectURL(ls.blobUrl)
+                            overlays.removeAt(index)
+                        },
+                        small = true
+                    ) { Translated("Remove") }
                 }
             }
 
             // Walking toggle
-            Button(attrs = {
-                classes(Styles.primaryButton)
-                onClick {
+            DialogButton(
+                style = DialogButtonStyle.Primary,
+                onClick = {
                     walking = !walking
                     if (walking) sitting = false
                 }
-            }) { Translated(if (walking) "Stop walking" else "Start walking") }
+            ) { Translated(if (walking) "Stop walking" else "Start walking") }
 
             // Sitting toggle
-            Button(attrs = {
-                classes(Styles.primaryButton)
-                onClick {
+            DialogButton(
+                style = DialogButtonStyle.Primary,
+                onClick = {
                     sitting = !sitting
                     if (sitting) walking = false
                 }
-            }) { Translated(if (sitting) "Stand" else "Sit") }
+            ) { Translated(if (sitting) "Stand" else "Sit") }
         }
 
         // Right: Preview

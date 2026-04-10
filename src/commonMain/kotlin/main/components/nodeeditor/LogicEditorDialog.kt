@@ -26,7 +26,6 @@ import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -204,11 +203,10 @@ fun LogicEditorDialog(
         isFullscreen = isFullscreen,
         // Custom header actions for fullscreen toggle
         headerActions = {
-            Button(
-                attrs = {
-                    classes(NodeEditorStyles.closeButton)
-                    onClick { toggleFullscreen() }
-                }
+            DialogButton(
+                onClick = { toggleFullscreen() },
+                style = DialogButtonStyle.Secondary,
+                small = true
             ) {
                 IconRenderer(
                     url = "raw/data/ui/ui.png",
@@ -235,33 +233,30 @@ fun LogicEditorDialog(
                             }
                         }
                     ) {
-                        Button(
-                            attrs = {
-                                classes(Styles.primaryButton)
-                                onClick { showSidebar = !showSidebar }
-                            }
+                        DialogButton(
+                            style = DialogButtonStyle.Primary,
+                            onClick = { showSidebar = !showSidebar },
+                            small = true
                         ) { Translated(if (showSidebar) "Hide nodes" else "Nodes") }
 
-                        Button(
-                            attrs = {
-                                classes(Styles.primaryButton)
-                                if (controller.selectedNode == null) disabled()
-                                onClick { showProperties = !showProperties }
-                            }
+                        DialogButton(
+                            style = DialogButtonStyle.Primary,
+                            isDisabled = controller.selectedNode == null,
+                            onClick = { showProperties = !showProperties },
+                            small = true
                         ) { Translated(if (showProperties) "Hide properties" else "Properties") }
 
                         // Delete button available on both desktop and mobile
-                        Button(
-                            attrs = {
-                                classes(Styles.primaryButton)
-                                if (controller.selectedNode == null && controller.selectedConnection == null) disabled()
-                                onClick {
-                                    when {
-                                        controller.selectedNode != null -> controller.deleteNode(controller.selectedNode!!)
-                                        controller.selectedConnection != null -> controller.deleteConnection(controller.selectedConnection!!)
-                                    }
+                        DialogButton(
+                            style = DialogButtonStyle.Danger,
+                            isDisabled = controller.selectedNode == null && controller.selectedConnection == null,
+                            onClick = {
+                                when {
+                                    controller.selectedNode != null -> controller.deleteNode(controller.selectedNode!!)
+                                    controller.selectedConnection != null -> controller.deleteConnection(controller.selectedConnection!!)
                                 }
-                            }
+                            },
+                            small = true
                         ) { Translated("Delete") }
                     }
                 }

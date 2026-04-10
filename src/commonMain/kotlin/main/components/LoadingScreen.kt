@@ -1,16 +1,12 @@
 package main.components
 
-import Translations.str
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.web.dom.Button
+import main.api.UserApi
+import main.theme.OverlayStyles
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import app.softwork.routingcompose.Router
-import main.api.UserApi
-import main.theme.OverlayStyles
-import main.theme.Styles
 
 /**
  * A component that displays a loading screen or error message.
@@ -62,16 +58,14 @@ fun LoadingScreen(
                         val isPlayer = UserApi.isLoggedInAsPlayer()
 
                         // Create this world or Login button
-                        Button(
-                            attrs = {
-                                classes(Styles.primaryButton)
-                                onClick {
-                                    // Only allow players to open the world editor
-                                    if (isPlayer) {
-                                        onShowWorldEditPanel()
-                                    } else {
-                                        onShowLoginDialog()
-                                    }
+                        DialogButton(
+                            style = DialogButtonStyle.Primary,
+                            onClick = {
+                                // Only allow players to open the world editor
+                                if (isPlayer) {
+                                    onShowWorldEditPanel()
+                                } else {
+                                    onShowLoginDialog()
                                 }
                             }
                         ) {
@@ -85,12 +79,10 @@ fun LoadingScreen(
                     } else {
                         // Show retry button for non-404 and non-403 errors
                         if (!isNoAccess) {
-                            Button(
-                                attrs = {
-                                    classes(Styles.primaryButton)
-                                    onClick {
-                                        onRetry()
-                                    }
+                            DialogButton(
+                                style = DialogButtonStyle.Primary,
+                                onClick = {
+                                    onRetry()
                                 }
                             ) {
                                 Translated("Retry")
@@ -100,12 +92,10 @@ fun LoadingScreen(
 
                     // Go back button
                     if (showGoHome) {
-                        Button(
-                            attrs = {
-                                classes(Styles.secondaryButton)
-                                onClick {
-                                    onNavigateHome()
-                                }
+                        DialogButton(
+                            style = DialogButtonStyle.Secondary,
+                            onClick = {
+                                onNavigateHome()
                             }
                         ) {
                             Translated("Go home")

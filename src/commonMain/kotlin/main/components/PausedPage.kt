@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import app.softwork.routingcompose.Router
 import main.PausedState
 import main.theme.Styles
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -17,14 +16,13 @@ fun PausedPage() {
         Div {
             val worldName = PausedState.lastWorldName.value.ifBlank { null }
             val buttonText = if (worldName == null) translated("Resume") else "${translated("Resume to")} \"$worldName\""
-            Button(attrs = {
-                classes(Styles.primaryButton)
-
-                onClick {
+            DialogButton(
+                style = DialogButtonStyle.Primary,
+                onClick = {
                     val url = PausedState.lastWorldUrl.value
                     router.navigate("/${url}")
                 }
-            }) { Text(buttonText) }
+            ) { Text(buttonText) }
         }
     }
 }

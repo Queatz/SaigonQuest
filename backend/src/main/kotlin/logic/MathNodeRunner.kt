@@ -21,13 +21,13 @@ class MathNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
 
             fun inKey(key: PropertyKey) = "${node.id}_in_${key.name.lowercase()}"
             
-            val aStr = (eventData[inKey(PropertyKey.A)] as? String)
+            val aStr = eventData[inKey(PropertyKey.A)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.A }?.value ?: "0"
                 
-            val bStr = (eventData[inKey(PropertyKey.B)] as? String)
+            val bStr = eventData[inKey(PropertyKey.B)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.B }?.value ?: "0"
                 
-            val operator = (eventData[inKey(PropertyKey.MATH_OPERATOR)] as? String)
+            val operator = eventData[inKey(PropertyKey.MATH_OPERATOR)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.MATH_OPERATOR }?.value ?: "Add"
 
             val a = aStr.toDoubleOrNull() ?: 0.0

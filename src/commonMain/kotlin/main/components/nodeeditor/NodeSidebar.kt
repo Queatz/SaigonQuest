@@ -25,7 +25,6 @@ import models.UserRequestType
 import main.components.UserRequestsDialog
 import main.components.DialogButton
 import main.components.DialogButtonStyle
-import org.jetbrains.compose.web.dom.Button
 
 /**
  * Sidebar component for the node editor that contains draggable node items.

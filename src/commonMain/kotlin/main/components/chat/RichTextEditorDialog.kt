@@ -17,7 +17,6 @@ import main.components.translated
 import main.theme.Styles
 import main.utils.toggleFullscreen
 import org.jetbrains.compose.web.css.flex
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -55,11 +54,10 @@ fun RichTextEditorDialog(
         isFullscreen = isFullscreen,
         // Fullscreen toggle like LogicEditorDialog
         headerActions = {
-            Button(
-                attrs = {
-                    classes(Styles.textButton)
-                    onClick { toggleFullscreen() }
-                }
+            DialogButton(
+                onClick = { toggleFullscreen() },
+                style = DialogButtonStyle.Secondary,
+                small = true
             ) {
                 IconRenderer(
                     url = "raw/data/ui/ui.png",

@@ -1,20 +1,17 @@
 package main.components
 
-import androidx.compose.runtime.*
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.parameter
-import io.ktor.http.HttpHeaders
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.httpClient
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import main.components.common.BalanceEventRow
-import main.theme.Styles
+import main.httpClient
 import models.UserBalanceHistory
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 

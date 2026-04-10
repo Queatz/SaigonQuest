@@ -31,6 +31,7 @@ class AiImageNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                 ?: nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
 
         val prompt = getInput(PropertyKey.USER_PROMPT)
+        val size = getInput(PropertyKey.IMAGE_SIZE) ?: "1024*1024"
 
         if (prompt == null) {
             WebSocketDebug.logMessage("AI_IMAGE_NODE_SKIP", "No prompt for node ${node.id}", context.session)
@@ -59,7 +60,7 @@ class AiImageNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         }
 
         val imageUrl = try {
-            AiManager.client.generateImageUrl(prompt, token = context.connection.token)
+            AiManager.client.generateImageUrl(prompt, size = size, token = context.connection.token)
         } catch (e: Throwable) {
             WebSocketDebug.logError("Failed to generate AI image", e, context.session)
             null

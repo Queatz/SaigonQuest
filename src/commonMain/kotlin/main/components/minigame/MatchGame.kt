@@ -80,7 +80,6 @@ fun MatchGame(
                                             val perItemReflex = reflex / 2.0
                                             winResult = MinigameResult(
                                                 minigameId = config.minigameId,
-                                                userId = "",
                                                 type = MinigameType.MatchGame,
                                                 reflex = perItemReflex,
                                                 accuracy = accuracy,

@@ -7,34 +7,7 @@ import lib.BinaryUtils
 import lib.Qr
 import lib.Vector3
 import main.theme.Styles
-import main.components.generatePrintImage
-import main.components.Translated
-import main.components.translated
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.Color
-import org.jetbrains.compose.web.css.DisplayStyle
-import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.JustifyContent
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.color
-import org.jetbrains.compose.web.css.cursor
-import org.jetbrains.compose.web.css.display
-import org.jetbrains.compose.web.css.flexDirection
-import org.jetbrains.compose.web.css.fontSize
-import org.jetbrains.compose.web.css.height
-import org.jetbrains.compose.web.css.justifyContent
-import org.jetbrains.compose.web.css.margin
-import org.jetbrains.compose.web.css.marginBottom
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.rgba
-import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -95,29 +68,24 @@ fun QrDialog(
         showCloseButton = true, // Show the standard close button
         headerActions = {
             // Print button in header
-            Button(
-                attrs = {
-                    classes(Styles.baseDialogCloseButton)
-                    style {
-                        fontSize(16.px)
-                        padding(4.px, 8.px)
-                    }
-                    onClick { 
-                        // Generate the print image and show dialog
-                        generatePrintImage(
-                            url = currentUrl,
-                            worldTitle = worldTitle,
-                            worldSubtitle = worldSubtitle,
-                            worldDescription = worldDescription,
-                            onComplete = { imageUrl ->
-                                onPrint(imageUrl)
-                                onClose() // Close the QR dialog when print is clicked
-                            }
-                        )
-                    }
-                }
+            DialogButton(
+                onClick = { 
+                    // Generate the print image and show dialog
+                    generatePrintImage(
+                        url = currentUrl,
+                        worldTitle = worldTitle,
+                        worldSubtitle = worldSubtitle,
+                        worldDescription = worldDescription,
+                        onComplete = { imageUrl ->
+                            onPrint(imageUrl)
+                            onClose() // Close the QR dialog when print is clicked
+                        }
+                    )
+                },
+                style = DialogButtonStyle.Secondary,
+                small = true
             ) {
-                Translated("🖨️ Print")
+                Translated("Print")
             }
         },
         content = {

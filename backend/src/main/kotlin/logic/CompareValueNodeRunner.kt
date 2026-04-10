@@ -21,13 +21,13 @@ class CompareValueNodeRunner(private val context: NodeRunnerContext) : NodeRunne
 
             fun inKey(key: PropertyKey) = "${node.id}_in_${key.name.lowercase()}"
             
-            val a = (eventData[inKey(PropertyKey.A)] as? String)
+            val a = eventData[inKey(PropertyKey.A)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.A }?.value ?: ""
                 
-            val b = (eventData[inKey(PropertyKey.B)] as? String)
+            val b = eventData[inKey(PropertyKey.B)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.B }?.value ?: ""
                 
-            val operator = (eventData[inKey(PropertyKey.OPERATOR)] as? String)
+            val operator = eventData[inKey(PropertyKey.OPERATOR)]?.toString()
                 ?: nodeData.properties.find { it.key == PropertyKey.OPERATOR }?.value ?: "Equals"
 
             val result = when (operator) {

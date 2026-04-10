@@ -14,7 +14,6 @@ import main.components.player.FriendshipStatus
 import main.theme.NotificationStyles
 import models.Notification
 import main.components.Translated
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -91,27 +90,19 @@ fun FriendRequestNotificationContent(
         // Show action buttons based on the friendship status
         if (friendshipStatus == FriendshipStatus.REQUEST_RECEIVED) {
             Div(attrs = { classes(NotificationStyles.friendRequestActions) }) {
-                Button(
-                    attrs = {
-                        classes(NotificationStyles.acceptButton)
-                        onClick {
-                            it.stopPropagation()
-                            it.preventDefault()
-                            acceptFriendRequest()
-                        }
+                DialogButton(
+                    style = DialogButtonStyle.Good,
+                    onClick = {
+                        acceptFriendRequest()
                     }
                 ) {
                     Translated("Add friend")
                 }
                 
-                Button(
-                    attrs = {
-                        classes(NotificationStyles.rejectButton)
-                        onClick {
-                            it.stopPropagation()
-                            it.preventDefault()
-                            rejectFriendRequest()
-                        }
+                DialogButton(
+                    style = DialogButtonStyle.Secondary,
+                    onClick = {
+                        rejectFriendRequest()
                     }
                 ) {
                     Translated("Ignore")

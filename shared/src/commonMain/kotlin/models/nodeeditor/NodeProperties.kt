@@ -63,6 +63,7 @@ enum class PropertyKey {
     // AI properties
     USER_PROMPT,
     SYSTEM_PROMPT,
+    IMAGE_SIZE,
 
     // Dialogue Word Click properties
     WORD_CLICKED,
@@ -1252,6 +1253,14 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.IMAGE_SIZE,
+                name = "Size",
+                type = PropertyType.ENUM,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "1024*1024",
+                options = listOf("1024*1024", "720*1280", "1280*720", "768*1024", "1024*768")
             ),
             NodePropertyDefinition(
                 key = PropertyKey.IMAGE_URL,

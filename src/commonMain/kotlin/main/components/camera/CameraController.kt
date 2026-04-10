@@ -80,7 +80,8 @@ class CameraController(private val scene: Scene) {
     // Animation properties
     private var targetPosition: Vector3? = null
     private var isAnimating: Boolean = false
-    private var inputsAttached: Boolean = false // Track state to avoid redundant calls
+    private var inputsAttached: Boolean = false // Track current attachment state
+    private var isManuallyDisabled: Boolean = false // Track manual disabling to ignore proximity re-enabling
     private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
     private val proximityAnimationSpeed: Float = 0.025f // Smooth speed for proximity transitions
 
@@ -103,9 +104,6 @@ class CameraController(private val scene: Scene) {
         
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
-
-        // Enable camera inputs
-        enableCameraInputs()
 
         // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
         GraphicsSettings.addObserver(graphicsSettingsObserver)
@@ -201,16 +199,16 @@ class CameraController(private val scene: Scene) {
             
             // Handle input enablement based on influence for a "soft" lock
             if (influence > 0.9f) {
-                disableCameraInputs()
+                disableCameraInputs(manual = false)
             }
             
             updateSkybox()
             return true
         }
 
-        // Ensure inputs are re-enabled when not locked or influence is low
+        // Re-enable camera inputs when not locked (only if not manually disabled)
         if (influence < 0.1f) {
-            enableCameraInputs()
+            enableCameraInputs(manual = false)
         }
 
         // Check if we are still transitioning (FOV or Pivot)
@@ -478,8 +476,18 @@ class CameraController(private val scene: Scene) {
 
     /**
      * Enables camera inputs to allow camera movement.
+     * 
+     * @param manual Whether this is a manual request (e.g., from InputHandler)
      */
-    fun enableCameraInputs() {
+    fun enableCameraInputs(manual: Boolean = false) {
+        if (manual) {
+            isManuallyDisabled = false
+        }
+        
+        if (isManuallyDisabled) {
+            return
+        }
+
         if (inputsAttached) return
         inputsAttached = true
 
@@ -491,8 +499,14 @@ class CameraController(private val scene: Scene) {
     
     /**
      * Disables camera inputs to prevent camera movement during object manipulation
+     * 
+     * @param manual Whether this is a manual request (e.g., from InputHandler)
      */
-    fun disableCameraInputs() {
+    fun disableCameraInputs(manual: Boolean = false) {
+        if (manual) {
+            isManuallyDisabled = true
+        }
+
         if (!inputsAttached) return
         inputsAttached = false
 

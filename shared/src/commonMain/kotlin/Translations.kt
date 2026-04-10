@@ -1964,6 +1964,29 @@ vi: Chiều rộng ô (px)
 Cell height (px)
 vi: Chiều cao ô (px)
 
+Size
+vi: Kích thước
+
+1024*1024
+en: 1024*1024 (1:1)
+vi: 1024*1024 (1:1)
+
+720*1280
+en: 720*1280 (9:16)
+vi: 720*1280 (9:16)
+
+1280*720
+en: 1280*720 (16:9)
+vi: 1280*720 (16:9)
+
+768*1024
+en: 768*1024 (3:4)
+vi: 768*1024 (3:4)
+
+1024*768
+en: 1024*768 (4:3)
+vi: 1024*768 (4:3)
+
 Columns
 vi: Cột
 
@@ -2158,6 +2181,33 @@ vi: Tài khoản
 
 Disconnected.
 vi: Đã ngắt kết nối.
+
+Print
+vi: In
+
+pairs matched
+vi: cặp đã khớp
+
+Still learning
+vi: Vẫn đang học
+
+I know this!
+vi: Tôi đã biết cái này!
+
+Quest results
+vi: Kết quả thử thách
+
+Avg reflex
+vi: Phản xạ trung bình
+
+Accuracy
+vi: Độ chính xác
+
+Continue
+vi: Tiếp tục
+
+Find
+vi: Tìm
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

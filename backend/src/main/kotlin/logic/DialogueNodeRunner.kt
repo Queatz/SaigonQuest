@@ -72,7 +72,7 @@ class DialogueNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         
         fun inKey(name: String) = "${node.id}_in_${name}"
         fun fromEventOrNode(nameLower: String, key: PropertyKey): String? {
-            val eventVal = eventData[inKey(nameLower)] as? String
+            val eventVal = eventData[inKey(nameLower)]?.toString()
             if (!eventVal.isNullOrBlank()) return eventVal
             return nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
         }

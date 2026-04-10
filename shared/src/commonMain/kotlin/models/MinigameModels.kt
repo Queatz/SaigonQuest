@@ -55,7 +55,7 @@ data class MinigameConfig(
 @Serializable
 data class MinigameResult(
     val minigameId: String,
-    val userId: String,
+    val userId: String = "",
     val type: MinigameType,
     val reflex: Double, // Average response time in seconds
     val accuracy: Double, // Success rate (0.0 to 1.0)

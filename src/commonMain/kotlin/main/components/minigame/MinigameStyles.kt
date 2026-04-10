@@ -62,10 +62,10 @@ object MinigameStyles : StyleSheet() {
 
     val matchGrid by style {
         display(DisplayStyle.Grid)
-        gridTemplateColumns("repeat(auto-fit, minmax(100.px, 1fr))")
+        gridTemplateColumns("repeat(auto-fit, minmax(180px, 1fr))")
         gap(16.px)
         width(100.percent)
-        maxWidth(1000.px)
+        maxWidth(100.percent)
         padding(24.px)
         justifyContent(JustifyContent.Center)
         boxSizing("border-box")

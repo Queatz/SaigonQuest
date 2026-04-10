@@ -185,7 +185,7 @@ fun PropertyPanel(
                                     attr("for", "prop-${propDef.key.name.lowercase()}")
                                 }
                             ) {
-                                Text(propDef.name)
+                                Text(translated(propDef.name))
                             }
                         }
 
@@ -308,7 +308,7 @@ fun PropertyPanel(
                                 LabeledCheckbox(
                                     checked = (propertyValues[propDef.key] ?: "false") == "true",
                                     enabled = true,
-                                    label = propDef.name,
+                                    label = translated(propDef.name),
                                     onCheckedChange = { isChecked ->
                                         propertyValues = propertyValues.edit {
                                             it[propDef.key] = if (isChecked) "true" else "false"

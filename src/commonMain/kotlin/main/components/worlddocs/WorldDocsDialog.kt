@@ -447,6 +447,13 @@ fun WorldDocsDialog(
                                         ) { Translated("Delete") }
                                     }
 
+                                    // Print button
+                                    DialogButton(
+                                        onClick = { window.open("/doc/${selectedDoc.key}", "_blank") }
+                                    ) {
+                                        Translated("Print")
+                                    }
+
                                     // Move up/down among siblings (editors and owners)
                                     if (canEditDoc) {
                                         val siblings = WorldDocsUtils.siblingsOf(docs, selectedDoc.parentId)

@@ -608,48 +608,41 @@ class InputHandler(
                     console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
                     objectManager.selectObject(closestObjectId)
                 }
-                return
-            }
-
-            // Check if we clicked on a player (local or other)
-            run {
+            } else {
+                // Check if we clicked on a player (local or other)
                 val ray = pick.ray
-                
+
                 // Local player check
                 if (pickLocalPlayer(ray, playerController)) {
-                    objectManager?.deselectCurrentObject()
-                    return
-                }
-                
-                // Other players check
-                if (pickOtherPlayer(ray) != null) {
-                    objectManager?.deselectCurrentObject()
-                    return
-                }
-            }
+                    objectManager.deselectCurrentObject()
+                } else if (pickOtherPlayer(ray) != null) {
+                    // Other players check
+                    objectManager.deselectCurrentObject()
+                } else {
+                    // If we didn't click on an object or player, check if we clicked on a world mesh
+                    // and deselect any selected object
+                    val worldMeshes = playerController.getWorldMeshes()
+                    val player = playerController.getCollider()
+                    val moveCircle = playerController.getMoveCircle()
 
-            // If we didn't click on an object, check if we clicked on a world mesh
-            // and deselect any selected object
-            val worldMeshes = playerController.getWorldMeshes()
-            val player = playerController.getCollider()
-            val moveCircle = playerController.getMoveCircle()
+                    // Deselect any currently selected object if we didn't click on an object
+                    objectManager.deselectCurrentObject()
 
-            // Deselect any currently selected object if we didn't click on an object
-            objectManager.deselectCurrentObject()
+                    var clickedOnWorldMesh = false
+                    for (mesh in worldMeshes) {
+                        // Skip player and move circle meshes
+                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
 
-            var clickedOnWorldMesh = false
-            for (mesh in worldMeshes) {
-                // Skip player and move circle meshes
-                if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-
-                val hit = pick.ray.intersectsMesh(mesh)
-                if (hit.pickedPoint != null) {
-                    clickedOnWorldMesh = true
-                    break
+                        val hit = pick.ray.intersectsMesh(mesh)
+                        if (hit.pickedPoint != null) {
+                            clickedOnWorldMesh = true
+                            break
+                        }
+                    }
                 }
             }
 
-            // We may have changed selection state above; recompute before deciding camera handling below
+            // Update local state for subsequent check
             isObjectSelected = objectManager.getSelectedObject() != null
         }
 
@@ -697,16 +690,16 @@ class InputHandler(
      * Disables camera inputs to prevent camera movement during object manipulation
      */
     private fun disableCameraInputs() {
-        // Use the CameraController to disable camera inputs
-        cameraController.disableCameraInputs()
+        // Use the CameraController to disable camera inputs with manual override
+        cameraController.disableCameraInputs(manual = true)
     }
     
     /**
      * Re-enables camera inputs after object manipulation is complete
      */
     private fun enableCameraInputs() {
-        // Use the CameraController to enable camera inputs
-        cameraController.enableCameraInputs()
+        // Use the CameraController to enable camera inputs with manual override
+        cameraController.enableCameraInputs(manual = true)
     }
     
     /**

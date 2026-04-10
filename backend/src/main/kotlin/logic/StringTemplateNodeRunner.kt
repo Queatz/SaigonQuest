@@ -25,7 +25,7 @@ class StringTemplateNodeRunner(private val context: NodeRunnerContext) : NodeRun
 
         fun inKey(key: PropertyKey) = "${node.id}_in_${key.name.lowercase()}"
         fun getInput(key: PropertyKey): String? =
-            (eventData[inKey(key)] as? String)?.takeIf { it.isNotBlank() }
+            eventData[inKey(key)]?.toString()?.takeIf { it.isNotBlank() }
                 ?: nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
 
         val template = getInput(PropertyKey.TEMPLATE) ?: return false
@@ -43,9 +43,9 @@ class StringTemplateNodeRunner(private val context: NodeRunnerContext) : NodeRun
 
             // Also include any eventData inputs that are targeted to this node ("<nodeId>_in_<something>")
             eventData.forEach { (k, v) ->
-                if (k is String && k.startsWith("${node.id}_in_") && v is String) {
+                if (k.startsWith("${node.id}_in_")) {
                     val label = k.removePrefix("${node.id}_in_")
-                    put(label, v)
+                    put(label, v.toString())
                 }
             }
         }

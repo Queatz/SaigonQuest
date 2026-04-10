@@ -47,7 +47,6 @@ fun FlashcardsGame(
             val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
             winResult = MinigameResult(
                 minigameId = config.minigameId,
-                userId = "",
                 type = MinigameType.Flashcards,
                 reflex = reflex,
                 accuracy = accuracy,

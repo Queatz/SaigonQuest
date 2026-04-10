@@ -24,7 +24,6 @@ import models.NotificationType
 import main.components.Translated
 import Translations.str
 import main.theme.Styles
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.P

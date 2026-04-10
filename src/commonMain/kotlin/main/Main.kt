@@ -51,13 +51,15 @@ fun main() {
             Style(WorldDocsStyles)
             Style(MinigameStyles)
             
-            // Render the global, floating AI chat box once
-            main.components.chat.GlobalAiChat()
-
             BrowserRouter(
                 initPath = "/"
             ) {
                 val router = Router.current
+
+                // Render the global, floating AI chat box once (except on doc print page)
+                if (!router.currentPath.path.startsWith("/doc/")) {
+                    main.components.chat.GlobalAiChat()
+                }
 
                 route("/bye") {
                     ByePage()
@@ -65,6 +67,12 @@ fun main() {
 
                 route("/paused") {
                     PausedPage()
+                }
+
+                route("/doc") {
+                    string { id ->
+                        main.components.worlddocs.PrintDocPage(docId = id)
+                    }
                 }
 
                 route("/tools") {
