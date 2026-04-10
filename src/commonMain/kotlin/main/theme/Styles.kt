@@ -2344,6 +2344,11 @@ object Styles : StyleSheet() {
         "button" {
             property("color", "inherit")
         }
+
+        "body.printable, html.printable" style {
+            overflow("auto")
+            property("height", "auto")
+        }
     }
 }
 
