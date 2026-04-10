@@ -17,6 +17,7 @@ import main.components.audio.SoundManager
 import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
 import main.components.input.InputHandler
+import main.components.minigame.MinigameOverlay
 import main.components.objects.IdleObjectHighlighter
 import main.components.objects.SceneObjectManager
 import main.components.player.FriendshipStatus
@@ -998,12 +999,15 @@ fun SceneComponent(url: String) {
                             shadowManager.addShadowCaster(it)
                             shadowManager.configureShadowReceiver(it)
                         }
-                        println("[DEBUG] Player mesh registered as shadow caster and receiver")
+                        console.log("[DEBUG] Player mesh registered as shadow caster and receiver")
                     }
                 }
 
                 // Set initial camera target position
                 cameraController.setInitialTargetPosition(startPosition)
+
+                // Initialize proximity-based cameras from the world
+                cameraController.initializeProximityCameras()
 
                 // Set up input handling
                 inputHandler.setupKeyboardHandling()
@@ -1171,6 +1175,10 @@ fun SceneComponent(url: String) {
                 moveDirection = moveDirection,
                 speedMultiplier = speedMultiplier,
             )
+
+            // Update proximity camera state based on player position
+            cameraController.checkProximity(playerController.getPlayerPosition() ?: lib.Vector3.Zero())
+
             if (newPosition == null) {
                 // No movement this frame; zero out instantaneous velocity for sway
                 SceneManager.setPlayerVelocity(lib.Vector3(0f, 0f, 0f))
@@ -1254,6 +1262,14 @@ fun SceneComponent(url: String) {
 
     // Add DialogueBox component for displaying dialogue messages
     DialogueBox {
+        scope.launch {
+            awaitAnimationFrame()
+            canvasRef?.focus()
+        }
+    }
+
+    // Add MinigameOverlay component for language learning games
+    MinigameOverlay {
         scope.launch {
             awaitAnimationFrame()
             canvasRef?.focus()

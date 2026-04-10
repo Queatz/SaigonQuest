@@ -1,8 +1,6 @@
 package main.components.camera
 
 import lib.ArcRotateCamera
-import lib.ArcRotateCameraMouseWheelInput
-import lib.ArcRotateCameraPointersInput
 import lib.Camera
 import lib.Color4
 import lib.ColorCorrectionPostProcess
@@ -19,6 +17,9 @@ import lib.Vector3
 import kotlin.math.PI
 import main.components.GraphicsSettings
 import main.components.SceneManager
+import main.components.world.getRadius
+import main.components.world.getCameraName
+import main.components.camera.ProximityCamera
 
 /**
  * Controller for managing the camera in the 3D scene.
@@ -47,6 +48,16 @@ class CameraController(private val scene: Scene) {
         updateConstraints()
         this.targetScreenOffset = Vector2(0f, -.75f)
 
+        // Reduce camera rotation sensitivity (higher value = less sensitive)
+        // Default is 1000f. 500f is 2x more sensitive/faster.
+        this.angularSensibilityX = 500f
+        this.angularSensibilityY = 500f
+        this.panningSensibility = 500f
+
+        // Remove keyboard input once
+        this.inputs.removeByType("keyboard")
+        this.inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
+
         this.wheelPrecision = 5f
         this.zoomToMouseLocation = true
         this.wheelDeltaPercentage = 0.01f
@@ -58,29 +69,10 @@ class CameraController(private val scene: Scene) {
         // Set initial position
         this.alpha = (-PI / 2).toFloat()
         this.beta = upperBetaLimit
-
-        // Attach camera controls
-        attachControl(true)
-
-        // Remove keyboard controls to avoid conflicts with player movement
-        inputs.removeByType("ArcRotateCameraKeyboardMoveInput")
     }
 
     // Camera target - separate from player to prevent player moving with camera during panning
     private var cameraTarget: Mesh? = null
-    
-    // Rendering pipeline for post-processing effects
-
-    // Set up PBR rendering pipeline with depth texture enabled for better depth of field quality
-    private val pipeline: DefaultRenderingPipeline = DefaultRenderingPipeline(
-        name = "pbrPipeline",
-        hdr = true,
-        scene = scene,
-        cameras = arrayOf(camera)
-    )
-
-    // Vignette post-process effect
-    private var vignettePostProcess: ImageProcessingPostProcess
     
     // Color correction post-process effect
     private var colorCorrectionPostProcess: ColorCorrectionPostProcess? = null
@@ -88,53 +80,35 @@ class CameraController(private val scene: Scene) {
     // Animation properties
     private var targetPosition: Vector3? = null
     private var isAnimating: Boolean = false
+    private var inputsAttached: Boolean = false // Track state to avoid redundant calls
     private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
+    private val proximityAnimationSpeed: Float = 0.025f // Smooth speed for proximity transitions
+
+    // Proximity camera locking
+    private val proximityCameraManager = ProximityCameraManager(scene)
+
+    // Pipeline manager for post-processing effects
+    private val pipelineManager = CameraPipelineManager(scene, camera)
 
     /**
      * Observer for graphics settings changes.
      */
     private val graphicsSettingsObserver: () -> Unit = {
-        updatePipelineSettings()
+        pipelineManager.updatePipelineSettings()
         camera.updateConstraints()
     }
 
     init {
-        // Use the pipeline's built-in ImageProcessingPostProcess to ensure consistent gamma/tone mapping
-        try {
-            pipeline.imageProcessingEnabled = true
-        } catch (_: Throwable) {}
-        vignettePostProcess = pipeline.imageProcessing.apply {
-            fromLinearSpace = true
-        }
-
-        // Enable and configure the vignette effect directly on the image processing pass
-        try {
-            vignettePostProcess.vignetteEnabled = true
-            vignettePostProcess.vignetteStretch = 1.5f
-            vignettePostProcess.vignetteColor = Color4(0f, 0f, 0f, 0f)
-        } catch (_: Throwable) {}
-
-        // Set initial vignette weight based on current radius
-        updateVignetteWeight()
-
-        println("[DEBUG] Vignette effect configured on pipeline imageProcessing")
-
+        console.log("[CameraController] Initializing camera controller")
+        
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
 
+        // Enable camera inputs
+        enableCameraInputs()
+
         // Register an observer with GraphicsSettings to update pipeline settings when graphics settings change
         GraphicsSettings.addObserver(graphicsSettingsObserver)
-
-        // Initial setup of pipeline and camera settings
-        updatePipelineSettings()
-        camera.updateConstraints()
-
-//        colorCorrectionPostProcess = ColorCorrectionPostProcess(
-//            name = "colorCorrection",
-//            colorTableUrl = "/raw/data/lut.png",
-//            ratio = 1.0f, // Full resolution
-//            camera = camera
-//        )
     }
     
     /**
@@ -153,7 +127,7 @@ class CameraController(private val scene: Scene) {
             isVisible = false
         }
         
-        println("[DEBUG] Created camera target with depth-texture-friendly invisible material")
+        console.log("[DEBUG] Created camera target with depth-texture-friendly invisible material")
     }
     
     /**
@@ -178,50 +152,115 @@ class CameraController(private val scene: Scene) {
      * @return True if animation is in progress, false otherwise
      */
     fun updateAnimation(): Boolean {
-        updateDepthOfFieldFocus()
-        updateVignetteWeight()
+        pipelineManager.updateDepthOfFieldFocus(cameraTarget)
+        pipelineManager.updateVignetteWeight()
 
-        // Update FOV based on camera radius
-        if (GraphicsSettings.isWideAngleEnabled()) {
+        // Handle proximity-based camera locking
+        val influence = proximityCameraManager.getInfluence()
+        val easedInfluence = proximityCameraManager.getEasedInfluence()
+        val activePc = proximityCameraManager.getActiveCamera()
+        
+        // Determine normal FOV based on settings and radius
+        val normalFov = if (GraphicsSettings.isWideAngleEnabled()) {
             val radiusRange = camera.upperRadiusLimit - camera.lowerRadiusLimit
             val radiusRatio = (camera.radius - camera.lowerRadiusLimit) / radiusRange
-            camera.fov = baseFov * (1f + 1f * radiusRatio) // Scale from 1x to 4x base FOV
+            baseFov * (1f + 1f * radiusRatio) // Scale from 1x to 4x base FOV
         } else {
-            camera.fov = baseFov
+            baseFov
         }
+
+        // Determine intended FOV, blending between normal and locked if transitioning
+        val blendPc = activePc ?: proximityCameraManager.getLastActiveCamera()
+        val targetFov = if (blendPc != null) {
+            val lockedFov = blendPc.targetCamera.fov
+            normalFov * (1f - easedInfluence) + lockedFov * easedInfluence
+        } else {
+            normalFov
+        }
+        
+        // Use faster speed for FOV during proximity transitions to feel snappier
+        val currentPosition = cameraTarget?.position ?: Vector3.Zero()
+        val pivotDist = Vector3.Distance(camera.target, currentPosition)
+        val isFarFromPlayer = pivotDist > 1.0f
+        val currentFovSpeed = if (influence > 0f) animationSpeed else if (isFarFromPlayer) proximityAnimationSpeed else animationSpeed
+        
+        // Smoothly lerp FOV
+        camera.fov = camera.fov * (1 - currentFovSpeed) + targetFov * currentFovSpeed
+
+        if (activePc != null) {
+            val lockedCam = activePc.targetCamera
+            val targetPos: Vector3 = lockedCam.globalPosition
+            val forward: Vector3 = lockedCam.getForwardRay(1f).direction
+            val targetLookAt: Vector3 = targetPos.add(forward)
+
+            // Smoothly move the camera towards the locked camera's position and orientation.
+            // We modulate the speed with easedInfluence to achieve an ease-in-out effect.
+            val currentProximitySpeed = proximityAnimationSpeed * easedInfluence
+            camera.setPosition(Vector3.Lerp(camera.position, targetPos, currentProximitySpeed))
+            camera.setTarget(Vector3.Lerp(camera.target, targetLookAt, currentProximitySpeed))
+            
+            // Handle input enablement based on influence for a "soft" lock
+            if (influence > 0.9f) {
+                disableCameraInputs()
+            }
+            
+            updateSkybox()
+            return true
+        }
+
+        // Ensure inputs are re-enabled when not locked or influence is low
+        if (influence < 0.1f) {
+            enableCameraInputs()
+        }
+
+        // Check if we are still transitioning (FOV or Pivot)
+        val fovCaughtUp = kotlin.math.abs(camera.fov - targetFov) < 0.001f
+        val cameraCaughtUp = pivotDist < 0.01f
+        val isTransitioning = !fovCaughtUp || !cameraCaughtUp
 
         if (!isAnimating || targetPosition == null || cameraTarget == null) {
+            if (isTransitioning && cameraTarget != null) {
+                // Continue lerping the camera target even if the mesh is stationary
+                updateCameraTargetImmediate(cameraTarget!!.position, useAnimation = true)
+                updateSkybox()
+                return true
+            }
             updateSkybox()
             return false
         }
         
-        // Get current position
-        val currentPosition = cameraTarget!!.position
+        // Get current mesh position
         
         // Check if we're close enough to the target to end the animation
-        if (Vector3.Distance(currentPosition, targetPosition!!) < 0.01f) {
-            // Set final position
+        val meshReachedTarget = Vector3.Distance(currentPosition, targetPosition!!) < 0.01f
+        // cameraCaughtUp and fovCaughtUp are already calculated above
+
+        if (meshReachedTarget) {
+            // Set final position for mesh
             cameraTarget!!.position = targetPosition!!
             
-            // Update camera to target the camera target object
-            updateCameraTargetImmediate(targetPosition!!)
+            // Update camera to target the camera target object smoothly
+            updateCameraTargetImmediate(targetPosition!!, useAnimation = true)
             
-            // Reset animation state
-            stopAnimating()
-
+            // Only stop animating if the camera pivot and FOV have also caught up
+            if (cameraCaughtUp && fovCaughtUp) {
+                stopAnimating()
+                updateSkybox()
+                return false
+            }
+            
             updateSkybox()
-            
-            return false
+            return true
         }
         
-        // Interpolate between current position and target position
+        // Interpolate between current position and target position for the mesh
         val newPosition = Vector3.Lerp(currentPosition, targetPosition!!, animationSpeed)
         
         // Update the camera target object's position
         cameraTarget!!.position = newPosition
         
-        // Update camera to target the camera target object
-        updateCameraTargetImmediate(newPosition)
+        // Update camera to target the camera target object smoothly
+        updateCameraTargetImmediate(newPosition, useAnimation = true)
 
         updateSkybox()
         
@@ -237,13 +276,30 @@ class CameraController(private val scene: Scene) {
     }
     
     /**
-     * Updates the camera target position immediately without animation.
+     * Updates the camera target position immediately or with animation.
      * Used internally and for initial positioning.
      * 
      * @param position The new position for the camera target
      * @param preserveSettings Whether to preserve current alpha, beta, and radius
+     * @param useAnimation Whether to use a smooth transition (lerp)
      */
-    fun updateCameraTargetImmediate(position: Vector3, preserveSettings: Boolean = true) {
+    fun updateCameraTargetImmediate(
+        position: Vector3, 
+        preserveSettings: Boolean = true,
+        useAnimation: Boolean = false
+    ) {
+        var speed = if (useAnimation) {
+            animationSpeed
+        } else {
+            1.0f
+        }
+
+        // Modulate speed when returning from a proximity lock for ease-in-out effect
+        if (useAnimation && proximityCameraManager.getInfluence() > 0f && proximityCameraManager.getActiveCamera() == null) {
+            val easedInfluence = proximityCameraManager.getEasedInfluence()
+            speed *= (1f - easedInfluence)
+        }
+
         if (preserveSettings) {
             // Store current camera settings
             val currentAlpha = camera.alpha
@@ -251,7 +307,11 @@ class CameraController(private val scene: Scene) {
             val currentRadius = camera.radius
             
             // Update camera to target the camera target object
-            camera.setTarget(position)
+            if (speed >= 1.0f) {
+                camera.setTarget(position)
+            } else {
+                camera.setTarget(Vector3.Lerp(camera.target, position, speed))
+            }
             
             // Restore camera settings to maintain relative position
             camera.alpha = currentAlpha
@@ -261,7 +321,11 @@ class CameraController(private val scene: Scene) {
             // This is the "Auto Depth" / Navigation mode:
             // Set new pivot, camera stays put, radius/alpha/beta recompute naturally
             val currentPosition = camera.position.clone()
-            camera.setTarget(position)
+            if (speed >= 1.0f) {
+                camera.setTarget(position)
+            } else {
+                camera.setTarget(Vector3.Lerp(camera.target, position, speed))
+            }
             camera.setPosition(currentPosition)
         }
 
@@ -269,49 +333,6 @@ class CameraController(private val scene: Scene) {
         cameraTarget?.position = position
     }
     
-    /**
-     * Updates the depth of field focus to match the distance to the camera target.
-     */
-    private fun updateDepthOfFieldFocus() {
-        if (pipeline.depthOfFieldEnabled && cameraTarget != null) {
-            // Use active camera if available, fallback to main camera
-            val currentCamera = scene.activeCamera ?: camera
-            
-            // Skip updating DOF if the active camera is not our main camera (e.g. screen saver)
-            // The screen saver or other camera systems will handle their own focal distance.
-            if (currentCamera != camera) {
-                return
-            }
-
-            // Calculate distance between camera and camera target
-            val distanceToTarget = Vector3.Distance(currentCamera.position, cameraTarget!!.position)
-            // Update DOF focus distance with the actual distance to target
-            pipeline.depthOfField.focusDistance = distanceToTarget * 1_000f // in millimeters
-        }
-    }
-    
-    /**
-     * Updates the vignette weight based on the camera radius.
-     * - When radius=4 (min), vignetteWeight = 8
-     * - When radius=12 (max), vignetteWeight = 2
-     */
-    private fun updateVignetteWeight() {
-        // Constants for the linear interpolation
-        val minRadius = camera.lowerRadiusLimit
-        val maxRadius = camera.upperRadiusLimit
-        val maxWeight = 4f // Weight when radius is at minimum
-        val minWeight = 1f // Weight when radius is at maximum
-        
-        // Use active camera radius if it's an ArcRotateCamera, otherwise use main camera's radius
-        val activeCamera = scene.activeCamera ?: camera
-        val currentRadius = (activeCamera as? lib.ArcRotateCamera)?.radius ?: camera.radius
-        
-        // Calculate the vignette weight using linear interpolation
-        val weight = maxWeight - (currentRadius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
-        
-        // Update the vignette weight
-        vignettePostProcess.vignetteWeight = weight
-    }
     
     /**
      * Gets the camera.
@@ -342,7 +363,7 @@ class CameraController(private val scene: Scene) {
         // Create a clone of the position to decouple from player position
         val cameraTargetPosition = position.clone()
         cameraTarget?.position = cameraTargetPosition
-        updateCameraTargetImmediate(cameraTargetPosition)
+        updateCameraTargetImmediate(cameraTargetPosition, useAnimation = false)
     }
     
     /**
@@ -376,7 +397,7 @@ class CameraController(private val scene: Scene) {
      * @return The rendering pipeline
      */
     fun getPipeline(): DefaultRenderingPipeline {
-        return pipeline
+        return pipelineManager.getPipeline()
     }
 
     fun stopAnimating() {
@@ -391,13 +412,7 @@ class CameraController(private val scene: Scene) {
      * @param cameraToAdd The camera to add to the pipeline
      */
     fun addCameraToPipeline(cameraToAdd: lib.Camera) {
-        try {
-            pipeline.addCamera(cameraToAdd)
-            ssaoPipeline?.addCamera(cameraToAdd)
-            println("[DEBUG] Added camera ${cameraToAdd.name} to rendering pipelines")
-        } catch (e: Throwable) {
-            println("[ERROR] Failed to add camera to pipeline: ${e.message}")
-        }
+        pipelineManager.addCameraToPipeline(cameraToAdd)
     }
 
     /**
@@ -406,14 +421,31 @@ class CameraController(private val scene: Scene) {
      * @param cameraToRemove The camera to remove from the pipeline
      */
     fun removeCameraFromPipeline(cameraToRemove: lib.Camera) {
-        try {
-            pipeline.removeCamera(cameraToRemove)
-            ssaoPipeline?.removeCamera(cameraToRemove)
-            println("[DEBUG] Removed camera ${cameraToRemove.name} from rendering pipelines")
-        } catch (e: Throwable) {
-            println("[ERROR] Failed to remove camera from pipeline: ${e.message}")
-        }
+        pipelineManager.removeCameraFromPipeline(cameraToRemove)
     }
+
+    /**
+     * Initializes proximity-based cameras from the given nodes.
+     */
+    fun initializeProximityCameras() {
+        proximityCameraManager.initialize()
+    }
+
+    /**
+     * Checks if the player is within range of any proximity cameras.
+     * 
+     * @param playerPosition The current position of the player
+     */
+    fun checkProximity(playerPosition: Vector3) {
+        proximityCameraManager.update(playerPosition)
+    }
+
+    /**
+     * Checks if the camera is currently locked to a proximity camera.
+     * 
+     * @return True if locked, false otherwise
+     */
+    fun isLocked(): Boolean = proximityCameraManager.isActive()
     
     // Store reference to the SSAO pipeline
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
@@ -441,188 +473,18 @@ class CameraController(private val scene: Scene) {
      * This method can be called when the pretty graphics setting changes.
      */
     fun updatePipelineSettings() {
-        val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
-
-        scene.imageProcessingConfiguration.exposure = 2f
-
-        try {
-            // Ensure image processing is always active so gamma/tone mapping are applied in all modes
-            try {
-                if (pipeline.imageProcessingEnabled) {
-                    pipeline.imageProcessingEnabled = false
-                }
-                pipeline.imageProcessingEnabled = true
-                try { pipeline.imageProcessing.fromLinearSpace = true } catch (_: Throwable) {}
-            } catch (e: Throwable) {
-                println("[ERROR] Failed to toggle imageProcessingEnabled: ${e.message}")
-            }
-
-            // First enable/disable features, then configure them
-            // This ensures the components are created before we try to access their properties
-            
-            // Step 1: Enable/disable features
-            pipeline.apply {
-                // Enable/disable features one by one with proper error handling
-                try {
-                    // Enable/disable bloom
-                    bloomEnabled = isPrettyEnabled
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to set bloomEnabled: ${e.message}")
-                }
-                
-                try {
-                    // Enable/disable grain effect
-                    grainEnabled = isPrettyEnabled
-                    if (isPrettyEnabled) {
-                        grain.intensity = .667f
-                    }
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to set grainEnabled: ${e.message}")
-                }
-
-                try {
-                    // Enable/disable image processing
-                    chromaticAberrationEnabled = isPrettyEnabled
-                    if (isPrettyEnabled) {
-                        chromaticAberration.radialIntensity = 3f
-                    }
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to set imageProcessingEnabled: ${e.message}")
-                }
-            }
-            
-            // Step 2: Configure features if they're enabled
-            // This ensures the components are created before we try to access their properties
-            if (isPrettyEnabled) {
-                pipeline.apply {
-                    try {
-                        // Check if bloom is available before configuring
-                        if (isPrettyEnabled) {
-                            // Configure bloom settings
-                            bloomThreshold = 0.5f
-                            bloomWeight = 0.5f
-                            bloomKernel = 48f
-                            bloomScale = .5f
-                            println("[DEBUG] Bloom settings configured successfully")
-                        }
-                    } catch (e: Throwable) {
-                        println("[ERROR] Failed to configure bloom: ${e.message}")
-                    }
-                    
-                    try {
-                        // Check if depth of field is available before configuring
-                        if (depthOfFieldEnabled) {
-                            // Configure depth of field settings
-                            depthOfField.focalLength = 120f
-                            depthOfField.fStop = 1f
-                            depthOfField.focusDistance = 10_000f
-                            depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
-                            println("[DEBUG] Depth of field settings configured successfully")
-                        }
-                    } catch (e: Throwable) {
-                        println("[ERROR] Failed to configure depth of field: ${e.message}")
-                    }
-                }
-            }
-            
-            // Handle SSAO pipeline
-            // We'll recreate the SSAO pipeline each time to avoid potential issues
-            // First, clean up any existing SSAO pipeline
-            if (ssaoPipeline != null) {
-                try {
-                    // Just set to null to let garbage collection handle it
-                    // The BabylonJS engine will clean up the pipeline resources
-                    ssaoPipeline?.dispose()
-                    ssaoPipeline = null
-                    println("[DEBUG] Cleaned up existing SSAO pipeline")
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to clean up SSAO pipeline: ${e.message}")
-                }
-            }
-            
-            // Create new SSAO pipeline if pretty graphics are enabled
-            // Disabled due to issue with pre-pass depth map
-            if (isPrettyEnabled && false) {
-                try {
-                    // Include active camera if it's not the main camera
-                    val allCameras = mutableListOf<Camera>(camera)
-                    scene.activeCamera?.let {
-                        if (it != camera) {
-                            allCameras.add(it)
-                        }
-                    }
-
-                    // Create SSAO pipeline with subtle settings
-                    ssaoPipeline = SSAO2RenderingPipeline(
-                        name = "ssao",
-                        scene = scene,
-                        ratio = 1.0, // Full resolution
-                        cameras = allCameras.toTypedArray()
-                    )
-                    
-                    // Configure SSAO for subtle effect
-                    ssaoPipeline?.apply {
-                        // Fine-tune SSAO settings
-                        radius = 2f  // Small radius for subtle effect (default is 2.0)
-                        totalStrength = 0.25f  // Subtle strength (default is 1.0)
-                        samples = 8  // Moderate sample count for quality/performance balance (default is 8)
-                        maxZ = camera.maxZ  // Match camera maxZ (default is 100.0)
-                        minZAspect = 0.2f  // Default value
-                        base = 0f  // Default value
-                        epsilon = 0.02f  // Default value
-                    }
-                    println("[DEBUG] Created and configured new SSAO pipeline")
-                } catch (e: Throwable) {
-                    println("[ERROR] Failed to create SSAO pipeline: ${e.message}")
-                    // Ensure ssaoPipeline is null if creation failed
-                    ssaoPipeline = null
-                }
-            }
-
-            // Force-refresh depth-dependent post-processes (like DOF) to rebind depth/pre-pass after renderer changes
-            try {
-                val shouldEnableDOF = isPrettyEnabled
-                // Toggle DOF off then back on to force internal resources to rebuild
-                if (pipeline.depthOfFieldEnabled) {
-                    pipeline.depthOfFieldEnabled = false
-                }
-                pipeline.depthOfFieldEnabled = shouldEnableDOF
-            } catch (e: Throwable) {
-                println("[ERROR] Failed to force-refresh DOF: ${e.message}")
-            }
-            
-            println("[DEBUG] Pipeline settings updated. Pretty graphics mode: $isPrettyEnabled")
-        } catch (e: Throwable) {
-            println("[ERROR] Failed to update pipeline settings: ${e.message}")
-        }
+        pipelineManager.updatePipelineSettings()
     }
-    
+
     /**
-     * Enables camera inputs to allow camera movement
-     * This re-attaches all controls and adds back specific input types
+     * Enables camera inputs to allow camera movement.
      */
     fun enableCameraInputs() {
-        // Re-attach all controls with preventDefaultBehavior set to true
-        // This prevents the browser's default behavior for these events
-        camera.attachControl(true)
-        
-        try {
-            // Add mouse wheel input
-            val mouseWheelInput = ArcRotateCameraMouseWheelInput()
-            camera.inputs.add(mouseWheelInput)
-            
-            // Add pointer input (mouse movement)
-            val pointerInput = ArcRotateCameraPointersInput()
-            camera.inputs.add(pointerInput)
-            
-            console.log("Camera inputs explicitly re-added: keyboard, mouse wheel, and pointers")
-        } catch (e: Throwable) {
-            console.error("Error re-adding camera inputs: ${e.message}")
-        }
+        if (inputsAttached) return
+        inputsAttached = true
 
-        camera.wheelPrecision = 5f
-        camera.zoomToMouseLocation = true
-        camera.wheelDeltaPercentage = 0.01f
+        // Attach controls
+        camera.attachControl(true)
         
         console.log("Camera inputs re-enabled")
     }
@@ -631,38 +493,41 @@ class CameraController(private val scene: Scene) {
      * Disables camera inputs to prevent camera movement during object manipulation
      */
     fun disableCameraInputs() {
-        // First detach all controls
+        if (!inputsAttached) return
+        inputsAttached = false
+
+        // Detach all controls
         camera.detachControl()
         
-        // Also disable specific input types to ensure no camera movement during dragging
-        camera.inputs.removeByType("ArcRotateCameraMouseWheelInput")
-        camera.inputs.removeByType("ArcRotateCameraPointersInput")
-        
-        console.log("Camera inputs disabled for object manipulation")
+        console.log("Camera inputs disabled")
     }
 
     /**
      * Disposes of the camera controller resources.
      */
     fun dispose() {
+        // Clear proximity cameras
+        proximityCameraManager.clear()
+
         // Remove the observer when disposing
         GraphicsSettings.removeObserver(graphicsSettingsObserver)
         
-        // Clean up the SSAO pipeline
-        ssaoPipeline = null
+        // Clean up the pipeline
+        pipelineManager.dispose()
         
         // Clean up the ColorCorrectionPostProcess
         try {
             colorCorrectionPostProcess?.dispose()
             colorCorrectionPostProcess = null
-            println("[DEBUG] ColorCorrectionPostProcess disposed")
+            console.log("[DEBUG] ColorCorrectionPostProcess disposed")
         } catch (e: Throwable) {
-            println("[ERROR] Failed to dispose ColorCorrectionPostProcess: ${e.message}")
+            console.error("[ERROR] Failed to dispose ColorCorrectionPostProcess: ${e.message}")
         }
         
         // Clean up the camera target
         cameraTarget?.dispose()
         
-        println("[DEBUG] Camera controller resources disposed")
+        console.log("[DEBUG] Camera controller resources disposed")
     }
 }
+

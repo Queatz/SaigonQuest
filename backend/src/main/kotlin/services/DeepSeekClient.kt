@@ -200,4 +200,9 @@ object DeepSeekClient : AiClient {
     ): Boolean = false
 
     override suspend fun tts(text: String): ByteArray? = null
+
+    override suspend fun generateImage(
+        prompt: String,
+        size: String,
+    ): String? = null
 }

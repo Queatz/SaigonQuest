@@ -209,6 +209,91 @@ object AlibabaAiClient : AiClient {
         val payload: WsPayload,
     )
 
+    @Serializable
+    private data class ImageSynthesisInput(
+        val prompt: String,
+    )
+
+    @Serializable
+    private data class ImageSynthesisParameters(
+        val size: String = "1024*1024",
+        val n: Int = 1,
+        @SerialName("prompt_extend")
+        val promptExtend: Boolean = true,
+        val watermark: Boolean = false,
+    )
+
+    @Serializable
+    private data class WanImageContent(
+        val text: String,
+    )
+
+    @Serializable
+    private data class WanImageMessage(
+        val role: String = "user",
+        val content: List<WanImageContent>,
+    )
+
+    @Serializable
+    private data class WanImageInput(
+        val messages: List<WanImageMessage>,
+    )
+
+    @Serializable
+    private data class WanImageSynthesisRequest(
+        val model: String = "wan2.6-t2i",
+        val input: WanImageInput,
+        val parameters: ImageSynthesisParameters = ImageSynthesisParameters(),
+    )
+
+    @Serializable
+    private data class ImageResult(
+        val url: String? = null,
+    )
+
+    @Serializable
+    private data class WanImageOutputContent(
+        val image: String? = null,
+        val type: String? = null,
+    )
+
+    @Serializable
+    private data class WanImageOutputMessage(
+        val role: String? = null,
+        val content: List<WanImageOutputContent>? = null,
+    )
+
+    @Serializable
+    private data class WanImageChoice(
+        @SerialName("finish_reason")
+        val finishReason: String? = null,
+        val message: WanImageOutputMessage? = null,
+    )
+
+    @Serializable
+    private data class ImageSynthesisOutput(
+        @SerialName("task_id")
+        val taskId: String? = null,
+        @SerialName("task_status")
+        val taskStatus: String? = null,
+        val results: List<ImageResult>? = null,
+        val choices: List<WanImageChoice>? = null,
+        val finished: Boolean? = null,
+        @SerialName("error_code")
+        val errorCode: String? = null,
+        @SerialName("error_message")
+        val errorMessage: String? = null,
+    )
+
+    @Serializable
+    private data class ImageSynthesisResponse(
+        @SerialName("request_id")
+        val requestId: String? = null,
+        val output: ImageSynthesisOutput? = null,
+        val code: String? = null,
+        val message: String? = null,
+    )
+
     override suspend fun promptText(
         systemPrompt: String,
         userPrompt: String,
@@ -235,7 +320,7 @@ object AlibabaAiClient : AiClient {
         val body = AlibabaRequest(
             messages = messages,
             temperature = temperature ?: 1.2,
-            model = "qwen3.5-flash",
+            model = "qwen-max-latest",
             maxTokens = 1024,
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
         )
@@ -519,5 +604,124 @@ object AlibabaAiClient : AiClient {
             return false
         }
         return success
+    }
+
+    override suspend fun generateImage(prompt: String, size: String): String? {
+        val apiKey = System.getenv("ALIBABA_API_KEY")
+            ?: System.getProperty("ALIBABA_API_KEY")
+            ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
+
+        val request = WanImageSynthesisRequest(
+            input = WanImageInput(
+                messages = listOf(
+                    WanImageMessage(
+                        content = listOf(WanImageContent(text = prompt))
+                    )
+                )
+            ),
+            parameters = ImageSynthesisParameters(size = size)
+        )
+
+        return try {
+            val response: HttpResponse = http.post("https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation") {
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                // header("X-DashScope-Async", "enable") // Removed to avoid AccessDenied: current user api does not support asynchronous calls
+                header("X-DashScope-OssResourceResolve", "enable")
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+
+            if (!response.status.isSuccess()) {
+                val err = response.bodyAsText()
+                println("[DEBUG_LOG] Alibaba Image Synthesis HTTP error ${response.status}: $err")
+                return null
+            }
+
+            val rawInitial = response.bodyAsText()
+            println("[DEBUG_LOG] Alibaba Image Synthesis Initial Response: $rawInitial")
+            val initialData = try {
+                appJson.decodeFromString<ImageSynthesisResponse>(rawInitial)
+            } catch (e: Throwable) {
+                println("[DEBUG_LOG] Alibaba Image Synthesis initial parse error: ${e.message}")
+                null
+            } ?: return null
+            
+            // Check for business error in JSON
+            if (!initialData.code.isNullOrBlank()) {
+                println("[DEBUG_LOG] Alibaba Image Synthesis business error: ${initialData.code} - ${initialData.message}")
+                return null
+            }
+            
+            // Check if results are already present (synchronous response)
+            val directUrl = initialData.output?.results?.firstOrNull()?.url
+                ?: initialData.output?.choices?.firstOrNull()?.message?.content?.firstOrNull { it.type == "image" || it.image != null }?.image
+            
+            if (directUrl != null) {
+                println("[DEBUG_LOG] Alibaba Image Synthesis direct URL found: $directUrl")
+                return directUrl
+            }
+
+            val taskId = initialData.output?.taskId
+            if (taskId.isNullOrBlank()) {
+                println("[DEBUG_LOG] Alibaba Image Synthesis failed to get taskId or directUrl. Output: ${initialData.output}")
+                return null
+            }
+            
+            println("[DEBUG_LOG] Alibaba Image Synthesis task started: $taskId")
+
+            // Poll for result if taskId is present but results are not
+            var imageUrl: String? = null
+            var attempts = 0
+            while (attempts < 60) {
+                delay(2000)
+                val pollResp = http.get("https://dashscope-intl.aliyuncs.com/api/v1/tasks/$taskId") {
+                    header(HttpHeaders.Authorization, "Bearer $apiKey")
+                }
+
+                if (pollResp.status.isSuccess()) {
+                    val rawPoll = pollResp.bodyAsText()
+                    val pollData = try {
+                        appJson.decodeFromString<ImageSynthesisResponse>(rawPoll)
+                    } catch (e: Throwable) {
+                        println("[DEBUG_LOG] Alibaba Image Synthesis poll parse error: ${e.message}. Raw: $rawPoll")
+                        null
+                    }
+                    
+                    if (pollData != null) {
+                        val status = pollData.output?.taskStatus
+                        val finished = pollData.output?.finished ?: false
+                        
+                        if (attempts % 5 == 0) {
+                            println("[DEBUG_LOG] Polling for image task $taskId, status: $status, finished: $finished")
+                        }
+
+                        if (status == "SUCCEEDED" || (finished && pollData.output?.choices != null)) {
+                            imageUrl = pollData.output?.results?.firstOrNull()?.url
+                                ?: pollData.output?.choices?.firstOrNull()?.message?.content?.firstOrNull { it.type == "image" || it.image != null }?.image
+                            
+                            if (imageUrl != null) {
+                                println("[DEBUG_LOG] Alibaba Image Synthesis success: $imageUrl")
+                            } else {
+                                println("[DEBUG_LOG] Alibaba Image Synthesis SUCCEEDED but no URL found in choices/results. Raw: $rawPoll")
+                            }
+                            break
+                        } else if (status == "FAILED" || status == "CANCELLED") {
+                            println("[DEBUG_LOG] Alibaba Image Synthesis task $status: ${pollData.output?.errorMessage ?: pollData.message}")
+                            break
+                        }
+                    }
+                } else {
+                    println("[DEBUG_LOG] Alibaba Image Synthesis poll HTTP error ${pollResp.status}: ${pollResp.bodyAsText()}")
+                }
+                attempts++
+            }
+            if (imageUrl == null && attempts >= 60) {
+                println("[DEBUG_LOG] Alibaba Image Synthesis polling timed out for task $taskId")
+            }
+            imageUrl
+        } catch (e: Throwable) {
+            println("[DEBUG_LOG] Alibaba Image Synthesis exception: ${e.message}")
+            null
+        }
     }
 }

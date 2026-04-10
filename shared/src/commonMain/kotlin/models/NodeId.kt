@@ -43,4 +43,8 @@ enum class NodeId {
     UpdatePlayerQuestState,
     CompareValue,
     Math,
+    AiImage,
+    AiTts,
+    Minigame,
+    JsonExtract,
 }

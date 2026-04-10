@@ -857,6 +857,38 @@ class NodeLogicRunner(
                 )
                 MathNodeRunner(context)
             }
+            NodeId.AiImage -> {
+                WebSocketDebug.logMessage(
+                    "AI_IMAGE_RUNNER_SELECTED",
+                    "Selected AiImageNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                AiImageNodeRunner(context)
+            }
+            NodeId.AiTts -> {
+                WebSocketDebug.logMessage(
+                    "AI_TTS_RUNNER_SELECTED",
+                    "Selected AiTtsNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                AiTtsNodeRunner(context)
+            }
+            NodeId.Minigame -> {
+                WebSocketDebug.logMessage(
+                    "MINIGAME_RUNNER_SELECTED",
+                    "Selected MinigameNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                MinigameNodeRunner(context)
+            }
+            NodeId.JsonExtract -> {
+                WebSocketDebug.logMessage(
+                    "JSON_EXTRACT_RUNNER_SELECTED",
+                    "Selected JsonExtractNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                JsonExtractNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

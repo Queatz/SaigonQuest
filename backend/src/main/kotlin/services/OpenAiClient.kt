@@ -78,11 +78,28 @@ object OpenAiClient : AiClient {
 
     @Serializable
     private data class TtsRequest(
-        val model: String = "gpt-4o-mini-tts",
+        val model: String = "tts-1",
         val input: String,
-        val voice: String = "coral",
-        @SerialName("response_format")
-        val responseFormat: String = "pcm",
+        val voice: String = "alloy",
+    )
+
+    @Serializable
+    private data class ImageGenerationRequest(
+        val model: String = "dall-e-3",
+        val prompt: String,
+        val n: Int = 1,
+        val size: String = "1024x1024",
+    )
+
+    @Serializable
+    private data class ImageData(
+        val url: String,
+    )
+
+    @Serializable
+    private data class ImageGenerationResponse(
+        val created: Long,
+        val data: List<ImageData>,
     )
 
     override suspend fun promptText(
@@ -218,5 +235,32 @@ object OpenAiClient : AiClient {
             out.write(chunk)
         }
         return if (success && out.size() > 0) out.toByteArray() else null
+    }
+
+    override suspend fun generateImage(prompt: String, size: String): String? {
+        val apiKey = System.getenv("OPENAI_API_KEY") ?: System.getProperty("OPENAI_API_KEY")
+        if (apiKey.isNullOrBlank()) return null
+
+        val body = ImageGenerationRequest(prompt = prompt, size = size.replace("*", "x"))
+
+        return try {
+            val response: HttpResponse = http.post("https://api.openai.com/v1/images/generations") {
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+
+            if (!response.status.isSuccess()) {
+                val err = response.bodyAsText()
+                println("[DEBUG_LOG] OpenAI Image Generation error: $err")
+                return null
+            }
+
+            val data = response.body<ImageGenerationResponse>()
+            data.data.firstOrNull()?.url
+        } catch (e: Throwable) {
+            println("[DEBUG_LOG] OpenAI Image Generation exception: ${e.message}")
+            null
+        }
     }
 }

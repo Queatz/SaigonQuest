@@ -466,6 +466,50 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Performs arithmetic operations (Add, Subtract, Multiply, Divide)"
     ) : LogicNode
+
+    /**
+     * AiImage node - generates an image from a prompt
+     */
+    @Serializable
+    data class AiImage(
+        override val id: NodeId = NodeId.AiImage,
+        override val label: String = "AI Image",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Generate an image from a prompt"
+    ) : LogicNode
+
+    /**
+     * AiTts node - generates audio from text
+     */
+    @Serializable
+    data class AiTts(
+        override val id: NodeId = NodeId.AiTts,
+        override val label: String = "AI TTS",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Generate audio from text"
+    ) : LogicNode
+
+    /**
+     * Minigame node - triggers a minigame on the client
+     */
+    @Serializable
+    data class Minigame(
+        override val id: NodeId = NodeId.Minigame,
+        override val label: String = "Minigame",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Start a minigame (Flashcards, Matching, etc.)"
+    ) : LogicNode
+
+    /**
+     * JsonExtract node - extracts fields from a JSON string
+     */
+    @Serializable
+    data class JsonExtract(
+        override val id: NodeId = NodeId.JsonExtract,
+        override val label: String = "JSON extract",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Extract a value from a JSON string using a key"
+    ) : LogicNode
 }
 
 /**
@@ -519,6 +563,10 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.UpdatePlayerQuestState(),
         LogicNode.CompareValue(),
         LogicNode.Math(),
+        LogicNode.AiImage(),
+        LogicNode.AiTts(),
+        LogicNode.Minigame(),
+        LogicNode.JsonExtract(),
     )
 }
 

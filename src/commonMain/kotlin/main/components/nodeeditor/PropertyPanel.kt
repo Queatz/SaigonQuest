@@ -8,8 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import main.api.DocApi
-import main.api.ItemApi
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
@@ -17,13 +15,8 @@ import main.components.DialogSelect
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
 import main.components.Translated
-import main.components.chat.RichTextEditorDialog
-import main.components.inventory.ItemRenderer
-import main.components.inventory.SelectItemDialog
-import main.components.media.UploadMediaDialog
 import main.components.translated
 import main.theme.NodeEditorStyles
-import models.MediaType
 import models.NodeCategory
 import models.nodeeditor.NodeData
 import models.nodeeditor.PropertyBasedNodeData
@@ -37,10 +30,8 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.width
-import org.jetbrains.compose.web.dom.Audio
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Text
@@ -200,7 +191,22 @@ fun PropertyPanel(
 
                         when (propDef.type) {
                             PropertyType.STRING -> {
-                                if (
+                                if (propDef.key == PropertyKey.CONFIG_JSON && node.type.id == models.NodeId.Minigame) {
+                                    val typeStr = propertyValues[PropertyKey.MINIGAME_TYPE] ?: "Flashcards"
+                                    val minigameType = try {
+                                        models.MinigameType.valueOf(typeStr)
+                                    } catch (e: Throwable) {
+                                        models.MinigameType.Flashcards
+                                    }
+
+                                    MinigameConfigEditor(
+                                        type = minigameType,
+                                        configJson = propertyValues[propDef.key] ?: "[]",
+                                        onConfigChange = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        }
+                                    )
+                                } else if (
                                     propDef.key in listOf(
                                         PropertyKey.TEXT_CONTENT,
                                         PropertyKey.SYSTEM_PROMPT,
@@ -208,414 +214,64 @@ fun PropertyPanel(
                                         PropertyKey.TEMPLATE,
                                     )
                                 ) {
-                                    var showRichEditorDialog by remember(nodeId, propDef.key) { mutableStateOf(false) }
-
-                                    // Use DialogInput with multiline for text content
-                                    DialogInput(
+                                    RichTextPropertyEditor(
                                         value = propertyValues[propDef.key] ?: "",
-                                        onInput = { newValue ->
-                                            propertyValues = propertyValues.edit {
-                                                it[propDef.key] = newValue
-                                            }
-                                        },
-                                        multiline = true,
-                                        placeholder = str("Enter text"),
-                                        attrs = {
-                                            id("prop-${propDef.key.name.lowercase()}")
-                                            attr("rows", "4")
+                                        onUpdate = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
                                         }
                                     )
-
-                                    // Rich editor launcher
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                            padding(0.px)
-                                        }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showRichEditorDialog = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated("Rich editor") }
-                                    }
-
-                                    if (showRichEditorDialog) {
-                                        RichTextEditorDialog(
-                                            onClose = { showRichEditorDialog = false },
-                                            onSend = { markdown ->
-                                                propertyValues = propertyValues.edit { it[propDef.key] = markdown }
-                                                showRichEditorDialog = false
-                                            },
-                                            initialText = propertyValues[propDef.key] ?: "",
-                                            confirmButtonText = translated("Save"),
-                                            title = translated("Dialogue"),
-                                            placeholder = ""
-                                        )
-                                    }
                                 } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc || node.type is models.LogicNode.OpenDoc)) {
-                                    val currentId = propertyValues[propDef.key] ?: ""
-                                    var selectedDoc by remember(nodeId) { mutableStateOf<models.Doc?>(null) }
-                                    var loadingDoc by remember(nodeId) { mutableStateOf(false) }
-                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
-
-                                    LaunchedEffect(currentId) {
-                                        if (currentId.isNotBlank()) {
-                                            loadingDoc = true
-                                            try {
-                                                selectedDoc = DocApi.getDoc(currentId)
-                                            } catch (t: Throwable) {
-                                                console.error("Failed to load doc by id", t)
-                                                selectedDoc = null
-                                            } finally {
-                                                loadingDoc = false
-                                            }
-                                        } else {
-                                            selectedDoc = null
+                                    DocPropertyEditor(
+                                        worldId = worldId,
+                                        currentId = propertyValues[propDef.key] ?: "",
+                                        onUpdate = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
                                         }
-                                    }
-
-                                    // Preview and info
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                            property("align-items", "center")
-                                        }
-                                    }) {
-                                        when {
-                                            loadingDoc -> Text(translated("Loading..."))
-                                            selectedDoc != null -> Text(selectedDoc!!.title.ifBlank { translated("Selected doc") })
-                                            else -> Text(translated("No doc selected"))
-                                        }
-                                    }
-
-                                    // Actions
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                        }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showSelect = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated(if (currentId.isBlank()) "Select doc" else "Change") }
-
-                                        if (currentId.isNotBlank()) {
-                                            DialogButton(
-                                                onClick = {
-                                                    propertyValues = propertyValues.edit {
-                                                        it[PropertyKey.ID] = ""
-                                                    }
-                                                },
-                                                style = DialogButtonStyle.Danger
-                                            ) { Translated("Clear") }
-                                        }
-                                    }
-
-                                    if (showSelect) {
-                                        main.components.worlddocs.SelectDocDialog(
-                                            worldId = worldId,
-                                            onSelect = { d ->
-                                                propertyValues = propertyValues.edit { it[PropertyKey.ID] = d.key }
-                                                showSelect = false
-                                            },
-                                            onClose = { showSelect = false },
-                                        )
-                                    }
+                                    )
                                 } else if (propDef.key == PropertyKey.IMAGE_URL) {
-                                    val imageUrl = propertyValues[propDef.key] ?: ""
-                                    var showDialog by remember(nodeId) { mutableStateOf(false) }
-
-                                    if (imageUrl.isNotBlank()) {
-                                        Img(
-                                            src = imageUrl,
-                                            attrs = {
-                                                style {
-                                                    property("border-radius", "8px")
-                                                    property("overflow", "hidden")
-                                                }
-                                            }
-                                        )
-                                    }
-
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
+                                    MediaSelector(
+                                        url = propertyValues[propDef.key] ?: "",
+                                        type = models.MediaType.Image,
+                                        onSelect = { url ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = url }
+                                        },
+                                        onClear = {
+                                            propertyValues = propertyValues.edit { it[propDef.key] = "" }
                                         }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showDialog = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated(if (imageUrl.isBlank()) "Choose image" else "Change image") }
-
-                                        if (imageUrl.isNotBlank()) {
-                                            DialogButton(
-                                                onClick = {
-                                                    propertyValues =
-                                                        propertyValues.edit { it[PropertyKey.IMAGE_URL] = "" }
-                                                },
-                                                style = DialogButtonStyle.Danger
-                                            ) { Translated("Remove image") }
-                                        }
-                                    }
-
-                                    if (showDialog) {
-                                        UploadMediaDialog(
-                                            onClose = { showDialog = false },
-                                            onSelect = { selectedUrl, _, _ ->
-                                                propertyValues =
-                                                    propertyValues.edit { it[PropertyKey.IMAGE_URL] = selectedUrl }
-                                            },
-                                            filter = MediaType.Image,
-                                        )
-                                    }
+                                    )
                                 } else if (propDef.key == PropertyKey.SOUND_URL) {
-                                    val soundUrl = propertyValues[propDef.key] ?: ""
-                                    var showDialog by remember(nodeId) { mutableStateOf(false) }
-
-                                    if (soundUrl.isNotBlank()) {
-                                        Audio(attrs = {
-                                            attr("src", soundUrl)
-                                            attr("controls", "true")
-                                            style {
-                                                width(100.percent)
-                                            }
-                                        })
-                                    }
-
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
+                                    MediaSelector(
+                                        url = propertyValues[propDef.key] ?: "",
+                                        type = models.MediaType.Audio,
+                                        onSelect = { url ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = url }
+                                        },
+                                        onClear = {
+                                            propertyValues = propertyValues.edit { it[propDef.key] = "" }
                                         }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showDialog = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated(if (soundUrl.isBlank()) "Choose sound" else "Change sound") }
-
-                                        if (soundUrl.isNotBlank()) {
-                                            DialogButton(
-                                                onClick = {
-                                                    propertyValues =
-                                                        propertyValues.edit { it[PropertyKey.SOUND_URL] = "" }
-                                                },
-                                                style = DialogButtonStyle.Danger
-                                            ) { Translated("Remove sound") }
-                                        }
-                                    }
-
-                                    if (showDialog) {
-                                        UploadMediaDialog(
-                                            onClose = { showDialog = false },
-                                            onSelect = { selectedUrl, _, _ ->
-                                                propertyValues =
-                                                    propertyValues.edit { it[PropertyKey.SOUND_URL] = selectedUrl }
-                                            },
-                                            filter = MediaType.Audio,
-                                        )
-                                    }
+                                    )
                                 } else if (propDef.key == PropertyKey.ITEM_ID) {
-                                    val currentId = propertyValues[propDef.key] ?: ""
-                                    var selectedItem by remember(nodeId) { mutableStateOf<models.Item?>(null) }
-                                    var loadingItem by remember(nodeId) { mutableStateOf(false) }
-                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
-
-                                    LaunchedEffect(currentId) {
-                                        if (currentId.isNotBlank()) {
-                                            loadingItem = true
-                                            try {
-                                                selectedItem = ItemApi.getItemById(currentId)
-                                            } catch (t: Throwable) {
-                                                console.error("Failed to load item by id", t)
-                                                selectedItem = null
-                                            } finally {
-                                                loadingItem = false
+                                    ItemPropertyEditor(
+                                        currentId = propertyValues[propDef.key] ?: "",
+                                        quantity = propertyValues[PropertyKey.QUANTITY]?.toIntOrNull() ?: 1,
+                                        onUpdate = { id, qty ->
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.ITEM_ID] = id
+                                                it[PropertyKey.QUANTITY] = qty.toString()
                                             }
-                                        } else {
-                                            selectedItem = null
                                         }
-                                    }
-
-                                    // Preview and info
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                            property("align-items", "center")
-                                        }
-                                    }) {
-                                        if (selectedItem != null) {
-                                            ItemRenderer(item = selectedItem, size = 32)
-                                            val qty = propertyValues[PropertyKey.QUANTITY]?.toIntOrNull() ?: 1
-                                            Text(selectedItem!!.title.ifBlank { translated("Selected item") } + "  x" + qty)
-                                        } else if (loadingItem) {
-                                            Text(translated("Loading..."))
-                                        } else {
-                                            Text(translated("No item selected"))
-                                        }
-                                    }
-
-                                    // Actions
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                        }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showSelect = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated("Select item") }
-
-                                        if (currentId.isNotBlank()) {
-                                            DialogButton(
-                                                onClick = {
-                                                    propertyValues = propertyValues.edit {
-                                                        it[PropertyKey.ITEM_ID] = ""
-                                                    }
-                                                },
-                                                style = DialogButtonStyle.Danger
-                                            ) { Translated("Clear") }
-                                        }
-                                    }
-
-                                    if (showSelect) {
-                                        SelectItemDialog(
-                                            initial = if (selectedItem != null) listOf(
-                                                selectedItem!! to (propertyValues[PropertyKey.QUANTITY]?.toIntOrNull()
-                                                    ?: 1)
-                                            ) else emptyList(),
-                                            multiple = false,
-                                            useQuantities = true,
-                                            onConfirm = { list ->
-                                                val choice = list.firstOrNull()
-                                                propertyValues = propertyValues.edit {
-                                                    if (choice != null) {
-                                                        it[PropertyKey.ITEM_ID] = choice.first.key
-                                                        it[PropertyKey.QUANTITY] = choice.second.toString()
-                                                    }
-                                                }
-                                            },
-                                            onClose = { showSelect = false },
-                                        )
-                                    }
+                                    )
                                 } else if (propDef.key == PropertyKey.ITEMS) {
-                                    val itemsCsv = propertyValues[PropertyKey.ITEMS] ?: ""
-                                    val quantitiesCsv = propertyValues[PropertyKey.QUANTITIES] ?: ""
-                                    var previewPairs by remember(nodeId) {
-                                        mutableStateOf<List<Pair<models.Item, Int>>>(
-                                            emptyList()
-                                        )
-                                    }
-                                    var loadingList by remember(nodeId) { mutableStateOf(false) }
-                                    var showSelect by remember(nodeId) { mutableStateOf(false) }
-
-                                    LaunchedEffect(itemsCsv, quantitiesCsv) {
-                                        val ids = itemsCsv.split(',').map { it.trim() }.filter { it.isNotBlank() }
-                                        if (ids.isEmpty()) {
-                                            previewPairs = emptyList()
-                                            return@LaunchedEffect
-                                        }
-                                        loadingList = true
-                                        try {
-                                            val qtys = quantitiesCsv.split(',').map { it.trim().toIntOrNull() ?: 1 }
-                                            val fetched = ItemApi.getItemsByIds(ids)
-                                            val byId = fetched.associateBy { it.key }
-                                            val pairs = ids.mapIndexedNotNull { index, id ->
-                                                val item = byId[id]
-                                                item?.let { it to (qtys.getOrNull(index) ?: 1) }
-                                            }
-                                            previewPairs = pairs
-                                        } catch (t: Throwable) {
-                                            console.error("Failed to load items for preview", t)
-                                            previewPairs = emptyList()
-                                        } finally {
-                                            loadingList = false
-                                        }
-                                    }
-
-                                    // Preview list
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("flex-direction", "column")
-                                            property("gap", "6px")
-                                        }
-                                    }) {
-                                        when {
-                                            loadingList -> Text(translated("Loading..."))
-                                            previewPairs.isEmpty() -> Text(translated("No item selected"))
-                                            else -> {
-                                                for ((item, qty) in previewPairs) {
-                                                    Div({
-                                                        style {
-                                                            property("display", "flex")
-                                                            property("gap", "8px")
-                                                            property("align-items", "center")
-                                                        }
-                                                    }) {
-                                                        ItemRenderer(item = item, size = 24)
-                                                        Text(item.title.ifBlank { translated("Selected item") } + "  x" + qty)
-                                                    }
-                                                }
+                                    ItemListPropertyEditor(
+                                        itemsCsv = propertyValues[PropertyKey.ITEMS] ?: "",
+                                        quantitiesCsv = propertyValues[PropertyKey.QUANTITIES] ?: "",
+                                        onUpdate = { items, qtys ->
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.ITEMS] = items
+                                                it[PropertyKey.QUANTITIES] = qtys
                                             }
                                         }
-                                    }
-
-                                    // Actions
-                                    Div({
-                                        classes(NodeEditorStyles.propertyValue)
-                                        style {
-                                            property("display", "flex")
-                                            property("gap", "8px")
-                                        }
-                                    }) {
-                                        DialogButton(
-                                            onClick = { showSelect = true },
-                                            style = DialogButtonStyle.Primary
-                                        ) { Translated("Select items") }
-
-                                        if (!itemsCsv.isBlank()) {
-                                            DialogButton(
-                                                onClick = {
-                                                    propertyValues = propertyValues.edit {
-                                                        it[PropertyKey.ITEMS] = ""
-                                                        it[PropertyKey.QUANTITIES] = ""
-                                                    }
-                                                },
-                                                style = DialogButtonStyle.Danger
-                                            ) { Translated("Clear") }
-                                        }
-                                    }
-
-                                    if (showSelect) {
-                                        SelectItemDialog(
-                                            initial = previewPairs,
-                                            multiple = true,
-                                            useQuantities = true,
-                                            onConfirm = { list ->
-                                                val itemsJoined = list.joinToString(",") { it.first.key }
-                                                val quantitiesJoined = list.joinToString(",") { it.second.toString() }
-                                                propertyValues = propertyValues.edit {
-                                                    it[PropertyKey.ITEMS] = itemsJoined
-                                                    it[PropertyKey.QUANTITIES] = quantitiesJoined
-                                                }
-                                            },
-                                            onClose = { showSelect = false },
-                                        )
-                                    }
+                                    )
                                 } else {
                                     // Use Input for other string properties
                                     DialogInput(

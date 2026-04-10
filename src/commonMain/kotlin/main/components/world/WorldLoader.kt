@@ -48,16 +48,20 @@ class WorldLoader(private val scene: Scene) {
             currentWorld = world
             currentWorldIsOutdoors = world.isOutdoors
 
-            // Dispose previous world meshes if any
+            // Dispose previous world meshes and cameras if any
             try {
                 for (m in worldMeshes) {
                     try { m.dispose() } catch (_: Throwable) {}
+                }
+                // Dispose all cameras except our main camera to avoid leaks and confusion
+                scene.cameras.filter { it.name != "camera" }.forEach { 
+                    try { it.dispose() } catch (_: Throwable) {}
                 }
             } catch (_: Throwable) {}
             worldMeshes = emptyArray()
 
             if (world.file.isBlank()) {
-                println("[INFO] No world file specified after save; creating fallback plane")
+                console.log("[INFO] No world file specified after save; creating fallback plane")
                 worldMeshes = createFallbackWorld()
                 // Propagate to controllers
                 SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
@@ -70,14 +74,29 @@ class WorldLoader(private val scene: Scene) {
             }
 
             val sceneFilename = "${world.file}.glb"
+            console.log("[DEBUG] Importing world asset '$sceneFilename' into scene. Current cameras: ${scene.cameras.size}")
+            
             // Import new world asset
-            SceneLoader.ImportMesh(
-                meshNames = "",
+            SceneLoader.LoadAssetContainer(
                 rootUrl = "/raw/data/",
                 sceneFilename = sceneFilename,
                 scene = scene,
-                onSuccess = { meshes, _, _, _, nodes ->
+                onSuccess = { container ->
                     try {
+                        console.log("[DEBUG] World asset container load success. Meshes: ${container.meshes.size}, Nodes: ${container.transformNodes.size}, Cameras: ${container.cameras.size}")
+                        container.cameras.forEach { cam ->
+                            console.log("[DEBUG]   Camera in container: ${cam.name}")
+                        }
+                        
+                        container.addAllToScene()
+                        
+                        val meshes = container.meshes
+                        val nodes = container.transformNodes
+                        console.log("[DEBUG] After addAllToScene - Total Scene Cameras: ${scene.cameras.size}")
+                        scene.cameras.forEach { cam ->
+                            console.log("[DEBUG]   Scene camera: ${cam.name}")
+                        }
+                        
                         worldMeshes = meshes
                         transformNodes = nodes
                         applyMaterials(meshes)
@@ -86,15 +105,19 @@ class WorldLoader(private val scene: Scene) {
                         SceneManager.getPlayerController()?.setStartNodes(nodes)
                         SceneManager.getObjectManager()?.setWorldMeshes(meshes)
                         SceneManager.getOtherPlayersController()?.setWorldMeshes(meshes)
+                        
+                        // Re-initialize proximity cameras after asset import
+                        SceneManager.getCameraController()?.initializeProximityCameras()
+                        
                         // Apply edited lighting immediately
                         applyWorldEditLighting(world)
-                        println("[DEBUG] Reloaded world asset '$sceneFilename' successfully")
+                        console.log("[DEBUG] Reloaded world asset '$sceneFilename' successfully")
                     } catch (e: Throwable) {
-                        println("[ERROR] Failed during world reload success handling: ${e.message}")
+                        console.error("[ERROR] Failed during world reload success handling: ${e.message}")
                     }
                 },
                 onError = { _, message, exception ->
-                    println("[ERROR] Error reloading world model: $message. $exception")
+                    console.error("[ERROR] Error reloading world model: $message. $exception")
                     try {
                         // Attempt fallback world on error
                         worldMeshes = createFallbackWorld()
@@ -107,7 +130,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             )
         } catch (e: Throwable) {
-            println("[ERROR] Failed to reload world file: ${e.message}")
+            console.error("[ERROR] Failed to reload world file: ${e.message}")
         }
     }
     
@@ -145,7 +168,7 @@ class WorldLoader(private val scene: Scene) {
                 try {
                     cb.invoke()
                 } catch (e: Throwable) {
-                    println("[ERROR] onWorldLoaded callback failed: ${e.message}")
+                    console.error("[ERROR] onWorldLoaded callback failed: ${e.message}")
                 }
             }
         }
@@ -171,7 +194,7 @@ class WorldLoader(private val scene: Scene) {
         fun reloadWorldFile(world: World) {
             val loader = currentInstance
             if (loader == null) {
-                println("[WARN] No current WorldLoader instance; cannot reload world file")
+                console.warn("[WARN] No current WorldLoader instance; cannot reload world file")
                 return
             }
             loader.reloadWorldFileInternal(world)
@@ -186,12 +209,12 @@ class WorldLoader(private val scene: Scene) {
                 val light = currentDirectionalLight
                 if (light != null) {
                     light.diffuse = color
-                    println("[DEBUG] Updated directional light color to $hexColor")
+                    console.log("[DEBUG] Updated directional light color to $hexColor")
                 } else {
-                    println("[WARN] Directional light not initialized; cannot update color")
+                    console.warn("[WARN] Directional light not initialized; cannot update color")
                 }
             } catch (e: Throwable) {
-                println("[ERROR] Failed to update directional light color: ${e.message}")
+                console.error("[ERROR] Failed to update directional light color: ${e.message}")
             }
         }
 
@@ -203,10 +226,10 @@ class WorldLoader(private val scene: Scene) {
                 val light = currentDirectionalLight
                 if (light != null) {
                     light.intensity = intensity
-                    println("[DEBUG] Updated directional light intensity to $intensity")
+                    console.log("[DEBUG] Updated directional light intensity to $intensity")
                 }
             } catch (e: Throwable) {
-                println("[ERROR] Failed to update directional light intensity: ${e.message}")
+                console.error("[ERROR] Failed to update directional light intensity: ${e.message}")
             }
         }
 
@@ -218,10 +241,10 @@ class WorldLoader(private val scene: Scene) {
                 val light = currentHemisphericLight
                 if (light != null) {
                     light.intensity = intensity
-                    println("[DEBUG] Updated hemispheric light intensity to $intensity")
+                    console.log("[DEBUG] Updated hemispheric light intensity to $intensity")
                 }
             } catch (e: Throwable) {
-                println("[ERROR] Failed to update hemispheric light intensity: ${e.message}")
+                console.error("[ERROR] Failed to update hemispheric light intensity: ${e.message}")
             }
         }
 
@@ -233,7 +256,7 @@ class WorldLoader(private val scene: Scene) {
                 val color = Color3.FromHexString(hexColor).toLinearSpace()
                 updateHemisphericLightColor(color)
             } catch (e: Throwable) {
-                println("[ERROR] Failed to update hemispheric light color: ${e.message}")
+                console.error("[ERROR] Failed to update hemispheric light color: ${e.message}")
             }
         }
 
@@ -247,9 +270,9 @@ class WorldLoader(private val scene: Scene) {
                 light.diffuse = color
                 val ground = color.scale(0.5f)
                 light.groundColor = ground
-                println("[DEBUG] Updated hemispheric light color to diffuse=$color, ground=$ground")
+                console.log("[DEBUG] Updated hemispheric light color to diffuse=$color, ground=$ground")
             } else {
-                println("[WARN] Hemispheric light not initialized; cannot update color")
+                console.warn("[WARN] Hemispheric light not initialized; cannot update color")
             }
         }
 
@@ -280,18 +303,18 @@ class WorldLoader(private val scene: Scene) {
             try {
                 val loader = currentInstance
                 if (loader == null) {
-                    println("[WARN] No current WorldLoader instance; cannot reapply world")
+                    console.warn("[WARN] No current WorldLoader instance; cannot reapply world")
                     return
                 }
                 val world = loader.getCurrentWorld()
                 if (world == null) {
-                    println("[WARN] No current world available to reapply")
+                    console.warn("[WARN] No current world available to reapply")
                     return
                 }
                 loader.applyWorldEditLighting(world)
-                println("[DEBUG] Reapplied current world lighting")
+                console.log("[DEBUG] Reapplied current world lighting")
             } catch (e: Throwable) {
-                println("[ERROR] Failed to reapply current world: ${e.message}")
+                console.error("[ERROR] Failed to reapply current world: ${e.message}")
             }
         }
 
@@ -343,7 +366,7 @@ class WorldLoader(private val scene: Scene) {
      * Initializes the shadow manager for global shadow handling.
      */
     private fun setupLighting() {
-        println("[DEBUG] Setting up scene lighting")
+        console.log("[DEBUG] Setting up scene lighting")
         // Register this instance for edit notifications
         registerCurrentInstance(this)
         
@@ -359,7 +382,7 @@ class WorldLoader(private val scene: Scene) {
             scene = scene
         ).apply {
             this.intensity = 1f  // Further reduced intensity to make directional light shadows more visible
-            println("[DEBUG] Created hemispheric light with intensity ${this.intensity}")
+            console.log("[DEBUG] Created hemispheric light with intensity ${this.intensity}")
         }
 
         // Add a directional light for shadows
@@ -370,13 +393,13 @@ class WorldLoader(private val scene: Scene) {
             scene = scene
         )
         
-        println("[DEBUG] Created directional light (settings will be configured by ShadowManager)")
+        console.log("[DEBUG] Created directional light (settings will be configured by ShadowManager)")
         
         // Initialize the shadow manager with the directional light
         // ShadowManager will configure the light for optimal shadow casting
         directionalLight?.let { light ->
             shadowManager = ShadowManager(scene, light)
-            println("[DEBUG] Shadow manager initialized")
+            console.log("[DEBUG] Shadow manager initialized")
         }
         
         // Initialize the occlusion manager for fading objects that obstruct the player's view
@@ -412,7 +435,7 @@ class WorldLoader(private val scene: Scene) {
                 }
 
                 if (isUnauthorized) {
-                    println("[INFO] Unauthorized world load, refreshing session...")
+                    console.log("[INFO] Unauthorized world load, refreshing session...")
                     try {
                         UserApi.getCurrentUser(forceReload = true)
                         WorldApi.getWorldByUrl(url)
@@ -448,7 +471,7 @@ class WorldLoader(private val scene: Scene) {
             val lat = world.latLng?.getOrNull(0)
             val lon = world.latLng?.getOrNull(1)
             if (world.isOutdoors && lat != null && lon != null) {
-                println("[INFO] Outdoors mode with realtime sun enabled (lat=$lat, lon=$lon)")
+                console.log("[INFO] Outdoors mode with realtime sun enabled (lat=$lat, lon=$lon)")
                 startRealtimeSun(lat, lon)
             } else {
                 // Indoor or invalid lat/lng: preserve existing behavior
@@ -463,21 +486,35 @@ class WorldLoader(private val scene: Scene) {
             // Check if world file is specified
             if (world.file.isEmpty()) {
                 // Create a fallback 10x10 plane
-                println("[INFO] No world file specified, creating fallback 10x10 plane")
+                console.log("[INFO] No world file specified, creating fallback 10x10 plane")
                 return createFallbackWorld() to emptyArray()
             }
 
             // Determine the file to load
             val worldFile = "${world.file}.glb"
+            console.log("[DEBUG] Loading world file: $worldFile. Initial scene cameras: ${scene.cameras.size}")
             
             // Load the 3D model using suspendCancellableCoroutine to convert callback to coroutine
             return suspendCancellableCoroutine { continuation ->
-                SceneLoader.ImportMesh(
-                    meshNames = "",
+                SceneLoader.LoadAssetContainer(
                     rootUrl = "/raw/data/",
                     sceneFilename = worldFile,
                     scene = scene,
-                    onSuccess = { meshes, _, _, _, nodes ->
+                    onSuccess = { container ->
+                        console.log("[DEBUG] Scene container load success. Meshes: ${container.meshes.size}, Nodes: ${container.transformNodes.size}, Cameras: ${container.cameras.size}")
+                        container.cameras.forEach { cam ->
+                            console.log("[DEBUG]   Camera in container: ${cam.name}")
+                        }
+
+                        container.addAllToScene()
+                        
+                        val meshes = container.meshes
+                        val nodes = container.transformNodes
+                        console.log("[DEBUG] After addAllToScene - Total Scene Cameras: ${scene.cameras.size}")
+                        scene.cameras.forEach { cam ->
+                            console.log("[DEBUG]   Scene camera: ${cam.name}")
+                        }
+
                         // Store world meshes for collision detection
                         worldMeshes = meshes
                         transformNodes = nodes
@@ -500,13 +537,13 @@ class WorldLoader(private val scene: Scene) {
                 // Register cancellation handler
                 continuation.invokeOnCancellation {
                     // Clean up resources if needed when coroutine is cancelled
-                    println("[DEBUG] World loading cancelled")
+                    console.log("[DEBUG] World loading cancelled")
                 }
             }
         } catch (error: Throwable) {
             // Log the error; for 404 return fallback, otherwise rethrow so UI can show precise message
             console.error("[WORLD ERROR]", error)
-            println("[ERROR] Failed to load world: ${error.message}")
+            console.error("[ERROR] Failed to load world: ${error.message}")
 
             val apiCode = when (error) {
                 is ErrorResponse -> error.code
@@ -530,7 +567,7 @@ class WorldLoader(private val scene: Scene) {
      * @return An array containing the fallback world meshes
      */
     private fun createFallbackWorld(): Array<AbstractMesh> {
-        println("[INFO] Creating fallback world with a 10x10 plane")
+        console.log("[INFO] Creating fallback world with a 10x10 plane")
         
         // Create a 10x10 plane
         val plane = MeshBuilder.CreatePlane(
@@ -585,12 +622,12 @@ class WorldLoader(private val scene: Scene) {
      * @param meshes The meshes to apply materials to
      */
     private fun applyMaterials(meshes: Array<AbstractMesh>) {
-        println("[DEBUG] Applying materials and configuring shadows for ${meshes.size} meshes")
+        console.log("[DEBUG] Applying materials and configuring shadows for ${meshes.size} meshes")
         
         // Log information about each mesh for debugging
-        println("[DEBUG] Mesh list from .glb file:")
+        console.log("[DEBUG] Mesh list from .glb file:")
         meshes.forEachIndexed { index, mesh ->
-            println("[DEBUG] Mesh #$index: name=${mesh.name}, visible=${mesh.isVisible}, position=${mesh.position}, scaling=${mesh.scaling}")
+            console.log("[DEBUG] Mesh #$index: name=${mesh.name}, visible=${mesh.isVisible}, position=${mesh.position}, scaling=${mesh.scaling}")
         }
         
         // Count for logging
@@ -607,7 +644,7 @@ class WorldLoader(private val scene: Scene) {
         meshes.forEach { mesh ->
             // Skip if mesh is not visible or is a helper object
             if (!mesh.isVisible || mesh.name.startsWith("__")) {
-                println("[DEBUG] Skipping mesh: ${mesh.name} (invisible or helper)")
+                console.log("[DEBUG] Skipping mesh: ${mesh.name} (invisible or helper)")
                 return@forEach
             }
 
@@ -637,9 +674,9 @@ class WorldLoader(private val scene: Scene) {
                 shadowReceiverCount++
                 
                 // Log the mesh configuration
-                println("[DEBUG] Configured mesh for shadows: ${mesh.name} (both caster and receiver)")
+                console.log("[DEBUG] Configured mesh for shadows: ${mesh.name} (both caster and receiver)")
             } ?: run {
-                println("[ERROR] Shadow manager is null! Cannot configure shadows for ${mesh.name}")
+                console.error("[ERROR] Shadow manager is null! Cannot configure shadows for ${mesh.name}")
             }
             
             // Register mesh with occlusion manager for fading when it obstructs the player's view
@@ -648,29 +685,29 @@ class WorldLoader(private val scene: Scene) {
             }
         }
         
-        println("[DEBUG] Configured $shadowCasterCount shadow casters and $shadowReceiverCount shadow receivers")
+        console.log("[DEBUG] Configured $shadowCasterCount shadow casters and $shadowReceiverCount shadow receivers")
         
         // Configure shadows for point lights loaded from the GLB
         configurePointLightShadows(meshes)
 
         // Final shadow configuration check
         if (shadowCasterCount == 0) {
-            println("[WARNING] No shadow casters configured! Shadows will not be visible.")
+            console.warn("[WARNING] No shadow casters configured! Shadows will not be visible.")
         }
         if (shadowReceiverCount == 0) {
-            println("[WARNING] No shadow receivers configured! Shadows will not be visible.")
+            console.warn("[WARNING] No shadow receivers configured! Shadows will not be visible.")
         }
         
         // Log directional light status
         directionalLight?.let { light ->
-            println("[DEBUG] Directional light status:")
-            println("[DEBUG] - position: ${light.position}")
-            println("[DEBUG] - direction: ${light.direction}")
-            println("[DEBUG] - intensity: ${light.intensity}")
-            println("[DEBUG] - shadowMinZ: ${light.shadowMinZ}")
-            println("[DEBUG] - shadowMaxZ: ${light.shadowMaxZ}")
+            console.log("[DEBUG] Directional light status:")
+            console.log("[DEBUG] - position: ${light.position}")
+            console.log("[DEBUG] - direction: ${light.direction}")
+            console.log("[DEBUG] - intensity: ${light.intensity}")
+            console.log("[DEBUG] - shadowMinZ: ${light.shadowMinZ}")
+            console.log("[DEBUG] - shadowMaxZ: ${light.shadowMaxZ}")
         } ?: run {
-            println("[ERROR] Directional light is null! Shadows will not be visible.")
+            console.error("[ERROR] Directional light is null! Shadows will not be visible.")
         }
     }
     
@@ -686,7 +723,7 @@ class WorldLoader(private val scene: Scene) {
             if (light.getTypeID() == 0) {
                 val shadowLight = light as? IShadowLight
                 if (shadowLight != null) {
-                    println("[DEBUG] Found point light from GLB: ${light.name}. Configuring clustered shadows.")
+                    console.log("[DEBUG] Found point light from GLB: ${light.name}. Configuring clustered shadows.")
                     
                     // Create a shadow generator for the point light
                     // Map size 512 is generally enough for clustered point light shadows
@@ -769,7 +806,7 @@ class WorldLoader(private val scene: Scene) {
 
             scene.fogColor = color3
         } catch (e: Throwable) {
-            println("[ERROR] Failed to set background color: ${e.message}")
+            console.error("[ERROR] Failed to set background color: ${e.message}")
         }
     }
     
@@ -794,7 +831,7 @@ class WorldLoader(private val scene: Scene) {
                 // Enable fog in the rendering pipeline
                 pipeline?.fogEnabled = true
                 
-                println("[DEBUG] Set scene fog density to $density and enabled fog in pipeline")
+                console.log("[DEBUG] Set scene fog density to $density and enabled fog in pipeline")
             } else {
                 // Disable fog by setting density to 0
                 scene.fogDensity = 0.0f
@@ -802,10 +839,10 @@ class WorldLoader(private val scene: Scene) {
                 // Disable fog in the rendering pipeline
                 pipeline?.fogEnabled = false
                 
-                println("[DEBUG] Disabled scene fog and disabled fog in pipeline")
+                console.log("[DEBUG] Disabled scene fog and disabled fog in pipeline")
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to set fog density: ${e.message}")
+            console.error("[ERROR] Failed to set fog density: ${e.message}")
         }
     }
 
@@ -856,7 +893,7 @@ class WorldLoader(private val scene: Scene) {
                 updateDirectionalLightIntensity(world.directionalLightIntensity)
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to apply edited world lighting: ${e.message}")
+            console.error("[ERROR] Failed to apply edited world lighting: ${e.message}")
         }
     }
     
@@ -913,7 +950,7 @@ class WorldLoader(private val scene: Scene) {
             scene.clearColor = color4.toLinearSpace()
             scene.fogColor = skyColor
         } catch (e: Throwable) {
-            println("[ERROR] Failed to set outdoors background color: ${e.message}")
+            console.error("[ERROR] Failed to set outdoors background color: ${e.message}")
         }
 
         // Update hemispheric light
@@ -928,7 +965,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update hemispheric light: ${e.message}")
+            console.error("[ERROR] Failed to update hemispheric light: ${e.message}")
         }
 
         // Update directional light
@@ -952,7 +989,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update directional light: ${e.message}")
+            console.error("[ERROR] Failed to update directional light: ${e.message}")
         }
 
         // Update sun mesh
@@ -981,7 +1018,7 @@ class WorldLoader(private val scene: Scene) {
                     }
                     sunMesh = mesh
                     SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
-                    println("[DEBUG] Created realtime sun mesh")
+                    console.log("[DEBUG] Created realtime sun mesh")
                 }
                 sunMesh?.let { mesh ->
                     mesh.isVisible = true
@@ -995,7 +1032,7 @@ class WorldLoader(private val scene: Scene) {
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update sun mesh: ${e.message}")
+            console.error("[ERROR] Failed to update sun mesh: ${e.message}")
         }
 
         // Update moon mesh and its dedicated light for phase rendering
@@ -1031,7 +1068,7 @@ class WorldLoader(private val scene: Scene) {
                     hemi?.excludedMeshes = (hemi?.excludedMeshes ?: emptyArray()) + mesh
                     dir?.excludedMeshes = (dir?.excludedMeshes ?: emptyArray()) + mesh
                     
-                    println("[DEBUG] Created realtime moon mesh")
+                    console.log("[DEBUG] Created realtime moon mesh")
                 }
                 
                 moonMesh?.let { mesh ->
@@ -1050,8 +1087,8 @@ class WorldLoader(private val scene: Scene) {
                     
                     // Log positions for debugging
                     if (isNight) {
-                        println("[DEBUG] Celestial: Sun alt=${(alt * 180 / PI).asDynamic().toFixed(2)} azi=${(azi * 180 / PI).asDynamic().toFixed(2)}, Moon alt=${(moon.altitudeRad * 180 / PI).asDynamic().toFixed(2)} azi=${(moon.azimuthRad * 180 / PI).asDynamic().toFixed(2)}")
-                        println("[DEBUG] Moon mesh at ${mesh.position.x.asDynamic().toFixed(2)}, ${mesh.position.y.asDynamic().toFixed(2)}, ${mesh.position.z.asDynamic().toFixed(2)}, distance=$moonDistance, scale=$moonScale")
+                        console.log("[DEBUG] Celestial: Sun alt=${(alt * 180 / PI).asDynamic().toFixed(2)} azi=${(azi * 180 / PI).asDynamic().toFixed(2)}, Moon alt=${(moon.altitudeRad * 180 / PI).asDynamic().toFixed(2)} azi=${(moon.azimuthRad * 180 / PI).asDynamic().toFixed(2)}")
+                        console.log("[DEBUG] Moon mesh at ${mesh.position.x.asDynamic().toFixed(2)}, ${mesh.position.y.asDynamic().toFixed(2)}, ${mesh.position.z.asDynamic().toFixed(2)}, distance=$moonDistance, scale=$moonScale")
                     }
 
                     // Dedicated light to render moon phase by lighting it from the sun's direction
@@ -1060,14 +1097,14 @@ class WorldLoader(private val scene: Scene) {
                             includedOnlyMeshes = arrayOf(mesh)
                             intensity = 4f // Increased from 2f
                         }
-                        println("[DEBUG] Created moon phase light")
+                        console.log("[DEBUG] Created moon phase light")
                     } else {
                         moonLight?.direction = Vector3(x, y, z)
                     }
                 }
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update moon: ${e.message}")
+            console.error("[ERROR] Failed to update moon: ${e.message}")
         }
 
         // Update stars skybox (night-only)
@@ -1116,7 +1153,7 @@ class WorldLoader(private val scene: Scene) {
                     mesh.material = mat
                     starsMesh = mesh
                     SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
-                    println("[DEBUG] Created realtime stars skybox")
+                    console.log("[DEBUG] Created realtime stars skybox")
                 }
 
                 starsMesh?.let { mesh ->
@@ -1136,7 +1173,7 @@ class WorldLoader(private val scene: Scene) {
                 starsMesh?.isVisible = false
             }
         } catch (e: Throwable) {
-            println("[ERROR] Failed to update stars skybox: ${e.message}")
+            console.error("[ERROR] Failed to update stars skybox: ${e.message}")
         }
     }
 
@@ -1196,3 +1233,5 @@ fun Node.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == tru
 fun Node.isWater(): Boolean = metadata?.gltf?.extras?.water as? Boolean == true
 fun Node.isStartPosition(): Boolean = metadata?.gltf?.extras?.start as? Boolean == true
 fun Node.isBillboard(): Boolean = metadata?.gltf?.extras?.billboard as? Boolean == true
+fun Node.getRadius(): Float? = (metadata?.gltf?.extras?.radius as? Number)?.toFloat() ?: (metadata?.gltf?.extras?.radius as? String)?.toFloatOrNull()
+fun Node.getCameraName(): String? = (metadata?.gltf?.extras?.camera as? String)

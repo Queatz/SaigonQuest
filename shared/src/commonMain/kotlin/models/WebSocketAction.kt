@@ -52,4 +52,8 @@ enum class WebSocketAction {
 
     // Connection health
     HEARTBEAT,
+
+    // Minigames
+    MINIGAME_PROMPT,
+    MINIGAME_RESULT,
 }

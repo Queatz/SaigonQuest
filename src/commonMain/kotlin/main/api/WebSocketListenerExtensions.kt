@@ -258,3 +258,19 @@ fun WebSocketApi.addInventoryChangedListener(listener: (models.InventoryChanged)
     addListener(models.WebSocketAction.INVENTORY_CHANGED, handler)
     return ListenerToken(models.WebSocketAction.INVENTORY_CHANGED, handler)
 }
+
+/**
+ * Add a listener for minigame prompts.
+ */
+fun WebSocketApi.addMinigameListener(listener: (models.MinigameConfig) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val config = ApiClient.json.decodeFromString<models.MinigameConfig>(message.data)
+            listener(config)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing MINIGAME_PROMPT data", e)
+        }
+    }
+    addListener(models.WebSocketAction.MINIGAME_PROMPT, handler)
+    return ListenerToken(models.WebSocketAction.MINIGAME_PROMPT, handler)
+}

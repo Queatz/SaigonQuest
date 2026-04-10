@@ -313,6 +313,11 @@ external class Scene(engine: Engine? = definedExternally) {
     val lights: Array<Light>
 
     /**
+     * List of all transform nodes in the scene
+     */
+    val transformNodes: Array<TransformNode>
+
+    /**
      * List of all cameras in the scene
      */
     val cameras: Array<Camera>
@@ -926,6 +931,9 @@ external class ArcRotateCamera(
     var inertialBetaOffset: Float
     var targetScreenOffset: Vector2
     var inputs: ArcRotateCameraInputs
+    var angularSensibilityX: Float
+    var angularSensibilityY: Float
+    var panningSensibility: Float
 
     fun attachControl(noPreventDefault: Boolean = definedExternally)
     fun detachControl()
@@ -2005,6 +2013,16 @@ external class AssetContainer(scene: Scene) {
      */
     val rootNodes: Array<Node>
 
+    /**
+     * List of cameras in the asset container
+     */
+    val cameras: Array<Camera>
+
+    /**
+     * List of lights in the asset container
+     */
+    val lights: Array<Light>
+
     fun getNodes(): Array<Node>
     
     /**
@@ -2174,6 +2192,27 @@ external class SceneLoader {
             onProgress: ((event: dynamic) -> Unit)? = definedExternally,
             pluginExtension: String? = definedExternally
         ): Promise<AssetContainer>
+
+        /**
+         * Load an asset container
+         * @param rootUrl a string that defines the root url for the scene and resources
+         * @param sceneFilename a string that defines the name of the scene file
+         * @param scene is the instance of Scene to append to
+         * @param onSuccess a callback with the asset container when import succeeds
+         * @param onProgress a callback with a progress event for each file being loaded
+         * @param onError a callback with the scene, a message, and possibly an exception when import fails
+         * @param pluginExtension the extension used to determine the plugin
+         * @returns The loaded plugin
+         */
+        fun LoadAssetContainer(
+            rootUrl: String,
+            sceneFilename: String,
+            scene: Scene,
+            onSuccess: (AssetContainer) -> Unit = definedExternally,
+            onProgress: ((event: dynamic) -> Unit)? = definedExternally,
+            onError: ((scene: Scene, message: String, exception: dynamic) -> Unit)? = definedExternally,
+            pluginExtension: String? = definedExternally
+        ): dynamic
     }
 }
 

@@ -18,6 +18,7 @@ import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.components.minigame.MinigameStyles
 import main.components.tools.CharacterToolPage
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
@@ -48,6 +49,7 @@ fun main() {
             Style(InventoryStyles)
             Style(AssetStyles)
             Style(WorldDocsStyles)
+            Style(MinigameStyles)
             
             // Render the global, floating AI chat box once
             main.components.chat.GlobalAiChat()

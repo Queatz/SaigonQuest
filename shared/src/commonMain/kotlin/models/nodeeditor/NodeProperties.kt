@@ -98,6 +98,17 @@ enum class PropertyKey {
     A,
     B,
     RESULT,
+
+    // JsonExtract properties
+    JSON,
+    KEY,
+
+    // Minigame properties
+    MINIGAME_TYPE,
+    CONFIG_JSON,
+    TIMED,
+    REFLEX,
+    ACCURACY,
 }
 
 /**
@@ -1229,6 +1240,133 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 key = PropertyKey.RESULT,
                 name = "Result",
                 type = PropertyType.NUMBER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // AiImage node properties
+        is LogicNode.AiImage -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.USER_PROMPT,
+                name = "Prompt",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.IMAGE_URL,
+                name = "URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.IMAGE_MARKDOWN,
+                name = "Markdown",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // AiTts node properties
+        is LogicNode.AiTts -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.AUDIO_URL,
+                name = "URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.AUDIO_MARKDOWN,
+                name = "Markdown",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // Minigame node properties
+        is LogicNode.Minigame -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MINIGAME_TYPE,
+                name = "Type",
+                type = PropertyType.ENUM,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Flashcards",
+                options = listOf("Flashcards", "MatchGame", "Scenario")
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TITLE,
+                name = "Title",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "Minigame"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TIMED,
+                name = "Timed",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "true"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.CONFIG_JSON,
+                name = "Config (JSON)",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "[]"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.REFLEX,
+                name = "Reflex (s)",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ACCURACY,
+                name = "Accuracy",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // JsonExtract node properties
+        is LogicNode.JsonExtract -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.JSON,
+                name = "JSON",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.KEY,
+                name = "Key",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT
             )
         )

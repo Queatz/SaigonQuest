@@ -148,6 +148,10 @@ object Styles : StyleSheet() {
             whiteSpace("pre-wrap")
             overflowX("auto")
         }
+
+        desc(self, selector("table")) style {
+            width(100.percent)
+        }
     }
 
     val richTextEditorToolbar by style {

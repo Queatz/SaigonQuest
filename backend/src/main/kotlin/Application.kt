@@ -8,6 +8,7 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
@@ -36,6 +37,8 @@ import routes.configureDocRoutes
 import routes.configureAiRoutes
 import routes.configureVoiceRoutes
 import routes.configureUserRequestRoutes
+import io.ktor.server.http.content.staticFiles
+import java.io.File
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 
@@ -75,7 +78,6 @@ fun Application.module() {
         JwtConfig.configureKtorAuth(this)
     }
     
-    // Configure routing
     routing {
         // Note: Service worker and favicon are served by the frontend host in this setup.
         configureHealthRoutes()

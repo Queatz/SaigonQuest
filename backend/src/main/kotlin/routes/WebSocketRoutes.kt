@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class WebSocketConnection(
     val session: DefaultWebSocketServerSession,
     val user: User,
+    val token: String = "",
     var hasAnnouncedLeave: Boolean = false,
 ) {
     val userId: String
@@ -163,7 +164,8 @@ fun Routing.configureWebSocketRoutes() {
         
         val connection = WebSocketConnection(
             session = this,
-            user = user
+            user = user,
+            token = token,
         )
         WebSocketDebug.logConnection("CREATED", this, worldId, user.key)
         
@@ -479,7 +481,7 @@ fun Routing.configureWebSocketRoutes() {
             return@webSocket
         }
 
-        val connection = WebSocketConnection(this, user)
+        val connection = WebSocketConnection(this, user, token)
         try {
             globalUserConnections.getOrPut(user.key) { mutableListOf() }.add(connection)
             // Update user's last active time on global connect

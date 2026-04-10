@@ -205,6 +205,29 @@ object InventoryState {
     }
     
     /**
+     * Gets a page of items from the inventory.
+     * 
+     * @param page The page index (0-based)
+     * @param pageSize The number of items per page
+     * @return A list of items on the specified page, or an empty list if not found
+     */
+    fun getPageOfItems(page: Int, pageSize: Int): List<Item> {
+        val inv = inventory ?: return emptyList()
+        val itemIds = inv.itemOrder.drop(page * pageSize).take(pageSize)
+        
+        return itemIds.mapNotNull { getItemForInventoryItemKey(it) }
+    }
+    
+    /**
+     * Gets the total number of items in the inventory.
+     * 
+     * @return The total number of items
+     */
+    fun getTotalItemsCount(): Int {
+        return inventory?.itemOrder?.size ?: 0
+    }
+    
+    /**
      * Gets the Item for a given InventoryItem key.
      * 
      * @param inventoryItemKey The key of the InventoryItem

@@ -29,6 +29,9 @@ fun InventoryTray(
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
     
+    // Current page for inventory paging
+    var currentPage by remember { mutableStateOf(0) }
+    
     // Coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
     
@@ -75,8 +78,18 @@ fun InventoryTray(
     }
     
     // Observe inventory state changes
-    val inventoryItems = remember(InventoryState.items, InventoryState.inventory) {
-        InventoryState.getFirstNItems(4)
+    val pageSize = 4
+    val inventoryItems = remember(InventoryState.items, InventoryState.inventory, currentPage) {
+        InventoryState.getPageOfItems(currentPage, pageSize)
+    }
+    
+    // Get total items for pagination
+    val totalItems = InventoryState.getTotalItemsCount()
+    val maxPage = if (totalItems == 0) 0 else (totalItems - 1) / pageSize
+    
+    // Ensure currentPage is valid if inventory changes
+    if (currentPage > maxPage) {
+        currentPage = maxPage
     }
     
     // Get current user from shared state
@@ -125,12 +138,25 @@ fun InventoryTray(
             }
         }
     ) {
-        // Display the first 4 inventory items (or fewer if inventory has less than 4 items)
-        repeat(4) { index ->
+        // Left arrow to page backwards
+        if (currentPage > 0) {
+            InventoryBox(
+                onClick = { currentPage-- },
+                content = "⬅️",
+                isLoading = false,
+                quantity = 0,
+                isWorn = false,
+                sex = currentUser?.sex,
+            )
+        }
+
+        // Display the current page of inventory items
+        repeat(pageSize) { index ->
             val item = if (index < inventoryItems.size) inventoryItems[index] else null
         
             // Get the inventory item key for this item
-            val inventoryItemKey = InventoryState.inventory?.itemOrder?.getOrNull(index)
+            val offset = currentPage * pageSize
+            val inventoryItemKey = InventoryState.inventory?.itemOrder?.getOrNull(offset + index)
             
             InventoryBox(
                 onClick = { 
@@ -146,10 +172,22 @@ fun InventoryTray(
                     }
                 },
                 item = item,
-                isLoading = InventoryState.isLoading && item == null && index < 4,
+                isLoading = InventoryState.isLoading && item == null,
                 quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1,
                 inventoryItemKey = inventoryItemKey,
                 isWorn = item != null && currentUser?.wornItems?.contains(item.key) == true,
+                sex = currentUser?.sex,
+            )
+        }
+
+        // Right arrow to page forwards
+        if ((currentPage + 1) * pageSize < totalItems) {
+            InventoryBox(
+                onClick = { currentPage++ },
+                content = "➡️",
+                isLoading = false,
+                quantity = 0,
+                isWorn = false,
                 sex = currentUser?.sex,
             )
         }
