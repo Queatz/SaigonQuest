@@ -100,7 +100,7 @@ class OcclusionManager(private val scene: Scene) {
     private var lastActiveCamera: lib.Camera? = null
     
     // Configurable parameters
-    private var occlusionSoftness = 0.1f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
+    private var occlusionSoftness = 0.2f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
     private var isEnabled = true
     private var isForceDisabled = false
 
@@ -356,7 +356,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)
-                    effect.setBool("useRadius", false)
+                    effect.setBool("useRadius", true)
                     effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 }
@@ -496,7 +496,7 @@ class OcclusionManager(private val scene: Scene) {
                     // Calculate occlusion radius based on minimum of view width/height
                     val viewWidth = scene.getEngine().getRenderWidth()
                     val viewHeight = scene.getEngine().getRenderHeight()
-                    val occlusionRadius = min(viewWidth, viewHeight) / 2.0f
+                    val occlusionRadius = min(viewWidth, viewHeight) / 3.0f
 
                     // Create screenSize vector once and reuse it
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
@@ -513,7 +513,7 @@ class OcclusionManager(private val scene: Scene) {
                     // Set screen size
                     effect.setVector2("screenSize", screenSize)
 
-                    effect.setBool("useRadius", false)
+                    effect.setBool("useRadius", true)
                     effect.setBool("isEnabled", isEnabled)
 
                     // Set time uniform for animations

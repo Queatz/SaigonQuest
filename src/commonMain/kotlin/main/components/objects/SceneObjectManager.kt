@@ -106,7 +106,7 @@ class SceneObjectManager(
     
     init {
         // Configure the selection outline layer
-        selectionOutlineLayer.outlineThickness = 3.0f
+        selectionOutlineLayer.outlineThickness = 4.0f
         selectionOutlineLayer.outlineColor = Color3.White()
 
         GraphicsSettings.addObserver {
@@ -114,7 +114,7 @@ class SceneObjectManager(
             if (GraphicsSettings.isLowGraphicsModeEnabled()) {
                 selectionOutlineLayer.outlineThickness = 2.0f
             } else {
-                selectionOutlineLayer.outlineThickness = 3.0f
+                selectionOutlineLayer.outlineThickness = 4.0f
             }
         }
     }
