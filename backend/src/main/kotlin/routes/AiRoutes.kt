@@ -14,6 +14,8 @@ import models.AiTtsRequest
 import models.AiImageRequest
 import models.AiImageResponse
 import models.ErrorResponse
+import models.MinigameGenerateRequest
+import models.MinigameType
 import repository.AiHistoryRepository
 import services.AiManager
 
@@ -180,7 +182,70 @@ fun Routing.configureAiRoutes() {
                     }
                 }
             }
+
+            post("/minigame/generate") {
+                val req = try { call.receive<MinigameGenerateRequest>() } catch (t: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request", code = HttpStatusCode.BadRequest.value, details = t.message)
+                    )
+                }
+
+                if (!AiManager.isConfigured()) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "AI integration not configured", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+
+                val sysPrompt = buildMinigameSystemPrompt(req.type)
+
+                val text = AiManager.client.promptText(
+                    systemPrompt = sysPrompt,
+                    userPrompt = req.prompt,
+                    temperature = 0.7,
+                    json = true
+                )
+
+                if (text.isNullOrBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = "Empty AI response", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                call.respondText(text, ContentType.Application.Json)
+            }
         }
+    }
+}
+
+private fun buildMinigameSystemPrompt(type: MinigameType): String {
+    return buildString {
+        appendLine("You are a minigame content generator for Saigon.Quest.")
+        appendLine("Generate a JSON object containing an 'items' array of MinigameItem objects based on the user's prompt for the $type minigame type.")
+        appendLine()
+        appendLine("MinigameItem structure:")
+        appendLine("""{ "id": "string", "text": "string", "translation": "string", "image": null, "audio": null, "definition": "string", "matchId": "string", "hotspot": null }""")
+        appendLine()
+        appendLine("Rules for $type:")
+        when (type) {
+            MinigameType.Flashcards -> {
+                appendLine("- 'text': Word in English.")
+                appendLine("- 'translation': Word in Vietnamese.")
+                appendLine("- 'definition': Brief definition or example.")
+            }
+            MinigameType.MatchGame -> {
+                appendLine("- 'text': Word/phrase.")
+                appendLine("- 'matchId': Common ID for paired items.")
+            }
+            MinigameType.Scenario -> {
+                appendLine("- 'text': Name of object to find.")
+                appendLine("- 'hotspot': Leave null.")
+            }
+        }
+        appendLine("- Generate 5-10 items.")
+        appendLine("- Respond ONLY with a JSON object: { \"items\": [...] }")
     }
 }
 

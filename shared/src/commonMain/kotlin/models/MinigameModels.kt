@@ -61,3 +61,20 @@ data class MinigameResult(
     val accuracy: Double, // Success rate (0.0 to 1.0)
     val completed: Boolean = true,
 )
+
+/**
+ * Request to generate minigame items using AI
+ */
+@Serializable
+data class MinigameGenerateRequest(
+    val type: MinigameType,
+    val prompt: String,
+)
+
+/**
+ * Response containing generated minigame items
+ */
+@Serializable
+data class MinigameItemsResponse(
+    val items: List<MinigameItem>,
+)

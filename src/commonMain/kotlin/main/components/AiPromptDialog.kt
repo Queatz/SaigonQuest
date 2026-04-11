@@ -1,12 +1,8 @@
 package main.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import main.theme.Styles
-import org.jetbrains.compose.web.dom.Div
-import org.w3c.dom.HTMLTextAreaElement
 import web.animations.awaitAnimationFrame
 
 /**
@@ -22,11 +18,19 @@ fun AiPromptDialog(
     onCancel: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    var stopVoiceRequest by remember { mutableStateOf(false) }
+
     BaseDialog(
-        onClose = onCancel,
+        onClose = {
+            stopVoiceRequest = true
+            onCancel()
+        },
         title = title,
         headerActions = {
-            DialogButton(onClick = onOpenHistory, style = DialogButtonStyle.Secondary) {
+            DialogButton(
+                onClick = onOpenHistory,
+                style = DialogButtonStyle.Secondary,
+            ) {
                 Translated("History")
             }
         },
@@ -49,12 +53,36 @@ fun AiPromptDialog(
             )
         },
         actions = {
+            VoiceInput(
+                stopRequested = stopVoiceRequest,
+                onText = { transcribed ->
+                    val t = transcribed.trim()
+                    if (t.isNotEmpty()) {
+                        onPromptChange(
+                            buildString {
+                                append(prompt)
+                                if (prompt.isNotEmpty() && !prompt.endsWith(" ")) append(" ")
+                                append(t)
+                            }
+                        )
+                    }
+                },
+            )
+
             DialogButton(
-                onClick = onCancel,
+                onClick = {
+                    stopVoiceRequest = true
+                    onCancel()
+                },
                 style = DialogButtonStyle.Secondary,
             ) { Translated("Cancel") }
             DialogButton(
-                onClick = { if (prompt.trim().isNotEmpty()) onSubmit() },
+                onClick = {
+                    if (prompt.trim().isNotEmpty()) {
+                        stopVoiceRequest = true
+                        onSubmit()
+                    }
+                },
                 style = DialogButtonStyle.Primary,
                 isDisabled = prompt.trim().isBlank(),
             ) { Translated("Send") }

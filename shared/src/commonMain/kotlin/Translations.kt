@@ -2221,6 +2221,21 @@ vi: Tạo hình ảnh thất bại
 Generate
 vi: Tạo
 
+Add item
+vi: Thêm mục
+
+Add items with AI
+vi: Thêm các mục bằng AI
+
+Add items with AI prompt
+vi: Thêm các mục bằng lệnh AI
+
+Describe what items you want to generate
+vi: Mô tả các mục bạn muốn tạo
+
+Generating items...
+vi: Đang tạo các mục...
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

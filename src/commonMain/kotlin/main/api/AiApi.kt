@@ -21,6 +21,11 @@ import models.AiTtsRequest
 import models.AiImageRequest
 import models.AiImageResponse
 import models.ErrorResponse
+import models.MinigameGenerateRequest
+import models.MinigameItem
+import models.MinigameItemsResponse
+import models.MinigameType
+import utils.json
 
 object AiApi {
     suspend fun generateImage(prompt: String, size: String = "1024*1024"): String {
@@ -115,6 +120,26 @@ object AiApi {
                 val txt = err?.message ?: runCatching { response.bodyAsText() }.getOrNull()
                 throw Error(txt ?: "TTS request failed: HTTP ${response.status.value}")
             }
+        }
+    }
+
+    suspend fun generateMinigameItems(type: MinigameType, prompt: String): List<MinigameItem> {
+        val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/minigame/generate") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(MinigameGenerateRequest(type = type, prompt = prompt))
+        }
+        if (resp.status.isSuccess()) {
+            val raw = resp.bodyAsText()
+            return try {
+                json.decodeFromString<MinigameItemsResponse>(raw).items
+            } catch (e: Throwable) {
+                json.decodeFromString<List<MinigameItem>>(raw)
+            }
+        } else {
+            val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
+            val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
+            throw Error(txt ?: "Minigame generation failed: HTTP ${resp.status.value}")
         }
     }
 }

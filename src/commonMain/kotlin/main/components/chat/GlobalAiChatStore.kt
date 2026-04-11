@@ -58,21 +58,29 @@ object GlobalAiChatStore {
     fun open(
         system: String? = null,
         initialUserMessage: String? = null,
+        initialAssistantMessage: String? = null,
     ) {
         if (isOpen) close() // reset any previous ephemeral session
 
         isOpen = true
-        val initial = buildList {
+        val initialHistory = buildList {
             if (!system.isNullOrBlank()) add(AiChatMessageDto(role = AiRole.System, content = system))
             if (!initialUserMessage.isNullOrBlank()) add(AiChatMessageDto(role = AiRole.User, content = initialUserMessage))
         }
-        messages = initial
-        initialMessageCount = initial.size
+
+        val displayMessages = if (!initialAssistantMessage.isNullOrBlank()) {
+            initialHistory + AiChatMessageDto(role = AiRole.Assistant, content = initialAssistantMessage)
+        } else {
+            initialHistory
+        }
+
+        messages = displayMessages
+        initialMessageCount = displayMessages.size
         isLoading = false
         input = ""
         isFullscreen = false
 
-        scope.launch { connectAndStart(system) }
+        scope.launch { connectAndStart(system, initialHistory) }
     }
 
     fun close() {
@@ -130,23 +138,23 @@ object GlobalAiChatStore {
         ws.send(payload)
     }
 
-    private fun connectAndStart(system: String?) {
+    private fun connectAndStart(system: String?, initialHistory: List<AiChatMessageDto>) {
         val token = UserApi.getToken() ?: ""
         val url = "${ApiConstants.API_BASE_URL.replace("http", "ws")}/ws/ai/chat?token=$token"
         val ws = WebSocket(url)
         socket = ws
 
         ws.onopen = {
-            // Send Start with initialMessages taken from current messages
+            // Send Start with initialMessages taken from provided history
             val start = AiChatClientEvent.Start(
                 system = system,
-                initialMessages = messages,
+                initialMessages = initialHistory,
             )
             val payload = ApiClient.json.encodeToString(AiChatClientEvent.serializer(), start)
             ws.send(payload)
 
-            // If last preloaded message was user, we expect an assistant response
-            if (messages.lastOrNull()?.role == AiRole.User) isLoading = true
+            // If last preloaded message in history was user, we expect an assistant response
+            if (initialHistory.lastOrNull()?.role == AiRole.User) isLoading = true
         }
 
         ws.onmessage = { ev: MessageEvent ->

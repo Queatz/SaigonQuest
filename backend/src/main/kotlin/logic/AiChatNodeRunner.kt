@@ -34,6 +34,7 @@ class AiChatNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
 
         val systemPrompt = getInput(PropertyKey.SYSTEM_PROMPT)
         val initialUserMessage = getInput(PropertyKey.USER_PROMPT)
+        val initialAssistantMessage = getInput(PropertyKey.INITIAL_MESSAGE)
 
         WebSocketDebug.logMessage(
             "AI_CHAT_NODE_EXECUTE",
@@ -44,7 +45,8 @@ class AiChatNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
         val aiChatData = AiChatData(
             userId = context.connection.userId,
             systemPrompt = systemPrompt,
-            initialUserMessage = initialUserMessage
+            initialUserMessage = initialUserMessage,
+            initialAssistantMessage = initialAssistantMessage
         )
 
         val aiChatMessage = WebSocketMessage(

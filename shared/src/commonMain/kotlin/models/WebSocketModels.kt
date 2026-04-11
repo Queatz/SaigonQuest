@@ -233,6 +233,7 @@ data class AiChatData(
     val userId: String,
     val systemPrompt: String? = null,
     val initialUserMessage: String? = null,
+    val initialAssistantMessage: String? = null,
 )
 
 /**

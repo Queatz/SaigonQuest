@@ -343,7 +343,7 @@ sealed interface LogicNode {
         override val id: NodeId = NodeId.AiChat,
         override val label: String = "AI chat",
         override val category: NodeCategory = NodeCategory.Action,
-        override val description: String = "Open a new AI chat session with custom system prompt and initial message"
+        override val description: String = "Open a new AI chat session with custom system prompt, initial user message, and initial assistant message"
     ) : LogicNode
 
     /**

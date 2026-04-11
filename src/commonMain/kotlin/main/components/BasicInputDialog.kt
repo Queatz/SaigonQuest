@@ -1,13 +1,9 @@
 package main.components
 
 import androidx.compose.runtime.*
-import main.theme.Styles
-import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -37,13 +33,11 @@ fun BasicInputDialog(
                     Text(message)
                 }
             }
-            Input(
-                type = InputType.Text,
+            DialogInput(
+                value = value,
+                onInput = { value = it },
+                placeholder = placeholder,
                 attrs = {
-                    classes(Styles.inputField)
-                    placeholder(placeholder)
-                    value(value)
-                    onInput { value = it.value }
                     onKeyDown {
                         if (it.key == "Enter") {
                             onConfirm(value)

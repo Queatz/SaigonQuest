@@ -714,23 +714,13 @@ object Styles : StyleSheet() {
     val objectEditorDialogLogicPreview by style {
         width(100.percent)
         height(200.px)
-        backgroundColor(Theme.colors.surfaceVariant)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         color(Theme.colors.onSurface)
-        property("border", "1px solid ${Theme.colors.outline}")
-        borderRadius(8.px)
         property("margin-top", "16px")
         cursor("pointer")
-        property("transition", "background-color 0.2s, border-color 0.2s")
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-            color(Theme.colors.onSurfaceDark)
-            property("border", "1px solid ${Theme.colors.outlineDark}")
-        }
     }
 
     val objectEditorDialogLogicTitle by style {

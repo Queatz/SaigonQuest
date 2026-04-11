@@ -380,12 +380,12 @@ fun ObjectEditorDialog(
                             }
                         }
                     ) {
-                        Text("${verticalOffset}")
+                        Text("$verticalOffset")
                     }
                 }
                 
                 // Logic Editor preview (disabled)
-                Div(
+                FramedBorder(
                     attrs = {
                         classes(Styles.objectEditorDialogLogicPreview)
                         // Make the entire div clickable to open the logic editor

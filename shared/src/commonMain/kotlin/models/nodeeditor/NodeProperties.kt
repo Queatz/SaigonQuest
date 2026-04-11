@@ -110,6 +110,7 @@ enum class PropertyKey {
     TIMED,
     REFLEX,
     ACCURACY,
+    INITIAL_MESSAGE,
 }
 
 /**
@@ -878,6 +879,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.INITIAL_MESSAGE,
+                name = "Initial message",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
             )
         )
 
@@ -1331,7 +1339,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
             NodePropertyDefinition(
                 key = PropertyKey.CONFIG_JSON,
-                name = "Config (JSON)",
+                name = "Configure",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.INPUT,
                 defaultValue = "[]"

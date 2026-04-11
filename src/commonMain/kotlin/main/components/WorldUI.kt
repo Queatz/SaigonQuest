@@ -569,6 +569,7 @@ fun WorldUI(
                 main.components.chat.GlobalAiChatStore.open(
                     system = data.systemPrompt,
                     initialUserMessage = data.initialUserMessage,
+                    initialAssistantMessage = data.initialAssistantMessage,
                 )
             } catch (e: Throwable) {
                 console.error("Failed to parse OPEN_AI_CHAT payload", e)

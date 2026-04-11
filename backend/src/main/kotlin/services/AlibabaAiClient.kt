@@ -369,7 +369,7 @@ object AlibabaAiClient : AiClient {
                 appJson.decodeFromString(AiTextJson.serializer(), content).text
             }.getOrNull()
 
-            val finalText = (parsedText ?: content).trim()
+            val finalText = (if (json) content else (parsedText ?: content)).trim()
             finalText.ifBlank {
                 if (logSession != null) {
                     WebSocketDebug.logMessage(

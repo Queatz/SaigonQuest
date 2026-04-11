@@ -3,6 +3,8 @@ package main.components.nodeeditor
 import Translations.str
 import androidx.compose.runtime.*
 import main.components.*
+import main.components.common.Spinner
+import main.api.AiApi
 import main.components.media.UploadMediaDialog
 import main.theme.NodeEditorStyles
 import models.*
@@ -12,6 +14,7 @@ import org.jetbrains.compose.web.dom.*
 import main.components.minigame.CoordinatePickerDialog
 import utils.json
 import kotlin.random.Random
+import kotlinx.coroutines.launch
 
 @Composable
 fun MinigameConfigEditor(
@@ -34,6 +37,11 @@ fun MinigameConfigEditor(
     fun updateItems(newItems: List<MinigameItem>) {
         onConfigChange(json.encodeToString(newItems))
     }
+
+    var showAiPromptDialog by remember { mutableStateOf(false) }
+    var isGenerating by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Div({
         classes(NodeEditorStyles.propertyGroup)
@@ -108,7 +116,11 @@ fun MinigameConfigEditor(
         }
 
         Div({
-            style { marginTop(16.px) }
+            style {
+                marginTop(16.px)
+                display(DisplayStyle.Flex)
+                gap(8.px)
+            }
         }) {
             DialogButton(
                 onClick = {
@@ -123,8 +135,59 @@ fun MinigameConfigEditor(
                 },
                 style = DialogButtonStyle.Primary
             ) {
-                Text(translated("Add Item"))
+                Text(translated("Add item"))
             }
+
+            DialogButton(
+                onClick = { showAiPromptDialog = true },
+                style = DialogButtonStyle.Secondary
+            ) {
+                Text(translated("Add items with AI"))
+            }
+        }
+
+        if (showAiPromptDialog) {
+            BasicInputDialog(
+                title = translated("Add items with AI prompt"),
+                placeholder = translated("Describe what items you want to generate"),
+                onConfirm = { prompt ->
+                    showAiPromptDialog = false
+                    isGenerating = true
+                    scope.launch {
+                        try {
+                            val generatedItems = AiApi.generateMinigameItems(type, prompt)
+                            val newList = items.toMutableList()
+                            newList.addAll(generatedItems.map {
+                                if (it.id.isBlank()) it.copy(id = "item_${Random.nextInt(1000000)}") else it
+                            })
+                            updateItems(newList)
+                        } catch (e: Throwable) {
+                            errorMessage = e.message ?: "Generation failed"
+                        } finally {
+                            isGenerating = false
+                        }
+                    }
+                },
+                onCancel = { showAiPromptDialog = false }
+            )
+        }
+
+        if (isGenerating) {
+            BaseDialog(
+                onClose = {},
+                showCloseButton = false,
+                clickOutside = false,
+                content = {
+                    Spinner(message = translated("Generating items..."))
+                }
+            )
+        }
+
+        if (errorMessage != null) {
+            BasicAlertDialog(
+                message = errorMessage!!,
+                onClose = { errorMessage = null }
+            )
         }
     }
 }
