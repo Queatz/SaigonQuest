@@ -16,3 +16,14 @@ data class AiPromptRequest(
 data class AiTtsRequest(
     val text: String,
 )
+
+@Serializable
+data class AiImageRequest(
+    val prompt: String,
+    val size: String = "1024*1024",
+)
+
+@Serializable
+data class AiImageResponse(
+    val imageUrl: String,
+)

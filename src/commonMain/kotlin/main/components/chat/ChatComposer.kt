@@ -462,10 +462,12 @@ fun ChatComposer(
                         initialRichText = ""
                     },
                     onSend = { markdown ->
-                        initialRichText = ""
                         if (isAuthenticated && markdown.isNotBlank()) {
                             WebSocketApi.sendChatMessage(worldId = worldId, messageText = markdown, shouted = shoutNext) { success ->
                                 if (success) {
+                                    showRichEditorDialog = false
+                                    initialRichText = ""
+                                    messageText = ""
                                     shoutNext = false
                                     updateTypingStatus(false)
                                     scope.launch { try { ChatApi.markMessagesAsRead(worldId) } catch (_: Throwable) {} }

@@ -18,9 +18,25 @@ import kotlinx.io.readByteArray
 import models.AiPromptHistory
 import models.AiPromptRequest
 import models.AiTtsRequest
+import models.AiImageRequest
+import models.AiImageResponse
 import models.ErrorResponse
 
 object AiApi {
+    suspend fun generateImage(prompt: String, size: String = "1024*1024"): String {
+        val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/image") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(AiImageRequest(prompt = prompt, size = size))
+        }
+        if (resp.status.isSuccess()) {
+            return resp.body<AiImageResponse>().imageUrl
+        } else {
+            val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
+            val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
+            throw Error(txt ?: "Image generation failed: HTTP ${resp.status.value}")
+        }
+    }
     suspend fun sendPrompt(
         prompt: String,
         docContents: String,

@@ -13,6 +13,6 @@ object ApiConstants {
         } catch (t: Throwable) {
             null
         }
-        fromEnv?.trimEnd('/').orEmpty().ifBlank { "https://api.saigon.quest" }
+        fromEnv?.trimEnd('/').orEmpty().ifBlank { "http://localhost:8080" }
     }
 }

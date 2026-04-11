@@ -2,7 +2,6 @@ package routes
 
 import auth.JWTUtils
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
@@ -12,6 +11,8 @@ import io.ktor.utils.io.*
 import models.AiPromptHistory
 import models.AiPromptRequest
 import models.AiTtsRequest
+import models.AiImageRequest
+import models.AiImageResponse
 import models.ErrorResponse
 import repository.AiHistoryRepository
 import services.AiManager
@@ -87,6 +88,63 @@ fun Routing.configureAiRoutes() {
                         )
                     }
                 call.respond(items)
+            }
+
+            post("/image") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                val token = call.request.header(HttpHeaders.Authorization)?.removePrefix("Bearer ")
+
+                val req = try { call.receive<AiImageRequest>() } catch (t: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request", code = HttpStatusCode.BadRequest.value, details = t.message)
+                    )
+                }
+
+                if (req.prompt.isBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Prompt cannot be empty", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                if (!AiManager.isConfigured()) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(
+                            message = "AI integration not configured",
+                            code = HttpStatusCode.InternalServerError.value,
+                        )
+                    )
+                }
+
+                val imageUrl = try {
+                    AiManager.client.generateImageUrl(req.prompt, req.size, token)
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = e.message ?: "Image generation failed", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                if (imageUrl == null) {
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = "Failed to generate image URL", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                // Save to history
+                val history = AiPromptHistory(
+                    userId = userId,
+                    prompt = req.prompt,
+                    responsePreview = imageUrl,
+                )
+                runCatching { historyRepo.insert(history) }
+
+                call.respond(AiImageResponse(imageUrl))
             }
 
             post("/tts") {

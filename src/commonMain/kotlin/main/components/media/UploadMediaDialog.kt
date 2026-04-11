@@ -35,6 +35,7 @@ fun UploadMediaDialog(
     var uploading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var renameItem by remember { mutableStateOf<UserMedia?>(null) }
+    var showAi by remember { mutableStateOf(false) }
 
     fun imageUrlFor(path: String) = ContentApiConstants.CONTENT_BASE_URL + path
 
@@ -100,13 +101,46 @@ fun UploadMediaDialog(
         maxWidth = "720px",
         isFullHeight = false,
         content = {
-            // Top upload area
-            MediaUploadArea(
-                onUpload = { uploadFile(it) },
-                uploading = uploading,
-                onError = { error = it },
-                filter = filter,
-            )
+            if (filter == MediaType.Image || filter == null) {
+                Div(attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        gap(8.px)
+                        marginBottom(12.px)
+                    }
+                }) {
+                    DialogButton(
+                        onClick = { showAi = false },
+                        style = if (!showAi) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                        small = true,
+                        attrs = { style { flex(1) } }
+                    ) { Translated("Upload") }
+
+                    DialogButton(
+                        onClick = { showAi = true },
+                        style = if (showAi) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                        small = true,
+                        attrs = { style { flex(1) } }
+                    ) { Translated("AI Image") }
+                }
+            }
+
+            if (showAi) {
+                MediaAiArea(
+                    onSelect = onSelect,
+                    onError = { error = it },
+                    filter = filter,
+                    onRefreshLibrary = { refresh() },
+                )
+            } else {
+                // Top upload area
+                MediaUploadArea(
+                    onUpload = { uploadFile(it) },
+                    uploading = uploading,
+                    onError = { error = it },
+                    filter = filter,
+                )
+            }
 
             // Error
             if (error != null) {

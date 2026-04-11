@@ -2208,6 +2208,19 @@ vi: Tiếp tục
 
 Find
 vi: Tìm
+
+Describe the image you want to generate...
+vi: Mô tả hình ảnh bạn muốn tạo...
+
+Generating your image...
+vi: Đang tạo hình ảnh của bạn...
+
+Generation failed
+vi: Tạo hình ảnh thất bại
+
+Generate
+vi: Tạo
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

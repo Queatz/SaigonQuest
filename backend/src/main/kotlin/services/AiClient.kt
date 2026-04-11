@@ -51,10 +51,10 @@ interface AiClient {
         token: String? = null,
     ): String? {
         val bytes = tts(text) ?: return null
-        return if (token != null) {
+        return if (!token.isNullOrBlank()) {
             uploadAsset(bytes, "wav", token)
         } else {
-            saveGenFile(bytes, "wav")
+            null
         }
     }
 
@@ -76,20 +76,20 @@ interface AiClient {
     ): String? {
         val url = generateImage(prompt, size) ?: return null
         if (url.startsWith("http") && !url.contains("/gen/") && !url.contains("/static/")) {
-            // Download and save locally or upload to content server
+            // Download and upload to content server if token is present
             return try {
                 HttpClient(CIO).use { client ->
                     val bytes = client.get(url).body<ByteArray>()
-                    if (token != null) {
+                    if (!token.isNullOrBlank()) {
                         uploadAsset(bytes, "png", token)
                     } else {
-                        saveGenFile(bytes, "png")
+                        null
                     }
                 }
             } catch (e: Throwable) {
                 e.printStackTrace()
-                url // Fallback to temporary URL
-            }
+                null
+            } ?: url
         }
         return url
     }
@@ -107,21 +107,4 @@ interface AiClient {
         }
     }
 
-    /**
-     * Helper to save bytes to gen/ directory and return the URL
-     */
-    fun saveGenFile(bytes: ByteArray, extension: String): String? {
-        val fileName = "${java.util.UUID.randomUUID()}.$extension"
-        val dir = java.io.File("gen")
-        if (!dir.exists()) dir.mkdirs()
-        val file = java.io.File(dir, fileName)
-        return try {
-            file.writeBytes(bytes)
-            val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "https://api.saigon.quest").trimEnd('/')
-            "$apiBase/gen/$fileName"
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            null
-        }
-    }
 }
