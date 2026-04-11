@@ -721,6 +721,10 @@ object Styles : StyleSheet() {
         color(Theme.colors.onSurface)
         property("margin-top", "16px")
         cursor("pointer")
+
+        dark(self) {
+            color(Theme.colors.onSurfaceDark)
+        }
     }
 
     val objectEditorDialogLogicTitle by style {
