@@ -53,8 +53,8 @@ fun VisitorDialogPresenter(
 
                     // Re-show local player's status after registration
                     try {
-                        if (!user.status.isNullOrBlank()) {
-                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status!!)
+                        if (user.status.isNotBlank()) {
+                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status)
                         }
                     } catch (e: Throwable) {
                         console.error("VisitorDialogPresenter: Failed to display status after registration", e)
@@ -80,8 +80,8 @@ fun VisitorDialogPresenter(
 
                     // Re-show local player's status after login
                     try {
-                        if (!user.status.isNullOrBlank()) {
-                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status!!)
+                        if (user.status.isNotBlank()) {
+                            SceneManager.getPlayerController()?.displayPlayerStatus(user.status)
                         }
                     } catch (e: Throwable) {
                         console.error("VisitorDialogPresenter: Failed to display status after login", e)

@@ -38,7 +38,7 @@ fun applyImageLoadBehavior(container: Element) {
         // In case of error, still reveal the element so the broken image indicator shows
         onError = {
             img.classList.add("loaded")
-            img.removeEventListener("load", onLoad!!)
+            img.removeEventListener("load", onLoad)
             img.removeEventListener("error", onError!!)
         }
 

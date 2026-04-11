@@ -184,9 +184,11 @@ fun MdEditable(
                                 val canDomWrap = sel != null && sel.rangeCount > 0 && domTag != null
                                 if (canDomWrap) {
                                     try {
-                                        val range = sel!!.getRangeAt(0)
+                                        val range = sel.getRangeAt(0)
                                         if (!range.collapsed) {
-                                            val wrapper = el.ownerDocument?.createElement(domTag!!) ?: document.createElement(domTag!!)
+                                            val wrapper = el.ownerDocument?.createElement(domTag) ?: document.createElement(
+                                                domTag
+                                            )
                                             range.surroundContents(wrapper)
                                             // Select contents of the new wrapper (exclude wrapper element itself)
                                             val newRange = document.createRange()
@@ -217,9 +219,9 @@ fun MdEditable(
                                 val cachedLen = (lastMdSelection.last - lastMdSelection.first).coerceAtLeast(0)
                                 val visibleText = getCurrentSelectionText()
                                 val singleLineVisible = visibleText != null && !visibleText.contains('\n') && visibleText.isNotEmpty()
-                                val visibleLen = if (singleLineVisible) visibleText!!.length else 0
+                                val visibleLen = if (singleLineVisible) visibleText.length else 0
                                 // Avoid wrapping list markers if start accidentally points at "- "
-                                if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText!!.startsWith("-")) {
+                                if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText.startsWith("-")) {
                                     start = (start + 2).coerceAtMost(sourceMd.length)
                                 }
                                 val chosenLen = if (visibleLen > 0) visibleLen else maxOf(baseLen, cachedLen)
@@ -356,8 +358,8 @@ fun MdEditable(
                             val cachedLen = (lastMdSelection.last - lastMdSelection.first).coerceAtLeast(0)
                             val visibleText = getCurrentSelectionText()
                             val singleLineVisible = visibleText != null && !visibleText.contains('\n') && visibleText.isNotEmpty()
-                            val visibleLen = if (singleLineVisible) visibleText!!.length else 0
-                            if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText!!.startsWith("-")) {
+                            val visibleLen = if (singleLineVisible) visibleText.length else 0
+                            if (singleLineVisible && start + 2 <= sourceMd.length && sourceMd.startsWith("- ", start) && !visibleText.startsWith("-")) {
                                 start = (start + 2).coerceAtMost(sourceMd.length)
                             }
                             val chosenLen = if (visibleLen > 0) visibleLen else maxOf(baseLen, cachedLen)

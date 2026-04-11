@@ -221,7 +221,7 @@ fun InventoryDialog(onClose: () -> Unit) {
         val itemKey = if (isDirectItemId) id else InventoryState.inventoryItemToItemMap[id]
 
         // Check if the item is actually worn
-        if (itemKey == null || currentUser?.wornItems?.contains(itemKey) != true) {
+        if (itemKey == null || currentUser.wornItems?.contains(itemKey) != true) {
             console.log("[DEBUG_LOG] handleRemoveWornItem: Item is not currently worn: ${item.title}, itemKey=$itemKey")
             showFeedback("Item is not currently worn: ${item.title}", true)
             return
@@ -756,7 +756,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 classes(InventoryStyles.wornItemCard)
                                                 
                                                 // Move worn border highlight here
-                                                when (currentUser?.sex) {
+                                                when (currentUser.sex) {
                                                     Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
                                                     Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
                                                     else -> {}
@@ -806,7 +806,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 quantity = 1, // Worn items always have quantity 1
                                                 inventoryItemKey = inventoryItemKey,
                                                 isWorn = false, // Disable worn highlight in the box itself
-                                                sex = currentUser?.sex,
+                                                sex = currentUser.sex,
                                                 useBorder = false, // Remove the 2nd framed border (inner)
                                                 draggable = false,
                                             )
@@ -912,7 +912,7 @@ fun InventoryDialog(onClose: () -> Unit) {
                                                 classes(InventoryStyles.inventoryCard)
 
                                                 if (isWorn) {
-                                                    when (currentUser?.sex) {
+                                                    when (currentUser.sex) {
                                                         Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
                                                         Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
                                                         else -> {}

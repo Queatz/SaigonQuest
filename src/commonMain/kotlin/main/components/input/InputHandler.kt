@@ -81,7 +81,7 @@ private fun pickUnderPointer(
         meshes.forEach { mesh ->
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) {
-                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                 if (distance < closestDistance) {
                     if (isInventoryObj) {
                         closestDistance = distance
@@ -757,7 +757,7 @@ class InputHandler(
                             if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                             val hit = ray.intersectsMesh(mesh)
                             if (hit.pickedPoint != null) {
-                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                                 if (distance < closestDistance) {
                                     closestDistance = distance
                                     clickPoint = hit.pickedPoint
@@ -768,7 +768,7 @@ class InputHandler(
                             if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                             val hit = ray.intersectsMesh(mesh)
                             if (hit.pickedPoint != null) {
-                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                                val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                                 if (distance < closestDistance) {
                                     closestDistance = distance
                                     clickPoint = hit.pickedPoint
@@ -1082,7 +1082,7 @@ class InputHandler(
                 if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
                 val hit = ray.intersectsMesh(mesh)
                 if (hit.pickedPoint != null) {
-                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint!!)
+                    val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                     if (distance < closestDistance) {
                         closestDistance = distance
                         closestPoint = hit.pickedPoint

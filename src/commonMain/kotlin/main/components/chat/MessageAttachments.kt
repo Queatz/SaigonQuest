@@ -45,7 +45,6 @@ fun MessageAttachments(
                     }
                 )
             }
-            else -> { /* no-op for now */ }
         }
     }
 }

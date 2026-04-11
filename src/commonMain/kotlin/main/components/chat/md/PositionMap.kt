@@ -284,7 +284,7 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         children.forEachIndexed { i, li ->
                             if ((li as? Element)?.tagName?.equals("LI", true) == true) {
                                 // marker for li anchored at its start boundary
-                                addLiteral("- ", BoundaryAnchor(li as Element, 0))
+                                addLiteral("- ", BoundaryAnchor(li, 0))
                                 // boundaries for LI
                                 val liChildren = childNodesList(li)
                                 val liArr = IntArray(liChildren.size + 1)
@@ -315,7 +315,7 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         children.forEachIndexed { i, li ->
                             if ((li as? Element)?.tagName?.equals("LI", true) == true) {
                                 val marker = "$iNum. "
-                                addLiteral(marker, BoundaryAnchor(li as Element, 0))
+                                addLiteral(marker, BoundaryAnchor(li, 0))
                                 val liChildren = childNodesList(li)
                                 val liArr = IntArray(liChildren.size + 1)
                                 liArr[0] = sb.length
@@ -338,7 +338,7 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         boundaries[el] = arr
                     }
                     "pre" -> {
-                        val code = el.getElementsByTagName("code").item(0) as? Element
+                        val code = el.getElementsByTagName("code").item(0)
                         val lang = code?.getAttribute("class")?.substringAfter("language-", "") ?: ""
                         val open = "```" + lang + "\n"
                         addLiteral(open, BoundaryAnchor(el, 0))

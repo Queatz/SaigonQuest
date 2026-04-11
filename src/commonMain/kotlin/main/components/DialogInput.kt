@@ -49,7 +49,7 @@ fun DialogInput(
     min: Number? = null,
     max: Number? = null,
     step: Number? = null,
-    attrs: AttrBuilderContext<out HTMLElement>? = null,
+    attrs: AttrBuilderContext<HTMLElement>? = null,
     wrapperAttrs: AttrBuilderContext<HTMLDivElement>? = null,
     containerAttrs: AttrBuilderContext<HTMLDivElement>? = null,
     content: @Composable () -> Unit = {},
@@ -103,7 +103,7 @@ fun DialogInput(
                 )
             } else {
                 Input(
-                    type = type as InputType<Any?>,
+                    type = type,
                     attrs = {
                         classes(Styles.dialogInputField)
                         if (placeholder != null) placeholder(placeholder)

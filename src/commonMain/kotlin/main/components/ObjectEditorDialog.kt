@@ -493,7 +493,7 @@ fun ObjectEditorDialog(
                     errorMessage = ""
                     coroutineScope.launch {
                         try {
-                            ObjectApi.deleteObject(objectModel!!.key)
+                            ObjectApi.deleteObject(objectModel.key)
                             isDeleting = false
                             onClose()
                         } catch (error: Throwable) {

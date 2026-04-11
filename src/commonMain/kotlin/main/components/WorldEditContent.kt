@@ -501,9 +501,9 @@ fun WorldEditContent(
 
         coroutineScope.launch {
             try {
-                val fileChanged = isEditing && currentWorld!!.file != worldModel.file
+                val fileChanged = isEditing && currentWorld.file != worldModel.file
                 val savedWorld = if (isEditing) {
-                    WorldApi.updateWorld(currentWorld!!.key, worldModel)
+                    WorldApi.updateWorld(currentWorld.key, worldModel)
                 } else {
                     WorldApi.createWorld(worldModel)
                 }
@@ -676,7 +676,7 @@ fun WorldEditContent(
                         },
                         onClose = { showOwnerPicker = false },
                         excludeIds = buildSet {
-                            currentWorld.userId?.let { if (it.isNotBlank()) add(it) }
+                            currentWorld.userId.let { if (it.isNotBlank()) add(it) }
                             addAll(ownerIds)
                         },
                     )
@@ -1762,7 +1762,7 @@ fun WorldEditContent(
                                 deleteError = null
                                 coroutineScope.launch {
                                     try {
-                                        WorldApi.deleteWorld(currentWorld!!.key)
+                                        WorldApi.deleteWorld(currentWorld.key)
                                         isDeleting = false
                                         showDeleteConfirm = false
                                         didSave = true

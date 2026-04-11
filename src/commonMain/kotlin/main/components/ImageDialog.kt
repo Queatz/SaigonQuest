@@ -59,12 +59,8 @@ fun ImageDialog(
                         scope.launch {
                             try {
                                 val clip = window.navigator.clipboard
-                                if (clip != null) {
-                                    clip.writeText(imageUrl).await()
-                                    copied = true
-                                } else {
-                                    console.error("Clipboard API not available in this context")
-                                }
+                                clip.writeText(imageUrl).await()
+                                copied = true
                             } catch (t: Throwable) {
                                 console.error("Failed to copy image URL", t)
                             }

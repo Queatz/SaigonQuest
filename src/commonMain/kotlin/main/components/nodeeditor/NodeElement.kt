@@ -174,7 +174,6 @@ fun NodeElement(
         NodeCategory.Action -> NodeEditorStyles.actionNodeColor
         NodeCategory.Input -> NodeEditorStyles.inputNodeColor
         NodeCategory.Quest -> NodeEditorStyles.questNodeColor
-        else -> NodeEditorStyles.defaultNodeColor
     }
 
     // Effect to register the node element with the controller
@@ -191,7 +190,7 @@ fun NodeElement(
         onDispose {
             println("[NODE_CONNECTIONS] Disposing node element: $id with ${inputs.size} inputs and ${outputs.size} outputs")
             // Unregister the node element when the component is disposed
-            controller.unregisterNodeElement(id, nodeElementRef!!)
+            controller.unregisterNodeElement(id, nodeElementRef)
         }
     }
 

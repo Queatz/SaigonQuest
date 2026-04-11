@@ -70,7 +70,7 @@ object TimeUtils {
         val month = months[localDateTime.month.ordinal]
         
         // Get day of month
-        val day = localDateTime.dayOfMonth
+        val day = localDateTime.day
         
         return "$month $day"
     }

@@ -161,7 +161,7 @@ fun SceneComponent(url: String) {
             awaitAnimationFrame()
             // Only steal focus if no specific element is focused and no text is selected by the user.
             // This prevents focus jumping and losing text selections in the Chat or other UI elements.
-            val selection = window.asDynamic().getSelection()?.toString() as? String
+            val selection = window.asDynamic().getSelection()?.toString()
             if (document.activeElement == document.body && selection.isNullOrEmpty()) {
                 canvasRef?.focus()
             }
@@ -772,7 +772,7 @@ fun SceneComponent(url: String) {
                 cameraController.addCameraToPipeline(ssCam)
 
                 worldLoader.getOcclusionManager()?.setEnabled(false)
-                animationGroup?.play(loop = true)
+                animationGroup.play(loop = true)
                 screenSaverAnimationGroup = animationGroup
                 console.log("[ScreenSaver] Started with camera: ${ssCam.name}")
                 console.log("[ScreenSaver]", ssCam)

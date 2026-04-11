@@ -1,6 +1,5 @@
 package main.components.chat
 
-import Translations.str
 import androidx.compose.runtime.Composable
 import main.components.IconRenderer
 import main.components.VoiceInput
@@ -8,13 +7,6 @@ import main.components.translated
 import main.theme.Styles
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.attributes.AttrsScope
-import org.w3c.dom.HTMLButtonElement
-
-private fun AttrsScope<HTMLButtonElement>.title(value: String) {
-    attr("title", value)
-}
 
 /**
  * A reusable toolbar for the RichTextEditor.

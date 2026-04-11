@@ -129,7 +129,7 @@ fun CharacterToolPage() {
                     attr("min", "1")
                     value(cellWidth.toString())
                     onInput { ev ->
-                        val v = (ev.target as HTMLInputElement).value
+                        val v = ev.target.value
                         cellWidth = v.toIntOrNull() ?: cellWidth
                     }
                 })
@@ -139,7 +139,7 @@ fun CharacterToolPage() {
                     attr("min", "1")
                     value(cellHeight.toString())
                     onInput { ev ->
-                        val v = (ev.target as HTMLInputElement).value
+                        val v = ev.target.value
                         cellHeight = v.toIntOrNull() ?: cellHeight
                     }
                 })
@@ -149,7 +149,7 @@ fun CharacterToolPage() {
                     attr("min", "1")
                     value(columns.toString())
                     onInput { ev ->
-                        val v = (ev.target as HTMLInputElement).value
+                        val v = ev.target.value
                         columns = v.toIntOrNull() ?: columns
                     }
                 })
@@ -159,7 +159,7 @@ fun CharacterToolPage() {
                     attr("min", "1")
                     value(fps.toInt().toString())
                     onInput { ev ->
-                        val v = (ev.target as HTMLInputElement).value
+                        val v = ev.target.value
                         fps = (v.toFloatOrNull() ?: fps).coerceAtLeast(1f)
                     }
                 })

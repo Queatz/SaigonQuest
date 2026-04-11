@@ -1065,8 +1065,8 @@ class WorldLoader(private val scene: Scene) {
                     SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
                     
                     // Ensure world lights don't wash out the moon's shadow/phase
-                    hemi?.excludedMeshes = (hemi?.excludedMeshes ?: emptyArray()) + mesh
-                    dir?.excludedMeshes = (dir?.excludedMeshes ?: emptyArray()) + mesh
+                    hemi?.excludedMeshes = (hemi.excludedMeshes ?: emptyArray()) + mesh
+                    dir?.excludedMeshes = (dir.excludedMeshes ?: emptyArray()) + mesh
                     
                     console.log("[DEBUG] Created realtime moon mesh")
                 }

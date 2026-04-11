@@ -40,7 +40,7 @@ fun InventoryBox(
     }
 
     val boxOnClick = onClick
-    val contentAttrs: AttrBuilderContext<out HTMLElement> = {
+    val contentAttrs: AttrBuilderContext<HTMLElement> = {
         classes(InventoryStyles.inventoryBox)
         if (isWorn) {
             when (sex) {

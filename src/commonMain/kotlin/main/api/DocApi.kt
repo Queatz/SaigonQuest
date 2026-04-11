@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.websocket.readText
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.callbackFlow
@@ -221,6 +222,7 @@ object DocApi {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun collaborate(docId: String): CollaborationConnection {
         val base = toWsUrl(ApiConstants.API_BASE_URL) + "/docs/$docId/collaborate"
         // Browsers cannot set Authorization headers on WebSocket handshakes; pass token/visitorId via query
