@@ -140,14 +140,16 @@ fun InventoryTray(
     ) {
         // Left arrow to page backwards
         if (currentPage > 0) {
-            InventoryBox(
-                onClick = { currentPage-- },
-                content = "⬅️",
-                isLoading = false,
-                quantity = 0,
-                isWorn = false,
-                sex = currentUser?.sex,
-            )
+            key("prev-page") {
+                InventoryBox(
+                    onClick = { currentPage-- },
+                    content = "⬅️",
+                    isLoading = false,
+                    quantity = 0,
+                    isWorn = false,
+                    sex = currentUser?.sex,
+                )
+            }
         }
 
         // Display the current page of inventory items
@@ -158,48 +160,54 @@ fun InventoryTray(
             val offset = currentPage * pageSize
             val inventoryItemKey = InventoryState.inventory?.itemOrder?.getOrNull(offset + index)
             
-            InventoryBox(
-                onClick = { 
-                    // Use the item if we have one
-                    if (item != null) {
-                        ItemUsageHandler.useItem(
-                            item = item,
-                            currentUser = currentUser,
-                            coroutineScope = coroutineScope,
-                            onSuccess = { message -> showFeedback(message) },
-                            onError = { message -> showFeedback(message, true) }
-                        )
-                    }
-                },
-                item = item,
-                isLoading = InventoryState.isLoading && item == null,
-                quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1,
-                inventoryItemKey = inventoryItemKey,
-                isWorn = item != null && currentUser?.wornItems?.contains(item.key) == true,
-                sex = currentUser?.sex,
-            )
+            key(inventoryItemKey ?: "empty-$index") {
+                InventoryBox(
+                    onClick = { 
+                        // Use the item if we have one
+                        if (item != null) {
+                            ItemUsageHandler.useItem(
+                                item = item,
+                                currentUser = currentUser,
+                                coroutineScope = coroutineScope,
+                                onSuccess = { message -> showFeedback(message) },
+                                onError = { message -> showFeedback(message, true) }
+                            )
+                        }
+                    },
+                    item = item,
+                    isLoading = InventoryState.isLoading && item == null,
+                    quantity = if (inventoryItemKey != null) InventoryState.getQuantityForInventoryItemKey(inventoryItemKey) else 1,
+                    inventoryItemKey = inventoryItemKey,
+                    isWorn = item != null && currentUser?.wornItems?.contains(item.key) == true,
+                    sex = currentUser?.sex,
+                )
+            }
         }
 
         // Right arrow to page forwards
         if ((currentPage + 1) * pageSize < totalItems) {
+            key("next-page") {
+                InventoryBox(
+                    onClick = { currentPage++ },
+                    content = "➡️",
+                    isLoading = false,
+                    quantity = 0,
+                    isWorn = false,
+                    sex = currentUser?.sex,
+                )
+            }
+        }
+        
+        // Last box always opens inventory dialog
+        key("open-inventory") {
             InventoryBox(
-                onClick = { currentPage++ },
-                content = "➡️",
-                isLoading = false,
-                quantity = 0,
+                onClick = { onOpenInventory() },
+                content = "➕",
+                isLoading = false, // Never show loading for the dialog opener
+                quantity = 0, // No quantity for the dialog opener
                 isWorn = false,
                 sex = currentUser?.sex,
             )
         }
-        
-        // Last box always opens inventory dialog
-        InventoryBox(
-            onClick = { onOpenInventory() },
-            content = "➕",
-            isLoading = false, // Never show loading for the dialog opener
-            quantity = 0, // No quantity for the dialog opener
-            isWorn = false,
-            sex = currentUser?.sex,
-        )
     }
 }

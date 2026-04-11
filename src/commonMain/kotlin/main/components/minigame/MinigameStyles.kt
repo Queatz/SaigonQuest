@@ -117,6 +117,19 @@ object MinigameStyles : StyleSheet() {
         property("transform", "translate(-50%, -50%)")
     }
 
+    val scenarioPrompt by style {
+        position(Position.Absolute)
+        top(20.px)
+        left(20.px)
+        backgroundColor(Color("rgba(0, 0, 0, 0.6)"))
+        color(Color.white)
+        padding(8.px, 16.px)
+        borderRadius(8.px)
+        margin(0.px)
+        property("z-index", "10")
+        property("pointer-events", "none")
+    }
+
     val controlsContainer by style {
         display(DisplayStyle.Flex)
         gap(16.px)

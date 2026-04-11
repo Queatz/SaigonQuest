@@ -165,7 +165,7 @@ fun <TElement : HTMLElement> AttrsScope<TElement>.touchDraggable(
             window.addEventListener("touchcancel", ender, false)
         }
 
-        fun handleTouchStart(e: Event) {
+        val handleTouchStart: (Event) -> Unit = { e ->
             val te = e as TouchEvent
             if (te.touches.length == 1) {
                 val t: Touch = te.touches.item(0)!!
@@ -174,14 +174,14 @@ fun <TElement : HTMLElement> AttrsScope<TElement>.touchDraggable(
             }
         }
 
-        element.addEventListener("touchstart", ::handleTouchStart, false)
+        element.addEventListener("touchstart", handleTouchStart, false)
 
         onDispose {
             preview?.let { document.body?.removeChild(it) }
             preview = null
             val wasDragging = isDragging
             isDragging = false
-            element.removeEventListener("touchstart", ::handleTouchStart, false)
+            element.removeEventListener("touchstart", handleTouchStart, false)
             detachWindowListeners()
             if (wasDragging) {
                 element.style.removeProperty("touch-action")

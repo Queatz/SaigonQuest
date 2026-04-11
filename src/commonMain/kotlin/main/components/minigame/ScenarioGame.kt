@@ -53,17 +53,19 @@ fun ScenarioGame(
     Div({
         classes(MinigameStyles.gameContainer)
     }) {
-        currentPromptTarget?.let { target ->
-            H3 { 
-                Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
-            }
-        }
-
         FramedBorder(
             attrs = {
                 classes(MinigameStyles.scenarioBackground)
             }
         ) {
+            currentPromptTarget?.let { target ->
+                H3({
+                    classes(MinigameStyles.scenarioPrompt)
+                }) {
+                    Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
+                }
+            }
+
             heroItem?.image?.let { url ->
                 Img(src = url, attrs = {
                     style {

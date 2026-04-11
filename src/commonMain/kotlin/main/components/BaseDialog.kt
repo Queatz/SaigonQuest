@@ -13,6 +13,7 @@ import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.dom.*
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.random.Random
@@ -129,6 +130,7 @@ fun BaseDialog(
     isFullWidth: Boolean = false,
     anchorToBottom: Boolean = false,
     banner: (@Composable () -> Unit)? = null,
+    useBorder: Boolean = true,
     content: @Composable () -> Unit,
     actions: (@Composable () -> Unit)? = null
 ) {
@@ -163,43 +165,43 @@ fun BaseDialog(
                 }
             }
         ) {
-            // Dialog content
-            FramedBorder(
-                attrs = {
-                    classes(Styles.baseDialogContainer)
-                    style {
-                        if (isFullscreen) {
-                            // Apply fullscreen styling
+            // Dialog container
+            val containerAttrs: AttrBuilderContext<HTMLDivElement> = {
+                classes(Styles.baseDialogContainer)
+                style {
+                    if (isFullscreen) {
+                        // Apply fullscreen styling
+                        property("width", "100%")
+                        property("height", "100vh")
+                        property("border-radius", "0")
+                        // Note: we might want to skip the frame for actual fullscreen
+                        // but for now we follow the instruction to apply it to all dialogs
+                    } else {
+                        // Apply regular styling
+                        if (isFullHeight) {
+                            property("height", "calc(100vh - 64px)")
+                        }
+                        if (isFullWidth) {
+                            property("width", "calc(100vw - 64px)")
+                        }
+                        if (anchorToBottom) {
+                            // Bottom sheet style tweaks
+                            maxHeight("calc(100vh - 64px)")
                             property("width", "100%")
-                            property("height", "100vh")
+                            property("max-width", "100vw")
                             property("border-radius", "0")
-                            // Note: we might want to skip the frame for actual fullscreen
-                            // but for now we follow the instruction to apply it to all dialogs
+                            property("margin-bottom", "env(safe-area-inset-bottom)")
                         } else {
-                            // Apply regular styling
-                            if (isFullHeight) {
-                                property("height", "calc(100vh - 64px)")
-                            }
-                            if (isFullWidth) {
-                                property("width", "calc(100vw - 64px)")
-                            }
-                            if (anchorToBottom) {
-                                // Bottom sheet style tweaks
-                                maxHeight("calc(100vh - 64px)")
-                                property("width", "100%")
-                                property("max-width", "100vw")
-                                property("border-radius", "0")
-                                property("margin-bottom", "env(safe-area-inset-bottom)")
-                            } else {
-                                property("max-width", maxWidth)
-                                maxHeight("calc(100vh - 2rem)")
-                            }
+                            property("max-width", maxWidth)
+                            maxHeight("calc(100vh - 2rem)")
                         }
                     }
-                    // Stop propagation to prevent closing when clicking inside the dialog
-                    onClick { it.stopPropagation() }
                 }
-            ) {
+                // Stop propagation to prevent closing when clicking inside the dialog
+                onClick { it.stopPropagation() }
+            }
+
+            val dialogContent: @Composable () -> Unit = {
                 // Dialog header (if title is provided)
                 if (title != null || showCloseButton) {
                     Div(
@@ -220,7 +222,7 @@ fun BaseDialog(
                             // Empty div to maintain flex layout when no title
                             Div {}
                         }
-                        
+
                         // Header actions container (for additional buttons and close button)
                         Div(
                             attrs = {
@@ -236,7 +238,7 @@ fun BaseDialog(
                             if (headerActions != null) {
                                 headerActions()
                             }
-                            
+
                             // Close button (if enabled)
                             if (showCloseButton) {
                                 Button(
@@ -245,22 +247,22 @@ fun BaseDialog(
                                         onClick { onClose() }
                                     }
                                 ) {
-                                IconRenderer(
-                                    url = "raw/data/ui/ui.png",
-                                    index = 20,
-                                    size = 24,
-                                )
+                                    IconRenderer(
+                                        url = "raw/data/ui/ui.png",
+                                        index = 20,
+                                        size = 24,
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                
+
                 // Dialog banner (if provided)
                 if (banner != null) {
                     banner()
                 }
-                
+
                 // Dialog content
                 Div(
                     attrs = {
@@ -275,7 +277,7 @@ fun BaseDialog(
                 ) {
                     content()
                 }
-                
+
                 // Dialog footer with actions (if provided)
                 if (actions != null) {
                     Div(
@@ -291,6 +293,19 @@ fun BaseDialog(
                     ) {
                         actions()
                     }
+                }
+            }
+
+            if (useBorder) {
+                FramedBorder(
+                    attrs = containerAttrs,
+                    content = dialogContent
+                )
+            } else {
+                Div(
+                    attrs = containerAttrs
+                ) {
+                    dialogContent()
                 }
             }
         }

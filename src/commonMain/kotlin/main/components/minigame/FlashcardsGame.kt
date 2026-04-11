@@ -2,6 +2,7 @@ package main.components.minigame
 
 import androidx.compose.runtime.*
 import kotlinx.browser.window
+import kotlinx.coroutines.*
 import main.api.*
 import main.components.audio.SoundManager
 import main.components.DialogButton
@@ -26,6 +27,8 @@ fun FlashcardsGame(
     var successCount by remember { mutableStateOf(0) }
 
     var winResult by remember { mutableStateOf<MinigameResult?>(null) }
+    val scope = rememberCoroutineScope()
+    var isTransitioning by remember { mutableStateOf(false) }
 
     if (winResult != null) {
         WinScreen(winResult!!, onComplete)
@@ -35,23 +38,33 @@ fun FlashcardsGame(
     val currentItem = config.items.getOrNull(currentIndex) ?: return
 
     val handleNext: (Boolean) -> Unit = { success ->
-        if (startTime == null) startTime = window.performance.now()
-        totalAttempts++
-        if (success) successCount++
-        
-        if (currentIndex < config.items.size - 1) {
-            currentIndex++
-            isFlipped = false
-        } else {
-            val endTime = window.performance.now()
-            val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
-            winResult = MinigameResult(
-                minigameId = config.minigameId,
-                type = MinigameType.Flashcards,
-                reflex = reflex,
-                accuracy = accuracy,
-                completed = true
-            )
+        if (!isTransitioning) {
+            isTransitioning = true
+            if (startTime == null) startTime = window.performance.now()
+            totalAttempts++
+            if (success) successCount++
+
+            scope.launch {
+                if (isFlipped) {
+                    isFlipped = false
+                    delay(600) // Match the transition time in MinigameStyles.kt (0.6s)
+                }
+
+                if (currentIndex < config.items.size - 1) {
+                    currentIndex++
+                } else {
+                    val endTime = window.performance.now()
+                    val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
+                    winResult = MinigameResult(
+                        minigameId = config.minigameId,
+                        type = MinigameType.Flashcards,
+                        reflex = reflex,
+                        accuracy = accuracy,
+                        completed = true
+                    )
+                }
+                isTransitioning = false
+            }
         }
     }
 
@@ -65,6 +78,7 @@ fun FlashcardsGame(
         Div({
             classes(MinigameStyles.cardContainer)
             onClick { 
+                if (isTransitioning) return@onClick
                 if (startTime == null) startTime = window.performance.now()
                 isFlipped = !isFlipped
                 if (isFlipped) {
@@ -124,14 +138,16 @@ fun FlashcardsGame(
         }) {
             DialogButton(
                 onClick = { handleNext(false) },
-                style = DialogButtonStyle.Secondary
+                style = DialogButtonStyle.Secondary,
+                isDisabled = isTransitioning
             ) {
                 Text(translated("Still learning"))
             }
 
             DialogButton(
                 onClick = { handleNext(true) },
-                style = DialogButtonStyle.Primary
+                style = DialogButtonStyle.Primary,
+                isDisabled = isTransitioning
             ) {
                 Text(translated("I know this!"))
             }

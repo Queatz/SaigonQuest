@@ -6,7 +6,6 @@ import main.components.BaseDialog
 import models.*
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.css.*
-import main.theme.Styles
 import main.theme.Theme
 import main.components.translated
 import main.components.DialogButton
@@ -22,7 +21,6 @@ fun MinigameOverlay(
     onClose: () -> Unit = {}
 ) {
     var currentConfig by remember { mutableStateOf<MinigameConfig?>(null) }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         WebSocketApi.addMinigameListener { config ->
@@ -44,6 +42,7 @@ fun MinigameOverlay(
         title = config.title,
         showCloseButton = true,
         isFullscreen = true,
+        useBorder = false,
         content = {
             when (config.type) {
                 MinigameType.Flashcards -> FlashcardsGame(config, handleComplete)
