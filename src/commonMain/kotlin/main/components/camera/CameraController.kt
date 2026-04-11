@@ -82,8 +82,8 @@ class CameraController(private val scene: Scene) {
     private var isAnimating: Boolean = false
     private var inputsAttached: Boolean = false // Track current attachment state
     private var isManuallyDisabled: Boolean = false // Track manual disabling to ignore proximity re-enabling
-    private val animationSpeed: Float = 0.1f // Adjust this value to control animation speed (0.0-1.0)
-    private val proximityAnimationSpeed: Float = 0.025f // Smooth speed for proximity transitions
+    private val animationSpeed: Float = 0.25f // Adjust this value to control animation speed (0.0-1.0)
+    private val proximityAnimationSpeed: Float = 0.25f // Smooth speed for proximity transitions
 
     // Proximity camera locking
     private val proximityCameraManager = ProximityCameraManager(scene)
