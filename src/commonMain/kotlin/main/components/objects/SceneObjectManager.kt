@@ -578,8 +578,9 @@ class SceneObjectManager(
      * 
      * @param obj The object containing the item data
      * @param item The item to create
+     * @param overrideStatus Optional status to display instead of obj.status
      */
-    private fun createInventoryItemInScene(obj: Object, item: Item) {
+    private fun createInventoryItemInScene(obj: Object, item: Item, overrideStatus: String? = null) {
         console.log("[DEBUG_ITEM] Creating 3D representation for item: ${obj.key}")
         
         try {
@@ -607,7 +608,7 @@ class SceneObjectManager(
                 objectKinds[obj.key] = ObjectKind.Inventory
 
                 // Handle status text
-                handleObjectStatusText(obj.key, obj.status, node)
+                handleObjectStatusText(obj.key, overrideStatus ?: obj.status, node)
 
                 node.getChildMeshes().also { meshes ->
                     console.log("[DEBUG_ITEM] Adding shadows: ${meshes}")
@@ -789,7 +790,18 @@ class SceneObjectManager(
                 if (first != null) {
                     // Load item definition and render as inventory object
                     val itemDef = ItemApi.getItemById(first.item)
-                    createInventoryItemInScene(obj, itemDef)
+                    
+                    // Show name and quantity in the status
+                    val inventoryStatus = if (first.quantity > 1) {
+                        "${itemDef.title} x${first.quantity}"
+                    } else {
+                        itemDef.title
+                    }
+                    
+                    // Use inventory status if current status is blank
+                    val finalStatus = if (obj.status.isBlank()) inventoryStatus else obj.status
+                    
+                    createInventoryItemInScene(obj, itemDef, finalStatus)
                 } else {
                     console.log("[INVENTORY_RENDER] No items for ${obj.key}; skipping render")
                 }
@@ -1905,7 +1917,6 @@ class SceneObjectManager(
                     }
 
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
-                    existingHandle.position = Vector3(0f, offsetY, 0f)
                     
                     // Ensure visibility is consistent with hover, proximity, or interactable state
                     if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
@@ -1914,6 +1925,9 @@ class SceneObjectManager(
                         // Ensure it's hidden if neither
                         if (existingHandle.isVisible) {
                             animateStatusText(objectId, false)
+                        } else {
+                            // Even if not visible, update position for when it becomes visible
+                            existingHandle.position = Vector3(0f, offsetY, 0f)
                         }
                     }
                     
@@ -1929,14 +1943,17 @@ class SceneObjectManager(
                         // Store the handle for future updates
                         objectStatusTextHandles[objectId] = statusTextHandle
                         objectDisplayedStatusTexts[objectId] = displayedStatus
-                        statusTextHandle.position = Vector3(0f, offsetY, 0f)
+                        
+                        // Set initial state to hidden/zero-scaled to ensure animation triggers
+                        statusTextHandle.isVisible = false
+                        statusTextHandle.node.scaling = Vector3(0f, 0f, 0f)
+                        statusTextHandle.position = Vector3(0f, offsetY - 0.2f, 0f)
                         
                         // Set initial visibility based on hover, proximity, or interactable state
                         if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
                             animateStatusText(objectId, true)
                         } else {
-                            // Ensure it's hidden if neither
-                            statusTextHandle.isVisible = false
+                            // Already set to isVisible = false above
                         }
                         
                         console.log("[DEBUG_STATUS] Successfully created and stored status text for object: $objectId")

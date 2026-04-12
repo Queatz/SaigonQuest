@@ -292,9 +292,15 @@ class InputHandler(
                 val interactableId = objectManager?.getInteractableObjectId()
                 if (interactableId != null) {
                     console.log("InputHandler: X key pressed, interacting with object $interactableId")
-                    objectManager.selectObject(interactableId)
-                    val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
-                    WebSocketApi.playerInteract(interactableId, isPlayer)
+                    
+                    // If it's an inventory object, collect it; otherwise interact with it
+                    if (objectManager.isInventoryObject(interactableId)) {
+                        collectInventoryItem(interactableId)
+                    } else {
+                        objectManager.selectObject(interactableId)
+                        val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
+                        WebSocketApi.playerInteract(interactableId, isPlayer)
+                    }
                 }
             }
         }
