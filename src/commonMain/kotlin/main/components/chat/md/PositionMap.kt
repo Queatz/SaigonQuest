@@ -220,6 +220,15 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         sb.append(lit)
                         virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
                     }
+                    "video" -> {
+                        val src = el.getAttribute("src") ?: ""
+                        val parent = el.parentElement ?: return
+                        val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
+                        val start = sb.length
+                        val lit = "![video]($src)"
+                        sb.append(lit)
+                        virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
+                    }
                     "strong", "b" -> writeInlineWrapper(el, "**", "**")
                     "em", "i" -> writeInlineWrapper(el, "*", "*")
                     "u" -> writeInlineWrapper(el, "<u>", "</u>")
@@ -352,6 +361,79 @@ internal fun buildPositionMap(root: Element): PositionMap {
                         val close = "\n```\n\n"
                         addLiteral(close, BoundaryAnchor(el, children.size))
                         boundaries[el] = arr
+                    }
+                    "hr" -> {
+                        val parent = el.parentElement ?: return
+                        val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
+                        addLiteral("---\n\n", BoundaryAnchor(parent, idx + 1))
+                        boundaries[el] = intArrayOf(sb.length)
+                    }
+                    "table" -> writeBlockWithTrailing(el, "", "\n\n")
+                    "thead", "tbody", "tfoot" -> {
+                        val children = childNodesList(el)
+                        val arr = IntArray(children.size + 1)
+                        arr[0] = sb.length
+                        children.forEachIndexed { i, c ->
+                            emit(c)
+                            arr[i + 1] = sb.length
+                        }
+                        boundaries[el] = arr
+                        if (tag == "thead") {
+                            val firstTr = el.querySelector("tr")
+                            if (firstTr != null) {
+                                val cells = firstTr.querySelectorAll("th, td")
+                                if (cells.length > 0) {
+                                    val separator = StringBuilder("|")
+                                    for (j in 0 until cells.length) {
+                                        val cell = cells.item(j) as? Element
+                                        val style = cell?.getAttribute("style") ?: ""
+                                        when {
+                                            style.contains("text-align:center") -> separator.append(" :---: |")
+                                            style.contains("text-align:right") -> separator.append(" ---: |")
+                                            else -> separator.append(" --- |")
+                                        }
+                                    }
+                                    separator.append("\n")
+                                    addLiteral(separator.toString(), BoundaryAnchor(el, children.size))
+                                }
+                            }
+                        }
+                    }
+                    "tr" -> {
+                        val children = childNodesList(el)
+                        addLiteral("| ", BoundaryAnchor(el, 0))
+                        val arr = IntArray(children.size + 1)
+                        arr[0] = sb.length
+                        children.forEachIndexed { i, c ->
+                            emit(c)
+                            arr[i + 1] = sb.length
+                        }
+                        addLiteral("\n", BoundaryAnchor(el, children.size))
+                        boundaries[el] = arr
+                    }
+                    "th", "td" -> {
+                        val children = childNodesList(el)
+                        val arr = IntArray(children.size + 1)
+                        arr[0] = sb.length
+                        children.forEachIndexed { i, c ->
+                            emit(c)
+                            arr[i + 1] = sb.length
+                        }
+                        addLiteral(" | ", BoundaryAnchor(el, children.size))
+                        boundaries[el] = arr
+                    }
+                    "div" -> {
+                        if (el.classList.contains("md-item")) {
+                            val data = el.getAttribute("data-item") ?: ""
+                            val parent = el.parentElement ?: return
+                            val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
+                            val start = sb.length
+                            val lit = "![item]($data)"
+                            sb.append(lit)
+                            virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
+                        } else {
+                            writeBlockWithTrailing(el, "", "")
+                        }
                     }
                     else -> {
                         // Generic: just children, no wrappers

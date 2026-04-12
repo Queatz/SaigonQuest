@@ -609,6 +609,7 @@ object Styles : StyleSheet() {
         property("border", "0")
         property("cursor", "pointer")
         fontWeight("bold")
+        fontSize(20.px)
 
         self + disabled style {
             opacity(.25f)
@@ -622,6 +623,7 @@ object Styles : StyleSheet() {
         property("border", "1px solid ${Theme.colors.primary}")
         property("cursor", "pointer")
         fontWeight("bold")
+        fontSize(20.px)
 
         self + disabled style {
             opacity(.25f)
@@ -636,6 +638,7 @@ object Styles : StyleSheet() {
         property("border", "0")
         property("cursor", "pointer")
         fontWeight("bold")
+        fontSize(20.px)
     }
 
     val framedBorder by style {
@@ -1829,6 +1832,7 @@ object Styles : StyleSheet() {
     val settingsControlContainer by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
         padding(8.px)
     }
 
@@ -2170,6 +2174,27 @@ object Styles : StyleSheet() {
                 "rgb(255, 255, 255) 0px 0px 6px, rgb(255, 255, 255) 0px 0px 3px, rgb(255, 255, 255) 0px 0px 24px"
             )
         }
+    }
+
+    val voiceInputPulse by keyframes {
+        0.percent {
+            property("filter", "brightness(1)")
+        }
+        25.percent {
+            property("filter", "brightness(1.5)")
+        }
+        100.percent {
+            property("filter", "brightness(1)")
+        }
+    }
+
+    val voiceInputPulseClass by style {
+        property("border-radius", "12px !important")
+        animation(voiceInputPulse) {
+            duration(5.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+        }
+        property("animation-iteration-count", "infinite")
     }
 
     val aiChatOverlay by style {

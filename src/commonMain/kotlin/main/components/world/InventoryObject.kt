@@ -52,6 +52,9 @@ class InventoryObject(
         // Set plane as child of root node
         plane.parent = root
         
+        // Float the item above the ground (center of 0.25x0.25 plane + small offset)
+        plane.position.y = 0.2f
+        
         // Create material with item texture
         val material = PBRMaterial("item-material-${objectId}", scene)
         

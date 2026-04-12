@@ -83,9 +83,11 @@ object OpenAiClient : AiClient {
 
     @Serializable
     private data class TtsRequest(
-        val model: String = "tts-1",
+        val model: String,
         val input: String,
-        val voice: String = "ash",
+        val voice: String,
+        @SerialName("response_format")
+        val responseFormat: String,
     )
 
     @Serializable
@@ -231,21 +233,41 @@ object OpenAiClient : AiClient {
         val apiKey = System.getenv("OPENAI_API_KEY") ?: System.getProperty("OPENAI_API_KEY")
         if (apiKey.isNullOrBlank()) return false
 
-        val body = TtsRequest(input = text)
+        // Construct body as a map to ensure absolute control over serialization
+        val bodyMap = mapOf(
+            "model" to "tts-1",
+            "input" to text,
+            "voice" to "alloy",
+            "response_format" to "pcm",
+        )
+        val bodyStr = appJson.encodeToString(bodyMap)
 
         return try {
             val response = http.post("https://api.openai.com/v1/audio/speech") {
                 header(HttpHeaders.Authorization, "Bearer $apiKey")
+                header(HttpHeaders.Accept, "audio/pcm")
                 contentType(ContentType.Application.Json)
-                setBody(body)
+                setBody(bodyStr)
             }
+
+            val contentType = response.contentType()
+            println("[DEBUG_LOG] OpenAI TTS Request: model=tts-1, voice=alloy, format=pcm, textLen=${text.length}")
+            println("[DEBUG_LOG] OpenAI TTS response status: ${response.status}, contentType: $contentType")
 
             if (response.status.isSuccess()) {
                 val channel = response.bodyAsChannel()
+                var first = true
                 while (!channel.isClosedForRead) {
                     val packet = channel.readRemaining(8192)
                     if (!packet.exhausted()) {
-                        onChunk(packet.readByteArray())
+                        val bytes = packet.readByteArray()
+                        if (first && bytes.size >= 4) {
+                            val sig = bytes.take(4).joinToString("") { (it.toInt() and 0xFF).toChar().toString() }
+                            val hex = bytes.take(4).joinToString(" ") { (it.toInt() and 0xFF).toString(16).padStart(2, '0') }
+                            println("[DEBUG_LOG] OpenAI TTS First bytes sig: $sig, hex: $hex, contentType: $contentType")
+                            first = false
+                        }
+                        onChunk(bytes)
                     }
                 }
                 true

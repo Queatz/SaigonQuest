@@ -40,7 +40,16 @@ fun CoordinatePickerDialog(
                     alignItems(AlignItems.Center)
                 }
             }) {
-                Text(str("Click on the image to set the position"))
+                FramedBorder(
+                    attrs = {
+                        style {
+                            padding(8.px, 16.px)
+                            marginBottom(16.px)
+                        }
+                    }
+                ) {
+                    Text(str("Click on the image to set the position"))
+                }
 
                 FramedBorder(
                     attrs = {

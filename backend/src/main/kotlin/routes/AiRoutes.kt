@@ -157,6 +157,8 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
+                println("[DEBUG_LOG] TTS Route hit for text: ${req.text.take(50)}...")
+
                 if (req.text.isBlank()) {
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
@@ -164,12 +166,12 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                // Ensure transcription provider is configured
-                if (!AiManager.isConfigured(AiManager.client)) {
+                // Ensure TTS provider is configured
+                if (!AiManager.isConfigured(AiManager.ttsClient)) {
                     return@post call.respond(
                         HttpStatusCode.InternalServerError,
                         ErrorResponse(
-                            message = "TTS provider not configured (missing ${AiManager.getApiKeyName(AiManager.client)})",
+                            message = "TTS provider not configured (missing ${AiManager.getApiKeyName(AiManager.ttsClient)})",
                             code = HttpStatusCode.InternalServerError.value,
                         )
                     )
@@ -242,6 +244,10 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
             MinigameType.Scenario -> {
                 appendLine("- 'text': Name of object to find.")
                 appendLine("- 'hotspot': Leave null.")
+            }
+            MinigameType.Sequencing -> {
+                appendLine("- 'text': Step or ingredient name.")
+                appendLine("- Generate items in the CORRECT LOGICAL ORDER (e.g., first step first, last step last).")
             }
         }
         appendLine("- Generate 5-10 items.")

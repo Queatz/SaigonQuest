@@ -14,6 +14,7 @@ import main.api.ApiClient
 import main.api.ApiConstants
 import main.api.UserApi
 import main.components.audio.MusicManager
+import main.theme.Styles
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.WebSocket
 import web.mediadevices.getUserMedia
@@ -257,6 +258,11 @@ fun VoiceInput(
         style = if (isRecording) DialogButtonStyle.Danger else DialogButtonStyle.Good,
         isDisabled = !enabled,
         small = small,
+        attrs = {
+            if (!isRecording) {
+                classes(Styles.voiceInputPulseClass)
+            }
+        },
     ) {
         if (isRecording) Text("🛑") else Text("🎙️")
     }

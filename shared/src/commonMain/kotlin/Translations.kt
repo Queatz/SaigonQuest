@@ -73,6 +73,9 @@ vi: Tiêu đề nhiệm vụ
 Quest description
 vi: Mô tả nhiệm vụ
 
+Select the items in the correct order
+vi: Chọn các mục theo đúng thứ tự
+
 Quest events
 vi: Sự kiện nhiệm vụ
 
@@ -2014,6 +2017,9 @@ vi: Dừng đi bộ
 AI chat
 vi: Chat AI
 
+Ask AI
+vi: Hỏi AI
+
 Send
 vi: Gửi
 
@@ -2244,6 +2250,12 @@ vi: Tạo tất cả hình ảnh
 
 Generate all audio
 vi: Tạo tất cả âm thanh
+
+Step
+vi: Bước
+
+Step description / Item name
+vi: Mô tả bước / Tên mục
 
 """
 

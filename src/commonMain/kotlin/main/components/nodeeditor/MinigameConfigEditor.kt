@@ -9,6 +9,7 @@ import main.api.ContentApi
 import main.api.UserApi
 import main.components.media.UploadMediaDialog
 import main.theme.NodeEditorStyles
+import main.theme.Theme
 import models.*
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
@@ -119,6 +120,7 @@ fun MinigameConfigEditor(
             MinigameItemEditor(
                 type = type,
                 item = item,
+                index = index,
                 heroImageUrl = heroImageUrl,
                 onUpdate = { updatedItem ->
                     val newList = items.toMutableList()
@@ -300,6 +302,7 @@ fun MinigameConfigEditor(
 fun MinigameItemEditor(
     type: MinigameType,
     item: MinigameItem,
+    index: Int,
     heroImageUrl: String? = null,
     onUpdate: (MinigameItem) -> Unit,
     onRemove: () -> Unit
@@ -317,10 +320,23 @@ fun MinigameItemEditor(
         Div({
             style {
                 display(DisplayStyle.Flex)
-                justifyContent(JustifyContent.End)
+                justifyContent(JustifyContent.SpaceBetween)
                 alignItems(AlignItems.Center)
             }
         }) {
+            if (type == MinigameType.Sequencing) {
+                Span({
+                    style {
+                        fontWeight("bold")
+                        color(Theme.colors.primary)
+                    }
+                }) {
+                    Text("${str("Step")} ${index + 1}")
+                }
+            } else {
+                Div()
+            }
+
             DialogButton(
                 onClick = onRemove,
                 style = DialogButtonStyle.Danger,
@@ -334,7 +350,13 @@ fun MinigameItemEditor(
         DialogInput(
             value = item.text ?: "",
             onInput = { onUpdate(item.copy(text = it)) },
-            placeholder = str(if (type == MinigameType.Scenario) "What to find" else "Text (Front)")
+            placeholder = str(
+                when (type) {
+                    MinigameType.Scenario -> "What to find"
+                    MinigameType.Sequencing -> "Step description / Item name"
+                    else -> "Text (Front)"
+                }
+            )
         )
 
         if (type == MinigameType.Flashcards) {

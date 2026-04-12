@@ -61,6 +61,7 @@ import web.notifications.requestPermission
 import main.components.chat.ChatStore
 import main.components.chat.ChatComposerController
 import kotlinx.coroutines.flow.collect
+import main.components.chat.GlobalAiChatStore
 import models.canUserEdit
 import web.navigator.navigator
 import web.push.PushManager
@@ -579,7 +580,7 @@ fun WorldUI(
         val token = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_AI_CHAT) { msg ->
             try {
                 val data = ApiClient.json.decodeFromString(models.AiChatData.serializer(), msg.data)
-                main.components.chat.GlobalAiChatStore.open(
+                GlobalAiChatStore.open(
                     system = data.systemPrompt,
                     initialUserMessage = data.initialUserMessage,
                     initialAssistantMessage = data.initialAssistantMessage,

@@ -74,7 +74,14 @@ fun FlashcardsGame(
         Div({
             classes(MinigameStyles.gameContentWrapper)
         }) {
-            P {
+            FramedBorder(
+                attrs = {
+                    style {
+                        padding(8.px, 16.px)
+                        marginBottom(24.px)
+                    }
+                }
+            ) {
                 Text("${currentIndex + 1} / ${config.items.size}")
             }
 
@@ -105,10 +112,13 @@ fun FlashcardsGame(
                             classes(MinigameStyles.cardFace)
                         }
                     ) {
-                        H3 { Text(currentItem.text ?: "") }
+                        Div({
+                            classes(MinigameStyles.flashcardText)
+                        }) { Text(currentItem.text ?: "") }
+                        
                         if (currentItem.audio != null) {
                             Span({
-                                style { fontSize(24.px) }
+                                style { fontSize(28.px) }
                             }) { Text("🔊") }
                         }
                     }
@@ -122,16 +132,17 @@ fun FlashcardsGame(
                         val imageUrl = currentItem.image
                         if (imageUrl != null) {
                             Img(src = imageUrl, attrs = {
-                                style {
-                                    maxWidth(100.percent)
-                                    maxHeight(200.px)
-                                    borderRadius(8.px)
-                                    marginBottom(16.px)
-                                }
+                                classes(MinigameStyles.flashcardImage)
                             })
                         }
-                        H3 { Text(currentItem.translation ?: "") }
-                        P { Text(currentItem.definition ?: "") }
+                        
+                        Div({
+                            classes(MinigameStyles.flashcardTranslation)
+                        }) { Text(currentItem.translation ?: "") }
+                        
+                        Div({
+                            classes(MinigameStyles.flashcardDefinition)
+                        }) { Text(currentItem.definition ?: "") }
                     }
                 }
             }

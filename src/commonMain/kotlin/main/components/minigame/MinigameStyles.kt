@@ -26,7 +26,7 @@ object MinigameStyles : StyleSheet() {
 
     val cardContainer by style {
         position(Position.Relative)
-        width(300.px)
+        width(400.px)
         maxWidth(100.percent)
         property("aspect-ratio", "3/4")
         property("perspective", "1000px")
@@ -56,7 +56,7 @@ object MinigameStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)
         color(Theme.colors.onBackground)
-        padding(24.px)
+        padding(32.px)
         boxSizing("border-box")
 
         media("(prefers-color-scheme: dark)") {
@@ -70,9 +70,17 @@ object MinigameStyles : StyleSheet() {
         property("transform", "rotateY(180deg)")
     }
 
+    val flashcardImage by style {
+        maxWidth(100.percent)
+        maxHeight(260.px)
+        borderRadius(12.px)
+        marginBottom(16.px)
+        property("object-fit", "contain")
+    }
+
     val matchGrid by style {
         display(DisplayStyle.Grid)
-        gridTemplateColumns("repeat(auto-fit, minmax(180px, 1fr))")
+        gridTemplateColumns("repeat(auto-fit, minmax(280px, 1fr))")
         gap(16.px)
         width(100.percent)
         maxWidth(100.percent)
@@ -87,13 +95,13 @@ object MinigameStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)
         gap(12.px)
-        padding(12.px)
+        padding(16.px)
         cursor("pointer")
         textAlign("center")
         property("transition", "all 0.2s")
         boxSizing("border-box")
-        property("aspect-ratio", "1 / 1")
-        maxWidth(180.px)
+        minHeight(280.px)
+        maxWidth(280.px)
         property("margin-left", "auto")
         property("margin-right", "auto")
         width(100.percent)
@@ -107,24 +115,21 @@ object MinigameStyles : StyleSheet() {
     val matchItemImage by style {
         width(100.percent)
         height(100.percent)
-        maxWidth(100.px)
-        maxHeight(100.px)
+        maxWidth(160.px)
+        maxHeight(160.px)
         property("object-fit", "cover")
-        borderRadius(8.px)
+        borderRadius(12.px)
     }
 
     val matchItemText by style {
         margin(0.px)
-        fontSize(16.px)
+        fontSize(24.px)
         fontWeight("bold")
         color(Theme.colors.onBackground)
+        textAlign("center")
         maxWidth(100.percent)
-        property("overflow", "hidden")
-        property("text-overflow", "ellipsis")
-        property("display", "-webkit-box")
-        property("-webkit-line-clamp", "2")
-        property("-webkit-box-orient", "vertical")
         lineHeight(1.2.em)
+        property("word-wrap", "break-word")
         
         media("(prefers-color-scheme: dark)") {
             self style {
@@ -134,8 +139,31 @@ object MinigameStyles : StyleSheet() {
     }
 
     val matchItemAudioIcon by style {
-        fontSize(24.px)
+        fontSize(32.px)
         opacity(0.8)
+    }
+
+    val matchOut by keyframes {
+        from {
+            property("transform", "scale(1)")
+            property("opacity", "1")
+        }
+        20.percent {
+            property("transform", "scale(1.1) rotate(-5deg)")
+        }
+        to {
+            property("transform", "scale(0) rotate(15deg)")
+            property("opacity", "0")
+        }
+    }
+
+    val matchedMatchItem by style {
+        animation(matchOut) {
+            duration(0.6.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+            fillMode(AnimationFillMode.Forwards)
+        }
+        property("pointer-events", "none")
     }
 
     val selectedMatchItem by style {
@@ -168,18 +196,136 @@ object MinigameStyles : StyleSheet() {
         position(Position.Absolute)
         top(20.px)
         left(20.px)
-        backgroundColor(Color("rgba(0, 0, 0, 0.6)"))
-        color(Color.white)
-        padding(8.px, 16.px)
-        borderRadius(8.px)
         margin(0.px)
         property("z-index", "10")
         property("pointer-events", "none")
+    }
+
+    val scenarioPromptText by style {
+        margin(0.px)
+        fontSize(28.px)
+        fontWeight("bold")
+        color(Theme.colors.onBackground)
+        
+        media("(prefers-color-scheme: dark)") {
+            self style {
+                color(Theme.colors.onBackgroundDark)
+            }
+        }
+    }
+
+    val flashcardText by style {
+        fontSize(32.px)
+        fontWeight("bold")
+        textAlign("center")
+        margin(16.px, 0.px)
+    }
+
+    val flashcardTranslation by style {
+        fontSize(24.px)
+        fontWeight("bold")
+        textAlign("center")
+        margin(8.px, 0.px)
+        color(Theme.colors.primary)
+
+        media("(prefers-color-scheme: dark)") {
+            self style {
+                color(Theme.colors.primaryDark)
+            }
+        }
+    }
+
+    val flashcardDefinition by style {
+        fontSize(20.px)
+        textAlign("center")
+        margin(8.px, 0.px)
+        opacity(0.9)
     }
 
     val controlsContainer by style {
         display(DisplayStyle.Flex)
         gap(16.px)
         marginTop(24.px)
+    }
+
+    val sequencingWorkbench by style {
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(12.px)
+        padding(20.px)
+        minHeight(220.px)
+        width(100.percent)
+        maxWidth(800.px)
+        justifyContent(JustifyContent.Center)
+        alignItems(AlignItems.Center)
+        marginBottom(32.px)
+        boxSizing("border-box")
+    }
+
+    val sequencingItem by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        padding(12.px)
+        width(180.px)
+        minHeight(180.px)
+        cursor("pointer")
+        property("transition", "all 0.2s")
+        boxSizing("border-box")
+        position(Position.Relative)
+
+        hover(self) style {
+            property("transform", "translateY(-2px)")
+            property("filter", "brightness(1.05)")
+        }
+    }
+
+    val sequencingItemImage by style {
+        width(120.px)
+        height(120.px)
+        property("object-fit", "contain")
+        marginBottom(8.px)
+        borderRadius(12.px)
+    }
+
+    val sequencingItemText by style {
+        fontSize(20.px)
+        fontWeight("bold")
+        textAlign("center")
+        margin(0.px)
+        width(100.percent)
+        property("word-wrap", "break-word")
+    }
+
+    val sequencingPool by style {
+        display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
+        gap(16.px)
+        justifyContent(JustifyContent.Center)
+        width(100.percent)
+        maxWidth(800.px)
+    }
+
+    val scenarioHeroImage by style {
+        maxWidth(100.percent)
+        maxHeight(80.vh)
+        display(DisplayStyle.Block)
+        property("object-fit", "contain")
+        borderRadius(12.px)
+        boxSizing("border-box")
+    }
+
+    val shakeError by style {
+        property("animation", "shake 0.4s ease-in-out")
+    }
+
+    val shake by keyframes {
+        0.percent { property("transform", "translateX(0)") }
+        20.percent { property("transform", "translateX(-8px)") }
+        40.percent { property("transform", "translateX(8px)") }
+        60.percent { property("transform", "translateX(-8px)") }
+        80.percent { property("transform", "translateX(8px)") }
+        100.percent { property("transform", "translateX(0)") }
     }
 }

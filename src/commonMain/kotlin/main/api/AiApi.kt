@@ -109,10 +109,32 @@ object AiApi {
         request.execute { response ->
             if (response.status.isSuccess()) {
                 val channel = response.bodyAsChannel()
+                var leftover: Byte? = null
                 while (!channel.isClosedForRead) {
                     val packet = channel.readRemaining(8192)
                     if (!packet.exhausted()) {
-                        onChunk(packet.readByteArray())
+                        val rawBytes = packet.readByteArray()
+                        val bytes = if (leftover != null) {
+                            val combined = ByteArray(rawBytes.size + 1)
+                            combined[0] = leftover
+                            rawBytes.copyInto(combined, 1)
+                            combined
+                        } else {
+                            rawBytes
+                        }
+
+                        if (bytes.size % 2 != 0) {
+                            leftover = bytes[bytes.size - 1]
+                            val evenBytes = bytes.copyOfRange(0, bytes.size - 1)
+                            if (evenBytes.isNotEmpty()) {
+                                onChunk(evenBytes)
+                            }
+                        } else {
+                            leftover = null
+                            if (bytes.isNotEmpty()) {
+                                onChunk(bytes)
+                            }
+                        }
                     }
                 }
             } else {

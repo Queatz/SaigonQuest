@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import main.api.DocApi
 import main.components.*
 import main.components.chat.ChatComposerController
+import main.components.chat.GlobalAiChatStore
 import main.theme.Styles
 import main.theme.WorldDocsStyles
 import main.utils.createCustomEvent
@@ -439,6 +440,15 @@ fun WorldDocsDialog(
                                                 saveTitle()
                                             }
                                         ) { Translated("Save") }
+
+                                        DialogButton(
+                                            onClick = {
+                                                GlobalAiChatStore.open(
+                                                    system = "You are helping with a document. Use the following document content as context for the user's questions.\n\nDocument title: ${selectedDoc.title}\n\nDocument content:\n$editedContent",
+                                                    initialAssistantMessage = "Hello! how can I help you with \"${selectedDoc.title}\"?",
+                                                )
+                                            }
+                                        ) { Translated("Ask AI") }
                                     }
 
                                     if (isOwner) {

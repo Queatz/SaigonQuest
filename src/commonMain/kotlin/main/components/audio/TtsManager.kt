@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import lib.AudioBufferSourceNode
 import lib.AudioContext
 import main.api.AiApi
+import org.khronos.webgl.DataView
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Int8Array
 import org.khronos.webgl.get
@@ -65,14 +66,16 @@ object TtsManager {
         }
     }
 
-    private fun pcm16ToFloat32(byteArray: Int8Array): Float32Array {
-        val floatArray = Float32Array(byteArray.length / 2)
-        for (i in 0 until floatArray.length) {
-            val low = byteArray[i * 2].toInt() and 0xFF
-            val high = byteArray[i * 2 + 1].toInt()
-            val pcm = (high shl 8) or low
-            // Convert to Float (-1.0 to 1.0)
-            floatArray[i] = pcm.toShort().toFloat() / 32768f
+    private fun pcm16ToFloat32(byteArray: Int8Array, offset: Int = 0): Float32Array {
+        val bytesToProcess = byteArray.length - offset
+        val samplesCount = bytesToProcess / 2
+        val floatArray = Float32Array(samplesCount)
+        val dataView = DataView(byteArray.buffer, byteArray.byteOffset + offset, bytesToProcess)
+        
+        for (i in 0 until samplesCount) {
+            // Read as signed 16-bit little-endian
+            val pcm = dataView.getInt16(i * 2, true)
+            floatArray[i] = pcm.toFloat() / 32768f
         }
         return floatArray
     }
@@ -102,12 +105,40 @@ object TtsManager {
                 lastScheduledEndTime = ctx.currentTime
                 activeSources.clear()
 
+                var firstChunkChecked = false
+                var bytesToSkip = 0
                 AiApi.generateTtsStream(text) { chunk ->
                     while (isPaused) {
                         delay(100)
                     }
                     isLoading = false
-                    val floatData = pcm16ToFloat32(chunk.unsafeCast<Int8Array>())
+                    val bytes = chunk.unsafeCast<Int8Array>()
+                    var chunkOffset = 0
+                    
+                    if (!firstChunkChecked) {
+                        firstChunkChecked = true
+                        val sigStr = (0 until 4.coerceAtMost(bytes.length)).map { bytes[it].toInt() and 0xFF }.joinToString("") { it.toChar().toString() }
+                        val hex = (0 until 4.coerceAtMost(bytes.length)).map { bytes[it].toInt() and 0xFF }.joinToString(" ") { it.toString(16).padStart(2, '0') }
+                        console.log("TTS Stream start. Signature: $sigStr, Hex: $hex, First chunk size: ${bytes.length}")
+                        
+                        if (sigStr == "RIFF") {
+                            bytesToSkip = 44
+                            console.log("Detected WAV format, skipping 44-byte header")
+                        } else if (sigStr.startsWith("ID3") || (bytes.length >= 2 && (bytes[0].toInt() and 0xFF == 0xFF) && (bytes[1].toInt() and 0xE0 == 0xE0))) {
+                            console.error("CRITICAL: Detected MP3/AAC instead of PCM! Pure static will occur. Hex: $hex")
+                        } else {
+                            console.log("Assuming raw PCM format")
+                        }
+                    }
+
+                    if (bytesToSkip > 0) {
+                        val skip = bytesToSkip.coerceAtMost(bytes.length)
+                        chunkOffset = skip
+                        bytesToSkip -= skip
+                        if (bytes.length <= chunkOffset) return@generateTtsStream
+                    }
+                    
+                    val floatData = pcm16ToFloat32(bytes, chunkOffset)
                     if (floatData.length == 0) return@generateTtsStream
                     
                     val buffer = ctx.createBuffer(1, floatData.length, 24000)

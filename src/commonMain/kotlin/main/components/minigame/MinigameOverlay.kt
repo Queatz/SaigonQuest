@@ -48,6 +48,7 @@ fun MinigameOverlay(
                 MinigameType.Flashcards -> FlashcardsGame(config, handleComplete)
                 MinigameType.MatchGame -> MatchGame(config, handleComplete)
                 MinigameType.Scenario -> ScenarioGame(config, handleComplete)
+                MinigameType.Sequencing -> SequencingGame(config, handleComplete)
             }
         }
     )
@@ -110,7 +111,7 @@ fun WinScreen(
                 }) {
                     // Reflex stat
                     Span({
-                        style { fontSize(28.px); textAlign("center") }
+                        style { fontSize(32.px); textAlign("center") }
                     }) { Text("⚡") }
                     Div({
                         style {
@@ -118,8 +119,8 @@ fun WinScreen(
                             flexDirection(FlexDirection.Column)
                         }
                     }) {
-                        Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Avg reflex")) }
-                        Span({ style { fontSize(24.px); fontWeight("bold") } }) {
+                        Span({ style { fontSize(18.px); opacity(0.8) } }) { Text(translated("Avg reflex")) }
+                        Span({ style { fontSize(28.px); fontWeight("bold") } }) {
                             val reflexSeconds = (result.reflex * 100).toInt() / 100.0
                             Text("${reflexSeconds}s")
                         }
@@ -127,7 +128,7 @@ fun WinScreen(
 
                     // Accuracy stat
                     Span({
-                        style { fontSize(28.px); textAlign("center") }
+                        style { fontSize(32.px); textAlign("center") }
                     }) { Text("🎯") }
                     Div({
                         style {
@@ -135,8 +136,8 @@ fun WinScreen(
                             flexDirection(FlexDirection.Column)
                         }
                     }) {
-                        Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Accuracy")) }
-                        Span({ style { fontSize(24.px); fontWeight("bold") } }) {
+                        Span({ style { fontSize(18.px); opacity(0.8) } }) { Text(translated("Accuracy")) }
+                        Span({ style { fontSize(28.px); fontWeight("bold") } }) {
                             Text("${(result.accuracy * 100).toInt()}%")
                         }
                     }

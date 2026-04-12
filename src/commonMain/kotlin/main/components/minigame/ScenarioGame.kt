@@ -35,6 +35,7 @@ fun ScenarioGame(
 
     var totalAttempts by remember { mutableStateOf(0) }
     var successCount by remember { mutableStateOf(0) }
+    var isError by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
     var winResult by remember { mutableStateOf<MinigameResult?>(null) }
@@ -62,21 +63,23 @@ fun ScenarioGame(
                 }
             ) {
                 currentPromptTarget?.let { target ->
-                    H3({
-                        classes(MinigameStyles.scenarioPrompt)
-                    }) {
-                        Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
+                    FramedBorder(
+                        attrs = {
+                            classes(MinigameStyles.scenarioPrompt)
+                        }
+                    ) {
+                        Div({
+                            classes(MinigameStyles.scenarioPromptText)
+                        }) {
+                            Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
+                        }
                     }
                 }
 
                 heroItem?.image?.let { url ->
                     Img(src = url, attrs = {
-                        style {
-                            maxWidth(100.percent)
-                            maxHeight(80.vh)
-                            display(DisplayStyle.Block)
-                            property("object-fit", "contain")
-                        }
+                        classes(MinigameStyles.scenarioHeroImage)
+                        if (isError) classes(MinigameStyles.shakeError)
                         onClick { event ->
                             if (matchedTargets.size >= targets.size) return@onClick
                             
@@ -113,6 +116,12 @@ fun ScenarioGame(
                                             completed = true
                                         )
                                     }
+                                }
+                            } else {
+                                scope.launch {
+                                    isError = true
+                                    delay(400)
+                                    isError = false
                                 }
                             }
                         }
