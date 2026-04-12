@@ -74,7 +74,8 @@ interface AiClient {
         size: String = "1024*1024",
         token: String? = null,
     ): String? {
-        val url = generateImage(prompt, size) ?: return null
+        val styledPrompt = "$prompt, dreamy, watercolor illustrations with soft, vibrant colors, NO TEXT"
+        val url = generateImage(styledPrompt, size) ?: return null
         if (url.startsWith("http") && !url.contains("/gen/") && !url.contains("/static/")) {
             // Download and save locally or upload to content server
             return try {

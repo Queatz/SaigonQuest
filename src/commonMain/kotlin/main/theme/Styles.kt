@@ -1163,6 +1163,20 @@ object Styles : StyleSheet() {
         property("animation-iteration-count", "infinite")
     }
 
+    val smallLoadingSpinner by style {
+        width(20.px)
+        height(20.px)
+        property("border", "3px solid ${Theme.colors.white10}")
+        property("border-top", "3px solid ${Theme.colors.white80}")
+        property("border-radius", "50%")
+        animation(chatLoadingSpin) {
+            duration(1.s)
+            timingFunction(AnimationTimingFunction.Linear)
+        }
+        // Compose Web does not yet provide a DSL helper for infinite iteration in this codebase; set via raw property
+        property("animation-iteration-count", "infinite")
+    }
+
     val aiChatLoadingSpinner by style {
         width(20.px)
         height(20.px)

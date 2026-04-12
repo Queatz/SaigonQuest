@@ -67,89 +67,93 @@ fun WinScreen(
             gap(32.px)
         }
     }) {
-        FramedBorder(
-            attrs = {
-                style {
-                    width(100.percent)
-                    maxWidth(450.px)
-                    padding(40.px)
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    alignItems(AlignItems.Center)
-                    gap(24.px)
-                    boxSizing("border-box")
-                }
-            }
-        ) {
-            H3({
-                style {
-                    margin(0.px)
-                    property("border-bottom", "2px solid ${Theme.colors.primary}")
-                    paddingBottom(12.px)
-                    width(100.percent)
-                    textAlign("center")
-                    property("text-transform", "uppercase")
-                    property("letter-spacing", "1px")
-                }
-            }) {
-                Text(translated("Quest results"))
-            }
-
-            Div({
-                style {
-                    display(DisplayStyle.Grid)
-                    gridTemplateColumns("40px 1fr")
-                    gap(16.px)
-                    alignItems(AlignItems.Center)
-                    width(100.percent)
-                    padding(16.px, 0.px)
-                }
-            }) {
-                // Reflex stat
-                Span({
-                    style { fontSize(28.px); textAlign("center") }
-                }) { Text("⚡") }
-                Div({
-                    style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                    }
-                }) {
-                    Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Avg reflex")) }
-                    Span({ style { fontSize(24.px); fontWeight("bold") } }) {
-                        val reflexSeconds = (result.reflex * 100).toInt() / 100.0
-                        Text("${reflexSeconds}s")
-                    }
-                }
-
-                // Accuracy stat
-                Span({
-                    style { fontSize(28.px); textAlign("center") }
-                }) { Text("🎯") }
-                Div({
-                    style {
-                        display(DisplayStyle.Flex)
-                        flexDirection(FlexDirection.Column)
-                    }
-                }) {
-                    Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Accuracy")) }
-                    Span({ style { fontSize(24.px); fontWeight("bold") } }) {
-                        Text("${(result.accuracy * 100).toInt()}%")
-                    }
-                }
-            }
-            
-            DialogButton(
-                onClick = { onContinue(result) },
-                style = DialogButtonStyle.Primary,
+        Div({
+            classes(MinigameStyles.gameContentWrapper)
+        }) {
+            FramedBorder(
                 attrs = {
                     style {
                         width(100.percent)
-                        marginTop(12.px)
+                        maxWidth(450.px)
+                        padding(40.px)
+                        display(DisplayStyle.Flex)
+                        flexDirection(FlexDirection.Column)
+                        alignItems(AlignItems.Center)
+                        gap(24.px)
+                        boxSizing("border-box")
                     }
                 }
             ) {
-                Text(translated("Continue"))
+                H3({
+                    style {
+                        margin(0.px)
+                        property("border-bottom", "2px solid ${Theme.colors.primary}")
+                        paddingBottom(12.px)
+                        width(100.percent)
+                        textAlign("center")
+                        property("text-transform", "uppercase")
+                        property("letter-spacing", "1px")
+                    }
+                }) {
+                    Text(translated("Quest results"))
+                }
+
+                Div({
+                    style {
+                        display(DisplayStyle.Grid)
+                        gridTemplateColumns("40px 1fr")
+                        gap(16.px)
+                        alignItems(AlignItems.Center)
+                        width(100.percent)
+                        padding(16.px, 0.px)
+                    }
+                }) {
+                    // Reflex stat
+                    Span({
+                        style { fontSize(28.px); textAlign("center") }
+                    }) { Text("⚡") }
+                    Div({
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                        }
+                    }) {
+                        Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Avg reflex")) }
+                        Span({ style { fontSize(24.px); fontWeight("bold") } }) {
+                            val reflexSeconds = (result.reflex * 100).toInt() / 100.0
+                            Text("${reflexSeconds}s")
+                        }
+                    }
+
+                    // Accuracy stat
+                    Span({
+                        style { fontSize(28.px); textAlign("center") }
+                    }) { Text("🎯") }
+                    Div({
+                        style {
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                        }
+                    }) {
+                        Span({ style { fontSize(14.px); opacity(0.8) } }) { Text(translated("Accuracy")) }
+                        Span({ style { fontSize(24.px); fontWeight("bold") } }) {
+                            Text("${(result.accuracy * 100).toInt()}%")
+                        }
+                    }
+                }
+
+                DialogButton(
+                    onClick = { onContinue(result) },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            width(100.percent)
+                            marginTop(12.px)
+                        }
+                    }
+                ) {
+                    Text(translated("Continue"))
+                }
             }
         }
     }

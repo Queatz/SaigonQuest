@@ -139,6 +139,7 @@ fun MediaAiArea(
                         },
                         style = DialogButtonStyle.Primary,
                         isDisabled = prompt.isBlank(),
+                        isLoading = generating,
                         small = true
                     ) {
                         Translated("Generate")

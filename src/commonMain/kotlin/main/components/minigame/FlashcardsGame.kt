@@ -71,85 +71,89 @@ fun FlashcardsGame(
     Div({
         classes(MinigameStyles.gameContainer)
     }) {
-        P {
-            Text("${currentIndex + 1} / ${config.items.size}")
-        }
-
         Div({
-            classes(MinigameStyles.cardContainer)
-            onClick { 
-                if (isTransitioning) return@onClick
-                if (startTime == null) startTime = window.performance.now()
-                isFlipped = !isFlipped
-                if (isFlipped) {
-                    // Play audio if available on flip
-                    currentItem.audio?.let { url ->
-                        SoundManager.playSound(url)
-                    }
-                }
-            }
+            classes(MinigameStyles.gameContentWrapper)
         }) {
+            P {
+                Text("${currentIndex + 1} / ${config.items.size}")
+            }
+
             Div({
-                classes(MinigameStyles.cardInner)
-                if (isFlipped) classes("is-flipped")
-                style {
-                    property("transform-style", "preserve-3d")
+                classes(MinigameStyles.cardContainer)
+                onClick { 
+                    if (isTransitioning) return@onClick
+                    if (startTime == null) startTime = window.performance.now()
+                    isFlipped = !isFlipped
+                    if (isFlipped) {
+                        // Play audio if available on flip
+                        currentItem.audio?.let { url ->
+                            SoundManager.playSound(url)
+                        }
+                    }
                 }
             }) {
-                // Front Face
-                FramedBorder(
-                    attrs = {
-                        classes(MinigameStyles.cardFace)
+                Div({
+                    classes(MinigameStyles.cardInner)
+                    if (isFlipped) classes("is-flipped")
+                    style {
+                        property("transform-style", "preserve-3d")
                     }
-                ) {
-                    val imageUrl = currentItem.image
-                    if (imageUrl != null) {
-                        Img(src = imageUrl, attrs = {
-                            style {
-                                maxWidth(100.percent)
-                                maxHeight(200.px)
-                                borderRadius(8.px)
-                                marginBottom(16.px)
-                            }
-                        })
+                }) {
+                    // Front Face
+                    FramedBorder(
+                        attrs = {
+                            classes(MinigameStyles.cardFace)
+                        }
+                    ) {
+                        val imageUrl = currentItem.image
+                        if (imageUrl != null) {
+                            Img(src = imageUrl, attrs = {
+                                style {
+                                    maxWidth(100.percent)
+                                    maxHeight(200.px)
+                                    borderRadius(8.px)
+                                    marginBottom(16.px)
+                                }
+                            })
+                        }
+                        H3 { Text(currentItem.text ?: "") }
+                        if (currentItem.audio != null) {
+                            Span({
+                                style { fontSize(24.px) }
+                            }) { Text("🔊") }
+                        }
                     }
-                    H3 { Text(currentItem.text ?: "") }
-                    if (currentItem.audio != null) {
-                        Span({
-                            style { fontSize(24.px) }
-                        }) { Text("🔊") }
+
+                    // Back Face
+                    FramedBorder(
+                        attrs = {
+                            classes(MinigameStyles.cardFace, MinigameStyles.cardBack)
+                        }
+                    ) {
+                        H3 { Text(currentItem.translation ?: "") }
+                        P { Text(currentItem.definition ?: "") }
                     }
                 }
+            }
 
-                // Back Face
-                FramedBorder(
-                    attrs = {
-                        classes(MinigameStyles.cardFace, MinigameStyles.cardBack)
-                    }
+            Div({
+                classes(MinigameStyles.controlsContainer)
+            }) {
+                DialogButton(
+                    onClick = { handleNext(false) },
+                    style = DialogButtonStyle.Secondary,
+                    isDisabled = isTransitioning
                 ) {
-                    H3 { Text(currentItem.translation ?: "") }
-                    P { Text(currentItem.definition ?: "") }
+                    Text(translated("Still learning"))
                 }
-            }
-        }
 
-        Div({
-            classes(MinigameStyles.controlsContainer)
-        }) {
-            DialogButton(
-                onClick = { handleNext(false) },
-                style = DialogButtonStyle.Secondary,
-                isDisabled = isTransitioning
-            ) {
-                Text(translated("Still learning"))
-            }
-
-            DialogButton(
-                onClick = { handleNext(true) },
-                style = DialogButtonStyle.Primary,
-                isDisabled = isTransitioning
-            ) {
-                Text(translated("I know this!"))
+                DialogButton(
+                    onClick = { handleNext(true) },
+                    style = DialogButtonStyle.Primary,
+                    isDisabled = isTransitioning
+                ) {
+                    Text(translated("I know this!"))
+                }
             }
         }
     }

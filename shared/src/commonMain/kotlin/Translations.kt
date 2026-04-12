@@ -2236,6 +2236,12 @@ vi: Mô tả các mục bạn muốn tạo
 Generating items...
 vi: Đang tạo các mục...
 
+Generate all images
+vi: Tạo tất cả hình ảnh
+
+Generate all audio
+vi: Tạo tất cả âm thanh
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

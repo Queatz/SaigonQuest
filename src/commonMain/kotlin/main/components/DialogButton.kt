@@ -1,11 +1,20 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import main.components.common.Spinner
 import main.theme.Styles
-import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.css.AlignItems
+import org.jetbrains.compose.web.css.Color
+import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.alignItems
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.justifyContent
+import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.AttrBuilderContext
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.HTMLDivElement
 
 enum class DialogButtonStyle {
@@ -33,6 +42,7 @@ fun DialogButton(
     style: DialogButtonStyle = DialogButtonStyle.Secondary,
     isDisabled: Boolean = false,
     small: Boolean = false,
+    isLoading: Boolean = false,
     color: String? = null,
     attrs: AttrBuilderContext<HTMLDivElement>? = null,
     content: @Composable () -> Unit
@@ -62,6 +72,8 @@ fun DialogButton(
                 else -> classes(Styles.baseDialogButtonSecondary)
             }
 
+            val effectivelyDisabled = isDisabled || isLoading
+
             // Ensure the framed border stays visible despite button class defaults
             style {
                 if (small) {
@@ -79,7 +91,7 @@ fun DialogButton(
                 display(DisplayStyle.Flex)
                 justifyContent(JustifyContent.Center)
                 alignItems(AlignItems.Center)
-                property("cursor", if (isDisabled) "default" else "pointer")
+                property("cursor", if (effectivelyDisabled) "default" else "pointer")
             }
 
             if (color != null) {
@@ -88,7 +100,7 @@ fun DialogButton(
                 }
             }
 
-            if (isDisabled) {
+            if (effectivelyDisabled) {
                 style {
                     opacity(0.5)
                     property("pointer-events", "none")
@@ -100,6 +112,12 @@ fun DialogButton(
             attrs?.invoke(this)
         }
     ) {
-        content()
+        if (isLoading) {
+            Spinner(
+                spinnerClass = Styles.smallLoadingSpinner,
+            )
+        } else {
+            content()
+        }
     }
 }

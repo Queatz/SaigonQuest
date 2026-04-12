@@ -40,7 +40,16 @@ object ContentApi {
         val bytes = fileToByteArray(file)
         val filename = file.name.ifBlank { "upload" }
         val contentType = file.type.ifBlank { "application/octet-stream" }
+        return upload(bytes, filename, contentType, bearerToken)
+    }
 
+    @OptIn(InternalAPI::class)
+    suspend fun upload(
+        bytes: ByteArray,
+        filename: String,
+        contentType: String,
+        bearerToken: String
+    ): ContentUpload {
         val url = ContentApiConstants.CONTENT_BASE_URL + "/upload"
         val response = client.post(url) {
             setBody(

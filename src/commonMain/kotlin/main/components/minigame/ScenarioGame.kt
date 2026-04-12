@@ -53,109 +53,113 @@ fun ScenarioGame(
     Div({
         classes(MinigameStyles.gameContainer)
     }) {
-        FramedBorder(
-            attrs = {
-                classes(MinigameStyles.scenarioBackground)
-            }
-        ) {
-            currentPromptTarget?.let { target ->
-                H3({
-                    classes(MinigameStyles.scenarioPrompt)
-                }) {
-                    Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
+        Div({
+            classes(MinigameStyles.gameContentWrapper)
+        }) {
+            FramedBorder(
+                attrs = {
+                    classes(MinigameStyles.scenarioBackground)
                 }
-            }
-
-            heroItem?.image?.let { url ->
-                Img(src = url, attrs = {
-                    style {
-                        maxWidth(100.percent)
-                        maxHeight(80.vh)
-                        display(DisplayStyle.Block)
-                        property("object-fit", "contain")
+            ) {
+                currentPromptTarget?.let { target ->
+                    H3({
+                        classes(MinigameStyles.scenarioPrompt)
+                    }) {
+                        Text("${translated("Find")}: ${target.text ?: target.translation ?: ""}")
                     }
-                    onClick { event ->
-                        if (matchedTargets.size >= targets.size) return@onClick
-                        
-                        if (startTime == null) startTime = window.performance.now()
-                        
-                        val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onClick
-                        val clickX = (event.clientX - rect.left) / rect.width
-                        val clickY = (event.clientY - rect.top) / rect.height
-                        
-                        totalAttempts++
-                        
-                        val isHit = currentTargetIndex != -1 && isInsideHotspot(clickX, clickY, targets[currentTargetIndex].hotspot!!)
-                        
-                        if (isHit) {
-                            val clickedIndex = currentTargetIndex
-                            // Success!
-                            successCount++
-                            matchedTargets.add(clickedIndex)
+                }
+
+                heroItem?.image?.let { url ->
+                    Img(src = url, attrs = {
+                        style {
+                            maxWidth(100.percent)
+                            maxHeight(80.vh)
+                            display(DisplayStyle.Block)
+                            property("object-fit", "contain")
+                        }
+                        onClick { event ->
+                            if (matchedTargets.size >= targets.size) return@onClick
                             
-                            val clickedTarget = targets[clickedIndex]
-                            // Play success sound or item audio
-                            clickedTarget.audio?.let { SoundManager.playSound(it) }
+                            if (startTime == null) startTime = window.performance.now()
                             
-                            if (matchedTargets.size >= targets.size) {
-                                val endTime = window.performance.now()
-                                scope.launch {
-                                    delay(1000)
-                                    val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
-                                    winResult = MinigameResult(
-                                        minigameId = config.minigameId,
-                                        type = MinigameType.Scenario,
-                                        reflex = reflex,
-                                        accuracy = accuracy,
-                                        completed = true
-                                    )
+                            val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onClick
+                            val clickX = (event.clientX - rect.left) / rect.width
+                            val clickY = (event.clientY - rect.top) / rect.height
+                            
+                            totalAttempts++
+                            
+                            val isHit = currentTargetIndex != -1 && isInsideHotspot(clickX, clickY, targets[currentTargetIndex].hotspot!!)
+                            
+                            if (isHit) {
+                                val clickedIndex = currentTargetIndex
+                                // Success!
+                                successCount++
+                                matchedTargets.add(clickedIndex)
+                                
+                                val clickedTarget = targets[clickedIndex]
+                                // Play success sound or item audio
+                                clickedTarget.audio?.let { SoundManager.playSound(it) }
+                                
+                                if (matchedTargets.size >= targets.size) {
+                                    val endTime = window.performance.now()
+                                    scope.launch {
+                                        delay(1000)
+                                        val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
+                                        winResult = MinigameResult(
+                                            minigameId = config.minigameId,
+                                            type = MinigameType.Scenario,
+                                            reflex = reflex,
+                                            accuracy = accuracy,
+                                            completed = true
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                    onMouseMove { event ->
-                        val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onMouseMove
-                        val mouseX = (event.clientX - rect.left) / rect.width
-                        val mouseY = (event.clientY - rect.top) / rect.height
-                        mousePos = mouseX to mouseY
-                    }
-                    onMouseLeave {
-                        mousePos = null
-                    }
-                })
-            }
-
-            // Show matched hotspots or hovered hotspots
-            targets.indices.forEach { index ->
-                val target = targets[index]
-                val hotspot = target.hotspot!!
-                val isMatched = matchedTargets.contains(index)
-                
-                val isHovered = mousePos?.let { (mx, my) ->
-                    isInsideHotspot(mx, my, hotspot)
-                } ?: false
-
-                if (isMatched || isHovered) {
-                    Div({
-                        classes(MinigameStyles.hotspotIndicator)
-                        style {
-                            left((hotspot.x * 100).percent)
-                            top((hotspot.y * 100).percent)
-                            width((hotspot.radius * 2 * 100).percent)
-                            property("aspect-ratio", "1 / 1")
-                            property("pointer-events", "none")
+                        onMouseMove { event ->
+                            val rect = (event.currentTarget as? org.w3c.dom.Element)?.getBoundingClientRect() ?: return@onMouseMove
+                            val mouseX = (event.clientX - rect.left) / rect.width
+                            val mouseY = (event.clientY - rect.top) / rect.height
+                            mousePos = mouseX to mouseY
                         }
-                    }) {
-                        if (isMatched) {
-                            target.image?.let { url ->
-                                Img(src = url, attrs = {
-                                    style {
-                                        width(100.percent)
-                                        height(100.percent)
-                                        property("object-fit", "cover")
-                                        borderRadius(50.percent)
-                                    }
-                                })
+                        onMouseLeave {
+                            mousePos = null
+                        }
+                    })
+                }
+
+                // Show matched hotspots or hovered hotspots
+                targets.indices.forEach { index ->
+                    val target = targets[index]
+                    val hotspot = target.hotspot!!
+                    val isMatched = matchedTargets.contains(index)
+                    
+                    val isHovered = mousePos?.let { (mx, my) ->
+                        isInsideHotspot(mx, my, hotspot)
+                    } ?: false
+
+                    if (isMatched || isHovered) {
+                        Div({
+                            classes(MinigameStyles.hotspotIndicator)
+                            style {
+                                left((hotspot.x * 100).percent)
+                                top((hotspot.y * 100).percent)
+                                width((hotspot.radius * 2 * 100).percent)
+                                property("aspect-ratio", "1 / 1")
+                                property("pointer-events", "none")
+                            }
+                        }) {
+                            if (isMatched) {
+                                target.image?.let { url ->
+                                    Img(src = url, attrs = {
+                                        style {
+                                            width(100.percent)
+                                            height(100.percent)
+                                            property("object-fit", "cover")
+                                            borderRadius(50.percent)
+                                        }
+                                    })
+                                }
                             }
                         }
                     }

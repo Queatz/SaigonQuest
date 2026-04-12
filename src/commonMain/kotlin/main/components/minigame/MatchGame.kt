@@ -36,86 +36,91 @@ fun MatchGame(
     Div({
         classes(MinigameStyles.gameContainer)
     }) {
-        P {
-            Text("${matchedIds.size / 2} / ${config.items.size / 2} ${translated("pairs matched")}")
-        }
-
         Div({
-            classes(MinigameStyles.matchGrid)
+            classes(MinigameStyles.gameContentWrapper)
         }) {
-            shuffledItems.forEach { item ->
-                val isMatched = matchedIds.contains(item.id)
-                val isSelected = selectedId == item.id
-                
-                if (!isMatched) {
-                    FramedBorder(
-                        attrs = {
-                            classes(MinigameStyles.matchItem)
-                            if (isSelected) classes(MinigameStyles.selectedMatchItem)
-                            
-                            onClick {
-                                if (startTime == null) startTime = window.performance.now()
+            P {
+                Text("${matchedIds.size / 2} / ${config.items.size / 2} ${translated("pairs matched")}")
+            }
+
+            Div({
+                classes(MinigameStyles.matchGrid)
+            }) {
+                shuffledItems.forEach { item ->
+                    val isMatched = matchedIds.contains(item.id)
+                    val isSelected = selectedId == item.id
+                    
+                    if (!isMatched) {
+                        FramedBorder(
+                            attrs = {
+                                classes(MinigameStyles.matchItem)
+                                if (isSelected) classes(MinigameStyles.selectedMatchItem)
                                 
-                                if (isSelected) {
-                                    selectedId = null
-                                } else if (selectedId == null) {
-                                    selectedId = item.id
-                                    // Play audio if available
-                                    item.audio?.let { SoundManager.playSound(it) }
-                                } else {
-                                    totalAttempts++
-                                    val firstItem = shuffledItems.find { it.id == selectedId }
-                                    if (firstItem != null && firstItem.matchId == item.matchId) {
-                                        // Match!
-                                        matchedIds.add(firstItem.id)
-                                        matchedIds.add(item.id)
-                                        successCount++
+                                onClick {
+                                    if (startTime == null) startTime = window.performance.now()
+                                    
+                                    if (isSelected) {
                                         selectedId = null
-                                        
-                                        // Check if complete
-                                        if (matchedIds.size == shuffledItems.size) {
-                                            val endTime = window.performance.now()
-                                            // Each attempt in MatchGame involves 2 items, so we double the count for reflex consistency with other games
-                                            val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
-                                            val perItemReflex = reflex / 2.0
-                                            winResult = MinigameResult(
-                                                minigameId = config.minigameId,
-                                                type = MinigameType.MatchGame,
-                                                reflex = perItemReflex,
-                                                accuracy = accuracy,
-                                                completed = true
-                                            )
-                                        }
-                                    } else {
-                                        // No match
+                                    } else if (selectedId == null) {
                                         selectedId = item.id
+                                        // Play audio if available
                                         item.audio?.let { SoundManager.playSound(it) }
+                                    } else {
+                                        totalAttempts++
+                                        val firstItem = shuffledItems.find { it.id == selectedId }
+                                        if (firstItem != null && firstItem.matchId == item.matchId) {
+                                            // Match!
+                                            matchedIds.add(firstItem.id)
+                                            matchedIds.add(item.id)
+                                            successCount++
+                                            selectedId = null
+                                            
+                                            // Check if complete
+                                            if (matchedIds.size == shuffledItems.size) {
+                                                val endTime = window.performance.now()
+                                                // Each attempt in MatchGame involves 2 items, so we double the count for reflex consistency with other games
+                                                val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
+                                                val perItemReflex = reflex / 2.0
+                                                winResult = MinigameResult(
+                                                    minigameId = config.minigameId,
+                                                    type = MinigameType.MatchGame,
+                                                    reflex = perItemReflex,
+                                                    accuracy = accuracy,
+                                                    completed = true
+                                                )
+                                            }
+                                        } else {
+                                            // No match
+                                            selectedId = item.id
+                                            item.audio?.let { SoundManager.playSound(it) }
+                                        }
                                     }
                                 }
                             }
-                        }
-                    ) {
-                        val imageUrl = item.image
-                        if (imageUrl != null) {
-                            Img(src = imageUrl, attrs = {
-                                style {
-                                    width(100.percent)
-                                    height(100.percent)
-                                    maxWidth(120.px)
-                                    maxHeight(120.px)
-                                    property("object-fit", "cover")
+                        ) {
+                            item.image?.takeIf { it.isNotBlank() }?.let { imageUrl ->
+                                Img(src = imageUrl, attrs = {
+                                    classes(MinigameStyles.matchItemImage)
+                                })
+                            }
+
+                            item.text?.takeIf { it.isNotBlank() }?.let { text ->
+                                P({
+                                    classes(MinigameStyles.matchItemText)
+                                }) {
+                                    Text(text)
                                 }
-                            })
-                        } else if (item.text != null) {
-                            Text(item.text!!)
-                        } else if (item.audio != null) {
-                            Span({
-                                style { fontSize(32.px) }
-                            }) { Text("🔊") }
+                            }
+
+                            item.audio?.takeIf { it.isNotBlank() }?.let {
+                                Span({
+                                    classes(MinigameStyles.matchItemAudioIcon)
+                                }) { Text("🔊") }
+                            }
                         }
+                    } else {
+                        Div { }
                     }
-                } else {
-                    Div { }
                 }
             }
         }

@@ -8,10 +8,19 @@ object MinigameStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         alignItems(AlignItems.Center)
-        justifyContent(JustifyContent.Center)
         width(100.percent)
         height(100.percent)
         padding(20.px)
+        boxSizing("border-box")
+        property("overflow-y", "auto")
+    }
+
+    val gameContentWrapper by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        property("margin", "auto")
+        width(100.percent)
         boxSizing("border-box")
     }
 
@@ -73,8 +82,11 @@ object MinigameStyles : StyleSheet() {
 
     val matchItem by style {
         display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)
+        gap(12.px)
+        padding(12.px)
         cursor("pointer")
         textAlign("center")
         property("transition", "all 0.2s")
@@ -89,6 +101,40 @@ object MinigameStyles : StyleSheet() {
             property("transform", "translateY(-4px)")
             property("filter", "brightness(1.1)")
         }
+    }
+
+    val matchItemImage by style {
+        width(100.percent)
+        height(100.percent)
+        maxWidth(100.px)
+        maxHeight(100.px)
+        property("object-fit", "cover")
+        borderRadius(8.px)
+    }
+
+    val matchItemText by style {
+        margin(0.px)
+        fontSize(16.px)
+        fontWeight("bold")
+        color(Theme.colors.onBackground)
+        maxWidth(100.percent)
+        property("overflow", "hidden")
+        property("text-overflow", "ellipsis")
+        property("display", "-webkit-box")
+        property("-webkit-line-clamp", "2")
+        property("-webkit-box-orient", "vertical")
+        lineHeight(1.2.em)
+        
+        media("(prefers-color-scheme: dark)") {
+            self style {
+                color(Theme.colors.onBackgroundDark)
+            }
+        }
+    }
+
+    val matchItemAudioIcon by style {
+        fontSize(24.px)
+        opacity(0.8)
     }
 
     val selectedMatchItem by style {
