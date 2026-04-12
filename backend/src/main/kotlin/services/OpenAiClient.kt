@@ -43,6 +43,11 @@ object OpenAiClient : AiClient {
     }
 
     @Serializable
+    private data class AiTextJson(
+        val text: String,
+    )
+
+    @Serializable
     private data class ChatMessage(
         val role: String,
         val content: String,
@@ -144,8 +149,34 @@ object OpenAiClient : AiClient {
             }
 
             val resp = httpResp.body<OpenAiResponse>()
-            val content = resp.choices.firstOrNull()?.message?.content?.trim()
-            content
+            var content = resp.choices.firstOrNull()?.message?.content?.trim() ?: ""
+
+            if (content.startsWith("```")) {
+                content = content.removePrefix("```")
+                content = content.dropWhile { it != '\n' }.drop(1)
+                val fenceIdx = content.lastIndexOf("```")
+                if (fenceIdx >= 0) content = content.take(fenceIdx)
+                content = content.trim()
+            }
+
+            val parsedText: String? = if (!json) {
+                runCatching {
+                    val parsed = appJson.decodeFromString(AiTextJson.serializer(), content)
+                    parsed.text.takeIf { it.isNotBlank() }
+                }.getOrNull()
+            } else null
+
+            val finalText = (parsedText ?: content).trim()
+            finalText.ifBlank {
+                if (logSession != null) {
+                    WebSocketDebug.logMessage(
+                        "AI_RESPONSE_BLANK",
+                        "OpenAI yielded blank text after parsing. Content preview: ${content.take(200)}",
+                        logSession
+                    )
+                }
+                null
+            }
         } catch (e: Throwable) {
             WebSocketDebug.logError("OpenAI call failed", e, logSession)
             null

@@ -27,7 +27,8 @@ object MinigameStyles : StyleSheet() {
     val cardContainer by style {
         position(Position.Relative)
         width(300.px)
-        height(400.px)
+        maxWidth(100.percent)
+        property("aspect-ratio", "3/4")
         property("perspective", "1000px")
         cursor("pointer")
     }

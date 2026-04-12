@@ -170,10 +170,12 @@ object DeepSeekClient : AiClient {
                 content = content.trim()
             }
 
-            // Try to decode structured JSON with `text`
-            val parsedText: String? = runCatching {
-                appJson.decodeFromString(AiTextJson.serializer(), content).text
-            }.getOrNull()
+            val parsedText: String? = if (!json) {
+                runCatching {
+                    val parsed = appJson.decodeFromString(AiTextJson.serializer(), content)
+                    parsed.text.takeIf { it.isNotBlank() }
+                }.getOrNull()
+            } else null
 
             val finalText = (parsedText ?: content).trim()
             finalText.ifBlank {

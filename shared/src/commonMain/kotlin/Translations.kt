@@ -526,6 +526,9 @@ vi: Hủy bản ghi
 Save
 vi: Lưu
 
+Save changes to edit logic.
+vi: Lưu thay đổi để chỉnh sửa logic.
+
 You haven't made any friends yet!
 vi: Bạn vẫn chưa kết bạn nào!
 

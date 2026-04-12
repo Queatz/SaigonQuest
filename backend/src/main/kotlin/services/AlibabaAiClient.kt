@@ -164,7 +164,7 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class AiTextJson(
-        val text: String = "",
+        val text: String,
     )
 
     @Serializable
@@ -365,11 +365,14 @@ object AlibabaAiClient : AiClient {
                 content = content.trim()
             }
 
-            val parsedText: String? = runCatching {
-                appJson.decodeFromString(AiTextJson.serializer(), content).text
-            }.getOrNull()
+            val parsedText: String? = if (!json) {
+                runCatching {
+                    val parsed = appJson.decodeFromString(AiTextJson.serializer(), content)
+                    parsed.text.takeIf { it.isNotBlank() }
+                }.getOrNull()
+            } else null
 
-            val finalText = (if (json) content else (parsedText ?: content)).trim()
+            val finalText = (parsedText ?: content).trim()
             finalText.ifBlank {
                 if (logSession != null) {
                     WebSocketDebug.logMessage(

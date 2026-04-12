@@ -34,7 +34,7 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             (eventData[inKey(key)] as? String)?.takeIf { it.isNotBlank() }
                 ?: nodeData.properties.find { it.key == key }?.value?.takeIf { it.isNotBlank() }
 
-        val systemPrompt = "${getInput(PropertyKey.SYSTEM_PROMPT) ?: ""}\n\n Respond with a JSON object that has a single field named 'text' containing your reply."
+        val systemPrompt = getInput(PropertyKey.SYSTEM_PROMPT) ?: ""
         val userPrompt = getInput(PropertyKey.USER_PROMPT) ?: return false
 
         WebSocketDebug.logMessage(
@@ -63,7 +63,7 @@ class AiNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
                 systemPrompt = systemPrompt,
                 userPrompt = userPrompt,
                 logSession = context.session,
-                json = true
+                json = false
             )
         } finally {
             // Always broadcast OBJECT_TYPING false (stop)

@@ -12,6 +12,7 @@ fun BasicInputDialog(
     message: String? = null,
     placeholder: String = "",
     initialValue: String = "",
+    multiline: Boolean = false,
     onConfirm: (String) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit = onCancel,
@@ -37,6 +38,7 @@ fun BasicInputDialog(
                 value = value,
                 onInput = { value = it },
                 placeholder = placeholder,
+                multiline = multiline,
                 attrs = {
                     onKeyDown {
                         if (it.key == "Enter") {

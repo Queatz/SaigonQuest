@@ -18,10 +18,13 @@ import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.utils.PageTitleManager
 import main.components.minigame.MinigameStyles
 import main.components.tools.CharacterToolPage
 import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
+import kotlinx.browser.document
+import androidx.compose.runtime.LaunchedEffect
 
 fun main() {
     // Configure BabylonJS Draco decoder very early to ensure local asset URLs are used
@@ -50,6 +53,16 @@ fun main() {
             Style(AssetStyles)
             Style(WorldDocsStyles)
             Style(MinigameStyles)
+
+            // Update document title based on current world title
+            LaunchedEffect(PageTitleManager.worldTitle) {
+                val title = PageTitleManager.worldTitle
+                if (title.isNullOrBlank()) {
+                    document.title = "Saigon Quest"
+                } else {
+                    document.title = "$title • Saigon Quest"
+                }
+            }
             
             BrowserRouter(
                 initPath = "/"

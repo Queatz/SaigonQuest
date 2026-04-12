@@ -105,17 +105,6 @@ fun FlashcardsGame(
                             classes(MinigameStyles.cardFace)
                         }
                     ) {
-                        val imageUrl = currentItem.image
-                        if (imageUrl != null) {
-                            Img(src = imageUrl, attrs = {
-                                style {
-                                    maxWidth(100.percent)
-                                    maxHeight(200.px)
-                                    borderRadius(8.px)
-                                    marginBottom(16.px)
-                                }
-                            })
-                        }
                         H3 { Text(currentItem.text ?: "") }
                         if (currentItem.audio != null) {
                             Span({
@@ -130,6 +119,17 @@ fun FlashcardsGame(
                             classes(MinigameStyles.cardFace, MinigameStyles.cardBack)
                         }
                     ) {
+                        val imageUrl = currentItem.image
+                        if (imageUrl != null) {
+                            Img(src = imageUrl, attrs = {
+                                style {
+                                    maxWidth(100.percent)
+                                    maxHeight(200.px)
+                                    borderRadius(8.px)
+                                    marginBottom(16.px)
+                                }
+                            })
+                        }
                         H3 { Text(currentItem.translation ?: "") }
                         P { Text(currentItem.definition ?: "") }
                     }

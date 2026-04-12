@@ -89,6 +89,22 @@ fun ObjectEditorDialog(
     // Determine if we're editing or creating
     val isEditing = objectModel != null
     val dialogTitle = if (isEditing) "Edit object" else "Create object"
+
+    // Store initial values to detect changes
+    val initialRotationYDeg = remember(objectModel) {
+        ((objectModel?.rotation?.y ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
+            ((deg % 360f) + 360f) % 360f
+        }
+    }
+
+    val hasChanges = isEditing && (
+            title != (objectModel?.title ?: "") ||
+            file != (objectModel?.file ?: "") ||
+            collection != (objectModel?.collection ?: "") ||
+            status != (objectModel?.status ?: "") ||
+            verticalOffset != (objectModel?.verticalOffset ?: 0f) ||
+            rotationYDeg != initialRotationYDeg
+    )
     
     // Create a coroutine scope for async operations
     val coroutineScope = rememberCoroutineScope()
@@ -390,7 +406,7 @@ fun ObjectEditorDialog(
                         classes(Styles.objectEditorDialogLogicPreview)
                         // Make the entire div clickable to open the logic editor
 
-                        if (isEditing) {
+                        if (isEditing && !hasChanges) {
                             onClick {
                                 // Create a current object with the form data
                                 val currentObject = if (isEditing) {
@@ -440,7 +456,9 @@ fun ObjectEditorDialog(
                         }
                     ) {
                         if (isEditing) {
-                            if (objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
+                            if (hasChanges) {
+                                Translated("Save changes to edit logic.")
+                            } else if (objectModel.data != "{}" && objectModel.data.isNotEmpty()) {
                                 // Show a preview of the logic data
                                 Text(
                                     "Object logic (${

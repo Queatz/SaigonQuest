@@ -20,6 +20,8 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import web.animations.awaitAnimationFrame
 
 @Composable
@@ -136,6 +138,22 @@ fun WorldDocsDialog(
     // Collaborators shown under the title input
     var collaborators by remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(selectedDocId) { collaborators = emptySet() }
+
+    // CTRL+P shortcut to print (open in new tab)
+    DisposableEffect(selectedDoc?.key) {
+        val docKey = selectedDoc?.key
+        val listener = { e: Event ->
+            val ke = e as? KeyboardEvent
+            if (ke != null && ke.ctrlKey && ke.key.lowercase() == "p" && docKey != null) {
+                ke.preventDefault()
+                window.open("/doc/$docKey", "_blank")
+            }
+        }
+        window.addEventListener("keydown", listener)
+        onDispose {
+            window.removeEventListener("keydown", listener)
+        }
+    }
 
     // Title input focus management
     var requestFocusOnTitle by remember { mutableStateOf(false) }

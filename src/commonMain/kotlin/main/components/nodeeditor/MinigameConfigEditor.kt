@@ -44,7 +44,7 @@ fun MinigameConfigEditor(
         items.filter { (if (type == MinigameType.Scenario) it.hotspot != null else true) && it.audio == null && !it.text.isNullOrBlank() }
     }
 
-    val semaphore = remember { Semaphore(6) }
+    val semaphore = remember { Semaphore(3) }
     val mutex = remember { Mutex() }
 
     val heroImageUrl = if (type == MinigameType.Scenario) {
@@ -168,81 +168,83 @@ fun MinigameConfigEditor(
                 Text(translated("Add items with AI"))
             }
 
-            if (itemsToGenImage.isNotEmpty()) {
-                DialogButton(
-                    onClick = {
-                        scope.launch {
-                            var currentList = json.decodeFromString<List<MinigameItem>>(configJson)
-                            generatingImagesCount = itemsToGenImage.size
-                            itemsToGenImage.forEach { item ->
-                                launch {
-                                    try {
-                                        semaphore.withPermit {
-                                            val url = AiApi.generateImage(item.text!!)
-                                            mutex.withLock {
-                                                val idx = currentList.indexOfFirst { it.id == item.id }
-                                                if (idx != -1) {
-                                                    val updated = currentList.toMutableList()
-                                                    updated[idx] = updated[idx].copy(image = url)
-                                                    currentList = updated
-                                                    latestOnConfigChange(json.encodeToString(updated))
+            if (type != MinigameType.Scenario) {
+                if (itemsToGenImage.isNotEmpty()) {
+                    DialogButton(
+                        onClick = {
+                            scope.launch {
+                                var currentList = json.decodeFromString<List<MinigameItem>>(configJson)
+                                generatingImagesCount = itemsToGenImage.size
+                                itemsToGenImage.forEach { item ->
+                                    launch {
+                                        try {
+                                            semaphore.withPermit {
+                                                val url = AiApi.generateImage(item.text!!)
+                                                mutex.withLock {
+                                                    val idx = currentList.indexOfFirst { it.id == item.id }
+                                                    if (idx != -1) {
+                                                        val updated = currentList.toMutableList()
+                                                        updated[idx] = updated[idx].copy(image = url)
+                                                        currentList = updated
+                                                        latestOnConfigChange(json.encodeToString(updated))
+                                                    }
                                                 }
                                             }
+                                        } catch (t: Throwable) {
+                                            t.printStackTrace()
+                                        } finally {
+                                            generatingImagesCount--
                                         }
-                                    } catch (t: Throwable) {
-                                        t.printStackTrace()
-                                    } finally {
-                                        generatingImagesCount--
                                     }
                                 }
                             }
-                        }
-                    },
-                    style = DialogButtonStyle.Secondary,
-                    isLoading = generatingImagesCount > 0
-                ) {
-                    Text(translated("Generate all images"))
+                        },
+                        style = DialogButtonStyle.Secondary,
+                        isLoading = generatingImagesCount > 0
+                    ) {
+                        Text(translated("Generate all images"))
+                    }
                 }
-            }
 
-            if (itemsToGenAudio.isNotEmpty()) {
-                DialogButton(
-                    onClick = {
-                        scope.launch {
-                            var currentList = json.decodeFromString<List<MinigameItem>>(configJson)
-                            generatingAudioCount = itemsToGenAudio.size
-                            val token = UserApi.getToken() ?: ""
-                            itemsToGenAudio.forEach { item ->
-                                launch {
-                                    try {
-                                        semaphore.withPermit {
-                                            val bytes = AiApi.generateTts(item.text!!)
-                                            val filename = "audio_${item.id}.mp3"
-                                            val upload = ContentApi.upload(bytes, filename, "audio/mpeg", token)
-                                            val url = ContentApi.imageUrlFor(upload.uploadedFilePath)
-                                            mutex.withLock {
-                                                val idx = currentList.indexOfFirst { it.id == item.id }
-                                                if (idx != -1) {
-                                                    val updated = currentList.toMutableList()
-                                                    updated[idx] = updated[idx].copy(audio = url)
-                                                    currentList = updated
-                                                    latestOnConfigChange(json.encodeToString(updated))
+                if (itemsToGenAudio.isNotEmpty()) {
+                    DialogButton(
+                        onClick = {
+                            scope.launch {
+                                var currentList = json.decodeFromString<List<MinigameItem>>(configJson)
+                                generatingAudioCount = itemsToGenAudio.size
+                                val token = UserApi.getToken() ?: ""
+                                itemsToGenAudio.forEach { item ->
+                                    launch {
+                                        try {
+                                            semaphore.withPermit {
+                                                val bytes = AiApi.generateTts(item.text!!)
+                                                val filename = "audio_${item.id}.mp3"
+                                                val upload = ContentApi.upload(bytes, filename, "audio/mpeg", token)
+                                                val url = ContentApi.imageUrlFor(upload.uploadedFilePath)
+                                                mutex.withLock {
+                                                    val idx = currentList.indexOfFirst { it.id == item.id }
+                                                    if (idx != -1) {
+                                                        val updated = currentList.toMutableList()
+                                                        updated[idx] = updated[idx].copy(audio = url)
+                                                        currentList = updated
+                                                        latestOnConfigChange(json.encodeToString(updated))
+                                                    }
                                                 }
                                             }
+                                        } catch (t: Throwable) {
+                                            t.printStackTrace()
+                                        } finally {
+                                            generatingAudioCount--
                                         }
-                                    } catch (t: Throwable) {
-                                        t.printStackTrace()
-                                    } finally {
-                                        generatingAudioCount--
                                     }
                                 }
                             }
-                        }
-                    },
-                    style = DialogButtonStyle.Secondary,
-                    isLoading = generatingAudioCount > 0
-                ) {
-                    Text(translated("Generate all audio"))
+                        },
+                        style = DialogButtonStyle.Secondary,
+                        isLoading = generatingAudioCount > 0
+                    ) {
+                        Text(translated("Generate all audio"))
+                    }
                 }
             }
         }
@@ -251,6 +253,7 @@ fun MinigameConfigEditor(
             BasicInputDialog(
                 title = translated("Add items with AI prompt"),
                 placeholder = translated("Describe what items you want to generate"),
+                multiline = true,
                 onConfirm = { prompt ->
                     showAiPromptDialog = false
                     isGenerating = true

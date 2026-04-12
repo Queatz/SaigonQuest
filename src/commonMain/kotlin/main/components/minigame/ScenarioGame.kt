@@ -147,21 +147,16 @@ fun ScenarioGame(
                                 width((hotspot.radius * 2 * 100).percent)
                                 property("aspect-ratio", "1 / 1")
                                 property("pointer-events", "none")
-                            }
-                        }) {
-                            if (isMatched) {
-                                target.image?.let { url ->
-                                    Img(src = url, attrs = {
-                                        style {
-                                            width(100.percent)
-                                            height(100.percent)
-                                            property("object-fit", "cover")
-                                            borderRadius(50.percent)
-                                        }
-                                    })
+
+                                if (isMatched) {
+                                    target.image?.let { url ->
+                                        backgroundImage("url(\"$url\")")
+                                        backgroundSize("100%")
+                                        backgroundPosition("center")
+                                    }
                                 }
                             }
-                        }
+                        })
                     }
                 }
             }

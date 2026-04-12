@@ -36,6 +36,7 @@ import main.components.worlddocs.WorldDocsDialog
 import main.theme.Styles
 import main.theme.OverlayStyles
 import main.utils.PathUtils
+import main.utils.PageTitleManager
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
 import models.ChatMessage
@@ -214,6 +215,18 @@ fun WorldUI(
         }
     }
     
+    // Update the webpage title with the current world name
+    LaunchedEffect(currentWorld?.title) {
+        PageTitleManager.worldTitle = currentWorld?.title
+    }
+
+    // Reset the title when the component is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            PageTitleManager.worldTitle = null
+        }
+    }
+
     // Refresh unread counts when panels are closed
     LaunchedEffect(currentPanel) {
         if (currentPanel != SidePanelState.Notifications) {

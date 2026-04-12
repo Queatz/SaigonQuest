@@ -1164,8 +1164,8 @@ object Styles : StyleSheet() {
     }
 
     val smallLoadingSpinner by style {
-        width(20.px)
-        height(20.px)
+        width(18.px)
+        height(18.px)
         property("border", "3px solid ${Theme.colors.white10}")
         property("border-top", "3px solid ${Theme.colors.white80}")
         property("border-radius", "50%")
