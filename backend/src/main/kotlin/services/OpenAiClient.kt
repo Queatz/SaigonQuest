@@ -228,30 +228,35 @@ object OpenAiClient : AiClient {
 
     override suspend fun ttsStream(
         text: String,
+        format: String,
         onChunk: suspend (ByteArray) -> Unit
     ): Boolean {
         val apiKey = System.getenv("OPENAI_API_KEY") ?: System.getProperty("OPENAI_API_KEY")
         if (apiKey.isNullOrBlank()) return false
+
+        
+        val actualFormat = if (format == "pcm") "pcm" else "mp3"
 
         // Construct body as a map to ensure absolute control over serialization
         val bodyMap = mapOf(
             "model" to "tts-1",
             "input" to text,
             "voice" to "alloy",
-            "response_format" to "pcm",
+            "response_format" to actualFormat,
         )
         val bodyStr = appJson.encodeToString(bodyMap)
 
         return try {
             val response = http.post("https://api.openai.com/v1/audio/speech") {
                 header(HttpHeaders.Authorization, "Bearer $apiKey")
-                header(HttpHeaders.Accept, "audio/pcm")
+                val acceptType = if (actualFormat == "pcm") "audio/pcm" else "audio/mpeg"
+                header(HttpHeaders.Accept, acceptType)
                 contentType(ContentType.Application.Json)
                 setBody(bodyStr)
             }
 
             val contentType = response.contentType()
-            println("[DEBUG_LOG] OpenAI TTS Request: model=tts-1, voice=alloy, format=pcm, textLen=${text.length}")
+            println("[DEBUG_LOG] OpenAI TTS Request: model=tts-1, voice=alloy, format=$actualFormat, textLen=${text.length}")
             println("[DEBUG_LOG] OpenAI TTS response status: ${response.status}, contentType: $contentType")
 
             if (response.status.isSuccess()) {
@@ -282,9 +287,9 @@ object OpenAiClient : AiClient {
         }
     }
 
-    override suspend fun tts(text: String): ByteArray? {
+    override suspend fun tts(text: String, format: String): ByteArray? {
         val out = java.io.ByteArrayOutputStream()
-        val success = ttsStream(text) { chunk ->
+        val success = ttsStream(text, format) { chunk ->
             out.write(chunk)
         }
         return if (success && out.size() > 0) out.toByteArray() else null

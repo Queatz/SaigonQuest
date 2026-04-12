@@ -77,8 +77,8 @@ fun MatchGame(
                                     selectedId = null
                                 } else if (selectedId == null) {
                                     selectedId = item.id
-                                    // Play audio if available
-                                    item.audio?.let { SoundManager.playSound(it) }
+                                    // Play audio with TTS fallback
+                                    SoundManager.playItemAudio(item)
                                 } else {
                                     totalAttempts++
                                     val firstItem = shuffledItems.find { it.id == selectedId }
@@ -116,7 +116,7 @@ fun MatchGame(
                                             errorIds = emptySet()
                                         }
                                         selectedId = null
-                                        item.audio?.let { SoundManager.playSound(it) }
+                                        SoundManager.playItemAudio(item)
                                     }
                                 }
                             }
@@ -136,7 +136,8 @@ fun MatchGame(
                             }
                         }
 
-                        item.audio?.takeIf { it.isNotBlank() }?.let {
+                        val hasAudio = item.audio?.isNotBlank() == true || item.text?.isNotBlank() == true
+                        if (hasAudio) {
                             Span({
                                 classes(MinigameStyles.matchItemAudioIcon)
                             }) { Text("🔊") }

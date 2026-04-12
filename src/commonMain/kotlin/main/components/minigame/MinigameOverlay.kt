@@ -49,6 +49,8 @@ fun MinigameOverlay(
                 MinigameType.MatchGame -> MatchGame(config, handleComplete)
                 MinigameType.Scenario -> ScenarioGame(config, handleComplete)
                 MinigameType.Sequencing -> SequencingGame(config, handleComplete)
+                MinigameType.Categorization -> CategorizationGame(config, handleComplete)
+                MinigameType.Identify -> IdentifyGame(config, handleComplete)
             }
         }
     )

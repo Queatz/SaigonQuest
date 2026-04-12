@@ -92,10 +92,8 @@ fun FlashcardsGame(
                     if (startTime == null) startTime = window.performance.now()
                     isFlipped = !isFlipped
                     if (isFlipped) {
-                        // Play audio if available on flip
-                        currentItem.audio?.let { url ->
-                            SoundManager.playSound(url)
-                        }
+                        // Play audio with TTS fallback on flip
+                        SoundManager.playItemAudio(currentItem)
                     }
                 }
             }) {
@@ -116,7 +114,8 @@ fun FlashcardsGame(
                             classes(MinigameStyles.flashcardText)
                         }) { Text(currentItem.text ?: "") }
                         
-                        if (currentItem.audio != null) {
+                        val hasAudio = currentItem.audio?.isNotBlank() == true || currentItem.text?.isNotBlank() == true
+                        if (hasAudio) {
                             Span({
                                 style { fontSize(28.px) }
                             }) { Text("🔊") }

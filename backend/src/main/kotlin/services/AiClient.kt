@@ -33,6 +33,7 @@ interface AiClient {
      */
     suspend fun ttsStream(
         text: String,
+        format: String = "pcm",
         onChunk: suspend (ByteArray) -> Unit,
     ): Boolean
 
@@ -41,6 +42,7 @@ interface AiClient {
      */
     suspend fun tts(
         text: String,
+        format: String = "mp3",
     ): ByteArray?
 
     /**
@@ -50,11 +52,12 @@ interface AiClient {
         text: String,
         token: String? = null,
     ): String? {
-        val bytes = tts(text) ?: return null
+        val format = "mp3"
+        val bytes = tts(text, format) ?: return null
         return if (token != null) {
-            uploadAsset(bytes, "wav", token)
+            uploadAsset(bytes, format, token)
         } else {
-            saveGenFile(bytes, "wav")
+            saveGenFile(bytes, format)
         }
     }
 

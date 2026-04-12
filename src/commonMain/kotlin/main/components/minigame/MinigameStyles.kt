@@ -226,13 +226,6 @@ object MinigameStyles : StyleSheet() {
         fontWeight("bold")
         textAlign("center")
         margin(8.px, 0.px)
-        color(Theme.colors.primary)
-
-        media("(prefers-color-scheme: dark)") {
-            self style {
-                color(Theme.colors.primaryDark)
-            }
-        }
     }
 
     val flashcardDefinition by style {
@@ -314,6 +307,127 @@ object MinigameStyles : StyleSheet() {
         property("object-fit", "contain")
         borderRadius(12.px)
         boxSizing("border-box")
+    }
+
+    val categorizationItemContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        marginBottom(40.px)
+        width(100.percent)
+    }
+
+    val categorizationItem by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        padding(24.px)
+        width(320.px)
+        minHeight(320.px)
+        boxSizing("border-box")
+    }
+
+    val categorizationItemImage by style {
+        width(200.px)
+        height(200.px)
+        property("object-fit", "contain")
+        borderRadius(12.px)
+        marginBottom(16.px)
+    }
+
+    val categorizationItemText by style {
+        fontSize(28.px)
+        fontWeight("bold")
+        margin(0.px)
+        textAlign("center")
+        width(100.percent)
+    }
+
+    val categorizationBasketsContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        flexWrap(FlexWrap.Wrap)
+        gap(32.px)
+        width(100.percent)
+    }
+
+    val categorizationBasket by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        padding(24.px)
+        width(240.px)
+        minHeight(120.px)
+        cursor("pointer")
+        property("transition", "all 0.2s")
+        boxSizing("border-box")
+        
+        hover(self) style {
+            property("transform", "scale(1.05)")
+            property("filter", "brightness(1.1)")
+        }
+    }
+
+    val categorizationBasketText by style {
+        fontSize(24.px)
+        fontWeight("bold")
+        margin(0.px)
+        textAlign("center")
+    }
+
+    val identifyPromptContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        marginBottom(40.px)
+        gap(16.px)
+    }
+
+    val identifyAudioButton by style {
+        fontSize(64.px)
+        cursor("pointer")
+        property("transition", "transform 0.2s")
+        
+        hover(self) style {
+            property("transform", "scale(1.1)")
+        }
+    }
+
+    val identifyOptionsGrid by style {
+        display(DisplayStyle.Grid)
+        gridTemplateColumns("repeat(2, 1fr)")
+        gap(24.px)
+        maxWidth(600.px)
+        width(100.percent)
+    }
+
+    val identifyOption by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        padding(16.px)
+        cursor("pointer")
+        property("transition", "all 0.2s")
+        boxSizing("border-box")
+        
+        hover(self) style {
+            property("transform", "translateY(-4.px)")
+            property("filter", "brightness(1.05)")
+        }
+    }
+
+    val identifyOptionImage by style {
+        width(160.px)
+        height(160.px)
+        property("object-fit", "contain")
+        borderRadius(12.px)
+        marginBottom(8.px)
+    }
+
+    val identifyOptionText by style {
+        fontSize(20.px)
+        fontWeight("bold")
+        margin(0.px)
     }
 
     val shakeError by style {

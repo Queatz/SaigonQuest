@@ -11,6 +11,8 @@ enum class MinigameType {
     MatchGame,
     Scenario,
     Sequencing,
+    Categorization,
+    Identify,
 }
 
 /**

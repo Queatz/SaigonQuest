@@ -84,9 +84,10 @@ object AiApi {
         }
     }
 
-    suspend fun generateTts(text: String): ByteArray {
+    suspend fun generateTts(text: String, format: String = "mp3"): ByteArray {
         val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/tts") {
             contentType(ContentType.Application.Json)
+            parameter("format", format)
             ApiClient.addAuthHeader(this)
             setBody(AiTtsRequest(text = text))
         }
@@ -99,9 +100,10 @@ object AiApi {
         }
     }
 
-    suspend fun generateTtsStream(text: String, onChunk: suspend (ByteArray) -> Unit) {
+    suspend fun generateTtsStream(text: String, format: String = "pcm", onChunk: suspend (ByteArray) -> Unit) {
         val request = ApiClient.httpClient.preparePost("${ApiConstants.API_BASE_URL}/ai/tts") {
             contentType(ContentType.Application.Json)
+            parameter("format", format)
             ApiClient.addAuthHeader(this)
             setBody(AiTtsRequest(text = text))
         }

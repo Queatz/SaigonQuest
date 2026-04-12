@@ -157,7 +157,8 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                println("[DEBUG_LOG] TTS Route hit for text: ${req.text.take(50)}...")
+                val format = call.request.queryParameters["format"] ?: "pcm"
+                println("[DEBUG_LOG] TTS Route hit for text: ${req.text.take(50)}..., format: $format")
 
                 if (req.text.isBlank()) {
                     return@post call.respond(
@@ -177,8 +178,9 @@ fun Routing.configureAiRoutes() {
                     )
                 }
 
-                call.respondBytesWriter(ContentType("audio", "l16")) {
-                    AiManager.ttsClient.ttsStream(req.text) { chunk ->
+                val contentType = if (format == "pcm") ContentType("audio", "l16") else ContentType.Audio.MPEG
+                call.respondBytesWriter(contentType) {
+                    AiManager.ttsClient.ttsStream(req.text, format) { chunk ->
                         writeFully(chunk)
                         flush()
                     }
@@ -248,6 +250,15 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
             MinigameType.Sequencing -> {
                 appendLine("- 'text': Step or ingredient name.")
                 appendLine("- Generate items in the CORRECT LOGICAL ORDER (e.g., first step first, last step last).")
+            }
+            MinigameType.Categorization -> {
+                appendLine("- 'text': Item to sort.")
+                appendLine("- 'matchId': The Category name (e.g., 'Fruit', 'Drink', 'Verb').")
+                appendLine("- Use 2-3 different matchIds across 6-9 items.")
+            }
+            MinigameType.Identify -> {
+                appendLine("- 'text': The name of the object to identify.")
+                appendLine("- Generate 4-6 distinct items that could be confused with each other (e.g., different types of food).")
             }
         }
         appendLine("- Generate 5-10 items.")

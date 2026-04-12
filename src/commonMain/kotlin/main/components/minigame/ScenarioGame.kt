@@ -100,8 +100,8 @@ fun ScenarioGame(
                                 matchedTargets.add(clickedIndex)
                                 
                                 val clickedTarget = targets[clickedIndex]
-                                // Play success sound or item audio
-                                clickedTarget.audio?.let { SoundManager.playSound(it) }
+                                // Play success sound or item audio with TTS fallback
+                                SoundManager.playItemAudio(clickedTarget)
                                 
                                 if (matchedTargets.size >= targets.size) {
                                     val endTime = window.performance.now()

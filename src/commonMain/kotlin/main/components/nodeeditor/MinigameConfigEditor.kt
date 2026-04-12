@@ -354,6 +354,8 @@ fun MinigameItemEditor(
                 when (type) {
                     MinigameType.Scenario -> "What to find"
                     MinigameType.Sequencing -> "Step description / Item name"
+                    MinigameType.Categorization -> "Item name"
+                    MinigameType.Identify -> "Identify target name"
                     else -> "Text (Front)"
                 }
             )
@@ -372,11 +374,11 @@ fun MinigameItemEditor(
             )
         }
 
-        if (type == MinigameType.MatchGame) {
+        if (type == MinigameType.MatchGame || type == MinigameType.Categorization) {
             DialogInput(
                 value = item.matchId ?: "",
                 onInput = { onUpdate(item.copy(matchId = it)) },
-                placeholder = str("Match Group ID")
+                placeholder = str(if (type == MinigameType.Categorization) "Category" else "Match Group ID")
             )
         }
 

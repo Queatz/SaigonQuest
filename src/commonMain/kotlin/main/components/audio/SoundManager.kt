@@ -3,6 +3,7 @@ package main.components.audio
 import kotlinx.browser.document
 import org.w3c.dom.HTMLAudioElement
 import main.components.AudioSettings
+import models.MinigameItem
 
 /**
  * Global sound manager for one-shot sound effects.
@@ -15,13 +16,13 @@ object SoundManager {
      * 
      * @param url The URL of the sound file to play.
      */
-    fun playSound(url: String) {
+    fun playSound(url: String): kotlin.js.Promise<Unit>? {
         console.log("[SoundManager] playSound requested for URL: $url")
         // Always play sounds regardless of music setting
         // Music setting is specifically for background music
         
         try {
-            val audio = document.createElement("audio") as HTMLAudioElement
+            val audio = document.createElement("audio") as org.w3c.dom.HTMLAudioElement
             audio.src = url
             activeSounds.add(audio)
             
@@ -31,14 +32,38 @@ object SoundManager {
             }
             
             console.log("[SoundManager] Playing audio: $url")
-            audio.play().then {
+            return audio.play().then {
                 console.log("[SoundManager] Audio playback started successfully: $url")
             }.catch { err ->
                 activeSounds.remove(audio)
                 console.warn("[SoundManager] Autoplay prevented or error playing sound: $err")
+                throw err.unsafeCast<Throwable>()
             }
         } catch (t: Throwable) {
             console.error("[SoundManager] Failed to play sound from URL: $url", t)
+            return null
+        }
+    }
+
+    /**
+     * Reusable logic to play a MinigameItem's audio with fallback to TTS.
+     */
+    fun playItemAudio(item: MinigameItem) {
+        val audio = item.audio
+        val text = item.text
+        if (audio != null) {
+            console.log("[SoundManager] Playing item audio URL: $audio")
+            playSound(audio)?.catch { _ ->
+                if (text != null) {
+                    console.log("[SoundManager] Audio playback failed, falling back to TTS: $text")
+                    TtsManager.speak(text)
+                }
+            }
+        } else if (text != null) {
+            console.log("[SoundManager] No audio URL, falling back to TTS: $text")
+            TtsManager.speak(text)
+        } else {
+            console.warn("[SoundManager] Cannot play audio: both audio and text are null")
         }
     }
 

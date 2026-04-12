@@ -534,9 +534,9 @@ object AlibabaAiClient : AiClient {
         }
     }
 
-    override suspend fun tts(text: String): ByteArray? {
+    override suspend fun tts(text: String, format: String): ByteArray? {
         val out = java.io.ByteArrayOutputStream()
-        val success = ttsStream(text) { chunk ->
+        val success = ttsStream(text, format) { chunk ->
             out.write(chunk)
         }
         return if (success && out.size() > 0) out.toByteArray() else null
@@ -544,6 +544,7 @@ object AlibabaAiClient : AiClient {
 
     override suspend fun ttsStream(
         text: String,
+        format: String,
         onChunk: suspend (ByteArray) -> Unit,
     ): Boolean {
         val apiKey = System.getenv("ALIBABA_API_KEY")
@@ -557,6 +558,8 @@ object AlibabaAiClient : AiClient {
         val taskId = java.util.UUID.randomUUID().toString().replace("-", "")
         val messageId = java.util.UUID.randomUUID().toString().replace("-", "")
 
+        val actualFormat = if (format == "pcm") "pcm" else "mp3"
+
         val request = WsRequest(
             header = WsHeader(
                 action = "run-task",
@@ -566,7 +569,7 @@ object AlibabaAiClient : AiClient {
             payload = WsPayload(
                 model = "cosyvoice-v3-flash",
                 input = TtsInput(text = text),
-                parameters = TtsParameters()
+                parameters = TtsParameters(format = actualFormat)
             )
         )
 

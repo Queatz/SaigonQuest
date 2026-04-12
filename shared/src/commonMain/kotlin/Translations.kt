@@ -76,6 +76,18 @@ vi: Mô tả nhiệm vụ
 Select the items in the correct order
 vi: Chọn các mục theo đúng thứ tự
 
+Sort the items into the correct categories
+vi: Sắp xếp các mục vào đúng loại
+
+Listen and identify the correct item
+vi: Nghe và chọn đúng mục
+
+Categories
+vi: Các loại
+
+Item to sort
+vi: Mục cần sắp xếp
+
 Quest events
 vi: Sự kiện nhiệm vụ
 

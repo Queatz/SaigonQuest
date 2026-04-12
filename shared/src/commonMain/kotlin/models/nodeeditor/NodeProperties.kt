@@ -1321,7 +1321,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.ENUM,
                 direction = PropertyDirection.INPUT,
                 defaultValue = "Flashcards",
-                options = listOf("Flashcards", "MatchGame", "Scenario", "Sequencing")
+                options = listOf("Flashcards", "MatchGame", "Scenario", "Sequencing", "Categorization", "Identify")
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TITLE,

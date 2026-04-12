@@ -88,7 +88,7 @@ fun SequencingGame(
                                 if (item.id == nextTarget.id) {
                                     successCount++
                                     currentSequence.add(item)
-                                    item.audio?.let { SoundManager.playSound(it) }
+                                    SoundManager.playItemAudio(item)
 
                                     if (currentSequence.size == targetSequence.size) {
                                         val endTime = window.performance.now()
@@ -119,6 +119,13 @@ fun SequencingGame(
                         }
                         item.text?.let { text ->
                             P({ classes(MinigameStyles.sequencingItemText) }) { Text(text) }
+                        }
+                        
+                        val hasAudio = item.audio?.isNotBlank() == true || item.text?.isNotBlank() == true
+                        if (hasAudio) {
+                            Span({
+                                style { fontSize(16.px); property("position", "absolute"); top(4.px); right(4.px) }
+                            }) { Text("🔊") }
                         }
                     }
                 }
