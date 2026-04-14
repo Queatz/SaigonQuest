@@ -709,6 +709,12 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             ),
+            NodePropertyDefinition(
+                key = PropertyKey.ID,
+                name = "Doc ID",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            ),
         )
 
         // PlayerInput node properties

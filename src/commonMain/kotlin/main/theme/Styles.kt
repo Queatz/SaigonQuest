@@ -152,6 +152,54 @@ object Styles : StyleSheet() {
         desc(self, selector("table")) style {
             width(100.percent)
         }
+
+        // Doc preview style
+        desc(self, className("md-doc")) style {
+            display(DisplayStyle("inline-flex"))
+            flexDirection(FlexDirection.Column)
+            gap(4.px)
+            padding(8.px)
+            borderRadius(8.px)
+            backgroundColor(rgba(255, 255, 255, 0.06))
+            width(12.cssRem)
+            maxHeight(12.cssRem)
+            flexShrink(0)
+            cursor("pointer")
+            overflow("hidden")
+            border(1.px, LineStyle.Solid, rgba(255, 255, 255, 0.1))
+            property("vertical-align", "middle")
+            margin(8.px, 4.px)
+            property("user-select", "none")
+
+            desc(self, className("md-doc-image")) style {
+                width(100.percent)
+                height(4.cssRem)
+                property("background-size", "cover")
+                property("background-position", "center")
+                borderRadius(4.px)
+                marginBottom(4.px)
+                flexShrink(0)
+            }
+
+            desc(self, className("md-doc-title")) style {
+                fontWeight("bold")
+                fontSize(13.px)
+                whiteSpace("nowrap")
+                overflow("hidden")
+                property("text-overflow", "ellipsis")
+            }
+
+            desc(self, className("md-doc-preview")) style {
+                fontSize(11.px)
+                opacity(0.7)
+                property("display", "-webkit-box")
+                property("-webkit-line-clamp", "3")
+                property("-webkit-box-orient", "vertical")
+                overflow("hidden")
+                property("text-overflow", "ellipsis")
+                whiteSpace("normal")
+            }
+        }
     }
 
     val richTextEditorToolbar by style {

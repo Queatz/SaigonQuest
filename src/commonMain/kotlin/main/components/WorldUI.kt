@@ -52,6 +52,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.P
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 import web.console.console
 import web.encoding.atob
 import web.notifications.Notification
@@ -153,6 +154,39 @@ fun WorldUI(
     var currentWorld by remember { mutableStateOf<World?>(null) }
     var isWorldLoading by remember { mutableStateOf(true) }
     var worldErrorMessage by remember { mutableStateOf("") }
+
+    // Listen for custom 'openDoc' event (e.g. from Md preview click)
+    DisposableEffect(currentWorld?.key, currentWorld?.url) {
+        val listener: (Event) -> Unit = { e ->
+            val de = e.asDynamic()
+            val docId = de.detail.docId as? String
+            val targetWorldId = de.detail.worldId as? String
+            
+            // Check if it's the current world by both ID (key) and URL
+            val isCurrentWorld = targetWorldId == null || 
+                targetWorldId == currentWorld?.key || 
+                (currentWorld?.url?.isNotBlank() == true && targetWorldId == currentWorld?.url)
+
+            if (!isCurrentWorld) {
+                // Navigate to other world (targetWorldId is either key or URL)
+                router.navigate("/$targetWorldId?openDoc=$docId")
+            } else if (docId != null) {
+                initialWorldDocId = docId
+                isWorldDocsDialogOpen = true
+            }
+        }
+        window.addEventListener("openDoc", listener)
+        onDispose { window.removeEventListener("openDoc", listener) }
+    }
+
+    // Handle openDoc query parameter for deep linking after navigation
+    LaunchedEffect(router.currentPath) {
+        val openDocId = router.currentPath.parameters?.map?.get("openDoc")?.firstOrNull()
+        if (openDocId != null) {
+            initialWorldDocId = openDocId.toString()
+            isWorldDocsDialogOpen = true
+        }
+    }
 
     LaunchedEffect(requestPanel) {
         requestPanel.collect { panel ->
@@ -1074,6 +1108,7 @@ fun WorldUI(
             WorldDocsDialog(
                 worldId = currentWorld!!.key,
                 worldName = currentWorld!!.title,
+                worldUrl = currentWorld!!.url,
                 isOwner = currentWorld!!.canUserEdit(currentUser!!.key),
                 currentUserId = currentUser!!.key,
                 initialDocId = initialWorldDocId,

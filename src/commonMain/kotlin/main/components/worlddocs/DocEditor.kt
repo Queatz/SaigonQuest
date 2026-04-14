@@ -42,13 +42,15 @@ fun DocEditor(
     onCollaboratorsChange: (Set<String>) -> Unit = {},
     onConnectionStateChange: (ConnectionState) -> Unit = {},
     onLocalContentChange: (String) -> Unit = {},
+    controller: main.components.chat.RichTextEditorController? = null,
+    worldUrl: String? = null,
 ) {
     var text by remember(doc.key) { mutableStateOf(doc.content) }
     var version by remember(doc.key) { mutableStateOf(doc.version) }
     var savingState by remember { mutableStateOf<SavingState>(SavingState.Idle) }
     val scope = rememberCoroutineScope()
     // Imperative controller for zero-flash remote updates
-    val rtedController = remember(doc.key) { main.components.chat.RichTextEditorController() }
+    val rtedController = controller ?: remember(doc.key) { main.components.chat.RichTextEditorController() }
     var suppressSave by remember { mutableStateOf(false) }
 
     // Track local selection (caret) so we can preserve it across remote updates
@@ -512,6 +514,8 @@ fun DocEditor(
                     },
                     selectionTargetLength = selTargetLen,
                     controller = rtedController,
+                    worldId = doc.worldId,
+                    worldUrl = worldUrl,
                 )
             }
         } else {

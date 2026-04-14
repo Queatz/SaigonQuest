@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.components.applyImageLoadBehavior
+import main.components.applyDocClickBehavior
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.components.markdownToHtml
@@ -52,6 +53,8 @@ fun MdEditable(
             el.innerHTML = markdownToHtml(markdown, softBreaks = false)
             // Ensure images adopt the same load/fade behavior as in Md
             applyImageLoadBehavior(el)
+            // Handle doc preview clicks
+            applyDocClickBehavior(el)
         }
         suppressDomRenderOnce = false
 

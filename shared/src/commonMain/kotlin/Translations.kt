@@ -2269,6 +2269,12 @@ vi: Bước
 Step description / Item name
 vi: Mô tả bước / Tên mục
 
+Back
+vi: Quay lại
+
+Forward
+vi: Tiếp theo
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

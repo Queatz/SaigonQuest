@@ -29,6 +29,7 @@ import web.animations.awaitAnimationFrame
 fun WorldDocsDialog(
     worldId: String,
     worldName: String,
+    worldUrl: String? = null,
     isOwner: Boolean,
     currentUserId: String,
     onClose: () -> Unit,
@@ -83,6 +84,27 @@ fun WorldDocsDialog(
     }
 
     var selectedDocId by remember { mutableStateOf<String?>(null) }
+
+    // Navigation history
+    var history by remember { mutableStateOf(emptyList<String>()) }
+    var historyIndex by remember { mutableStateOf(-1) }
+    var isNavigatingHistory by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedDocId) {
+        val currentId = selectedDocId ?: return@LaunchedEffect
+        if (isNavigatingHistory) {
+            isNavigatingHistory = false
+            return@LaunchedEffect
+        }
+
+        // If the current doc is the same as the one at the current history index, do nothing
+        if (historyIndex >= 0 && history[historyIndex] == currentId) return@LaunchedEffect
+
+        // Truncate history after current index and add the new ID
+        val newHistory = history.take(historyIndex + 1) + currentId
+        history = newHistory
+        historyIndex = newHistory.lastIndex
+    }
     // When using server-side search, auto-select the first result
     LaunchedEffect(serverSearchIds) {
         val ids = serverSearchIds
@@ -135,6 +157,8 @@ fun WorldDocsDialog(
 
     // Move dialog state
     var showMoveDialog by remember { mutableStateOf(false) }
+
+    val rtedController = remember { main.components.chat.RichTextEditorController() }
 
     // Collaborators shown under the title input
     var collaborators by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -240,7 +264,7 @@ fun WorldDocsDialog(
                                 requestFocusOnTitle = true
                                 error = null
                                 // Notify listeners that world docs changed (for counts)
-                                val detail: dynamic = object {}
+                                val detail: dynamic = js("{}")
                                 detail.worldId = worldId
                                 val evt = createCustomEvent("worldDocsChanged", detail)
                                 window.dispatchEvent(evt)
@@ -253,6 +277,40 @@ fun WorldDocsDialog(
                 ) {
                     Translated("Create doc")
                 }
+                }
+
+                DialogButton(
+                    style = DialogButtonStyle.Secondary,
+                    isDisabled = historyIndex <= 0,
+                    onClick = {
+                        if (historyIndex > 0) {
+                            isNavigatingHistory = true
+                            historyIndex--
+                            selectedDocId = history[historyIndex]
+                        }
+                    },
+                    attrs = {
+                        title(str("Back"))
+                    }
+                ) {
+                    Text("←")
+                }
+
+                DialogButton(
+                    style = DialogButtonStyle.Secondary,
+                    isDisabled = historyIndex < 0 || historyIndex >= history.lastIndex,
+                    onClick = {
+                        if (historyIndex >= 0 && historyIndex < history.lastIndex) {
+                            isNavigatingHistory = true
+                            historyIndex++
+                            selectedDocId = history[historyIndex]
+                        }
+                    },
+                    attrs = {
+                        title(str("Forward"))
+                    }
+                ) {
+                    Text("→")
                 }
                 Div(
                     attrs = {
@@ -577,6 +635,8 @@ fun WorldDocsDialog(
                                         doc = selectedDoc,
                                         isEditable = true,
                                         currentUserId = currentUserId,
+                                        controller = rtedController,
+                                        worldUrl = worldUrl,
                                         onUpdated = { updated ->
                                             docs = docs.map { WorldDocsUtils.updateNode(it, updated) }
                                             // Keep local edited content in sync with server-updated content
@@ -607,7 +667,7 @@ fun WorldDocsDialog(
 
             if (showDeleteConfirm && selectedDoc != null) {
                 BasicConfirmDialog(
-                    message = Translations.str("Are you sure you want to delete this doc?"),
+                    message = str("Are you sure you want to delete this doc?"),
                     onConfirm = {
                         showDeleteConfirm = false
                         val id = selectedDoc.key
@@ -617,7 +677,7 @@ fun WorldDocsDialog(
                                 docs = WorldDocsUtils.removeNode(docs, id)
                                 selectedDocId = docs.firstOrNull()?.doc?.key
                                 // Notify listeners that world docs changed (for counts)
-                                val detail: dynamic = object {}
+                                val detail: dynamic = js("{}")
                                 detail.worldId = worldId
                                 val evt = createCustomEvent("worldDocsChanged", detail)
                                 window.dispatchEvent(evt)
@@ -705,4 +765,3 @@ fun WorldDocsDialog(
         )
     }
 }
-

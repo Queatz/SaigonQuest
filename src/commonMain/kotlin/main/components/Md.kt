@@ -15,7 +15,9 @@ import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLAudioElement
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLSpanElement
+import main.utils.createCustomEvent
 import kotlin.js.Json
 import kotlin.js.json
 
@@ -87,6 +89,68 @@ internal fun ensureExtensionsRegistered() {
                 },
                 "renderer" to { token: Json ->
                     "<video src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></video>"
+                },
+            ),
+            json(
+                "name" to "doc",
+                "level" to "inline",
+                "start" to { src: String -> src.indexOf("![doc]") },
+                "tokenizer" to { src: String ->
+                    val rule = Regex("^!\\[doc\\]\\((.*?)\\)")
+                    val match = rule.find(src)
+                    if (match != null) {
+                        json(
+                            "type" to "doc",
+                            "raw" to match.value,
+                            "data" to match.groupValues[1].trim(),
+                        )
+                    } else {
+                        null
+                    }
+                },
+                "renderer" to { token: Json ->
+                    val raw = token["data"] as String
+                    val parts = raw.split("|")
+                    val docId = parts.getOrNull(0) ?: ""
+                    val worldId = parts.getOrNull(1) ?: ""
+                    val titleEnc = parts.getOrNull(2) ?: ""
+                    val previewEnc = parts.getOrNull(3) ?: ""
+                    val imageUrlEnc = parts.getOrNull(4) ?: ""
+                    val title = try {
+                        decodeURIComponent(titleEnc)
+                    } catch (e: dynamic) {
+                        titleEnc
+                    }
+                    val preview = try {
+                        decodeURIComponent(previewEnc)
+                    } catch (e: dynamic) {
+                        previewEnc
+                    }
+                    val imageUrl = try {
+                        decodeURIComponent(imageUrlEnc)
+                    } catch (e: dynamic) {
+                        imageUrlEnc
+                    }
+
+                    val safeTitle = title
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace("\"", "&quot;")
+                    val safePreview = preview
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace("\"", "&quot;")
+
+                    val imgHtml = if (imageUrl.isNotBlank()) {
+                        "<div class=\"md-doc-image\" style='width:100%;height:4rem;background-image:url(\"$imageUrl\");background-size:cover;background-position:center;border-radius:4px;margin-bottom:4px;'></div>"
+                    } else ""
+
+                    "<div class=\"md-doc\" contenteditable=\"false\" data-doc-id=\"$docId\" data-world-id=\"$worldId\" data-image=\"$imageUrl\" style='display:inline-flex;flex-direction:column;gap:4px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.06);width:12rem;max-height:12rem;flex-shrink:0;cursor:pointer;overflow:hidden;border:1px solid rgba(255,255,255,0.1);vertical-align:middle;margin:8px 4px;user-select:none;'>$imgHtml" +
+                        "<div class=\"md-doc-title\" style='font-weight:bold;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>$safeTitle</div>" +
+                        "<div class=\"md-doc-preview\" style='font-size:11px;opacity:0.7;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:normal;'>$safePreview</div>" +
+                        "</div>"
                 },
             ),
             json(
@@ -239,6 +303,23 @@ fun stripMarkdown(content: String): String {
         .trim()
 }
 
+fun extractFirstImage(content: String): String? {
+    if (content.isBlank()) return null
+    // Standard markdown image: ![alt](url)
+    val mediaRegex = Regex("!\\[.*?\\]\\((.*?)\\)")
+    val match = mediaRegex.find(content)
+    if (match != null) {
+        val url = match.groupValues[1].trim()
+        // Avoid doc/item custom types which use ![doc] or ![item]
+        if (match.value.startsWith("![doc]") || match.value.startsWith("![item]")) {
+            // Recurse after this match
+            return extractFirstImage(content.substring(match.range.last + 1))
+        }
+        return url
+    }
+    return null
+}
+
 private fun applyAudioExclusivePlayBehavior(root: Element) {
     try {
         val nodeList = root.querySelectorAll("audio")
@@ -259,6 +340,31 @@ private fun applyAudioExclusivePlayBehavior(root: Element) {
                             }
                         } catch (_: Throwable) {}
                     })
+                }
+            }
+        }
+    } catch (_: Throwable) {}
+}
+
+internal fun applyDocClickBehavior(root: Element) {
+    try {
+        val nodeList = root.querySelectorAll(".md-doc")
+        for (i in 0 until nodeList.length) {
+            val el = nodeList.item(i)
+            if (el is HTMLElement) {
+                val already = el.getAttribute("data-click-listener") != null
+                if (!already) {
+                    el.setAttribute("data-click-listener", "1")
+                    el.onclick = { _ ->
+                        val docId = el.getAttribute("data-doc-id")
+                        val worldId = el.getAttribute("data-world-id")
+                        val detail = json(
+                            "docId" to docId,
+                            "worldId" to worldId
+                        )
+                        val evt = createCustomEvent("openDoc", detail)
+                        window.dispatchEvent(evt)
+                    }
                 }
             }
         }
@@ -286,6 +392,8 @@ fun Md(
         applyImageLoadBehavior(container)
         // Ensure only one audio plays at a time: when one starts, pause all others
         applyAudioExclusivePlayBehavior(container)
+        // Handle doc preview clicks
+        applyDocClickBehavior(container)
     }
 
     Span(

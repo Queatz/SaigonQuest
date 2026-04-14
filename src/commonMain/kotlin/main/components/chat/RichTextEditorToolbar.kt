@@ -25,6 +25,7 @@ fun RichTextEditorToolbar(
     onInsertAudioClick: () -> Unit,
     onInsertLinkClick: () -> Unit,
     onInsertItemClick: () -> Unit,
+    onInsertDocClick: (() -> Unit)? = null,
     onToggleRawMdClick: () -> Unit,
     onVoiceInput: (String) -> Unit,
 ) {
@@ -214,6 +215,19 @@ fun RichTextEditorToolbar(
                 index = 16, // Item icon
                 size = 24,
             )
+        }
+        if (onInsertDocClick != null) {
+            ToolbarIconButton(
+                onClick = onInsertDocClick,
+                title = translated("Insert doc"),
+                disabled = aiLoading,
+            ) {
+                IconRenderer(
+                    url = sheetUrl,
+                    index = 17, // Placeholder index
+                    size = 24,
+                )
+            }
         }
 
         // Toggle raw MD textarea visibility

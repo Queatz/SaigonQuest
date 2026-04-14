@@ -76,7 +76,7 @@ fun getDocument(): Document {
  */
 fun createCustomEvent(type: String, detail: dynamic): Event {
     // Create options object with detail
-    val options: dynamic = object {}
+    val options: dynamic = js("{}")
     options.detail = detail
     options.bubbles = true
     options.cancelable = true
@@ -103,7 +103,7 @@ fun createObjectDropEvent(
     dataType: DataType = DataType.OBJECT
 ): Event {
     // Create detail object
-    val detail: dynamic = object {}
+    val detail: dynamic = js("{}")
     detail.x = x
     detail.y = y
     detail.data = data
@@ -120,7 +120,7 @@ fun createObjectDropEvent(
  */
 fun createObjectDoubleClickEvent(objectId: String): Event {
     // Create detail object
-    val detail: dynamic = object {}
+    val detail: dynamic = js("{}")
     detail.objectId = objectId
     
     return createCustomEvent("objectDoubleClick", detail)
@@ -133,7 +133,7 @@ fun createObjectDoubleClickEvent(objectId: String): Event {
  * @return The created CustomEvent
  */
 fun createItemCollectedEvent(title: String): Event {
-    val detail: dynamic = object {}
+    val detail: dynamic = js("{}")
     detail.title = title
     return createCustomEvent("itemCollected", detail)
 }

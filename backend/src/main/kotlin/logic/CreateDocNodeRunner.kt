@@ -70,6 +70,11 @@ class CreateDocNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             context.session
         )
 
+        // Emit the created doc ID to the output port (index 1)
+        eventData["${node.id}_out_1"] = created.key
+        // Convenience alias
+        eventData["${node.id}_id"] = created.key
+
         return true
     }
 }

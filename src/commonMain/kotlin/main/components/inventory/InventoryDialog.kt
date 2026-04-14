@@ -7,7 +7,9 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.InventoryApi
+import main.api.UserApi
 import main.api.WebSocketApi
+import main.api.updatePlayerStatus
 import main.api.addUpdatePlayerListener
 import main.components.*
 import main.components.attrs.touchDraggable
@@ -23,6 +25,7 @@ import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.HTMLElement
 import utils.json
+import kotlinx.coroutines.MainScope
 
 /**
  * An inventory dialog that displays the user's inventory items.
@@ -40,6 +43,17 @@ fun InventoryDialog(onClose: () -> Unit) {
     var showCreateItemDialog by remember { mutableStateOf(false) }
     var showMarketplaceDialog by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    
+    // State for user status
+    var status by remember { mutableStateOf(currentUser?.status ?: "") }
+
+    // Update status when currentUser changes (e.g. from WebSocket)
+    LaunchedEffect(currentUser?.status) {
+        status = currentUser?.status ?: ""
+    }
+
+    // Persistent scope for operations that must survive dialog closing
+    val persistentScope = remember { MainScope() }
     
     // State for feedback messages
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
@@ -569,8 +583,31 @@ fun InventoryDialog(onClose: () -> Unit) {
         )
     }
 
+    // Function to handle update user status and close
+    val handleClose = {
+        val user = InventoryState.currentUser
+        if (user != null && user.status != status) {
+            val newStatus = status
+            user.status = newStatus
+
+            // Use persistentScope to ensure it finishes after dialog close
+            persistentScope.launch {
+                try {
+                    // Update user status via UserApi
+                    UserApi.updateUserStatus(newStatus)
+                    
+                    // Update WebSocket status
+                    WebSocketApi.updatePlayerStatus(newStatus)
+                } catch (e: Throwable) {
+                    console.error("[DEBUG_LOG] InventoryDialog: Error updating player status", e)
+                }
+            }
+        }
+        onClose()
+    }
+
     BaseDialog(
-        onClose = onClose,
+        onClose = handleClose,
         title = translated("Inventory"),
         banner = {
             val message = feedbackMessage ?: if (errorMessage.isNotEmpty()) (translated("Error") + ": " + errorMessage) else null
@@ -591,9 +628,7 @@ fun InventoryDialog(onClose: () -> Unit) {
         },
         actions = {
             DialogButton(
-                onClick = {
-                    onClose()
-                }
+                onClick = handleClose
             ) {
                 Translated("Close")
             }
@@ -699,6 +734,18 @@ fun InventoryDialog(onClose: () -> Unit) {
                             } else {
                                 Translated("Drag wearable items here to equip them")
                             }
+                        }
+
+                        // Status input
+                        SettingsSection(label = "Status") {
+                            val statusPlaceholder = translated("Set your status")
+
+                            // Status input field
+                            DialogInput(
+                                value = status,
+                                onInput = { status = it },
+                                placeholder = statusPlaceholder,
+                            )
                         }
                     }
 

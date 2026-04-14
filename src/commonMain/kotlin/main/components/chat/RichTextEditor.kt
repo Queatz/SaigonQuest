@@ -3,9 +3,11 @@ package main.components.chat
 import androidx.compose.runtime.*
 import kotlinx.browser.document
 import kotlinx.coroutines.launch
+import js.uri.encodeURIComponent
 import main.api.AiApi
 import main.components.*
 import main.components.inventory.SelectItemDialog
+import main.components.worlddocs.SelectDocDialog
 import main.components.media.UploadMediaDialog
 import main.theme.Styles
 import models.DocOperation
@@ -38,6 +40,7 @@ class RichTextEditorController {
     internal var applySnapshotImpl: ((String, Int, Int) -> Boolean)? = null
     internal var setSelectionImpl: ((Int, Int) -> Boolean)? = null
     internal var inlineWrapImpl: ((String, String) -> Boolean)? = null
+    internal var insertAtCursorImpl: ((String) -> Unit)? = null
 
     fun applyRemoteOps(ops: List<DocOperation>, newSelStart: Int, newSelEnd: Int): Boolean {
         return applyOpsImpl?.invoke(ops, newSelStart, newSelEnd) == true
@@ -52,6 +55,10 @@ class RichTextEditorController {
     fun inlineWrap(left: String, right: String = left): Boolean {
         return inlineWrapImpl?.invoke(left, right) == true
     }
+
+    fun insertAtCursor(text: String) {
+        insertAtCursorImpl?.invoke(text)
+    }
 }
 
 @Composable
@@ -64,11 +71,14 @@ fun RichTextEditor(
     onSelectionChange: (Int, Int) -> Unit = { _, _ -> },
     selectionTargetLength: Int? = null,
     controller: RichTextEditorController? = null,
+    worldId: String? = null,
+    worldUrl: String? = null,
 ) {
     var showUploadDialog by remember { mutableStateOf(false) }
     var showAudioUploadDialog by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
     var showItemDialog by remember { mutableStateOf(false) }
+    var showDocDialog by remember { mutableStateOf(false) }
     var showRawMd by remember { mutableStateOf(false) }
     // AI integration state
     var showAiDialog by remember { mutableStateOf(false) }
@@ -411,6 +421,12 @@ fun RichTextEditor(
             saveSelectionFromEl(force = true)
             showItemDialog = true
         },
+        onInsertDocClick = if (worldId != null) {
+            {
+                saveSelectionFromEl(force = true)
+                showDocDialog = true
+            }
+        } else null,
         onToggleRawMdClick = { showRawMd = !showRawMd },
         onVoiceInput = { text -> insertAtCursor(text) }
     )
@@ -481,6 +497,13 @@ fun RichTextEditor(
                     }
                 },
             )
+        }
+    }
+
+    // Wire controller
+    LaunchedEffect(controller, value, selStart, selEnd, editorEl) {
+        controller?.insertAtCursorImpl = { snippet ->
+            insertAtCursor(snippet)
         }
     }
 
@@ -660,6 +683,24 @@ fun RichTextEditor(
                 showLinkDialog = false
             },
             onCancel = { showLinkDialog = false },
+        )
+    }
+
+    if (showDocDialog && worldId != null) {
+        SelectDocDialog(
+            worldId = worldId,
+            onSelect = { docToInsert ->
+                showDocDialog = false
+                val titleEnc = encodeURIComponent(docToInsert.title)
+                val plainText = stripMarkdown(docToInsert.content)
+                val previewEnc = encodeURIComponent(plainText.trim().take(100))
+                val imageUrl = extractFirstImage(docToInsert.content) ?: ""
+                val imageUrlEnc = if (imageUrl.isNotBlank()) encodeURIComponent(imageUrl) else ""
+                val targetWorld = (if (!worldUrl.isNullOrBlank()) worldUrl else worldId) ?: ""
+                val snippet = "![doc](${docToInsert.key}|${targetWorld}|${titleEnc}|${previewEnc}|${imageUrlEnc})"
+                insertAtCursor(snippet)
+            },
+            onClose = { showDocDialog = false },
         )
     }
 }

@@ -1,5 +1,6 @@
 package main.components.chat.md
 
+import js.uri.encodeURIComponent
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.*
@@ -429,6 +430,22 @@ internal fun buildPositionMap(root: Element): PositionMap {
                             val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
                             val start = sb.length
                             val lit = "![item]($data)"
+                            sb.append(lit)
+                            virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
+                        } else if (el.classList.contains("md-doc")) {
+                            val docId = el.getAttribute("data-doc-id") ?: ""
+                            val worldId = el.getAttribute("data-world-id") ?: ""
+                            val title = (el.querySelector(".md-doc-title")?.textContent ?: "").let { encodeURIComponent(it) }
+                            val preview = (el.querySelector(".md-doc-preview")?.textContent ?: "").let { encodeURIComponent(it) }
+                            val imageUrl = (el.getAttribute("data-image") ?: "").let { encodeURIComponent(it) }
+                            val parent = el.parentElement ?: return
+                            val idx = childNodesList(parent).indexOf(el).coerceAtLeast(0)
+                            val start = sb.length
+                            val lit = if (imageUrl.isNotBlank()) {
+                                "![doc]($docId|$worldId|$title|$preview|$imageUrl)"
+                            } else {
+                                "![doc]($docId|$worldId|$title|$preview)"
+                            }
                             sb.append(lit)
                             virtuals.add(VirtualSpan(start, start + lit.length, BoundaryAnchor(parent, idx + 1)))
                         } else {
