@@ -147,7 +147,7 @@ fun WorldDocsDialog(
             val ke = e as? KeyboardEvent
             if (ke != null && ke.ctrlKey && ke.key.lowercase() == "p" && docKey != null) {
                 ke.preventDefault()
-                window.open("/doc/$docKey", "_blank")
+                window.open("/doc/$docKey?action=print", "_blank")
             }
         }
         window.addEventListener("keydown", listener)
@@ -477,7 +477,7 @@ fun WorldDocsDialog(
 
                                     // Print button
                                     DialogButton(
-                                        onClick = { window.open("/doc/${selectedDoc.key}", "_blank") }
+                                        onClick = { window.open("/doc/${selectedDoc.key}?action=print", "_blank") }
                                     ) {
                                         Translated("Print")
                                     }

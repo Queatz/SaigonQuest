@@ -96,7 +96,7 @@ fun main() {
 
                 // Catch-all route for any other path
                 noMatch {
-                    // Get the current path from the window.location.pathname
+                    // Get the current path from the router
                     val url = router.currentPath.path.trimStart('/')
 
                     // Render the 3D scene with the URL from the path or Bye page

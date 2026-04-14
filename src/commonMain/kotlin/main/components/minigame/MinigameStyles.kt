@@ -197,6 +197,7 @@ object MinigameStyles : StyleSheet() {
         top(20.px)
         left(20.px)
         margin(0.px)
+        padding(.5.cssRem, 1.cssRem)
         property("z-index", "10")
         property("pointer-events", "none")
     }

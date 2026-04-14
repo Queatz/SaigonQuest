@@ -329,7 +329,7 @@ fun SceneComponent(url: String) {
         onNavigateHome = { navigateWithFade("/", false) },
         isNoAccess = isNoAccess.value,
         showClaimOption = showClaimOption.value,
-        onRetry = { navigateWithFade(window.location.pathname, true) },
+        onRetry = { navigateWithFade(router.currentPath.path, true) },
         worldName = currentWorld.value?.title,
     )
 

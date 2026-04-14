@@ -1,10 +1,13 @@
 package main.components.worlddocs
 
 import androidx.compose.runtime.*
+import app.softwork.routingcompose.Router
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import main.api.DocApi
 import main.components.Md
+import main.components.Translated
+import main.components.translated
 import models.Doc
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
@@ -13,6 +16,11 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun PrintDocPage(docId: String) {
+    val router = Router.current
+    val action = remember(router.currentPath) {
+        router.currentPath.parameters?.map?.get("action")?.firstOrNull()
+    }
+
     var doc by remember { mutableStateOf<Doc?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -28,8 +36,8 @@ fun PrintDocPage(docId: String) {
         }
     }
 
-    LaunchedEffect(doc) {
-        if (doc != null) {
+    LaunchedEffect(doc, action) {
+        if (doc != null && action == "print") {
             delay(500)
             window.print()
         }
@@ -56,8 +64,11 @@ fun PrintDocPage(docId: String) {
         }
     }) {
         when {
-            loading -> Div { Text("Loading...") }
-            error != null -> Div { Text("Error: $error") }
+            loading -> Div { Translated("Loading...") }
+            error != null -> {
+                val errorTitle = translated("Error")
+                Div { Text("$errorTitle: $error") }
+            }
             doc != null -> {
                 H1 { Text(doc!!.title) }
                 Md(
