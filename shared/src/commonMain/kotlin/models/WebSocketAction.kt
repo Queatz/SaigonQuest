@@ -40,6 +40,7 @@ enum class WebSocketAction {
     OPEN_DOC,
     PLAY_SOUND,
     UPDATE_EMOJI_HISTORY,
+    LOCATE_OBJECT,
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,
@@ -56,4 +57,7 @@ enum class WebSocketAction {
     // Minigames
     MINIGAME_PROMPT,
     MINIGAME_RESULT,
+
+    // Questing
+    QUEST_PROGRESS_UPDATED,
 }

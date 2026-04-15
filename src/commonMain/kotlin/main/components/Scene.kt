@@ -32,6 +32,7 @@ import main.utils.DataType
 import main.utils.createObjectDropEvent
 import models.ErrorResponse
 import models.OpenUrlData
+import models.QuestStep
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
@@ -149,6 +150,12 @@ fun SceneComponent(url: String) {
 
     // Get the router for navigation
     val router = Router.current
+    
+    var lastQuestUpdate by remember { mutableStateOf(0L) }
+    
+    fun refreshQuestIndicators() {
+        lastQuestUpdate = window.performance.now().toLong()
+    }
 
     var hasFocus by remember { mutableStateOf(true) }
 
@@ -177,6 +184,59 @@ fun SceneComponent(url: String) {
         } catch (e: Throwable) {
             console.error("Error checking current user type: ${e.message}")
             isCurrentUserPlayer.value = false // Default to false if there's an error
+        }
+    }
+
+    // Quest indicators effect
+    LaunchedEffect(isCurrentUserPlayer.value, currentWorld.value, isLoaded.value, lastQuestUpdate) {
+        if (isCurrentUserPlayer.value != true || currentWorld.value == null || !isLoaded.value) return@LaunchedEffect
+        
+        try {
+            val progress = QuestApi.getAllPlayerQuestProgress()
+            val activeProgress = progress.filter { !it.completed }
+            
+            val questIndicators = mutableMapOf<String, QuestStep>()
+            activeProgress.forEach { p ->
+                val quest = try { QuestApi.getQuest(p.questId) } catch (_: Throwable) { null }
+                val step = quest?.steps?.getOrNull(p.currentStepIndex)
+                if (step != null && step.objectId != null && (step.worldId.isNullOrBlank() || step.worldId == currentWorld.value!!.key)) {
+                    questIndicators[step.objectId!!] = step
+                }
+            }
+            
+            main.components.SceneManager.getObjectManager()?.updateActiveQuests(questIndicators)
+        } catch (e: Throwable) {
+            console.error("Failed to fetch quests for indicators", e)
+        }
+        
+        while (isActive) {
+            delay(30_000)
+            try {
+                val progress = QuestApi.getAllPlayerQuestProgress()
+                val activeProgress = progress.filter { !it.completed }
+                
+                val questIndicators = mutableMapOf<String, QuestStep>()
+                activeProgress.forEach { p ->
+                    val quest = try { QuestApi.getQuest(p.questId) } catch (_: Throwable) { null }
+                    val step = quest?.steps?.getOrNull(p.currentStepIndex)
+                    if (step != null && step.objectId != null && (step.worldId.isNullOrBlank() || step.worldId == currentWorld.value!!.key)) {
+                        questIndicators[step.objectId!!] = step
+                    }
+                }
+                
+                main.components.SceneManager.getObjectManager()?.updateActiveQuests(questIndicators)
+            } catch (e: Throwable) {
+                console.error("Failed to fetch quests for indicators (loop)", e)
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val token = WebSocketApi.addQuestProgressListener {
+            refreshQuestIndicators()
+        }
+        onDispose {
+            WebSocketApi.removeListener(token)
         }
     }
 
@@ -986,6 +1046,11 @@ fun SceneComponent(url: String) {
                 console.log("[DEBUG_LOG] Scene: Initializing teleport listener")
                 playerController.initializeTeleportListener(router)
                 console.log("[DEBUG_LOG] Scene: Teleport listener initialization completed")
+
+                // Initialize locate object listener
+                console.log("[DEBUG_LOG] Scene: Initializing locate object listener")
+                playerController.initializeLocateObjectListener(router)
+                console.log("[DEBUG_LOG] Scene: Locate object listener initialization completed")
 
                 // Initialize pause listener (single-device enforcement)
                 console.log("[DEBUG_LOG] Scene: Initializing pause listener")

@@ -115,6 +115,7 @@ object CollectionsConfig {
     const val QUESTS_COLLECTION = "quests"
     const val QUEST_STATES_COLLECTION = "quest_states"
     const val PLAYER_QUEST_STATES_COLLECTION = "player_quest_states"
+    const val PLAYER_QUEST_PROGRESS_COLLECTION = "player_quest_progress"
     const val USER_EMOJI_HISTORY_COLLECTION = "user_emoji_history"
     
     // World docs collection
@@ -160,6 +161,7 @@ object CollectionsConfig {
         QUESTS_COLLECTION to CollectionSpec(documentOptions(), models.Quest::class.java),
         QUEST_STATES_COLLECTION to CollectionSpec(documentOptions(), models.QuestState::class.java),
         PLAYER_QUEST_STATES_COLLECTION to CollectionSpec(documentOptions(), models.PlayerQuestState::class.java),
+        PLAYER_QUEST_PROGRESS_COLLECTION to CollectionSpec(documentOptions(), models.PlayerQuestProgress::class.java),
         DOCS_COLLECTION to CollectionSpec(documentOptions(), models.Doc::class.java),
         DOC_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.DocHistory::class.java),
         AI_PROMPT_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.AiPromptHistory::class.java),

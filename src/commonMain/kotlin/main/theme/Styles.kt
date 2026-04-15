@@ -383,6 +383,7 @@ object Styles : StyleSheet() {
         fontSize(32.px)
         cursor("pointer")
         borderRadius(8.px)
+        property("outline", "none")
         property("transition", "background-color 0.2s")
     }
 
@@ -521,6 +522,7 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         position(Position.Relative)
         cursor("pointer")
+        property("outline", "none")
         // Prevent button from shrinking in flex containers
         property("flex-shrink", "0")
         // Make button interactive
@@ -631,8 +633,22 @@ object Styles : StyleSheet() {
     val baseDialogCloseButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
+        property("outline", "none")
         cursor("pointer")
         fontSize(20.px)
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + active style {
+            property("filter", "brightness(1.4)")
+        }
+
+        self + focus style {
+            property("filter", "brightness(1.2)")
+        }
     }
 
     val baseDialogContent by style {
@@ -655,9 +671,23 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
+        property("outline", "none")
         property("cursor", "pointer")
         fontWeight("bold")
         fontSize(20.px)
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + active style {
+            property("filter", "brightness(1.4)")
+        }
+
+        self + focus style {
+            property("filter", "brightness(1.2)")
+        }
 
         self + disabled style {
             opacity(.25f)
@@ -669,9 +699,23 @@ object Styles : StyleSheet() {
         backgroundColor(Color.transparent)
         color(Theme.colors.onPrimary)
         property("border", "1px solid ${Theme.colors.primary}")
+        property("outline", "none")
         property("cursor", "pointer")
         fontWeight("bold")
         fontSize(20.px)
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + active style {
+            property("filter", "brightness(1.4)")
+        }
+
+        self + focus style {
+            property("filter", "brightness(1.2)")
+        }
 
         self + disabled style {
             opacity(.25f)
@@ -684,9 +728,27 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.error)
         color(Theme.colors.onPrimary)
         property("border", "0")
+        property("outline", "none")
         property("cursor", "pointer")
         fontWeight("bold")
         fontSize(20.px)
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + active style {
+            property("filter", "brightness(1.4)")
+        }
+
+        self + focus style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + disabled style {
+            opacity(.25f)
+        }
     }
 
     val framedBorder by style {
@@ -760,6 +822,15 @@ object Styles : StyleSheet() {
         alignItems(AlignItems.Center)
         width(100.percent)
         boxSizing("border-box")
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.1)")
+        }
+
+        self + selector(":focus-within") style {
+            property("filter", "brightness(1.2)")
+        }
     }
 
     val objectEditorDialogLogicPreview by style {
@@ -1779,6 +1850,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.primary)
         color(Theme.colors.onPrimary)
         property("border", "0")
+        property("outline", "none")
         borderRadius(16.px)
         property("cursor", "pointer")
         property("user-select", "none")
@@ -1794,6 +1866,7 @@ object Styles : StyleSheet() {
         backgroundColor(Color.transparent)
         color(Theme.colors.primary)
         property("border", "0")
+        property("outline", "none")
         property("cursor", "pointer")
         property("user-select", "none")
         borderRadius(16.px)
@@ -1807,6 +1880,7 @@ object Styles : StyleSheet() {
     val textButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
+        property("outline", "none")
         cursor("pointer")
         property("user-select", "none")
         fontSize(20.px)
@@ -1818,6 +1892,7 @@ object Styles : StyleSheet() {
         backgroundColor(Theme.colors.secondary)
         color(Theme.colors.onPrimary)
         property("border", "0")
+        property("outline", "none")
         borderRadius(16.px)
         property("cursor", "pointer")
         property("user-select", "none")
@@ -1892,6 +1967,19 @@ object Styles : StyleSheet() {
         marginBottom(16.px)
         backgroundColor(Color.transparent)
         borderRadius(0.px)
+        property("transition", "filter 0.1s ease-in-out")
+
+        self + hover style {
+            property("filter", "brightness(1.2)")
+        }
+
+        self + active style {
+            property("filter", "brightness(1.4)")
+        }
+
+        self + selector(":focus-within") style {
+            property("filter", "brightness(1.2)")
+        }
     }
 
     val graphicsToggleLabel by style {
@@ -2424,6 +2512,7 @@ object Styles : StyleSheet() {
 
         "button" {
             property("color", "inherit")
+            property("outline", "none")
         }
 
         "body.printable, html.printable" style {

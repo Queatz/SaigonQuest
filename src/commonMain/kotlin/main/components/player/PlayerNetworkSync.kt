@@ -1,6 +1,7 @@
 package main.components.player
 
 import app.softwork.routingcompose.Router
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,6 +12,7 @@ import main.api.WebSocketApi
 import main.api.addTeleportPlayerListener
 import main.api.addPauseListener
 import main.api.addUpdatePlayerListener
+import main.api.addLocateObjectListener
 import models.ChatMessage
 import models.UpdatePlayerData
 import models.WebSocketAction
@@ -21,6 +23,7 @@ import models.WebSocketAction
 class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)) {
     private var chatListenerToken: ListenerToken? = null
     private var updatePlayerListenerToken: ListenerToken? = null
+    private var locateObjectListenerToken: ListenerToken? = null
 
     fun initChatListener(onSelfChat: (String) -> Unit) {
         chatListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
@@ -88,10 +91,38 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
         }
     }
 
+    fun initLocateObjectListener(router: Router, onLocate: (String) -> Unit) {
+        locateObjectListenerToken = WebSocketApi.addLocateObjectListener { data ->
+            val objectId = data["objectId"]
+            val worldUrl = data["worldUrl"]
+
+            if (worldUrl != null && objectId != null) {
+                val currentPath = router.currentPath.path.removePrefix("/")
+                if (currentPath != worldUrl) {
+                    // Navigate to target world
+                    val detail: dynamic = object {}
+                    detail.path = "/$worldUrl"
+                    detail.hardReload = false
+                    
+                    // Store the objectId to locate it after the world loads
+                    window.sessionStorage.setItem("pendingLocateObjectId", objectId)
+                    
+                    val evt = main.utils.createCustomEvent("navigateWithFade", detail)
+                    window.dispatchEvent(evt)
+                    return@addLocateObjectListener
+                }
+            }
+
+            if (objectId != null) onLocate(objectId)
+        }
+    }
+
     fun dispose() {
         chatListenerToken?.let { WebSocketApi.removeListener(it) }
         chatListenerToken = null
         updatePlayerListenerToken?.let { WebSocketApi.removeListener(it) }
         updatePlayerListenerToken = null
+        locateObjectListenerToken?.let { WebSocketApi.removeListener(it) }
+        locateObjectListenerToken = null
     }
 }

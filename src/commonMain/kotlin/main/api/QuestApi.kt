@@ -8,6 +8,7 @@ import models.ErrorResponse
 import models.Quest
 import models.QuestState
 import models.PlayerQuestState
+import models.PlayerQuestProgress
 
 /**
  * API client for quest operations
@@ -35,7 +36,6 @@ object QuestApi {
                 throw errorResponse
             }
         } catch (e: Throwable) {
-            console.error("Error fetching quests", e)
             throw e
         }
     }
@@ -60,7 +60,6 @@ object QuestApi {
                 throw errorResponse
             }
         } catch (e: Throwable) {
-            console.error("Error fetching quest", e)
             throw e
         }
     }
@@ -88,6 +87,33 @@ object QuestApi {
             }
         } catch (e: Throwable) {
             console.error("Error creating quest", e)
+            throw e
+        }
+    }
+
+    /**
+     * Updates an existing quest (admin only)
+     */
+    suspend fun updateQuest(quest: Quest): Quest {
+        try {
+            val response = ApiClient.httpClient.put("$baseUrl/${quest.key}") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(quest)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<Quest>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error updating quest", e)
             throw e
         }
     }
@@ -286,6 +312,133 @@ object QuestApi {
             }
         } catch (e: Throwable) {
             console.error("Error deleting player quest state", e)
+            throw e
+        }
+    }
+
+    /**
+     * Gets current player's progress for all quests
+     */
+    suspend fun getAllPlayerQuestProgress(): List<PlayerQuestProgress> {
+        try {
+            val response = ApiClient.httpClient.get("$baseUrl/progress") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<List<PlayerQuestProgress>>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error fetching all player quest progress", e)
+            throw e
+        }
+    }
+
+    /**
+     * Gets current player's progress for a specific quest
+     */
+    suspend fun getPlayerQuestProgress(questId: String): PlayerQuestProgress? {
+        try {
+            val response = ApiClient.httpClient.get("$baseUrl/$questId/progress") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<PlayerQuestProgress>()
+            } else if (response.status == HttpStatusCode.NotFound) {
+                return null
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error fetching player quest progress", e)
+            throw e
+        }
+    }
+
+    /**
+     * Gets all progress for a quest (admin only)
+     */
+    suspend fun getAllPlayerQuestProgress(questId: String): List<PlayerQuestProgress> {
+        try {
+            val response = ApiClient.httpClient.get("$baseUrl/$questId/progress/all") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<List<PlayerQuestProgress>>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error fetching all player quest progress for quest", e)
+            throw e
+        }
+    }
+
+    /**
+     * Updates player quest progress (admin only)
+     */
+    suspend fun updatePlayerQuestProgress(progress: PlayerQuestProgress): PlayerQuestProgress {
+        try {
+            val response = ApiClient.httpClient.post("$baseUrl/progress") {
+                contentType(ContentType.Application.Json)
+                ApiClient.addAuthHeader(this)
+                setBody(progress)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<PlayerQuestProgress>()
+            } else {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error updating player quest progress", e)
+            throw e
+        }
+    }
+
+    /**
+     * Deletes player quest progress (admin only)
+     */
+    suspend fun deletePlayerQuestProgress(id: String) {
+        try {
+            val response = ApiClient.httpClient.delete("$baseUrl/progress/$id") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error deleting player quest progress", e)
             throw e
         }
     }

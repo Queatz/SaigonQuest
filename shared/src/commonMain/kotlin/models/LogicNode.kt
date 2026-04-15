@@ -510,6 +510,50 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Extract a value from a JSON string using a key"
     ) : LogicNode
+
+    /**
+     * UpdatePlayerQuestStep node - updates the player-local quest progress to a specific step
+     */
+    @Serializable
+    data class UpdatePlayerQuestStep(
+        override val id: NodeId = NodeId.UpdatePlayerQuestStep,
+        override val label: String = "Update player quest step",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Updates the player's current quest step"
+    ) : LogicNode
+
+    /**
+     * LocateObject node - moves the player to an object's location with a random offset
+     */
+    @Serializable
+    data class LocateObject(
+        override val id: NodeId = NodeId.LocateObject,
+        override val label: String = "Locate object",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Moves the player to an object's location"
+    ) : LogicNode
+
+    /**
+     * StartQuest node - starts a quest for the current player
+     */
+    @Serializable
+    data class StartQuest(
+        override val id: NodeId = NodeId.StartQuest,
+        override val label: String = "Start quest",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Starts a quest for the current player"
+    ) : LogicNode
+
+    /**
+     * HasStartedQuest node - checks if the player has started a specific quest
+     */
+    @Serializable
+    data class HasStartedQuest(
+        override val id: NodeId = NodeId.HasStartedQuest,
+        override val label: String = "Has started quest",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Checks if the player has started a specific quest"
+    ) : LogicNode
 }
 
 /**
@@ -567,6 +611,10 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.AiTts(),
         LogicNode.Minigame(),
         LogicNode.JsonExtract(),
+        LogicNode.UpdatePlayerQuestStep(),
+        LogicNode.LocateObject(),
+        LogicNode.StartQuest(),
+        LogicNode.HasStartedQuest(),
     )
 }
 

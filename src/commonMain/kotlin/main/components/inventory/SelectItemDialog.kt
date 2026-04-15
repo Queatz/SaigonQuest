@@ -36,6 +36,7 @@ fun SelectItemDialog(
     initial: List<Pair<Item, Int>> = emptyList(),
     multiple: Boolean,
     useQuantities: Boolean,
+    minQuantity: Int = 0,
     onConfirm: (List<Pair<Item, Int>>) -> Unit,
     onClose: () -> Unit,
 ) {
@@ -107,7 +108,7 @@ fun SelectItemDialog(
                     Div(attrs = {
                         style {
                             property("display", "grid")
-                            property("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))")
+                            property("grid-template-columns", "repeat(auto-fill, minmax(240px, 1fr))")
                             property("gap", "12px")
                             property("margin-top", "12px")
                             property("max-height", "50vh")
@@ -122,13 +123,13 @@ fun SelectItemDialog(
                                     if (selected.containsKey(item.key)) {
                                         selected - item.key
                                     } else {
-                                        selected + (item.key to (item to 0))
+                                        selected + (item.key to (item to minQuantity))
                                     }
                                 } else {
                                     if (isSelected) {
                                         emptyMap()
                                     } else {
-                                        mapOf(item.key to (item to 0))
+                                        mapOf(item.key to (item to minQuantity))
                                     }
                                 }
                             }
@@ -152,10 +153,10 @@ fun SelectItemDialog(
                                             selected = if (isSelected) {
                                                 selected - item.key
                                             } else {
-                                                selected + (item.key to (item to 0))
+                                                selected + (item.key to (item to minQuantity))
                                             }
                                         } else {
-                                            selected = mapOf(item.key to (item to 0))
+                                            selected = mapOf(item.key to (item to minQuantity))
                                         }
                                     })
                                 }
@@ -181,16 +182,16 @@ fun SelectItemDialog(
                                     ) { Text(if (isSelected) translated("Clear") else translated("Select")) }
 
                                     if (useQuantities && isSelected) {
-                                        val current = selected[item.key] ?: (item to 0)
+                                        val current = selected[item.key] ?: (item to minQuantity)
                                         // Quantity input
                                         DialogInput(
                                             value = current.second.toString(),
                                             onInput = { str ->
-                                                val v = (str.toLongOrNull() ?: 0L).coerceAtLeast(0L)
+                                                val v = (str.toLongOrNull() ?: minQuantity.toLong()).coerceAtLeast(minQuantity.toLong())
                                                 selected = selected + (item.key to (item to v.toInt()))
                                             },
                                             type = InputType.Number,
-                                            min = 0,
+                                            min = minQuantity,
                                             attrs = {
                                                 onClick { it.stopPropagation() }
                                             }

@@ -91,6 +91,8 @@ enum class PropertyKey {
     // Quest properties
     QUEST_ID,
     QUEST_STATE_ID,
+    STEP_INDEX,
+    COMPLETED,
     VALUE,
 
     // Logic/Math properties
@@ -143,6 +145,7 @@ enum class PropertyType {
     TRIGGER, // Special type for execution flow
     QUEST,
     QUEST_STATE,
+    QUEST_STEP,
 }
 
 /**
@@ -1390,6 +1393,122 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 key = PropertyKey.VALUE,
                 name = "Value",
                 type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // UpdatePlayerQuestStep node properties
+        is LogicNode.UpdatePlayerQuestStep -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.STEP_INDEX,
+                name = "Step",
+                type = PropertyType.QUEST_STEP,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "0"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETED,
+                name = "Completed",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "false"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // StartQuest node properties
+        is LogicNode.StartQuest -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // HasStartedQuest node properties
+        is LogicNode.HasStartedQuest -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Yes",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "No",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // LocateObject node properties
+        is LogicNode.LocateObject -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TARGET_WORLD_ID,
+                name = "World ID",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ID,
+                name = "Object ID",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )
         )

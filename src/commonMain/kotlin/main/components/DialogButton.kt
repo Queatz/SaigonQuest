@@ -14,7 +14,7 @@ import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.dom.*
 import org.w3c.dom.HTMLDivElement
 
 enum class DialogButtonStyle {
@@ -88,6 +88,7 @@ fun DialogButton(
                 property("border-style", "solid")
                 property("border-radius", "0")
                 property("box-shadow", "none")
+                property("outline", "none")
                 display(DisplayStyle.Flex)
                 justifyContent(JustifyContent.Center)
                 alignItems(AlignItems.Center)
@@ -106,7 +107,14 @@ fun DialogButton(
                     property("pointer-events", "none")
                 }
             } else {
+                tabIndex(0)
                 onClick { onClick() }
+                onKeyDown {
+                    if (it.key == "Enter" || it.key == " ") {
+                        onClick()
+                        it.preventDefault()
+                    }
+                }
             }
 
             attrs?.invoke(this)

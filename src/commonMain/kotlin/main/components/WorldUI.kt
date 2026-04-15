@@ -31,6 +31,7 @@ import main.api.PushApi
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.theme.Dimens
+import main.components.QuestTracker
 import main.components.inventory.InventoryTray
 import main.components.worlddocs.WorldDocsDialog
 import main.theme.Styles
@@ -1244,7 +1245,7 @@ fun WorldUI(
         
         // Always-show QR code banner above BottomText
         if (GraphicsSettings.isAlwaysShowQrEnabled()) {
-            val currentUrl = window.location.href
+            val currentUrl = window.location.origin + router.currentPath.path
             val qrDataUrl = remember(currentUrl) {
                 val qrData = lib.Qr.createQR(currentUrl, "gif")
                 lib.BinaryUtils.uint8ArrayToDataUrl(qrData, "image/gif")
@@ -1259,6 +1260,11 @@ fun WorldUI(
                     }
                 }
             }
+        }
+
+        // Quest Tracker
+        if (showUI) {
+            QuestTracker()
         }
 
         // Bottom text with copyright information

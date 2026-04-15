@@ -63,7 +63,9 @@ class WebSocketHandlerFactory(
             WebSocketAction.FRIEND_REQUEST_CANCELLED -> NullHandler() // Server -> clients only
             WebSocketAction.HEARTBEAT -> NullHandler() // Ping/pong no-op
             WebSocketAction.MINIGAME_PROMPT -> NullHandler() // Server -> clients only
+            WebSocketAction.LOCATE_OBJECT -> NullHandler() // Server -> clients only
             WebSocketAction.MINIGAME_RESULT -> MinigameResultHandler()
+            WebSocketAction.QUEST_PROGRESS_UPDATED -> NullHandler()
             null -> NullHandler()
         }
     }

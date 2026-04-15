@@ -86,6 +86,9 @@ fun NodeElement(
     // State for quest name (if this node has a Quest ID)
     var questName by remember(id) { mutableStateOf<String?>(null) }
 
+    // State for object name (if this node has an Object ID)
+    var objectName by remember(id) { mutableStateOf<String?>(null) }
+
     // Get doc title for Doc Content, Create Doc and Open Doc nodes
     LaunchedEffect(node.data) {
         if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
@@ -109,16 +112,43 @@ fun NodeElement(
     LaunchedEffect(node.data) {
         val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
         val questId = nodeData.properties.find { it.key == PropertyKey.QUEST_ID }?.value
-        if (!questId.isNullOrBlank()) {
+        if (!questId.isNullOrBlank() && questId != "Quest ID") {
             try {
                 val quest = QuestApi.getQuest(questId)
                 questName = quest.name.ifBlank { "Selected quest" }
             } catch (t: Throwable) {
-                console.error("Failed to load quest name for NodeElement", t)
+                // Only log if it's not a 404, which is expected during editing if ID is being typed or invalid
+                val is404 = (t as? models.ErrorResponse)?.code == 404
+                if (!is404) {
+                    console.error("Failed to load quest name for NodeElement", t)
+                }
                 questName = null
             }
         } else {
             questName = null
+        }
+    }
+
+    // Get object name
+    LaunchedEffect(node.data) {
+        if (type is LogicNode.LocateObject) {
+            val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
+            val objectId = nodeData.properties.find { it.key == PropertyKey.ID }?.value
+            if (!objectId.isNullOrBlank()) {
+                try {
+                    val obj = main.api.ObjectApi.getObject(objectId)
+                    objectName = obj.title.ifBlank { "Selected object" }
+                } catch (t: Throwable) {
+                    // Only log if it's not a 404
+                    val is404 = (t as? models.ErrorResponse)?.code == 404
+                    if (!is404) {
+                        console.error("Failed to load object name for NodeElement", t)
+                    }
+                    objectName = null
+                }
+            } else {
+                objectName = null
+            }
         }
     }
 
@@ -412,9 +442,10 @@ fun NodeElement(
                         }
 
                         PropertyKey.ID -> {
-                            if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
+                            if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc || type is LogicNode.LocateObject) {
                                 Div {
                                     val displayTitle = when {
+                                        type is LogicNode.LocateObject -> if (objectName != null) objectName else if (property.value.isBlank()) "Not selected" else "..."
                                         docTitle != null -> docTitle
                                         property.value.isBlank() -> if (type is LogicNode.CreateDoc) "None" else "Not selected"
                                         else -> "..."
@@ -425,7 +456,7 @@ fun NodeElement(
                         }
 
                         PropertyKey.QUEST_ID -> {
-                            if (property.value.isNotBlank()) {
+                            if (property.value.isNotBlank() && property.value != "Quest ID") {
                                 Div {
                                     val displayQuest = when {
                                         questName != null -> questName

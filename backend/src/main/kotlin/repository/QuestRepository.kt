@@ -9,15 +9,21 @@ import database.CollectionsConfig
 import models.Quest
 import models.QuestState
 import models.PlayerQuestState
+import models.PlayerQuestProgress
 
 class QuestRepository {
     private val questColl: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.QUESTS_COLLECTION)
     private val stateColl: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.QUEST_STATES_COLLECTION)
     private val playerStateColl: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.PLAYER_QUEST_STATES_COLLECTION)
+    private val progressColl: ArangoCollection = ArangoConfig.db.collection(CollectionsConfig.PLAYER_QUEST_PROGRESS_COLLECTION)
 
     // Quest CRUD
     fun createQuest(quest: Quest): Quest {
         return questColl.insertDocument(quest, DocumentCreateOptions().returnNew(true)).new
+    }
+
+    fun updateQuest(quest: Quest): Quest {
+        return questColl.replaceDocument(quest.key, quest, com.arangodb.model.DocumentReplaceOptions().returnNew(true)).new
     }
 
     fun getQuestById(id: String): Quest? {
@@ -114,5 +120,44 @@ class QuestRepository {
 
     fun deletePlayerQuestState(playerStateId: String) {
         playerStateColl.deleteDocument(playerStateId)
+    }
+
+    // PlayerQuestProgress CRUD
+    fun getPlayerQuestProgress(questId: String, userId: String): PlayerQuestProgress? {
+        val query = "FOR p IN @@collection FILTER p.questId == @questId AND p.userId == @userId RETURN p"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.PLAYER_QUEST_PROGRESS_COLLECTION,
+            "questId" to questId,
+            "userId" to userId
+        )
+        return ArangoConfig.db.query(query, PlayerQuestProgress::class.java, bindVars).toList().firstOrNull()
+    }
+
+    fun updatePlayerQuestProgress(questId: String, userId: String, stepIndex: Int, completed: Boolean = false): PlayerQuestProgress {
+        val existing = getPlayerQuestProgress(questId, userId)
+        return if (existing != null) {
+            existing.currentStepIndex = stepIndex
+            existing.completed = completed
+            progressColl.updateDocument(existing.key, existing, DocumentUpdateOptions().returnNew(true)).new
+        } else {
+            val newProgress = PlayerQuestProgress(questId = questId, userId = userId, currentStepIndex = stepIndex, completed = completed)
+            progressColl.insertDocument(newProgress, DocumentCreateOptions().returnNew(true)).new
+        }
+    }
+
+    fun getAllPlayerQuestProgress(userId: String): List<PlayerQuestProgress> {
+        val query = "FOR p IN @@collection FILTER p.userId == @userId RETURN p"
+        val bindVars = mapOf("@collection" to CollectionsConfig.PLAYER_QUEST_PROGRESS_COLLECTION, "userId" to userId)
+        return ArangoConfig.db.query(query, PlayerQuestProgress::class.java, bindVars).toList()
+    }
+
+    fun getAllPlayerQuestProgressForQuest(questId: String): List<PlayerQuestProgress> {
+        val query = "FOR p IN @@collection FILTER p.questId == @questId RETURN p"
+        val bindVars = mapOf("@collection" to CollectionsConfig.PLAYER_QUEST_PROGRESS_COLLECTION, "questId" to questId)
+        return ArangoConfig.db.query(query, PlayerQuestProgress::class.java, bindVars).toList()
+    }
+
+    fun deletePlayerQuestProgress(id: String) {
+        progressColl.deleteDocument(id)
     }
 }

@@ -62,6 +62,7 @@ object PanelStyles : StyleSheet() {
     val closeButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
+        property("outline", "none")
         color(Theme.colors.onBackgroundDark)
         property("cursor", "pointer")
         fontSize(20.px)

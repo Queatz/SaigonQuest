@@ -12,6 +12,7 @@ import models.ErrorResponse
 import models.Quest
 import models.QuestState
 import models.PlayerQuestState
+import models.PlayerQuestProgress
 import repository.QuestRepository
 import repository.UserRepository
 
@@ -28,6 +29,17 @@ fun Routing.configureQuestRoutes() {
                 call.respond(quests)
             }
 
+            // Get quest by id
+            get("/{id}") {
+                val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing id", code = 400))
+                val quest = questRepository.getQuestById(id)
+                if (quest != null) {
+                    call.respond(quest)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, ErrorResponse(message = "Quest not found", code = 404))
+                }
+            }
+
             // Create new quest (admin only)
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -41,6 +53,23 @@ fun Routing.configureQuestRoutes() {
                 val quest = call.receive<Quest>()
                 val createdQuest = questRepository.createQuest(quest)
                 call.respond(HttpStatusCode.Created, createdQuest)
+            }
+
+            // Update quest (admin only)
+            put("/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal)
+                val user = userId?.let { userRepository.getById(it) }
+                
+                if (user?.isAdmin != true) {
+                    return@put call.respond(HttpStatusCode.Forbidden, ErrorResponse(message = "Only admins can update quests", code = 403))
+                }
+
+                val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing id", code = 400))
+                val quest = call.receive<Quest>()
+                quest.key = id
+                val updatedQuest = questRepository.updateQuest(quest)
+                call.respond(updatedQuest)
             }
 
             // Delete quest (admin only)
@@ -160,6 +189,77 @@ fun Routing.configureQuestRoutes() {
 
                 val playerStateId = call.parameters["playerStateId"] ?: return@delete call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing player state id", code = 400))
                 questRepository.deletePlayerQuestState(playerStateId)
+                call.respond(HttpStatusCode.NoContent)
+            }
+
+            // Get all player's progress
+            get("/progress") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal) ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val progress = questRepository.getAllPlayerQuestProgress(userId)
+                call.respond(progress)
+            }
+
+            // Get progress for a specific quest
+            get("/{id}/progress") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal) ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val questId = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing quest id", code = 400))
+                val progress = questRepository.getPlayerQuestProgress(questId, userId)
+                if (progress != null) {
+                    call.respond(progress)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, ErrorResponse(message = "No progress found for quest", code = 404))
+                }
+            }
+
+            // Get all progress for a quest (admin only)
+            get("/{id}/progress/all") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal)
+                val user = userId?.let { userRepository.getById(it) }
+                
+                if (user?.isAdmin != true) {
+                    return@get call.respond(HttpStatusCode.Forbidden, ErrorResponse(message = "Only admins can view all quest progress", code = 403))
+                }
+
+                val questId = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing quest id", code = 400))
+                val progress = questRepository.getAllPlayerQuestProgressForQuest(questId)
+                call.respond(progress)
+            }
+
+            // Update player progress (admin only)
+            post("/progress") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal)
+                val user = userId?.let { userRepository.getById(it) }
+                
+                if (user?.isAdmin != true) {
+                    return@post call.respond(HttpStatusCode.Forbidden, ErrorResponse(message = "Only admins can update player progress", code = 403))
+                }
+
+                val progress = call.receive<PlayerQuestProgress>()
+                val updated = questRepository.updatePlayerQuestProgress(
+                    progress.questId,
+                    progress.userId,
+                    progress.currentStepIndex,
+                    progress.completed
+                )
+                call.respond(updated)
+            }
+
+            // Delete/Reset player progress (admin only)
+            delete("/progress/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserId(principal)
+                val user = userId?.let { userRepository.getById(it) }
+                
+                if (user?.isAdmin != true) {
+                    return@delete call.respond(HttpStatusCode.Forbidden, ErrorResponse(message = "Only admins can delete player progress", code = 403))
+                }
+
+                val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest, ErrorResponse(message = "Missing id", code = 400))
+                questRepository.deletePlayerQuestProgress(id)
                 call.respond(HttpStatusCode.NoContent)
             }
         }

@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import app.softwork.routingcompose.Router
 import kotlinx.browser.window
 import lib.BinaryUtils
 import lib.Qr
@@ -30,9 +31,10 @@ fun QrDialog(
     worldSubtitle: String = translated("Local Worlds"),
     worldDescription: String = ""
 ) {
+    val router = Router.current
     // Get the current URL and append player position if available
     val currentUrl = remember(playerPosition) { 
-        val baseUrl = window.location.href
+        val baseUrl = window.location.origin + router.currentPath.path
         
         // If player position is provided, append it to the URL
         if (playerPosition != null) {

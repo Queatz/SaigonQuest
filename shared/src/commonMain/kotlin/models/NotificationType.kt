@@ -56,4 +56,14 @@ enum class NotificationType {
      * World invitation from a friend
      */
     WORLD_INVITATION,
+
+    /**
+     * Quest started notification
+     */
+    QUEST_STARTED,
+
+    /**
+     * Quest completed notification
+     */
+    QUEST_COMPLETED,
 }

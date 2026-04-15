@@ -309,6 +309,7 @@ object NodeEditorStyles : StyleSheet() {
     val closeButton by style {
         backgroundColor(Color.transparent)
         property("border", "0")
+        outline("none")
         cursor("pointer")
         fontSize(20.px)
     }

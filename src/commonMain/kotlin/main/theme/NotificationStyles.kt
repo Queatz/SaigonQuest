@@ -130,6 +130,12 @@ object NotificationStyles : StyleSheet() {
         paddingLeft(10.px) // compensate for left border
     }
 
+    // Quest notification accent
+    val notificationItemQuest by style {
+        property("border-left", "4px solid ${Theme.colors.nodeQuest}")
+        paddingLeft(10.px) // compensate for left border
+    }
+
     val notificationHeader by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
@@ -190,6 +196,16 @@ object NotificationStyles : StyleSheet() {
     val friendBadge by style {
         backgroundColor(Theme.colors.accentSuccessSoft)
         color(Theme.colors.accentSuccess)
+        borderRadius(12.px)
+        padding(2.px, 8.px)
+        fontSize(12.px)
+        whiteSpace("nowrap")
+    }
+
+    // Small badge for quest notifications
+    val questBadge by style {
+        backgroundColor(Theme.colors.successSoftBg)
+        color(Theme.colors.success)
         borderRadius(12.px)
         padding(2.px, 8.px)
         fontSize(12.px)

@@ -37,6 +37,7 @@ fun SettingsToggle(
                 property("border-style", "solid")
                 property("border-radius", "0")
                 property("box-shadow", "none")
+                property("outline", "none")
                 display(DisplayStyle.Flex)
                 justifyContent(JustifyContent.SpaceBetween)
                 alignItems(AlignItems.Center)
@@ -44,8 +45,15 @@ fun SettingsToggle(
                 property("user-select", "none")
             }
 
+            tabIndex(0)
             onClick {
                 onCheckedChange(!checked)
+            }
+            onKeyDown {
+                if (it.key == "Enter" || it.key == " ") {
+                    onCheckedChange(!checked)
+                    it.preventDefault()
+                }
             }
         }
     ) {

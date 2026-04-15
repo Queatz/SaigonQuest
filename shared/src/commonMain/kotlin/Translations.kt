@@ -1,6 +1,75 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+Rewards
+vi: Phần thưởng
+
+Add Reward
+vi: Thêm phần thưởng
+
+Select World
+vi: Chọn thế giới
+
+Select Object
+vi: Chọn đối tượng
+
+Indicator Emoji
+vi: Emoji chỉ báo
+
+Status Override
+vi: Ghi đè trạng thái
+
+New Step
+vi: Bước mới
+
+Add Step
+vi: Thêm bước
+
+Quest saved successfully!
+vi: Đã lưu nhiệm vụ thành công!
+
+Are you sure you want to remove this step?
+vi: Bạn có chắc chắn muốn xóa bước này không?
+
+Search worlds...
+vi: Tìm kiếm thế giới...
+
+No worlds found
+vi: Không tìm thấy thế giới nào
+
+Please select a world first
+vi: Vui lòng chọn một thế giới trước
+
+Search objects...
+vi: Tìm kiếm đối tượng...
+
+No objects found in this world
+vi: Không tìm thấy đối tượng nào trong thế giới này
+
+Untitled Object
+vi: Đối tượng không tên
+
+Select a quest first
+vi: Chọn một nhiệm vụ trước
+
+Select world
+vi: Chọn thế giới
+
+Select object
+vi: Chọn đối tượng
+
+Has started quest
+vi: Đã bắt đầu nhiệm vụ
+
+Checks if the player has started a specific quest
+vi: Kiểm tra xem người chơi đã bắt đầu một nhiệm vụ cụ thể chưa
+
+Loading steps...
+vi: Đang tải các bước...
+
+Quest not found
+vi: Không tìm thấy nhiệm vụ
+
 Select quest
 vi: Chọn nhiệm vụ
 
@@ -28,6 +97,24 @@ vi: Tên trạng thái
 Initial value
 vi: Giá trị ban đầu
 
+Edit Progress
+vi: Chỉnh sửa tiến trình
+
+Reset Progress
+vi: Đặt lại tiến trình
+
+Are you sure you want to reset this player's quest progress?
+vi: Bạn có chắc chắn muốn đặt lại tiến trình nhiệm vụ của người chơi này không?
+
+Step Index
+vi: Chỉ số bước
+
+Completed
+vi: Đã hoàn thành
+
+Edit Player Progress
+vi: Chỉnh sửa tiến trình người chơi
+
 Manage Quests
 vi: Quản lý nhiệm vụ
 
@@ -51,6 +138,39 @@ vi: Chọn một nhiệm vụ để xem chi tiết
 
 User ID
 vi: Mã người dùng
+
+Quest Details
+vi: Chi tiết nhiệm vụ
+
+Progress
+vi: Tiến trình
+
+Total Quests
+vi: Tổng số nhiệm vụ
+
+Player Progress
+vi: Tiến độ người chơi
+
+Quest Rewards
+vi: Phần thưởng nhiệm vụ
+
+Quest Steps
+vi: Các bước nhiệm vụ
+
+Add Quest
+vi: Thêm nhiệm vụ
+
+View all quests
+vi: Xem tất cả nhiệm vụ
+
+Next Step
+vi: Bước tiếp theo
+
+Completed
+vi: Đã hoàn thành
+
+Continue
+vi: Tiếp tục
 
 Are you sure you want to delete this quest and all its states?
 vi: Bạn có chắc chắn muốn xóa nhiệm vụ này và tất cả các trạng thái của nó không?
@@ -2214,6 +2334,21 @@ vi: Vẫn đang học
 
 I know this!
 vi: Tôi đã biết cái này!
+
+Quest Results
+vi: Kết quả nhiệm vụ
+
+Quest Started
+vi: Nhiệm vụ đã bắt đầu
+
+Quest Completed
+vi: Nhiệm vụ đã hoàn thành
+
+You have started the quest: {0}
+vi: Bạn đã bắt đầu nhiệm vụ: {0}
+
+You have completed the quest: {0}
+vi: Bạn đã hoàn thành nhiệm vụ: {0}
 
 Quest results
 vi: Kết quả thử thách

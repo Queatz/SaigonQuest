@@ -274,3 +274,37 @@ fun WebSocketApi.addMinigameListener(listener: (models.MinigameConfig) -> Unit):
     addListener(models.WebSocketAction.MINIGAME_PROMPT, handler)
     return ListenerToken(models.WebSocketAction.MINIGAME_PROMPT, handler)
 }
+
+/**
+ * Add a listener for locate object events
+ * 
+ * @param listener A function that takes a Map<String, String> containing locate data and returns Unit
+ */
+fun WebSocketApi.addLocateObjectListener(listener: (Map<String, String>) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val locateData = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
+            listener(locateData)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing locate object data", e)
+        }
+    }
+    addListener(WebSocketAction.LOCATE_OBJECT, handler)
+    return ListenerToken(WebSocketAction.LOCATE_OBJECT, handler)
+}
+
+/**
+ * Add a listener for quest progress update events
+ */
+fun WebSocketApi.addQuestProgressListener(listener: (Map<String, String>) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val data = ApiClient.json.decodeFromString<Map<String, String>>(message.data)
+            listener(data)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing quest progress data", e)
+        }
+    }
+    addListener(WebSocketAction.QUEST_PROGRESS_UPDATED, handler)
+    return ListenerToken(WebSocketAction.QUEST_PROGRESS_UPDATED, handler)
+}

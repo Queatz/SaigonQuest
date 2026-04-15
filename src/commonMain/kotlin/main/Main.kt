@@ -18,6 +18,7 @@ import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.theme.QuestStyles
 import main.utils.PageTitleManager
 import main.components.minigame.MinigameStyles
 import main.components.tools.CharacterToolPage
@@ -53,6 +54,7 @@ fun main() {
             Style(AssetStyles)
             Style(WorldDocsStyles)
             Style(MinigameStyles)
+            Style(QuestStyles)
 
             // Update document title based on current world title
             LaunchedEffect(PageTitleManager.worldTitle) {

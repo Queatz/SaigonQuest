@@ -355,7 +355,9 @@ internal fun applyDocClickBehavior(root: Element) {
                 val already = el.getAttribute("data-click-listener") != null
                 if (!already) {
                     el.setAttribute("data-click-listener", "1")
-                    el.onclick = { _ ->
+                    el.onclick = { e ->
+                        e.preventDefault()
+                        e.stopPropagation()
                         val docId = el.getAttribute("data-doc-id")
                         val worldId = el.getAttribute("data-world-id")
                         val detail = json(

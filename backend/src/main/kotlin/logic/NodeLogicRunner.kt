@@ -391,7 +391,17 @@ class NodeLogicRunner(
                         context.session
                     )
                 }
-            } else if (node.nodeId in listOf(NodeId.HasItem, NodeId.TakeItems, NodeId.GiveItems, NodeId.UserAge, NodeId.IsObjectOwner, NodeId.PlayerImageInput, NodeId.PlayerAudioInput, NodeId.CompareValue)) {
+            } else if (node.nodeId in listOf(
+                NodeId.HasItem,
+                NodeId.TakeItems,
+                NodeId.GiveItems,
+                NodeId.UserAge,
+                NodeId.IsObjectOwner,
+                NodeId.PlayerImageInput,
+                NodeId.PlayerAudioInput,
+                NodeId.CompareValue,
+                NodeId.HasStartedQuest,
+            )) {
                 // For nodes that use outputProperty to select the correct branches
                 val outputProperty = eventData["outputProperty"] as? PropertyKey
 
@@ -840,6 +850,38 @@ class NodeLogicRunner(
                     context.session
                 )
                 UpdatePlayerQuestStateNodeRunner(context)
+            }
+            NodeId.UpdatePlayerQuestStep -> {
+                WebSocketDebug.logMessage(
+                    "UPDATE_PLAYER_QUEST_STEP_RUNNER_SELECTED",
+                    "Selected UpdatePlayerQuestStepNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                UpdatePlayerQuestStepNodeRunner(context)
+            }
+            NodeId.LocateObject -> {
+                WebSocketDebug.logMessage(
+                    "LOCATE_OBJECT_RUNNER_SELECTED",
+                    "Selected LocateObjectNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                LocateObjectNodeRunner(context)
+            }
+            NodeId.StartQuest -> {
+                WebSocketDebug.logMessage(
+                    "START_QUEST_RUNNER_SELECTED",
+                    "Selected StartQuestNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                StartQuestNodeRunner(context)
+            }
+            NodeId.HasStartedQuest -> {
+                WebSocketDebug.logMessage(
+                    "HAS_STARTED_QUEST_RUNNER_SELECTED",
+                    "Selected HasStartedQuestNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                HasStartedQuestNodeRunner(context)
             }
             NodeId.CompareValue -> {
                 WebSocketDebug.logMessage(

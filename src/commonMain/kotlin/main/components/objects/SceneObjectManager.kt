@@ -3,6 +3,10 @@ package main.components.objects
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,6 +41,7 @@ import models.ObjectKind
 import models.Position
 import models.WebSocketAction
 import models.ObjectTypingData
+import models.QuestStep
 
 /**
  * Implementation of the ObjectManager interface for managing objects in the 3D scene
@@ -75,6 +80,7 @@ class SceneObjectManager(
 
     // Tracks object kinds for quick lookup (World vs Inventory)
     private val objectKinds = mutableMapOf<String, ObjectKind>()
+    private val activeQuestIndicators = mutableMapOf<String, QuestStep>()
     
     // Tracks vertical offset for each object (applied during dragging)
     private val objectVerticalOffsets = mutableMapOf<String, Float>()
@@ -375,6 +381,31 @@ class SceneObjectManager(
             onError?.invoke("Object not found in scene")
             return false
         }
+    }
+
+    /**
+     * Moves the player character to an object's location with a random offset.
+     * Also focuses the camera on the object.
+     * 
+     * @param objectId The ID of the object to move to
+     * @param playerController The player controller to handle movement
+     */
+    fun movePlayerToObject(objectId: String, playerController: main.components.player.PlayerController) {
+        val node = objectMeshes[objectId] ?: return
+        val pos = node.getAbsolutePosition().clone()
+        
+        // Random offset between 0.5 and 1.5 units away from the object center
+        val angle = Random.nextDouble(0.0, 2.0 * PI)
+        val radius = Random.nextDouble(0.5, 1.5)
+        pos.x += (radius * cos(angle)).toFloat()
+        pos.z += (radius * sin(angle)).toFloat()
+        
+        // Teleport player and focus camera
+        playerController.teleportTo(pos)
+        cameraController.focusOnPosition(node.getAbsolutePosition())
+        
+        // Highlight the object
+        selectObject(objectId)
     }
     
     /**
@@ -1600,6 +1631,11 @@ class SceneObjectManager(
     fun update(deltaTime: Float) {
         if (objectStatusTextHandles.isEmpty() && objectTypingHandles.isEmpty()) return
 
+        // Force quest indicators to be visible
+        activeQuestIndicators.keys.forEach { objectId ->
+            animateStatusText(objectId, true)
+        }
+
         val anyAnimationGroupsPlaying = try {
             scene.animationGroups.any { it.isPlaying }
         } catch (_: Throwable) {
@@ -1715,6 +1751,7 @@ class SceneObjectManager(
         objectTypingTimeouts.clear()
         objectModelSources.clear()
         objectKinds.clear()
+        activeQuestIndicators.clear()
         nearbyObjectIds.clear()
         interactableObjectId = null
         
@@ -1791,6 +1828,22 @@ class SceneObjectManager(
      * @param status The status text
      * @param node The node representing the object in the scene
      */
+    /**
+     * Updates active quest steps for objects in the scene.
+     * 
+     * @param steps Map of objectId to QuestStep
+     */
+    fun updateActiveQuests(steps: Map<String, QuestStep>) {
+        activeQuestIndicators.clear()
+        activeQuestIndicators.putAll(steps)
+        
+        // Refresh all object statuses that might have changed
+        objectMeshes.forEach { (objectId, node) ->
+            val status = objectStatusTexts[objectId] ?: ""
+            handleObjectStatusText(objectId, status, node)
+        }
+    }
+
     private fun handleObjectStatusText(objectId: String, status: String, node: Node) {
         try {
             console.log("[DEBUG_STATUS] Handling status text for object: $objectId, status: '$status'")
@@ -1803,12 +1856,24 @@ class SceneObjectManager(
             val previousStatus = objectStatusTexts[objectId] ?: ""
             objectStatusTexts[objectId] = status
 
+            // Apply quest overrides
+            val questStep = activeQuestIndicators[objectId]
+            var finalStatus = if (questStep?.statusOverride != null) {
+                questStep.statusOverride!!
+            } else {
+                status
+            }
+            
+            if (!questStep?.indicatorEmoji.isNullOrBlank()) {
+                finalStatus = "${questStep!!.indicatorEmoji} $finalStatus"
+            }
+
             // Prepend "🆇 " if it's the interactable object
             val isInteractable = objectId == interactableObjectId
             val displayedStatus = if (isInteractable) {
-                if (status.isBlank()) "🆇" else "🆇 $status"
+                if (finalStatus.isBlank()) "🆇" else "🆇 $finalStatus"
             } else {
-                status
+                finalStatus
             }
 
             // If typing indicator is active, hide status text (typing has precedence)

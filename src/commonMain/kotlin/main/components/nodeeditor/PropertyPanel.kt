@@ -8,15 +8,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import main.api.ObjectApi
+import main.api.WorldApi
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
 import main.components.DialogSelect
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
+import main.components.SelectObjectDialog
+import main.components.SelectWorldDialog
 import main.components.Translated
 import main.components.translated
 import main.theme.NodeEditorStyles
+import models.LogicNode
 import models.NodeCategory
 import models.nodeeditor.NodeData
 import models.nodeeditor.PropertyBasedNodeData
@@ -26,14 +31,12 @@ import models.nodeeditor.PropertyType
 import models.nodeeditor.PropertyValue
 import models.nodeeditor.getPropertyDefinitions
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.css.padding
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.width
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -220,6 +223,22 @@ fun PropertyPanel(
                                             propertyValues = propertyValues.edit { it[propDef.key] = newValue }
                                         }
                                     )
+                                } else if (propDef.key == PropertyKey.TARGET_WORLD_ID) {
+                                    WorldPropertyEditor(
+                                        currentId = propertyValues[propDef.key] ?: "",
+                                        preselectWorldId = worldId,
+                                        onUpdate = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        }
+                                    )
+                                } else if (propDef.key == PropertyKey.ID && node.type is models.LogicNode.LocateObject) {
+                                    ObjectPropertyEditor(
+                                        worldId = propertyValues[PropertyKey.TARGET_WORLD_ID] ?: "",
+                                        currentId = propertyValues[propDef.key] ?: "",
+                                        onUpdate = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        }
+                                    )
                                 } else if (propDef.key == PropertyKey.ID && (node.type is models.LogicNode.DocContent || node.type is models.LogicNode.CreateDoc || node.type is models.LogicNode.OpenDoc)) {
                                     DocPropertyEditor(
                                         worldId = worldId,
@@ -387,6 +406,19 @@ fun PropertyPanel(
                                 )
                             }
 
+                            PropertyType.QUEST_STEP -> {
+                                val questId = propertyValues[PropertyKey.QUEST_ID] ?: ""
+                                QuestStepPropertySelector(
+                                    questId = questId,
+                                    value = propertyValues[propDef.key] ?: "0",
+                                    onInput = { newValue ->
+                                        propertyValues = propertyValues.edit {
+                                            it[propDef.key] = newValue
+                                        }
+                                    }
+                                )
+                            }
+
                             else -> {
                                 // Default to text input for other types
                                 DialogInput(
@@ -494,3 +526,131 @@ fun PropertyPanel(
 
 fun <K, V> Map<K, V>.edit(block: (MutableMap<K, V>) -> Unit): Map<K, V> =
     toMutableMap().apply(block).toMap()
+
+@Composable
+fun WorldPropertyEditor(
+    currentId: String,
+    preselectWorldId: String?,
+    onUpdate: (String) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var title by remember(currentId) { mutableStateOf(currentId) }
+
+    LaunchedEffect(currentId) {
+        if (currentId.isNotEmpty()) {
+            try {
+                title = WorldApi.getWorld(currentId).title
+            } catch (e: Throwable) {
+                // Ignore, keep ID as fallback
+            }
+        } else {
+            title = ""
+        }
+    }
+
+    Div(attrs = {
+        style {
+            display(DisplayStyle.Flex)
+            alignItems(AlignItems.Center)
+            gap(8.px)
+            marginBottom(4.px)
+        }
+    }) {
+        Span(attrs = {
+            style {
+                flexGrow(1)
+                fontSize(0.9.em)
+                opacity(0.8)
+                overflow("hidden")
+                property("text-overflow", "ellipsis")
+                whiteSpace("nowrap")
+            }
+        }) {
+            Text(if (title.isEmpty()) str("None") else title)
+        }
+
+        DialogButton(
+            onClick = { showDialog = true },
+            style = DialogButtonStyle.Secondary,
+            small = true
+        ) {
+            Translated("Select")
+        }
+    }
+
+    if (showDialog) {
+        SelectWorldDialog(
+            onClose = { showDialog = false },
+            preselectWorldId = preselectWorldId,
+            onSelect = { world ->
+                onUpdate(world.key)
+                showDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun ObjectPropertyEditor(
+    worldId: String,
+    currentId: String,
+    onUpdate: (String) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    var title by remember(currentId) { mutableStateOf(currentId) }
+
+    LaunchedEffect(currentId, worldId) {
+        if (currentId.isNotEmpty() && worldId.isNotEmpty()) {
+            try {
+                val obj = ObjectApi.getObject(currentId)
+                title = obj.title
+            } catch (e: Throwable) {
+                // Ignore, keep ID as fallback
+            }
+        } else {
+            title = ""
+        }
+    }
+
+    Div(attrs = {
+        style {
+            display(DisplayStyle.Flex)
+            alignItems(AlignItems.Center)
+            gap(8.px)
+            marginBottom(4.px)
+        }
+    }) {
+        Span(attrs = {
+            style {
+                flexGrow(1)
+                fontSize(0.9.em)
+                opacity(0.8)
+                overflow("hidden")
+                property("text-overflow", "ellipsis")
+                whiteSpace("nowrap")
+            }
+        }) {
+            Text(if (title.isEmpty()) str("None") else title)
+        }
+
+        DialogButton(
+            onClick = { showDialog = true },
+            style = DialogButtonStyle.Secondary,
+            small = true,
+            isDisabled = worldId.isBlank()
+        ) {
+            Translated("Select")
+        }
+    }
+
+    if (showDialog) {
+        SelectObjectDialog(
+            worldId = worldId,
+            onClose = { showDialog = false },
+            onSelect = { obj ->
+                onUpdate(obj.key)
+                showDialog = false
+            }
+        )
+    }
+}

@@ -168,6 +168,9 @@ private fun NotificationItem(
                 NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED -> {
                     classes(NotificationStyles.notificationItemFriend)
                 }
+                NotificationType.QUEST_STARTED, NotificationType.QUEST_COMPLETED -> {
+                    classes(NotificationStyles.notificationItemQuest)
+                }
                 else -> Unit
             }
 
@@ -197,6 +200,11 @@ private fun NotificationItem(
                     NotificationType.FRIEND_REQUEST, NotificationType.FRIEND_REQUEST_ACCEPTED, NotificationType.WORLD_INVITATION -> {
                         Span(attrs = { classes(NotificationStyles.friendBadge) }) {
                             Translated("Friends")
+                        }
+                    }
+                    NotificationType.QUEST_STARTED, NotificationType.QUEST_COMPLETED -> {
+                        Span(attrs = { classes(NotificationStyles.questBadge) }) {
+                            Translated("Quests")
                         }
                     }
                     else -> Unit

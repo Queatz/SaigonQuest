@@ -538,6 +538,35 @@ class PlayerController(private val scene: Scene) {
     fun initializeTeleportListener(router: Router) { netSync.initTeleportListener(router) }
 
     /**
+     * Initializes the locate object listener
+     */
+    fun initializeLocateObjectListener(router: Router) {
+        netSync.initLocateObjectListener(router) { objectId ->
+            main.components.SceneManager.getObjectManager()?.movePlayerToObject(objectId, this)
+        }
+
+        // Check for pending locate
+        val pending = window.sessionStorage.getItem("pendingLocateObjectId")
+        if (!pending.isNullOrBlank()) {
+            window.sessionStorage.removeItem("pendingLocateObjectId")
+            coroutineScope.launch {
+                // Wait for scene objects to be loaded
+                var manager = main.components.SceneManager.getObjectManager()
+                var attempts = 0
+                while (manager == null && attempts < 100) {
+                    kotlinx.coroutines.delay(100)
+                    manager = main.components.SceneManager.getObjectManager()
+                    attempts++
+                }
+                
+                // Extra delay to ensure meshes are actually ready
+                kotlinx.coroutines.delay(500)
+                manager?.movePlayerToObject(pending, this@PlayerController)
+            }
+        }
+    }
+
+    /**
      * Initializes the pause listener (single-device enforcement)
      */
     fun initializePauseListener(router: Router) { netSync.initPauseListener(router) }

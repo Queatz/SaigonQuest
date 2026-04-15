@@ -47,4 +47,8 @@ enum class NodeId {
     AiTts,
     Minigame,
     JsonExtract,
+    UpdatePlayerQuestStep,
+    LocateObject,
+    StartQuest,
+    HasStartedQuest,
 }
