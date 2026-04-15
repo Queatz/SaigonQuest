@@ -116,6 +116,10 @@ enum class PropertyKey {
     REFLEX,
     ACCURACY,
     INITIAL_MESSAGE,
+
+    // SetAsset properties
+    FILE,
+    COLLECTION,
 }
 
 /**
@@ -1552,6 +1556,36 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.NEXT,
                 name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // SetAsset node properties
+        is LogicNode.SetAsset -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.FILE,
+                name = "File",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COLLECTION,
+                name = "Collection",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )

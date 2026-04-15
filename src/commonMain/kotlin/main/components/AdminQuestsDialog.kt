@@ -207,7 +207,7 @@ fun AdminQuestsDialog(
                 Div(
                     attrs = {
                         style {
-                            width(if (isMobile) 100.percent else 30.percent)
+                            width(if (isMobile) 100.percent else 240.px)
                             if (isMobile) {
                                 maxHeight(200.px)
                                 property("border-bottom", "1px solid #444")
@@ -275,7 +275,7 @@ fun AdminQuestsDialog(
                 Div(
                     attrs = {
                         style {
-                            width(if (isMobile) 100.percent else 70.percent)
+                            width(if (isMobile) 100.percent else 0.px)
                             overflowY("auto")
                             overflowX("auto")
                             display(DisplayStyle.Flex)
@@ -284,6 +284,8 @@ fun AdminQuestsDialog(
                             if (isMobile) {
                                 flex(1)
                                 property("min-height", "0")
+                            } else {
+                                flexGrow(1)
                             }
                         }
                     }

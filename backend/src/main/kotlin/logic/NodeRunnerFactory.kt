@@ -367,6 +367,14 @@ object NodeRunnerFactory {
                 )
                 JsonExtractNodeRunner(context)
             }
+            NodeId.SetAsset -> {
+                WebSocketDebug.logMessage(
+                    "SET_ASSET_RUNNER_SELECTED",
+                    "Selected SetAssetNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                SetAssetNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

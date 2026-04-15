@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.ObjectApi
 import main.api.WorldApi
+import main.components.AssetBrowserDialog
+import main.components.BasicSceneRenderer
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
@@ -21,6 +23,7 @@ import main.components.SelectWorldDialog
 import main.components.Translated
 import main.components.translated
 import main.theme.NodeEditorStyles
+import models.AssetType
 import models.LogicNode
 import models.NodeCategory
 import models.nodeeditor.NodeData
@@ -172,7 +175,7 @@ fun PropertyPanel(
         // Render editable properties (excluding trigger properties which are handled by ports)
         propertyDefinitions
             .filter { it.type != PropertyType.TRIGGER }
-            .filter { it.key !in listOf(PropertyKey.QUANTITIES, PropertyKey.QUANTITY) }
+            .filter { it.key !in listOf(PropertyKey.QUANTITIES, PropertyKey.QUANTITY, PropertyKey.COLLECTION) }
             .forEach { propDef ->
                 // Only render input properties in the property panel
                 if (propDef.direction == PropertyDirection.INPUT) {
@@ -288,6 +291,17 @@ fun PropertyPanel(
                                             propertyValues = propertyValues.edit {
                                                 it[PropertyKey.ITEMS] = items
                                                 it[PropertyKey.QUANTITIES] = qtys
+                                            }
+                                        }
+                                    )
+                                } else if (propDef.key == PropertyKey.FILE) {
+                                    AssetPropertyEditor(
+                                        file = propertyValues[PropertyKey.FILE] ?: "",
+                                        collection = propertyValues[PropertyKey.COLLECTION] ?: "",
+                                        onUpdate = { newFile, newCollection ->
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.FILE] = newFile
+                                                it[PropertyKey.COLLECTION] = newCollection
                                             }
                                         }
                                     )
@@ -651,6 +665,79 @@ fun ObjectPropertyEditor(
                 onUpdate(obj.key)
                 showDialog = false
             }
+        )
+    }
+}
+
+@Composable
+fun AssetPropertyEditor(
+    file: String,
+    collection: String,
+    onUpdate: (file: String, collection: String) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Div(attrs = {
+        style {
+            display(DisplayStyle.Flex)
+            flexDirection(FlexDirection.Column)
+            gap(8.px)
+        }
+    }) {
+        Div(attrs = {
+            style {
+                display(DisplayStyle.Flex)
+                alignItems(AlignItems.Center)
+                gap(8.px)
+            }
+        }) {
+            Span(attrs = {
+                style {
+                    flexGrow(1)
+                    fontSize(0.9.em)
+                    opacity(0.8)
+                    overflow("hidden")
+                    property("text-overflow", "ellipsis")
+                    whiteSpace("nowrap")
+                }
+            }) {
+                Text(if (file.isEmpty()) str("None selected") else "$collection / $file")
+            }
+
+            DialogButton(
+                onClick = { showDialog = true },
+                style = DialogButtonStyle.Secondary,
+                small = true
+            ) {
+                Translated("Browse")
+            }
+        }
+
+        if (file.isNotEmpty() && collection.isNotEmpty()) {
+            Div(attrs = {
+                style {
+                    alignSelf(AlignSelf.Center)
+                    width(100.percent)
+                    height(200.px)
+                }
+            }) {
+                BasicSceneRenderer(
+                    filename = file,
+                    collection = collection,
+                    transparentBackground = true,
+                )
+            }
+        }
+    }
+
+    if (showDialog) {
+        AssetBrowserDialog(
+            type = AssetType.Objects,
+            onSelect = { r ->
+                onUpdate(r.asset!!.file, r.collection ?: "")
+                showDialog = false
+            },
+            onClose = { showDialog = false },
         )
     }
 }

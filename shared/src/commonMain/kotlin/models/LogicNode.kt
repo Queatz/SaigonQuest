@@ -565,6 +565,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Quest,
         override val description: String = "Checks if a specific quest step is completed"
     ) : LogicNode
+
+    /**
+     * SetAsset node - changes the asset of an object
+     */
+    @Serializable
+    data class SetAsset(
+        override val id: NodeId = NodeId.SetAsset,
+        override val label: String = "Set asset",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Changes the asset (file and collection) of this object"
+    ) : LogicNode
 }
 
 /**
@@ -627,6 +638,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.StartQuest(),
         LogicNode.QuestPlayerStatus(),
         LogicNode.QuestStep(),
+        LogicNode.SetAsset(),
     )
 }
 

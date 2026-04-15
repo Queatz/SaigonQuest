@@ -52,4 +52,5 @@ enum class NodeId {
     StartQuest,
     QuestPlayerStatus,
     QuestStep,
+    SetAsset,
 }
