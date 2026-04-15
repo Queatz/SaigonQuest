@@ -192,11 +192,11 @@ fun SelectItemDialog(
                                             },
                                             type = InputType.Number,
                                             min = minQuantity,
+                                            placeholder = translated("Quantity"),
                                             attrs = {
                                                 onClick { it.stopPropagation() }
                                             }
                                         )
-                                        Label { Translated("Quantity") }
                                     }
                                 }
                             }

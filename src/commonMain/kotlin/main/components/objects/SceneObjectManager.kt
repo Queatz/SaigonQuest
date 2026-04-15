@@ -143,8 +143,8 @@ class SceneObjectManager(
             animateStatusText(objectId, true)
         } else {
             nearbyObjectIds.remove(objectId)
-            // Hide status only if it's no longer nearby AND not hovered AND not interactable
-            if (hoveredObjectId != objectId && interactableObjectId != objectId) {
+            // Hide status only if it's no longer nearby AND not hovered AND not interactable AND not a quest indicator
+            if (hoveredObjectId != objectId && interactableObjectId != objectId && !activeQuestIndicators.containsKey(objectId)) {
                 animateStatusText(objectId, false)
             }
         }
@@ -171,8 +171,8 @@ class SceneObjectManager(
                 handleObjectStatusText(previousId, originalStatus, node)
             }
 
-            // Hide status if neither hovered nor nearby nor interactable anymore
-            if (previousId != hoveredObjectId && !nearbyObjectIds.contains(previousId)) {
+            // Hide status if neither hovered nor nearby nor interactable nor quest indicator anymore
+            if (previousId != hoveredObjectId && !nearbyObjectIds.contains(previousId) && !activeQuestIndicators.containsKey(previousId)) {
                 animateStatusText(previousId, false)
             }
         }
@@ -261,8 +261,8 @@ class SceneObjectManager(
                     // Reset cursor
                     document.body?.style?.cursor = "default"
 
-                    // Hide status text for the unhovered object, unless still nearby or interactable
-                    if (!nearbyObjectIds.contains(objectId) && interactableObjectId != objectId) {
+                    // Hide status text for the unhovered object, unless still nearby, interactable, or a quest indicator
+                    if (!nearbyObjectIds.contains(objectId) && interactableObjectId != objectId && !activeQuestIndicators.containsKey(objectId)) {
                         animateStatusText(objectId, false)
                     }
 
@@ -1866,6 +1866,9 @@ class SceneObjectManager(
             
             if (!questStep?.indicatorEmoji.isNullOrBlank()) {
                 finalStatus = "${questStep!!.indicatorEmoji} $finalStatus"
+            } else if (questStep != null && finalStatus.isBlank()) {
+                // Default quest indicator if nothing else is specified
+                finalStatus = "❓"
             }
 
             // Prepend "🆇 " if it's the interactable object
@@ -1984,7 +1987,7 @@ class SceneObjectManager(
                     console.log("[DEBUG_STATUS] Updating status text local offset for object: $objectId (offsetY=$offsetY)")
                     
                     // Ensure visibility is consistent with hover, proximity, or interactable state
-                    if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
+                    if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId || activeQuestIndicators.containsKey(objectId)) {
                         animateStatusText(objectId, true)
                     } else {
                         // Ensure it's hidden if neither
@@ -2015,7 +2018,7 @@ class SceneObjectManager(
                         statusTextHandle.position = Vector3(0f, offsetY - 0.2f, 0f)
                         
                         // Set initial visibility based on hover, proximity, or interactable state
-                        if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId) {
+                        if (objectId == hoveredObjectId || nearbyObjectIds.contains(objectId) || objectId == interactableObjectId || activeQuestIndicators.containsKey(objectId)) {
                             animateStatusText(objectId, true)
                         } else {
                             // Already set to isVisible = false above

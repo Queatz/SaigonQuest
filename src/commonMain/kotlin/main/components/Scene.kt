@@ -71,6 +71,29 @@ private fun dispatchObjectDropEvent(
 }
 
 /**
+ * Helper to remove the 'at' parameter from the URL without triggering a reload.
+ */
+private fun removeAtParamFromUrl() {
+    try {
+        val currentUrl = window.location.href
+        if (currentUrl.contains("at=")) {
+            // Remove 'at=x,y,z' from the URL. Handles both ?at= and &at=
+            val newUrl = currentUrl
+                .replace(Regex("[?&]at=[^&]*"), "")
+                .replace("?&", "?")
+                .trimEnd('?', '&')
+            
+            if (newUrl != currentUrl) {
+                window.history.replaceState(null, "", newUrl)
+                console.log("[SCENE] Removed 'at' parameter from URL")
+            }
+        }
+    } catch (e: Throwable) {
+        console.error("Failed to cleanup URL", e)
+    }
+}
+
+/**
  * A component that renders a BabylonJS scene with a 3D model.
  * Uses Physics-Based Rendering (PBR) Pipeline and PBR Materials.
  *
@@ -184,6 +207,43 @@ fun SceneComponent(url: String) {
         } catch (e: Throwable) {
             console.error("Error checking current user type: ${e.message}")
             isCurrentUserPlayer.value = false // Default to false if there's an error
+        }
+    }
+
+    // Handle 'at' query parameter for initial position or teleport
+    var handledAt by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(router.currentPath, isLoaded.value) {
+        val atParam = router.currentPath.parameters?.map?.get("at")?.firstOrNull()
+        if (atParam == null) {
+            handledAt = null
+        } else if (atParam != handledAt) {
+            console.log("[SCENE] Found 'at' parameter: $atParam (isLoaded: ${isLoaded.value})")
+            val parts = atParam.split(",")
+            if (parts.size == 3) {
+                val x = parts[0].toFloatOrNull()
+                val y = parts[1].toFloatOrNull()
+                val z = parts[2].toFloatOrNull()
+                if (x != null && y != null && z != null) {
+                    val pos = lib.Vector3(x, y, z)
+                    val pc = SceneManager.getPlayerController()
+                    
+                    if (isLoaded.value && pc != null) {
+                        handledAt = atParam
+                        console.log("[SCENE] Teleporting existing player to $pos")
+                        pc.teleportTo(pos)
+                        
+                        // Remove from URL after processing
+                        removeAtParamFromUrl()
+                    } else if (!isLoaded.value) {
+                        handledAt = atParam
+                        console.log("[SCENE] Setting pending teleport to $pos")
+                        SceneManager.setPendingTeleport(pos)
+                        
+                        // Remove from URL after processing
+                        removeAtParamFromUrl()
+                    }
+                }
+            }
         }
     }
 

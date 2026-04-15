@@ -26,6 +26,7 @@ import org.jetbrains.compose.web.css.Style
 import org.jetbrains.compose.web.renderComposableInBody
 import kotlinx.browser.document
 import androidx.compose.runtime.LaunchedEffect
+import main.components.chat.GlobalAiChat
 
 fun main() {
     // Configure BabylonJS Draco decoder very early to ensure local asset URLs are used
@@ -73,7 +74,7 @@ fun main() {
 
                 // Render the global, floating AI chat box once (except on doc print page)
                 if (!router.currentPath.path.startsWith("/doc/")) {
-                    main.components.chat.GlobalAiChat()
+                    GlobalAiChat()
                 }
 
                 route("/bye") {

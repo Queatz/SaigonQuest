@@ -28,6 +28,7 @@ object MinigameStyles : StyleSheet() {
         position(Position.Relative)
         width(400.px)
         maxWidth(100.percent)
+        maxHeight(80.vh)
         property("aspect-ratio", "3/4")
         property("perspective", "1000px")
         cursor("pointer")
@@ -76,6 +77,8 @@ object MinigameStyles : StyleSheet() {
         borderRadius(12.px)
         marginBottom(16.px)
         property("object-fit", "contain")
+        flexShrink(1)
+        minHeight(0.px)
     }
 
     val matchGrid by style {
@@ -220,6 +223,7 @@ object MinigameStyles : StyleSheet() {
         fontWeight("bold")
         textAlign("center")
         margin(16.px, 0.px)
+        flexShrink(0)
     }
 
     val flashcardTranslation by style {
@@ -227,6 +231,7 @@ object MinigameStyles : StyleSheet() {
         fontWeight("bold")
         textAlign("center")
         margin(8.px, 0.px)
+        flexShrink(0)
     }
 
     val flashcardDefinition by style {
@@ -234,6 +239,7 @@ object MinigameStyles : StyleSheet() {
         textAlign("center")
         margin(8.px, 0.px)
         opacity(0.9)
+        flexShrink(0)
     }
 
     val controlsContainer by style {

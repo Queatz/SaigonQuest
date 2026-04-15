@@ -21,6 +21,9 @@ import main.theme.OverlayStyles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
 import kotlinx.browser.window
+import kotlinx.browser.document
+import main.utils.toggleFullscreen
+import main.components.IconRenderer
 import Translations.str
 
 @Composable
@@ -55,6 +58,14 @@ fun AdminQuestsDialog(
     var editPlayerProgress by remember { mutableStateOf<PlayerQuestProgress?>(null) }
     val scope = rememberCoroutineScope()
     val isMobile by rememberIsMobile()
+
+    // Fullscreen state
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
+    DisposableEffect(Unit) {
+        val listener: (dynamic) -> Unit = { isFullscreen = document.fullscreenElement != null }
+        document.addEventListener("fullscreenchange", listener)
+        onDispose { document.removeEventListener("fullscreenchange", listener) }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -132,6 +143,21 @@ fun AdminQuestsDialog(
         onClose = onClose,
         title = translated("Manage Quests"),
         showCloseButton = true,
+        isFullscreen = isFullscreen,
+        isFullHeight = true,
+        isFullWidth = true,
+        headerActions = {
+            DialogButton(
+                onClick = { toggleFullscreen() },
+                style = DialogButtonStyle.Secondary,
+            ) {
+                IconRenderer(
+                    url = "raw/data/ui/ui.png",
+                    index = if (isFullscreen) 1 else 0,
+                    size = 24,
+                )
+            }
+        },
         banner = {
             if (successMessage != null || errorMessage != null) {
                 val isError = errorMessage != null
@@ -163,11 +189,17 @@ fun AdminQuestsDialog(
                             width(100.percent)
                             property("height", "auto")
                         } else {
-                            height(500.px)
-                            width(800.px)
+                            width(100.percent)
+                            height(0.px)
+                            flexGrow(1)
                         }
-                        maxWidth(if (isMobile) 95.vw else 90.vw)
-                        maxHeight(if (isMobile) 90.vh else 70.vh)
+                        if (isFullscreen) {
+                            maxWidth(100.vw)
+                            maxHeight(100.vh)
+                        } else {
+                            maxWidth(if (isMobile) 95.vw else 100.percent)
+                            maxHeight(if (isMobile) 90.vh else 100.percent)
+                        }
                     }
                 }
             ) {

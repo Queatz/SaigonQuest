@@ -330,11 +330,11 @@ fun WorldDocsDialog(
                         )
                     }) {
                         when (connState) {
-                            is ConnectionState.Online -> Text(Translations.str("Online"))
-                            is ConnectionState.Reconnecting -> Text(Translations.str("Reconnecting…"))
-                            is ConnectionState.Connecting -> Text(Translations.str("Reconnecting…"))
-                            is ConnectionState.Error -> Text(Translations.str("Reconnecting…"))
-                            is ConnectionState.Closed -> Text(Translations.str("Reconnecting…"))
+                            is ConnectionState.Online -> Text(str("Online"))
+                            is ConnectionState.Reconnecting -> Text(str("Reconnecting…"))
+                            is ConnectionState.Connecting -> Text(str("Reconnecting…"))
+                            is ConnectionState.Error -> Text(str("Reconnecting…"))
+                            is ConnectionState.Closed -> Text(str("Reconnecting…"))
                         }
                     }
                 }
