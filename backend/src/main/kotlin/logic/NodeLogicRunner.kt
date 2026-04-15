@@ -96,6 +96,15 @@ class NodeLogicRunner(
     }
 
     /**
+     * Enum to determine how a node selects its next branches
+     */
+    private enum class BranchingMode {
+        INDEX,      // Branch based on buttonIndex or isWordClick
+        PROPERTY,   // Branch based on outputProperty (YES, NO, etc.)
+        ALL         // Follow all trigger connections
+    }
+
+    /**
      * Start processing from a specific node type
      *
      * @param startNodeType The type of node to start processing from
@@ -302,14 +311,60 @@ class NodeLogicRunner(
         ensureInputValuesFor(node, resolving)
 
         // Get the node runner for this node type
-        val nodeRunner = getNodeRunner(node)
+        val result = executeNode(node, eventData)
+
+        // If the node execution was successful, follow its connections
+        if (result) {
+            // Mark this node as executed in this traversal so re-entry can clear inputs
+            executedNodes.add(node.id)
+            
+            // Get branching signals and THEN clear them from eventData so they don't leak to next nodes
+            val outputProperty = eventData.remove("outputProperty") as? PropertyKey
+            val buttonIndex = eventData.remove("buttonIndex") as? Int
+            val isWordClick = eventData.remove("isWordClick") as? Boolean ?: false
+
+            // Find connections from this node
+            val connections = nodeConfig?.connections?.filter { it.from == node.id } ?: emptyList()
+            WebSocketDebug.logMessage(
+                "NODE_CONNECTIONS",
+                "Found ${connections.size} connections from node: ${node.id}",
+                context.session
+            )
+
+            // 1) Pass 1: Propagate ALL non-trigger values across connections first.
+            // This ensures target nodes receive their input values before being triggered.
+            propagateNonTriggerValues(node, connections, eventData)
+
+            // 2) Pass 2: Identify matching trigger connections and follow them
+            handleBranching(
+                node = node,
+                connections = connections,
+                eventData = eventData,
+                executedNodes = executedNodes,
+                outputProperty = outputProperty,
+                buttonIndex = buttonIndex,
+                isWordClick = isWordClick
+            )
+        } else {
+            WebSocketDebug.logMessage(
+                "NODE_EXECUTION_STOPPED",
+                "Node execution returned false, stopping branch at ${node.nodeCategory}/${node.id}",
+                context.session
+            )
+        }
+    }
+
+    /**
+     * Executes the logic runner for a node
+     */
+    private suspend fun executeNode(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
+        val nodeRunner = NodeRunnerFactory.getNodeRunner(node, context)
         WebSocketDebug.logMessage(
             "NODE_RUNNER_SELECTED",
             "Selected runner: ${nodeRunner::class.simpleName} for node: ${node.nodeCategory}/${node.id}",
             context.session
         )
 
-        // Execute the node's logic
         WebSocketDebug.logMessage(
             "NODE_EXECUTION_START",
             "Executing node: ${node.nodeCategory}/${node.id}",
@@ -321,198 +376,110 @@ class NodeLogicRunner(
             "Node ${node.nodeCategory}/${node.id} execution result: $result",
             context.session
         )
+        return result
+    }
 
-        // If the node execution was successful, follow its connections
-        if (result) {
-            // Mark this node as executed in this traversal so re-entry can clear inputs
-            executedNodes.add(node.id)
-            // Find connections from this node
-            val connections = nodeConfig?.connections?.filter { it.from == node.id } ?: emptyList()
-            WebSocketDebug.logMessage(
-                "NODE_CONNECTIONS",
-                "Found ${connections.size} connections from node: ${node.id}",
-                context.session
-            )
+    /**
+     * Propagates all non-trigger values from a node to its connected target ports
+     */
+    private fun propagateNonTriggerValues(
+        node: NodeDataModel,
+        connections: List<NodeConnection>,
+        eventData: MutableMap<String, Any>
+    ) {
+        for (connection in connections) {
+            if (!isTriggerConnection(node, connection.fromPort)) {
+                propagateValue(connection.fromPort, connection.toPort, eventData)
+            }
+        }
+    }
 
-            // For dialogue and language nodes, follow the connection that matches the button index or word click
-            // For HasItem nodes, follow the connection that matches the output property
-            if (node.nodeId in listOf(NodeId.Dialogue, NodeId.UserLanguage, NodeId.UserSex)) {
-                // Pass 1: Propagate all non-trigger values (e.g. text content, clicked word)
-                for (connection in connections) {
-                    if (!isTriggerConnection(node, connection.fromPort)) {
-                        propagateValue(connection.fromPort, connection.toPort, eventData)
-                    }
-                }
+    /**
+     * Handles the branching logic after a node has executed successfully
+     */
+    private suspend fun handleBranching(
+        node: NodeDataModel,
+        connections: List<NodeConnection>,
+        eventData: MutableMap<String, Any>,
+        executedNodes: MutableSet<String>,
+        outputProperty: PropertyKey?,
+        buttonIndex: Int?,
+        isWordClick: Boolean
+    ) {
+        // 1) Determine the branching mode for this node
+        val mode = when {
+            // Nodes that explicitly set an outputProperty want property-based branching
+            outputProperty != null -> BranchingMode.PROPERTY
+            
+            // Dialogue and user-info nodes are inherently index-based selectors
+            node.nodeId in listOf(NodeId.Dialogue, NodeId.UserLanguage, NodeId.UserSex) -> BranchingMode.INDEX
+            
+            // If buttonIndex is present for some other reason, treat as index-based
+            buttonIndex != null || isWordClick -> BranchingMode.INDEX
+            
+            // Default: follow all trigger connections
+            else -> BranchingMode.ALL
+        }
 
-                // Pass 2: Traverse selected trigger branches
-                val isWordClick = (eventData["isWordClick"] as? Boolean) ?: false
-                val buttonIndex = if (isWordClick) -1 else (eventData["buttonIndex"] as? Int) ?: 0
-
-                val matchingConnections = if (isWordClick && node.nodeId == NodeId.Dialogue) {
+        // 2) Identify matching trigger connections based on the mode
+        val matchingConnections = when (mode) {
+            BranchingMode.INDEX -> {
+                val idx = if (isWordClick) -1 else (buttonIndex ?: 0)
+                WebSocketDebug.logMessage("BRANCHING_INDEX", "Using index: $idx (isWordClick: $isWordClick)", context.session)
+                
+                if (isWordClick && node.nodeId == NodeId.Dialogue) {
                     connections.filter { it.fromPort.endsWith("_out_word_clicked") }
                 } else {
-                    // Use the button index to select connections
-                    // Prefer dynamic dialogue outputs, but fall back to static outputs
-                    val dynamic = connections.filter { c -> c.fromPort.endsWith("_out_button_$buttonIndex") }
-                    if (dynamic.isNotEmpty()) dynamic else connections.filter { c -> c.fromPort.endsWith("_out_$buttonIndex") }
+                    // Prefer dynamic dialogue outputs (_out_button_N), fall back to indexed outputs (_out_N)
+                    val dynamic = connections.filter { c -> c.fromPort.endsWith("_out_button_$idx") }
+                    if (dynamic.isNotEmpty()) dynamic else connections.filter { c -> c.fromPort.endsWith("_out_$idx") }
                 }
+            }
+            
+            BranchingMode.PROPERTY -> {
+                WebSocketDebug.logMessage("BRANCHING_PROPERTY", "Using property: $outputProperty", context.session)
+                connections.filter { connection ->
+                    if (!isTriggerConnection(node, connection.fromPort)) return@filter false
 
-                if (matchingConnections.isNotEmpty()) {
-                    coroutineScope {
-                        for (connection in matchingConnections) {
-                            WebSocketDebug.logMessage(
-                                "FOLLOWING_DIALOGUE_CONNECTION",
-                                "Following connection from ${connection.from} to ${connection.to} for buttonIndex: $buttonIndex",
-                                context.session
-                            )
-
-                            val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                            if (targetNode != null) {
-                                // Only traverse if this is a trigger connection
-                                if (isTriggerConnection(node, connection.fromPort)) {
-                                    launch {
-                                        val branchEventData = eventData.toMutableMap()
-                                        val branchExecuted = executedNodes.toMutableSet()
-                                        // Propagate any value carried on this connection into the branch state
-                                        propagateValue(connection.fromPort, connection.toPort, branchEventData)
-                                        processNode(targetNode, branchEventData, branchExecuted)
-                                    }
-                                } else {
-                                    // If it's a value connection, ensure it's propagated
-                                    propagateValue(connection.fromPort, connection.toPort, eventData)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    WebSocketDebug.logMessage(
-                        "NO_CONNECTION_FOR_DIALOGUE_OUTPUT",
-                        "No connection found for buttonIndex: $buttonIndex on node: ${node.id}",
-                        context.session
-                    )
-                }
-            } else if (node.nodeId in listOf(
-                NodeId.HasItem,
-                NodeId.TakeItems,
-                NodeId.GiveItems,
-                NodeId.UserAge,
-                NodeId.IsObjectOwner,
-                NodeId.PlayerImageInput,
-                NodeId.PlayerAudioInput,
-                NodeId.CompareValue,
-                NodeId.HasStartedQuest,
-            )) {
-                // For nodes that use outputProperty to select the correct branches
-                val outputProperty = eventData["outputProperty"] as? PropertyKey
-
-                WebSocketDebug.logMessage(
-                    "NODE_OUTPUT_PROPERTY",
-                    "Using output property: $outputProperty for node: ${node.id} (${node.nodeId})",
-                    context.session
-                )
-
-                val matchingConnections = if (outputProperty != null) {
-                    connections.filter { connection ->
-                        if (!isTriggerConnection(node, connection.fromPort)) return@filter false
-
-                        when (outputProperty) {
-                            PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
-                            PropertyKey.NO, PropertyKey.NO_IMAGES, PropertyKey.NO_AUDIO -> connection.fromPort.endsWith("_out_1")
-                            PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
-                            else -> false
-                        }
-                    }
-                } else {
-                    emptyList()
-                }
-
-                if (matchingConnections.isNotEmpty()) {
-                    coroutineScope {
-                        for (connection in matchingConnections) {
-                            WebSocketDebug.logMessage(
-                                "FOLLOWING_CONDITION_CONNECTION",
-                                "Following connection from ${connection.from} to ${connection.to} for output property: $outputProperty",
-                                context.session
-                            )
-
-                            val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                            if (targetNode != null) {
-                                launch {
-                                    val branchEventData = eventData.toMutableMap()
-                                    val branchExecuted = executedNodes.toMutableSet()
-                                    // Propagate any value carried on this connection into the branch state
-                                    propagateValue(connection.fromPort, connection.toPort, branchEventData)
-                                    processNode(targetNode, branchEventData, branchExecuted)
-                                }
-                            } else {
-                                WebSocketDebug.logError(
-                                    "Target node not found for connection: ${connection.from} -> ${connection.to}",
-                                    null,
-                                    context.session
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    WebSocketDebug.logMessage(
-                        "NO_CONNECTION_FOR_CONDITION_OUTPUT",
-                        "No connection found matching output property $outputProperty for node: ${node.id}",
-                        context.session
-                    )
-                }
-            } else {
-                // For other node types, do a two-pass approach:
-                // 1) Propagate ALL values across connections first
-                // 2) Then traverse ONLY trigger connections
-                // This ensures targets receive value inputs before they are processed via a trigger.
-                // Pass 1: propagate values
-                for (connection in connections) {
-                    propagateValue(connection.fromPort, connection.toPort, eventData)
-                }
-                // Pass 2: traverse triggers concurrently
-                coroutineScope {
-                    for (connection in connections) {
-                        WebSocketDebug.logMessage(
-                            "FOLLOWING_CONNECTION",
-                            "Following connection from ${connection.from} to ${connection.to}",
-                            context.session
-                        )
-
-                        val targetNode = nodeConfig?.nodes?.find { it.id == connection.to }
-                        if (targetNode != null) {
-                            WebSocketDebug.logMessage(
-                                "TARGET_NODE_FOUND",
-                                "Found target node: ${targetNode.nodeCategory}/${targetNode.id}",
-                                context.session
-                            )
-                            if (isTriggerConnection(node, connection.fromPort)) {
-                                // Launch each trigger-connected branch concurrently with isolated state
-                                val branchEventData = eventData.toMutableMap()
-                                val branchExecuted = executedNodes.toMutableSet()
-                                launch {
-                                    processNode(targetNode, branchEventData, branchExecuted)
-                                }
-                            } else {
-                                WebSocketDebug.logMessage(
-                                    "SKIP_NON_TRIGGER_CONNECTION",
-                                    "Skipping non-trigger connection fromPort=${connection.fromPort} toPort=${connection.toPort} for node=${node.id}",
-                                    context.session
-                                )
-                            }
-                        } else {
-                            WebSocketDebug.logError(
-                                "Target node not found for connection: ${connection.from} -> ${connection.to}",
-                                null,
-                                context.session
-                            )
-                        }
+                    when (outputProperty) {
+                        PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
+                        PropertyKey.NO, PropertyKey.NO_IMAGES, PropertyKey.NO_AUDIO -> connection.fromPort.endsWith("_out_1")
+                        PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
+                        else -> false
                     }
                 }
             }
-        } else {
+            
+            BranchingMode.ALL -> {
+                connections.filter { isTriggerConnection(node, it.fromPort) }
+            }
+        }
+
+        // 3) Follow the selected trigger branches concurrently
+        if (matchingConnections.isNotEmpty()) {
+            coroutineScope {
+                for (connection in matchingConnections) {
+                    val targetNode = nodeConfig?.nodes?.find { it.id == connection.to } ?: continue
+                    
+                    WebSocketDebug.logMessage(
+                        "FOLLOWING_CONNECTION",
+                        "Following connection from ${connection.from} to ${connection.to} (Mode: $mode)",
+                        context.session
+                    )
+                    
+                    launch {
+                        val branchEventData = eventData.toMutableMap()
+                        val branchExecuted = executedNodes.toMutableSet()
+                        // Propagate any value carried on this trigger connection itself
+                        propagateValue(connection.fromPort, connection.toPort, branchEventData)
+                        processNode(targetNode, branchEventData, branchExecuted)
+                    }
+                }
+            }
+        } else if (mode != BranchingMode.ALL) {
             WebSocketDebug.logMessage(
-                "NODE_EXECUTION_STOPPED",
-                "Node execution returned false, stopping branch at ${node.nodeCategory}/${node.id}",
+                "NO_MATCHING_BRANCH",
+                "No branch found for mode $mode on node: ${node.id}",
                 context.session
             )
         }
@@ -588,360 +555,7 @@ class NodeLogicRunner(
      * @return The node runner
      */
     private fun getNodeRunner(node: NodeDataModel): NodeRunner {
-        WebSocketDebug.logMessage(
-            "GET_NODE_RUNNER",
-            "Finding runner for node category: ${node.nodeCategory}, id: ${node.nodeId}, node id: ${node.id}",
-            context.session
-        )
-
-        val runner = when (node.nodeId) {
-            NodeId.Teleport -> {
-                WebSocketDebug.logMessage(
-                    "TELEPORT_RUNNER_SELECTED",
-                    "Selected TeleportNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                TeleportNodeRunner(context)
-            }
-
-            NodeId.Dialogue -> {
-                WebSocketDebug.logMessage(
-                    "DIALOGUE_RUNNER_SELECTED",
-                    "Selected DialogueNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                DialogueNodeRunner(context)
-            }
-
-            NodeId.UserLanguage -> {
-                WebSocketDebug.logMessage(
-                    "LANGUAGE_RUNNER_SELECTED",
-                    "Selected LanguageNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                LanguageNodeRunner(context)
-            }
-
-            NodeId.UserSex -> {
-                WebSocketDebug.logMessage(
-                    "SEX_RUNNER_SELECTED",
-                    "Selected SexNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                SexNodeRunner(context)
-            }
-
-            NodeId.HasItem -> {
-                WebSocketDebug.logMessage(
-                    "HAS_ITEM_RUNNER_SELECTED",
-                    "Selected HasItemNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                HasItemNodeRunner(context)
-            }
-            
-            NodeId.Delay -> {
-                WebSocketDebug.logMessage(
-                    "DELAY_RUNNER_SELECTED",
-                    "Selected DelayNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                DelayNodeRunner(context)
-            }
-
-            NodeId.OpenUrl -> {
-                WebSocketDebug.logMessage(
-                    "OPEN_URL_RUNNER_SELECTED",
-                    "Selected OpenUrlNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                OpenUrlNodeRunner(context)
-            }
-
-            NodeId.OpenDoc -> {
-                WebSocketDebug.logMessage(
-                    "OPEN_DOC_RUNNER_SELECTED",
-                    "Selected OpenDocNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                OpenDocNodeRunner(context)
-            }
-            
-            NodeId.ObjectNotification -> {
-                WebSocketDebug.logMessage(
-                    "OBJECT_NOTIFICATION_RUNNER_SELECTED",
-                    "Selected ObjectNotificationNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                ObjectNotificationNodeRunner(context)
-            }
-            NodeId.ObjectOwnerNotification -> {
-                WebSocketDebug.logMessage(
-                    "OBJECT_OWNER_NOTIFICATION_RUNNER_SELECTED",
-                    "Selected ObjectOwnerNotificationNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                ObjectOwnerNotificationNodeRunner(context)
-            }
-            NodeId.TakeItems -> {
-                WebSocketDebug.logMessage(
-                    "TAKE_ITEMS_RUNNER_SELECTED",
-                    "Selected TakeItemsNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                TakeItemsNodeRunner(context)
-            }
-            NodeId.GiveItems -> {
-                WebSocketDebug.logMessage(
-                    "GIVE_ITEMS_RUNNER_SELECTED",
-                    "Selected GiveItemsNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                GiveItemsNodeRunner(context)
-            }
-            NodeId.UserAge -> {
-                WebSocketDebug.logMessage(
-                    "AGE_RUNNER_SELECTED",
-                    "Selected AgeNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                AgeNodeRunner(context)
-            }
-            NodeId.SendChat -> {
-                WebSocketDebug.logMessage(
-                    "SEND_CHAT_RUNNER_SELECTED",
-                    "Selected SendChatNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                SendChatNodeRunner(context)
-            }
-            NodeId.SetStatus -> {
-                WebSocketDebug.logMessage(
-                    "SET_STATUS_RUNNER_SELECTED",
-                    "Selected SetStatusNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                SetStatusNodeRunner(context)
-            }
-            NodeId.PlayerInput -> {
-                WebSocketDebug.logMessage(
-                    "PLAYER_INPUT_RUNNER_SELECTED",
-                    "Selected PlayerInputNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlayerInputNodeRunner(context)
-            }
-            NodeId.PlayerImageInput -> {
-                WebSocketDebug.logMessage(
-                    "PLAYER_IMAGE_INPUT_RUNNER_SELECTED",
-                    "Selected PlayerImageInputNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlayerImageInputNodeRunner(context)
-            }
-            NodeId.PlayerAudioInput -> {
-                WebSocketDebug.logMessage(
-                    "PLAYER_AUDIO_INPUT_RUNNER_SELECTED",
-                    "Selected PlayerAudioInputNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlayerAudioInputNodeRunner(context)
-            }
-            NodeId.StringTemplate -> {
-                WebSocketDebug.logMessage(
-                    "STRING_TEMPLATE_RUNNER_SELECTED",
-                    "Selected StringTemplateNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                StringTemplateNodeRunner(context)
-            }
-            NodeId.PlayerName -> {
-                WebSocketDebug.logMessage(
-                    "PLAYER_NAME_RUNNER_SELECTED",
-                    "Selected PlayerNameNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlayerNameNodeRunner(context)
-            }
-            NodeId.Ai -> {
-                WebSocketDebug.logMessage(
-                    "AI_RUNNER_SELECTED",
-                    "Selected AiNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                AiNodeRunner(context)
-            }
-            NodeId.DocContent -> {
-                WebSocketDebug.logMessage(
-                    "DOC_CONTENT_RUNNER_SELECTED",
-                    "Selected DocContentNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                DocContentNodeRunner(context)
-            }
-            NodeId.CreateDoc -> {
-                WebSocketDebug.logMessage(
-                    "CREATE_DOC_RUNNER_SELECTED",
-                    "Selected CreateDocNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                CreateDocNodeRunner(context)
-            }
-            NodeId.IsObjectOwner -> {
-                WebSocketDebug.logMessage(
-                    "IS_OBJECT_OWNER_RUNNER_SELECTED",
-                    "Selected IsObjectOwnerNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                IsObjectOwnerNodeRunner(context)
-            }
-            NodeId.AiChat -> {
-                WebSocketDebug.logMessage(
-                    "AI_CHAT_RUNNER_SELECTED",
-                    "Selected AiChatNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                AiChatNodeRunner(context)
-            }
-            NodeId.PlaySound -> {
-                WebSocketDebug.logMessage(
-                    "PLAY_SOUND_RUNNER_SELECTED",
-                    "Selected PlaySoundNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlaySoundNodeRunner(context)
-            }
-            NodeId.JoinList -> {
-                WebSocketDebug.logMessage(
-                    "JOIN_LIST_RUNNER_SELECTED",
-                    "Selected JoinListNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                JoinListNodeRunner(context)
-            }
-            NodeId.QuestState -> {
-                WebSocketDebug.logMessage(
-                    "QUEST_STATE_RUNNER_SELECTED",
-                    "Selected QuestStateNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                QuestStateNodeRunner(context)
-            }
-            NodeId.PlayerQuestState -> {
-                WebSocketDebug.logMessage(
-                    "PLAYER_QUEST_STATE_RUNNER_SELECTED",
-                    "Selected PlayerQuestStateNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                PlayerQuestStateNodeRunner(context)
-            }
-            NodeId.UpdateQuestState -> {
-                WebSocketDebug.logMessage(
-                    "UPDATE_QUEST_STATE_RUNNER_SELECTED",
-                    "Selected UpdateQuestStateNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                UpdateQuestStateNodeRunner(context)
-            }
-            NodeId.UpdatePlayerQuestState -> {
-                WebSocketDebug.logMessage(
-                    "UPDATE_PLAYER_QUEST_STATE_RUNNER_SELECTED",
-                    "Selected UpdatePlayerQuestStateNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                UpdatePlayerQuestStateNodeRunner(context)
-            }
-            NodeId.UpdatePlayerQuestStep -> {
-                WebSocketDebug.logMessage(
-                    "UPDATE_PLAYER_QUEST_STEP_RUNNER_SELECTED",
-                    "Selected UpdatePlayerQuestStepNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                UpdatePlayerQuestStepNodeRunner(context)
-            }
-            NodeId.LocateObject -> {
-                WebSocketDebug.logMessage(
-                    "LOCATE_OBJECT_RUNNER_SELECTED",
-                    "Selected LocateObjectNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                LocateObjectNodeRunner(context)
-            }
-            NodeId.StartQuest -> {
-                WebSocketDebug.logMessage(
-                    "START_QUEST_RUNNER_SELECTED",
-                    "Selected StartQuestNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                StartQuestNodeRunner(context)
-            }
-            NodeId.HasStartedQuest -> {
-                WebSocketDebug.logMessage(
-                    "HAS_STARTED_QUEST_RUNNER_SELECTED",
-                    "Selected HasStartedQuestNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                HasStartedQuestNodeRunner(context)
-            }
-            NodeId.CompareValue -> {
-                WebSocketDebug.logMessage(
-                    "COMPARE_VALUE_RUNNER_SELECTED",
-                    "Selected CompareValueNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                CompareValueNodeRunner(context)
-            }
-            NodeId.Math -> {
-                WebSocketDebug.logMessage(
-                    "MATH_RUNNER_SELECTED",
-                    "Selected MathNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                MathNodeRunner(context)
-            }
-            NodeId.AiImage -> {
-                WebSocketDebug.logMessage(
-                    "AI_IMAGE_RUNNER_SELECTED",
-                    "Selected AiImageNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                AiImageNodeRunner(context)
-            }
-            NodeId.AiTts -> {
-                WebSocketDebug.logMessage(
-                    "AI_TTS_RUNNER_SELECTED",
-                    "Selected AiTtsNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                AiTtsNodeRunner(context)
-            }
-            NodeId.Minigame -> {
-                WebSocketDebug.logMessage(
-                    "MINIGAME_RUNNER_SELECTED",
-                    "Selected MinigameNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                MinigameNodeRunner(context)
-            }
-            NodeId.JsonExtract -> {
-                WebSocketDebug.logMessage(
-                    "JSON_EXTRACT_RUNNER_SELECTED",
-                    "Selected JsonExtractNodeRunner for node: ${node.id}",
-                    context.session
-                )
-                JsonExtractNodeRunner(context)
-            }
-            // Add more node runners as needed
-            else -> {
-                WebSocketDebug.logMessage(
-                    "NO_RUNNER_FOUND",
-                    "No specific runner found for node category: ${node.nodeCategory}, id: ${node.nodeId}. Using NoOpNodeRunner",
-                    context.session
-                )
-                NoOpNodeRunner()
-            }
-        }
-
-        return runner
+        // Implementation moved to NodeRunnerFactory
+        return NodeRunnerFactory.getNodeRunner(node, context)
     }
 }
