@@ -39,6 +39,8 @@ enum class PropertyKey {
     QUANTITY,
     YES,
     NO,
+    NOT_STARTED,
+    IN_PROGRESS,
 
     // TakeItems specific output when player lacks items
     NOT_ENOUGH,
@@ -93,6 +95,7 @@ enum class PropertyKey {
     QUEST_STATE_ID,
     STEP_INDEX,
     COMPLETED,
+    INCOMPLETE,
     VALUE,
 
     // Logic/Math properties
@@ -1455,8 +1458,8 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             )
         )
 
-        // HasStartedQuest node properties
-        is LogicNode.HasStartedQuest -> listOf(
+        // QuestPlayerStatus node properties
+        is LogicNode.QuestPlayerStatus -> listOf(
             NodePropertyDefinition(
                 key = PropertyKey.TRIGGER,
                 name = "Trigger",
@@ -1470,14 +1473,55 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.INPUT
             ),
             NodePropertyDefinition(
-                key = PropertyKey.YES,
-                name = "Yes",
+                key = PropertyKey.NOT_STARTED,
+                name = "Not started",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             ),
             NodePropertyDefinition(
-                key = PropertyKey.NO,
-                name = "No",
+                key = PropertyKey.IN_PROGRESS,
+                name = "In progress",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // QuestStep node properties
+        is LogicNode.QuestStep -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUEST_ID,
+                name = "Quest",
+                type = PropertyType.QUEST,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.STEP_INDEX,
+                name = "Step",
+                type = PropertyType.QUEST_STEP,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "0"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Completed",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.INCOMPLETE,
+                name = "Incomplete",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )

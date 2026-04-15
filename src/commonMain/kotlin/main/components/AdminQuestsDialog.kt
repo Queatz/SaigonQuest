@@ -16,6 +16,7 @@ import main.components.BaseDialog
 import main.components.SelectWorldDialog
 import main.components.SelectObjectDialog
 import main.components.inventory.SelectItemDialog
+import main.components.DialogSelect
 import main.theme.OverlayStyles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -445,7 +446,14 @@ fun AdminQuestsDialog(
                                             val user = userMap[p.userId]
                                             Tr {
                                                 Td { Text(user?.username ?: p.userId) }
-                                                Td { Text(p.currentStepIndex.toString()) }
+                                                Td {
+                                                    val step = selectedQuest?.steps?.getOrNull(p.currentStepIndex)
+                                                    if (step != null) {
+                                                        Translated(step.title)
+                                                    } else {
+                                                        Text(p.currentStepIndex.toString())
+                                                    }
+                                                }
                                                 Td { Text(if (p.completed) translated("Yes") else translated("No")) }
                                                 Td {
                                                     DialogButton(
@@ -812,15 +820,19 @@ fun AdminQuestsDialog(
                     onClose = { editPlayerProgress = null },
                     content = {
                         Div(attrs = { style { padding(16.px); display(DisplayStyle.Flex); flexDirection(FlexDirection.Column); gap(16.px); width(300.px) } }) {
-                            // Step Index
+                            // Step
                             Div {
-                                Label { Translated("Step Index") }
-                                DialogInput(
+                                val steps = selectedQuest?.steps ?: emptyList()
+                                val options = steps.mapIndexed { index, step ->
+                                    index.toString() to step.title
+                                }
+                                DialogSelect(
+                                    label = "Step",
+                                    options = options,
                                     value = p.currentStepIndex.toString(),
                                     onInput = { newVal ->
                                         newVal.toIntOrNull()?.let { editPlayerProgress = p.copy(currentStepIndex = it) }
-                                    },
-                                    placeholder = str("Step index")
+                                    }
                                 )
                             }
                             

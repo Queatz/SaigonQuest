@@ -58,11 +58,20 @@ vi: Chọn thế giới
 Select object
 vi: Chọn đối tượng
 
-Has started quest
-vi: Đã bắt đầu nhiệm vụ
+Quest player status
+vi: Trạng thái nhiệm vụ người chơi
 
-Checks if the player has started a specific quest
-vi: Kiểm tra xem người chơi đã bắt đầu một nhiệm vụ cụ thể chưa
+Checks the player's status for a specific quest (Not started, In progress, Complete)
+vi: Kiểm tra trạng thái nhiệm vụ của người chơi (Chưa bắt đầu, Đang tiến hành, Hoàn thành)
+
+Quest step
+vi: Bước nhiệm vụ
+
+Checks if a specific quest step is completed
+vi: Kiểm tra xem một bước nhiệm vụ cụ thể đã hoàn thành chưa
+
+Incomplete
+vi: Chưa hoàn thành
 
 Loading steps...
 vi: Đang tải các bước...
@@ -72,6 +81,12 @@ vi: Không tìm thấy nhiệm vụ
 
 Select quest
 vi: Chọn nhiệm vụ
+
+Not started
+vi: Chưa bắt đầu
+
+In progress
+vi: Đang tiến hành
 
 Select quest...
 vi: Chọn nhiệm vụ...
@@ -106,8 +121,8 @@ vi: Đặt lại tiến trình
 Are you sure you want to reset this player's quest progress?
 vi: Bạn có chắc chắn muốn đặt lại tiến trình nhiệm vụ của người chơi này không?
 
-Step Index
-vi: Chỉ số bước
+Step
+vi: Bước
 
 Completed
 vi: Đã hoàn thành
@@ -2418,9 +2433,6 @@ vi: Tạo tất cả hình ảnh
 
 Generate all audio
 vi: Tạo tất cả âm thanh
-
-Step
-vi: Bước
 
 Step description / Item name
 vi: Mô tả bước / Tên mục

@@ -438,14 +438,22 @@ class NodeLogicRunner(
             
             BranchingMode.PROPERTY -> {
                 WebSocketDebug.logMessage("BRANCHING_PROPERTY", "Using property: $outputProperty", context.session)
+                
+                val expectedIndex = getOutputPropertyIndex(node, outputProperty!!)
+                
                 connections.filter { connection ->
                     if (!isTriggerConnection(node, connection.fromPort)) return@filter false
-
-                    when (outputProperty) {
-                        PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
-                        PropertyKey.NO, PropertyKey.NO_IMAGES, PropertyKey.NO_AUDIO -> connection.fromPort.endsWith("_out_1")
-                        PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
-                        else -> false
+                    
+                    if (expectedIndex != -1) {
+                        connection.fromPort.endsWith("_out_$expectedIndex")
+                    } else {
+                        // Fallback for hardcoded common keys
+                        when (outputProperty) {
+                            PropertyKey.YES, PropertyKey.NEXT -> connection.fromPort.endsWith("_out_0")
+                            PropertyKey.NO, PropertyKey.NO_IMAGES, PropertyKey.NO_AUDIO -> connection.fromPort.endsWith("_out_1")
+                            PropertyKey.NOT_ENOUGH -> connection.fromPort.endsWith("_out_2")
+                            else -> false
+                        }
                     }
                 }
             }
@@ -518,6 +526,11 @@ class NodeLogicRunner(
     private fun getOutputPropertyTypes(node: NodeDataModel): List<PropertyType> {
         val logicNode = logicNodeById[node.nodeId]!!
         return logicNode.getOutputPropertyDefinitions().map { it.type }
+    }
+
+    private fun getOutputPropertyIndex(node: NodeDataModel, key: PropertyKey): Int {
+        val logicNode = logicNodeById[node.nodeId] ?: return -1
+        return logicNode.getOutputPropertyDefinitions().indexOfFirst { it.key == key }
     }
 
     private fun isTriggerConnection(node: NodeDataModel, fromPort: String): Boolean {

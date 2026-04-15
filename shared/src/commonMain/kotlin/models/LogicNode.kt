@@ -545,14 +545,25 @@ sealed interface LogicNode {
     ) : LogicNode
 
     /**
-     * HasStartedQuest node - checks if the player has started a specific quest
+     * QuestPlayerStatus node - checks the player's status for a specific quest
      */
     @Serializable
-    data class HasStartedQuest(
-        override val id: NodeId = NodeId.HasStartedQuest,
-        override val label: String = "Has started quest",
+    data class QuestPlayerStatus(
+        override val id: NodeId = NodeId.QuestPlayerStatus,
+        override val label: String = "Quest player status",
         override val category: NodeCategory = NodeCategory.Quest,
-        override val description: String = "Checks if the player has started a specific quest"
+        override val description: String = "Checks if the player's status for a specific quest (Not started, In progress, Complete)"
+    ) : LogicNode
+
+    /**
+     * QuestStep node - checks if the player's status for a specific quest step
+     */
+    @Serializable
+    data class QuestStep(
+        override val id: NodeId = NodeId.QuestStep,
+        override val label: String = "Quest step",
+        override val category: NodeCategory = NodeCategory.Quest,
+        override val description: String = "Checks if a specific quest step is completed"
     ) : LogicNode
 }
 
@@ -614,7 +625,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.UpdatePlayerQuestStep(),
         LogicNode.LocateObject(),
         LogicNode.StartQuest(),
-        LogicNode.HasStartedQuest(),
+        LogicNode.QuestPlayerStatus(),
+        LogicNode.QuestStep(),
     )
 }
 

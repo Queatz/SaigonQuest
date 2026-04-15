@@ -147,7 +147,7 @@ fun NodePickerDialog(
                                     },
                                     style = DialogButtonStyle.Primary,
                                 ) {
-                                    Div { Text(node.label) }
+                                    Div { Text(translated(node.label)) }
                                     if (node.description.isNotBlank()) {
                                         Div(
                                             attrs = {
@@ -157,7 +157,7 @@ fun NodePickerDialog(
                                                 }
                                             }
                                         ) {
-                                            Text(node.description)
+                                            Text(translated(node.description))
                                         }
                                     }
                                 }

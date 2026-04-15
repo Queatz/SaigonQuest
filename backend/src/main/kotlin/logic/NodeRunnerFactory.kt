@@ -303,13 +303,21 @@ object NodeRunnerFactory {
                 )
                 StartQuestNodeRunner(context)
             }
-            NodeId.HasStartedQuest -> {
+            NodeId.QuestPlayerStatus -> {
                 WebSocketDebug.logMessage(
-                    "HAS_STARTED_QUEST_RUNNER_SELECTED",
-                    "Selected HasStartedQuestNodeRunner for node: ${node.id}",
+                    "QUEST_PLAYER_STATUS_RUNNER_SELECTED",
+                    "Selected QuestPlayerStatusNodeRunner for node: ${node.id}",
                     context.session
                 )
-                HasStartedQuestNodeRunner(context)
+                QuestPlayerStatusNodeRunner(context)
+            }
+            NodeId.QuestStep -> {
+                WebSocketDebug.logMessage(
+                    "QUEST_STEP_RUNNER_SELECTED",
+                    "Selected QuestStepNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                QuestStepNodeRunner(context)
             }
             NodeId.CompareValue -> {
                 WebSocketDebug.logMessage(

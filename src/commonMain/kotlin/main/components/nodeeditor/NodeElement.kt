@@ -12,6 +12,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import main.api.DocApi
 import main.api.QuestApi
+import main.components.translated
 import main.theme.NodeEditorStyles
 import main.utils.ellipsize
 import models.LogicNode
@@ -397,7 +398,7 @@ fun NodeElement(
                 classes(NodeEditorStyles.nodeHeader)
             }
         ) {
-            Text(label)
+            Text(translated(label))
         }
 
         // Node description
@@ -463,7 +464,13 @@ fun NodeElement(
                                         property.value.isBlank() -> "Not selected"
                                         else -> "..."
                                     }
-                                    Text("Quest: ${displayQuest?.ellipsize().orEmpty()}")
+
+                                    val stepSuffix = if (type is LogicNode.QuestStep || type is LogicNode.UpdatePlayerQuestStep) {
+                                        val stepIndex = nodeData.properties.find { it.key == PropertyKey.STEP_INDEX }?.value ?: "0"
+                                        " (Step $stepIndex)"
+                                    } else ""
+
+                                    Text("Quest: ${displayQuest?.ellipsize().orEmpty()}$stepSuffix")
                                 }
                             }
                         }

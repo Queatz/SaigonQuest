@@ -50,5 +50,6 @@ enum class NodeId {
     UpdatePlayerQuestStep,
     LocateObject,
     StartQuest,
-    HasStartedQuest,
+    QuestPlayerStatus,
+    QuestStep,
 }

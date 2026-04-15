@@ -8,9 +8,11 @@ import repository.QuestRepository
 import utils.json
 
 /**
- * Runner for HasStartedQuest nodes
+ * Runner for QuestStep nodes
+ *
+ * Checks if a specific quest step is completed for the player.
  */
-class HasStartedQuestNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
+class QuestStepNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
     override suspend fun execute(node: NodeDataModel, eventData: MutableMap<String, Any>): Boolean {
         val repository = QuestRepository()
         
@@ -26,30 +28,35 @@ class HasStartedQuestNodeRunner(private val context: NodeRunnerContext) : NodeRu
             
             val questId = (eventData[inKey(PropertyKey.QUEST_ID)] as? String) 
                 ?: nodeData.properties.find { it.key == PropertyKey.QUEST_ID }?.value
+                
+            val stepIndexStr = (eventData[inKey(PropertyKey.STEP_INDEX)] as? String)
+                ?: nodeData.properties.find { it.key == PropertyKey.STEP_INDEX }?.value
+            val targetStepIndex = stepIndexStr?.toIntOrNull() ?: 0
 
             if (questId.isNullOrBlank()) {
-                WebSocketDebug.logError("HasStartedQuest: Missing questId ($questId)", null, context.session)
+                WebSocketDebug.logError("QuestStep: Missing questId ($questId)", null, context.session)
                 return false
             }
 
             val userId = context.connection.userId
             if (userId.isBlank()) {
-                WebSocketDebug.logError("HasStartedQuest: Missing userId in context", null, context.session)
+                WebSocketDebug.logError("QuestStep: Missing userId in context", null, context.session)
                 return false
             }
 
             val progress = repository.getPlayerQuestProgress(questId, userId)
-            val hasStarted = progress != null
             
-            WebSocketDebug.logMessage("HAS_STARTED_QUEST", "Quest $questId started for $userId: $hasStarted", context.session)
+            val isCompleted = progress != null && (progress.completed || progress.currentStepIndex > targetStepIndex)
             
-            // Set the outputProperty based on whether the quest has started
-            val outputProperty = if (hasStarted) PropertyKey.YES else PropertyKey.NO
+            val outputProperty = if (isCompleted) PropertyKey.COMPLETE else PropertyKey.INCOMPLETE
+            
+            WebSocketDebug.logMessage("QUEST_STEP_STATUS", "Quest $questId step $targetStepIndex status for $userId: $outputProperty", context.session)
+            
             eventData["outputProperty"] = outputProperty
             
             return true
         } catch (e: Throwable) {
-            WebSocketDebug.logError("Error executing HasStartedQuest node", e, context.session)
+            WebSocketDebug.logError("Error executing QuestStep node", e, context.session)
             return false
         }
     }
