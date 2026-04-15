@@ -115,6 +115,27 @@ vi: Đã hoàn thành
 Edit Player Progress
 vi: Chỉnh sửa tiến trình người chơi
 
+Player States
+vi: Trạng thái người chơi
+
+Options
+vi: Tùy chọn
+
+Steps
+vi: Các bước
+
+World (optional)
+vi: Thế giới (tùy chọn)
+
+Object (optional)
+vi: Đối tượng (tùy chọn)
+
+No world selected
+vi: Không có thế giới nào được chọn
+
+No object selected
+vi: Không có đối tượng nào được chọn
+
 Manage Quests
 vi: Quản lý nhiệm vụ
 

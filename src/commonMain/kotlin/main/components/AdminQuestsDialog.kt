@@ -257,16 +257,6 @@ fun AdminQuestsDialog(
                 ) {
                     selectedQuest?.let { quest ->
                         H3 { Text(quest.name) }
-                        
-                        Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px) } }) {
-                            DialogButton(
-                                onClick = { confirmDeleteQuest = quest },
-                                style = DialogButtonStyle.Danger,
-                                small = true
-                            ) {
-                                Translated("Delete Quest")
-                            }
-                        }
 
                         // Basic Info
                         Div {
@@ -583,6 +573,18 @@ fun AdminQuestsDialog(
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        H3 { Text("Options") }
+
+                        Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px) } }) {
+                            DialogButton(
+                                onClick = { confirmDeleteQuest = quest },
+                                style = DialogButtonStyle.Danger,
+                                small = true
+                            ) {
+                                Translated("Delete Quest")
                             }
                         }
                     } ?: run {
