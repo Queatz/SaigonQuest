@@ -100,9 +100,10 @@ class OcclusionManager(private val scene: Scene) {
     private var lastActiveCamera: lib.Camera? = null
     
     // Configurable parameters
-    private var occlusionSoftness = 0.2f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
+    private var occlusionSoftness = 0.333f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
     private var isEnabled = true
     private var isForceDisabled = false
+    private var useRadius = true
 
     /**
      * Observer for graphics settings changes.
@@ -183,10 +184,14 @@ class OcclusionManager(private val scene: Scene) {
             }
         }
         
-        // 3. Alignment check: only fade pixels that are ABOVE the player in screen space.
-        // This prevents the 'Giant Hole' in the ground (which is below the player on screen)
-        // while still clearing walls and objects that block the player's upper body.
-        float yDiff = gl_FragCoord.y - playerScreenPixel.y;
+        // 3. Alignment check: fade pixels above the player in screen space.
+        // We allow some fading BELOW the player's screen position if the pixel is high in world space.
+        // This helps clear tall objects (like pillars or trees) that might have parts appearing
+        // below the player's center on screen due to perspective or proximity.
+        float worldYDiff = max(0.0, vPositionW.y - playerWorld.y - 1.0f);
+        float yThresholdOffset = worldYDiff * (occlusionRadius * 0.5f);
+        
+        float yDiff = gl_FragCoord.y - (playerScreenPixel.y - yThresholdOffset);
         bool isAboveOnScreen = (yDiff > 0.0);
         float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
         if (!isAboveOnScreen && bandWidthPx > 0.0) {
@@ -251,6 +256,10 @@ class OcclusionManager(private val scene: Scene) {
     fun setEnabled(enabled: Boolean) {
         isForceDisabled = !enabled
         updateEnabledState()
+    }
+
+    fun setUseRadius(enabled: Boolean) {
+        useRadius = enabled
     }
 
     private fun createDepthMaterial(original: Material?): CustomMaterial {
@@ -359,7 +368,7 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)
-                    effect.setBool("useRadius", true)
+                    effect.setBool("useRadius", useRadius)
                     effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 }
@@ -516,7 +525,7 @@ class OcclusionManager(private val scene: Scene) {
                     // Set screen size
                     effect.setVector2("screenSize", screenSize)
 
-                    effect.setBool("useRadius", true)
+                    effect.setBool("useRadius", useRadius)
                     effect.setBool("isEnabled", isEnabled)
 
                     // Set time uniform for animations
