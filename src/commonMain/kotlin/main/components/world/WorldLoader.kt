@@ -29,9 +29,11 @@ import kotlin.coroutines.resumeWithException
 import kotlin.math.PI
 import kotlin.math.*
 import kotlinx.browser.window
+import lib.Light
 import lib.Node
 import models.ErrorResponse
 import main.components.player.FrameDeltaTracker
+import kotlin.random.Random
 
 /**
  * Handles loading and initialization of the 3D world.
@@ -58,10 +60,16 @@ class WorldLoader(private val scene: Scene) {
                 scene.cameras.filter { it.name != "camera" }.forEach { 
                     try { it.dispose() } catch (_: Throwable) {}
                 }
+                // Dispose all lights except our core lights to avoid leaks
+                scene.lights.filter { it.name != "hemisphericLight" && it.name != "directionalLight" && it.name != "moonPhaseLight" }.forEach { 
+                    try { it.dispose() } catch (_: Throwable) {}
+                }
             } catch (_: Throwable) {}
             worldMeshes = emptyArray()
             waterTextures.clear()
             waterDeltaTracker.reset()
+            flickeringLights.clear()
+            flickerDeltaTracker.reset()
 
             if (world.file.isBlank()) {
                 console.log("[INFO] No world file specified after save; creating fallback plane")
@@ -385,6 +393,37 @@ class WorldLoader(private val scene: Scene) {
 
     // Interval ID for realtime sun/moon updates
     private var sunIntervalId: Int? = null
+
+    // List of point lights to flicker
+    private val flickeringLights = mutableListOf<FlickerData>()
+
+    // Helper to compute frame delta time for flickering
+    private val flickerDeltaTracker = FrameDeltaTracker()
+
+    // Total elapsed time for flicker calculations
+    private var flickerTime = 0.0
+
+    // The animation callback for flickering lights
+    private val flickerAnimationCallback = {
+        val dt = flickerDeltaTracker.nextDeltaSeconds()
+        flickerTime += dt
+
+        if (dt > 0.0 && flickeringLights.isNotEmpty()) {
+            flickeringLights.forEach { data ->
+                val time = flickerTime + data.seed
+                
+                // Intensity flicker: 80% to 120% of original intensity
+                // Use multiple sines for more natural look
+                val intensityVar = (sin(time * 15.0) * 0.1 + sin(time * 22.0) * 0.05 + sin(time * 7.0) * 0.05).toFloat()
+                data.light.intensity = data.originalIntensity * (1.0f + intensityVar)
+                
+                // Position flicker: small random offset (approx +/- 0.07 units)
+                data.light.position.x = data.originalPosition.x + (sin(time * 12.0) * 0.05 + cos(time * 18.0) * 0.02).toFloat()
+                data.light.position.y = data.originalPosition.y + (sin(time * 10.0) * 0.05 + sin(time * 25.0) * 0.02).toFloat()
+                data.light.position.z = data.originalPosition.z + (cos(time * 14.0) * 0.05 + sin(time * 20.0) * 0.02).toFloat()
+            }
+        }
+    }
     
     /**
      * Sets up lighting for the scene.
@@ -436,6 +475,9 @@ class WorldLoader(private val scene: Scene) {
 
         // Register the water animation callback
         scene.registerBeforeRender(waterAnimationCallback)
+
+        // Register the flicker animation callback
+        scene.registerBeforeRender(flickerAnimationCallback)
     }
     
     /**
@@ -760,13 +802,14 @@ class WorldLoader(private val scene: Scene) {
     private fun configurePointLightShadows(meshes: Array<AbstractMesh>) {
         // Clear previous point light shadow generators to avoid memory leaks
         shadowManager?.clearPointLightShadowGenerators()
+        flickeringLights.clear()
         
         scene.lights.forEach { light ->
-            // getTypeID() == 0 is PointLight in BabylonJS
-            if (light.getTypeID() == 0) {
+            // getTypeID() == 0 is PointLight, 2 is SpotLight in BabylonJS
+            if (light.getTypeID() == 0 || light.getTypeID() == 2) {
                 val shadowLight = light as? IShadowLight
                 if (shadowLight != null) {
-                    console.log("[DEBUG] Found point light from GLB: ${light.name}. Configuring clustered shadows.")
+                    console.log("[DEBUG] Found light from GLB: ${light.name} (type ${light.getTypeID()}). Configuring clustered shadows.")
                     
                     // Create a shadow generator for the point light
                     // Map size 512 is generally enough for clustered point light shadows
@@ -777,6 +820,18 @@ class WorldLoader(private val scene: Scene) {
                     
                     // Register with shadow manager so it can add players/objects later
                     shadowManager?.addPointLightShadowGenerator(sg)
+
+                    // Check for flicker effect
+                    if (light.isFlicker()) {
+                            flickeringLights.add(
+                                FlickerData(
+                                    light = light,
+                                    originalIntensity = light.intensity,
+                                    originalPosition = light.position.clone(),
+                                    seed = (Random.nextFloat() * 1000f)
+                                )
+                            )
+                        }
                 }
             }
         }
@@ -1261,6 +1316,10 @@ class WorldLoader(private val scene: Scene) {
         // Unregister the water animation callback
         scene.unregisterBeforeRender(waterAnimationCallback)
         waterTextures.clear()
+
+        // Unregister the flicker animation callback
+        scene.unregisterBeforeRender(flickerAnimationCallback)
+        flickeringLights.clear()
         
         // Set lights to null to allow garbage collection
         hemisphericLight = null
@@ -1276,9 +1335,40 @@ class WorldLoader(private val scene: Scene) {
     }
 }
 
-fun Node.isSkybox(): Boolean = metadata?.gltf?.extras?.skybox as? Boolean == true
-fun Node.isWater(): Boolean = metadata?.gltf?.extras?.water as? Boolean == true
-fun Node.isStartPosition(): Boolean = metadata?.gltf?.extras?.start as? Boolean == true
-fun Node.isBillboard(): Boolean = metadata?.gltf?.extras?.billboard as? Boolean == true
-fun Node.getRadius(): Float? = (metadata?.gltf?.extras?.radius as? Number)?.toFloat() ?: (metadata?.gltf?.extras?.radius as? String)?.toFloatOrNull()
-fun Node.getCameraName(): String? = (metadata?.gltf?.extras?.camera as? String)
+fun Node.isSkybox(): Boolean = hasExtra("skybox")
+fun Node.isWater(): Boolean = hasExtra("water")
+fun Node.isFlicker(): Boolean = hasExtra("flicker") || (parent?.hasExtra("flicker") ?: false)
+fun Node.isStartPosition(): Boolean = hasExtra("start")
+fun Node.isBillboard(): Boolean = hasExtra("billboard")
+
+fun Node.getRadius(): Float? {
+    val meta = metadata?.asDynamic() ?: return null
+    val extras = meta.gltf?.extras ?: meta.extras ?: meta
+    val value = extras["radius"] ?: return null
+    return (value as? Number)?.toFloat() ?: (value as? String)?.toFloatOrNull()
+}
+
+fun Node.getCameraName(): String? {
+    val meta = metadata?.asDynamic() ?: return null
+    val extras = meta.gltf?.extras ?: meta.extras ?: meta
+    return extras["camera"] as? String
+}
+
+/**
+ * Robustly check if a node or its metadata has a specific extra/property.
+ * Handles GLTF-style (gltf.extras), direct extras, or top-level metadata properties.
+ */
+private fun Node.hasExtra(key: String): Boolean {
+    val meta = metadata?.asDynamic() ?: return false
+    // Check various common places where GLTF extras might be stored
+    val extras = meta.gltf?.extras ?: meta.extras ?: meta
+    val value = extras[key]
+    return value == true || value == "true" || value == 1 || value == "1"
+}
+
+private data class FlickerData(
+    val light: Light,
+    val originalIntensity: Float,
+    val originalPosition: Vector3,
+    val seed: Float
+)
