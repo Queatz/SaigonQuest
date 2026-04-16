@@ -239,7 +239,7 @@ object DepthPicking {
             scene.meshes.forEach { mesh ->
                 try {
                     if (!mesh.isVisible) return@forEach
-                    val shouldExclude = excludeSet.contains(mesh) || mesh.isSkybox() || mesh.isWater() || isStatusBillboardMesh(mesh)
+                    val shouldExclude = excludeSet.contains(mesh) || mesh.isSkybox() || mesh.isWater() || mesh.isPassable() || isStatusBillboardMesh(mesh)
                     if (shouldExclude) {
                         renderer.setMaterialForRendering(mesh, excludeMat)
                         overriddenMeshesForPicking.add(mesh)

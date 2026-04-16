@@ -1340,6 +1340,7 @@ fun Node.isWater(): Boolean = hasExtra("water")
 fun Node.isFlicker(): Boolean = hasExtra("flicker") || (parent?.hasExtra("flicker") ?: false)
 fun Node.isStartPosition(): Boolean = hasExtra("start")
 fun Node.isBillboard(): Boolean = hasExtra("billboard")
+fun Node.isPassable(): Boolean = hasExtra("passable")
 
 fun Node.getRadius(): Float? {
     val meta = metadata?.asDynamic() ?: return null

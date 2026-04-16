@@ -5,6 +5,7 @@ import lib.Mesh
 import lib.Ray
 import lib.Vector3
 import main.components.world.effect.WindSystem
+import main.components.world.isPassable
 import main.components.world.isSkybox
 import main.components.world.isWater
 
@@ -25,7 +26,7 @@ object WorldCollisionUtils {
             it.direction = rayDirection
         }
         for (mesh in worldMeshes) {
-            if (mesh == collider || mesh == moveCircle || mesh.isSkybox()) continue
+            if (mesh == collider || mesh == moveCircle || mesh.isSkybox() || mesh.isPassable()) continue
             val hit = ray.intersectsMesh(mesh)
             if (hit.pickedPoint != null) return true
         }
@@ -40,7 +41,7 @@ object WorldCollisionUtils {
         yPadding: Float = 0.5f,
     ): Pair<Boolean, Vector3?> {
         val groundMeshes = worldMeshes.filter {
-            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
+            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater() && !it.isPassable()
         }.toTypedArray()
 
         val rayFar = Ray().also {
@@ -142,7 +143,7 @@ object WorldCollisionUtils {
         
         // Prepare target meshes once (exclude collider, move circle, skybox, and water)
         val targetMeshes = worldMeshes.filter {
-            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
+            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater() && !it.isPassable()
         }.toTypedArray()
 
         for (heightOffset in checkHeights) {
@@ -188,7 +189,7 @@ object WorldCollisionUtils {
             it.origin = rayOrigin
             it.direction = rayDirection
         }
-        val waterMeshes = worldMeshes.filter { it.isWater() }.toTypedArray()
+        val waterMeshes = worldMeshes.filter { it.isWater() && !it.isPassable() }.toTypedArray()
         if (waterMeshes.isEmpty()) return null
 
         val hits = ray.intersectsMeshes(meshes = waterMeshes)
