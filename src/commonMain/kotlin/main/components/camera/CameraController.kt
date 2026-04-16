@@ -1,25 +1,18 @@
 package main.components.camera
 
 import lib.ArcRotateCamera
-import lib.Camera
-import lib.Color4
 import lib.ColorCorrectionPostProcess
 import lib.CreateSphereOptions
 import lib.DefaultRenderingPipeline
-import lib.DepthOfFieldEffectBlurLevel
-import lib.ImageProcessingPostProcess
 import lib.Mesh
 import lib.MeshBuilder
 import lib.SSAO2RenderingPipeline
 import lib.Scene
 import lib.Vector2
 import lib.Vector3
-import kotlin.math.PI
 import main.components.GraphicsSettings
 import main.components.SceneManager
-import main.components.world.getRadius
-import main.components.world.getCameraName
-import main.components.camera.ProximityCamera
+import kotlin.math.PI
 
 /**
  * Controller for managing the camera in the 3D scene.
@@ -445,8 +438,6 @@ class CameraController(private val scene: Scene) {
      */
     fun isLocked(): Boolean = proximityCameraManager.isActive()
     
-    // Store reference to the SSAO pipeline
-    private var ssaoPipeline: SSAO2RenderingPipeline? = null
     
     /**
      * Updates camera constraints (limits) based on current settings.

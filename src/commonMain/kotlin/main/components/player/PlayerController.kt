@@ -366,7 +366,8 @@ class PlayerController(private val scene: Scene) {
 
             // Check for water ripples when moving
             val now = window.performance.now()
-            if (now - lastRippleTime > 300) {
+            val isActivelyMoving = moveDirection.length() > 0f || mover.isMoving() || mover.isJumping()
+            if (isActivelyMoving && now - lastRippleTime > 300) {
                 trySpawnWaterRipple(validPos)
                 lastRippleTime = now
             }

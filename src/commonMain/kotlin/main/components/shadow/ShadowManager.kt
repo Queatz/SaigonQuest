@@ -29,7 +29,7 @@ class ShadowManager(
     private val pointLightShadowGenerators = mutableListOf<ShadowGenerator>()
     
     // Shadow map size (power of 2, higher = better quality but lower performance)
-    private val shadowMapSize = 384
+    private val shadowMapSize = 1024
     
     // List of meshes that cast shadows
     private val shadowCasters = mutableListOf<AbstractMesh>()
@@ -59,7 +59,7 @@ class ShadowManager(
         
         // Set shadow frustum limits
         light.shadowMinZ = 0.1f  // Reduced to match camera minZ
-        light.shadowMaxZ = 100f // 500f
+        light.shadowMaxZ = 500f // Matches camera maxZ
         
         // Adjust direction to point at the center of the scene
         // Slight angle for better shadow projection
@@ -82,8 +82,8 @@ class ShadowManager(
         // Configure shadow generator properties
         shadowGenerator.apply {
             lambda = .667f
-            bias = 0.005f  // Reduced bias for better contact shadows with PCF
-            normalBias = 0.01f // Adjust for PCF
+            bias = 0.001f  // Reduced bias for better contact shadows with PCF at higher resolution
+            normalBias = 0.005f // Adjust for PCF
             
             // Enable transparent shadows
             transparencyShadow = true

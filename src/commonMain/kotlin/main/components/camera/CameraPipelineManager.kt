@@ -1,6 +1,15 @@
 package main.components.camera
 
-import lib.*
+import lib.ArcRotateCamera
+import lib.Camera
+import lib.Color4
+import lib.DefaultRenderingPipeline
+import lib.DepthOfFieldEffectBlurLevel
+import lib.ImageProcessingPostProcess
+import lib.Mesh
+import lib.SSAO2RenderingPipeline
+import lib.Scene
+import lib.Vector3
 import main.components.GraphicsSettings
 
 /**
@@ -100,9 +109,9 @@ class CameraPipelineManager(
             if (isPrettyEnabled) {
                 pipeline.apply {
                     try {
-                        bloomThreshold = 0.5f
-                        bloomWeight = 0.5f
-                        bloomKernel = 48f
+                        bloomThreshold = 0.25f
+                        bloomWeight = 0.25f
+                        bloomKernel = 32f
                         bloomScale = .5f
                         console.log("[DEBUG] Bloom settings configured successfully")
                     } catch (e: Throwable) {
@@ -134,8 +143,8 @@ class CameraPipelineManager(
                 }
             }
             
-            // Disabled due to issue with pre-pass depth map
-            if (isPrettyEnabled && false) {
+            // Reenable SSAO
+            if (isPrettyEnabled) {
                 try {
                     val allCameras = mutableListOf<Camera>(camera)
                     scene.activeCamera?.let {
@@ -149,16 +158,14 @@ class CameraPipelineManager(
                         scene = scene,
                         ratio = 1.0,
                         cameras = allCameras.toTypedArray(),
+                        forceGeometryBuffer = true,
                     )
                     
                     ssaoPipeline?.apply {
-                        radius = 2f
-                        totalStrength = 0.25f
-                        samples = 8
-                        maxZ = camera.maxZ
-                        minZAspect = 0.2f
-                        base = 0f
-                        epsilon = 0.02f
+                        samples = 16
+                        maxZ = 500f
+                        radius = 0.5f
+                        totalStrength = 1.0f
                     }
                     console.log("[DEBUG] Created and configured new SSAO pipeline")
                 } catch (e: Throwable) {
@@ -243,7 +250,9 @@ class CameraPipelineManager(
     fun dispose() {
         ssaoPipeline?.dispose()
         ssaoPipeline = null
-        // pipeline is usually disposed when the scene/engine is disposed,
-        // but it doesn't hurt to be explicit if it had its own dispose method (it's a rendering pipeline).
+        try {
+            pipeline.dispose()
+        } catch (_: Throwable) {
+        }
     }
 }
