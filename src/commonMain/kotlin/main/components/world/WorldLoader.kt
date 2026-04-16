@@ -31,6 +31,7 @@ import kotlin.math.*
 import kotlinx.browser.window
 import lib.Node
 import models.ErrorResponse
+import main.components.player.FrameDeltaTracker
 
 /**
  * Handles loading and initialization of the 3D world.
@@ -59,6 +60,8 @@ class WorldLoader(private val scene: Scene) {
                 }
             } catch (_: Throwable) {}
             worldMeshes = emptyArray()
+            waterTextures.clear()
+            waterDeltaTracker.reset()
 
             if (world.file.isBlank()) {
                 console.log("[INFO] No world file specified after save; creating fallback plane")
@@ -89,6 +92,11 @@ class WorldLoader(private val scene: Scene) {
                         }
                         
                         container.addAllToScene()
+                        
+                        // Play all animations in the container (e.g., for water or other animated world elements)
+                        container.animationGroups.forEach { group ->
+                            try { group.play(true) } catch (_: Throwable) {}
+                        }
                         
                         val meshes = container.meshes
                         val nodes = container.transformNodes
@@ -347,6 +355,24 @@ class WorldLoader(private val scene: Scene) {
     // Occlusion manager for fading objects that obstruct the player's view
     private var occlusionManager: OcclusionManager? = null
 
+    // List of water textures to animate
+    private val waterTextures = mutableListOf<Texture>()
+
+    // Helper to compute frame delta time
+    private val waterDeltaTracker = FrameDeltaTracker()
+
+    // The animation callback for water
+    private val waterAnimationCallback = {
+        val dt = waterDeltaTracker.nextDeltaSeconds()
+        if (dt > 0.0 && waterTextures.isNotEmpty()) {
+            waterTextures.forEach { texture ->
+                // Move 5% of the texture per second
+//                texture.uOffset += (0.05f * dt).toFloat()
+                texture.vOffset += (0.25f * dt).toFloat()
+            }
+        }
+    }
+
     // Realtime sun mesh and material
     private var sunMesh: Mesh? = null
 
@@ -407,6 +433,9 @@ class WorldLoader(private val scene: Scene) {
 
         // Register current lights for global updates
         setCurrentLights(hemisphericLight, directionalLight)
+
+        // Register the water animation callback
+        scene.registerBeforeRender(waterAnimationCallback)
     }
     
     /**
@@ -507,6 +536,11 @@ class WorldLoader(private val scene: Scene) {
                         }
 
                         container.addAllToScene()
+                        
+                        // Play all animations in the container (e.g., for water or other animated world elements)
+                        container.animationGroups.forEach { group ->
+                            try { group.play(true) } catch (_: Throwable) {}
+                        }
                         
                         val meshes = container.meshes
                         val nodes = container.transformNodes
@@ -623,6 +657,7 @@ class WorldLoader(private val scene: Scene) {
      */
     private fun applyMaterials(meshes: Array<AbstractMesh>) {
         console.log("[DEBUG] Applying materials and configuring shadows for ${meshes.size} meshes")
+        waterTextures.clear()
         
         // Log information about each mesh for debugging
         console.log("[DEBUG] Mesh list from .glb file:")
@@ -682,6 +717,14 @@ class WorldLoader(private val scene: Scene) {
             // Register mesh with occlusion manager for fading when it obstructs the player's view
             if (!mesh.isSkybox()) {
                 occlusionManager?.registerMesh(mesh)
+            }
+
+            // Collect water textures for animation
+            if (mesh.isWater()) {
+                (mesh.material as? PBRMaterial)?.let { pbr ->
+                    pbr.albedoTexture?.let { if (!waterTextures.contains(it)) waterTextures.add(it) }
+                    pbr.bumpTexture?.let { if (!waterTextures.contains(it)) waterTextures.add(it) }
+                }
             }
         }
         
@@ -1214,6 +1257,10 @@ class WorldLoader(private val scene: Scene) {
         // Dispose of occlusion manager
         occlusionManager?.dispose()
         occlusionManager = null
+
+        // Unregister the water animation callback
+        scene.unregisterBeforeRender(waterAnimationCallback)
+        waterTextures.clear()
         
         // Set lights to null to allow garbage collection
         hemisphericLight = null

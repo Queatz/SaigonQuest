@@ -161,62 +161,65 @@ class OcclusionManager(private val scene: Scene) {
         if (!isEnabled) {
             return alpha;
         }
+        
+        // 1. Calculate distance from this pixel to the player on screen
         vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
         vec2 delta = gl_FragCoord.xy - playerScreenPixel;
-        float distance = sqrt(dot(delta, delta));
-        float normalizedDistance = distance / occlusionRadius;
+        float dist = length(delta);
         
+        // 2. Depth check: is the pixel closer to the camera than the player?
         float fragmentDepth = gl_FragCoord.z;
         float playerDepth = playerScreenPos.z;
         float depthDiff = fragmentDepth - playerDepth + 0.001;
-
-        // Dithered evaluation for depth and height comparisons (soften hard thresholds)
-        // Drive bands by occlusionSoftness ratio for uniform blur across resolutions
+        
+        // Dithered evaluation for depth comparison (soften hard thresholds)
         float DEPTH_BAND = occlusionSoftness * 0.001;
-        float HEIGHT_BAND = occlusionSoftness;
-
-        bool depthCloser = (depthDiff < 0.0);
-        if (!depthCloser) {
+        bool isOccluding = (depthDiff < 0.0);
+        if (!isOccluding && DEPTH_BAND > 0.0) {
             float depthWeight = smoothstep(DEPTH_BAND, 0.0, abs(depthDiff));
             float depthRnd = noise(gl_FragCoord.xy + vec2(13.7, 31.1));
             if (depthWeight > depthRnd) {
-                depthCloser = true;
+                isOccluding = true;
             }
         }
-
-        bool abovePlayer = (vPositionW.y > playerWorld.y);
-        if (!abovePlayer) {
-            float dy = vPositionW.y - playerWorld.y;
-            float heightWeight = smoothstep(HEIGHT_BAND, 0.0, abs(dy));
-            float heightRnd = noise(gl_FragCoord.xy + vec2(91.3, 7.9));
-            if (heightWeight > heightRnd) {
-                abovePlayer = true;
+        
+        // 3. Alignment check: only fade pixels that are ABOVE the player in screen space.
+        // This prevents the 'Giant Hole' in the ground (which is below the player on screen)
+        // while still clearing walls and objects that block the player's upper body.
+        float yDiff = gl_FragCoord.y - playerScreenPixel.y;
+        bool isAboveOnScreen = (yDiff > 0.0);
+        float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
+        if (!isAboveOnScreen && bandWidthPx > 0.0) {
+            float yWeight = smoothstep(-bandWidthPx, 0.0, yDiff);
+            float yRnd = noise(gl_FragCoord.xy + vec2(91.3, 7.9));
+            if (yWeight > yRnd) {
+                isAboveOnScreen = true;
             }
         }
-
-        // Proceed if both (dithered) conditions indicate occluder
-        if (depthCloser && abovePlayer) {
-            float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
-            if (bandWidthPx <= 0.0) {
-                // Hard edge: discard everything within the occlusion radius
-                if (normalizedDistance < 1.0) {
+        
+        // 4. Combine checks and apply radial mask with dithering
+        if (isOccluding && isAboveOnScreen) {
+            if (!useRadius) {
+                discard;
+            } else if (bandWidthPx <= 0.0) {
+                if (dist < occlusionRadius) {
                     discard;
                 }
             } else {
                 float innerRadius = max(0.0, occlusionRadius - bandWidthPx);
-                if (!useRadius || distance < innerRadius) {
+                if (dist < innerRadius) {
                     discard;
-                } else if (distance < occlusionRadius) {
-                    float gradientPos = (distance - innerRadius) / max(0.0001, bandWidthPx);
+                } else if (dist < occlusionRadius) {
+                    float gradientPos = (dist - innerRadius) / max(0.0001, bandWidthPx);
                     float coverage = clamp(gradientPos, 0.0, 1.0);
                     float threshold = noise(gl_FragCoord.xy);
                     if (coverage < threshold) {
                         discard;
                     }
-                    return alpha;
                 }
             }
         }
+        
         return alpha;
     }
     """
