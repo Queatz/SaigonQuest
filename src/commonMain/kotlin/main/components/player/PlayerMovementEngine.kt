@@ -25,6 +25,10 @@ class PlayerMovementEngine(
     private var isMoving = false
     private var isAutoRunning = false
 
+    fun isMoving() = isMoving
+    fun isAutoRunning() = isAutoRunning
+    fun isJumping() = isJumping
+
     // Inactivity auto-sit
     private var timeSinceLastMovement = 0.0
     private val autoSitTimeout = 300.0
@@ -97,8 +101,19 @@ class PlayerMovementEngine(
         speedMultiplier: Float = 1.0f,
     ): Vector3? {
         val deltaTime = movementDelta.nextDeltaSeconds()
-        val actualSpeedMultiplier = if (isAutoRunning) max(speedMultiplier, 4.0f) else speedMultiplier
-        val frameSpeed = (baseMovementSpeed * actualSpeedMultiplier * deltaTime).toFloat()
+        val isOnWater = WorldCollisionUtils.getIsOnWater(
+            worldMeshes = worldMeshes,
+            collider = collider,
+            moveCircle = moveCircle,
+            position = playerHandle.position,
+        )
+        val actualSpeedMultiplier = if (isAutoRunning) {
+            max(speedMultiplier, 4.0f)
+        } else {
+            speedMultiplier
+        }
+        val speedFactor = if (isOnWater) 0.5f else 1.0f
+        val frameSpeed = (baseMovementSpeed * actualSpeedMultiplier * speedFactor * deltaTime).toFloat()
 
         var finalMoveDirection = Vector3.Zero()
         var isPlayerMoving = false
@@ -126,7 +141,7 @@ class PlayerMovementEngine(
                 // Cancel click-to-move
                 stopMovement()
                 isPlayerMoving = true
-                val velocity = moveDirection.scale(baseMovementSpeed * actualSpeedMultiplier)
+                val velocity = moveDirection.scale(baseMovementSpeed * actualSpeedMultiplier * speedFactor)
                 // Temporary wind boost while moving (extends 1s tail)
                 playerHandle.triggerWindBoost(velocity)
                 // Stand if sitting
@@ -164,7 +179,7 @@ class PlayerMovementEngine(
                     finalMoveDirection = Vector3(moveXZ.x, moveY, moveXZ.z)
                     // Use horizontal direction for facing
                     onMoveDirection(moveXZ)
-                    val velocity = toTargetXZ.normalize().scale(baseMovementSpeed * actualSpeedMultiplier)
+                    val velocity = toTargetXZ.normalize().scale(baseMovementSpeed * actualSpeedMultiplier * speedFactor)
                     isPlayerMoving = true
                     // Temporary wind boost while moving-to-target as well
                     playerHandle.triggerWindBoost(velocity)
@@ -192,7 +207,7 @@ class PlayerMovementEngine(
             }
         }
 
-        if (finalMoveDirection.length() > 0f || isJumping) {
+        if (finalMoveDirection.length() > 0f || isJumping || true) {
             val currentPos = playerHandle.position
 
             fun tryMove(candidatePos: Vector3): Vector3? {

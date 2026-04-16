@@ -294,6 +294,10 @@ class PlayerController(private val scene: Scene) {
      */
     fun stopMovement() { mover.stopMovement() }
 
+    fun isAutoRunning() = mover.isAutoRunning()
+    fun isJumping() = mover.isJumping()
+    fun isMoving() = mover.isMoving()
+
     /**
      * Triggers a jump for the player.
      * 

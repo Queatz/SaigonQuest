@@ -594,9 +594,21 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             }
             val targetPos = op.targetPos?.let { snapToGround(it) } ?: return@forEach
             val currentPos = handle.position
+
+            val isOnWater = WorldCollisionUtils.getIsOnWater(
+                worldMeshes = worldMeshes,
+                collider = null,
+                moveCircle = null,
+                position = currentPos,
+            )
+            val speedFactor = if (isOnWater) 0.5f else 1.0f
+            val playerFrameMovementSpeed = frameMovementSpeed * speedFactor
+
             val direction = targetPos.subtract(currentPos)
             val distance = direction.length()
-            if (distance < 0.001f) {
+            val distanceXZ = Vector3(targetPos.x - currentPos.x, 0f, targetPos.z - currentPos.z).length()
+
+            if (distanceXZ < 0.005f) {
                 // Close enough
                 handle.position = targetPos
                 hud.updateHudPosition(op.userId, targetPos)
@@ -618,7 +630,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             }
 
             direction.normalize()
-            val step = kotlin.math.min(frameMovementSpeed, distance)
+            val step = kotlin.math.min(playerFrameMovementSpeed, distance)
             direction.scaleInPlace(step)
             val moved = currentPos.add(direction)
             val newPosition = snapToGround(moved)

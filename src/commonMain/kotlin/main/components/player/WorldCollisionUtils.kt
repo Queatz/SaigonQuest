@@ -4,6 +4,7 @@ import lib.AbstractMesh
 import lib.Mesh
 import lib.Ray
 import lib.Vector3
+import main.components.world.effect.WindSystem
 import main.components.world.isSkybox
 import main.components.world.isWater
 
@@ -31,47 +32,86 @@ object WorldCollisionUtils {
         return false
     }
 
+    private fun calculateIsOnWater(
+        worldMeshes: Array<AbstractMesh>,
+        collider: Mesh?,
+        moveCircle: Mesh?,
+        position: Vector3,
+        yPadding: Float = 0.5f,
+    ): Pair<Boolean, Vector3?> {
+        val groundMeshes = worldMeshes.filter {
+            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
+        }.toTypedArray()
+
+        val rayFar = Ray().also {
+            it.origin = Vector3(position.x, position.y + 10f, position.z)
+            it.direction = Vector3(0f, -1f, 0f)
+        }
+        val rayNear = Ray().also {
+            it.origin = Vector3(position.x, position.y + 2.5f, position.z)
+            it.direction = Vector3(0f, -1f, 0f)
+        }
+        val ray3 = Ray().also {
+            it.origin = Vector3(position.x, position.y + 1f, position.z)
+            it.direction = Vector3(0f, -1f, 0f)
+        }
+
+        val hitsFar = rayFar.intersectsMeshes(meshes = groundMeshes)
+        val hitsNear = rayNear.intersectsMeshes(meshes = groundMeshes)
+        val hits3 = ray3.intersectsMeshes(meshes = groundMeshes)
+
+        val bestGroundHit = (hitsFar + hitsNear + hits3)
+            .filter { it.pickedPoint != null }
+            .minByOrNull { info -> kotlin.math.abs((info.pickedPoint!!.y) - position.y) }
+
+        val waterPoint = getWaterSurfacePoint(worldMeshes, position)
+        val floatingPadding = 0.0f
+
+        val isOnWater = waterPoint != null && (bestGroundHit == null || (waterPoint.y + floatingPadding) > (bestGroundHit.pickedPoint!!.y + yPadding))
+        
+        return Pair(isOnWater, bestGroundHit?.pickedPoint)
+    }
+
+    fun getIsOnWater(
+        worldMeshes: Array<AbstractMesh>,
+        collider: Mesh?,
+        moveCircle: Mesh?,
+        position: Vector3,
+        yPadding: Float = 0.5f,
+    ): Boolean {
+        return calculateIsOnWater(worldMeshes, collider, moveCircle, position, yPadding).first
+    }
+
     fun findValidYPosition(
         worldMeshes: Array<AbstractMesh>,
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
         yPadding: Float = 0.5f,
+        applyWaterOffset: Boolean = true,
     ): Vector3? {
-        // Prepare target meshes once (exclude collider, move circle, skybox, and water)
-        val targetMeshes = worldMeshes.filter {
-            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater()
-        }.toTypedArray()
+        val (isOnWater, groundPoint) = calculateIsOnWater(worldMeshes, collider, moveCircle, position, yPadding)
+        val waterPoint = if (isOnWater) getWaterSurfacePoint(worldMeshes, position) else null
 
-        // Ray 1: y + 10f
-        val rayFar = Ray().also {
-            it.origin = Vector3(position.x, position.y + 10f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
-        }
-        // Ray 2: y + 2.5f
-        val rayNear = Ray().also {
-            it.origin = Vector3(position.x, position.y + 2.5f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
-        }
-        // Ray 3: y + 1f
-        val ray3 = Ray().also {
-            it.origin = Vector3(position.x, position.y + 1f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
+        val finalMeshY = if (isOnWater) {
+            waterPoint!!.y
+        } else {
+            groundPoint?.y ?: return null
         }
 
-        val hitsFar = rayFar.intersectsMeshes(meshes = targetMeshes)
-        val hitsNear = rayNear.intersectsMeshes(meshes = targetMeshes)
-        val hits3 = ray3.intersectsMeshes(meshes = targetMeshes)
+        var finalPadding = yPadding
+        val floatingPadding = 0.0f
+        if (isOnWater && applyWaterOffset) {
+            finalPadding = floatingPadding
 
-        // Combine hits and choose the point closest to the input position.y
-        val bestHit = (hitsFar + hitsNear + hits3)
-            .filter { it.pickedPoint != null }
-            .minByOrNull { info -> kotlin.math.abs((info.pickedPoint!!.y) - position.y) }
-            ?: return null
+            // Add gentle vertical bobbling motion
+            val time = WindSystem.timeSeconds
+            finalPadding += kotlin.math.sin(time.toDouble() * 2.0).toFloat() * 0.05f
+        }
 
         return Vector3(
             position.x,
-            bestHit.pickedPoint!!.y + yPadding,
+            finalMeshY + finalPadding,
             position.z,
         )
     }

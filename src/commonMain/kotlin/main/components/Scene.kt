@@ -1318,7 +1318,7 @@ fun SceneComponent(url: String) {
             val isCameraAnimating = cameraController.updateAnimation()
 
             val currentTime = window.performance.now()
-            val isPlayerMoving = newPosition != null || moveDirection.length() > 0
+            val isPlayerMoving = moveDirection.length() > 0 || playerController.isMoving() || playerController.isJumping()
             
             if (isPlayerMoving || isCameraAnimating) {
                 lastInteractionTime = currentTime
