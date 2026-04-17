@@ -805,6 +805,14 @@ class WorldLoader(private val scene: Scene) {
         flickeringLights.clear()
         
         scene.lights.forEach { light ->
+            // Skip core lights that should not be dimmed
+            if (light.name == "hemisphericLight" || light.name == "directionalLight" || light.name == "moonPhaseLight") {
+                return@forEach
+            }
+
+            // Dim imported lights by 1000x to match Blender brightness
+            light.intensity = light.intensity / 1000f
+
             // getTypeID() == 0 is PointLight, 2 is SpotLight in BabylonJS
             if (light.getTypeID() == 0 || light.getTypeID() == 2) {
                 val shadowLight = light as? IShadowLight
@@ -823,15 +831,15 @@ class WorldLoader(private val scene: Scene) {
 
                     // Check for flicker effect
                     if (light.isFlicker()) {
-                            flickeringLights.add(
-                                FlickerData(
-                                    light = light,
-                                    originalIntensity = light.intensity,
-                                    originalPosition = light.position.clone(),
-                                    seed = (Random.nextFloat() * 1000f)
-                                )
+                        flickeringLights.add(
+                            FlickerData(
+                                light = light,
+                                originalIntensity = light.intensity,
+                                originalPosition = light.position.clone(),
+                                seed = (Random.nextFloat() * 1000f)
                             )
-                        }
+                        )
+                    }
                 }
             }
         }

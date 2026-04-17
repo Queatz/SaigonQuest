@@ -64,6 +64,7 @@ fun ChatComposer(
     isWebSocketConnected: Boolean,
     lastError: String?,
     isDialog: Boolean = false,
+    onClose: () -> Unit,
 ) {
     var initialRichText by remember { mutableStateOf("") }
     var messageText by remember { mutableStateOf("") }
@@ -360,6 +361,9 @@ fun ChatComposer(
                                         }
                                     }
                                 }
+                            } else if (event.key == "Escape") {
+                                event.preventDefault()
+                                onClose()
                             }
                         }
                         onPaste { event ->

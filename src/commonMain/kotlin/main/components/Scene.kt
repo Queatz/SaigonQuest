@@ -853,44 +853,54 @@ fun SceneComponent(url: String) {
         fun triggerScreenSaver() {
             if (isScreenSaverActive) return
             
-            // Find the first camera that isn't the main player camera
+            // Find the first camera that isn't the main player camera and has a long enough animation
             val mainCam = cameraController.getCamera()
-            val ssCam = scene.cameras.firstOrNull { it != mainCam }
             
-            if (ssCam != null) {
-                // Fix for horizontally flipped view in screen saver by modifying projection matrix
-                // We only want to flip it once to avoid toggling back and forth on subsequent screen saver starts
-                if (ssCam !in flippedCameras) {
-                    try {
-                        // Store original parent
-                        val originalParent = ssCam.parent
+            // Filter animation groups that last longer than 1 second
+            val longAnimationGroups = scene.animationGroups.filter { group ->
+                val durationFrames = kotlin.math.abs(group.to - group.from)
+                // Use the FPS of the first targeted animation as a reference, or default to 60
+                val fps = group.targetedAnimations.firstOrNull()?.animation?.framePerSecond?.toFloat() ?: 60f
+                val durationSeconds = durationFrames / fps
+                durationSeconds > 1.0f
+            }
 
-                        // Create flip node with -1 z scaling
-                        val flipNode = lib.TransformNode("cameraFlipNode_${ssCam.name}", scene)
-                        flipNode.position = ssCam.position
-                        flipNode.scaling = lib.Vector3(-1f, 1f, 1f)
-
-                        // Set flip node's parent to camera's original parent
-                        flipNode.parent = originalParent
-
-                        // Parent camera to flip node
-                        ssCam.parent = flipNode
-
-//                        val projectionMatrix = ssCam.getProjectionMatrix()
-//                        projectionMatrix.m[0] = projectionMatrix.m[0] * -1f
-//                        ssCam.onProjectionMatrixChangedObservable.add { camera ->
-//                            val projectionMatrix = camera.getProjectionMatrix()
-//                            projectionMatrix.m[0] = projectionMatrix.m[0] * -1f
-//                        }
-
-                        flippedCameras.add(ssCam)
-                    } catch (t: Throwable) {
-                        console.warn("[ScreenSaver] Failed to modify projection matrix", t)
+                // Find a camera that has an animation in one of these long groups
+                val ssCam = scene.cameras.firstOrNull { cam ->
+                    cam != mainCam && cam.animations.isNotEmpty() && longAnimationGroups.any { group ->
+                        group.targetedAnimations.any { it.target == cam }
                     }
                 }
 
-                // Find first animation group
-                val animationGroup = scene.animationGroups.firstOrNull() ?: return
+                if (ssCam != null) {
+                    // Fix for horizontally flipped view in screen saver by modifying projection matrix
+                    // We only want to flip it once to avoid toggling back and forth on subsequent screen saver starts
+                    if (ssCam !in flippedCameras) {
+                        try {
+                            // Store original parent
+                            val originalParent = ssCam.parent
+
+                            // Create flip node with -1 z scaling
+                            val flipNode = lib.TransformNode("cameraFlipNode_${ssCam.name}", scene)
+                            flipNode.position = ssCam.position
+                            flipNode.scaling = lib.Vector3(-1f, 1f, 1f)
+
+                            // Set flip node's parent to camera's original parent
+                            flipNode.parent = originalParent
+
+                            // Parent camera to flip node
+                            ssCam.parent = flipNode
+
+                            flippedCameras.add(ssCam)
+                        } catch (t: Throwable) {
+                            console.warn("[ScreenSaver] Failed to modify projection matrix", t)
+                        }
+                    }
+
+                    // Find first animation group that contains this camera
+                    val animationGroup = longAnimationGroups.firstOrNull { group ->
+                        group.targetedAnimations.any { it.target == ssCam }
+                    } ?: return
                 
                 isScreenSaverActive = true
                 scene.activeCamera = ssCam

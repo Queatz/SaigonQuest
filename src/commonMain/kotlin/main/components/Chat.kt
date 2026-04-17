@@ -80,6 +80,7 @@ fun Chat(
         ChatContent(
             worldId = worldId,
             isDialog = isMobile,
+            onClose = onClose,
         )
     }
 

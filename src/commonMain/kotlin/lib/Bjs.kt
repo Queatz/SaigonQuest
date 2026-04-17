@@ -2050,10 +2050,18 @@ external class AssetContainer(scene: Scene) {
 external class AnimationGroup(name: String, scene: Scene? = definedExternally) {
     val name: String
     val isPlaying: Boolean
+    val from: Float
+    val to: Float
+    val targetedAnimations: Array<TargetedAnimation>
     fun play(loop: Boolean = definedExternally)
     fun stop()
     fun pause()
     fun restart()
+}
+
+external class TargetedAnimation {
+    val animation: Animation
+    val target: Any
 }
 
 external class Animation(
@@ -2064,8 +2072,10 @@ external class Animation(
     loopMode: Int = definedExternally,
     enableBlending: Boolean = definedExternally
 ) {
+    val framePerSecond: Int
     fun setKeys(keys: Array<dynamic>)
     fun setEasingFunction(easingFunction: EasingFunction)
+    fun getHighestFrame(): Float
 
     companion object {
         val ANIMATIONTYPE_FLOAT: Int

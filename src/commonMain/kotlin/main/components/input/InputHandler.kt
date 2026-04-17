@@ -342,7 +342,9 @@ class InputHandler(
      * @param info The pointer event information
      */
     private fun handlePointerEvent(info: PointerInfo) {
-        onActivity?.invoke()
+        if (info.type != PointerEventTypes.POINTERMOVE) {
+            onActivity?.invoke()
+        }
 
         // Track multi-touch pointer counts to suppress accidental moves after pinch/zoom
         run {
@@ -543,6 +545,9 @@ class InputHandler(
         if (info.type == PointerEventTypes.POINTERMOVE) {
             // Check if dragging (pointer is down and has moved more than a threshold)
             if (isPointerDown) {
+                // We only call onActivity when actually dragging or moving with intent
+                onActivity?.invoke()
+
                 // Drag to move camera
                 if (info.event.ctrlKey) {
                     cameraController.stopAnimating()
