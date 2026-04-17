@@ -903,6 +903,8 @@ abstract external class Camera : Node {
     fun getForwardRay(length: Float = definedExternally): Ray
     fun getProjectionMatrix(usingRightHandedSystem: Boolean = definedExternally): Matrix
     fun freezeProjectionMatrix()
+    fun attachPostProcess(postProcess: PostProcess, insertAt: Int? = definedExternally)
+    fun detachPostProcess(postProcess: PostProcess)
 }
 
 external class ArcRotateCamera(
@@ -1080,7 +1082,27 @@ external class VertexData {
     }
 }
 
-abstract external class PostProcess {
+external open class PostProcess(
+    name: String,
+    fragmentUrl: String,
+    parameters: Array<String>?,
+    samplers: Array<String>?,
+    options: Double,
+    camera: Camera?,
+    samplingMode: Int? = definedExternally,
+    engine: Engine? = definedExternally,
+    reusable: Boolean? = definedExternally,
+    defines: String? = definedExternally,
+    textureType: Int? = definedExternally,
+    vertexUrl: String? = definedExternally,
+    indexParameters: dynamic = definedExternally,
+    blockCompilation: Boolean? = definedExternally,
+    textureFormat: Int? = definedExternally
+) {
+    var onApply: ((Effect) -> Unit)?
+    var onApplyObservable: Observable<Effect>
+    val width: Int
+    val height: Int
     fun dispose()
 }
 

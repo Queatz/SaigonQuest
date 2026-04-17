@@ -5,10 +5,15 @@ import lib.Camera
 import lib.Color4
 import lib.DefaultRenderingPipeline
 import lib.DepthOfFieldEffectBlurLevel
+import lib.Effect
 import lib.ImageProcessingPostProcess
 import lib.Mesh
+import lib.PostProcess
 import lib.SSAO2RenderingPipeline
 import lib.Scene
+import lib.ShaderStore
+import lib.Texture
+import lib.Vector2
 import lib.Vector3
 import main.components.GraphicsSettings
 
@@ -43,7 +48,13 @@ class CameraPipelineManager(
     // SSAO pipeline
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
 
+    // Outline post-processes per camera
+    private val outlinePostProcesses = mutableMapOf<Camera, PostProcess>()
+
     init {
+        // Register outline shader
+        registerOutlineShader()
+
         // Enable and configure the vignette effect directly on the image processing pass
         try {
             vignettePostProcess.vignetteEnabled = true
@@ -56,6 +67,101 @@ class CameraPipelineManager(
 
         // Initial setup of pipeline and camera settings
         updatePipelineSettings()
+
+        // Create initial outline post-process for the main camera
+        // This is done after updatePipelineSettings to ensure it's at the end of the chain
+        createOutlinePostProcess(camera)
+    }
+
+    /**
+     * Registers the outline shader in the ShaderStore.
+     */
+    private fun registerOutlineShader() {
+        // Use a unique name to ensure we're using the latest version of the shader
+        val shaderName = "saigonOutlinePixelShader"
+        
+        ShaderStore.ShadersStore[shaderName] = """
+            precision mediump float;
+            varying vec2 vUV;
+            uniform sampler2D textureSampler;
+            uniform vec2 screenSize;
+            
+            void main(void) {
+                vec4 baseColor = texture2D(textureSampler, vUV);
+                
+                if (screenSize.x <= 0.0 || screenSize.y <= 0.0) {
+                    gl_FragColor = baseColor;
+                    return;
+                }
+
+                vec2 texelSize = 1.0 / screenSize;
+                
+                // Sample 4 cardinal neighbors
+                vec3 n1 = texture2D(textureSampler, vUV + vec2(0.0,  texelSize.y)).rgb;
+                vec3 n2 = texture2D(textureSampler, vUV + vec2(0.0, -texelSize.y)).rgb;
+                vec3 n3 = texture2D(textureSampler, vUV + vec2( texelSize.x, 0.0)).rgb;
+                vec3 n4 = texture2D(textureSampler, vUV + vec2(-texelSize.x, 0.0)).rgb;
+                
+                // Perceptual luminance weights
+                vec3 lumWeights = vec3(0.299, 0.587, 0.114);
+                
+                float l0 = dot(baseColor.rgb, lumWeights);
+                float l1 = dot(n1, lumWeights);
+                float l2 = dot(n2, lumWeights);
+                float l3 = dot(n3, lumWeights);
+                float l4 = dot(n4, lumWeights);
+                
+                // Find maximum difference in luminance with neighbors
+                float diff = max(max(abs(l0 - l1), abs(l0 - l2)), max(abs(l0 - l3), abs(l0 - l4)));
+                
+                // Threshold with smooth transition for a "playful" hand-drawn look
+                // 0.1 to 0.2 is a good range for LDR colors
+                float edge = smoothstep(0.1, 0.2, diff);
+                
+                // Mix base color with black for the outline (not 100% black to keep some detail)
+                vec3 outlineColor = vec3(0.0, 0.0, 0.0);
+                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, edge * 0.85), 1.0);
+            }
+        """.trimIndent()
+    }
+
+    /**
+     * Creates an outline post-process for the given camera.
+     */
+    private fun createOutlinePostProcess(cam: Camera) {
+        var pp = outlinePostProcesses[cam]
+        if (pp == null) {
+            try {
+                pp = PostProcess(
+                    name = "saigonOutline",
+                    fragmentUrl = "saigonOutline",
+                    parameters = arrayOf("screenSize"),
+                    samplers = null,
+                    options = 1.0,
+                    camera = cam,
+                    samplingMode = Texture.BILINEAR_SAMPLINGMODE,
+                )
+
+                pp.onApplyObservable.add { effect ->
+                    val w = if (pp.width > 0) pp.width.toFloat() else scene.getEngine().getRenderWidth().toFloat()
+                    val h = if (pp.height > 0) pp.height.toFloat() else scene.getEngine().getRenderHeight().toFloat()
+                    effect.setVector2("screenSize", Vector2(w, h))
+                }
+
+                outlinePostProcesses[cam] = pp
+                console.log("[DEBUG] Created outline post-process for camera: ${cam.name}")
+            } catch (e: Throwable) {
+                console.error("[ERROR] Failed to create outline post-process: ${e.message}")
+            }
+        }
+
+        // Move to the end of the post-process chain to ensure it runs after tone mapping (LDR)
+        if (pp != null) {
+            try {
+                cam.detachPostProcess(pp)
+                cam.attachPostProcess(pp)
+            } catch (_: Throwable) {}
+        }
     }
 
     /**
@@ -184,6 +290,11 @@ class CameraPipelineManager(
             } catch (e: Throwable) {
                 console.error("[ERROR] Failed to force-refresh DOF: ${e.message}")
             }
+
+            // Re-ensure outline is at the end of the post-process chain for all cameras
+            outlinePostProcesses.keys.toList().forEach { cam ->
+                createOutlinePostProcess(cam)
+            }
         } catch (e: Throwable) {
             console.error("[ERROR] Failed to update pipeline settings: ${e.message}")
         }
@@ -228,6 +339,7 @@ class CameraPipelineManager(
         try {
             pipeline.addCamera(cameraToAdd)
             ssaoPipeline?.addCamera(cameraToAdd)
+            createOutlinePostProcess(cameraToAdd)
         } catch (e: Throwable) {
             console.error("[ERROR] Failed to add camera to pipeline: ${e.message}")
         }
@@ -240,6 +352,7 @@ class CameraPipelineManager(
         try {
             pipeline.removeCamera(cameraToRemove)
             ssaoPipeline?.removeCamera(cameraToRemove)
+            outlinePostProcesses.remove(cameraToRemove)?.dispose()
         } catch (e: Throwable) {
             console.error("[ERROR] Failed to remove camera from pipeline: ${e.message}")
         }
@@ -250,6 +363,8 @@ class CameraPipelineManager(
     fun dispose() {
         ssaoPipeline?.dispose()
         ssaoPipeline = null
+        outlinePostProcesses.values.forEach { it.dispose() }
+        outlinePostProcesses.clear()
         try {
             pipeline.dispose()
         } catch (_: Throwable) {

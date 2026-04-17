@@ -67,9 +67,6 @@ class CameraController(private val scene: Scene) {
     // Camera target - separate from player to prevent player moving with camera during panning
     private var cameraTarget: Mesh? = null
     
-    // Color correction post-process effect
-    private var colorCorrectionPostProcess: ColorCorrectionPostProcess? = null
-    
     // Animation properties
     private var targetPosition: Vector3? = null
     private var isAnimating: Boolean = false
@@ -519,15 +516,6 @@ class CameraController(private val scene: Scene) {
         
         // Clean up the pipeline
         pipelineManager.dispose()
-        
-        // Clean up the ColorCorrectionPostProcess
-        try {
-            colorCorrectionPostProcess?.dispose()
-            colorCorrectionPostProcess = null
-            console.log("[DEBUG] ColorCorrectionPostProcess disposed")
-        } catch (e: Throwable) {
-            console.error("[ERROR] Failed to dispose ColorCorrectionPostProcess: ${e.message}")
-        }
         
         // Clean up the camera target
         cameraTarget?.dispose()
