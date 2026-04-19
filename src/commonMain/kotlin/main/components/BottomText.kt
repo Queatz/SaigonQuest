@@ -1,17 +1,21 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import main.theme.Styles
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Ul
 import org.jetbrains.compose.web.dom.Li
+import org.jetbrains.compose.web.dom.Text
 import main.components.Translated
+import kotlin.math.roundToInt
 
 /**
  * A component that displays the copyright text at the bottom left of the screen.
@@ -20,6 +24,17 @@ import main.components.Translated
 @Composable
 fun BottomText() {
     var showAbout by remember { mutableStateOf(false) }
+    var fps by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val scene = SceneManager.getScene()
+            if (scene != null) {
+                fps = scene.getEngine().getFps().roundToInt()
+            }
+            delay(500)
+        }
+    }
 
     Div(
         attrs = {
@@ -27,7 +42,9 @@ fun BottomText() {
             onClick { showAbout = true }
         }
     ) {
-        Translated("© 2026 Saigon.Quest v0.1")
+        val baseText = translated("© 2026 Saigon.Quest v0.1")
+        val fullText = if (fps > 0) "$baseText • $fps FPS" else baseText
+        Text(fullText)
     }
 
     if (showAbout) {

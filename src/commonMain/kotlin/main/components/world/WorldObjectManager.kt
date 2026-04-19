@@ -2,6 +2,8 @@ package main.components.world
 
 import kotlinx.browser.window
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.sqrt
 import lib.AbstractMesh
 import lib.Node
 import lib.Scene
@@ -26,6 +28,10 @@ class WorldObjectManager(private val scene: Scene) {
     private val objectNodes = mutableMapOf<String, Node>()
     private val typingHudHandles = mutableMapOf<String, WorldObjectHandle>()
     private val typingTimeouts = mutableMapOf<String, Int>()
+    
+    // Performance caches
+    private val cachedMeshes = mutableMapOf<String, List<AbstractMesh>>()
+    private val cachedHighestY = mutableMapOf<String, Float>()
     
     // Shadow manager reference for adding shadow support to objects
     private var shadowManager: ShadowManager? = null
@@ -106,6 +112,8 @@ class WorldObjectManager(private val scene: Scene) {
         // Remove from our tracking
         objects.remove(objectId)
         objectNodes.remove(objectId)
+        cachedMeshes.remove(objectId)
+        cachedHighestY.remove(objectId)
     }
     
     /**
@@ -124,6 +132,8 @@ class WorldObjectManager(private val scene: Scene) {
         // Clear the maps
         objects.clear()
         objectNodes.clear()
+        cachedMeshes.clear()
+        cachedHighestY.clear()
     }
     
     /**
@@ -149,17 +159,25 @@ class WorldObjectManager(private val scene: Scene) {
         typingHudHandles.forEach { (objectId, handle) ->
             val node = objectNodes[objectId] ?: return@forEach
             
-            val objectMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+            // Task 3: Mesh Caching
+            val objectMeshes = cachedMeshes.getOrPut(objectId) {
+                node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+            }
             
-            // For efficiency, only update based on bounding box if the object has active animations
+            // Task 1: Floating UI Caching
+            // Only update based on bounding box if the object has active animations or it's the first time
+            val isFirstTime = !cachedHighestY.containsKey(objectId)
             val hasAnimations = node.animations.isNotEmpty() ||
                                 objectMeshes.any { it.animations.isNotEmpty() } ||
                                 anyAnimationsPlaying
 
             val p = node.position
-            var highestY = p.y
+            var highestY = cachedHighestY[objectId] ?: p.y
 
-            if (hasAnimations) {
+            // If any animation is playing, we re-calculate, but we can throttle this 
+            // or only do it if the object itself is likely to be moving.
+            // For now, let's at least avoid the calculation if nothing is playing.
+            if (hasAnimations || isFirstTime) {
                 if (objectMeshes.isNotEmpty()) {
                     if (node is TransformNode) {
                         node.computeWorldMatrix(true)
@@ -169,9 +187,6 @@ class WorldObjectManager(private val scene: Scene) {
                     var found = false
                     objectMeshes.forEach { mesh ->
                         try {
-                            // Exclude status billboards from bounding box calculation
-                            if (DepthPicking.isStatusBillboardMesh(mesh)) return@forEach
-
                             mesh.computeWorldMatrix(true)
                             val meshMaxY = mesh.getBoundingInfo().boundingBox.maximumWorld.y
                             if (meshMaxY > maxY) {
@@ -180,7 +195,10 @@ class WorldObjectManager(private val scene: Scene) {
                             }
                         } catch (_: Throwable) {}
                     }
-                    if (found) highestY = maxY
+                    if (found) {
+                        highestY = maxY
+                        cachedHighestY[objectId] = highestY
+                    }
                 }
             }
             
@@ -205,13 +223,26 @@ class WorldObjectManager(private val scene: Scene) {
         val playerPos = player.getPlayerPosition() ?: return
         val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
 
-        // Iterate over backend object nodes from the SceneObjectManager and check distance
-        val backendNodes = SceneManager.getObjectManager()?.getObjectNodes() ?: return
+        val objectManager = SceneManager.getObjectManager() ?: return
+        
+        // Use spatial hashing to get only nearby object IDs
+        val maxRadius = max(SceneManager.PROXIMITY_RADIUS_SQ, SceneManager.INTERACTION_RADIUS_SQ).toDouble().let { sqrt(it).toFloat() }
+        val nearbyCandidates = objectManager.getNearbyObjectIds(playerPos, maxRadius)
         
         var closestInteractableId: String? = null
         var minInteractableDistSq = SceneManager.INTERACTION_RADIUS_SQ
 
-        backendNodes.forEach { (backendObjectId, node) ->
+        // Proximity exit logic: objects that were inside but are no longer candidates
+        val currentEntered = enteredProximity.toSet()
+        currentEntered.forEach { backendObjectId ->
+            if (!nearbyCandidates.contains(backendObjectId)) {
+                enteredProximity.remove(backendObjectId)
+                objectManager.setObjectNearby(backendObjectId, false)
+            }
+        }
+
+        nearbyCandidates.forEach { backendObjectId ->
+            val node = objectManager.getObjectNodes()[backendObjectId] ?: return@forEach
             val pos = node.position
             val dx = pos.x - playerPos.x
             val dy = pos.y - playerPos.y
@@ -226,12 +257,12 @@ class WorldObjectManager(private val scene: Scene) {
                 enteredProximity.add(backendObjectId)
                 WebSocketApi.userNearby(objectId = backendObjectId, isPlayer = isPlayer)
                 // Reveal status if it's nearby
-                SceneManager.getObjectManager()?.setObjectNearby(backendObjectId, true)
+                objectManager.setObjectNearby(backendObjectId, true)
             } else if (!isInside && wasInside) {
                 // Exited radius: allow future re-entry to trigger again
                 enteredProximity.remove(backendObjectId)
                 // Hide status if it's no longer nearby
-                SceneManager.getObjectManager()?.setObjectNearby(backendObjectId, false)
+                objectManager.setObjectNearby(backendObjectId, false)
             }
 
             // Interaction check (range 1) - find the closest one
@@ -244,7 +275,7 @@ class WorldObjectManager(private val scene: Scene) {
         }
 
         // Notify object manager about the closest interactable object
-        SceneManager.getObjectManager()?.setObjectInteractable(closestInteractableId)
+        objectManager.setObjectInteractable(closestInteractableId)
     }
     
     /**
@@ -436,11 +467,17 @@ class WorldObjectManager(private val scene: Scene) {
             return
         }
         
-        val objectMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+        // Task 3: Mesh Caching
+        val objectMeshes = cachedMeshes.getOrPut(objectId) {
+            node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+        }
         val p = node.position
-        var highestY = p.y
         
-        if (objectMeshes.isNotEmpty()) {
+        // Task 1: Floating UI Caching
+        // Use cached value if available
+        var highestY = cachedHighestY[objectId] ?: p.y
+        
+        if (!cachedHighestY.containsKey(objectId) && objectMeshes.isNotEmpty()) {
             try {
                 if (node is TransformNode) {
                     node.computeWorldMatrix(true)
@@ -458,7 +495,10 @@ class WorldObjectManager(private val scene: Scene) {
                         }
                     } catch (_: Throwable) {}
                 }
-                if (found) highestY = maxY
+                if (found) {
+                    highestY = maxY
+                    cachedHighestY[objectId] = highestY
+                }
             } catch (_: Throwable) {}
         }
         

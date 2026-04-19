@@ -351,8 +351,8 @@ object GraphicsSettings {
     private fun loadOutlineEnabledFromStorage(): Boolean {
         return try {
             val storedValue = localStorage.getItem(OUTLINE_ENABLED_STORAGE_KEY)
-            // Default to true if not set
-            storedValue == null || storedValue == "true"
+            // Default to false if not set
+            storedValue == "true"
         } catch (e: Throwable) {
             console.error("Error loading outline setting from localStorage", e)
             true

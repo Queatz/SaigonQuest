@@ -623,6 +623,7 @@ external class Engine(
     fun getRenderWidth(): Int
     fun getRenderHeight(): Int
     fun getRenderingCanvas(): HTMLCanvasElement?
+    fun getFps(): Float
 
     var maxFPS: Int
 

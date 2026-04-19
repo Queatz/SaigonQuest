@@ -163,10 +163,10 @@ class OcclusionManager(private val scene: Scene) {
             return alpha;
         }
         
+        float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
+        
         // 1. Calculate distance from this pixel to the player on screen
         vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
-        vec2 delta = gl_FragCoord.xy - playerScreenPixel;
-        float dist = length(delta);
         
         // 2. Depth check: is the pixel closer to the camera than the player?
         float fragmentDepth = gl_FragCoord.z;
@@ -184,19 +184,62 @@ class OcclusionManager(private val scene: Scene) {
             }
         }
         
-        float yDiff = gl_FragCoord.y - playerScreenPixel.y;
-        bool isAboveOnScreen = (yDiff > 0.0);
-        float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
-        if (!isAboveOnScreen && bandWidthPx > 0.0) {
-            float yWeight = smoothstep(-bandWidthPx, 0.0, yDiff);
-            float yRnd = noise(gl_FragCoord.xy + vec2(91.3, 7.9));
-            if (yWeight > yRnd) {
-                isAboveOnScreen = true;
+        // 3. Directional/Height Check: "The Flashlight Cone"
+        // We only want to fade if the pixel is either:
+        // - Above the player in screen space
+        // - Well above the player in world space (tall objects)
+        // - Inside an imaginary cone from the player towards the camera
+        if (isOccluding) {
+            float SOFTNESS_WORLD = occlusionSoftness * 0.4;
+            
+            // Screen Height Weight (soft transition from below to above player)
+            float screenHeightWeight = smoothstep(-bandWidthPx * 0.5, bandWidthPx * 0.5, gl_FragCoord.y - playerScreenPixel.y);
+            
+            // World Height Weight (at feet vs tall object)
+            float worldHeightWeight = smoothstep(0.1 - SOFTNESS_WORLD, 0.1 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
+            
+            // Cone check: world-space alignment with player-camera axis
+            vec3 toFrag = vPositionW - playerWorld;
+            vec3 toCamDir = normalize(cameraWorld - playerWorld);
+            float distAlongAxis = dot(toFrag, toCamDir);
+            vec3 perp = toFrag - distAlongAxis * toCamDir;
+            float distSqToAxis = dot(perp, perp);
+            
+            // Cone starts at player, grows slightly as it goes towards camera
+            float coneRadius = 0.125 + clamp(distAlongAxis / 10.0, 0.0, 1.0);
+            float coneRadiusSq = coneRadius * coneRadius;
+            
+            // Soften the cone edge and the cone start
+            float coneWeight = smoothstep(coneRadiusSq * (1.0 + occlusionSoftness), coneRadiusSq * (1.0 - occlusionSoftness), distSqToAxis);
+            coneWeight *= smoothstep(-0.2 - SOFTNESS_WORLD, -0.2 + SOFTNESS_WORLD, distAlongAxis);
+            
+            // Additional safety weights for "above player but far below world" and "below player but in cone"
+            float floorWeight = smoothstep(-0.4 - SOFTNESS_WORLD, -0.4 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
+            float safetyWeight = smoothstep(-0.5 - SOFTNESS_WORLD, -0.5 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
+
+            // Logic:
+            // if below player (screenHeightWeight=0.0): must be wellAbove OR (inCone AND floor)
+            // if above player (screenHeightWeight=1.0): must be wellAbove OR inCone OR safety
+            float weightBelow = max(worldHeightWeight, min(coneWeight, floorWeight));
+            float weightAbove = max(worldHeightWeight, max(coneWeight, safetyWeight));
+            
+            float finalProb = mix(weightBelow, weightAbove, screenHeightWeight);
+            
+            // Apply dithering to these new checks
+            if (finalProb < 1.0) {
+                float rnd = noise(gl_FragCoord.xy + vec2(23.1, 61.7));
+                if (rnd > finalProb) {
+                    isOccluding = false;
+                }
             }
         }
-        
+
         // 4. Combine checks and apply radial mask with dithering
-        if (isOccluding && isAboveOnScreen) {
+        // We only fade if the pixel is confirmed as occluding
+        if (isOccluding) {
+            vec2 delta = gl_FragCoord.xy - playerScreenPixel;
+            float dist = length(delta);
+            
             if (!useRadius) {
                 discard;
             } else if (bandWidthPx <= 0.0) {
@@ -269,6 +312,7 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("screenSize", "vec2")
         mat.AddUniform("occlusionRadius", "float")
         mat.AddUniform("playerWorld", "vec3")
+        mat.AddUniform("cameraWorld", "vec3")
         mat.AddUniform("occlusionSoftness", "float")
         mat.AddUniform("useRadius", "bool")
         mat.AddUniform("isEnabled", "bool")
@@ -353,11 +397,12 @@ class OcclusionManager(private val scene: Scene) {
 
                     val viewWidth = scene.getEngine().getRenderWidth()
                     val viewHeight = scene.getEngine().getRenderHeight()
-                    val occRadius = min(viewWidth, viewHeight) / 2.0f
+                    val occRadius = min(viewWidth, viewHeight) / 3.0f
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
 
                     effect.setVector3("playerScreenPos", playerScreenPos)
                     effect.setVector3("playerWorld", playerWorldPos)
+                    effect.setVector3("cameraWorld", cam.globalPosition)
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)

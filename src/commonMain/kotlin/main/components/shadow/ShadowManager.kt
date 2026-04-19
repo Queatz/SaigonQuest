@@ -1,13 +1,16 @@
 package main.components.shadow
 
 import lib.AbstractMesh
+import lib.ArcRotateCamera
 import lib.CascadedShadowGenerator
 import lib.Color3
 import lib.DirectionalLight
 import lib.Scene
 import lib.ShadowGenerator
 import lib.Vector3
+import main.components.GraphicsSettings
 import kotlin.js.Console
+import kotlin.math.abs
 
 /**
  * Manages shadows globally for the entire scene.
@@ -23,16 +26,32 @@ class ShadowManager(
     private val light: DirectionalLight
 ) {
     // The main shadow generator instance (directional light)
-    private val shadowGenerator: CascadedShadowGenerator
+    private var shadowGenerator: CascadedShadowGenerator
     
     // List of point light shadow generators (from GLB files)
     private val pointLightShadowGenerators = mutableListOf<ShadowGenerator>()
     
-    // Shadow map size (power of 2, higher = better quality but lower performance)
-    private val shadowMapSize = 1024
+    // Task 4: Shadow Map Downscaling
+    // Default size is now 2048, reduced to 1024 in Low Graphics mode
+    private var shadowMapSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
     
     // List of meshes that cast shadows
     private val shadowCasters = mutableListOf<AbstractMesh>()
+    
+    // Task 2: Shadow Distance Culling
+    // Meshes currently added to the generators
+    private val activeShadowCasters = mutableSetOf<AbstractMesh>()
+    private val shadowDistanceThreshold = 250f
+    private val shadowDistanceThresholdSq = shadowDistanceThreshold * shadowDistanceThreshold
+    
+    // Observer for graphics settings changes
+    private val graphicsSettingsObserver: () -> Unit = {
+        val newSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
+        if (newSize != shadowMapSize) {
+            println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
+            recreateShadowGenerator(newSize)
+        }
+    }
     
     init {
         // Configure the light for shadows
@@ -44,8 +63,31 @@ class ShadowManager(
         // Configure shadow generator for optimal performance with many moving objects
         configureShadowGenerator()
         
+        // Listen for graphics settings changes to update shadow map resolution if needed
+        GraphicsSettings.addObserver(graphicsSettingsObserver)
+
         // Log shadow setup for debugging
-        println("[DEBUG] Shadow manager initialized with cascaded shadow generator")
+        println("[DEBUG] Shadow manager initialized with cascaded shadow generator (size=$shadowMapSize)")
+    }
+
+    /**
+     * Recreates the shadow generator with a new map size.
+     * This is called when graphics settings change.
+     */
+    private fun recreateShadowGenerator(newSize: Int) {
+        shadowMapSize = newSize
+        
+        // Clean up old generator
+        shadowGenerator.dispose()
+        
+        // Create new one
+        shadowGenerator = CascadedShadowGenerator(shadowMapSize, light, true)
+        configureShadowGenerator()
+        
+        // Re-add active shadow casters
+        activeShadowCasters.forEach { mesh ->
+            shadowGenerator.addShadowCaster(mesh)
+        }
     }
     
     /**
@@ -91,6 +133,9 @@ class ShadowManager(
             // Stabilize cascades for smoother shadows during camera movement
             stabilizeCascades = true
             
+            // Auto calculate depth bounds for better cascade distribution in big scenes
+            autoCalcDepthBounds = true
+            
             // Set shadow max Z to match light
             shadowMaxZ = light.shadowMaxZ
             
@@ -133,26 +178,60 @@ class ShadowManager(
     }
     
     /**
+     * Updates shadow casters based on distance to camera (Task 2)
+     */
+    fun update() {
+        val camera = scene.activeCamera ?: return
+        val cameraPos = camera.position
+        
+        // Task 2: Shadow Distance Culling (Optimized for big scenes)
+        // Calculate dynamic threshold based on camera distance (radius) for ArcRotateCamera
+        val cameraRadius = (camera as? ArcRotateCamera)?.radius ?: 0f
+        val effectiveThresholdSq = if (cameraRadius > 0) {
+            // Ensure threshold is at least 150% of camera radius to avoid culling visible objects
+            val dynamicThreshold = if (shadowDistanceThreshold > cameraRadius * 1.5f) shadowDistanceThreshold else cameraRadius * 1.5f
+            dynamicThreshold * dynamicThreshold
+        } else {
+            shadowDistanceThresholdSq
+        }
+        
+        shadowCasters.forEach { mesh ->
+            val dx = mesh.position.x - cameraPos.x
+            val dy = mesh.position.y - cameraPos.y
+            val dz = mesh.position.z - cameraPos.z
+            val distanceSq = dx * dx + dy * dy + dz * dz
+            val isWithinDistance = distanceSq <= effectiveThresholdSq
+            val isActive = activeShadowCasters.contains(mesh)
+            
+            if (isWithinDistance && !isActive) {
+                // Add to generators
+                shadowGenerator.addShadowCaster(mesh)
+                pointLightShadowGenerators.forEach { it.addShadowCaster(mesh) }
+                activeShadowCasters.add(mesh)
+            } else if (!isWithinDistance && isActive) {
+                // Remove from generators
+                shadowGenerator.removeShadowCaster(mesh)
+                pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
+                activeShadowCasters.remove(mesh)
+            }
+        }
+    }
+
+    /**
      * Adds a mesh as a shadow caster.
      * 
      * @param mesh The mesh to add as a shadow caster
      */
     fun addShadowCaster(mesh: AbstractMesh) {
-        // Skip if already a shadow caster
+        // Skip if already tracked
         if (shadowCasters.contains(mesh)) {
             return
         }
         
-        // Add to main shadow generator
-        shadowGenerator.addShadowCaster(mesh)
-        
-        // Add to all point light shadow generators
-        pointLightShadowGenerators.forEach { it.addShadowCaster(mesh) }
-        
         // Add to tracking list
         shadowCasters.add(mesh)
         
-        println("[DEBUG] Added shadow caster: ${mesh.name} to main and ${pointLightShadowGenerators.size} point light generators")
+        // Let update() handle adding it to the actual generator based on distance
     }
     
     /**
@@ -161,7 +240,6 @@ class ShadowManager(
      * @param meshes The array of meshes to add as shadow casters
      */
     fun addShadowCasters(meshes: Array<AbstractMesh>) {
-        println("[DEBUG] Adding ${meshes.size} meshes as shadow casters")
         meshes.forEach { mesh ->
             addShadowCaster(mesh)
         }
@@ -173,21 +251,16 @@ class ShadowManager(
      * @param mesh The mesh to remove from shadow casters
      */
     fun removeShadowCaster(mesh: AbstractMesh) {
-        // Skip if not a shadow caster
-        if (!shadowCasters.contains(mesh)) {
+        // Remove from trackers
+        if (!shadowCasters.remove(mesh)) {
             return
         }
         
-        // Remove from main shadow generator
-        shadowGenerator.removeShadowCaster(mesh)
-        
-        // Remove from all point light shadow generators
-        pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
-        
-        // Remove from tracking list
-        shadowCasters.remove(mesh)
-        
-        println("[DEBUG] Removed shadow caster: ${mesh.name}")
+        // If it was active, remove from generators
+        if (activeShadowCasters.remove(mesh)) {
+            shadowGenerator.removeShadowCaster(mesh)
+            pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
+        }
     }
     
     /**
@@ -201,8 +274,8 @@ class ShadowManager(
         
         pointLightShadowGenerators.add(generator)
         
-        // Add all existing shadow casters to this new generator
-        shadowCasters.forEach { mesh ->
+        // Add all active shadow casters to this new generator
+        activeShadowCasters.forEach { mesh ->
             generator.addShadowCaster(mesh)
         }
         
@@ -272,16 +345,23 @@ class ShadowManager(
      * Cleans up the shadow generator and clears the shadow casters list.
      */
     fun dispose() {
+        // Remove graphics settings observer
+        GraphicsSettings.removeObserver(graphicsSettingsObserver)
+        
         // Remove all shadow casters from main generator
-        shadowCasters.forEach { mesh ->
+        activeShadowCasters.forEach { mesh ->
             shadowGenerator.removeShadowCaster(mesh)
         }
+        
+        // Dispose main generator
+        shadowGenerator.dispose()
         
         // Dispose and clear point light shadow generators
         clearPointLightShadowGenerators()
         
-        // Clear shadow casters list
+        // Clear shadow casters lists
         shadowCasters.clear()
+        activeShadowCasters.clear()
         
         println("[DEBUG] Shadow manager disposed")
     }

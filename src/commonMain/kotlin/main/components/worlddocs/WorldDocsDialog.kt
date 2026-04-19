@@ -5,6 +5,7 @@ import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.DocApi
@@ -152,6 +153,15 @@ fun WorldDocsDialog(
     // Delete confirmation state
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    // Feedback message (auto-hidden)
+    var feedbackMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(feedbackMessage) {
+        if (feedbackMessage != null) {
+            delay(3000)
+            feedbackMessage = null
+        }
+    }
+
     // History dialog state
     var showHistoryDialog by remember { mutableStateOf(false) }
 
@@ -218,6 +228,12 @@ fun WorldDocsDialog(
                 Div(attrs = {
                     classes(Styles.toastMessage, Styles.toastError)
                 }) { Text(error!!) }
+            }
+            // Toast feedback banner (auto-hidden)
+            if (feedbackMessage != null) {
+                Div(attrs = {
+                    classes(Styles.toastMessage, Styles.toastSuccess)
+                }) { Text(feedbackMessage!!) }
             }
             // Header actions: create and search
             // Connection status state (for header chip)
@@ -538,6 +554,41 @@ fun WorldDocsDialog(
                                         onClick = { window.open("/doc/${selectedDoc.key}?action=print", "_blank") }
                                     ) {
                                         Translated("Print")
+                                    }
+
+                                    // Share button
+                                    DialogButton(
+                                        onClick = {
+                                            val url = "${window.location.origin}/doc/${selectedDoc.key}"
+                                            val nav = window.navigator.asDynamic()
+                                            if (nav.share != null) {
+                                                val shareData: dynamic = js("{}")
+                                                shareData.title = selectedDoc.title
+                                                shareData.url = url
+                                                nav.share(shareData)
+                                            } else {
+                                                window.open("/doc/${selectedDoc.key}", "_blank")
+                                            }
+                                        }
+                                    ) {
+                                        Translated("Share")
+                                    }
+
+                                    // Copy link button
+                                    DialogButton(
+                                        onClick = {
+                                            val url = "${window.location.origin}/doc/${selectedDoc.key}"
+                                            scope.launch {
+                                                try {
+                                                    window.navigator.clipboard.writeText(url).await()
+                                                    feedbackMessage = str("Copied!")
+                                                } catch (t: Throwable) {
+                                                    error = t.message
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Translated("Copy link")
                                     }
 
                                     // Move up/down among siblings (editors and owners)

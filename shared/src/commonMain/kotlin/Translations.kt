@@ -2371,6 +2371,9 @@ vi: Đã ngắt kết nối.
 Print
 vi: In
 
+Share
+vi: Chia sẻ
+
 pairs matched
 vi: cặp đã khớp
 
@@ -2451,6 +2454,9 @@ vi: Quay lại
 
 Forward
 vi: Tiếp theo
+
+© 2026 Saigon.Quest v0.1
+vi: © 2026 Saigon.Quest v0.1
 
 """
 

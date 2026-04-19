@@ -5,7 +5,6 @@ import lib.Camera
 import lib.Color4
 import lib.DefaultRenderingPipeline
 import lib.DepthOfFieldEffectBlurLevel
-import lib.Effect
 import lib.ImageProcessingPostProcess
 import lib.Mesh
 import lib.PostProcess
@@ -51,7 +50,7 @@ class CameraPipelineManager(
 
     // Outline settings
     private var outlineOpacity = 1f
-    private var outlineThicknessScale = 1f
+    private var outlineThicknessScale = .5f
     private var outlineColorMix = .8f
 
     // Outline post-processes per camera
@@ -90,7 +89,7 @@ class CameraPipelineManager(
      */
     private fun registerOutlineShader() {
         val shaderName = "saigonOutlineV14PixelShader"
-        
+
         ShaderStore.ShadersStore[shaderName] = """
             precision highp float;
             varying vec2 vUV;
@@ -100,9 +99,12 @@ class CameraPipelineManager(
             uniform float opacity;
             uniform float thicknessScale;
             uniform float colorMix;
-            uniform bool hasDepth;
             uniform mat4 invViewProjection;
+            uniform mat4 viewProjection;
             uniform vec2 depthRange;
+            uniform vec3 cameraPosition;
+            uniform vec3 cameraRight;
+            uniform vec3 cameraUp;
             
             float getLuminance(vec3 color) {
                 return dot(color, vec3(0.299, 0.587, 0.114));
@@ -145,17 +147,34 @@ class CameraPipelineManager(
                 }
 
                 vec2 texelSize = 1.0 / screenSize;
-                float d0 = hasDepth ? texture2D(depthSampler, vUV).r : 1.0;
+                float d0 = texture2D(depthSampler, vUV).r;
+                
+                // 0. Skip sky/background
+                if (d0 >= 1.0) {
+                    gl_FragColor = baseColor;
+                    return;
+                }
                 
                 // 1. Reconstruct ABSOLUTE world position for stability
                 // Using absolute world space ensures the brush strokes stay pinned to the objects
                 // as the camera moves through the world.
                 float n = depthRange.x;
                 float f = depthRange.y;
-                float zView0 = d0 * (f - n) + n;
+                
+                // STABILITY IMPROVEMENT: Sample neighborhood to find foreground depth.
+                // This ensures the noise used for the outline is pinned to the object creating the edge,
+                // rather than jumping to the background depth.
+                float d1 = texture2D(depthSampler, vUV + vec2(texelSize.x, 0.0)).r;
+                float d2 = texture2D(depthSampler, vUV + vec2(-texelSize.x, 0.0)).r;
+                float d3 = texture2D(depthSampler, vUV + vec2(0.0, texelSize.y)).r;
+                float d4 = texture2D(depthSampler, vUV + vec2(0.0, -texelSize.y)).r;
+                float dStable = min(d0, min(min(d1, d2), min(d3, d4)));
+
+                float zView0 = dStable * (f - n) + n;
                 float nonLinearDepth0 = (f / (f - n)) * (1.0 - n / zView0);
                 
-                // Standard NDC (-1 to 1 for XY, -1 to 1 for Z in WebGL/Babylon)
+                // Standard NDC (-1 to 1 for XY, -1 to 1 for Z in standard WebGL/Babylon)
+                // Note: nonLinearDepth0 is in [0,1], so we must scale to [-1,1] for the inverse matrix
                 vec4 ndc0 = vec4(vUV * 2.0 - 1.0, nonLinearDepth0 * 2.0 - 1.0, 1.0);
                 vec4 worldPos0 = invViewProjection * ndc0;
                 vec3 stablePos = worldPos0.xyz / worldPos0.w;
@@ -166,18 +185,25 @@ class CameraPipelineManager(
                 float noise_path2 = smoothNoise3D(stablePos * 0.125 + vec3(31.0, 71.0, 19.0));
                 
                 // 3. Ink variation (Weight/Opacity): medium frequency
+                // Splatter: additional high-frequency noise for edge "splatter"
                 float noise_var = smoothNoise3D(stablePos * 0.75);
+                float noise_splat = smoothNoise3D(stablePos * 2.5);
                 
-                // 4. Sampling displacement (stable because stablePos is stable)
-                vec2 uvWobble = vUV + (vec2(noise_path, noise_path2) - 0.5) * texelSize * 3.0 * thicknessScale;
+                // 4. World-space UV Wobble
+                // Perturb the world position by the noise and re-project to get the new UV.
+                // Using cameraRight and cameraUp for a stable basis across the screen.
+                vec3 perturbation = (cameraRight * (noise_path - 0.5) + cameraUp * (noise_path2 - 0.5)) * 0.05 * thicknessScale;
+                vec3 perturbedWorldPos = stablePos + perturbation;
+                vec4 perturbedNDC = viewProjection * vec4(perturbedWorldPos, 1.0);
+                vec2 uvWobble = (perturbedNDC.xy / perturbedNDC.w) * 0.5 + 0.5;
                 
                 // thickness modulation ranges from 0.4 to 1.6
-                float ts = thicknessScale * (0.4 + noise_var * 1.2);
+                float ts = thicknessScale * (0.4 + noise_var * 1.2 + noise_splat * 0.4);
                 // opacity modulation ranges from 0.6 to 1.4
                 float varOpacity = opacity * (0.6 + noise_var * 0.8);
                 
                 float l0 = getLuminance(texture2D(textureSampler, uvWobble).rgb);
-                float dCenter = hasDepth ? texture2D(depthSampler, uvWobble).r : 1.0;
+                float dCenter = texture2D(depthSampler, uvWobble).r;
                 float colorEdge = 0.0;
                 float depthEdge = 0.0;
                 
@@ -185,21 +211,28 @@ class CameraPipelineManager(
                 float baseAngle = noise_path * 6.28318;
                 for(int i = 0; i < 2; i++) {
                     float a = baseAngle + float(i) * 1.570796;
-                    vec2 offset = vec2(cos(a), sin(a)) * texelSize * ts;
                     
-                    vec2 uvP = uvWobble + offset;
-                    vec2 uvM = uvWobble - offset;
+                    // 5. World-space edge detection
+                    // Using cameraRight and cameraUp for stable offsets relative to the screen plane
+                    vec3 worldOffset = (cameraRight * cos(a) + cameraUp * sin(a)) * 0.01 * ts;
+                    
+                    vec3 posP = stablePos + worldOffset;
+                    vec3 posM = stablePos - worldOffset;
+                    
+                    vec4 ndcP = viewProjection * vec4(posP, 1.0);
+                    vec4 ndcM = viewProjection * vec4(posM, 1.0);
+                    
+                    vec2 uvP = (ndcP.xy / ndcP.w) * 0.5 + 0.5;
+                    vec2 uvM = (ndcM.xy / ndcM.w) * 0.5 + 0.5;
                     
                     float lP = getLuminance(texture2D(textureSampler, uvP).rgb);
                     float lM = getLuminance(texture2D(textureSampler, uvM).rgb);
                     colorEdge = max(colorEdge, max(abs(l0 - lP), abs(l0 - lM)));
                     
-                    if (hasDepth) {
-                        float dP = texture2D(depthSampler, uvP).r;
-                        float dM = texture2D(depthSampler, uvM).r;
-                        // Use dCenter for Laplacian-style edge detection centered at uvWobble
-                        depthEdge = max(depthEdge, abs(dP + dM - 2.0 * dCenter));
-                    }
+                    float dP = texture2D(depthSampler, uvP).r;
+                    float dM = texture2D(depthSampler, uvM).r;
+                    // Use dCenter for Laplacian-style edge detection centered at uvWobble
+                    depthEdge = max(depthEdge, abs(dP + dM - 2.0 * dCenter));
                 }
 
                 // Thresholds use world-stable noise to eliminate screen-space crawling
@@ -214,9 +247,9 @@ class CameraPipelineManager(
                 float inkAlpha = smoothstep(0.0, 0.25, edge);
                 
                 // Add a bit of fine grain to the ink to make it look like real charcoal/ink on paper
-                // WORLD-SPACE ONLY: Use stablePos instead of gl_FragCoord.xy
-                float grain = hash3(stablePos * 50.0);
-                inkAlpha *= (0.9 + grain * 0.1);
+                // WORLD-SPACE ONLY: Use smoothNoise3D for sub-pixel stability
+                float grain = smoothNoise3D(stablePos * 60.0);
+                inkAlpha *= (0.85 + grain * 0.25);
                 
                 vec3 outlineColor = mix(baseColor.rgb, vec3(0.0), colorMix);
                 
@@ -247,7 +280,7 @@ class CameraPipelineManager(
                 pp = PostProcess(
                     name = "saigonOutline",
                     fragmentUrl = "saigonOutlineV14",
-                    parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "hasDepth", "invViewProjection", "depthRange"),
+                    parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "invViewProjection", "viewProjection", "depthRange", "cameraPosition", "cameraRight", "cameraUp"),
                     samplers = arrayOf("depthSampler"),
                     options = 1.0,
                     camera = cam,
@@ -268,11 +301,13 @@ class CameraPipelineManager(
                     } catch (_: Throwable) {}
                     
                     effect.setMatrix("invViewProjection", cam.getTransformationMatrix().clone().invert())
+                    effect.setMatrix("viewProjection", cam.getTransformationMatrix())
                     effect.setVector2("depthRange", Vector2(cam.minZ, cam.maxZ))
+                    effect.setVector3("cameraPosition", cam.globalPosition)
+                    effect.setVector3("cameraRight", cam.getDirection(Vector3.Right()))
+                    effect.setVector3("cameraUp", cam.getDirection(Vector3.Up()))
                     
                     val dr = DepthPicking.depthRenderer
-                    val hasDepth = dr != null
-                    effect.setBool("hasDepth", hasDepth)
                     if (dr != null) {
                         effect.setTexture("depthSampler", dr.getDepthMap())
                     }

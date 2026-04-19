@@ -64,6 +64,10 @@ class SceneObjectManager(
     // Map of object IDs to their status text handles
     private val objectStatusTextHandles = mutableMapOf<String, WorldObjectHandle>()
     private val objectStatusOffsets = mutableMapOf<String, Float>()
+    
+    // Performance caches
+    private val cachedMeshes = mutableMapOf<String, List<AbstractMesh>>()
+    private val cachedHighestY = mutableMapOf<String, Float>()
 
     // Cache last known status text to restore after typing ends
     private val objectStatusTexts = mutableMapOf<String, String>()
@@ -101,6 +105,9 @@ class SceneObjectManager(
     
     // Track objects that are within proximity radius
     private val nearbyObjectIds = mutableSetOf<String>()
+
+    // Spatial hash for efficient proximity checks (10x10 unit cells)
+    private val spatialHash = SpatialHash(10f)
 
     // Add a selection outline layer for the outline effect
     private val selectionOutlineLayer = SelectionOutlineLayer("objectSelectionOutlineLayer", scene)
@@ -463,6 +470,9 @@ class SceneObjectManager(
 
                 (node as? TransformNode)?.dispose()
                 objectMeshes.remove(objectId)
+                spatialHash.remove(objectId)
+                cachedMeshes.remove(objectId)
+                cachedHighestY.remove(objectId)
                 console.log("[DEBUG_REMOVE] Successfully removed node for object: $objectId")
             } else {
                 console.log("[DEBUG_REMOVE] No node found for object: $objectId")
@@ -492,6 +502,9 @@ class SceneObjectManager(
     fun moveObject(objectId: String, newPosition: Position) {
         console.log("Moving object $objectId to position (${newPosition.x}, ${newPosition.y}, ${newPosition.z})")
         
+        // Update spatial hash
+        spatialHash.update(objectId, Vector3(newPosition.x, newPosition.y, newPosition.z))
+
         // Update the object's position in the scene
         // In a real implementation, we would find the mesh by ID and update its position
         
@@ -633,6 +646,7 @@ class SceneObjectManager(
                     
                 // Store the object in our map for future reference
                 objectMeshes[obj.key] = node
+                spatialHash.update(obj.key, node.position)
                 // Track as inventory-based source to stabilize model-change checks
                 objectModelSources[obj.key] = Pair("", "")
                 // Track object kind
@@ -857,6 +871,7 @@ class SceneObjectManager(
             // Store the fallback sphere in our map for future reference
             console.log("[DEBUG_OBJECT] Storing fallback sphere in objectMeshes map with key: ${obj.key}")
             objectMeshes[obj.key] = fallbackSphere
+            spatialHash.update(obj.key, fallbackSphere.position)
 
             // Track model source used for this object (may be blank strings)
             objectModelSources[obj.key] = Pair(obj.file, obj.collection)
@@ -912,6 +927,7 @@ class SceneObjectManager(
                         // Store the mesh in our map for future reference
                         console.log("[DEBUG_OBJECT] Storing mesh in objectMeshes map with key: ${obj.key}")
                         objectMeshes[obj.key] = node
+                        spatialHash.update(obj.key, node.position)
                         
                         // Track model source used for this object
                         objectModelSources[obj.key] = Pair(obj.file, obj.collection)
@@ -1211,6 +1227,7 @@ class SceneObjectManager(
                 console.log("Updating object ${draggingObjectId} position to (${adjustedPosition.x}, ${adjustedPosition.y}, ${adjustedPosition.z})")
                 console.log("Applied offset: (${offset.x}, ${offset.y}, ${offset.z})")
                 node.position = adjustedPosition
+                spatialHash.update(draggingObjectId!!, adjustedPosition)
                 
                 return true
             } else {
@@ -1621,6 +1638,11 @@ class SceneObjectManager(
     /** Returns a snapshot of root nodes for all backend objects, keyed by backend object ID. */
     fun getObjectNodes(): Map<String, Node> = objectMeshes.toMap()
 
+    /** Returns IDs of objects within the specified radius of the position. */
+    fun getNearbyObjectIds(position: Vector3, radius: Float): Set<String> {
+        return spatialHash.getNearby(position, radius)
+    }
+
     fun isInventoryObject(objectId: String): Boolean {
         return objectKinds[objectId] == ObjectKind.Inventory
     }
@@ -1675,14 +1697,19 @@ class SceneObjectManager(
     ) {
         val node = objectMeshes[objectId] ?: return
         
-        val childMeshes = node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+        // Task 3: Mesh Caching
+        val childMeshes = cachedMeshes.getOrPut(objectId) {
+            node.getChildMeshes(false).filter { !DepthPicking.isStatusBillboardMesh(it) }
+        }
         
-        // Check if the object has active animations
+        // Task 1: Floating UI Caching
+        // Check if the object has active animations or if it's the first time
+        val isFirstTime = !cachedHighestY.containsKey(objectId)
         val hasAnimations = node.animations.isNotEmpty() ||
                             childMeshes.any { it.animations.isNotEmpty() } ||
                             anyAnimationGroupsPlaying
 
-        if (hasAnimations) {
+        if (hasAnimations || isFirstTime) {
             if (childMeshes.isEmpty()) return
 
             var maxY = -1e9f
@@ -1694,9 +1721,6 @@ class SceneObjectManager(
 
             for (mesh in childMeshes) {
                 try {
-                    // Exclude status billboards from bounding box calculation
-                    if (DepthPicking.isStatusBillboardMesh(mesh)) continue
-
                     mesh.computeWorldMatrix(true)
                     val boundingInfo = mesh.getBoundingInfo()
                     val meshMaxY = boundingInfo.boundingBox.maximumWorld.y
@@ -1710,13 +1734,15 @@ class SceneObjectManager(
             }
 
             if (found) {
+                cachedHighestY[objectId] = maxY
                 val offsetY = (maxY + 0.5f) - node.position.y
                 
                 // Only update if the change is significant to avoid unnecessary work
                 val currentOffsetY = if (isStatusText) {
                     objectStatusOffsets[objectId] ?: 0f
                 } else {
-                    0.5f // Default offset for typing indicator
+                    // For typing indicator, we don't have a separate offset map, but we use handle.position.y relative to node.position.y
+                    handle.position.y
                 }
 
                 if (abs(offsetY - currentOffsetY) > 0.001f) {
@@ -1741,6 +1767,8 @@ class SceneObjectManager(
         
         // Clear maps
         objectMeshes.clear()
+        cachedMeshes.clear()
+        cachedHighestY.clear()
         objectStatusTextHandles.clear()
         objectStatusOffsets.clear()
         objectStatusTexts.clear()
@@ -1763,6 +1791,7 @@ class SceneObjectManager(
         dragStartPosition = null
         dragClickOffset = null
         
+        spatialHash.clear()
         console.log("Disposing SceneObjectManager resources")
     }
 
