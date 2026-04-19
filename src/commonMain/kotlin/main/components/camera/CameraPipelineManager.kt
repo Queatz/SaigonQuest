@@ -50,14 +50,20 @@ class CameraPipelineManager(
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
 
     // Outline settings
-    private var outlineOpacity = .8f
-    private var outlineThicknessScale = 1f
-    private var outlineColorMix = .8f
+    private var outlineOpacity = .9f
+    private var outlineThicknessScale = 6f
+    private var outlineColorMix = .9f
 
     // Outline post-processes per camera
     private val outlinePostProcesses = mutableMapOf<Camera, PostProcess>()
 
+    // Cameras registered to the pipeline to ensure effects can be toggled reliably
+    private val registeredCameras = mutableSetOf<Camera>()
+
     init {
+        // Track the main camera
+        registeredCameras.add(camera)
+
         // Register outline shader
         registerOutlineShader()
 
@@ -84,7 +90,7 @@ class CameraPipelineManager(
      */
     private fun registerOutlineShader() {
         // Use a unique name to ensure we're using the latest version of the shader
-        val shaderName = "saigonOutlineV4PixelShader"
+        val shaderName = "saigonOutlineV6PixelShader"
         
         ShaderStore.ShadersStore[shaderName] = """
             precision highp float;
@@ -101,16 +107,27 @@ class CameraPipelineManager(
                 return dot(color, vec3(0.299, 0.587, 0.114));
             }
 
-            // High-quality hash-based noise
+            // High-quality hash
             float hash12(vec2 p) {
                 vec3 p3 = fract(vec3(p.xyx) * 0.1031);
                 p3 += dot(p3, p3.yzx + 33.33);
                 return fract((p3.x + p3.y) * p3.z);
             }
 
+            // Smooth Value Noise
+            float smoothNoise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                float a = hash12(i);
+                float b = hash12(i + vec2(1.0, 0.0));
+                float c = hash12(i + vec2(0.0, 1.0));
+                float d = hash12(i + vec2(1.0, 1.0));
+                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+            }
+
             void main(void) {
                 vec4 baseColor = texture2D(textureSampler, vUV);
-                
                 if (screenSize.x <= 0.0 || screenSize.y <= 0.0) {
                     gl_FragColor = baseColor;
                     return;
@@ -118,64 +135,64 @@ class CameraPipelineManager(
 
                 vec2 texelSize = 1.0 / screenSize;
                 
-                // Use gl_FragCoord for stable per-pixel noise
-                float noise = hash12(gl_FragCoord.xy);
+                // Low frequency noise for smooth wobble and thickness variation (~60px scale)
+                vec2 pixelCoord = gl_FragCoord.xy;
+                float noiseS = smoothNoise(pixelCoord * 0.0175);
+                float noiseS2 = smoothNoise(pixelCoord * 0.0175 + vec2(100.0, 50.0));
                 
-                // Jittered thickness for brush stroke look
-                float ts = thicknessScale * (0.7 + noise * 0.6);
+                // High frequency noise for ink grain
+                float noiseG = hash12(pixelCoord);
                 
-                // Sample neighbors with angular jitter for "hand-drawn" feel
-                // This also breaks up axis-aligned banding artifacts
-                float angle = noise * 6.28318;
-                vec2 dir = vec2(cos(angle), sin(angle)) * texelSize * ts;
-                vec2 ortho = vec2(-dir.y, dir.x);
+                // Displace UV slightly for "hand-drawn" wobble
+                vec2 uvWobble = vUV + (vec2(noiseS, noiseS2) - 0.5) * texelSize * 1.5 * thicknessScale;
                 
-                vec2 uv1 = vUV + dir;
-                vec2 uv2 = vUV - dir;
-                vec2 uv3 = vUV + ortho;
-                vec2 uv4 = vUV - ortho;
-
-                float l0 = getLuminance(baseColor.rgb);
-                float l1 = getLuminance(texture2D(textureSampler, uv1).rgb);
-                float l2 = getLuminance(texture2D(textureSampler, uv2).rgb);
-                float l3 = getLuminance(texture2D(textureSampler, uv3).rgb);
-                float l4 = getLuminance(texture2D(textureSampler, uv4).rgb);
+                // Thickness varies smoothly
+                float ts = thicknessScale * (0.7 + noiseS * 0.6);
                 
-                // Color edge detection
-                float colorEdge = max(max(abs(l0 - l1), abs(l0 - l2)), max(abs(l0 - l3), abs(l0 - l4)));
-                // Dithered threshold to avoid color banding in smooth gradients
-                float colorThreshold = 0.15 + (noise - 0.5) * 0.05;
-                colorEdge = smoothstep(colorThreshold, colorThreshold + 0.1, colorEdge);
-
+                float l0 = getLuminance(texture2D(textureSampler, uvWobble).rgb);
+                float d0 = hasDepth ? texture2D(depthSampler, uvWobble).r : 0.0;
+                
+                float colorEdge = 0.0;
                 float depthEdge = 0.0;
-                if (hasDepth) {
-                    float d0 = texture2D(depthSampler, vUV).r;
-                    float d1 = texture2D(depthSampler, uv1).r;
-                    float d2 = texture2D(depthSampler, uv2).r;
-                    float d3 = texture2D(depthSampler, uv3).r;
-                    float d4 = texture2D(depthSampler, uv4).r;
+                
+                // Two perpendicular pairs for Laplacian (4 samples total)
+                float baseAngle = noiseS * 2.0;
+                for(int i = 0; i < 2; i++) {
+                    float a = baseAngle + float(i) * 1.570796;
+                    vec2 offset = vec2(cos(a), sin(a)) * texelSize * ts;
                     
-                    // Use Laplacian (second derivative) to ignore linear depth gradients (planes/slopes)
-                    // On a flat slope, d1+d2-2*d0 is zero.
-                    float lap1 = abs(d1 + d2 - 2.0 * d0);
-                    float lap2 = abs(d3 + d4 - 2.0 * d0);
-                    depthEdge = max(lap1, lap2);
+                    vec2 uvP = uvWobble + offset;
+                    vec2 uvM = uvWobble - offset;
                     
-                    // Dithered depth threshold is CRITICAL to fixing banding on low-precision mobile depth buffers
-                    // It turns the "step" line into a noisy, textured transition
-                    float depthThreshold = 0.008 + (noise - 0.5) * 0.006;
-                    depthEdge = smoothstep(depthThreshold, depthThreshold + 0.004, depthEdge);
+                    float lP = getLuminance(texture2D(textureSampler, uvP).rgb);
+                    float lM = getLuminance(texture2D(textureSampler, uvM).rgb);
+                    colorEdge = max(colorEdge, max(abs(l0 - lP), abs(l0 - lM)));
+                    
+                    if (hasDepth) {
+                        float dP = texture2D(depthSampler, uvP).r;
+                        float dM = texture2D(depthSampler, uvM).r;
+                        // Laplacian: abs(dP + dM - 2.0 * d0)
+                        depthEdge = max(depthEdge, abs(dP + dM - 2.0 * d0));
+                    }
                 }
+
+                // Thresholds
+                float colorThreshold = 0.12 + (noiseS - 0.5) * 0.05 + (noiseG - 0.5) * 0.02;
+                colorEdge = smoothstep(colorThreshold, colorThreshold + 0.15, colorEdge);
+                
+                float depthThreshold = 0.007 + (noiseS - 0.5) * 0.005 + (noiseG - 0.5) * 0.003;
+                depthEdge = smoothstep(depthThreshold, depthThreshold + 0.005, depthEdge);
                 
                 float edge = max(colorEdge, depthEdge);
                 
-                // Vary opacity for ink-like feel
-                float finalOpacity = opacity * (0.75 + noise * 0.25);
+                // Ink modulation: darker in the middle, slightly grainy at edges
+                float inkAlpha = smoothstep(0.0, 0.4, edge) * (0.8 + noiseG * 0.2);
+                float finalOpacity = opacity * inkAlpha;
                 
                 vec3 targetColor = vec3(0.0, 0.0, 0.0);
                 vec3 outlineColor = mix(baseColor.rgb, targetColor, colorMix);
                 
-                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, edge * finalOpacity), 1.0);
+                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, finalOpacity * edge), 1.0);
             }
         """.trimIndent()
     }
@@ -200,7 +217,7 @@ class CameraPipelineManager(
             try {
                 pp = PostProcess(
                     name = "saigonOutline",
-                    fragmentUrl = "saigonOutlineV4",
+                    fragmentUrl = "saigonOutlineV6",
                     parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "hasDepth"),
                     samplers = arrayOf("depthSampler"),
                     options = 1.0,
@@ -368,7 +385,7 @@ class CameraPipelineManager(
             }
 
             // Re-ensure outline is at the end of the post-process chain for all cameras
-            outlinePostProcesses.keys.toList().forEach { cam ->
+            registeredCameras.toList().forEach { cam ->
                 createOutlinePostProcess(cam)
             }
         } catch (e: Throwable) {
@@ -413,6 +430,7 @@ class CameraPipelineManager(
      */
     fun addCameraToPipeline(cameraToAdd: Camera) {
         try {
+            registeredCameras.add(cameraToAdd)
             pipeline.addCamera(cameraToAdd)
             ssaoPipeline?.addCamera(cameraToAdd)
             createOutlinePostProcess(cameraToAdd)
@@ -426,6 +444,7 @@ class CameraPipelineManager(
      */
     fun removeCameraFromPipeline(cameraToRemove: Camera) {
         try {
+            registeredCameras.remove(cameraToRemove)
             pipeline.removeCamera(cameraToRemove)
             ssaoPipeline?.removeCamera(cameraToRemove)
             outlinePostProcesses.remove(cameraToRemove)?.dispose()
@@ -454,6 +473,7 @@ class CameraPipelineManager(
         ssaoPipeline = null
         outlinePostProcesses.values.forEach { it.dispose() }
         outlinePostProcesses.clear()
+        registeredCameras.clear()
         try {
             pipeline.dispose()
         } catch (_: Throwable) {

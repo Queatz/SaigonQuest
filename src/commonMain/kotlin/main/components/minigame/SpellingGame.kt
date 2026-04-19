@@ -56,7 +56,6 @@ fun SpellingGame(
     fun completeWord() {
         if (isWordCompleted) return
         isWordCompleted = true
-        successCount++
         
         scope.launch {
             delay(1000)
@@ -180,6 +179,7 @@ fun SpellingGame(
                                 if (newVal.isNotEmpty()) {
                                     val isCorrect = newVal[0] == targetWord[index]
                                     totalAttempts++
+                                    if (isCorrect) successCount++
                                     
                                     val newList = userLetters.toMutableList()
                                     newList[index] = newVal
