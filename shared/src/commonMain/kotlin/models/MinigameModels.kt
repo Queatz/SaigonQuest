@@ -13,6 +13,7 @@ enum class MinigameType {
     Sequencing,
     Categorization,
     Identify,
+    Spelling,
 }
 
 /**

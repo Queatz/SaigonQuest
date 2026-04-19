@@ -606,20 +606,8 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
 }
 
 // Subset of RenderTargetTexture we need for depth picking render list control
-external interface RenderTargetTexture {
+external open class RenderTargetTexture : Texture {
     var renderList: Array<AbstractMesh>?
-    fun getSize(): TextureSize
-    fun readPixels(
-        faceIndex: Int? = definedExternally,
-        level: Int? = definedExternally,
-        buffer: ArrayBufferView? = definedExternally,
-        flushRenderer: Boolean? = definedExternally,
-        noDataConversion: Boolean? = definedExternally,
-        x: Int? = definedExternally,
-        y: Int? = definedExternally,
-        width: Int? = definedExternally,
-        height: Int? = definedExternally,
-    ): Promise<ArrayBufferView>?
 }
 
 external class Engine(

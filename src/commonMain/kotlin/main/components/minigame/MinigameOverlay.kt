@@ -51,6 +51,7 @@ fun MinigameOverlay(
                 MinigameType.Sequencing -> SequencingGame(config, handleComplete)
                 MinigameType.Categorization -> CategorizationGame(config, handleComplete)
                 MinigameType.Identify -> IdentifyGame(config, handleComplete)
+                MinigameType.Spelling -> SpellingGame(config, handleComplete)
             }
         }
     )

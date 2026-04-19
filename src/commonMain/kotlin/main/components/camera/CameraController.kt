@@ -463,6 +463,17 @@ class CameraController(private val scene: Scene) {
     }
 
     /**
+     * Updates the outline settings.
+     */
+    fun updateOutlineSettings(
+        opacity: Float? = null,
+        thicknessScale: Float? = null,
+        colorMix: Float? = null,
+    ) {
+        pipelineManager.updateOutlineSettings(opacity, thicknessScale, colorMix)
+    }
+
+    /**
      * Enables camera inputs to allow camera movement.
      * 
      * @param manual Whether this is a manual request (e.g., from InputHandler)

@@ -235,6 +235,12 @@ vi: Chọn các mục theo đúng thứ tự
 Sort the items into the correct categories
 vi: Sắp xếp các mục vào đúng loại
 
+Word to spell
+vi: Từ cần đánh vần
+
+Spell the word correctly
+vi: Đánh vần từ đúng
+
 Listen and identify the correct item
 vi: Nghe và chọn đúng mục
 
@@ -1840,6 +1846,9 @@ vi: Chế độ quan sát
 
 Wide angle
 vi: Chế độ rộng
+
+Outline
+vi: Đường viền
 
 World screenshot
 vi: Ảnh chụp thế giới

@@ -4,6 +4,10 @@ import org.jetbrains.compose.web.css.*
 import main.theme.Theme
 
 object MinigameStyles : StyleSheet() {
+    val noOverflow by style {
+        property("overflow", "hidden")
+    }
+
     val gameContainer by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -448,5 +452,80 @@ object MinigameStyles : StyleSheet() {
         60.percent { property("transform", "translateX(-8px)") }
         80.percent { property("transform", "translateX(8px)") }
         100.percent { property("transform", "translateX(0)") }
+    }
+
+    val spellingInputContainer by style {
+        display(DisplayStyle.Flex)
+        justifyContent(JustifyContent.Center)
+        gap(12.px)
+        marginTop(32.px)
+        flexWrap(FlexWrap.Wrap)
+    }
+
+    val letterPop by keyframes {
+        from { property("transform", "scale(1)") }
+        50.percent { property("transform", "scale(1.15)") }
+        to { property("transform", "scale(1)") }
+    }
+
+    val spellingLetterInput by style {
+        width(60.px)
+        height(80.px)
+        fontSize(48.px)
+        fontWeight("bold")
+        textAlign("center")
+        backgroundColor(rgba(255, 255, 255, 0.1))
+        border(0.px)
+        property("border-bottom", "4px solid ${Theme.colors.primary}")
+        color(Theme.colors.onBackground)
+        property("outline", "none")
+        property("transition", "all 0.2s")
+        borderRadius(8.px, 8.px, 0.px, 0.px)
+
+        (self + className("is-correct")) style {
+            property("border-bottom-color", "#4CAF50")
+            backgroundColor(rgba(76, 175, 80, 0.2))
+            animation(letterPop) {
+                duration(0.3.s)
+            }
+        }
+
+        (self + className("is-wrong")) style {
+            property("border-bottom-color", "#F44336")
+            backgroundColor(rgba(244, 67, 54, 0.2))
+            animation(shake) {
+                duration(0.4.s)
+            }
+        }
+
+        (self + ":focus") style {
+            backgroundColor(rgba(255, 255, 255, 0.2))
+            property("border-bottom-width", "6px")
+        }
+
+        media("(prefers-color-scheme: dark)") {
+            self style {
+                color(Theme.colors.onBackgroundDark)
+            }
+        }
+    }
+
+    val spellingWordAnimation by keyframes {
+        from {
+            property("transform", "scale(1)")
+        }
+        50.percent {
+            property("transform", "scale(1.1)")
+        }
+        to {
+            property("transform", "scale(1)")
+        }
+    }
+
+    val spellingSuccessAnimation by style {
+        animation(spellingWordAnimation) {
+            duration(0.5.s)
+            timingFunction(AnimationTimingFunction.EaseInOut)
+        }
     }
 }

@@ -260,6 +260,11 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
                 appendLine("- 'text': The name of the object to identify.")
                 appendLine("- Generate 4-6 distinct items that could be confused with each other (e.g., different types of food).")
             }
+            MinigameType.Spelling -> {
+                appendLine("- 'text': Word to spell in English.")
+                appendLine("- 'translation': Word in Vietnamese (used as a clue).")
+                appendLine("- 'definition': Brief definition (used as a clue).")
+            }
         }
         appendLine("- Generate 5-10 items.")
         appendLine("- Respond ONLY with a JSON object: { \"items\": [...] }")

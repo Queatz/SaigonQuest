@@ -356,12 +356,13 @@ fun MinigameItemEditor(
                     MinigameType.Sequencing -> "Step description / Item name"
                     MinigameType.Categorization -> "Item name"
                     MinigameType.Identify -> "Identify target name"
+                    MinigameType.Spelling -> "Word to spell"
                     else -> "Text (Front)"
                 }
             )
         )
 
-        if (type == MinigameType.Flashcards) {
+        if (type == MinigameType.Flashcards || type == MinigameType.Spelling) {
             DialogInput(
                 value = item.translation ?: "",
                 onInput = { onUpdate(item.copy(translation = it)) },

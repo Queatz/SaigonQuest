@@ -2,6 +2,7 @@ package models.nodeeditor
 
 import kotlinx.serialization.Serializable
 import models.LogicNode
+import models.MinigameType
 
 /**
  * Enum for property keys to ensure type safety
@@ -1337,7 +1338,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.ENUM,
                 direction = PropertyDirection.INPUT,
                 defaultValue = "Flashcards",
-                options = listOf("Flashcards", "MatchGame", "Scenario", "Sequencing", "Categorization", "Identify")
+                options = MinigameType.entries.map { it.name }
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TITLE,

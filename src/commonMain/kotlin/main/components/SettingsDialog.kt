@@ -17,6 +17,7 @@ fun SettingsDialog(
     val showChangePassword = remember { mutableStateOf(false) }
     val wideAngle = remember { mutableStateOf(GraphicsSettings.isWideAngleEnabled()) }
     val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
+    val outlineEnabled = remember { mutableStateOf(GraphicsSettings.isOutlineEnabled()) }
     val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
     val showLogoutDialog = remember { mutableStateOf(false) }
 
@@ -68,6 +69,22 @@ fun SettingsDialog(
                     }
                 ) {
                     Text("${translated("Observer mode")}: ${if (observerMode.value) translated("On") else translated("Off")}")
+                }
+
+                // Outline
+                DialogButton(
+                    onClick = {
+                        outlineEnabled.value = !outlineEnabled.value
+                        GraphicsSettings.setOutlineEnabled(outlineEnabled.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                ) {
+                    Text("${translated("Outline")}: ${if (outlineEnabled.value) translated("On") else translated("Off")}")
                 }
             }
 

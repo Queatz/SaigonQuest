@@ -16,6 +16,7 @@ import lib.Texture
 import lib.Vector2
 import lib.Vector3
 import main.components.GraphicsSettings
+import main.components.world.DepthPicking
 
 /**
  * Manages the post-processing pipeline for the camera.
@@ -48,6 +49,11 @@ class CameraPipelineManager(
     // SSAO pipeline
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
 
+    // Outline settings
+    private var outlineOpacity = .8f
+    private var outlineThicknessScale = 1f
+    private var outlineColorMix = .8f
+
     // Outline post-processes per camera
     private val outlinePostProcesses = mutableMapOf<Camera, PostProcess>()
 
@@ -78,14 +84,30 @@ class CameraPipelineManager(
      */
     private fun registerOutlineShader() {
         // Use a unique name to ensure we're using the latest version of the shader
-        val shaderName = "saigonOutlinePixelShader"
+        val shaderName = "saigonOutlineV4PixelShader"
         
         ShaderStore.ShadersStore[shaderName] = """
-            precision mediump float;
+            precision highp float;
             varying vec2 vUV;
             uniform sampler2D textureSampler;
+            uniform sampler2D depthSampler;
             uniform vec2 screenSize;
+            uniform float opacity;
+            uniform float thicknessScale;
+            uniform float colorMix;
+            uniform bool hasDepth;
             
+            float getLuminance(vec3 color) {
+                return dot(color, vec3(0.299, 0.587, 0.114));
+            }
+
+            // High-quality hash-based noise
+            float hash12(vec2 p) {
+                vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+
             void main(void) {
                 vec4 baseColor = texture2D(textureSampler, vUV);
                 
@@ -96,31 +118,64 @@ class CameraPipelineManager(
 
                 vec2 texelSize = 1.0 / screenSize;
                 
-                // Sample 4 cardinal neighbors
-                vec3 n1 = texture2D(textureSampler, vUV + vec2(0.0,  texelSize.y)).rgb;
-                vec3 n2 = texture2D(textureSampler, vUV + vec2(0.0, -texelSize.y)).rgb;
-                vec3 n3 = texture2D(textureSampler, vUV + vec2( texelSize.x, 0.0)).rgb;
-                vec3 n4 = texture2D(textureSampler, vUV + vec2(-texelSize.x, 0.0)).rgb;
+                // Use gl_FragCoord for stable per-pixel noise
+                float noise = hash12(gl_FragCoord.xy);
                 
-                // Perceptual luminance weights
-                vec3 lumWeights = vec3(0.299, 0.587, 0.114);
+                // Jittered thickness for brush stroke look
+                float ts = thicknessScale * (0.7 + noise * 0.6);
                 
-                float l0 = dot(baseColor.rgb, lumWeights);
-                float l1 = dot(n1, lumWeights);
-                float l2 = dot(n2, lumWeights);
-                float l3 = dot(n3, lumWeights);
-                float l4 = dot(n4, lumWeights);
+                // Sample neighbors with angular jitter for "hand-drawn" feel
+                // This also breaks up axis-aligned banding artifacts
+                float angle = noise * 6.28318;
+                vec2 dir = vec2(cos(angle), sin(angle)) * texelSize * ts;
+                vec2 ortho = vec2(-dir.y, dir.x);
                 
-                // Find maximum difference in luminance with neighbors
-                float diff = max(max(abs(l0 - l1), abs(l0 - l2)), max(abs(l0 - l3), abs(l0 - l4)));
+                vec2 uv1 = vUV + dir;
+                vec2 uv2 = vUV - dir;
+                vec2 uv3 = vUV + ortho;
+                vec2 uv4 = vUV - ortho;
+
+                float l0 = getLuminance(baseColor.rgb);
+                float l1 = getLuminance(texture2D(textureSampler, uv1).rgb);
+                float l2 = getLuminance(texture2D(textureSampler, uv2).rgb);
+                float l3 = getLuminance(texture2D(textureSampler, uv3).rgb);
+                float l4 = getLuminance(texture2D(textureSampler, uv4).rgb);
                 
-                // Threshold with smooth transition for a "playful" hand-drawn look
-                // 0.1 to 0.2 is a good range for LDR colors
-                float edge = smoothstep(0.1, 0.2, diff);
+                // Color edge detection
+                float colorEdge = max(max(abs(l0 - l1), abs(l0 - l2)), max(abs(l0 - l3), abs(l0 - l4)));
+                // Dithered threshold to avoid color banding in smooth gradients
+                float colorThreshold = 0.15 + (noise - 0.5) * 0.05;
+                colorEdge = smoothstep(colorThreshold, colorThreshold + 0.1, colorEdge);
+
+                float depthEdge = 0.0;
+                if (hasDepth) {
+                    float d0 = texture2D(depthSampler, vUV).r;
+                    float d1 = texture2D(depthSampler, uv1).r;
+                    float d2 = texture2D(depthSampler, uv2).r;
+                    float d3 = texture2D(depthSampler, uv3).r;
+                    float d4 = texture2D(depthSampler, uv4).r;
+                    
+                    // Use Laplacian (second derivative) to ignore linear depth gradients (planes/slopes)
+                    // On a flat slope, d1+d2-2*d0 is zero.
+                    float lap1 = abs(d1 + d2 - 2.0 * d0);
+                    float lap2 = abs(d3 + d4 - 2.0 * d0);
+                    depthEdge = max(lap1, lap2);
+                    
+                    // Dithered depth threshold is CRITICAL to fixing banding on low-precision mobile depth buffers
+                    // It turns the "step" line into a noisy, textured transition
+                    float depthThreshold = 0.008 + (noise - 0.5) * 0.006;
+                    depthEdge = smoothstep(depthThreshold, depthThreshold + 0.004, depthEdge);
+                }
                 
-                // Mix base color with black for the outline (not 100% black to keep some detail)
-                vec3 outlineColor = vec3(0.0, 0.0, 0.0);
-                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, edge * 0.85), 1.0);
+                float edge = max(colorEdge, depthEdge);
+                
+                // Vary opacity for ink-like feel
+                float finalOpacity = opacity * (0.75 + noise * 0.25);
+                
+                vec3 targetColor = vec3(0.0, 0.0, 0.0);
+                vec3 outlineColor = mix(baseColor.rgb, targetColor, colorMix);
+                
+                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, edge * finalOpacity), 1.0);
             }
         """.trimIndent()
     }
@@ -129,14 +184,25 @@ class CameraPipelineManager(
      * Creates an outline post-process for the given camera.
      */
     private fun createOutlinePostProcess(cam: Camera) {
+        val isEnabled = GraphicsSettings.isOutlineEnabled()
         var pp = outlinePostProcesses[cam]
+
+        if (!isEnabled) {
+            if (pp != null) {
+                pp.dispose()
+                outlinePostProcesses.remove(cam)
+                console.log("[DEBUG] Disposed outline post-process for camera: ${cam.name} (disabled in settings)")
+            }
+            return
+        }
+
         if (pp == null) {
             try {
                 pp = PostProcess(
                     name = "saigonOutline",
-                    fragmentUrl = "saigonOutline",
-                    parameters = arrayOf("screenSize"),
-                    samplers = null,
+                    fragmentUrl = "saigonOutlineV4",
+                    parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "hasDepth"),
+                    samplers = arrayOf("depthSampler"),
                     options = 1.0,
                     camera = cam,
                     samplingMode = Texture.BILINEAR_SAMPLINGMODE,
@@ -146,6 +212,16 @@ class CameraPipelineManager(
                     val w = if (pp.width > 0) pp.width.toFloat() else scene.getEngine().getRenderWidth().toFloat()
                     val h = if (pp.height > 0) pp.height.toFloat() else scene.getEngine().getRenderHeight().toFloat()
                     effect.setVector2("screenSize", Vector2(w, h))
+                    effect.setFloat("opacity", outlineOpacity)
+                    effect.setFloat("thicknessScale", outlineThicknessScale)
+                    effect.setFloat("colorMix", outlineColorMix)
+                    
+                    val dr = DepthPicking.depthRenderer
+                    val hasDepth = dr != null
+                    effect.setBool("hasDepth", hasDepth)
+                    if (dr != null) {
+                        effect.setTexture("depthSampler", dr.getDepthMap())
+                    }
                 }
 
                 outlinePostProcesses[cam] = pp
@@ -359,6 +435,19 @@ class CameraPipelineManager(
     }
 
     fun getPipeline(): DefaultRenderingPipeline = pipeline
+
+    /**
+     * Updates the outline settings.
+     */
+    fun updateOutlineSettings(
+        opacity: Float? = null,
+        thicknessScale: Float? = null,
+        colorMix: Float? = null,
+    ) {
+        opacity?.let { outlineOpacity = it }
+        thicknessScale?.let { outlineThicknessScale = it }
+        colorMix?.let { outlineColorMix = it }
+    }
 
     fun dispose() {
         ssaoPipeline?.dispose()
