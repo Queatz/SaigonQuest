@@ -50,9 +50,9 @@ class CameraPipelineManager(
     private var ssaoPipeline: SSAO2RenderingPipeline? = null
 
     // Outline settings
-    private var outlineOpacity = .9f
-    private var outlineThicknessScale = 6f
-    private var outlineColorMix = .9f
+    private var outlineOpacity = 1f
+    private var outlineThicknessScale = 1f
+    private var outlineColorMix = .8f
 
     // Outline post-processes per camera
     private val outlinePostProcesses = mutableMapOf<Camera, PostProcess>()
@@ -89,8 +89,7 @@ class CameraPipelineManager(
      * Registers the outline shader in the ShaderStore.
      */
     private fun registerOutlineShader() {
-        // Use a unique name to ensure we're using the latest version of the shader
-        val shaderName = "saigonOutlineV6PixelShader"
+        val shaderName = "saigonOutlineV14PixelShader"
         
         ShaderStore.ShadersStore[shaderName] = """
             precision highp float;
@@ -102,28 +101,40 @@ class CameraPipelineManager(
             uniform float thicknessScale;
             uniform float colorMix;
             uniform bool hasDepth;
+            uniform mat4 invViewProjection;
+            uniform vec2 depthRange;
             
             float getLuminance(vec3 color) {
                 return dot(color, vec3(0.299, 0.587, 0.114));
             }
 
-            // High-quality hash
-            float hash12(vec2 p) {
-                vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-                p3 += dot(p3, p3.yzx + 33.33);
-                return fract((p3.x + p3.y) * p3.z);
+            // High-quality 3D hash for stability
+            float hash3(vec3 p) {
+                p = fract(p * 0.1031);
+                p += dot(p, p.yzx + 33.33);
+                return fract((p.x + p.y) * p.z);
             }
 
-            // Smooth Value Noise
-            float smoothNoise(vec2 p) {
-                vec2 i = floor(p);
-                vec2 f = fract(p);
+            // Smooth 3D Value Noise for organic variations
+            float smoothNoise3D(vec3 p) {
+                vec3 i = floor(p);
+                vec3 f = fract(p);
                 f = f * f * (3.0 - 2.0 * f);
-                float a = hash12(i);
-                float b = hash12(i + vec2(1.0, 0.0));
-                float c = hash12(i + vec2(0.0, 1.0));
-                float d = hash12(i + vec2(1.0, 1.0));
-                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+                
+                float n000 = hash3(i + vec3(0, 0, 0));
+                float n100 = hash3(i + vec3(1, 0, 0));
+                float n010 = hash3(i + vec3(0, 1, 0));
+                float n110 = hash3(i + vec3(1, 1, 0));
+                float n001 = hash3(i + vec3(0, 0, 1));
+                float n101 = hash3(i + vec3(1, 0, 1));
+                float n011 = hash3(i + vec3(0, 1, 1));
+                float n111 = hash3(i + vec3(1, 1, 1));
+                
+                return mix(
+                    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+                    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+                    f.z
+                );
             }
 
             void main(void) {
@@ -134,29 +145,44 @@ class CameraPipelineManager(
                 }
 
                 vec2 texelSize = 1.0 / screenSize;
+                float d0 = hasDepth ? texture2D(depthSampler, vUV).r : 1.0;
                 
-                // Low frequency noise for smooth wobble and thickness variation (~60px scale)
-                vec2 pixelCoord = gl_FragCoord.xy;
-                float noiseS = smoothNoise(pixelCoord * 0.0175);
-                float noiseS2 = smoothNoise(pixelCoord * 0.0175 + vec2(100.0, 50.0));
+                // 1. Reconstruct ABSOLUTE world position for stability
+                // Using absolute world space ensures the brush strokes stay pinned to the objects
+                // as the camera moves through the world.
+                float n = depthRange.x;
+                float f = depthRange.y;
+                float zView0 = d0 * (f - n) + n;
+                float nonLinearDepth0 = (f / (f - n)) * (1.0 - n / zView0);
                 
-                // High frequency noise for ink grain
-                float noiseG = hash12(pixelCoord);
+                // Standard NDC (-1 to 1 for XY, -1 to 1 for Z in WebGL/Babylon)
+                vec4 ndc0 = vec4(vUV * 2.0 - 1.0, nonLinearDepth0 * 2.0 - 1.0, 1.0);
+                vec4 worldPos0 = invViewProjection * ndc0;
+                vec3 stablePos = worldPos0.xyz / worldPos0.w;
                 
-                // Displace UV slightly for "hand-drawn" wobble
-                vec2 uvWobble = vUV + (vec2(noiseS, noiseS2) - 0.5) * texelSize * 1.5 * thicknessScale;
+                // 2. Drive all variations from 3D world space (pinned to objects)
+                // Path wobble: very low frequency for long, elegant strokes
+                float noise_path = smoothNoise3D(stablePos * 0.125);
+                float noise_path2 = smoothNoise3D(stablePos * 0.125 + vec3(31.0, 71.0, 19.0));
                 
-                // Thickness varies smoothly
-                float ts = thicknessScale * (0.7 + noiseS * 0.6);
+                // 3. Ink variation (Weight/Opacity): medium frequency
+                float noise_var = smoothNoise3D(stablePos * 0.75);
+                
+                // 4. Sampling displacement (stable because stablePos is stable)
+                vec2 uvWobble = vUV + (vec2(noise_path, noise_path2) - 0.5) * texelSize * 3.0 * thicknessScale;
+                
+                // thickness modulation ranges from 0.4 to 1.6
+                float ts = thicknessScale * (0.4 + noise_var * 1.2);
+                // opacity modulation ranges from 0.6 to 1.4
+                float varOpacity = opacity * (0.6 + noise_var * 0.8);
                 
                 float l0 = getLuminance(texture2D(textureSampler, uvWobble).rgb);
-                float d0 = hasDepth ? texture2D(depthSampler, uvWobble).r : 0.0;
-                
+                float dCenter = hasDepth ? texture2D(depthSampler, uvWobble).r : 1.0;
                 float colorEdge = 0.0;
                 float depthEdge = 0.0;
                 
-                // Two perpendicular pairs for Laplacian (4 samples total)
-                float baseAngle = noiseS * 2.0;
+                // Kernel rotation: stable world-space seed
+                float baseAngle = noise_path * 6.28318;
                 for(int i = 0; i < 2; i++) {
                     float a = baseAngle + float(i) * 1.570796;
                     vec2 offset = vec2(cos(a), sin(a)) * texelSize * ts;
@@ -171,28 +197,31 @@ class CameraPipelineManager(
                     if (hasDepth) {
                         float dP = texture2D(depthSampler, uvP).r;
                         float dM = texture2D(depthSampler, uvM).r;
-                        // Laplacian: abs(dP + dM - 2.0 * d0)
-                        depthEdge = max(depthEdge, abs(dP + dM - 2.0 * d0));
+                        // Use dCenter for Laplacian-style edge detection centered at uvWobble
+                        depthEdge = max(depthEdge, abs(dP + dM - 2.0 * dCenter));
                     }
                 }
 
-                // Thresholds
-                float colorThreshold = 0.12 + (noiseS - 0.5) * 0.05 + (noiseG - 0.5) * 0.02;
-                colorEdge = smoothstep(colorThreshold, colorThreshold + 0.15, colorEdge);
+                // Thresholds use world-stable noise to eliminate screen-space crawling
+                float colorThreshold = 0.12 + (noise_var - 0.5) * 0.1;
+                colorEdge = smoothstep(colorThreshold, colorThreshold + 0.12, colorEdge);
                 
-                float depthThreshold = 0.007 + (noiseS - 0.5) * 0.005 + (noiseG - 0.5) * 0.003;
-                depthEdge = smoothstep(depthThreshold, depthThreshold + 0.005, depthEdge);
+                float dThreshold = 0.008 + (noise_var - 0.5) * 0.007;
+                depthEdge = smoothstep(dThreshold, dThreshold + 0.004, depthEdge);
                 
                 float edge = max(colorEdge, depthEdge);
+                // Sharper ink transition for "bolder" look
+                float inkAlpha = smoothstep(0.0, 0.25, edge);
                 
-                // Ink modulation: darker in the middle, slightly grainy at edges
-                float inkAlpha = smoothstep(0.0, 0.4, edge) * (0.8 + noiseG * 0.2);
-                float finalOpacity = opacity * inkAlpha;
+                // Add a bit of fine grain to the ink to make it look like real charcoal/ink on paper
+                // WORLD-SPACE ONLY: Use stablePos instead of gl_FragCoord.xy
+                float grain = hash3(stablePos * 50.0);
+                inkAlpha *= (0.9 + grain * 0.1);
                 
-                vec3 targetColor = vec3(0.0, 0.0, 0.0);
-                vec3 outlineColor = mix(baseColor.rgb, targetColor, colorMix);
+                vec3 outlineColor = mix(baseColor.rgb, vec3(0.0), colorMix);
                 
-                gl_FragColor = vec4(mix(baseColor.rgb, outlineColor, finalOpacity * edge), 1.0);
+                vec3 finalColor = mix(baseColor.rgb, outlineColor, inkAlpha * varOpacity);
+                gl_FragColor = vec4(finalColor, baseColor.a);
             }
         """.trimIndent()
     }
@@ -217,8 +246,8 @@ class CameraPipelineManager(
             try {
                 pp = PostProcess(
                     name = "saigonOutline",
-                    fragmentUrl = "saigonOutlineV6",
-                    parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "hasDepth"),
+                    fragmentUrl = "saigonOutlineV14",
+                    parameters = arrayOf("screenSize", "opacity", "thicknessScale", "colorMix", "hasDepth", "invViewProjection", "depthRange"),
                     samplers = arrayOf("depthSampler"),
                     options = 1.0,
                     camera = cam,
@@ -232,6 +261,14 @@ class CameraPipelineManager(
                     effect.setFloat("opacity", outlineOpacity)
                     effect.setFloat("thicknessScale", outlineThicknessScale)
                     effect.setFloat("colorMix", outlineColorMix)
+                    
+                    // Force update of camera matrices to ensure stable unprojection
+                    try {
+                        cam.getTransformationMatrix()
+                    } catch (_: Throwable) {}
+                    
+                    effect.setMatrix("invViewProjection", cam.getTransformationMatrix().clone().invert())
+                    effect.setVector2("depthRange", Vector2(cam.minZ, cam.maxZ))
                     
                     val dr = DepthPicking.depthRenderer
                     val hasDepth = dr != null

@@ -837,9 +837,19 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
 external class Matrix {
     var m: org.khronos.webgl.Float32Array
     fun invert(): Matrix
+    fun clone(): Matrix
+    fun multiply(other: Matrix): Matrix
+    fun multiplyToRef(other: Matrix, result: Matrix): Matrix
 
     companion object {
         fun Identity(): Matrix
+        fun IdentityToRef(result: Matrix): Unit
+        fun Translation(x: Float, y: Float, z: Float): Matrix
+        fun RotationX(angle: Float): Matrix
+        fun RotationY(angle: Float): Matrix
+        fun RotationZ(angle: Float): Matrix
+        fun Scaling(x: Float, y: Float, z: Float): Matrix
+        fun Invert(source: Matrix): Matrix
     }
 }
 
@@ -890,6 +900,7 @@ abstract external class Camera : Node {
     fun getDirection(direction: Vector3): Vector3
     fun getForwardRay(length: Float = definedExternally): Ray
     fun getProjectionMatrix(usingRightHandedSystem: Boolean = definedExternally): Matrix
+    fun getTransformationMatrix(): Matrix
     fun freezeProjectionMatrix()
     fun attachPostProcess(postProcess: PostProcess, insertAt: Int? = definedExternally)
     fun detachPostProcess(postProcess: PostProcess)
