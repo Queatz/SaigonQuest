@@ -133,7 +133,7 @@ class OcclusionManager(private val scene: Scene) {
     const float ALPHA_THRESHOLD = 0.5;  // Higher value = more fragments discarded
     
     // Forward declaration of the applyOcclusion function
-    mediump float applyOcclusion(mediump float alpha);
+    float applyOcclusion(float alpha);
     """
 
     // Fragment shader code for occlusion effect implementation
@@ -206,7 +206,7 @@ class OcclusionManager(private val scene: Scene) {
             float distSqToAxis = dot(perp, perp);
             
             // Cone starts at player, grows slightly as it goes towards camera
-            float coneRadius = 0.125 + clamp(distAlongAxis / 10.0, 0.0, 1.0);
+            float coneRadius = 0.125 + clamp(distAlongAxis / 10.0, 0.0, 1.0) * 0.5;
             float coneRadiusSq = coneRadius * coneRadius;
             
             // Soften the cone edge and the cone start
@@ -352,7 +352,7 @@ class OcclusionManager(private val scene: Scene) {
         mat.disableLighting = true
         mat.fogEnabled = false
         mat.alpha = 1.0f
-        
+
         // Copy settings from original material to support alpha testing and correct culling
         if (original != null) {
             mat.zOffset = original.zOffset
