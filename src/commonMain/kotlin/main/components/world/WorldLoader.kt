@@ -31,6 +31,7 @@ import kotlin.math.*
 import kotlinx.browser.window
 import lib.Light
 import lib.Node
+import lib.Space
 import models.ErrorResponse
 import main.components.player.FrameDeltaTracker
 import kotlin.random.Random
@@ -725,6 +726,11 @@ class WorldLoader(private val scene: Scene) {
                 return@forEach
             }
 
+            // Handle billboard mode for meshes that should face the camera (e.g. grass, trees)
+            if (mesh.isBillboard()) {
+                setupAnchorBillboard(mesh, scene, useParent = false)
+            }
+
             // Check for skybox custom property and set infinite distance
             if (mesh.isSkybox()) {
                 mesh.infiniteDistance = true
@@ -1341,38 +1347,6 @@ class WorldLoader(private val scene: Scene) {
         // Disconnect from WebSocket
         WebSocketApi.disconnect()
     }
-}
-
-fun Node.isSkybox(): Boolean = hasExtra("skybox")
-fun Node.isWater(): Boolean = hasExtra("water")
-fun Node.isFlicker(): Boolean = hasExtra("flicker") || (parent?.hasExtra("flicker") ?: false)
-fun Node.isStartPosition(): Boolean = hasExtra("start")
-fun Node.isBillboard(): Boolean = hasExtra("billboard")
-fun Node.isPassable(): Boolean = hasExtra("passable")
-
-fun Node.getRadius(): Float? {
-    val meta = metadata?.asDynamic() ?: return null
-    val extras = meta.gltf?.extras ?: meta.extras ?: meta
-    val value = extras["radius"] ?: return null
-    return (value as? Number)?.toFloat() ?: (value as? String)?.toFloatOrNull()
-}
-
-fun Node.getCameraName(): String? {
-    val meta = metadata?.asDynamic() ?: return null
-    val extras = meta.gltf?.extras ?: meta.extras ?: meta
-    return extras["camera"] as? String
-}
-
-/**
- * Robustly check if a node or its metadata has a specific extra/property.
- * Handles GLTF-style (gltf.extras), direct extras, or top-level metadata properties.
- */
-private fun Node.hasExtra(key: String): Boolean {
-    val meta = metadata?.asDynamic() ?: return false
-    // Check various common places where GLTF extras might be stored
-    val extras = meta.gltf?.extras ?: meta.extras ?: meta
-    val value = extras[key]
-    return value == true || value == "true" || value == 1 || value == "1"
 }
 
 private data class FlickerData(

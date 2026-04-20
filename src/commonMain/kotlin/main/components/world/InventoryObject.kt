@@ -89,9 +89,8 @@ class InventoryObject(
         // Apply material to plane
         plane.material = material
         
-        // Set billboard mode to Y-axis only (rotate around Y-axis)
-        // This makes the plane always face the camera with Y-axis locked
-        plane.billboardMode = Mesh.BILLBOARDMODE_Y
+        // Set billboard mode using the robust anchor system
+        setupAnchorBillboard(plane, scene)
         
         // Store references
         rootNode = root

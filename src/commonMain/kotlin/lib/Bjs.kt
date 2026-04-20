@@ -44,6 +44,8 @@ open external class Node {
     open val animations: Array<dynamic>
 
     open var metadata: MeshMetadata?
+    
+    open fun getClassName(): String
 
     open fun getAbsolutePosition(): Vector3 = definedExternally
 
@@ -98,11 +100,14 @@ open external class TransformNode(name: String, scene: Scene? = definedExternall
     override var rotation: Vector3
     override var scaling: Vector3
     open var rotationQuaternion: Quaternion?
+    open var billboardMode: Int
 
     override var metadata: MeshMetadata?
 
     open fun getWorldMatrix(): Matrix
     open fun computeWorldMatrix(force: Boolean = definedExternally): Matrix
+    
+    open val absolutePosition: Vector3
     
     /**
      * Gets all child meshes of this node
@@ -111,6 +116,21 @@ open external class TransformNode(name: String, scene: Scene? = definedExternall
      * @return Array of child meshes
      */
     override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
+
+    /**
+     * Sets the pivot point of the transform node
+     *
+     * @param point The pivot point
+     * @param space The space to use (default: LOCAL)
+     */
+    open fun setPivotPoint(point: Vector3, space: Int = definedExternally)
+
+    /**
+     * Sets the absolute position of the transform node
+     *
+     * @param position The absolute position
+     */
+    open fun setAbsolutePosition(position: Vector3)
     
     /**
      * Disposes of the transform node and all its resources
@@ -146,7 +166,7 @@ abstract external class AbstractMesh : TransformNode {
     override var rotationQuaternion: Quaternion?
     var origin: Vector3
     override var scaling: Vector3
-    var billboardMode: Int
+    override var billboardMode: Int
     val onAfterWorldMatrixUpdateObservable: Observable<AbstractMesh>
     var instancedBuffers: dynamic
     var actionManager: ActionManager?
@@ -155,7 +175,9 @@ abstract external class AbstractMesh : TransformNode {
     var infiniteDistance: Boolean
     var checkCollisions: Boolean
     var renderingGroupId: Int
-
+    var sourceMesh: Mesh?
+    var alwaysSelectAsActiveMesh: Boolean
+    
     override fun getWorldMatrix(): Matrix
 
     /**
@@ -423,6 +445,7 @@ external class Mesh(name: String = definedExternally, scene: Scene = definedExte
     override var metadata: MeshMetadata?
 
     companion object {
+        val BILLBOARDMODE_NONE: Int
         val BILLBOARDMODE_Y: Int
         val BILLBOARDMODE_ALL: Int
         val ALPHA_DISABLE: Int
@@ -712,6 +735,11 @@ external class BoundingBox {
     val maximum: Vector3
 
     /**
+     * The center of the bounding box in local space
+     */
+    val center: Vector3
+
+    /**
      * The minimum vector of the bounding box in world space
      */
     val minimumWorld: Vector3
@@ -720,6 +748,11 @@ external class BoundingBox {
      * The maximum vector of the bounding box in world space
      */
     val maximumWorld: Vector3
+
+    /**
+     * The center of the bounding box in world space
+     */
+    val centerWorld: Vector3
 
     /**
      * Creates a new bounding box
@@ -799,6 +832,9 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
         fun Lerp(start: Vector3, end: Vector3, amount: Float): Vector3
         fun Dot(left: Vector3, right: Vector3): Float
         
+        fun Minimize(left: Vector3, right: Vector3): Vector3
+        fun Maximize(left: Vector3, right: Vector3): Vector3
+        
         /**
          * Projects a 3D point to screen space
          * 
@@ -841,6 +877,8 @@ external class Matrix {
     fun clone(): Matrix
     fun multiply(other: Matrix): Matrix
     fun multiplyToRef(other: Matrix, result: Matrix): Matrix
+    
+    fun decompose(scaling: Vector3 = definedExternally, rotation: Quaternion = definedExternally, translation: Vector3 = definedExternally): Boolean
 
     companion object {
         fun Identity(): Matrix
@@ -865,6 +903,17 @@ external class Quaternion {
         fun FromLookDirectionLH(direction: Vector3, up: Vector3): Quaternion
         fun SlerpToRef(start: Quaternion, end: Quaternion, amount: Float, result: Quaternion): Unit
         fun RotationAxis(axis: Vector3, angle: Float): Quaternion
+    }
+}
+
+/**
+ * Class representing a space in BabylonJS
+ */
+external class Space {
+    companion object {
+        val LOCAL: Int
+        val WORLD: Int
+        val BONE: Int
     }
 }
 

@@ -185,8 +185,8 @@ class TextBillboard(
         // Apply the material to the plane
         planeMesh?.material = material
         
-        // Set billboard mode to make the text always face the camera
-        planeMesh?.billboardMode = Mesh.BILLBOARDMODE_ALL
+        // Set billboard mode using the robust anchor system
+        planeMesh?.let { setupAnchorBillboard(it, scene, billboardMode = Mesh.BILLBOARDMODE_ALL) }
 
         texture?.let { tex ->
             // Get the canvas context

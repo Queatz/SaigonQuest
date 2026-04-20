@@ -770,11 +770,11 @@ class Character(
 
         mesh.material = material
 
-        // Set billboard mode to Y-axis only (rotate around Y-axis)
-        mesh.billboardMode = Mesh.BILLBOARDMODE_Y
-
         // Make the mesh a child of the parent
         mesh.parent = parent
+
+        // Set billboard mode using the robust anchor system
+        setupAnchorBillboard(mesh, scene)
 
         // Set image dimensions for the sprite sheet (assets are 256x256)
         spriteSheet.setImageDimensions(256, 256)
@@ -891,6 +891,10 @@ class Model(
         // Clone the mesh and make it a child of the container
         val clonedMesh = mesh.clone("model_${id}")
         clonedMesh.parent = container
+
+        if (clonedMesh.isBillboard()) {
+            setupAnchorBillboard(clonedMesh, scene)
+        }
 
         // Store references to the meshes
         modelMesh = clonedMesh

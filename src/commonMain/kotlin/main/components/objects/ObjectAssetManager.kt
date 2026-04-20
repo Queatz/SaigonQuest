@@ -10,9 +10,11 @@ import lib.Node
 import lib.PBRMaterial
 import lib.Scene
 import lib.SceneLoader
+import lib.Space
 import lib.TransformNode
 import lib.Vector3
 import main.components.world.isBillboard
+import main.components.world.setupAnchorBillboard
 import kotlin.time.Clock
 import kotlin.collections.*
 
@@ -122,7 +124,7 @@ class ObjectAssetManager(private val scene: Scene) {
                     clonedMesh.scaling = Vector3(1f, 1f, 1f)
 
                     if (mesh.isBillboard()) {
-                        clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                        setupAnchorBillboard(clonedMesh, scene)
                     }
                     
                     console.log("[ASSET_MANAGER] Set cloned cached mesh position: (${clonedMesh.position.x}, ${clonedMesh.position.y}, ${clonedMesh.position.z})")
@@ -251,7 +253,7 @@ class ObjectAssetManager(private val scene: Scene) {
 
                             // Handle flags
                             if (requestedNode.isBillboard()) {
-                                clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                                setupAnchorBillboard(clonedMesh, scene)
                             }
 
 
@@ -268,13 +270,9 @@ class ObjectAssetManager(private val scene: Scene) {
 
                             if (childMeshes.isNotEmpty()) {
                                 console.log("[ASSET_MANAGER] Found ${childMeshes.size} child meshes for node: ${requestedNode.name}")
-
-                                val basePosition = childMeshes[0].position.clone()
-                                val baseRotation = childMeshes[0].rotation.clone()
-                                val baseScaling = childMeshes[0].scaling.clone()
-                                
                                 // Create a parent mesh to hold all child meshes
                                 val node = TransformNode("parent_${requestedCollection}_${Clock.System.now().toEpochMilliseconds()}", scene)
+                                node.metadata = requestedNode.metadata
 
                                 // Process all child meshes, not just the first one
                                 childMeshes.forEach { childMesh ->
@@ -282,11 +280,6 @@ class ObjectAssetManager(private val scene: Scene) {
 
                                     // Make the original mesh invisible
                                     childMesh.isVisible = false
-
-                                    // Handle flags
-                                    if (childMesh.isBillboard()) {
-                                        childMesh.billboardMode = Mesh.BILLBOARDMODE_Y
-                                    }
 
                                     childMesh.material.fogEnabled = true
 
@@ -318,7 +311,7 @@ class ObjectAssetManager(private val scene: Scene) {
                                     console.log("[ASSET_MANAGER] Added cloned mesh to parent: ${childMesh.name}")
 
                                     if (childMesh.isBillboard()) {
-                                        clonedMesh.billboardMode = Mesh.BILLBOARDMODE_Y
+                                        setupAnchorBillboard(clonedMesh, scene)
                                     }
                                 }
                                 
