@@ -9,6 +9,7 @@ import lib.Scene
 import lib.Vector3
 import main.api.UserApi
 import main.components.inventory.InventoryState
+import main.components.world.setIncullable
 import main.api.WebSocketApi
 import main.api.addInventoryChangedListener
 import main.components.world.CharacterDirection
@@ -45,6 +46,10 @@ object PlayerInitializer {
             additionalSpriteSheets = emptyList(),
             user = InventoryState.currentUser
         )
+        
+        // Exclude the player from being culled by the performance engine
+        playerHandle?.node?.setIncullable(true)
+        
         onSetPlayerHandle(playerHandle)
 
         // Create invisible collider box

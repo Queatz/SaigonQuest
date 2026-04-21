@@ -1,7 +1,10 @@
 package main.components.world
 
 import lib.AbstractMesh
+import lib.Gltf
+import lib.Material
 import lib.Mesh
+import lib.MeshMetadata
 import lib.Node
 import lib.Scene
 import lib.TransformNode
@@ -17,6 +20,22 @@ fun Node.isSkybox(): Boolean = hasExtra("skybox")
 fun Node.isWater(): Boolean = hasExtra("water")
 fun Node.isGround(): Boolean = hasExtra("ground")
 fun Node.isIncullable(): Boolean = hasExtra("incullable")
+
+fun Node.setIncullable(value: Boolean) {
+    val meta = metadata
+    if (meta != null) {
+        meta.incullable = value
+    } else {
+        val newMeta = object : MeshMetadata {
+            override var originalMaterial: Material? = null
+            override var isItem: Boolean? = null
+            override var gltf: Gltf? = null
+            override var extras: dynamic = undefined
+            override var incullable: Boolean? = value
+        }
+        metadata = newMeta
+    }
+}
 fun Node.isFlicker(): Boolean = hasExtra("flicker")
 fun Node.isStartPosition(): Boolean = hasExtra("start")
 fun Node.isPassable(): Boolean = hasExtra("passable")
@@ -105,10 +124,7 @@ fun setupAnchorBillboard(
     // 9. Diagnostic and quality flags
     mesh.alwaysSelectAsActiveMesh = true
     
-    val mat = mesh.material.asDynamic()
-    if (mat != null && mat != undefined) {
-        mat.backFaceCulling = false
-    }
+    mesh.material.backFaceCulling = false
 }
 
 /**
@@ -125,15 +141,22 @@ fun Node.hasExtra(key: String): Boolean {
  */
 fun Node.getExtraValue(key: String): dynamic {
     // 1. Check current node metadata
-    val meta = metadata?.asDynamic()
+    val meta = metadata
     if (meta != null) {
+        // Direct property (e.g. incullable)
+        if (key == "incullable") {
+            val inc = meta.incullable
+            if (inc != null) return inc
+        }
+
+        // GLTF-style extras or direct extras
         val extras = meta.gltf?.extras ?: meta.extras ?: meta
         val value = extras[key]
         if (value != undefined && value != null) return value
     }
 
     // 2. If it's an instance, check the source mesh metadata recursively
-    val sourceMesh = asDynamic().sourceMesh as? Node
+    val sourceMesh = (this as? AbstractMesh)?.sourceMesh
     if (sourceMesh != null) {
         val sValue = sourceMesh.getExtraValue(key)
         if (sValue != undefined && sValue != null) return sValue

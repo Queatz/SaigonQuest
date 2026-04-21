@@ -779,7 +779,7 @@ class WorldLoader(private val scene: Scene) {
             if (!mesh.isSkybox()) {
                 // Apply distance culling to massive meshes (like flower maps)
                 // This allows them to be "partially visible" by culling far fragments
-                // We exclude ground meshes from distance culling as they should always be fully visible.
+                // We exclude incullable meshes from distance culling as they should always be fully visible.
                 if (mesh.getBoundingInfo().boundingSphere.radiusWorld > 100f && !mesh.isIncullable()) {
                     distanceCullingSystem?.registerMesh(mesh)
                 }

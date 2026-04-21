@@ -29,6 +29,7 @@ import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
+import main.components.world.setIncullable
 import main.components.world.calculateFacingFromVector
 import main.components.world.isStartPosition
 import models.Position
@@ -607,6 +608,9 @@ class PlayerController(private val scene: Scene) {
         val manager = worldObjectManager ?: return
         val handle = playerHandle ?: return
         playerHandle = WornItemsRefresher.refresh(manager, handle, playerDirection, playerActivity)
+        
+        // Ensure the new player handle is also marked as incullable
+        playerHandle?.node?.setIncullable(true)
     }
     
     /**

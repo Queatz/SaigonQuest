@@ -137,7 +137,7 @@ class ActivePerformanceEngine(private val scene: Scene) {
             return ProcessResult(0, 0)
         }
         
-        // Ground meshes should ALWAYS be visible and counted in stats, but never culled.
+        // Incullable meshes should ALWAYS be visible and counted in stats, but never culled.
         // We check both the mesh itself and its source mesh (for instances).
         if (mesh.isIncullable() || mesh.sourceMesh?.isIncullable() == true) {
             if (hiddenByEngine.contains(mesh)) {
@@ -220,7 +220,7 @@ class ActivePerformanceEngine(private val scene: Scene) {
 
         val boundingInfo = try { mesh.getBoundingInfo() } catch (_: Throwable) { return true }
         
-        // Final safety check: if it's ground, it's always visible.
+        // Final safety check: if it's incullable, it's always visible.
         // (This is already handled in processMeshRecursive, but added here for robustness).
         if (mesh.isIncullable() || mesh.sourceMesh?.isIncullable() == true) return true
         

@@ -30,6 +30,8 @@ object MaterialCustomizer {
                     override var originalMaterial: Material? = currentMaterial
                     override var isItem: Boolean? = oldMeta?.isItem
                     override var gltf: Gltf? = oldMeta?.gltf
+                    override var extras: dynamic = oldMeta?.extras
+                    override var incullable: Boolean? = oldMeta?.incullable
                 }
                 mesh.metadata = newMeta
             }

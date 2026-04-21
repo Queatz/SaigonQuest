@@ -150,6 +150,10 @@ external interface MeshMetadata {
     var isItem: Boolean?
 
     var gltf: Gltf?
+
+    var extras: dynamic
+
+    var incullable: Boolean?
 }
 
 external interface Gltf {
