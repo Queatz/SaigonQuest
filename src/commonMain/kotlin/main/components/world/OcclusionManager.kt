@@ -445,82 +445,40 @@ class OcclusionManager(private val scene: Scene) {
      */
     fun registerMesh(mesh: AbstractMesh) {
         // Skip if mesh is not visible or is a helper object
-        if (!mesh.isVisible) {
+        // Or if already registered
+        if (!mesh.isVisible || occludedMeshes.contains(mesh)) {
             return
         }
 
-        // Ensure the material is a PBRMaterial
-        val originalMaterial = mesh.material
-        if (originalMaterial is PBRMaterial) {
-            // Store the original material to restore later
-            val metadata = object : MeshMetadata {
-                override var originalMaterial: Material? = originalMaterial
-                override var isItem: Boolean? = mesh.metadata?.isItem
-                override var gltf: Gltf? = mesh.metadata?.gltf
-            }
-            mesh.metadata = metadata
+        // Ensure we have a PBRCustomMaterial and add our effects to it
+        val customMaterial = MaterialCustomizer.getOrCreateCustomMaterial(mesh, scene) ?: return
 
-            // Create a PBRCustomMaterial based on the original PBRMaterial
-            val customMaterial = PBRCustomMaterial("${customShaderName}-${mesh.name}", scene)
+        // Register all required uniforms safely
+        MaterialCustomizer.safeAddUniform(customMaterial, "playerScreenPos", "vec3")
+        MaterialCustomizer.safeAddUniform(customMaterial, "screenSize", "vec2")
+        MaterialCustomizer.safeAddUniform(customMaterial, "occlusionRadius", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "playerWorld", "vec3")
+        MaterialCustomizer.safeAddUniform(customMaterial, "cameraWorld", "vec3")
+        MaterialCustomizer.safeAddUniform(customMaterial, "occlusionSoftness", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "useRadius", "bool")
+        MaterialCustomizer.safeAddUniform(customMaterial, "isEnabled", "bool")
+        MaterialCustomizer.safeAddUniform(customMaterial, "time", "float")
 
-            // Copy properties from the original material
-            customMaterial.albedoColor = originalMaterial.albedoColor
-            customMaterial.metallic = originalMaterial.metallic
-            customMaterial.roughness = originalMaterial.roughness
-            customMaterial.emissiveColor = originalMaterial.emissiveColor
-            customMaterial.emissiveIntensity = originalMaterial.emissiveIntensity
-            customMaterial.transparencyMode = originalMaterial.transparencyMode//Material.MATERIAL_ALPHATEST//ANDBLEND
-            customMaterial.alphaTestCutoff = originalMaterial.alphaTestCutoff
-            customMaterial.alpha = originalMaterial.alpha
-            customMaterial.fogEnabled = originalMaterial.fogEnabled
-            customMaterial.disableLighting = originalMaterial.disableLighting
-            customMaterial.zOffset = originalMaterial.zOffset
-            customMaterial.zOffsetUnits = originalMaterial.zOffsetUnits
-            customMaterial.backFaceCulling = originalMaterial.backFaceCulling
-            customMaterial.needDepthPrePass = true
-            customMaterial.useAlphaFromAlbedoTexture = originalMaterial.useAlphaFromAlbedoTexture
+        MaterialCustomizer.appendFragmentBegin(customMaterial, uniformDeclarations)
+        MaterialCustomizer.appendFragmentDefinitions(customMaterial, occlusionShaderCode)
 
-            // Copy textures if they exist
-            if (originalMaterial.albedoTexture != null) {
-                customMaterial.albedoTexture = originalMaterial.albedoTexture
-            }
-            if (originalMaterial.metallicTexture != null) {
-                customMaterial.metallicTexture = originalMaterial.metallicTexture
-            }
-            if (originalMaterial.roughnessTexture != null) {
-                customMaterial.roughnessTexture = originalMaterial.roughnessTexture
-            }
-            if (originalMaterial.emissiveTexture != null) {
-                customMaterial.emissiveTexture = originalMaterial.emissiveTexture
-            }
-            if (originalMaterial.bumpTexture != null) {
-                customMaterial.bumpTexture = originalMaterial.bumpTexture
-            }
+        // Use Fragment_Custom_Alpha instead of Fragment_Before_FragColor since we're only modifying the alpha
+        MaterialCustomizer.appendFragmentAlphaCode(customMaterial, occlusionCallCode)
 
-            // Register all required uniforms
-            customMaterial.AddUniform("playerScreenPos", "vec3")
-            customMaterial.AddUniform("screenSize", "vec2")
-            customMaterial.AddUniform("occlusionRadius", "float")
-            customMaterial.AddUniform("playerWorld", "vec3")
-            customMaterial.AddUniform("cameraWorld", "vec3")
-            customMaterial.AddUniform("occlusionSoftness", "float")
-            customMaterial.AddUniform("useRadius", "bool")
-            customMaterial.AddUniform("isEnabled", "bool")
-            customMaterial.AddUniform("time", "float")
-
-            customMaterial.Fragment_Begin(uniformDeclarations)
-
-            customMaterial.Fragment_Definitions(occlusionShaderCode)
-
-            // Use Fragment_Custom_Alpha instead of Fragment_Before_FragColor since we're only modifying the alpha
-            customMaterial.Fragment_Custom_Alpha(occlusionCallCode)
-
-            // Add a handler for the onBindObservable to set uniforms when the material is bound
+        // Add a handler for the onBindObservable to set uniforms when the material is bound
+        // We only add the observer once
+        val dyn = customMaterial.asDynamic()
+        if (dyn._occlusionObserved == null) {
+            dyn._occlusionObserved = true
             customMaterial.onBindObservable.add { _ ->
                 // Get the effect after the material is bound
                 val effect = customMaterial.getEffect()
                 if (effect == null) {
-                    console.log("[ERROR] Effect is null for material ${customMaterial.name} during binding! Cannot set uniforms.")
                     return@add
                 }
 
@@ -569,25 +527,22 @@ class OcclusionManager(private val scene: Scene) {
                     // Set time uniform for animations
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 } catch (e: Throwable) {
-                    console.log("[ERROR] Failed to set uniforms during binding for material ${customMaterial.name}: ${e.message}")
+                    // ignore binding errors
                 }
             }
-
-            customMaterial.needDepthPrePass = true
-
-            // Assign the custom material to the mesh
-            mesh.material = customMaterial
-
-            // Store the custom material for later updates
-            customMaterials[mesh] = customMaterial
-
-            val depthMat = getDepthMaterialForMesh(mesh)
-            depthRenderer.setMaterialForRendering(mesh, depthMat)
-            depthOverrideMeshes.add(mesh)
-            
-            // Add to tracking set
-            occludedMeshes.add(mesh)
         }
+
+        customMaterial.needDepthPrePass = true
+
+        // Store the custom material for later updates
+        customMaterials[mesh] = customMaterial
+
+        val depthMat = getDepthMaterialForMesh(mesh)
+        depthRenderer.setMaterialForRendering(mesh, depthMat)
+        depthOverrideMeshes.add(mesh)
+        
+        // Add to tracking set
+        occludedMeshes.add(mesh)
     }
 
     /**

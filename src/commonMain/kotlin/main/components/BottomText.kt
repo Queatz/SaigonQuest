@@ -15,6 +15,7 @@ import org.jetbrains.compose.web.dom.Ul
 import org.jetbrains.compose.web.dom.Li
 import org.jetbrains.compose.web.dom.Text
 import main.components.Translated
+import main.components.world.WorldLoader
 import kotlin.math.roundToInt
 
 /**
@@ -25,6 +26,8 @@ import kotlin.math.roundToInt
 fun BottomText() {
     var showAbout by remember { mutableStateOf(false) }
     var fps by remember { mutableStateOf(0) }
+    var visibleMeshes by remember { mutableStateOf(0) }
+    var totalMeshes by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -32,6 +35,16 @@ fun BottomText() {
             if (scene != null) {
                 fps = scene.getEngine().getFps().roundToInt()
             }
+            
+            val perfEngine = WorldLoader.getCurrentPerformanceEngine()
+            if (perfEngine != null) {
+                visibleMeshes = perfEngine.getVisibleCount()
+                totalMeshes = perfEngine.getTotalTrackedCount()
+            } else {
+                visibleMeshes = 0
+                totalMeshes = 0
+            }
+            
             delay(500)
         }
     }
@@ -43,8 +56,10 @@ fun BottomText() {
         }
     ) {
         val baseText = translated("© 2026 Saigon.Quest v0.1")
-        val fullText = if (fps > 0) "$baseText • $fps FPS" else baseText
-        Text(fullText)
+        val fpsText = if (fps > 0) " • $fps FPS" else ""
+        val meshText = if (totalMeshes > 0) " • ${translated("Visible")}: $visibleMeshes/$totalMeshes" else ""
+        
+        Text("$baseText$fpsText$meshText")
     }
 
     if (showAbout) {

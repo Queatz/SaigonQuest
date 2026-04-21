@@ -14,6 +14,7 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.userNearby
 import main.components.SceneManager
+import main.components.world.WorldLoader
 import main.components.shadow.ShadowManager
 import models.User
 import models.WebSocketAction
@@ -59,7 +60,13 @@ class WorldObjectManager(private val scene: Scene) {
         
         // Create a handle to the object
         val handle = createObjectHandle(obj, node)
-        
+
+        // Register with performance engine
+        WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+            val meshes = handle.getMeshes()
+            meshes.forEach { engine.registerObjectMesh(it) }
+        }
+
         // Add shadow support if shadow manager is available
         shadowManager?.let { manager ->
             // Get all meshes for this object (recursive to catch character layers)
@@ -94,9 +101,13 @@ class WorldObjectManager(private val scene: Scene) {
         
         // Remove from shadow manager if node exists
         node?.let { n ->
+            val meshes = n.getChildMeshes(false)
             shadowManager?.let { manager ->
-                val meshes = n.getChildMeshes(false)
                 meshes.forEach { manager.removeShadowCaster(it) }
+            }
+            // Remove from performance engine
+            WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+                meshes.forEach { engine.unregisterObjectMesh(it) }
             }
         }
 

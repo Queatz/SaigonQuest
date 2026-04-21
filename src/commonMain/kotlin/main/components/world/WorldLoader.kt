@@ -207,6 +207,11 @@ class WorldLoader(private val scene: Scene) {
             return currentInstance?.getOcclusionManager()
         }
 
+        /** Returns the current ActivePerformanceEngine if a world is active. */
+        fun getCurrentPerformanceEngine(): ActivePerformanceEngine? {
+            return currentInstance?.getPerformanceEngine()
+        }
+
         /** Reload the currently loaded world's asset file and propagate to controllers. */
         fun reloadWorldFile(world: World) {
             val loader = currentInstance
@@ -364,6 +369,12 @@ class WorldLoader(private val scene: Scene) {
     // Occlusion manager for fading objects that obstruct the player's view
     private var occlusionManager: OcclusionManager? = null
 
+    // Performance engine for culling small objects
+    private var performanceEngine: ActivePerformanceEngine? = null
+
+    // Distance culling system for massive meshes
+    private var distanceCullingSystem: DistanceCullingSystem? = null
+
     // List of water textures to animate
     private val waterTextures = mutableListOf<Texture>()
 
@@ -470,6 +481,8 @@ class WorldLoader(private val scene: Scene) {
         
         // Initialize the occlusion manager for fading objects that obstruct the player's view
         occlusionManager = OcclusionManager(scene)
+        performanceEngine = ActivePerformanceEngine(scene)
+        distanceCullingSystem = DistanceCullingSystem(scene)
 
         // Register current lights for global updates
         setCurrentLights(hemisphericLight, directionalLight)
@@ -764,6 +777,15 @@ class WorldLoader(private val scene: Scene) {
             
             // Register mesh with occlusion manager for fading when it obstructs the player's view
             if (!mesh.isSkybox()) {
+                // Apply distance culling to massive meshes (like flower maps)
+                // This allows them to be "partially visible" by culling far fragments
+                // We exclude ground meshes from distance culling as they should always be fully visible.
+                if (mesh.getBoundingInfo().boundingSphere.radiusWorld > 100f && !mesh.isIncullable()) {
+                    distanceCullingSystem?.registerMesh(mesh)
+                }
+                
+                // Also apply occlusion manager to all world meshes (except skybox)
+                // The systems now use a shared MaterialCustomizer to avoid overwriting each other
                 occlusionManager?.registerMesh(mesh)
             }
 
@@ -788,6 +810,9 @@ class WorldLoader(private val scene: Scene) {
         if (shadowReceiverCount == 0) {
             console.warn("[WARNING] No shadow receivers configured! Shadows will not be visible.")
         }
+
+        // Register all world meshes with the performance engine
+        performanceEngine?.setWorldMeshes(meshes)
         
         // Log directional light status
         directionalLight?.let { light ->
@@ -886,7 +911,14 @@ class WorldLoader(private val scene: Scene) {
     fun getOcclusionManager(): OcclusionManager? {
         return occlusionManager
     }
-    
+
+    /**
+     * Returns the current ActivePerformanceEngine if a world is active.
+     */
+    fun getPerformanceEngine(): ActivePerformanceEngine? {
+        return performanceEngine
+    }
+
     /**
      * Checks if a fallback world was created due to an API error.
      * 
@@ -1326,6 +1358,11 @@ class WorldLoader(private val scene: Scene) {
         // Dispose of occlusion manager
         occlusionManager?.dispose()
         occlusionManager = null
+        performanceEngine?.dispose()
+        performanceEngine = null
+        
+        distanceCullingSystem?.dispose()
+        distanceCullingSystem = null
 
         // Unregister the water animation callback
         scene.unregisterBeforeRender(waterAnimationCallback)

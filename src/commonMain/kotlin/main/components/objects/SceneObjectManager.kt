@@ -32,6 +32,7 @@ import main.components.world.CharacterDirection
 import main.components.world.DepthPicking
 import main.components.world.InventoryObject
 import main.components.world.PlayerActivity
+import main.components.world.WorldLoader
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import main.components.world.isSkybox
@@ -468,6 +469,13 @@ class SceneObjectManager(
                     shadowManager?.removeShadowCaster(mesh)
                 }
 
+                // Remove from performance engine
+                WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+                    node.getChildMeshes().forEach { mesh ->
+                        engine.unregisterObjectMesh(mesh)
+                    }
+                }
+
                 (node as? TransformNode)?.dispose()
                 objectMeshes.remove(objectId)
                 spatialHash.remove(objectId)
@@ -662,6 +670,11 @@ class SceneObjectManager(
 
                     // Configure all meshes to receive shadows
                     shadowManager?.configureShadowReceivers(meshes)
+
+                    // Register with performance engine
+                    WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+                        meshes.forEach { engine.registerObjectMesh(it) }
+                    }
                 }
 
                 console.log("[DEBUG_ITEM] Successfully created inventory item in scene: ${obj.key}")
@@ -881,6 +894,11 @@ class SceneObjectManager(
             // Start animations
             startAnimations(fallbackSphere)
 
+            // Register with performance engine
+            if (fallbackSphere is AbstractMesh) {
+                WorldLoader.getCurrentPerformanceEngine()?.registerObjectMesh(fallbackSphere)
+            }
+
             // Handle status text
             handleObjectStatusText(obj.key, obj.status, fallbackSphere)
         }
@@ -906,6 +924,11 @@ class SceneObjectManager(
 
                             // Configure all meshes to receive shadows
                             shadowManager?.configureShadowReceivers(meshes)
+
+                            // Register with performance engine
+                            WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+                                meshes.forEach { engine.registerObjectMesh(it) }
+                            }
                         }
                         
                         // Ensure the node has no parent (position is global to scene)

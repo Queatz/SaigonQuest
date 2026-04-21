@@ -1365,6 +1365,9 @@ fun SceneComponent(url: String) {
             // Update occlusion fading effect
             worldLoader.getOcclusionManager()?.update()
 
+            // Update performance engine (culling small objects)
+            worldLoader.getPerformanceEngine()?.update()
+
             // Update shadows based on camera distance (Task 2)
             worldLoader.getShadowManager()?.update()
         }

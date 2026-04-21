@@ -15,6 +15,8 @@ fun Node.isBillboard(): Boolean = hasExtra("billboard")
 
 fun Node.isSkybox(): Boolean = hasExtra("skybox")
 fun Node.isWater(): Boolean = hasExtra("water")
+fun Node.isGround(): Boolean = hasExtra("ground")
+fun Node.isIncullable(): Boolean = hasExtra("incullable")
 fun Node.isFlicker(): Boolean = hasExtra("flicker")
 fun Node.isStartPosition(): Boolean = hasExtra("start")
 fun Node.isPassable(): Boolean = hasExtra("passable")

@@ -2455,6 +2455,9 @@ vi: Quay lại
 Forward
 vi: Tiếp theo
 
+Visible
+vi: Hiển thị
+
 © 2026 Saigon.Quest v0.1
 vi: © 2026 Saigon.Quest v0.1
 

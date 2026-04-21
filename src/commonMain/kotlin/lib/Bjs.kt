@@ -438,7 +438,9 @@ external class Scene(engine: Engine? = definedExternally) {
     }
 }
 external class Mesh(name: String = definedExternally, scene: Scene = definedExternally) : AbstractMesh {
-    fun createInstance(name: String): Mesh
+    fun createInstance(name: String): InstancedMesh
+
+    val instances: Array<InstancedMesh>
 
     override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 
@@ -477,6 +479,15 @@ external class LinesMesh(name: String = definedExternally, scene: Scene = define
 
     override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 
+}
+
+/**
+ * InstancedMesh represents an instance of a Mesh.
+ */
+external class InstancedMesh(name: String, source: Mesh) : AbstractMesh {
+    override var metadata: MeshMetadata?
+
+    override fun getChildMeshes(directDescendantsOnly: Boolean?): Array<AbstractMesh>
 }
 
 external class MeshBuilder {
@@ -705,6 +716,11 @@ external class BoundingInfo {
     val boundingBox: BoundingBox
 
     /**
+     * The bounding sphere derived from minimum and maximum vectors
+     */
+    val boundingSphere: BoundingSphere
+
+    /**
      * Updates the bounding info with the given world matrix
      *
      * @param world The world matrix
@@ -777,6 +793,44 @@ external class BoundingBox {
      * @return True if the boxes intersect, false otherwise
      */
     fun intersectsBoundingBox(boundingBox: BoundingBox): Boolean
+}
+
+/**
+ * Class representing a bounding sphere
+ */
+external class BoundingSphere {
+    /**
+     * The center of the sphere in local space
+     */
+    val center: Vector3
+    /**
+     * The radius of the sphere in local space
+     */
+    val radius: Float
+    /**
+     * The center of the sphere in world space
+     */
+    val centerWorld: Vector3
+    /**
+     * The radius of the sphere in world space
+     */
+    val radiusWorld: Float
+
+    /**
+     * Creates a new bounding sphere
+     *
+     * @param min The minimum vector
+     * @param max The maximum vector
+     */
+    constructor(min: Vector3, max: Vector3)
+
+    /**
+     * Tests if a point is inside the bounding sphere
+     *
+     * @param point The point to test
+     * @return True if the point is inside the sphere, false otherwise
+     */
+    fun intersectsPoint(point: Vector3): Boolean
 }
 
 
@@ -1982,6 +2036,7 @@ open external class PBRMaterial(name: String, scene: Scene) : Material {
     var roughnessTexture: Texture?
     var emissiveTexture: Texture?
     var bumpTexture: Texture?
+    var opacityTexture: Texture?
     var lightmapTexture: Texture
     var refractionTexture: Texture
     var ambientTexture: Texture

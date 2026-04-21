@@ -552,15 +552,15 @@ class Character(
     private fun setupWindShader(material: PBRCustomMaterial, spriteSheet: SpriteSheet): Boolean {
         // Register 5x5 uniforms: each row split into vec3 (cols 0..2) and vec2 (cols 3..4)
         for (ri in 0 until 5) {
-            material.AddUniform("w${ri}a", "vec3")
-            material.AddUniform("w${ri}b", "vec2")
+            MaterialCustomizer.safeAddUniform(material, "w${ri}a", "vec3")
+            MaterialCustomizer.safeAddUniform(material, "w${ri}b", "vec2")
         }
-        material.AddUniform("intensityScale", "float")
-        material.AddUniform("windDirLocal", "vec3")
-        material.AddUniform("windIntensity", "float")
-        material.AddUniform("time", "float")
-        material.AddUniform("spatialFreq", "float")
-        material.AddUniform("temporalFreq", "float")
+        MaterialCustomizer.safeAddUniform(material, "intensityScale", "float")
+        MaterialCustomizer.safeAddUniform(material, "windDirLocal", "vec3")
+        MaterialCustomizer.safeAddUniform(material, "windIntensity", "float")
+        MaterialCustomizer.safeAddUniform(material, "time", "float")
+        MaterialCustomizer.safeAddUniform(material, "spatialFreq", "float")
+        MaterialCustomizer.safeAddUniform(material, "temporalFreq", "float")
 
         // GPU displacement attempt using a late hook (if provided by runtime).
         try {
