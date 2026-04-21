@@ -29,22 +29,27 @@ fun BottomText() {
     var visibleMeshes by remember { mutableStateOf(0) }
     var totalMeshes by remember { mutableStateOf(0) }
 
+    val debugFps = false
+
     LaunchedEffect(Unit) {
         while (true) {
             val scene = SceneManager.getScene()
             if (scene != null) {
                 fps = scene.getEngine().getFps().roundToInt()
             }
-            
-            val perfEngine = WorldLoader.getCurrentPerformanceEngine()
-            if (perfEngine != null) {
-                visibleMeshes = perfEngine.getVisibleCount()
-                totalMeshes = perfEngine.getTotalTrackedCount()
-            } else {
-                visibleMeshes = 0
-                totalMeshes = 0
+
+
+            if (debugFps) {
+                val perfEngine = WorldLoader.getCurrentPerformanceEngine()
+                if (perfEngine != null) {
+                    visibleMeshes = perfEngine.getVisibleCount()
+                    totalMeshes = perfEngine.getTotalTrackedCount()
+                } else {
+                    visibleMeshes = 0
+                    totalMeshes = 0
+                }
             }
-            
+
             delay(500)
         }
     }
@@ -57,7 +62,7 @@ fun BottomText() {
     ) {
         val baseText = translated("© 2026 Saigon.Quest v0.1")
         val fpsText = if (fps > 0) " • $fps FPS" else ""
-        val meshText = if (totalMeshes > 0) " • ${translated("Visible")}: $visibleMeshes/$totalMeshes" else ""
+        val meshText = if (debugFps && totalMeshes > 0) " • ${translated("Visible")}: $visibleMeshes/$totalMeshes" else ""
         
         Text("$baseText$fpsText$meshText")
     }

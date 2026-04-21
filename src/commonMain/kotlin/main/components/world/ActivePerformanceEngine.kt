@@ -15,7 +15,7 @@ import kotlin.math.tan
  * Active performance engine that hides meshes that are too small on screen.
  */
 class ActivePerformanceEngine(private val scene: Scene) {
-    private var minSizeThreshold = 32f
+    private var minSizeThreshold = 24f
     private var lastUpdateMs = 0.0
     private var updateIntervalMs = 250.0 // Run 4 times per second
 

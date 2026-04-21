@@ -42,7 +42,7 @@ class DistanceCullingSystem(private val scene: Scene) {
 
             float applyDistanceCulling(float alpha) {
                 float dist = distance(vPositionW, cameraWorldPos);
-                float startDist = maxVisibilityDistance * 0.8; // Start fading at 80% of max distance
+                float startDist = maxVisibilityDistance * 0.9; // Start fading at 90% of max distance
                 
                 if (dist > maxVisibilityDistance) {
                     discard;
