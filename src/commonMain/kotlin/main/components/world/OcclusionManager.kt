@@ -82,6 +82,7 @@ class OcclusionManager(private val scene: Scene) {
 
     // Single source of truth for current time (seconds), updated once per frame in update()
     private var currentTimeSeconds: Float = 0f
+    private var timePhase: Float = 0f
 
     // Smoothed tracking of player world position (follows actual player over ~2s)
     private var trackedPlayerWorldPos: Vector3? = null
@@ -153,9 +154,8 @@ class OcclusionManager(private val scene: Scene) {
     float noise(vec2 p) {
         // Interleaved Gradient Noise (IGN) — decorrelates neighboring pixels
         float ig = fract(52.9829189 * fract(p.x * 0.06711056 + p.y * 0.00583715));
-        // Cranley–Patterson rotation with time to avoid static patterns
-        float t = fract(time * 0.61803398875);
-        return fract(hash12(p + t) + ig);
+        // Cranley–Patterson rotation with pre-calculated timePhase to avoid redundant per-pixel math
+        return fract(hash12(p + timePhase) + ig);
     }
 
     float applyOcclusion(float alpha) {
@@ -163,50 +163,47 @@ class OcclusionManager(private val scene: Scene) {
             return alpha;
         }
         
-        float bandWidthPx = max(0.0, occlusionSoftness * occlusionRadius);
+        float bandWidthPx = occlusionSoftness * occlusionRadius;
         
         // 1. Calculate distance from this pixel to the player on screen
         vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
         
         // 2. Depth check: is the pixel closer to the camera than the player?
-        float fragmentDepth = gl_FragCoord.z;
-        float playerDepth = playerScreenPos.z;
-        float depthDiff = fragmentDepth - playerDepth + 0.001;
+        // playerScreenPos.z is pre-calculated in Kotlin
+        float depthDiff = gl_FragCoord.z - playerScreenPos.z + 0.001;
         
         // Dithered evaluation for depth comparison (soften hard thresholds)
         float DEPTH_BAND = occlusionSoftness * 0.001;
         bool isOccluding = (depthDiff < 0.0);
         if (!isOccluding && DEPTH_BAND > 0.0) {
             float depthWeight = smoothstep(DEPTH_BAND, 0.0, abs(depthDiff));
-            float depthRnd = noise(gl_FragCoord.xy + vec2(13.7, 31.1));
-            if (depthWeight > depthRnd) {
+            if (depthWeight > noise(gl_FragCoord.xy + vec2(13.7, 31.1))) {
                 isOccluding = true;
             }
         }
         
         // 3. Directional/Height Check: "The Flashlight Cone"
-        // We only want to fade if the pixel is either:
-        // - Above the player in screen space
-        // - Well above the player in world space (tall objects)
-        // - Inside an imaginary cone from the player towards the camera
         if (isOccluding) {
             float SOFTNESS_WORLD = occlusionSoftness * 0.4;
+            float halfBand = bandWidthPx * 0.5;
             
             // Screen Height Weight (soft transition from below to above player)
-            float screenHeightWeight = smoothstep(-bandWidthPx * 0.5, bandWidthPx * 0.5, gl_FragCoord.y - playerScreenPixel.y);
+            float screenHeightWeight = smoothstep(-halfBand, halfBand, gl_FragCoord.y - playerScreenPixel.y);
             
             // World Height Weight (at feet vs tall object)
-            float worldHeightWeight = smoothstep(0.1 - SOFTNESS_WORLD, 0.1 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
+            float worldHeightDiff = vPositionW.y - playerWorld.y;
+            float worldHeightWeight = smoothstep(0.1 - SOFTNESS_WORLD, 0.1 + SOFTNESS_WORLD, worldHeightDiff);
             
             // Cone check: world-space alignment with player-camera axis
+            // Optimized: use pre-calculated normalized playerToCamDir uniform
             vec3 toFrag = vPositionW - playerWorld;
-            vec3 toCamDir = normalize(cameraWorld - playerWorld);
-            float distAlongAxis = dot(toFrag, toCamDir);
-            vec3 perp = toFrag - distAlongAxis * toCamDir;
-            float distSqToAxis = dot(perp, perp);
+            float distAlongAxis = dot(toFrag, playerToCamDir);
+            
+            // Optimized perp distance squared: distSq(toFrag) - distAlongAxis^2
+            float distSqToAxis = dot(toFrag, toFrag) - (distAlongAxis * distAlongAxis);
             
             // Cone starts at player, grows slightly as it goes towards camera
-            float coneRadius = 0.125 + clamp(distAlongAxis / 10.0, 0.0, 1.0) * 0.5;
+            float coneRadius = 0.125 + clamp(distAlongAxis * 0.1, 0.0, 1.0) * 0.5;
             float coneRadiusSq = coneRadius * coneRadius;
             
             // Soften the cone edge and the cone start
@@ -214,8 +211,8 @@ class OcclusionManager(private val scene: Scene) {
             coneWeight *= smoothstep(-0.2 - SOFTNESS_WORLD, -0.2 + SOFTNESS_WORLD, distAlongAxis);
             
             // Additional safety weights for "above player but far below world" and "below player but in cone"
-            float floorWeight = smoothstep(-0.4 - SOFTNESS_WORLD, -0.4 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
-            float safetyWeight = smoothstep(-0.5 - SOFTNESS_WORLD, -0.5 + SOFTNESS_WORLD, vPositionW.y - playerWorld.y);
+            float floorWeight = smoothstep(-0.4 - SOFTNESS_WORLD, -0.4 + SOFTNESS_WORLD, worldHeightDiff);
+            float safetyWeight = smoothstep(-0.5 - SOFTNESS_WORLD, -0.5 + SOFTNESS_WORLD, worldHeightDiff);
 
             // Logic:
             // if below player (screenHeightWeight=0.0): must be wellAbove OR (inCone AND floor)
@@ -227,18 +224,15 @@ class OcclusionManager(private val scene: Scene) {
             
             // Apply dithering to these new checks
             if (finalProb < 1.0) {
-                float rnd = noise(gl_FragCoord.xy + vec2(23.1, 61.7));
-                if (rnd > finalProb) {
+                if (noise(gl_FragCoord.xy + vec2(23.1, 61.7)) > finalProb) {
                     isOccluding = false;
                 }
             }
         }
 
         // 4. Combine checks and apply radial mask with dithering
-        // We only fade if the pixel is confirmed as occluding
         if (isOccluding) {
-            vec2 delta = gl_FragCoord.xy - playerScreenPixel;
-            float dist = length(delta);
+            float dist = distance(gl_FragCoord.xy, playerScreenPixel);
             
             if (!useRadius) {
                 discard;
@@ -251,10 +245,8 @@ class OcclusionManager(private val scene: Scene) {
                 if (dist < innerRadius) {
                     discard;
                 } else if (dist < occlusionRadius) {
-                    float gradientPos = (dist - innerRadius) / max(0.0001, bandWidthPx);
-                    float coverage = clamp(gradientPos, 0.0, 1.0);
-                    float threshold = noise(gl_FragCoord.xy);
-                    if (coverage < threshold) {
+                    float coverage = (dist - innerRadius) / max(0.0001, bandWidthPx);
+                    if (coverage < noise(gl_FragCoord.xy)) {
                         discard;
                     }
                 }
@@ -317,6 +309,8 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("useRadius", "bool")
         mat.AddUniform("isEnabled", "bool")
         mat.AddUniform("time", "float")
+        mat.AddUniform("timePhase", "float")
+        mat.AddUniform("playerToCamDir", "vec3")
 
         // Depth linearization and any shared helpers
         mat.Fragment_Definitions(
@@ -403,12 +397,14 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setVector3("playerScreenPos", playerScreenPos)
                     effect.setVector3("playerWorld", playerWorldPos)
                     effect.setVector3("cameraWorld", cam.globalPosition)
+                    effect.setVector3("playerToCamDir", cam.globalPosition.subtract(playerWorldPos).normalize())
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)
                     effect.setBool("useRadius", useRadius)
                     effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
+                    effect.setFloat("timePhase", timePhase)
                 }
             } catch (_: Throwable) {
                 // avoid crashing if effect is not ready yet
@@ -463,6 +459,8 @@ class OcclusionManager(private val scene: Scene) {
         MaterialCustomizer.safeAddUniform(customMaterial, "useRadius", "bool")
         MaterialCustomizer.safeAddUniform(customMaterial, "isEnabled", "bool")
         MaterialCustomizer.safeAddUniform(customMaterial, "time", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "timePhase", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "playerToCamDir", "vec3")
 
         MaterialCustomizer.appendFragmentBegin(customMaterial, uniformDeclarations)
         MaterialCustomizer.appendFragmentDefinitions(customMaterial, occlusionShaderCode)
@@ -526,6 +524,8 @@ class OcclusionManager(private val scene: Scene) {
 
                     // Set time uniform for animations
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
+                    effect.setFloat("timePhase", timePhase)
+                    effect.setVector3("playerToCamDir", cam.globalPosition.subtract(playerWorldPos).normalize())
                 } catch (e: Throwable) {
                     // ignore binding errors
                 }
@@ -571,6 +571,7 @@ class OcclusionManager(private val scene: Scene) {
 
         // Update shared current time once per frame (seconds)
         currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
+        timePhase = (currentTimeSeconds * 0.61803398875f) % 1.0f
 
         // Update smoothed player world position to track real player over ~2 seconds
         val playerMeshRef = player
