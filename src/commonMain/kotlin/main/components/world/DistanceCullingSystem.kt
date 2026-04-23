@@ -65,6 +65,7 @@ class DistanceCullingSystem(private val scene: Scene) {
         // Bind uniforms
         // We only add the observer once
         val dyn = customMaterial.asDynamic()
+        dyn._maxVisibilityDistance = dist
         if (dyn._distanceCullingObserved == null) {
             dyn._distanceCullingObserved = true
             customMaterial.onBindObservable.add { _ ->
