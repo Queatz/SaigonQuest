@@ -26,7 +26,7 @@ import kotlin.math.PI
  */
 class CameraController(private val scene: Scene) {
     // Initial FOV value when closest to target
-    private val baseFov = 0.5f
+    private val baseFov = 0.25f
 
     // Create the main camera
     private val camera: ArcRotateCamera = ArcRotateCamera(
@@ -447,8 +447,8 @@ class CameraController(private val scene: Scene) {
             lowerBetaLimit = 0.01f
             upperBetaLimit = (PI/2f - 0.01f).toFloat()
         } else {
-            lowerRadiusLimit = 4f
-            upperRadiusLimit = 16f
+            lowerRadiusLimit = 8f
+            upperRadiusLimit = 32f
             lowerBetaLimit = (57.5f * PI / 180f).toFloat()
             upperBetaLimit = (87.5f * PI / 180f).toFloat()
         }

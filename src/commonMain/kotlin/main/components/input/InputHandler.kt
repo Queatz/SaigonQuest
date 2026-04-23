@@ -27,6 +27,19 @@ import main.components.SceneManager
 import main.components.camera.CameraController
 import main.components.inventory.InventoryState
 import main.components.objects.SceneObjectManager
+import main.components.objects.isCreatePlacementModeActive
+import main.components.objects.cancelCreatePlacementMode
+import main.components.objects.getInteractableObjectId
+import main.components.objects.selectObject
+import main.components.objects.deselectCurrentObject
+import main.components.objects.updateCreatePlacementPreview
+import main.components.objects.confirmCreatePlacement
+import main.components.objects.startDragging
+import main.components.objects.updateDragging
+import main.components.objects.endDragging
+import main.components.objects.highlightObject
+import main.components.objects.unhighlightObject
+import main.components.objects.removeObject
 import main.components.player.PlayerController
 import main.components.world.DepthPicking
 import main.components.world.isSkybox
@@ -34,8 +47,6 @@ import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
 import models.World
 import models.canUserEdit
-import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.events.MouseEvent
 import kotlin.math.abs
 
 /**
@@ -83,15 +94,15 @@ private fun pickUnderPointer(
             if (hit.pickedPoint != null) {
                 val distance = Vector3.Distance(cameraController.getCamera().position, hit.pickedPoint)
                 if (distance < closestDistance) {
+                    closestDistance = distance
                     if (isInventoryObj) {
-                        closestDistance = distance
                         closestInventoryItemId = objectId
                         closestObjectId = null
                         isInventoryItem = true
-                    } else if (!isInventoryItem) {
-                        closestDistance = distance
+                    } else {
                         closestObjectId = objectId
                         closestInventoryItemId = null
+                        isInventoryItem = false
                     }
                 }
             }
@@ -503,7 +514,7 @@ class InputHandler(
                 pendingTapSingleJob = scope.launch {
                     delay(tapDoubleClickThreshold)
                     objectManager.selectObject(objectId)
-                    val isPlayer = UserApi.getToken() != null
+                    val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
                     WebSocketApi.playerInteract(objectId, isPlayer)
                     pendingTapSingleJob = null
                 }
@@ -630,26 +641,8 @@ class InputHandler(
                     // Other players check
                     objectManager.deselectCurrentObject()
                 } else {
-                    // If we didn't click on an object or player, check if we clicked on a world mesh
-                    // and deselect any selected object
-                    val worldMeshes = playerController.getWorldMeshes()
-                    val player = playerController.getCollider()
-                    val moveCircle = playerController.getMoveCircle()
-
-                    // Deselect any currently selected object if we didn't click on an object
+                    // Deselect any currently selected object if we didn't click on an object or player
                     objectManager.deselectCurrentObject()
-
-                    var clickedOnWorldMesh = false
-                    for (mesh in worldMeshes) {
-                        // Skip player and move circle meshes
-                        if (mesh == player || mesh == moveCircle || mesh.isSkybox()) continue
-
-                        val hit = pick.ray.intersectsMesh(mesh)
-                        if (hit.pickedPoint != null) {
-                            clickedOnWorldMesh = true
-                            break
-                        }
-                    }
                 }
             }
 

@@ -14,6 +14,8 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.userNearby
 import main.components.SceneManager
+import main.components.objects.setObjectInteractable
+import main.components.objects.setObjectNearby
 import main.components.world.WorldLoader
 import main.components.shadow.ShadowManager
 import models.User
@@ -599,7 +601,7 @@ class WorldObjectManager(private val scene: Scene) {
     // Counter for generating unique IDs
     private var idCounter = 0
     
-    private fun createObjectHandle(obj: WorldObject, node: Node): WorldObjectHandle {
+    internal fun createObjectHandle(obj: WorldObject, node: Node): WorldObjectHandle {
         return object : WorldObjectHandle {
             override val id: String = obj.id
 

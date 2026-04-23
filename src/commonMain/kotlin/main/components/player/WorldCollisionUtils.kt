@@ -1,20 +1,91 @@
 package main.components.player
 
-import lib.AbstractMesh
 import lib.Mesh
 import lib.Ray
 import lib.Vector3
 import main.components.world.effect.WindSystem
-import main.components.world.isPassable
-import main.components.world.isSkybox
-import main.components.world.isWater
+
+/**
+ * Result of an environment check at a specific position.
+ */
+data class EnvironmentInfo(
+    val isOnWater: Boolean,
+    val groundPoint: Vector3?,
+    val waterPoint: Vector3?,
+)
 
 /**
  * Utilities for validating movement and computing supported Y positions against world meshes.
  */
 object WorldCollisionUtils {
+    /**
+     * Performs a single environment check that returns all necessary information for movement/collision.
+     * Consolidates multiple raycasts into one to improve performance.
+     */
+    fun getEnvironmentInfo(
+        context: WorldCollisionContext,
+        position: Vector3,
+        collider: Mesh? = null,
+        moveCircle: Mesh? = null,
+        yPadding: Float = 0.5f,
+    ): EnvironmentInfo {
+        // Prepare reusable rays
+        val rayDown = Ray().also {
+            it.direction = Vector3(0f, -1f, 0f)
+        }
+
+        // 1. Raycast ground (3 probes for better accuracy near edges)
+        val groundPoints = mutableListOf<Vector3>()
+        
+        // Exclude specific meshes only if necessary
+        val filteredGroundMeshes = if (collider == null && moveCircle == null) {
+            context.groundMeshes
+        } else {
+            context.groundMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
+        }
+
+        val yOffsets = arrayOf(10f, 2.5f, 1f)
+        for (offset in yOffsets) {
+            rayDown.origin = Vector3(position.x, position.y + offset, position.z)
+            val hits = rayDown.intersectsMeshes(filteredGroundMeshes)
+            for (hit in hits) {
+                hit.pickedPoint?.let {
+                    groundPoints.add(it)
+                    break
+                }
+            }
+        }
+
+        val bestGroundPoint = groundPoints.minByOrNull { kotlin.math.abs(it.y - position.y) }
+
+        // 2. Raycast water surface
+        var waterPoint: Vector3? = null
+        if (context.waterMeshes.isNotEmpty()) {
+            rayDown.origin = Vector3(position.x, position.y + 10f, position.z)
+            val hits = rayDown.intersectsMeshes(context.waterMeshes)
+            val bestHit = hits.filter { it.pickedPoint != null }
+                .minByOrNull { kotlin.math.abs(it.pickedPoint!!.y - position.y) }
+            waterPoint = bestHit?.pickedPoint
+        }
+
+        // 3. Determine if we are on water
+        val floatingPadding = 0.0f
+        val isOnWater = waterPoint != null && 
+            (bestGroundPoint == null || (waterPoint.y + floatingPadding) > (bestGroundPoint.y + yPadding))
+
+        return EnvironmentInfo(
+            isOnWater = isOnWater,
+            groundPoint = bestGroundPoint,
+            waterPoint = waterPoint,
+        )
+    }
+
+
+    /**
+     * Optimized version of isValidPosition that uses pre-filtered meshes.
+     */
     fun isValidPosition(
-        worldMeshes: Array<AbstractMesh>,
+        context: WorldCollisionContext,
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
@@ -25,84 +96,47 @@ object WorldCollisionUtils {
             it.origin = rayOrigin
             it.direction = rayDirection
         }
-        for (mesh in worldMeshes) {
-            if (mesh == collider || mesh == moveCircle || mesh.isSkybox() || mesh.isPassable()) continue
-            val hit = ray.intersectsMesh(mesh)
-            if (hit.pickedPoint != null) return true
-        }
-        return false
-    }
-
-    private fun calculateIsOnWater(
-        worldMeshes: Array<AbstractMesh>,
-        collider: Mesh?,
-        moveCircle: Mesh?,
-        position: Vector3,
-        yPadding: Float = 0.5f,
-    ): Pair<Boolean, Vector3?> {
-        val groundMeshes = worldMeshes.filter {
-            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater() && !it.isPassable()
-        }.toTypedArray()
-
-        val rayFar = Ray().also {
-            it.origin = Vector3(position.x, position.y + 10f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
-        }
-        val rayNear = Ray().also {
-            it.origin = Vector3(position.x, position.y + 2.5f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
-        }
-        val ray3 = Ray().also {
-            it.origin = Vector3(position.x, position.y + 1f, position.z)
-            it.direction = Vector3(0f, -1f, 0f)
-        }
-
-        val hitsFar = rayFar.intersectsMeshes(meshes = groundMeshes)
-        val hitsNear = rayNear.intersectsMeshes(meshes = groundMeshes)
-        val hits3 = ray3.intersectsMeshes(meshes = groundMeshes)
-
-        val bestGroundHit = (hitsFar + hitsNear + hits3)
-            .filter { it.pickedPoint != null }
-            .minByOrNull { info -> kotlin.math.abs((info.pickedPoint!!.y) - position.y) }
-
-        val waterPoint = getWaterSurfacePoint(worldMeshes, position)
-        val floatingPadding = 0.0f
-
-        val isOnWater = waterPoint != null && (bestGroundHit == null || (waterPoint.y + floatingPadding) > (bestGroundHit.pickedPoint!!.y + yPadding))
         
-        return Pair(isOnWater, bestGroundHit?.pickedPoint)
+        val meshes = if (collider == null && moveCircle == null) {
+            context.groundMeshes
+        } else {
+            context.groundMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
+        }
+        
+        val hits = ray.intersectsMeshes(meshes)
+        return hits.any { it.pickedPoint != null }
     }
+
 
     fun getIsOnWater(
-        worldMeshes: Array<AbstractMesh>,
+        context: WorldCollisionContext,
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
         yPadding: Float = 0.5f,
     ): Boolean {
-        return calculateIsOnWater(worldMeshes, collider, moveCircle, position, yPadding).first
+        return getEnvironmentInfo(context, position, collider, moveCircle, yPadding).isOnWater
     }
 
     fun findValidYPosition(
-        worldMeshes: Array<AbstractMesh>,
+        context: WorldCollisionContext,
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
         yPadding: Float = 0.5f,
         applyWaterOffset: Boolean = true,
     ): Vector3? {
-        val (isOnWater, groundPoint) = calculateIsOnWater(worldMeshes, collider, moveCircle, position, yPadding)
-        val waterPoint = if (isOnWater) getWaterSurfacePoint(worldMeshes, position) else null
-
-        val finalMeshY = if (isOnWater) {
-            waterPoint!!.y
+        val info = getEnvironmentInfo(context, position, collider, moveCircle, yPadding)
+        
+        val finalMeshY = if (info.isOnWater) {
+            info.waterPoint!!.y
         } else {
-            groundPoint?.y ?: return null
+            info.groundPoint?.y ?: return null
         }
 
         var finalPadding = yPadding
         val floatingPadding = 0.0f
-        if (isOnWater && applyWaterOffset) {
+        if (info.isOnWater && applyWaterOffset) {
             finalPadding = floatingPadding
 
             // Add gentle vertical bobbling motion
@@ -118,33 +152,30 @@ object WorldCollisionUtils {
     }
 
     /**
-     * Checks if there's a physical obstacle (wall/steep slope) in the way between from and to.
-     * Uses multiple horizontal raycasts at different heights to detect obstacles.
-     * 
-     * @return True if the path is blocked by a non-walkable obstacle
+     * Optimized version of isPathBlocked using pre-filtered meshes and consolidated info.
      */
     fun isPathBlocked(
-        worldMeshes: Array<AbstractMesh>,
+        context: WorldCollisionContext,
         collider: Mesh?,
         moveCircle: Mesh?,
         from: Vector3,
         to: Vector3,
     ): Boolean {
-        // 1. Check if the step up is too high (Rule 2: small ledges are allowed)
+        // 1. Check if the step up is too high
         if (to.y - from.y > 0.6f) return true
 
-        // 2. Check for physical obstacles in the way at multiple heights (Rule 1)
+        // 2. Check for physical obstacles in the way at multiple heights
         val horizontalDir = Vector3(to.x - from.x, 0f, to.z - from.z)
         val distance = horizontalDir.length()
         if (distance < 0.01f) return false
 
-        // Check at waist height and chest/head height
         val checkHeights = arrayOf(0.1f, 1.2f)
         
-        // Prepare target meshes once (exclude collider, move circle, skybox, and water)
-        val targetMeshes = worldMeshes.filter {
-            it != collider && it != moveCircle && !it.isSkybox() && !it.isWater() && !it.isPassable()
-        }.toTypedArray()
+        val targetMeshes = if (collider == null && moveCircle == null) {
+            context.obstacleMeshes
+        } else {
+            context.obstacleMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
+        }
 
         for (heightOffset in checkHeights) {
             val rayOrigin = Vector3(from.x, from.y + heightOffset, from.z)
@@ -154,22 +185,16 @@ object WorldCollisionUtils {
                 it.length = distance.toDouble()
             }
 
-            // Use intersectsMeshes to find any blocking geometry
             val hits = ray.intersectsMeshes(targetMeshes)
             for (hit in hits) {
-                if (hit.pickedPoint != null) {
-                    // Horizontal hit found! Check if this is a walkable slope/ledge or a wall.
-                    // We use findValidYPosition at the hit point (probed slightly back) to find ground level.
-                    val probePoint = hit.pickedPoint!!.subtract(ray.direction.scale(0.05f))
-                    val validYAtHit = findValidYPosition(worldMeshes, collider, moveCircle, probePoint, 0.5f)
+                hit.pickedPoint?.let { pickedPoint ->
+                    val probePoint = pickedPoint.subtract(ray.direction.scale(0.05f))
+                    val validYAtHit = findValidYPosition(context, collider, moveCircle, probePoint, 0.5f)
                     
-                    // If no ground found at hit point, it's an impassable obstacle.
                     if (validYAtHit == null) return true
                     
                     val groundYAtHit = validYAtHit.y - 0.5f
-                    // If the hit point is significantly above the ground level at that location, it's a wall.
-                    // Increased threshold to 0.3f to be more lenient with jagged edges.
-                    if (kotlin.math.abs(hit.pickedPoint!!.y - groundYAtHit) > 0.3f) {
+                    if (kotlin.math.abs(pickedPoint.y - groundYAtHit) > 0.3f) {
                         return true
                     }
                 }
@@ -180,19 +205,19 @@ object WorldCollisionUtils {
     }
 
     fun getWaterSurfacePoint(
-        worldMeshes: Array<AbstractMesh>,
+        context: WorldCollisionContext,
         position: Vector3,
     ): Vector3? {
+        if (context.waterMeshes.isEmpty()) return null
+        
         val rayOrigin = Vector3(position.x, position.y + 10f, position.z)
         val rayDirection = Vector3(0f, -1f, 0f)
         val ray = Ray().also {
             it.origin = rayOrigin
             it.direction = rayDirection
         }
-        val waterMeshes = worldMeshes.filter { it.isWater() && !it.isPassable() }.toTypedArray()
-        if (waterMeshes.isEmpty()) return null
 
-        val hits = ray.intersectsMeshes(meshes = waterMeshes)
+        val hits = ray.intersectsMeshes(meshes = context.waterMeshes)
         val bestHit = hits.filter { it.pickedPoint != null }
             .minByOrNull { kotlin.math.abs(it.pickedPoint!!.y - position.y) }
             ?: return null

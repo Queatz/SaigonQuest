@@ -177,11 +177,18 @@ class ShadowManager(
         // generator.darkness = 0.2f
     }
     
+    private var updateCounter = 0
+    
     /**
      * Updates shadow casters based on distance to camera (Task 2)
      */
     fun update() {
         val camera = scene.activeCamera ?: return
+        
+        // Performance Improvement: Throttle shadow distance check to every 10 frames
+        updateCounter++
+        if (updateCounter % 15 != 0) return
+        
         val cameraPos = camera.position
         
         // Task 2: Shadow Distance Culling (Optimized for big scenes)

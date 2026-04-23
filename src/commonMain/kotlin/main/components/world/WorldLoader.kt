@@ -31,7 +31,6 @@ import kotlin.math.*
 import kotlinx.browser.window
 import lib.Light
 import lib.Node
-import lib.Space
 import models.ErrorResponse
 import main.components.player.FrameDeltaTracker
 import kotlin.random.Random
@@ -885,14 +884,6 @@ class WorldLoader(private val scene: Scene) {
         return currentWorld
     }
     
-    /**
-     * Gets the world meshes.
-     * 
-     * @return The array of world meshes
-     */
-    fun getWorldMeshes(): Array<AbstractMesh> {
-        return worldMeshes
-    }
 
     /**
      * Gets the shadow manager for global shadow handling.

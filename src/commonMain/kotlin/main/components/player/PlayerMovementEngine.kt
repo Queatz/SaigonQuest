@@ -96,17 +96,22 @@ class PlayerMovementEngine(
         moveDirection: Vector3,
         playerHandle: WorldObjectHandle,
         collider: Mesh,
-        worldMeshes: Array<AbstractMesh>,
+        collisionContext: WorldCollisionContext,
         moveCircle: Mesh?,
         speedMultiplier: Float = 1.0f,
     ): Vector3? {
         val deltaTime = movementDelta.nextDeltaSeconds()
-        val isOnWater = WorldCollisionUtils.getIsOnWater(
-            worldMeshes = worldMeshes,
+        val currentPosition = playerHandle.position
+        
+        // 1. Determine environment info once per frame
+        val envInfo = WorldCollisionUtils.getEnvironmentInfo(
+            context = collisionContext,
+            position = currentPosition,
             collider = collider,
             moveCircle = moveCircle,
-            position = playerHandle.position,
         )
+
+        val isOnWater = envInfo.isOnWater
         val actualSpeedMultiplier = if (isAutoRunning) {
             max(speedMultiplier, 4.0f)
         } else {
@@ -211,8 +216,8 @@ class PlayerMovementEngine(
             val currentPos = playerHandle.position
 
             fun tryMove(candidatePos: Vector3): Vector3? {
-                if (WorldCollisionUtils.isValidPosition(worldMeshes, collider, moveCircle, candidatePos)) {
-                    var validPos = WorldCollisionUtils.findValidYPosition(worldMeshes, collider, moveCircle, candidatePos, 0.5f) ?: return null
+                if (WorldCollisionUtils.isValidPosition(collisionContext, collider, moveCircle, candidatePos)) {
+                    var validPos = WorldCollisionUtils.findValidYPosition(collisionContext, collider, moveCircle, candidatePos, 0.5f) ?: return null
 
                     if (isJumping) {
                         val t = jumpElapsed / jumpDuration
@@ -220,7 +225,7 @@ class PlayerMovementEngine(
                         validPos = Vector3(validPos.x, (validPos.y + h).toFloat(), validPos.z)
                     }
 
-                    if (WorldCollisionUtils.isPathBlocked(worldMeshes, collider, moveCircle, currentPos, validPos)) {
+                    if (WorldCollisionUtils.isPathBlocked(collisionContext, collider, moveCircle, currentPos, validPos)) {
                         return null
                     }
                     return validPos

@@ -33,7 +33,6 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
-import kotlin.random.Random
 
 class OtherPlayersCoordinator(private val scene: Scene) {
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -56,6 +55,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private val movementDelta = FrameDeltaTracker()
     private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
+    private var collisionContext: WorldCollisionContext? = null
+    private var frameCount: Int = 0
 
     // Spawn retry state to ensure other players appear even if world assets are not yet ready
     private val spawnRetryCounts = mutableMapOf<String, Int>()
@@ -74,12 +75,13 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {
         worldMeshes = meshes
+        collisionContext = WorldCollisionContext(meshes)
     }
 
     private fun snapToGround(position: Vector3): Vector3 {
-        if (worldMeshes.isEmpty()) return position
+        val context = collisionContext ?: return position
         val snapped = WorldCollisionUtils.findValidYPosition(
-            worldMeshes = worldMeshes,
+            context = context,
             collider = null,
             moveCircle = null,
             position = position,
@@ -497,7 +499,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             if (baseChanged) {
                 // Preserve current transform/state
                 val currentPos = op.handle?.position ?: op.targetPos ?: op.lastPos
-                val currentDir = op.direction
                 // Remove current mesh and trigger respawn with updated base body
                 op.handle?.remove()
                 op.handle = null
@@ -548,6 +549,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     // Per-frame movement and HUD positioning
     private fun update() {
+        frameCount++
         val deltaTime = movementDelta.nextDeltaSeconds()
         val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
         val now = window.performance.now()
@@ -595,12 +597,21 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val targetPos = op.targetPos?.let { snapToGround(it) } ?: return@forEach
             val currentPos = handle.position
 
-            val isOnWater = WorldCollisionUtils.getIsOnWater(
-                worldMeshes = worldMeshes,
-                collider = null,
-                moveCircle = null,
-                position = currentPos,
-            )
+            // Throttle environment check for other players (every 10 frames)
+            if (op.lastEnvCheckFrame == -1 || (frameCount - op.lastEnvCheckFrame) >= 10) {
+                val context = collisionContext
+                if (context != null) {
+                    op.isOnWater = WorldCollisionUtils.getIsOnWater(
+                        context = context,
+                        collider = null,
+                        moveCircle = null,
+                        position = currentPos,
+                    )
+                    op.lastEnvCheckFrame = frameCount
+                }
+            }
+            
+            val isOnWater = op.isOnWater
             val speedFactor = if (isOnWater) 0.5f else 1.0f
             val playerFrameMovementSpeed = frameMovementSpeed * speedFactor
 
@@ -660,8 +671,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     }
 
     private fun trySpawnWaterRipple(position: Vector3) {
-        if (worldMeshes.isEmpty()) return
-        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(worldMeshes, position) ?: return
+        val context = collisionContext ?: return
+        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(context, position) ?: return
         // Only spawn if player is actually in/at the water (within a reasonable distance from surface)
         if (kotlin.math.abs(position.y - waterPoint.y) < 1.0f) {
             WaterRippleEffect.create(scene, waterPoint)

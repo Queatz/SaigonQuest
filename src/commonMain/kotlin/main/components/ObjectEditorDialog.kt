@@ -13,6 +13,7 @@ import main.api.ObjectApi
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogInput
+import main.components.objects.consumePendingCreatePosition
 import main.theme.Styles
 import models.AssetType
 import models.Object

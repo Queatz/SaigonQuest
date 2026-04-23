@@ -212,17 +212,23 @@ class ActivePerformanceEngine(private val scene: Scene) {
     ): Boolean {
         // Ensure we have an up-to-date world matrix for accurate bounding info,
         // especially for instances, billboarded meshes, or moving objects.
+        // Task 1: Performance Improvement - Avoid forcing matrix re-computation if possible
         try {
-            mesh.computeWorldMatrix(true)
+            mesh.computeWorldMatrix(false)
         } catch (_: Throwable) {
             // Ignore errors during matrix computation
         }
 
-        val boundingInfo = try { mesh.getBoundingInfo() } catch (_: Throwable) { return true }
-        
+        // Task 2: Distance Culling - Skip expensive checks for meshes very far from camera
+        val cameraPos = camera.globalPosition
+        val meshPos = mesh.getAbsolutePosition()
+        val distance = Vector3.Distance(cameraPos, meshPos)
+
         // Final safety check: if it's incullable, it's always visible.
         // (This is already handled in processMeshRecursive, but added here for robustness).
         if (mesh.isIncullable() || mesh.sourceMesh?.isIncullable() == true) return true
+
+        val boundingInfo = try { mesh.getBoundingInfo() } catch (_: Throwable) { return true }
         
         val sphere = boundingInfo.boundingSphere
         
@@ -238,6 +244,9 @@ class ActivePerformanceEngine(private val scene: Scene) {
             // We cull the entire mesh only if it's quite far away.
             val distToBox = distanceToBoundingBox(camera.position, boundingInfo.boundingBox)
             return distToBox < 200f // 200 units is a safe distance for massive meshes
+        } else {
+            // Hide if further than 250 units (configurable based on scene scale)
+            if (distance > 250f) return false
         }
 
         // Distance from camera to sphere center

@@ -25,6 +25,7 @@ import main.api.updatePlayerPosition
 import main.components.SceneManager
 import main.components.world.effect.WaterRippleEffect
 import main.components.inventory.InventoryState
+import main.components.objects.movePlayerToObject
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
 import main.components.world.WorldObjectHandle
@@ -60,6 +61,7 @@ class PlayerController(private val scene: Scene) {
     
     // World meshes for collision detection
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
+    private var collisionContext: WorldCollisionContext? = null
 
     private var startNodes: Array<Node> = emptyArray()
     
@@ -166,6 +168,7 @@ class PlayerController(private val scene: Scene) {
     
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {
         worldMeshes = meshes
+        collisionContext = WorldCollisionContext(meshes)
         // Attempt to snap the player to the ground immediately when world meshes become available
         try {
             trySnapToGroundNow()
@@ -315,8 +318,10 @@ class PlayerController(private val scene: Scene) {
      * @param position The position to check
      * @return True if the position is valid, false otherwise
      */
-    fun isValidPosition(position: Vector3): Boolean =
-        WorldCollisionUtils.isValidPosition(worldMeshes, collider, moveCircle, position)
+    fun isValidPosition(position: Vector3): Boolean {
+        val context = collisionContext ?: return true
+        return WorldCollisionUtils.isValidPosition(context, collider, moveCircle, position)
+    }
     
     /**
      * Finds a valid Y position at the given X,Z coordinates.
@@ -324,8 +329,10 @@ class PlayerController(private val scene: Scene) {
      * @param position The position with X,Z coordinates
      * @return The updated position with a valid Y coordinate, or null if no valid position found
      */
-    fun findValidYPosition(position: Vector3): Vector3? =
-        WorldCollisionUtils.findValidYPosition(worldMeshes, collider, moveCircle, position, yPadding = 0.5f)
+    fun findValidYPosition(position: Vector3): Vector3? {
+        val context = collisionContext ?: return null
+        return WorldCollisionUtils.findValidYPosition(context, collider, moveCircle, position, yPadding = 0.5f)
+    }
     
     /**
      * Updates the player's position based on movement direction or target position.
@@ -342,11 +349,12 @@ class PlayerController(private val scene: Scene) {
     ): Vector3? {
         val handle = playerHandle ?: return null
         val coll = collider ?: return null
+        val context = collisionContext ?: return null
         val validPos = mover.update(
             moveDirection = moveDirection,
             playerHandle = handle,
             collider = coll,
-            worldMeshes = worldMeshes,
+            collisionContext = context,
             moveCircle = moveCircle,
             speedMultiplier = speedMultiplier,
         )
@@ -382,7 +390,8 @@ class PlayerController(private val scene: Scene) {
      * Attempts to spawn a water ripple if the player is in water.
      */
     private fun trySpawnWaterRipple(position: Vector3) {
-        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(worldMeshes, position) ?: return
+        val context = collisionContext ?: return
+        val waterPoint = WorldCollisionUtils.getWaterSurfacePoint(context, position) ?: return
         // Only spawn if player is actually in/at the water (within a reasonable distance from surface)
         if (kotlin.math.abs(position.y - waterPoint.y) < 1.0f) {
             WaterRippleEffect.create(scene, waterPoint)

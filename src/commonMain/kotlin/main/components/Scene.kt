@@ -20,6 +20,9 @@ import main.components.input.InputHandler
 import main.components.minigame.MinigameOverlay
 import main.components.objects.IdleObjectHighlighter
 import main.components.objects.SceneObjectManager
+import main.components.objects.handleInventoryItemDrop
+import main.components.objects.handleObjectDrop
+import main.components.objects.update
 import main.components.player.FriendshipStatus
 import main.components.player.OtherPlayerDialog
 import main.components.player.OtherPlayersController
@@ -36,8 +39,6 @@ import models.QuestStep
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
-import org.khronos.webgl.get
-import org.khronos.webgl.set
 import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -473,7 +474,7 @@ fun SceneComponent(url: String) {
             onClose = {
                 showLoginDialog.value = false
             },
-            onSuccess = { user ->
+            onSuccess = { _ ->
                 showLoginDialog.value = false
                 // After successful login/registration, show the world edit panel
                 showWorldEditPanel.value = true
