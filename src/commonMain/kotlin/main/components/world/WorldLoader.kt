@@ -834,6 +834,8 @@ class WorldLoader(private val scene: Scene) {
         shadowManager?.clearPointLightShadowGenerators()
         flickeringLights.clear()
         
+        var pointShadowGenerator: ShadowGenerator? = null
+        
         scene.lights.forEach { light ->
             // Skip core lights that should not be dimmed
             if (light.name == "hemisphericLight" || light.name == "directionalLight" || light.name == "moonPhaseLight") {
@@ -849,15 +851,24 @@ class WorldLoader(private val scene: Scene) {
                 if (shadowLight != null) {
                     console.log("[DEBUG] Found light from GLB: ${light.name} (type ${light.getTypeID()}). Configuring clustered shadows.")
                     
-                    // Create a shadow generator for the point light
-                    // Map size 512 is generally enough for clustered point light shadows
-                    val sg = ShadowGenerator(512, shadowLight)
-                    
-                    // Enable clustered shadows for this generator
-                    sg.useClusteredShadows = true
-                    
-                    // Register with shadow manager so it can add players/objects later
-                    shadowManager?.addPointLightShadowGenerator(sg)
+                    if (pointShadowGenerator == null) {
+                        // Create a single shadow generator for all point/spot lights
+                        // Map size 384 is generally enough for clustered point light shadows
+                        val sg = ShadowGenerator(
+                            mapSize = 384,
+                            light = shadowLight
+                        )
+                        
+                        // Enable clustered shadows for this generator
+                        sg.useClusteredShadows = true
+                        
+                        // Register with shadow manager so it can add players/objects later
+                        shadowManager?.addPointLightShadowGenerator(sg)
+                        pointShadowGenerator = sg
+                    } else {
+                        // Add this light to the existing shadow generator
+                        pointShadowGenerator.addLight(light = shadowLight)
+                    }
 
                     // Check for flicker effect
                     if (light.isFlicker()) {

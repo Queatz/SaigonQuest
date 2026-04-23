@@ -18,6 +18,7 @@ fun SettingsDialog(
     val wideAngle = remember { mutableStateOf(GraphicsSettings.isWideAngleEnabled()) }
     val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
     val outlineEnabled = remember { mutableStateOf(GraphicsSettings.isOutlineEnabled()) }
+    val shadowsEnabled = remember { mutableStateOf(GraphicsSettings.isShadowsEnabled()) }
     val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
     val showLogoutDialog = remember { mutableStateOf(false) }
 
@@ -85,6 +86,22 @@ fun SettingsDialog(
                     }
                 ) {
                     Text("${translated("Outline")}: ${if (outlineEnabled.value) translated("On") else translated("Off")}")
+                }
+
+                // Shadows
+                DialogButton(
+                    onClick = {
+                        shadowsEnabled.value = !shadowsEnabled.value
+                        GraphicsSettings.setShadowsEnabled(shadowsEnabled.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                ) {
+                    Text("${translated("Shadows")}: ${if (shadowsEnabled.value) translated("On") else translated("Off")}")
                 }
             }
 

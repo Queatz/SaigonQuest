@@ -679,6 +679,7 @@ external class Observable<T> {
 open external class ShadowGenerator(mapSize: Int, light: IShadowLight) {
     fun addShadowCaster(mesh: AbstractMesh)
     fun removeShadowCaster(mesh: AbstractMesh)
+    fun addLight(light: IShadowLight)
     var useBlurCloseExponentialShadowMap: Boolean
     var useExponentialShadowMap: Boolean
     var useBlurExponentialShadowMap: Boolean

@@ -46,10 +46,22 @@ class ShadowManager(
     
     // Observer for graphics settings changes
     private val graphicsSettingsObserver: () -> Unit = {
-        val newSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
-        if (newSize != shadowMapSize) {
-            println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
-            recreateShadowGenerator(newSize)
+        if (GraphicsSettings.isShadowsEnabled()) {
+            val newSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
+            if (newSize != shadowMapSize) {
+                println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
+                recreateShadowGenerator(newSize)
+            }
+        } else {
+            // If shadows are disabled, ensure active shadow casters are cleared
+            if (activeShadowCasters.isNotEmpty()) {
+                println("[DEBUG] Shadows disabled. Clearing all active shadow casters.")
+                activeShadowCasters.forEach { mesh ->
+                    shadowGenerator.removeShadowCaster(mesh)
+                    pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
+                }
+                activeShadowCasters.clear()
+            }
         }
     }
     
@@ -58,7 +70,11 @@ class ShadowManager(
         configureLightForShadows()
         
         // Create the cascaded shadow generator with the specified light
-        shadowGenerator = CascadedShadowGenerator(shadowMapSize, light, true)
+        shadowGenerator = CascadedShadowGenerator(
+            mapSize = shadowMapSize,
+            light = light,
+            useFullFloatEngine = true
+        )
         
         // Configure shadow generator for optimal performance with many moving objects
         configureShadowGenerator()
@@ -81,7 +97,11 @@ class ShadowManager(
         shadowGenerator.dispose()
         
         // Create new one
-        shadowGenerator = CascadedShadowGenerator(shadowMapSize, light, true)
+        shadowGenerator = CascadedShadowGenerator(
+            mapSize = shadowMapSize,
+            light = light,
+            useFullFloatEngine = true
+        )
         configureShadowGenerator()
         
         // Re-add active shadow casters
@@ -183,6 +203,18 @@ class ShadowManager(
      * Updates shadow casters based on distance to camera (Task 2)
      */
     fun update() {
+        // If shadows are disabled, clear active shadow casters and return early
+        if (!GraphicsSettings.isShadowsEnabled()) {
+            if (activeShadowCasters.isNotEmpty()) {
+                activeShadowCasters.forEach { mesh ->
+                    shadowGenerator.removeShadowCaster(mesh)
+                    pointLightShadowGenerators.forEach { it.removeShadowCaster(mesh) }
+                }
+                activeShadowCasters.clear()
+            }
+            return
+        }
+
         val camera = scene.activeCamera ?: return
         
         // Performance Improvement: Throttle shadow distance check to every 10 frames

@@ -1850,6 +1850,9 @@ vi: Chế độ rộng
 Outline
 vi: Đường viền
 
+Shadows
+vi: Bóng
+
 World screenshot
 vi: Ảnh chụp thế giới
 

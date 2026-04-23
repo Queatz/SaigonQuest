@@ -21,6 +21,7 @@ object GraphicsSettings {
     private const val OBSERVER_MODE_STORAGE_KEY = "saigon_quest_observer_mode"
     private const val ALWAYS_SHOW_QR_STORAGE_KEY = "saigon_quest_always_show_qr"
     private const val OUTLINE_ENABLED_STORAGE_KEY = "saigon_quest_outline_enabled"
+    private const val SHADOWS_ENABLED_STORAGE_KEY = "saigon_quest_shadows_enabled"
 
     /**
      * State to track whether low graphics mode is enabled.
@@ -38,6 +39,7 @@ object GraphicsSettings {
     val _isObserverModeEnabled = mutableStateOf(loadObserverModeFromStorage())
     val _isAlwaysShowQrEnabled = mutableStateOf(loadAlwaysShowQrFromStorage())
     val _isOutlineEnabled = mutableStateOf(loadOutlineEnabledFromStorage())
+    val _isShadowsEnabled = mutableStateOf(loadShadowsEnabledFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -308,6 +310,10 @@ object GraphicsSettings {
         return _isOutlineEnabled.value
     }
 
+    fun isShadowsEnabled(): Boolean {
+        return _isShadowsEnabled.value
+    }
+
     fun setAlwaysShowQr(enabled: Boolean) {
         val oldValue = _isAlwaysShowQrEnabled.value
         _isAlwaysShowQrEnabled.value = enabled
@@ -324,6 +330,17 @@ object GraphicsSettings {
         _isOutlineEnabled.value = enabled
         // Save to localStorage
         saveOutlineEnabledToStorage(enabled)
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
+
+    fun setShadowsEnabled(enabled: Boolean) {
+        val oldValue = _isShadowsEnabled.value
+        _isShadowsEnabled.value = enabled
+        // Save to localStorage
+        saveShadowsEnabledToStorage(enabled)
         // If the value changed, notify observers
         if (oldValue != enabled) {
             notifyObservers()
@@ -364,6 +381,25 @@ object GraphicsSettings {
             localStorage.setItem(OUTLINE_ENABLED_STORAGE_KEY, enabled.toString())
         } catch (e: Throwable) {
             console.error("Error saving outline setting to localStorage", e)
+        }
+    }
+
+    private fun loadShadowsEnabledFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(SHADOWS_ENABLED_STORAGE_KEY)
+            // Default to true if not set
+            storedValue == null || storedValue == "true"
+        } catch (e: Throwable) {
+            console.error("Error loading shadows enabled setting from localStorage", e)
+            true
+        }
+    }
+
+    private fun saveShadowsEnabledToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(SHADOWS_ENABLED_STORAGE_KEY, enabled.toString())
+        } catch (e: Throwable) {
+            console.error("Error saving shadows enabled setting to localStorage", e)
         }
     }
 }
