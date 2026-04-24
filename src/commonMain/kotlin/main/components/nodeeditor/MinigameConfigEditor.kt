@@ -247,7 +247,8 @@ fun MinigameConfigEditor(
                                     launch {
                                         try {
                                             semaphore.withPermit {
-                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: Storybook watercolor illustration, 3D anime, expressive, detailed, realistic")
+                                                val size = if (type == MinigameType.Story) "1280*720" else "1024*1024"
+                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: anime, expressive, detailed, realistic.", size)
                                                 mutex.withLock {
                                                     val idx = currentList.indexOfFirst { it.id == item.id }
                                                     if (idx != -1) {
@@ -556,7 +557,8 @@ fun MinigameItemEditor(
                 url = item.image ?: "",
                 type = MediaType.Image,
                 onSelect = { onUpdate(item.copy(image = it)) },
-                onClear = { onUpdate(item.copy(image = null)) }
+                onClear = { onUpdate(item.copy(image = null)) },
+                preferredSize = if (type == MinigameType.Story) "1280*720" else null
             )
             MediaSelector(
                 url = item.audio ?: "",

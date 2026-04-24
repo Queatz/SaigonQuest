@@ -23,9 +23,10 @@ fun MediaAiArea(
     onError: (String) -> Unit = {},
     filter: MediaType? = null,
     onRefreshLibrary: () -> Unit = {},
+    initialSize: String? = null,
 ) {
     var prompt by remember { mutableStateOf("") }
-    var size by remember { mutableStateOf("1024*1024") }
+    var size by remember { mutableStateOf(initialSize ?: "1024*1024") }
     var generating by remember { mutableStateOf(false) }
     var history by remember { mutableStateOf<List<AiPromptHistory>>(emptyList()) }
     var showHistory by remember { mutableStateOf(false) }

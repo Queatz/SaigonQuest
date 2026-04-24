@@ -286,6 +286,7 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
                 appendLine("- 'definition': For choices, set to 'correct' if it is the right option to advance the story. For story steps, leave empty.")
                 appendLine("- Group items by step: a story step followed by EXACTLY 4 choices, then the next story step and its choices.")
                 appendLine("- Ensure exactly one choice per step is marked as 'correct' in 'definition'.")
+                appendLine("- Keep story step text descriptive enough to generate good landscape images (16:9 aspect ratio).")
             }
         }
         if (type == MinigameType.Story) {

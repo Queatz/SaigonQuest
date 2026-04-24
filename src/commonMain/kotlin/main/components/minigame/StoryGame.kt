@@ -115,10 +115,7 @@ fun StoryGame(
                         attrs = {
                             classes(MinigameStyles.storyChoiceItem)
                             if (isError) {
-                                classes(MinigameStyles.shakeError)
-                                style {
-                                    backgroundColor(rgba(244, 67, 54, 0.2))
-                                }
+                                classes(MinigameStyles.storyChoiceError)
                             }
                             if (isSuccess) {
                                 classes(MinigameStyles.storyChoiceSuccess)

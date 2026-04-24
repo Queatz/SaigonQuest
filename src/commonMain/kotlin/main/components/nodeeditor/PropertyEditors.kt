@@ -327,7 +327,8 @@ fun MediaSelector(
     url: String,
     type: models.MediaType,
     onSelect: (String) -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    preferredSize: String? = null
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -395,7 +396,8 @@ fun MediaSelector(
                     onSelect(selectedUrl)
                     showDialog = false
                 },
-                filter = type
+                filter = type,
+                preferredSize = preferredSize
             )
         }
     }

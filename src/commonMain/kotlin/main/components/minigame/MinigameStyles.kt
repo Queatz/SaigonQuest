@@ -574,9 +574,11 @@ object MinigameStyles : StyleSheet() {
 
     val storyStepImage by style {
         maxWidth(100.percent)
-        maxHeight(400.px)
+        maxHeight(450.px)
         borderRadius(16.px)
-        property("box-shadow", "0 4px 12px rgba(0,0,0,0.3)")
+        property("box-shadow", "0 8px 24px rgba(0,0,0,0.4)")
+        property("aspect-ratio", "16 / 9")
+        property("object-fit", "cover")
     }
 
     val storyStepText by style {
@@ -609,11 +611,12 @@ object MinigameStyles : StyleSheet() {
     }
 
     val storyChoiceImage by style {
-        width(80.px)
-        height(80.px)
+        width(120.px)
+        height(67.px)
         borderRadius(8.px)
         marginRight(16.px)
         property("object-fit", "cover")
+        property("aspect-ratio", "16 / 9")
     }
 
     val storyChoiceText by style {
@@ -623,8 +626,13 @@ object MinigameStyles : StyleSheet() {
     }
 
     val storyChoiceSuccess by style {
-        backgroundColor(rgba(76, 175, 80, 0.3))
         property("transform", "scale(1.02)")
+    }
+
+    val storyChoiceError by style {
+        animation(shake) {
+            duration(0.4.s)
+        }
     }
 
     val storyTransition by style {

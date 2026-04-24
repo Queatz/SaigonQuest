@@ -29,6 +29,7 @@ fun UploadMediaDialog(
     onClose: () -> Unit,
     onSelect: (String, MediaType, String) -> Unit,
     filter: MediaType? = null,
+    preferredSize: String? = null
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
     var loading by remember { mutableStateOf(false) }
@@ -131,6 +132,7 @@ fun UploadMediaDialog(
                     onError = { error = it },
                     filter = filter,
                     onRefreshLibrary = { refresh() },
+                    initialSize = preferredSize,
                 )
             } else {
                 // Top upload area
