@@ -114,29 +114,94 @@ fun MinigameConfigEditor(
             H5 { Text(translated("Hotspots / Targets")) }
         }
 
-        items.filter { 
-            if (type == MinigameType.Scenario) it.hotspot != null else true 
-        }.forEachIndexed { index, item ->
-            MinigameItemEditor(
-                type = type,
-                item = item,
-                index = index,
-                heroImageUrl = heroImageUrl,
-                onUpdate = { updatedItem ->
-                    val newList = items.toMutableList()
-                    val actualIndex = items.indexOfFirst { it.id == item.id }
-                    if (actualIndex != -1) {
-                        newList[actualIndex] = updatedItem
+        if (type == MinigameType.Story) {
+            val steps = items.filter { it.matchId == null || it.matchId == "" }
+            steps.forEachIndexed { index, step ->
+                MinigameItemEditor(
+                    type = type,
+                    item = step,
+                    index = index,
+                    heroImageUrl = heroImageUrl,
+                    onUpdate = { updatedItem ->
+                        val newList = items.toMutableList()
+                        val actualIndex = items.indexOfFirst { it.id == step.id }
+                        if (actualIndex != -1) {
+                            newList[actualIndex] = updatedItem
+                            updateItems(newList)
+                        }
+                    },
+                    onRemove = {
+                        val newList = items.toMutableList()
+                        newList.removeAll { it.id == step.id || it.matchId == step.id }
                         updateItems(newList)
                     }
-                },
-                onRemove = {
-                    val newList = items.toMutableList()
-                    newList.removeAll { it.id == item.id }
-                    updateItems(newList)
+                )
+
+                // Choices for this step
+                val choices = items.filter { it.matchId == step.id }
+                choices.forEachIndexed { choiceIndex, choice ->
+                    Div({ style { marginLeft(24.px); marginTop(8.px) } }) {
+                        MinigameItemEditor(
+                            type = type,
+                            item = choice,
+                            index = choiceIndex,
+                            onUpdate = { updatedItem ->
+                                val newList = items.toMutableList()
+                                val actualIndex = items.indexOfFirst { it.id == choice.id }
+                                if (actualIndex != -1) {
+                                    newList[actualIndex] = updatedItem
+                                    updateItems(newList)
+                                }
+                            },
+                            onRemove = {
+                                val newList = items.toMutableList()
+                                newList.removeAll { it.id == choice.id }
+                                updateItems(newList)
+                            }
+                        )
+                    }
                 }
-            )
-            Hr()
+
+                DialogButton(
+                    onClick = {
+                        val newList = items.toMutableList()
+                        val id = "choice_${Random.nextInt(100000)}"
+                        newList.add(MinigameItem(id = id, matchId = step.id))
+                        updateItems(newList)
+                    },
+                    style = DialogButtonStyle.Secondary,
+                    small = true,
+                    attrs = { style { marginLeft(24.px); marginTop(8.px); marginBottom(16.px) } }
+                ) {
+                    Text(translated("Add choice"))
+                }
+                Hr()
+            }
+        } else {
+            items.filter {
+                if (type == MinigameType.Scenario) it.hotspot != null else true
+            }.forEachIndexed { index, item ->
+                MinigameItemEditor(
+                    type = type,
+                    item = item,
+                    index = index,
+                    heroImageUrl = heroImageUrl,
+                    onUpdate = { updatedItem ->
+                        val newList = items.toMutableList()
+                        val actualIndex = items.indexOfFirst { it.id == item.id }
+                        if (actualIndex != -1) {
+                            newList[actualIndex] = updatedItem
+                            updateItems(newList)
+                        }
+                    },
+                    onRemove = {
+                        val newList = items.toMutableList()
+                        newList.removeAll { it.id == item.id }
+                        updateItems(newList)
+                    }
+                )
+                Hr()
+            }
         }
 
         Div({
@@ -152,6 +217,7 @@ fun MinigameConfigEditor(
                     val id = "item_${items.size}_${Random.nextInt(1000)}"
                     val newItem = when(type) {
                         MinigameType.Scenario -> MinigameItem(id = id, hotspot = Hotspot(0.5, 0.5))
+                        MinigameType.Story -> MinigameItem(id = id)
                         else -> MinigameItem(id = id)
                     }
                     newList.add(newItem)
@@ -159,7 +225,7 @@ fun MinigameConfigEditor(
                 },
                 style = DialogButtonStyle.Primary
             ) {
-                Text(translated("Add item"))
+                Text(translated(if (type == MinigameType.Story) "Add Step" else "Add item"))
             }
 
             DialogButton(
@@ -181,7 +247,7 @@ fun MinigameConfigEditor(
                                     launch {
                                         try {
                                             semaphore.withPermit {
-                                                val url = AiApi.generateImage(item.text!!)
+                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: Storybook watercolor illustration, 3D anime, expressive, detailed, realistic")
                                                 mutex.withLock {
                                                     val idx = currentList.indexOfFirst { it.id == item.id }
                                                     if (idx != -1) {
@@ -307,6 +373,9 @@ fun MinigameItemEditor(
     onUpdate: (MinigameItem) -> Unit,
     onRemove: () -> Unit
 ) {
+    val isStoryStep = type == MinigameType.Story && (item.matchId == null || item.matchId == "")
+    val isStoryChoice = type == MinigameType.Story && (item.matchId != null && item.matchId != "")
+
     Div({
         style {
             display(DisplayStyle.Flex)
@@ -315,6 +384,9 @@ fun MinigameItemEditor(
             padding(8.px)
             backgroundColor(rgba(255, 255, 255, 0.05))
             borderRadius(4.px)
+            if (isStoryChoice) {
+                property("border-left", "4px solid ${Theme.colors.secondary}")
+            }
         }
     }) {
         Div({
@@ -324,7 +396,7 @@ fun MinigameItemEditor(
                 alignItems(AlignItems.Center)
             }
         }) {
-            if (type == MinigameType.Sequencing) {
+            if (type == MinigameType.Sequencing || isStoryStep) {
                 Span({
                     style {
                         fontWeight("bold")
@@ -332,6 +404,15 @@ fun MinigameItemEditor(
                     }
                 }) {
                     Text("${str("Step")} ${index + 1}")
+                }
+            } else if (isStoryChoice) {
+                Span({
+                    style {
+                        fontWeight("bold")
+                        color(Theme.colors.secondary)
+                    }
+                }) {
+                    Text("${str("Choice")} ${index + 1}")
                 }
             } else {
                 Div()
@@ -351,16 +432,31 @@ fun MinigameItemEditor(
             value = item.text ?: "",
             onInput = { onUpdate(item.copy(text = it)) },
             placeholder = str(
-                when (type) {
-                    MinigameType.Scenario -> "What to find"
-                    MinigameType.Sequencing -> "Step description / Item name"
-                    MinigameType.Categorization -> "Item name"
-                    MinigameType.Identify -> "Identify target name"
-                    MinigameType.Spelling -> "Word to spell"
+                when {
+                    type == MinigameType.Scenario -> "What to find"
+                    type == MinigameType.Sequencing -> "Step description / Item name"
+                    type == MinigameType.Categorization -> "Item name"
+                    type == MinigameType.Identify -> "Identify target name"
+                    type == MinigameType.Spelling -> "Word to spell"
+                    type == MinigameType.Story && isStoryStep -> "Step narration"
+                    type == MinigameType.Story && isStoryChoice -> "Choice text"
                     else -> "Text (Front)"
                 }
             )
         )
+
+        if (isStoryChoice) {
+            val isCorrect = item.definition == "true" || item.definition == "correct"
+            DialogButton(
+                onClick = {
+                    onUpdate(item.copy(definition = if (isCorrect) null else "true"))
+                },
+                style = if (isCorrect) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                small = true
+            ) {
+                Text(translated(if (isCorrect) "Correct Option" else "Mark as Correct"))
+            }
+        }
 
         if (type == MinigameType.Flashcards || type == MinigameType.Spelling) {
             DialogInput(

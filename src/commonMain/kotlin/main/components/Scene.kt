@@ -211,6 +211,27 @@ fun SceneComponent(url: String) {
         }
     }
 
+    // Refocus canvas when local dialogs are closed
+    LaunchedEffect(
+        showLoginDialog.value,
+        showWorldEditPanel.value,
+        showOtherPlayerDialog.value,
+        showMessageDialog.value,
+        showDropQuantityDialog.value,
+        showOpenUrlDialog.value,
+    ) {
+        if (!showLoginDialog.value &&
+            !showWorldEditPanel.value &&
+            !showOtherPlayerDialog.value &&
+            !showMessageDialog.value &&
+            !showDropQuantityDialog.value &&
+            !showOpenUrlDialog.value
+        ) {
+            awaitAnimationFrame()
+            canvasRef?.focus()
+        }
+    }
+
     // Handle 'at' query parameter for initial position or teleport
     var handledAt by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(router.currentPath, isLoaded.value) {
@@ -341,8 +362,11 @@ fun SceneComponent(url: String) {
                 val drag = (event.nativeEvent as DragEvent)
                 drag.dataTransfer ?: return@onDrop
 
-                val clientX = drag.clientX
-                val clientY = drag.clientY
+                // Adjust client coordinates to be relative to the canvas
+                val rect = canvasRef?.getBoundingClientRect()
+                val x = (drag.clientX - (rect?.left ?: 0.0)).toInt()
+                val y = (drag.clientY - (rect?.top ?: 0.0)).toInt()
+                
                 val data = drag.dataTransfer!!.getData("application/json")
 
                 // Get the data type from the event
@@ -354,12 +378,14 @@ fun SceneComponent(url: String) {
                 val dataType = dataTypeString.let { DataType.valueOf(it) }
 
                 // Use the helper function to dispatch the custom event with the data type
-                dispatchObjectDropEvent(clientX, clientY, data, dataType)
+                dispatchObjectDropEvent(x, y, data, dataType)
             }
 
-            // Touch drop mirrors mouse drop
             onTouchDrop { clientX, clientY, data, dataType ->
-                dispatchObjectDropEvent(clientX.toInt(), clientY.toInt(), data, dataType)
+                val rect = canvasRef?.getBoundingClientRect()
+                val x = (clientX - (rect?.left ?: 0.0)).toInt()
+                val y = (clientY - (rect?.top ?: 0.0)).toInt()
+                dispatchObjectDropEvent(x, y, data, dataType)
             }
 
             onMouseDown {
@@ -1427,7 +1453,12 @@ fun SceneComponent(url: String) {
     }
 
     // Add TakeItems dialog for item transfer prompts
-    TakeItemsDialog()
+    TakeItemsDialog {
+        scope.launch {
+            awaitAnimationFrame()
+            canvasRef?.focus()
+        }
+    }
 
     // Simple message dialog host
     if (showMessageDialog.value) {

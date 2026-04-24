@@ -2464,6 +2464,21 @@ vi: Tiếp theo
 Visible
 vi: Hiển thị
 
+Add choice
+vi: Thêm lựa chọn
+
+Step narration
+vi: Lời kể bước
+
+Choice text
+vi: Nội dung lựa chọn
+
+Correct Option
+vi: Lựa chọn đúng
+
+Mark as Correct
+vi: Đánh dấu là đúng
+
 © 2026 Saigon.Quest v0.1
 vi: © 2026 Saigon.Quest v0.1
 

@@ -54,6 +54,7 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.P
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
+import web.animations.awaitAnimationFrame
 import web.console.console
 import web.encoding.atob
 import web.notifications.Notification
@@ -186,6 +187,31 @@ fun WorldUI(
         if (openDocId != null) {
             initialWorldDocId = openDocId.toString()
             isWorldDocsDialogOpen = true
+        }
+    }
+
+    // Refocus canvas when all UI panels and dialogs are closed
+    LaunchedEffect(
+        currentPanel,
+        isQrDialogOpen,
+        isAdminDialogOpen,
+        isWorldDocsDialogOpen,
+        isVisitedWorldsDialogOpen,
+        showPrintDialog,
+        isScreenshotDialogOpen,
+    ) {
+        if (currentPanel == SidePanelState.None &&
+            !isQrDialogOpen &&
+            !isAdminDialogOpen &&
+            !isWorldDocsDialogOpen &&
+            !isVisitedWorldsDialogOpen &&
+            !showPrintDialog &&
+            !isScreenshotDialogOpen
+        ) {
+            scope.launch {
+                awaitAnimationFrame()
+                onRequestCanvasFocus()
+            }
         }
     }
 

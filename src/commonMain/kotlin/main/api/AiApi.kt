@@ -155,10 +155,42 @@ object AiApi {
         }
         if (resp.status.isSuccess()) {
             val raw = resp.bodyAsText()
+            var trimmed = raw.trim()
+
+            // Try to extract JSON if it's wrapped in text
+            if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) {
+                val startBracket = trimmed.indexOf('[')
+                val startBrace = trimmed.indexOf('{')
+                val start = if (startBracket != -1 && (startBrace == -1 || startBracket < startBrace)) startBracket else startBrace
+                
+                if (start != -1) {
+                    val endBracket = trimmed.lastIndexOf(']')
+                    val endBrace = trimmed.lastIndexOf('}')
+                    val end = maxOf(endBracket, endBrace)
+                    if (end > start) {
+                        trimmed = trimmed.substring(start, end + 1)
+                    }
+                }
+            }
+
             return try {
-                json.decodeFromString<MinigameItemsResponse>(raw).items
+                if (trimmed.startsWith("[")) {
+                    json.decodeFromString<List<MinigameItem>>(trimmed)
+                } else {
+                    json.decodeFromString<MinigameItemsResponse>(trimmed).items
+                }
             } catch (e: Throwable) {
-                json.decodeFromString<List<MinigameItem>>(raw)
+                val msg = e.message ?: "Unknown parsing error"
+                val offsetMatch = Regex("offset (\\d+)").find(msg)
+                val offset = offsetMatch?.groupValues?.get(1)?.toIntOrNull()
+                val context = if (offset != null) {
+                    val start = (offset - 100).coerceAtLeast(0)
+                    val end = (offset + 100).coerceAtMost(trimmed.length)
+                    "Context near offset $offset: ...${trimmed.substring(start, end)}..."
+                } else {
+                    "Start of response: ${trimmed.take(300)}"
+                }
+                throw Error("Failed to parse AI response: $msg\n$context")
             }
         } else {
             val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()

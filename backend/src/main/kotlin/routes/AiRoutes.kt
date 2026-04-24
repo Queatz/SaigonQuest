@@ -207,7 +207,7 @@ fun Routing.configureAiRoutes() {
                 val text = AiManager.client.promptText(
                     systemPrompt = sysPrompt,
                     userPrompt = req.prompt,
-                    temperature = 0.7,
+                    temperature = 0.1,
                     json = true
                 )
 
@@ -229,8 +229,22 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
         appendLine("You are a minigame content generator for Saigon.Quest.")
         appendLine("Generate a JSON object containing an 'items' array of MinigameItem objects based on the user's prompt for the $type minigame type.")
         appendLine()
-        appendLine("MinigameItem structure:")
-        appendLine("""{ "id": "string", "text": "string", "translation": "string", "image": null, "audio": null, "definition": "string", "matchId": "string", "hotspot": null }""")
+        appendLine("### MinigameItem JSON Structure:")
+        appendLine("{")
+        appendLine("  \"id\": \"string (unique identifier)\",")
+        appendLine("  \"text\": \"string (main content)\",")
+        appendLine("  \"translation\": \"string (optional Vietnamese translation)\",")
+        appendLine("  \"image\": null,")
+        appendLine("  \"audio\": null,")
+        appendLine("  \"definition\": \"string (optional extra info/clue)\",")
+        appendLine("  \"matchId\": \"string (optional, used for pairing/grouping)\",")
+        appendLine("  \"hotspot\": null")
+        appendLine("}")
+        appendLine()
+        appendLine("### CRITICAL RULES:")
+        appendLine("1. All 'id' and 'matchId' values MUST be strings, even if they contain numbers.")
+        appendLine("2. Use null for 'image', 'audio', and 'hotspot'.")
+        appendLine("3. Respond ONLY with the JSON object. Do not include any text before or after the JSON.")
         appendLine()
         appendLine("Rules for $type:")
         when (type) {
@@ -265,8 +279,20 @@ private fun buildMinigameSystemPrompt(type: MinigameType): String {
                 appendLine("- 'translation': Word in Vietnamese (used as a clue).")
                 appendLine("- 'definition': Brief definition (used as a clue).")
             }
+            MinigameType.Story -> {
+                appendLine("- 'text': The story text for a step OR the text for a choice.")
+                appendLine("- 'id': Provide a unique ID for each story step (e.g., 'step1', 'step2').")
+                appendLine("- 'matchId': For choices, set to the ID of the story step they belong to.")
+                appendLine("- 'definition': For choices, set to 'correct' if it is the right option to advance the story. For story steps, leave empty.")
+                appendLine("- Group items by step: a story step followed by EXACTLY 4 choices, then the next story step and its choices.")
+                appendLine("- Ensure exactly one choice per step is marked as 'correct' in 'definition'.")
+            }
         }
-        appendLine("- Generate 5-10 items.")
+        if (type == MinigameType.Story) {
+            appendLine("- Generate 3-4 steps, with each step followed by 4 choices (15-20 items total).")
+        } else {
+            appendLine("- Generate 5-10 items.")
+        }
         appendLine("- Respond ONLY with a JSON object: { \"items\": [...] }")
     }
 }

@@ -4,6 +4,7 @@ import lib.Animation
 import lib.BounceEase
 import lib.CubicEase
 import lib.EasingFunction
+import lib.MeshMetadata
 import lib.Scene
 import lib.Vector3
 import main.components.world.WorldObjectHandle
@@ -30,19 +31,32 @@ object ObjectStatusAnimator {
         scene: Scene
     ) {
         val node = handle.node
+        if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
+        val meta = node.metadata!!
+        val currentAnim = meta.animState
         
         if (show) {
-            // Only start show animation if not already fully visible at correct position
+            // If already fully shown at correct position, we skip
             val isVisible = handle.isVisible
             val isScaled = node.scaling.x > 0.99f
             val isAtCorrectPosition = Vector3.Distance(node.position, targetOffset) < 0.01f
             
-            if (isVisible && isScaled && isAtCorrectPosition) return
+            if (isVisible && isScaled && isAtCorrectPosition) {
+                meta.animState = "showing" // Ensure state is correct
+                return
+            }
+
+            // Avoid restarting if we are already in the process of showing
+            if (currentAnim == "showing" && isVisible) {
+                return
+            }
             
-            // Stop any existing hide/show animation
+            meta.animState = "showing"
+            
+            // Stop any existing hide/show animation immediately
             scene.stopAnimation(node, "statusScale")
             scene.stopAnimation(node, "statusPosition")
-            
+
             handle.isVisible = true
             
             // If it was fully hidden, start from below and zero scale
@@ -76,10 +90,15 @@ object ObjectStatusAnimator {
                 to = targetOffset,
                 loopMode = Animation.ANIMATIONLOOPMODE_CONSTANT,
                 easingFunction = bounce,
+                onAnimationEnd = {
+                    meta.animState = "shown"
+                }
             )
         } else {
-            // Only start hide animation if visible
-            if (!handle.isVisible) return
+            // Only start hide animation if visible and not already hiding
+            if (!handle.isVisible || currentAnim == "hiding") return
+            
+            meta.animState = "hiding"
             
             // Stop any existing show/hide animation
             scene.stopAnimation(node, "statusScale")
@@ -112,6 +131,7 @@ object ObjectStatusAnimator {
                 easingFunction = ease,
                 onAnimationEnd = {
                     handle.isVisible = false
+                    meta.animState = "hidden"
                 }
             )
         }

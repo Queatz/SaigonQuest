@@ -14,6 +14,7 @@ enum class MinigameType {
     Categorization,
     Identify,
     Spelling,
+    Story,
 }
 
 /**

@@ -630,9 +630,10 @@ class InputHandler(
 
             // If we found an object or inventory item, handle it
             if (pick.objectId != null || pick.inventoryItemId != null) {
-                pick.objectId?.let { closestObjectId ->
-                    console.log("[POINTER_DOWN] Selecting object: $closestObjectId")
-                    objectManager.selectObject(closestObjectId)
+                val closestId = pick.objectId ?: pick.inventoryItemId
+                closestId?.let { id ->
+                    console.log("[POINTER_DOWN] Selecting object: $id")
+                    objectManager.selectObject(id)
                 }
             } else {
                 // Check if we clicked on a player (local or other)
@@ -1016,7 +1017,7 @@ class InputHandler(
                 isHoveringOverPlayer = true
             }
         }
-        
+
         // If not hovering over a player either, reset everything
         if (!isHoveringPlayer) {
             // Reset player hover state

@@ -53,6 +53,7 @@ fun MinigameOverlay(
                 MinigameType.Categorization -> CategorizationGame(config, handleComplete)
                 MinigameType.Identify -> IdentifyGame(config, handleComplete)
                 MinigameType.Spelling -> SpellingGame(config, handleComplete)
+                MinigameType.Story -> StoryGame(config, handleComplete)
             }
         }
     )

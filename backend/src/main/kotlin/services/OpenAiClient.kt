@@ -133,7 +133,7 @@ object OpenAiClient : AiClient {
             model = "gpt-4o-mini",
             messages = messages,
             temperature = temperature,
-            maxTokens = 1024,
+            maxTokens = 4096,
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
         )
 

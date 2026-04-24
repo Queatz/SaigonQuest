@@ -70,7 +70,7 @@ object DeepSeekClient : AiClient {
         val thinking: Thinking? = null,
         val temperature: Double? = null,
         @SerialName("max_tokens")
-        val maxTokens: Int? = 1024,
+        val maxTokens: Int? = 4096,
         @SerialName("response_format")
         val responseFormat: ResponseFormat? = null,
     )

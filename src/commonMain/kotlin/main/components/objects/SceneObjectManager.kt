@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import lib.AbstractMesh
 import lib.Color3
 import lib.Mesh
+import lib.MeshMetadata
 import lib.Node
 import lib.PBRMaterial
 import lib.Scene
@@ -144,6 +145,11 @@ class SceneObjectManager(
                 objectMeshes[obj.key] = node
                 spatialHash.update(obj.key, node.position)
                 handleObjectStatusText(obj.key, obj.status, node)
+
+                // Set objectId on the node and all its meshes for picking
+                if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
+                node.metadata?.objectId = obj.key
+
                 node.getChildMeshes().also { meshes ->
                     shadowManager?.addShadowCasters(meshes)
                     shadowManager?.configureShadowReceivers(meshes)

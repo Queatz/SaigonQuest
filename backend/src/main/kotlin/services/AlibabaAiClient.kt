@@ -321,7 +321,7 @@ object AlibabaAiClient : AiClient {
             messages = messages,
             temperature = temperature ?: 1.2,
             model = "qwen-max-latest",
-            maxTokens = 1024,
+            maxTokens = 4096,
             responseFormat = if (json) ResponseFormat(type = "json_object") else null,
         )
 

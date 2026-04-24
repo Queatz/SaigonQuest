@@ -16,7 +16,7 @@ object SoundManager {
      * 
      * @param url The URL of the sound file to play.
      */
-    fun playSound(url: String): kotlin.js.Promise<Unit>? {
+    fun playSound(url: String, onEnd: () -> Unit = {}): kotlin.js.Promise<Unit>? {
         console.log("[SoundManager] playSound requested for URL: $url")
         // Always play sounds regardless of music setting
         // Music setting is specifically for background music
@@ -28,6 +28,7 @@ object SoundManager {
             
             audio.onended = {
                 activeSounds.remove(audio)
+                onEnd()
                 null
             }
             
@@ -36,11 +37,13 @@ object SoundManager {
                 console.log("[SoundManager] Audio playback started successfully: $url")
             }.catch { err ->
                 activeSounds.remove(audio)
+                onEnd() // Call onEnd even if it failed to play
                 console.warn("[SoundManager] Autoplay prevented or error playing sound: $err")
                 throw err.unsafeCast<Throwable>()
             }
         } catch (t: Throwable) {
             console.error("[SoundManager] Failed to play sound from URL: $url", t)
+            onEnd()
             return null
         }
     }
@@ -48,22 +51,33 @@ object SoundManager {
     /**
      * Reusable logic to play a MinigameItem's audio with fallback to TTS.
      */
-    fun playItemAudio(item: MinigameItem) {
+    fun playItemAudio(item: MinigameItem, onEnd: () -> Unit = {}) {
         val audio = item.audio
         val text = item.text
+        
+        val wrappedOnEnd = {
+            MusicManager.setIsAiSpeaking(false)
+            onEnd()
+        }
+
+        MusicManager.setIsAiSpeaking(true)
+
         if (audio != null) {
             console.log("[SoundManager] Playing item audio URL: $audio")
-            playSound(audio)?.catch { _ ->
+            playSound(audio, wrappedOnEnd)?.catch { _ ->
                 if (text != null) {
                     console.log("[SoundManager] Audio playback failed, falling back to TTS: $text")
-                    TtsManager.speak(text)
+                    TtsManager.speak(text, wrappedOnEnd)
+                } else {
+                    wrappedOnEnd()
                 }
             }
         } else if (text != null) {
             console.log("[SoundManager] No audio URL, falling back to TTS: $text")
-            TtsManager.speak(text)
+            TtsManager.speak(text, wrappedOnEnd)
         } else {
             console.warn("[SoundManager] Cannot play audio: both audio and text are null")
+            wrappedOnEnd()
         }
     }
 
@@ -72,6 +86,7 @@ object SoundManager {
      */
     fun stopAllSounds() {
         console.log("[SoundManager] Stopping all sounds (${activeSounds.size} active)")
+        TtsManager.stop()
         activeSounds.forEach { 
             try {
                 it.pause()

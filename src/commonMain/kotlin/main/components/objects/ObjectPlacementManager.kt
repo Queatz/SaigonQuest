@@ -11,6 +11,7 @@ import lib.Matrix
 import lib.PickingInfo
 import lib.TransformNode
 import lib.AbstractMesh
+import lib.MeshMetadata
 import lib.Color3
 import main.api.InventoryApi
 import main.api.ItemApi
@@ -92,8 +93,16 @@ internal fun SceneObjectManager.createInventoryItemInScene(obj: Object, item: It
             objectModelSources[obj.key] = Pair("", "")
             objectKinds[obj.key] = ObjectKind.Inventory
             handleObjectStatusText(obj.key, overrideStatus ?: obj.status, node)
-
+            
+            // Set objectId on the node and all its meshes for picking
+            if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
+            node.metadata?.objectId = obj.key
+            
             node.getChildMeshes().also { meshes ->
+                meshes.forEach { mesh ->
+                    if (mesh.metadata == null) mesh.metadata = js("{}").unsafeCast<MeshMetadata>()
+                    mesh.metadata?.objectId = obj.key
+                }
                 shadowManager?.addShadowCasters(meshes)
                 shadowManager?.configureShadowReceivers(meshes)
                 WorldLoader.getCurrentPerformanceEngine()?.let { engine ->

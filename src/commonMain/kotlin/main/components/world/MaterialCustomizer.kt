@@ -21,7 +21,7 @@ object MaterialCustomizer {
         if (currentMaterial is PBRCustomMaterial) {
             return currentMaterial
         }
-        
+
         if (currentMaterial is PBRMaterial) {
             // Store original material in metadata if not already there
             if (mesh.metadata?.originalMaterial == null) {

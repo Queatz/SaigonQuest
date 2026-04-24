@@ -561,4 +561,80 @@ object MinigameStyles : StyleSheet() {
             fillMode(AnimationFillMode.Forwards)
         }
     }
+
+    val storyStepContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        marginBottom(40.px)
+        gap(20.px)
+        width(100.percent)
+        maxWidth(800.px)
+    }
+
+    val storyStepImage by style {
+        maxWidth(100.percent)
+        maxHeight(400.px)
+        borderRadius(16.px)
+        property("box-shadow", "0 4px 12px rgba(0,0,0,0.3)")
+    }
+
+    val storyStepText by style {
+        textAlign("center")
+        margin(0.px)
+        color(Color.white)
+        fontSize(32.px)
+        lineHeight(1.4.em)
+    }
+
+    val storyChoicesContainer by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(16.px)
+        width(100.percent)
+        maxWidth(600.px)
+    }
+
+    val storyChoiceItem by style {
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        padding(20.px)
+        cursor("pointer")
+        property("transition", "all 0.2s")
+
+        hover(self) style {
+            property("transform", "translateX(8px)")
+            property("filter", "brightness(1.1)")
+        }
+    }
+
+    val storyChoiceImage by style {
+        width(80.px)
+        height(80.px)
+        borderRadius(8.px)
+        marginRight(16.px)
+        property("object-fit", "cover")
+    }
+
+    val storyChoiceText by style {
+        fontSize(22.px)
+        fontWeight("bold")
+        flex(1)
+    }
+
+    val storyChoiceSuccess by style {
+        backgroundColor(rgba(76, 175, 80, 0.3))
+        property("transform", "scale(1.02)")
+    }
+
+    val storyTransition by style {
+        property("transition", "opacity 0.5s ease-in-out, transform 0.5s ease-in-out")
+        property("transform", "translateY(0)")
+        opacity(1)
+
+        (self + className("entering")) style {
+            opacity(0)
+            property("transform", "translateY(20.px)")
+        }
+    }
 }

@@ -22,12 +22,18 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
-fun TakeItemsDialog() {
+fun TakeItemsDialog(onClose: (() -> Unit)? = null) {
     var prompt by remember { mutableStateOf<TakeItemsPrompt?>(null) }
 
     LaunchedEffect(Unit) {
         WebSocketApi.addTakeItemsListener { data ->
             prompt = data
+        }
+    }
+
+    LaunchedEffect(prompt) {
+        if (prompt == null) {
+            onClose?.invoke()
         }
     }
 
