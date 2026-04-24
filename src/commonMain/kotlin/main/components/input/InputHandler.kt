@@ -269,15 +269,19 @@ class InputHandler(
             }
         }
         
-        // Handle movement keys (WASD, arrow keys, and shift)
-        if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift")) {
+        // Handle movement keys (WASD, arrow keys, and shift/alt)
+        if (key in listOf("w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift", "alt")) {
             when (info.type) {
                 KeyboardEventTypes.KEYDOWN -> {
                     // Add key to pressed keys set
                     pressedKeys.add(key)
                     
-                    // Cancel any click-to-move in progress (unless it's just shift)
-                    if (key != "shift" && pressedKeys.isNotEmpty()) {
+                    // Cancel any click-to-move in progress (unless it's just shift or arrow keys for camera)
+                    val isArrowKey = key in listOf("arrowup", "arrowdown", "arrowleft", "arrowright")
+                    val isAltKey = key == "alt"
+                    val isCameraRotationEnabled = GraphicsSettings.isCameraRotationWithArrowsEnabled()
+
+                    if (key != "shift" && !isAltKey && !(isArrowKey && isCameraRotationEnabled) && pressedKeys.isNotEmpty()) {
                         playerController.stopMovement()
                     }
                 }
@@ -1204,11 +1208,49 @@ class InputHandler(
     }
 
     /**
+     * Handles camera rotation and radius based on Arrow keys if the setting is enabled.
+     */
+    private fun handleCameraRotation() {
+        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled()) return
+
+        val camera = cameraController.getCamera()
+        val rotationSpeed = 0.02f // Adjust as needed
+        val radiusSpeed = 0.2f // Adjust as needed
+
+        if ("alt" in pressedKeys) {
+            // Control radius with ALT + Up/Down
+            if ("arrowup" in pressedKeys) {
+                camera.radius -= radiusSpeed
+            }
+            if ("arrowdown" in pressedKeys) {
+                camera.radius += radiusSpeed
+            }
+        } else {
+            // Normal rotation
+            if ("arrowleft" in pressedKeys) {
+                camera.alpha -= rotationSpeed
+            }
+            if ("arrowright" in pressedKeys) {
+                camera.alpha += rotationSpeed
+            }
+            if ("arrowup" in pressedKeys) {
+                camera.beta -= rotationSpeed
+            }
+            if ("arrowdown" in pressedKeys) {
+                camera.beta += rotationSpeed
+            }
+        }
+    }
+
+    /**
      * Calculates the movement direction based on pressed keys.
      * 
      * @return The movement direction vector
      */
     fun calculateMovementDirection(): Vector3 {
+        // Handle camera rotation with arrow keys if enabled
+        handleCameraRotation()
+
         if (pressedKeys.isEmpty()) {
             return Vector3.Zero()
         }
@@ -1241,11 +1283,13 @@ class InputHandler(
         if ("a" in pressedKeys) moveX -= 1f
         if ("d" in pressedKeys) moveX += 1f
         
-        // Arrow keys (only control player, not camera)
-        if ("arrowup" in pressedKeys) moveZ += 1f
-        if ("arrowdown" in pressedKeys) moveZ -= 1f
-        if ("arrowleft" in pressedKeys) moveX -= 1f
-        if ("arrowright" in pressedKeys) moveX += 1f
+        // Arrow keys (only control player if camera rotation is OFF and ALT is not pressed)
+        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled() && "alt" !in pressedKeys) {
+            if ("arrowup" in pressedKeys) moveZ += 1f
+            if ("arrowdown" in pressedKeys) moveZ -= 1f
+            if ("arrowleft" in pressedKeys) moveX -= 1f
+            if ("arrowright" in pressedKeys) moveX += 1f
+        }
         
         // Combine directions relative to camera
         if (moveX != 0f || moveZ != 0f) {

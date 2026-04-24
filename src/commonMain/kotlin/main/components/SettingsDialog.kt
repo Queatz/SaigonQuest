@@ -19,6 +19,7 @@ fun SettingsDialog(
     val observerMode = remember { mutableStateOf(GraphicsSettings.isObserverModeEnabled()) }
     val outlineEnabled = remember { mutableStateOf(GraphicsSettings.isOutlineEnabled()) }
     val shadowsEnabled = remember { mutableStateOf(GraphicsSettings.isShadowsEnabled()) }
+    val cameraRotationWithArrows = remember { mutableStateOf(GraphicsSettings.isCameraRotationWithArrowsEnabled()) }
     val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
     val showLogoutDialog = remember { mutableStateOf(false) }
 
@@ -102,6 +103,22 @@ fun SettingsDialog(
                     }
                 ) {
                     Text("${translated("Shadows")}: ${if (shadowsEnabled.value) translated("On") else translated("Off")}")
+                }
+
+                // Camera rotation with arrows
+                DialogButton(
+                    onClick = {
+                        cameraRotationWithArrows.value = !cameraRotationWithArrows.value
+                        GraphicsSettings.setCameraRotationWithArrows(cameraRotationWithArrows.value)
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                ) {
+                    Text("${translated("Arrow keys rotate camera")}: ${if (cameraRotationWithArrows.value) translated("On") else translated("Off")}")
                 }
             }
 

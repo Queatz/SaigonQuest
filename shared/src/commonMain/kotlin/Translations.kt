@@ -1853,6 +1853,9 @@ vi: Đường viền
 Shadows
 vi: Bóng
 
+Arrow keys rotate camera
+vi: Phím mũi tên xoay camera
+
 World screenshot
 vi: Ảnh chụp thế giới
 

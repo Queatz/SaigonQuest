@@ -22,6 +22,7 @@ object GraphicsSettings {
     private const val ALWAYS_SHOW_QR_STORAGE_KEY = "saigon_quest_always_show_qr"
     private const val OUTLINE_ENABLED_STORAGE_KEY = "saigon_quest_outline_enabled"
     private const val SHADOWS_ENABLED_STORAGE_KEY = "saigon_quest_shadows_enabled"
+    private const val CAMERA_ROTATION_WITH_ARROWS_STORAGE_KEY = "saigon_quest_camera_rotation_with_arrows"
 
     /**
      * State to track whether low graphics mode is enabled.
@@ -40,6 +41,7 @@ object GraphicsSettings {
     val _isAlwaysShowQrEnabled = mutableStateOf(loadAlwaysShowQrFromStorage())
     val _isOutlineEnabled = mutableStateOf(loadOutlineEnabledFromStorage())
     val _isShadowsEnabled = mutableStateOf(loadShadowsEnabledFromStorage())
+    val _isCameraRotationWithArrowsEnabled = mutableStateOf(loadCameraRotationWithArrowsFromStorage())
     
     /**
      * List of observer callbacks to be notified when graphics settings change.
@@ -314,6 +316,10 @@ object GraphicsSettings {
         return _isShadowsEnabled.value
     }
 
+    fun isCameraRotationWithArrowsEnabled(): Boolean {
+        return _isCameraRotationWithArrowsEnabled.value
+    }
+
     fun setAlwaysShowQr(enabled: Boolean) {
         val oldValue = _isAlwaysShowQrEnabled.value
         _isAlwaysShowQrEnabled.value = enabled
@@ -341,6 +347,17 @@ object GraphicsSettings {
         _isShadowsEnabled.value = enabled
         // Save to localStorage
         saveShadowsEnabledToStorage(enabled)
+        // If the value changed, notify observers
+        if (oldValue != enabled) {
+            notifyObservers()
+        }
+    }
+
+    fun setCameraRotationWithArrows(enabled: Boolean) {
+        val oldValue = _isCameraRotationWithArrowsEnabled.value
+        _isCameraRotationWithArrowsEnabled.value = enabled
+        // Save to localStorage
+        saveCameraRotationWithArrowsToStorage(enabled)
         // If the value changed, notify observers
         if (oldValue != enabled) {
             notifyObservers()
@@ -400,6 +417,24 @@ object GraphicsSettings {
             localStorage.setItem(SHADOWS_ENABLED_STORAGE_KEY, enabled.toString())
         } catch (e: Throwable) {
             console.error("Error saving shadows enabled setting to localStorage", e)
+        }
+    }
+
+    private fun loadCameraRotationWithArrowsFromStorage(): Boolean {
+        return try {
+            val storedValue = localStorage.getItem(CAMERA_ROTATION_WITH_ARROWS_STORAGE_KEY)
+            storedValue == "true"
+        } catch (e: Throwable) {
+            console.error("Error loading camera rotation with arrows setting from localStorage", e)
+            false
+        }
+    }
+
+    private fun saveCameraRotationWithArrowsToStorage(enabled: Boolean) {
+        try {
+            localStorage.setItem(CAMERA_ROTATION_WITH_ARROWS_STORAGE_KEY, enabled.toString())
+        } catch (e: Throwable) {
+            console.error("Error saving camera rotation with arrows setting to localStorage", e)
         }
     }
 }
