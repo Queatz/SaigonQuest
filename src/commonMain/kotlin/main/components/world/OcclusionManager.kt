@@ -394,9 +394,10 @@ class OcclusionManager(private val scene: Scene) {
                     val occRadius = min(viewWidth, viewHeight) / 3.0f
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
 
+                    val floatingOrigin = scene.floatingOriginOffset ?: Vector3.Zero()
                     effect.setVector3("playerScreenPos", playerScreenPos)
-                    effect.setVector3("playerWorld", playerWorldPos)
-                    effect.setVector3("cameraWorld", cam.globalPosition)
+                    effect.setVector3("playerWorld", playerWorldPos.subtract(floatingOrigin))
+                    effect.setVector3("cameraWorld", cam.globalPosition.subtract(floatingOrigin))
                     effect.setVector3("playerToCamDir", cam.globalPosition.subtract(playerWorldPos).normalize())
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
@@ -507,10 +508,11 @@ class OcclusionManager(private val scene: Scene) {
                     // Create screenSize vector once and reuse it
                     val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
 
+                    val floatingOrigin = (cam.asDynamic()._floatingOrigin as? Vector3) ?: Vector3.Zero()
                     // Set player position uniforms
                     effect.setVector3("playerScreenPos", playerScreenPos)
-                    effect.setVector3("playerWorld", playerWorldPos)
-                    effect.setVector3("cameraWorld", cam.globalPosition)
+                    effect.setVector3("playerWorld", playerWorldPos.subtract(floatingOrigin))
+                    effect.setVector3("cameraWorld", cam.globalPosition.subtract(floatingOrigin))
 
                     // Set occlusion parameters
                     effect.setFloat("occlusionRadius", occlusionRadius)

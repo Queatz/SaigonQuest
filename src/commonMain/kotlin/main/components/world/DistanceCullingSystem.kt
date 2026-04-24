@@ -73,7 +73,8 @@ class DistanceCullingSystem(private val scene: Scene) {
                 val camera = scene.activeCamera ?: return@add
                 
                 effect.setFloat("maxVisibilityDistance", dist)
-                effect.setVector3("cameraWorldPos", camera.globalPosition)
+                val floatingOrigin = scene.floatingOriginOffset ?: Vector3.Zero()
+                effect.setVector3("cameraWorldPos", camera.globalPosition.subtract(floatingOrigin))
             }
         }
         

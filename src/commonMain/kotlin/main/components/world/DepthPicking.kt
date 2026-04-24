@@ -177,6 +177,7 @@ object DepthPicking {
                     target = active.target,
                     scene = scene
                 )
+
                 // Mirror critical camera parameters so unprojection math remains valid
                 try { depthCam.targetScreenOffset = active.targetScreenOffset } catch (_: Throwable) {}
                 try { depthCam.minZ = active.minZ } catch (_: Throwable) {}
@@ -205,14 +206,20 @@ object DepthPicking {
                     camera = depthCam,
                     storeNonLinearDepth = false,
                     force32bitsFloat = true,
-                )
+                ).apply {
+                    try { this.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
+                    DepthPicking.depthRenderer = this
+                }
             } else {
                 // Fallback: bind to whatever active camera exists
                 scene.enableDepthRenderer(
                     camera = active,
                     storeNonLinearDepth = false,
                     force32bitsFloat = true,
-                )
+                ).apply {
+                    try { this.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}
+                    DepthPicking.depthRenderer = this
+                }
             }
 
             try { renderer.forceDepthWriteTransparentMeshes = true } catch (_: Throwable) {}

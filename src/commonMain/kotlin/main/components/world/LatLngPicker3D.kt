@@ -97,6 +97,7 @@ fun LatLngPicker3D(
                 antialias = true,
                 options = object : EngineOptions {
                     override var alpha: Boolean? = true
+                    override var useHighPrecisionFloats: Boolean? = false
                 }
             )
             engine = eng

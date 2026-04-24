@@ -91,6 +91,7 @@ external class PBRCustomMaterial(name: String, scene: Scene) : PBRMaterial {
 external class CustomMaterial(name: String, scene: Scene) : StandardMaterial {
     fun AddUniform(name: String, kind: String)
     fun Fragment_Definitions(shaderCode: String)
+    fun Vertex_Begin(shaderCode: String)
     fun Fragment_Begin(shaderCode: String)
     fun Fragment_MainEnd(shaderCode: String)
 }

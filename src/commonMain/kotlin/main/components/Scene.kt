@@ -757,9 +757,11 @@ fun SceneComponent(url: String) {
         // Create the engine
         val engine = Engine(
             canvas = canvas,
-            antialias = true,
+            antialias = false,
             options = object : lib.EngineOptions {
-                override var stencil: Boolean? = true // For highlight layer
+                override var useLargeWorldRendering: Boolean? = false // todo: we want true, but depth renderer has issues
+                override var useHighPrecisionFloats: Boolean? = true
+                override var useHighPrecisionMatrix: Boolean? = true
             }
         ).also {
             engineRef = it

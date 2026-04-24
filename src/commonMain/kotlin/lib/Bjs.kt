@@ -322,7 +322,9 @@ external class Scene(engine: Engine? = definedExternally) {
     var deltaTime: Float
     val onKeyboardObservable: Observable<KeyboardInfo>
     val onPointerObservable: Observable<PointerInfo>
-    
+
+    val floatingOriginOffset: Vector3?
+
     var imageProcessingConfiguration: ImageProcessingConfiguration
     
     var useClusteredForwardLighting: Boolean
@@ -652,7 +654,7 @@ external class Engine(
     canvas: HTMLCanvasElement = definedExternally,
     antialias: Boolean = definedExternally,
     options: EngineOptions = definedExternally,
-    adaptToDeviceRatio: Boolean = definedExternally
+    adaptToDeviceRatio: Boolean = definedExternally,
 ) {
     fun runRenderLoop(callback: () -> Unit)
     fun setHardwareScalingLevel(scalingLevel: Int)
@@ -2480,6 +2482,15 @@ external interface EngineOptions {
         get() = definedExternally
         set(value) = definedExternally
     var timeStep: Float?
+        get() = definedExternally
+        set(value) = definedExternally
+    var useHighPrecisionFloats: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var useLargeWorldRendering: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var useHighPrecisionMatrix: Boolean?
         get() = definedExternally
         set(value) = definedExternally
 }

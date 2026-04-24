@@ -61,7 +61,7 @@ object MaterialCustomizer {
             customMaterial.zOffset = currentMaterial.zOffset
             customMaterial.zOffsetUnits = currentMaterial.zOffsetUnits
             customMaterial.needDepthPrePass = true
-            
+
             mesh.material = customMaterial
             return customMaterial
         }
