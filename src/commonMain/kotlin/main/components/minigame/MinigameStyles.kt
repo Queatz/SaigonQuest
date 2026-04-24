@@ -573,12 +573,14 @@ object MinigameStyles : StyleSheet() {
     }
 
     val storyStepImage by style {
+        width(100.percent)
         maxWidth(100.percent)
         maxHeight(450.px)
-        borderRadius(16.px)
-        property("box-shadow", "0 8px 24px rgba(0,0,0,0.4)")
         property("aspect-ratio", "16 / 9")
-        property("object-fit", "cover")
+        property("background-size", "cover")
+        property("background-position", "center")
+        property("background-repeat", "no-repeat")
+        property("background-image", "var(--bg-image)")
     }
 
     val storyStepText by style {

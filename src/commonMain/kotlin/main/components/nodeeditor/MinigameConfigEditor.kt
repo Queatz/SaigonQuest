@@ -38,7 +38,14 @@ fun MinigameConfigEditor(
     }
 
     val itemsToGenImage = remember(items, type) {
-        items.filter { (if (type == MinigameType.Scenario) it.hotspot != null else true) && it.image == null && !it.text.isNullOrBlank() }
+        items.filter { 
+            val isBaseValid = (if (type == MinigameType.Scenario) it.hotspot != null else true) && it.image == null && !it.text.isNullOrBlank()
+            if (type == MinigameType.Story) {
+                isBaseValid && it.matchId == null
+            } else {
+                isBaseValid
+            }
+        }
     }
 
     val itemsToGenAudio = remember(items, type) {
@@ -248,7 +255,7 @@ fun MinigameConfigEditor(
                                         try {
                                             semaphore.withPermit {
                                                 val size = if (type == MinigameType.Story) "1280*720" else "1024*1024"
-                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: anime, expressive, detailed, realistic.", size)
+                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: Realistic photo, cute, natural colors, good framing.", size)
                                                 mutex.withLock {
                                                     val idx = currentList.indexOfFirst { it.id == item.id }
                                                     if (idx != -1) {

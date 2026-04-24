@@ -38,14 +38,24 @@ fun StoryGame(
     var isAudioPlaying by remember { mutableStateOf(false) }
     var isEntering by remember { mutableStateOf(true) }
     var isLeaving by remember { mutableStateOf(false) }
+    var isChoiceDisabled by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     var winResult by remember { mutableStateOf<MinigameResult?>(null) }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            SoundManager.stopAllSounds()
+        }
+    }
+
+    var containerElement by remember { mutableStateOf<org.w3c.dom.HTMLElement?>(null) }
+
     // Auto-play audio when step changes
-    LaunchedEffect(currentStepIndex) {
+    LaunchedEffect(currentStepIndex, containerElement) {
+        containerElement?.scrollTo(0.0, 0.0)
         SoundManager.stopAllSounds()
-        window.scrollTo(0.0, 0.0)
+        isChoiceDisabled = false
         isEntering = true
         delay(100)
         isEntering = false
@@ -66,6 +76,10 @@ fun StoryGame(
 
     Div({
         classes(MinigameStyles.gameContainer)
+        ref { element ->
+            containerElement = element as? org.w3c.dom.HTMLElement
+            onDispose { containerElement = null }
+        }
     }) {
         Div({
             classes(MinigameStyles.gameContentWrapper, MinigameStyles.storyTransition)
@@ -77,9 +91,20 @@ fun StoryGame(
                     classes(MinigameStyles.storyStepContainer)
                 }) {
                     step.image?.let { url ->
-                        Img(src = url, attrs = {
-                            classes(MinigameStyles.storyStepImage)
-                        })
+                        FramedBorder(
+                            attrs = {
+                                style {
+                                    width(100.percent)
+                                }
+                            }
+                        ) {
+                            Div({
+                                classes(MinigameStyles.storyStepImage)
+                                style {
+                                    property("--bg-image", "url(\"$url\")")
+                                }
+                            })
+                        }
                     }
                     
                     H3({
@@ -122,12 +147,15 @@ fun StoryGame(
                             }
                             
                             onClick {
+                                if (isChoiceDisabled) return@onClick
                                 if (startTime == null) startTime = window.performance.now()
                                 totalAttempts++
                                 
                                 val isCorrect = choice.definition == "true" || choice.definition == "correct"
                                 
                                 if (isCorrect) {
+                                    isChoiceDisabled = true
+                                    successId = choice.id
                                     successCount++
                                     isAudioPlaying = true
                                     SoundManager.playItemAudio(choice) {
@@ -135,7 +163,6 @@ fun StoryGame(
                                     }
                                     
                                     scope.launch {
-                                        successId = choice.id
                                         delay(800)
                                         // Wait for audio to finish
                                         while (isAudioPlaying) {

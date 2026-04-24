@@ -3,6 +3,7 @@ package main.components.minigame
 import androidx.compose.runtime.*
 import main.api.*
 import main.components.BaseDialog
+import main.components.audio.SoundManager
 import models.*
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.css.*
@@ -34,12 +35,16 @@ fun MinigameOverlay(
 
     val handleComplete: (MinigameResult) -> Unit = { result ->
         WebSocketApi.sendMinigameResult(result)
+        SoundManager.stopAllSounds()
         currentConfig = null
         onClose()
     }
 
     BaseDialog(
-        onClose = { currentConfig = null },
+        onClose = { 
+            SoundManager.stopAllSounds()
+            currentConfig = null 
+        },
         title = config.title,
         showCloseButton = true,
         isFullscreen = true,
@@ -67,6 +72,9 @@ fun WinScreen(
     result: MinigameResult,
     onContinue: (MinigameResult) -> Unit
 ) {
+    LaunchedEffect(Unit) {
+        SoundManager.stopAllSounds()
+    }
     Celebration(result.accuracy)
     Div({
         classes(MinigameStyles.gameContainer)

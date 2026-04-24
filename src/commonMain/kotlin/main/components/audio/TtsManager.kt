@@ -20,6 +20,7 @@ object TtsManager {
     private var lastScheduledEndTime: Double = 0.0
     private var activeSources = mutableListOf<AudioBufferSourceNode>()
     private var isFetchingSpeech = false
+    private var currentSessionId = 0
 
     var isSpeaking by mutableStateOf(false)
         private set
@@ -31,10 +32,14 @@ object TtsManager {
         private set
 
     fun stop() {
+        currentSessionId++
         speechJob?.cancel()
         speechJob = null
         activeSources.forEach {
-            try { it.stop() } catch (_: Throwable) {}
+            try {
+                it.onended = null
+                it.stop()
+            } catch (_: Throwable) {}
         }
         activeSources.clear()
         isSpeaking = false
@@ -81,12 +86,13 @@ object TtsManager {
     }
 
     fun speak(text: String, onEnd: () -> Unit = {}) {
-        stop()
+        SoundManager.stopAllSounds()
         if (text.isBlank()) {
             onEnd()
             return
         }
 
+        val sessionId = currentSessionId
         speechJob = scope.launch {
             isSpeaking = true
             isLoading = true
@@ -108,8 +114,11 @@ object TtsManager {
                 var firstChunkChecked = false
                 var bytesToSkip = 0
                 AiApi.generateTtsStream(text) { chunk ->
+                    if (sessionId != currentSessionId) return@generateTtsStream
+                    
                     while (isPaused) {
                         delay(100)
+                        if (sessionId != currentSessionId) return@generateTtsStream
                     }
                     isLoading = false
                     val bytes = chunk.unsafeCast<Int8Array>()
@@ -154,11 +163,13 @@ object TtsManager {
                     activeSources.add(source)
                     
                     source.onended = {
-                        activeSources.remove(source)
-                        if (!isFetchingSpeech && activeSources.isEmpty()) {
-                            isSpeaking = false
-                            MusicManager.setIsAiSpeaking(false)
-                            onEnd()
+                        if (sessionId == currentSessionId) {
+                            activeSources.remove(source)
+                            if (!isFetchingSpeech && activeSources.isEmpty()) {
+                                isSpeaking = false
+                                MusicManager.setIsAiSpeaking(false)
+                                onEnd()
+                            }
                         }
                     }
                 }
@@ -167,11 +178,13 @@ object TtsManager {
                     console.error("TTS failed:", t)
                 }
             } finally {
-                isFetchingSpeech = false
-                if (activeSources.isEmpty()) {
-                    isSpeaking = false
-                    MusicManager.setIsAiSpeaking(false)
-                    onEnd()
+                if (sessionId == currentSessionId) {
+                    isFetchingSpeech = false
+                    if (activeSources.isEmpty()) {
+                        isSpeaking = false
+                        MusicManager.setIsAiSpeaking(false)
+                        onEnd()
+                    }
                 }
             }
         }

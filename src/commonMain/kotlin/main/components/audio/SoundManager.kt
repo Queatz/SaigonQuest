@@ -18,6 +18,9 @@ object SoundManager {
      */
     fun playSound(url: String, onEnd: () -> Unit = {}): kotlin.js.Promise<Unit>? {
         console.log("[SoundManager] playSound requested for URL: $url")
+        
+        // Stop all ongoing sounds and TTS when a new sound starts
+        stopAllSounds()
         // Always play sounds regardless of music setting
         // Music setting is specifically for background music
         
@@ -52,6 +55,9 @@ object SoundManager {
      * Reusable logic to play a MinigameItem's audio with fallback to TTS.
      */
     fun playItemAudio(item: MinigameItem, onEnd: () -> Unit = {}) {
+        // Stop all ongoing sounds and TTS
+        stopAllSounds()
+        
         val audio = item.audio
         val text = item.text
         
@@ -86,7 +92,10 @@ object SoundManager {
      */
     fun stopAllSounds() {
         console.log("[SoundManager] Stopping all sounds (${activeSounds.size} active)")
+        
+        // Stop speech
         TtsManager.stop()
+        
         activeSounds.forEach { 
             try {
                 it.pause()
