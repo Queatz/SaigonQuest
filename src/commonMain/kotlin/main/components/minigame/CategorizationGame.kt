@@ -108,7 +108,6 @@ fun CategorizationGame(
                                     if (sortedItems.size == items.size) {
                                         val endTime = window.performance.now()
                                         scope.launch {
-                                            delay(800)
                                             val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
                                             winResult = MinigameResult(
                                                 minigameId = config.minigameId,

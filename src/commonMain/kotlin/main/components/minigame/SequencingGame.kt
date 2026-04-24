@@ -93,7 +93,6 @@ fun SequencingGame(
                                     if (currentSequence.size == targetSequence.size) {
                                         val endTime = window.performance.now()
                                         scope.launch {
-                                            delay(800)
                                             val (reflex, accuracy) = calculateMetrics(startTime ?: endTime, endTime, totalAttempts, successCount)
                                             winResult = MinigameResult(
                                                 minigameId = config.minigameId,

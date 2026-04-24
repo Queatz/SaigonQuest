@@ -528,4 +528,37 @@ object MinigameStyles : StyleSheet() {
             timingFunction(AnimationTimingFunction.EaseInOut)
         }
     }
+
+    val emojiCelebrationContainer by style {
+        position(Position.Fixed)
+        top(0.px)
+        left(0.px)
+        width(100.vw)
+        height(100.vh)
+        property("pointer-events", "none")
+        property("z-index", "10000")
+        property("overflow", "hidden")
+    }
+
+    val celebrationRise by keyframes {
+        0.percent {
+            property("transform", "translateY(0) translateX(0) rotate(0deg)")
+            opacity(1)
+        }
+        100.percent {
+            property("transform", "translateY(-120vh) translateX(var(--drift)) rotate(720deg)")
+            opacity(0)
+        }
+    }
+
+    val emojiCelebrationItem by style {
+        position(Position.Absolute)
+        fontSize(32.px)
+        bottom((-100).px)
+        animation(celebrationRise) {
+            duration(3.s)
+            timingFunction(AnimationTimingFunction.EaseOut)
+            fillMode(AnimationFillMode.Forwards)
+        }
+    }
 }

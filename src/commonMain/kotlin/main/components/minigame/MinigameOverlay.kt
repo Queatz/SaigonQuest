@@ -11,6 +11,7 @@ import main.components.translated
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.FramedBorder
+import kotlin.random.Random
 
 /**
  * MinigameOverlay component
@@ -65,6 +66,7 @@ fun WinScreen(
     result: MinigameResult,
     onContinue: (MinigameResult) -> Unit
 ) {
+    Celebration(result.accuracy)
     Div({
         classes(MinigameStyles.gameContainer)
         style {
@@ -162,6 +164,67 @@ fun WinScreen(
         }
     }
 }
+
+/**
+ * Celebratory emoji confetti component
+ */
+@Composable
+fun Celebration(accuracy: Double) {
+    val emojiCount = (accuracy * 20).toInt()
+    if (emojiCount <= 0) return
+
+    val emojis = listOf("🎉", "🎊", "🔥", "✨", "⭐", "👏", "🥳", "🙌", "🎯", "⚡")
+
+    val items = remember(accuracy) {
+        List(emojiCount) {
+            val emoji = emojis.random()
+            val leftPos = Random.nextInt(5, 95)
+            val delay = Random.nextInt(0, 1000)
+            val duration = Random.nextInt(1000, 2000)
+            val size = Random.nextInt(24, 48)
+            val drift = Random.nextInt(-100, 100)
+
+            CelebrationItem(
+                emoji = emoji,
+                leftPos = leftPos,
+                delay = delay,
+                duration = duration,
+                size = size,
+                drift = drift,
+            )
+        }
+    }
+
+    Div({
+        classes(MinigameStyles.emojiCelebrationContainer)
+    }) {
+        items.forEach { item ->
+            key(item) {
+                Span({
+                    classes(MinigameStyles.emojiCelebrationItem)
+                    style {
+                        left(item.leftPos.percent)
+                        fontSize(item.size.px)
+                        property("animation-delay", "${item.delay}ms")
+                        property("animation-duration", "${item.duration}ms")
+                        property("--drift", "${item.drift}px")
+                    }
+                }) {
+                    Text(item.emoji)
+                }
+            }
+        }
+    }
+}
+
+private data class CelebrationItem(
+    val emoji: String,
+    val leftPos: Int,
+    val delay: Int,
+    val duration: Int,
+    val size: Int,
+    val drift: Int,
+)
 
 /**
  * Common helper to calculate accuracy and reflex
