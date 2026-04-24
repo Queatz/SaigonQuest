@@ -4,7 +4,7 @@ import lib.Vector3
 
 /**
  * Utility for converting movement vectors into 8-way CharacterDirection values.
- * Shared between PlayerController and OtherPlayersController to avoid duplication.
+ * Shared between PlayerController and OtherPlayersCoordinator to avoid duplication.
  */
 fun calculateFacingFromVector(
     direction: Vector3,

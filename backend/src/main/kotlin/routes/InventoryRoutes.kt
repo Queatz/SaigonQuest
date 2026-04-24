@@ -224,17 +224,7 @@ fun Routing.configureInventoryRoutes() {
                         )
                     }
 
-                    // Permission check: user must be an owner of the world if it exists
-                    val world = worldRepository.getById(req.worldId)
-                    if (world != null && !world.canUserEdit(userId)) {
-                        return@post call.respond(
-                            HttpStatusCode.Forbidden,
-                            ErrorResponse(
-                                message = "You don't have permission to add objects to this world",
-                                code = HttpStatusCode.Forbidden.value,
-                            )
-                        )
-                    }
+                    // Note: Inventory items can be aded  by anyone, not just the user
 
                     // Create the container object first using inventories as the sole source of truth
                     val obj = Object(

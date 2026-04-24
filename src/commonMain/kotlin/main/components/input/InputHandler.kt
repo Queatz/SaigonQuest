@@ -133,14 +133,14 @@ private fun pickLocalPlayer(
 private fun pickOtherPlayer(
     ray: Ray,
 ): Pair<String, Boolean>? {
-    val otherPlayersController = SceneManager.getOtherPlayersController() ?: return null
-    val playerMeshes = otherPlayersController.getPlayerMeshes()
+    val otherPlayersCoordinator = SceneManager.getOtherPlayersCoordinator() ?: return null
+    val playerMeshes = otherPlayersCoordinator.getPlayerMeshes()
     for (mesh in playerMeshes) {
         val hit = ray.intersectsMesh(mesh)
         if (hit.pickedPoint != null) {
-            val userId = otherPlayersController.getUserIdForMesh(mesh)
+            val userId = otherPlayersCoordinator.getUserIdForMesh(mesh)
             if (userId != null) {
-                val data = otherPlayersController.getPlayerData(userId)
+                val data = otherPlayersCoordinator.getPlayerData(userId)
                 if (data != null) {
                     return data
                 }

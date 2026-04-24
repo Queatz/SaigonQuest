@@ -51,7 +51,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     private var initialized = false
     private val baseMovementSpeed: Float = 3.0f
-    private val joinLeaveDuration: Double = 0.6
     private val movementDelta = FrameDeltaTracker()
     private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
@@ -156,6 +155,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                     op.username = p.username
                                     op.isPlayer = p.isPlayer
                                     op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
+                                    op.shouldSnap = true
                                     if (p.isPlayer) removePotentialVisitorDuplicates(
                                         newUserId = p.userId,
                                         newUsername = p.username,
@@ -181,6 +181,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                                                 op.username = p.username
                                                 op.isPlayer = p.isPlayer
                                                 op.targetPos = Vector3(p.position.x, p.position.y, p.position.z)
+                                                op.shouldSnap = true
                                                 attemptSpawnWithUser(op,)
                                             }
                                         }
@@ -245,6 +246,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.username = join.username
                 op.isPlayer = join.isPlayer
                 op.targetPos = snapToGround(Vector3(join.position.x, join.position.y, join.position.z))
+                op.shouldSnap = true
                 attemptSpawnWithUser(op,)
             }
         }
@@ -274,16 +276,12 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val op = players[leave.userId] ?: return
         scope.launch {
             op.mutex.withLock {
-                // Begin scale-out animation
-                op.leaveStartMs = window.performance.now()
                 // Stop any pending spawn retries
                 clearSpawnRetry(leave.userId)
-                window.setTimeout({
-                    op.handle?.remove()
-                    players.remove(leave.userId)
-                    hud.removeHud(leave.userId)
-                    usernameTextHandles.remove(leave.userId)?.remove()
-                }, (joinLeaveDuration * 1000).toInt())
+                op.handle?.remove()
+                players.remove(leave.userId)
+                hud.removeHud(leave.userId)
+                usernameTextHandles.remove(leave.userId)?.remove()
             }
         }
     }
@@ -291,12 +289,16 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private fun onPlayerPosition(pos: PlayerPositionData) {
         if (pos.userId == myUserId) return
         val op = ensurePlayer(pos.userId, pos.position)
-        op.isPlayer = pos.isPlayer
-        op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
-        // Only attempt to spawn if we don't already have a handle. Avoid re-applying appearance on every movement update,
-        // which can cause visible flashing as textures/materials are repeatedly reset.
-        if (op.handle == null) {
-            attemptSpawnWithUser(op)
+        scope.launch {
+            op.mutex.withLock {
+                op.isPlayer = pos.isPlayer
+                op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
+                // Only attempt to spawn if we don't already have a handle. Avoid re-applying appearance on every movement update,
+                // which can cause visible flashing as textures/materials are repeatedly reset.
+                if (op.handle == null) {
+                    attemptSpawnWithUser(op)
+                }
+            }
         }
     }
 
@@ -330,7 +332,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // This pattern is used when customization/worn items change and we need to refetch profile.
                 val shouldRefreshAppearance = update.activity == null && update.status == null
                 if (shouldRefreshAppearance) {
-                    assembleAppearance(op, scale = false)
+                    assembleAppearance(op)
                 }
 
                 if (prevIsPlayer != op.isPlayer) {
@@ -361,17 +363,13 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             position = startPos,
             additionalSpriteSheets = emptyList(),
             user = null,
-            initialScale = .5f
         )
         if (handle == null) {
             scheduleSpawnRetry(op, "createCharacter returned null (placeholder)")
             return
         }
-        // Start with scale 0 for join animation
-        handle.scale = Vector3(.5f, .5f, .5f)
         op.handle = handle
         op.lastPos = startPos
-        op.joinStartMs = window.performance.now()
         // Apply any pending activity (e.g., Sit) immediately on spawn
         op.activity?.let { pending ->
             try { handle.updateActivity(pending) } catch (_: Throwable) {}
@@ -426,7 +424,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         spawnRetryTimeouts.remove(userId)?.let { window.clearTimeout(it) }
     }
 
-    private fun attemptSpawnWithUser(op: OtherPlayer, scale: Boolean = true) {
+    private fun attemptSpawnWithUser(op: OtherPlayer) {
         // Fallback: spawn placeholder if user fetch isn't quick
         val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
         scope.launch {
@@ -443,15 +441,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             position = startPos,
                             additionalSpriteSheets = emptyList(),
                             user = user,
-                            initialScale = if (scale) .5f else 1f
                         )
                         if (handle != null) {
                             op.handle = handle
                             op.lastPos = startPos
                             op.targetPos = startPos
-                            if (scale) {
-                                op.joinStartMs = window.performance.now()
-                            }
                             // Track the profile so we can detect future base changes
                             op.profile = user
                             // Success: clear retry state
@@ -488,7 +482,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         }
     }
 
-    private suspend fun assembleAppearance(op: OtherPlayer, scale: Boolean = true) {
+    private suspend fun assembleAppearance(op: OtherPlayer) {
         try {
             val prev = op.profile
             val user = UserApi.getUserById(op.userId) ?: return
@@ -506,7 +500,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.lastPos = currentPos
                 op.profile = user
                 // Attempt spawn using fresh user so base body type is applied
-                attemptSpawnWithUser(op, scale = scale)
+                attemptSpawnWithUser(op)
                 return
             }
 
@@ -553,47 +547,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val deltaTime = movementDelta.nextDeltaSeconds()
         val frameMovementSpeed = (baseMovementSpeed * deltaTime).toFloat()
         val now = window.performance.now()
-        val initialJoinScale = 0.5f
 
         players.values.forEach { op ->
             val handle = op.handle ?: return@forEach
-            // Join scale-in animation (with alpha flicker)
-            op.joinStartMs?.let { start ->
-                val elapsed = (now - start) / 1000.0
-                if (elapsed < joinLeaveDuration) {
-                    val progress = (elapsed / joinLeaveDuration).coerceIn(0.0, 1.0)
-                    val s = (initialJoinScale + (1f - initialJoinScale) * progress.toFloat()).coerceIn(0f, 1f)
-                    handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
-                } else {
-                    handle.scale = Vector3(1f, 1f, 1f)
-                    op.joinStartMs = null
-                    // Restore opaque alpha after animation completes
-                    handle.node.getChildMeshes().forEach { mesh ->
-                        try {
-                            mesh.material.alpha = 1f
-                        } catch (_: Throwable) {
-                        }
-                    }
-                }
-            }
-            // Leave scale-out animation (with alpha flicker)
-            op.leaveStartMs?.let { start ->
-                val elapsed = (now - start) / 1000.0
-                if (elapsed < joinLeaveDuration) {
-                    val progress = 1.0 - (elapsed / joinLeaveDuration)
-                    val s = progress.toFloat().coerceIn(0f, 1f)
-                    handle.scale = Vector3(0.5f + s * 0.5f, 0.5f + s * 0.5f, 0.5f + s * 0.5f)
-                } else {
-                    handle.scale = Vector3(0.5f, 0.5f, 0.5f)
-                    // Ensure fully transparent at the end of leave animation
-                    handle.node.getChildMeshes().forEach { mesh ->
-                        try {
-                            mesh.material.alpha = 0f
-                        } catch (_: Throwable) {
-                        }
-                    }
-                }
-            }
+
+            // 1) Movement logic (Might return early)
             val targetPos = op.targetPos?.let { snapToGround(it) } ?: return@forEach
             val currentPos = handle.position
 
@@ -618,6 +576,19 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val direction = targetPos.subtract(currentPos)
             val distance = direction.length()
             val distanceXZ = Vector3(targetPos.x - currentPos.x, 0f, targetPos.z - currentPos.z).length()
+
+            if (op.shouldSnap || distance > 10f) {
+                op.shouldSnap = false
+                handle.position = targetPos
+                op.lastPos = targetPos
+                hud.updateHudPosition(op.userId, targetPos)
+                if (op.activity == PlayerActivity.Moving) {
+                    handle.updateActivity(null)
+                    op.activity = null
+                }
+                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
+                return@forEach
+            }
 
             if (distanceXZ < 0.005f) {
                 // Close enough

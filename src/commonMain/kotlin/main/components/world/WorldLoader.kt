@@ -78,7 +78,7 @@ class WorldLoader(private val scene: Scene) {
                 SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
                 SceneManager.getPlayerController()?.setStartNodes(emptyArray())
                 SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
-                SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+                SceneManager.getOtherPlayersCoordinator()?.setWorldMeshes(worldMeshes)
                 // Apply lighting state
                 applyWorldEditLighting(world)
                 return
@@ -120,7 +120,7 @@ class WorldLoader(private val scene: Scene) {
                         SceneManager.getPlayerController()?.setWorldMeshes(meshes)
                         SceneManager.getPlayerController()?.setStartNodes(nodes)
                         SceneManager.getObjectManager()?.setWorldMeshes(meshes)
-                        SceneManager.getOtherPlayersController()?.setWorldMeshes(meshes)
+                        SceneManager.getOtherPlayersCoordinator()?.setWorldMeshes(meshes)
                         
                         // Re-initialize proximity cameras after asset import
                         SceneManager.getCameraController()?.initializeProximityCameras()
@@ -140,7 +140,7 @@ class WorldLoader(private val scene: Scene) {
                         SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
                         SceneManager.getPlayerController()?.setStartNodes(emptyArray())
                         SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
-                        SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+                        SceneManager.getOtherPlayersCoordinator()?.setWorldMeshes(worldMeshes)
                         applyWorldEditLighting(world)
                     } catch (_: Throwable) {}
                 }
@@ -694,7 +694,7 @@ class WorldLoader(private val scene: Scene) {
             SceneManager.getPlayerController()?.setWorldMeshes(worldMeshes)
             SceneManager.getPlayerController()?.setStartNodes(emptyArray())
             SceneManager.getObjectManager()?.setWorldMeshes(worldMeshes)
-            SceneManager.getOtherPlayersController()?.setWorldMeshes(worldMeshes)
+            SceneManager.getOtherPlayersCoordinator()?.setWorldMeshes(worldMeshes)
         } catch (e: Throwable) {
             e.printStackTrace()
         }

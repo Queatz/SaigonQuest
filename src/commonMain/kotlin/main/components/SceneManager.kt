@@ -3,7 +3,7 @@ package main.components
 import lib.Scene
 import main.components.camera.CameraController
 import main.components.objects.SceneObjectManager
-import main.components.player.OtherPlayersController
+import main.components.player.OtherPlayersCoordinator
 import main.components.player.PlayerController
 
 /**
@@ -23,8 +23,8 @@ object SceneManager {
     // The player controller instance
     private var playerController: PlayerController? = null
     
-    // The other players controller instance
-    private var otherPlayersController: OtherPlayersController? = null
+    // The other players coordinator instance
+    private var otherPlayersCoordinator: OtherPlayersCoordinator? = null
     
     // The BabylonJS scene instance
     private var scene: Scene? = null
@@ -121,22 +121,22 @@ object SceneManager {
     }
     
     /**
-     * Sets the other players controller instance.
+     * Sets the other players coordinator instance.
      * 
-     * @param controller The other players controller instance to store
+     * @param coordinator The other players coordinator instance to store
      */
-    fun setOtherPlayersController(controller: OtherPlayersController) {
-        otherPlayersController = controller
-        println("[DEBUG] Other players controller registered with SceneManager")
+    fun setOtherPlayersCoordinator(coordinator: OtherPlayersCoordinator) {
+        otherPlayersCoordinator = coordinator
+        println("[DEBUG] Other players coordinator registered with SceneManager")
     }
     
     /**
-     * Gets the other players controller instance.
+     * Gets the other players coordinator instance.
      * 
-     * @return The other players controller instance, or null if not set
+     * @return The other players coordinator instance, or null if not set
      */
-    fun getOtherPlayersController(): OtherPlayersController? {
-        return otherPlayersController
+    fun getOtherPlayersCoordinator(): OtherPlayersCoordinator? {
+        return otherPlayersCoordinator
     }
     
     /**
@@ -172,7 +172,7 @@ object SceneManager {
         cameraController = null
         objectManager = null
         playerController = null
-        otherPlayersController = null
+        otherPlayersCoordinator = null
         scene = null
         playerVelocity = null
         println("[DEBUG] SceneManager cleared")

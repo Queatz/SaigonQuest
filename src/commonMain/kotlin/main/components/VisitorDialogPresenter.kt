@@ -144,9 +144,9 @@ private fun handleRegistration(
                         
                         // Inform other-players system of our new identity to avoid self-duplication
                         try {
-                            SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
+                            SceneManager.getOtherPlayersCoordinator()?.refreshCurrentUserId()
                         } catch (e: Throwable) {
-                            console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController (registration retry path)", e)
+                            console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersCoordinator (registration retry path)", e)
                         }
 
                         // Refresh inventory and customizations so the local avatar updates
@@ -187,9 +187,9 @@ private fun handleRegistration(
                     
                     // Inform other-players system of our new identity to avoid self-duplication
                     try {
-                        SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
+                        SceneManager.getOtherPlayersCoordinator()?.refreshCurrentUserId()
                     } catch (e: Throwable) {
-                        console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController (registration)", e)
+                        console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersCoordinator (registration)", e)
                     }
 
                     // Refresh inventory and customizations so the local avatar updates
@@ -243,11 +243,11 @@ private fun handleLogin(
             val user = UserApi.login(username, password)
             console.log("User logged in: ${user.username}")
 
-            // Update OtherPlayersController knowledge of our current userId so it ignores our join
+            // Update OtherPlayersCoordinator knowledge of our current userId so it ignores our join
             try {
-                SceneManager.getOtherPlayersController()?.refreshCurrentUserId()
+                SceneManager.getOtherPlayersCoordinator()?.refreshCurrentUserId()
             } catch (e: Throwable) {
-                console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersController", e)
+                console.error("VisitorDialogPresenter: Failed to refresh current userId in OtherPlayersCoordinator", e)
             }
 
             // Step 3: Reconnect WebSocket so server binds session to the logged-in user

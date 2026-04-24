@@ -25,11 +25,10 @@ data class OtherPlayer(
     var appearanceRevision: Int = 0,
     var additionalSpriteSheets: List<SpriteSheet> = emptyList(),
     var skinTone: Float = 0.5f,
-    var joinStartMs: Double? = null,
-    var leaveStartMs: Double? = null,
     var lastRippleTime: Double = 0.0,
     var isOnWater: Boolean = false,
     var lastEnvCheckFrame: Int = -1,
+    var shouldSnap: Boolean = false,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

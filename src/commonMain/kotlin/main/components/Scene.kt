@@ -25,7 +25,7 @@ import main.components.objects.handleObjectDrop
 import main.components.objects.update
 import main.components.player.FriendshipStatus
 import main.components.player.OtherPlayerDialog
-import main.components.player.OtherPlayersController
+import main.components.player.OtherPlayersCoordinator
 import main.components.player.PlayerController
 import main.components.world.DepthPicking
 import main.components.world.WorldLoader
@@ -816,10 +816,10 @@ fun SceneComponent(url: String) {
         // Register player controller with SceneManager for global access
         SceneManager.setPlayerController(playerController)
 
-        // Create other players controller for multiplayer
-        val otherPlayersController = OtherPlayersController(scene)
-        // Register other players controller with SceneManager for global access
-        SceneManager.setOtherPlayersController(otherPlayersController)
+        // Create other players coordinator for multiplayer
+        val otherPlayersCoordinator = OtherPlayersCoordinator(scene)
+        // Register other players coordinator with SceneManager for global access
+        SceneManager.setOtherPlayersCoordinator(otherPlayersCoordinator)
 
         val worldLoader = WorldLoader(scene)
 
@@ -1005,8 +1005,8 @@ fun SceneComponent(url: String) {
                 otherPlayerIsLoading.value = false
                 otherPlayerErrorMessage.value = null
 
-                // Get the player ID from the OtherPlayersController
-                val otherPlayers = SceneManager.getOtherPlayersController()
+                // Get the player ID from the OtherPlayersCoordinator
+                val otherPlayers = SceneManager.getOtherPlayersCoordinator()
                 otherPlayerId.value = otherPlayers?.getUserIdForUsername(username) ?: ""
 
                 // Check friendship status if we have a player ID
@@ -1126,7 +1126,7 @@ fun SceneComponent(url: String) {
                 playerController.setWorldMeshes(worldMeshes)
                 playerController.setStartNodes(nodes)
                 objectManager.setWorldMeshes(worldMeshes)
-                otherPlayersController.setWorldMeshes(worldMeshes)
+                otherPlayersCoordinator.setWorldMeshes(worldMeshes)
 
                 // Find a valid starting position for the player
                 val preferredStart = SceneManager.getAndClearPendingTeleport()
@@ -1207,7 +1207,7 @@ fun SceneComponent(url: String) {
                 if (WebSocketConnectionManager.connectionState.value == WebSocketConnectionManager.ConnectionState.CONNECTED) {
                     console.log("WebSocket connection established successfully!")
                     // Send USER_JOIN now that WebSocket is connected to ensure world state upsert even if player doesn't move
-                    otherPlayersController.sendJoinEvent(startPosition)
+                    otherPlayersCoordinator.sendJoinEvent(startPosition)
 
                     // Set up OPEN_URL listener
                     WebSocketApi.addListener(models.WebSocketAction.OPEN_URL) { message ->
@@ -1250,20 +1250,20 @@ fun SceneComponent(url: String) {
                     console.warn("WebSocket connection not established after multiple attempts. Player movement may be limited.")
                 }
 
-                console.log("Setting WorldObjectManager in other players controller...")
+                console.log("Setting WorldObjectManager in other players coordinator...")
 
-                // Set the WorldObjectManager in the OtherPlayersController for username display
-                otherPlayersController.setWorldObjectManager(worldObjectManager)
+                // Set the WorldObjectManager in the OtherPlayersCoordinator for username display
+                otherPlayersCoordinator.setWorldObjectManager(worldObjectManager)
 
                 // Provide HTTP worldId override (DB key) for snapshot fetches
                 currentWorld.value?.key?.let { dbKey ->
-                    otherPlayersController.setHttpWorldId(dbKey)
+                    otherPlayersCoordinator.setHttpWorldId(dbKey)
                 }
 
-                console.log("Initializing other players controller...")
+                console.log("Initializing other players coordinator...")
 
-                // Initialize other players controller for multiplayer
-                otherPlayersController.initialize()
+                // Initialize other players coordinator for multiplayer
+                otherPlayersCoordinator.initialize()
 
 
                 // Only mark as loaded if world loaded successfully (no API fallback/error)
@@ -1424,7 +1424,7 @@ fun SceneComponent(url: String) {
             // Dispose controllers
             cameraController.dispose()
             playerController.dispose()
-            otherPlayersController.dispose()
+            otherPlayersCoordinator.dispose()
             objectManager.dispose()
             worldObjectManager.dispose()
             worldLoader.dispose()

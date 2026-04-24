@@ -280,7 +280,7 @@ class PlayerController(private val scene: Scene) {
 
         // Update internal last position and SceneManager velocity to zero
         lastPosition = adjusted
-        main.components.SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
+        main.components.SceneManager.setPlayerVelocity(Vector3.Zero())
 
         // Apply position to physics collider and visual handle
         coll?.position = adjusted
@@ -362,9 +362,9 @@ class PlayerController(private val scene: Scene) {
             // Update velocity for wind sway (units per frame)
             lastPosition?.let { prev ->
                 val vel = validPos.subtract(prev)
-                main.components.SceneManager.setPlayerVelocity(vel)
+                SceneManager.setPlayerVelocity(vel)
             } ?: run {
-                main.components.SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
+                SceneManager.setPlayerVelocity(Vector3.Zero())
             }
             lastPosition = validPos
 

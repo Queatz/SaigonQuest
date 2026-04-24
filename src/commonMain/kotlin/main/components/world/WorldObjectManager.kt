@@ -309,7 +309,6 @@ class WorldObjectManager(private val scene: Scene) {
         activity: PlayerActivity? = null,
         additionalSpriteSheets: List<SpriteSheet> = emptyList(),
         user: User? = null,
-        initialScale: Float = 1f
     ): WorldObjectHandle? {
         // Get worn item sprite sheets only if a user is explicitly provided
         // This prevents other players from using the current player's worn items
@@ -345,8 +344,6 @@ class WorldObjectManager(private val scene: Scene) {
             additionalSpriteSheets = combinedSpriteSheets
         )
         character.position = position
-        // Set initial scale so initial render matches desired size (used for join animation)
-        character.scale = Vector3(initialScale, initialScale, initialScale)
         // Initialize skin tone from user if present
         character.skinTone = user?.skinTone ?: 0.5f
         
