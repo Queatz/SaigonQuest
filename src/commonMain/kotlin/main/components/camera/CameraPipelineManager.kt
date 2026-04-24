@@ -391,7 +391,7 @@ class CameraPipelineManager(
                     
                     try {
                         if (depthOfFieldEnabled) {
-                            depthOfField.focalLength = 120f
+                            depthOfField.focalLength = 500f
                             depthOfField.fStop = 1.4f
                             depthOfField.focusDistance = 10_000f
                             depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
@@ -424,13 +424,14 @@ class CameraPipelineManager(
                         }
                     }
 
-                    ssaoPipeline = SSAO2RenderingPipeline(
-                        name = "ssao",
-                        scene = scene,
-                        ratio = 1.0,
-                        cameras = allCameras.toTypedArray(),
-                        forceGeometryBuffer = true,
-                    )
+                    // We can't use SSAO2RenderingPipeline due to it breaking DOF depth sampling, will address later
+//                    ssaoPipeline = SSAO2RenderingPipeline(
+//                        name = "ssao",
+//                        scene = scene,
+//                        ratio = 1.0,
+//                        cameras = allCameras.toTypedArray(),
+//                        forceGeometryBuffer = true,
+//                    )
                     
                     ssaoPipeline?.apply {
                         samples = 16
