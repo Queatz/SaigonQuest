@@ -392,7 +392,7 @@ class CameraPipelineManager(
                     try {
                         if (depthOfFieldEnabled) {
                             depthOfField.focalLength = 500f
-                            depthOfField.fStop = 1.4f
+                            depthOfField.fStop = 1.2f
                             depthOfField.focusDistance = 10_000f
                             depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
                             console.log("[DEBUG] Depth of field settings configured successfully")
