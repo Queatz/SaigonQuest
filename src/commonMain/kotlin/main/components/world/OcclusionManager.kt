@@ -573,8 +573,7 @@ class OcclusionManager(private val scene: Scene) {
 
         // Update shared current time once per frame (seconds)
         currentTimeSeconds = (kotlinx.browser.window.performance.now() / 1000.0).toFloat()
-        timePhase = (currentTimeSeconds * 0.61803398875f) % 1.0f
-
+        timePhase = (((currentTimeSeconds * 12).toInt() / 12f) * 0.61803398875f) % 1.0f
         // Update smoothed player world position to track real player over ~2 seconds
         val playerMeshRef = player
         if (playerMeshRef != null) {
