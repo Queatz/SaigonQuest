@@ -148,7 +148,6 @@ class SceneObjectManager(
 
                 // Set objectId on the node and all its meshes for picking
                 if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
-                node.metadata?.objectId = obj.key
 
                 node.getChildMeshes().also { meshes ->
                     shadowManager?.addShadowCasters(meshes)

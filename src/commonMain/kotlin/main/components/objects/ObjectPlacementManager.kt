@@ -96,12 +96,10 @@ internal fun SceneObjectManager.createInventoryItemInScene(obj: Object, item: It
             
             // Set objectId on the node and all its meshes for picking
             if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
-            node.metadata?.objectId = obj.key
-            
+
             node.getChildMeshes().also { meshes ->
                 meshes.forEach { mesh ->
                     if (mesh.metadata == null) mesh.metadata = js("{}").unsafeCast<MeshMetadata>()
-                    mesh.metadata?.objectId = obj.key
                 }
                 shadowManager?.addShadowCasters(meshes)
                 shadowManager?.configureShadowReceivers(meshes)

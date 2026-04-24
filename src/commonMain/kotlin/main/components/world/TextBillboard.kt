@@ -150,6 +150,8 @@ class TextBillboard(
             scene
         )
 
+        planeMesh!!.setIncullable(true)
+
         planeMesh!!.parent = node
         
         // Create a material for the plane

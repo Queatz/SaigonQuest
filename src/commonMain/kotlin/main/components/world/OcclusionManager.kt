@@ -311,29 +311,12 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("time", "float")
         mat.AddUniform("timePhase", "float")
         mat.AddUniform("playerToCamDir", "vec3")
-        mat.AddUniform("maxVisibilityDistance", "float")
 
         // Depth linearization and any shared helpers
         mat.Fragment_Definitions(
             """
             $occlusionShaderCode
             
-            float applyDistanceCulling(float alpha) {
-                if (maxVisibilityDistance > 10000.0) return alpha;
-                float dist = distance(vPositionW, cameraWorld);
-                float startDist = maxVisibilityDistance * 0.9;
-                
-                if (dist > maxVisibilityDistance) {
-                    discard;
-                } else if (dist > startDist) {
-                    float coverage = 1.0 - (dist - startDist) / (maxVisibilityDistance - startDist);
-                    if (coverage < hash12(gl_FragCoord.xy)) {
-                        discard;
-                    }
-                }
-                return alpha;
-            }
-
             float toLinearDepth(float depth01) {
                 // Optionally handle reverse depth buffers
                 float d = useReverseDepth ? (1.0 - depth01) : depth01;
@@ -356,7 +339,6 @@ class OcclusionManager(private val scene: Scene) {
             
             // Apply occlusion discards
             applyOcclusion(alpha);
-            applyDistanceCulling(alpha);
             
             gl_FragColor = vec4(normDepth, 0.0, 0.0, 1.0);
             """.trimIndent()
@@ -423,9 +405,6 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                     effect.setFloat("timePhase", timePhase)
-
-                    val dist = (original?.asDynamic()?._maxVisibilityDistance as? Float) ?: 1000000f
-                    effect.setFloat("maxVisibilityDistance", dist)
                 }
             } catch (_: Throwable) {
                 // avoid crashing if effect is not ready yet

@@ -33,7 +33,7 @@ class CameraController(private val scene: Scene) {
         name = "camera",
         alpha = 0f,
         beta = 0f,
-        radius = 8f, // Starting radius between min and max
+        radius = 24f,
         target = Vector3.Zero(),
         scene = scene
     ).apply {

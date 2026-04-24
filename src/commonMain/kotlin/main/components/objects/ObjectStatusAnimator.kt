@@ -33,8 +33,7 @@ object ObjectStatusAnimator {
         val node = handle.node
         if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
         val meta = node.metadata!!
-        val currentAnim = meta.animState
-        
+
         if (show) {
             // If already fully shown at correct position, we skip
             val isVisible = handle.isVisible
@@ -42,17 +41,8 @@ object ObjectStatusAnimator {
             val isAtCorrectPosition = Vector3.Distance(node.position, targetOffset) < 0.01f
             
             if (isVisible && isScaled && isAtCorrectPosition) {
-                meta.animState = "showing" // Ensure state is correct
                 return
             }
-
-            // Avoid restarting if we are already in the process of showing
-            if (currentAnim == "showing" && isVisible) {
-                return
-            }
-            
-            meta.animState = "showing"
-            
             // Stop any existing hide/show animation immediately
             scene.stopAnimation(node, "statusScale")
             scene.stopAnimation(node, "statusPosition")
@@ -91,15 +81,13 @@ object ObjectStatusAnimator {
                 loopMode = Animation.ANIMATIONLOOPMODE_CONSTANT,
                 easingFunction = bounce,
                 onAnimationEnd = {
-                    meta.animState = "shown"
                 }
             )
         } else {
             // Only start hide animation if visible and not already hiding
-            if (!handle.isVisible || currentAnim == "hiding") return
+            if (!handle.isVisible) return
             
-            meta.animState = "hiding"
-            
+
             // Stop any existing show/hide animation
             scene.stopAnimation(node, "statusScale")
             scene.stopAnimation(node, "statusPosition")
@@ -131,7 +119,6 @@ object ObjectStatusAnimator {
                 easingFunction = ease,
                 onAnimationEnd = {
                     handle.isVisible = false
-                    meta.animState = "hidden"
                 }
             )
         }
