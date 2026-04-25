@@ -36,7 +36,7 @@ object WorldCollisionUtils {
         yPadding: Float = 0.5f,
     ): EnvironmentInfo {
         // Prepare reusable ray
-        rayDown.direction = downVector
+        rayDown.direction.copyFrom(downVector)
         rayDown.length = 1000f
 
         // 1. Raycast ground (3 probes for better accuracy near edges)
@@ -59,7 +59,7 @@ object WorldCollisionUtils {
                     val d = kotlin.math.abs(p.y - position.y)
                     if (d < bestGroundDist) {
                         bestGroundDist = d
-                        bestGroundPoint = p
+                        bestGroundPoint = p.clone()
                     }
                 }
             }
@@ -77,7 +77,7 @@ object WorldCollisionUtils {
                     val d = kotlin.math.abs(p.y - position.y)
                     if (d < bestWaterDist) {
                         bestWaterDist = d
-                        waterPoint = p
+                        waterPoint = p.clone()
                     }
                 }
             }
@@ -106,7 +106,7 @@ object WorldCollisionUtils {
         position: Vector3,
     ): Boolean {
         rayGeneral.origin.set(position.x, position.y + 1f, position.z)
-        rayGeneral.direction = downVector
+        rayGeneral.direction.copyFrom(downVector)
         rayGeneral.length = 1000f
         
         val meshes = if (collider == null && moveCircle == null) {
@@ -228,7 +228,7 @@ object WorldCollisionUtils {
 
         for (heightOffset in checkHeights) {
             rayGeneral.origin.set(from.x, from.y + heightOffset, from.z)
-            rayGeneral.direction = horizontalDir
+            rayGeneral.direction.copyFrom(horizontalDir)
             rayGeneral.length = distance
 
             val hits = rayGeneral.intersectsMeshes(targetMeshes)
@@ -258,7 +258,7 @@ object WorldCollisionUtils {
         if (context.waterMeshes.isEmpty()) return null
         
         rayGeneral.origin.set(position.x, position.y + 10f, position.z)
-        rayGeneral.direction = downVector
+        rayGeneral.direction.copyFrom(downVector)
         rayGeneral.length = 100.0f // Ensure it's long enough
 
         val hits = rayGeneral.intersectsMeshes(meshes = context.waterMeshes)
@@ -269,7 +269,7 @@ object WorldCollisionUtils {
                 val d = kotlin.math.abs(p.y - position.y)
                 if (d < bestDist) {
                     bestDist = d
-                    bestHit = p
+                    bestHit = p.clone()
                 }
             }
         }

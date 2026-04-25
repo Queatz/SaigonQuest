@@ -24,6 +24,7 @@ class PlayerMovementEngine(
     private val tempVector3 = Vector3()
     private val tempVector3_2 = Vector3()
     private val tempVector3_3 = Vector3()
+    private val tempVector3_4 = Vector3()
 
     // Click-to-move state
     private var playerTargetPosition: Vector3? = null
@@ -139,8 +140,8 @@ class PlayerMovementEngine(
             } else {
                 val dir = jumpDirection ?: Vector3.Zero()
                 if (dir.length() > 0f) {
-                    dir.scaleToRef(frameSpeed, tempVector3)
-                    finalMoveDirection = tempVector3
+                    dir.scaleToRef(frameSpeed, tempVector3_3)
+                    finalMoveDirection = tempVector3_3
                 }
                 isPlayerMoving = true
             }
@@ -148,8 +149,8 @@ class PlayerMovementEngine(
 
         if (!isJumping) {
             if (moveDirection.length() > 0f) {
-                moveDirection.scaleToRef(frameSpeed, tempVector3)
-                finalMoveDirection = tempVector3
+                moveDirection.scaleToRef(frameSpeed, tempVector3_3)
+                finalMoveDirection = tempVector3_3
                 // Notify facing update
                 onMoveDirection(moveDirection)
                 // Cancel click-to-move
@@ -253,8 +254,8 @@ class PlayerMovementEngine(
                 return null
             }
 
-            currentPos.addToRef(finalMoveDirection, tempVector3)
-            val newPos = tempVector3
+            currentPos.addToRef(finalMoveDirection, tempVector3_4)
+            val newPos = tempVector3_4
             var finalPos = tryMove(newPos)
 
             // If blocked, try sliding movement (X-only or Z-only)
