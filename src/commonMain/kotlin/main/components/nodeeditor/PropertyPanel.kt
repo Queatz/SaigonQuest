@@ -18,6 +18,8 @@ import main.components.DialogInput
 import main.components.DialogSelect
 import main.components.IconRenderer
 import main.components.LabeledCheckbox
+import main.components.MediaSelector
+import main.components.SkillSelector
 import main.components.SelectObjectDialog
 import main.components.SelectWorldDialog
 import main.components.Translated
@@ -430,6 +432,16 @@ fun PropertyPanel(
                                             it[propDef.key] = newValue
                                         }
                                     }
+                                )
+                            }
+
+                            PropertyType.SKILL -> {
+                                SkillSelector(
+                                    currentId = propertyValues[propDef.key] ?: "",
+                                    onUpdate = { newValue ->
+                                        propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                    },
+                                    label = null
                                 )
                             }
 

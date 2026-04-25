@@ -375,6 +375,22 @@ object NodeRunnerFactory {
                 )
                 SetAssetNodeRunner(context)
             }
+            NodeId.IncreasePlayerSkill -> {
+                WebSocketDebug.logMessage(
+                    "INCREASE_PLAYER_SKILL_RUNNER_SELECTED",
+                    "Selected IncreasePlayerSkillNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                IncreasePlayerSkillNodeRunner(context)
+            }
+            NodeId.CheckPlayerSkill -> {
+                WebSocketDebug.logMessage(
+                    "CHECK_PLAYER_SKILL_RUNNER_SELECTED",
+                    "Selected CheckPlayerSkillNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                CheckPlayerSkillNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

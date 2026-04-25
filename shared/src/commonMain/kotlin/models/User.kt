@@ -43,7 +43,9 @@ data class User(
     var eyeColor: String = "Brown",  // Black, Blue, Brown, Green, Gray
     var hairStyle: String = "Short", // Short, Medium, Long
     // Worn items - list of item IDs that the user is currently wearing
-    var wornItems: List<String> = mutableListOf()
+    var wornItems: List<String> = mutableListOf(),
+    // Skill levels - map of skill ID to level
+    var skillLevels: Map<String, Int> = emptyMap(),
 ) : BaseModel() {
     // Transient fields that won't be serialized
     @Transient

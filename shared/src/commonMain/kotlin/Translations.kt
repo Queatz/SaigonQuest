@@ -2482,6 +2482,114 @@ vi: Đánh dấu là đúng
 © 2026 Saigon.Quest v0.1
 vi: © 2026 Saigon.Quest v0.1
 
+Manage skills
+vi: Quản lý kỹ năng
+
+Skills
+vi: Kỹ năng
+
+Create skill
+vi: Tạo kỹ năng
+
+Edit skill
+vi: Chỉnh sửa kỹ năng
+
+Skill title
+vi: Tiêu đề kỹ năng
+
+Skill description
+vi: Mô tả kỹ năng
+
+Image URL
+vi: URL hình ảnh
+
+Skill created successfully!
+vi: Đã tạo kỹ năng thành công!
+
+Skill updated successfully!
+vi: Đã cập nhật kỹ năng thành công!
+
+Skill deleted successfully!
+vi: Đã xóa kỹ năng thành công!
+
+Are you sure you want to delete this skill?
+vi: Bạn có chắc chắn muốn xóa kỹ năng này không?
+
+Users with this skill
+vi: Người dùng có kỹ năng này
+
+Set level
+vi: Đặt cấp độ
+
+Level
+vi: Cấp độ
+
+Skill level updated successfully!
+vi: Đã cập nhật cấp độ kỹ năng thành công!
+
+Skill level
+vi: Cấp độ kỹ năng
+
+Increase player skill
+vi: Tăng kỹ năng người chơi
+
+Check player skill
+vi: Kiểm tra kỹ năng người chơi
+
+Increases a specific skill level for the player
+vi: Tăng một cấp độ kỹ năng cụ thể cho người chơi
+
+Checks if a player's skill level meets a condition
+vi: Kiểm tra xem cấp độ kỹ năng của người chơi có đáp ứng điều kiện không
+
+Skill
+vi: Kỹ năng
+
+Amount
+vi: Số lượng
+
+Greater than
+vi: Lớn hơn
+
+Less than
+vi: Nhỏ hơn
+
+Equals
+vi: Bằng
+
+Meets condition
+vi: Đáp ứng điều kiện
+
+Doesn't meet
+vi: Không đáp ứng
+
+No skills found
+vi: Không tìm thấy kỹ năng nào
+
+Loading skills...
+vi: Đang tải kỹ năng...
+
+Select skill
+vi: Chọn kỹ năng
+
+No users found with this skill
+vi: Không tìm thấy người dùng nào có kỹ năng này
+
+New
+vi: Mới
+
+Image
+vi: Hình ảnh
+
+Actions
+vi: Hành động
+
+Users
+vi: Người dùng
+
+Username
+vi: Tên người dùng
+
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

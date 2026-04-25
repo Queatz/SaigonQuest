@@ -94,6 +94,7 @@ enum class PropertyKey {
     // Quest properties
     QUEST_ID,
     QUEST_STATE_ID,
+    SKILL_ID,
     STEP_INDEX,
     COMPLETED,
     INCOMPLETE,
@@ -154,6 +155,7 @@ enum class PropertyType {
     QUEST,
     QUEST_STATE,
     QUEST_STEP,
+    SKILL,
 }
 
 /**
@@ -1587,6 +1589,77 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.COMPLETE,
                 name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // IncreasePlayerSkill node properties
+        is LogicNode.IncreasePlayerSkill -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "In",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.SKILL_ID,
+                name = "Skill",
+                type = PropertyType.SKILL,
+                direction = PropertyDirection.INPUT,
+                description = "Skill to increase"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUANTITY,
+                name = "Amount",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "1"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Out",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // CheckPlayerSkill node properties
+        is LogicNode.CheckPlayerSkill -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "In",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.SKILL_ID,
+                name = "Skill",
+                type = PropertyType.SKILL,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.OPERATOR,
+                name = "Operator",
+                type = PropertyType.ENUM,
+                direction = PropertyDirection.INPUT,
+                options = listOf("Greater than", "Less than", "Equals")
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.VALUE,
+                name = "Value",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.YES,
+                name = "Meets condition",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.NO,
+                name = "Doesn't meet",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )

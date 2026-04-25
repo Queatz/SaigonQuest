@@ -9,6 +9,9 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import main.api.*
+import main.api.SkillApi
+import main.components.player.SkillList
+import models.Skill
 import main.components.SceneManager.getPlayerController
 import main.components.common.formatAmount
 import main.components.player.CharacterRenderer
@@ -99,6 +102,15 @@ fun PlayerDialog(
             console.error("[DEBUG_LOG] PlayerDialog: Failed to load worlds: ${t.message}")
             // Assume zero on failure to avoid blocking CTA
             myWorldsCountState.value = 0
+        }
+    }
+
+    val allSkills = remember { mutableStateOf<List<Skill>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        try {
+            allSkills.value = SkillApi.getAllSkills()
+        } catch (e: Throwable) {
+            console.error("Failed to load skills: ${e.message}")
         }
     }
 
@@ -273,6 +285,11 @@ fun PlayerDialog(
                                 }
                             },
                             size = 24,
+                        )
+
+                        SkillList(
+                            skillLevels = user.skillLevels,
+                            allSkills = allSkills.value,
                         )
                     }
                 }

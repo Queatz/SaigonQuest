@@ -250,6 +250,29 @@ class UserRepository {
         user.lastActive = Clock.System.now()
         return update(id, user)
     }
+
+    /**
+     * Updates a user's skill level
+     */
+    fun updateUserSkillLevel(userId: String, skillId: String, level: Int): User? {
+        val user = getById(userId) ?: return null
+        val newSkillLevels = user.skillLevels.toMutableMap()
+        newSkillLevels[skillId] = level
+        user.skillLevels = newSkillLevels
+        return update(userId, user)
+    }
+
+    /**
+     * Gets all users with a specific skill
+     */
+    fun getUsersBySkill(skillId: String): List<User> {
+        val query = "FOR u IN @@collection FILTER HAS(u.skillLevels, @skillId) RETURN u"
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION,
+            "skillId" to skillId
+        )
+        return ArangoConfig.db.query(query, User::class.java, bindVars).toList()
+    }
     
     /**
      * Hashes a password using SHA-256

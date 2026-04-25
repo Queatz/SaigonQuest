@@ -13,11 +13,17 @@ import main.components.DialogButtonStyle
 import main.components.Translated
 import main.components.UserStatusBars
 import main.components.SendVndDialog
+import main.components.player.SkillList
+import main.components.player.FriendshipStatus
+import main.api.SkillApi
+import models.Skill
 import Translations.str
-import org.jetbrains.compose.web.css.color
+import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Img
 
 /**
  * Dialog shown when clicking on another player
@@ -48,6 +54,7 @@ fun OtherPlayerDialog(
 ) {
     // Load other user's status bars when possible
     val otherUserState = remember { mutableStateOf<models.User?>(null) }
+    var allSkills by remember { mutableStateOf<List<Skill>>(emptyList()) }
     var showConfirmRemove by remember { mutableStateOf(false) }
     var showSendVnd by remember { mutableStateOf(false) }
     if (otherUserId.isNotEmpty()) {
@@ -55,6 +62,8 @@ fun OtherPlayerDialog(
             try {
                 val u = main.api.UserApi.getUserById(otherUserId)
                 otherUserState.value = u
+                // Also load all skills to show labels/images
+                allSkills = SkillApi.getAllSkills()
             } catch (t: Throwable) {
                 console.error("Failed to load other user: ${t.message}")
             }
@@ -79,6 +88,12 @@ fun OtherPlayerDialog(
                             size = 18
                         )
                     }
+
+                    // Skills section
+                    SkillList(
+                        skillLevels = ou.skillLevels,
+                        allSkills = allSkills
+                    )
                 }
             }
 

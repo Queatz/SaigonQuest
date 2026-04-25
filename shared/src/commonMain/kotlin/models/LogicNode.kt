@@ -576,6 +576,28 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Changes the asset (file and collection) of this object"
     ) : LogicNode
+
+    /**
+     * IncreasePlayerSkill node - increases a player's skill level
+     */
+    @Serializable
+    data class IncreasePlayerSkill(
+        override val id: NodeId = NodeId.IncreasePlayerSkill,
+        override val label: String = "Increase player skill",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Increases a specific skill level for the player"
+    ) : LogicNode
+
+    /**
+     * CheckPlayerSkill node - checks if a player's skill level meets a condition
+     */
+    @Serializable
+    data class CheckPlayerSkill(
+        override val id: NodeId = NodeId.CheckPlayerSkill,
+        override val label: String = "Check player skill",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Checks if a player's skill level meets a condition"
+    ) : LogicNode
 }
 
 /**
@@ -639,6 +661,8 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.QuestPlayerStatus(),
         LogicNode.QuestStep(),
         LogicNode.SetAsset(),
+        LogicNode.IncreasePlayerSkill(),
+        LogicNode.CheckPlayerSkill(),
     )
 }
 

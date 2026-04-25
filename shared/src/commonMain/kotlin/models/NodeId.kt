@@ -53,4 +53,6 @@ enum class NodeId {
     QuestPlayerStatus,
     QuestStep,
     SetAsset,
+    IncreasePlayerSkill,
+    CheckPlayerSkill,
 }
