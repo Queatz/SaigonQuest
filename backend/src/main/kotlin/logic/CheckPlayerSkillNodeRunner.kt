@@ -39,8 +39,8 @@ class CheckPlayerSkillNodeRunner(private val context: NodeRunnerContext) : NodeR
             val currentLevel = user.skillLevels[skillId] ?: 0
             
             val result = when (operator) {
-                "Greater than" -> currentLevel > value
-                "Less than" -> currentLevel < value
+                "At least" -> currentLevel >= value
+                "At most" -> currentLevel <= value
                 "Equals" -> currentLevel == value
                 else -> false
             }

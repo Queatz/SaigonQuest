@@ -163,17 +163,11 @@ internal fun SceneObjectManager.handleObjectStatusText(objectId: String, status:
 
         // Quest override: if this object is a quest target, prepend quest symbol and use quest title
         val activeQuest = activeQuestIndicators[objectId]
-        val finalStatus = if (activeQuest != null) {
-            activeQuest.title
-        } else {
-            status
-        }
+        val finalStatus = activeQuest?.title ?: status
 
-        // Prepend "🆇 " if it's the interactable object or a quest target
+        // Prepend "🆇 " if it's the interactable object
         val isInteractable = objectId == interactableObjectId
-        val displayedStatus = if (activeQuest != null) {
-            "🆇 $finalStatus"
-        } else if (isInteractable) {
+        val displayedStatus = if (isInteractable) {
             if (finalStatus.isBlank()) "🆇" else "🆇 $finalStatus"
         } else {
             finalStatus

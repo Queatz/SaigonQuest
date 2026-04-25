@@ -1643,7 +1643,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 name = "Operator",
                 type = PropertyType.ENUM,
                 direction = PropertyDirection.INPUT,
-                options = listOf("Greater than", "Less than", "Equals")
+                options = listOf("At least", "At most", "Equals")
             ),
             NodePropertyDefinition(
                 key = PropertyKey.VALUE,

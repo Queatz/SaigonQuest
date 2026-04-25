@@ -157,7 +157,7 @@ class WorldObjectManager(private val scene: Scene) {
     // Proximity detection state
     private var lastProximityCheckMs: Double = 0.0
     private val enteredProximity = mutableSetOf<String>()
-    private val proximityIntervalMs: Double = 500.0
+    private val proximityIntervalMs: Double = 250.0
 
     fun update(deltaTime: Float) {
         objects.values.forEach { it.update(deltaTime) }

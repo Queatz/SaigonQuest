@@ -2554,6 +2554,12 @@ vi: Lớn hơn
 Less than
 vi: Nhỏ hơn
 
+At least
+vi: Ít nhất
+
+At most
+vi: Nhiều nhất
+
 Equals
 vi: Bằng
 
