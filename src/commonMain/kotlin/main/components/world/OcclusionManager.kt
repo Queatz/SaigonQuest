@@ -112,6 +112,20 @@ class OcclusionManager(private val scene: Scene) {
     private var isForceDisabled = false
     private var useRadius = true
 
+    // Pre-calculated values for uniforms
+    private val uPlayerScreenPixel = Vector2()
+    private var uPlayerScreenZ = 0f
+    private var uBandWidthPx = 0f
+    private var uHalfBand = 0f
+    private var uInnerRadius = 0f
+    private var uInvBandWidthPx = 0f
+    private var uDepthBand = 0f
+    private var uSoftnessWorld = 0f
+    private val uPlayerWorld = Vector3()
+    private val uCameraWorld = Vector3()
+    private val uPlayerToCamDir = Vector3()
+    private var uOcclusionRadius = 0f
+
     /**
      * Observer for graphics settings changes.
      */
@@ -169,20 +183,13 @@ class OcclusionManager(private val scene: Scene) {
             return alpha;
         }
         
-        float bandWidthPx = occlusionSoftness * occlusionRadius;
-        
-        // 1. Calculate distance from this pixel to the player on screen
-        vec2 playerScreenPixel = playerScreenPos.xy * screenSize;
-        
         // 2. Depth check: is the pixel closer to the camera than the player?
-        // playerScreenPos.z is pre-calculated in Kotlin
-        float depthDiff = gl_FragCoord.z - playerScreenPos.z + 0.001;
+        float depthDiff = gl_FragCoord.z - playerScreenZ + 0.001;
         
         // Dithered evaluation for depth comparison (soften hard thresholds)
-        float DEPTH_BAND = occlusionSoftness * 0.001;
         bool isOccluding = (depthDiff < 0.0);
-        if (!isOccluding && DEPTH_BAND > 0.0) {
-            float depthWeight = smoothstep(DEPTH_BAND, 0.0, abs(depthDiff));
+        if (!isOccluding && depthBand > 0.0) {
+            float depthWeight = smoothstep(depthBand, 0.0, abs(depthDiff));
             if (depthWeight > noise(gl_FragCoord.xy + vec2(13.7, 31.1))) {
                 isOccluding = true;
             }
@@ -190,15 +197,12 @@ class OcclusionManager(private val scene: Scene) {
         
         // 3. Directional/Height Check: "The Flashlight Cone"
         if (isOccluding) {
-            float SOFTNESS_WORLD = occlusionSoftness * 0.4;
-            float halfBand = bandWidthPx * 0.5;
-            
             // Screen Height Weight (soft transition from below to above player)
             float screenHeightWeight = smoothstep(-halfBand, halfBand, gl_FragCoord.y - playerScreenPixel.y);
             
             // World Height Weight (at feet vs tall object)
             float worldHeightDiff = vPositionW.y - playerWorld.y;
-            float worldHeightWeight = smoothstep(0.1 - SOFTNESS_WORLD, 0.1 + SOFTNESS_WORLD, worldHeightDiff);
+            float worldHeightWeight = smoothstep(0.1 - softnessWorld, 0.1 + softnessWorld, worldHeightDiff);
             
             // Cone check: world-space alignment with player-camera axis
             // Optimized: use pre-calculated normalized playerToCamDir uniform
@@ -214,11 +218,11 @@ class OcclusionManager(private val scene: Scene) {
             
             // Soften the cone edge and the cone start
             float coneWeight = smoothstep(coneRadiusSq * (1.0 + occlusionSoftness), coneRadiusSq * (1.0 - occlusionSoftness), distSqToAxis);
-            coneWeight *= smoothstep(-0.2 - SOFTNESS_WORLD, -0.2 + SOFTNESS_WORLD, distAlongAxis);
+            coneWeight *= smoothstep(-0.2 - softnessWorld, -0.2 + softnessWorld, distAlongAxis);
             
             // Additional safety weights for "above player but far below world" and "below player but in cone"
-            float floorWeight = smoothstep(-0.4 - SOFTNESS_WORLD, -0.4 + SOFTNESS_WORLD, worldHeightDiff);
-            float safetyWeight = smoothstep(-0.5 - SOFTNESS_WORLD, -0.5 + SOFTNESS_WORLD, worldHeightDiff);
+            float floorWeight = smoothstep(-0.4 - softnessWorld, -0.4 + softnessWorld, worldHeightDiff);
+            float safetyWeight = smoothstep(-0.5 - softnessWorld, -0.5 + softnessWorld, worldHeightDiff);
 
             // Logic:
             // if below player (screenHeightWeight=0.0): must be wellAbove OR (inCone AND floor)
@@ -247,11 +251,10 @@ class OcclusionManager(private val scene: Scene) {
                     discard;
                 }
             } else {
-                float innerRadius = max(0.0, occlusionRadius - bandWidthPx);
                 if (dist < innerRadius) {
                     discard;
                 } else if (dist < occlusionRadius) {
-                    float coverage = (dist - innerRadius) / max(0.0001, bandWidthPx);
+                    float coverage = (dist - innerRadius) * invBandWidthPx;
                     if (coverage < noise(gl_FragCoord.xy)) {
                         discard;
                     }
@@ -306,8 +309,8 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("useReverseDepth", "bool")
 
         // Occlusion uniforms (match those used in PBR occlusion shader)
-        mat.AddUniform("playerScreenPos", "vec3")
-        mat.AddUniform("screenSize", "vec2")
+        mat.AddUniform("playerScreenPixel", "vec2")
+        mat.AddUniform("playerScreenZ", "float")
         mat.AddUniform("occlusionRadius", "float")
         mat.AddUniform("playerWorld", "vec3")
         mat.AddUniform("cameraWorld", "vec3")
@@ -317,6 +320,12 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("time", "float")
         mat.AddUniform("timePhase", "float")
         mat.AddUniform("playerToCamDir", "vec3")
+        mat.AddUniform("bandWidthPx", "float")
+        mat.AddUniform("halfBand", "float")
+        mat.AddUniform("innerRadius", "float")
+        mat.AddUniform("invBandWidthPx", "float")
+        mat.AddUniform("depthBand", "float")
+        mat.AddUniform("softnessWorld", "float")
 
         // Depth linearization and any shared helpers
         mat.Fragment_Definitions(
@@ -373,58 +382,31 @@ class OcclusionManager(private val scene: Scene) {
             mat.backFaceCulling = false
         }
 
-        // Bind camera near/far and occlusion uniforms each frame when material is bound
         mat.onBindObservable.add { _ ->
             val effect = mat.getEffect() ?: return@add
-            val cam = scene.activeCamera ?: return@add
             try {
                 // Depth uniforms
-                effect.setFloat("cameraNear", cam.minZ)
-                effect.setFloat("cameraFar", cam.maxZ)
+                effect.setFloat("cameraNear", scene.activeCamera?.minZ ?: 0.1f)
+                effect.setFloat("cameraFar", scene.activeCamera?.maxZ ?: 1000f)
                 effect.setBool("useReverseDepth", false)
 
-                // Skip occlusion binding if we don't have player/camera
-                val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider()
-                if (playerMesh != null) {
-                    playerMesh.position.addToRef(tempVector3.set(0f, 0.5f, 0f), tempVector3)
-                    val playerWorldPos = trackedPlayerWorldPos ?: tempVector3
-                    
-                    Vector3.ProjectToRef(
-                        vector = playerWorldPos,
-                        world = identityMatrix,
-                        transform = scene.getTransformMatrix(),
-                        viewport = cam.viewport,
-                        result = tempVector3_2
-                    )
-                    tempVector3_2.y = 1.0f - tempVector3_2.y
-                    val playerScreenPos = tempVector3_2
-
-                    val viewWidth = scene.getEngine().getRenderWidth()
-                    val viewHeight = scene.getEngine().getRenderHeight()
-                    val occRadius = min(viewWidth, viewHeight) / 3.0f
-                    val screenSize = tempVector2.set(viewWidth.toFloat(), viewHeight.toFloat())
-
-                    val floatingOrigin = scene.floatingOriginOffset ?: Vector3.Zero()
-                    effect.setVector3("playerScreenPos", playerScreenPos)
-                    
-                    playerWorldPos.subtractToRef(floatingOrigin, tempVector3_2)
-                    effect.setVector3("playerWorld", tempVector3_2)
-                    
-                    cam.globalPosition.subtractToRef(floatingOrigin, tempVector3_2)
-                    effect.setVector3("cameraWorld", tempVector3_2)
-                    
-                    cam.globalPosition.subtractToRef(playerWorldPos, tempVector3_2)
-                    tempVector3_2.normalize()
-                    effect.setVector3("playerToCamDir", tempVector3_2)
-                    
-                    effect.setFloat("occlusionRadius", occRadius)
-                    effect.setFloat("occlusionSoftness", occlusionSoftness)
-                    effect.setVector2("screenSize", screenSize)
-                    effect.setBool("useRadius", useRadius)
-                    effect.setBool("isEnabled", isEnabled)
-                    effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
-                    effect.setFloat("timePhase", timePhase)
-                }
+                effect.setVector2("playerScreenPixel", uPlayerScreenPixel)
+                effect.setFloat("playerScreenZ", uPlayerScreenZ)
+                effect.setVector3("playerWorld", uPlayerWorld)
+                effect.setVector3("cameraWorld", uCameraWorld)
+                effect.setVector3("playerToCamDir", uPlayerToCamDir)
+                effect.setFloat("occlusionRadius", uOcclusionRadius)
+                effect.setFloat("occlusionSoftness", occlusionSoftness)
+                effect.setFloat("bandWidthPx", uBandWidthPx)
+                effect.setFloat("halfBand", uHalfBand)
+                effect.setFloat("innerRadius", uInnerRadius)
+                effect.setFloat("invBandWidthPx", uInvBandWidthPx)
+                effect.setFloat("depthBand", uDepthBand)
+                effect.setFloat("softnessWorld", uSoftnessWorld)
+                effect.setBool("useRadius", useRadius)
+                effect.setBool("isEnabled", isEnabled)
+                effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
+                effect.setFloat("timePhase", timePhase)
             } catch (_: Throwable) {
                 // avoid crashing if effect is not ready yet
             }
@@ -469,8 +451,8 @@ class OcclusionManager(private val scene: Scene) {
         val customMaterial = MaterialCustomizer.getOrCreateCustomMaterial(mesh, scene) ?: return
 
         // Register all required uniforms safely
-        MaterialCustomizer.safeAddUniform(customMaterial, "playerScreenPos", "vec3")
-        MaterialCustomizer.safeAddUniform(customMaterial, "screenSize", "vec2")
+        MaterialCustomizer.safeAddUniform(customMaterial, "playerScreenPixel", "vec2")
+        MaterialCustomizer.safeAddUniform(customMaterial, "playerScreenZ", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "occlusionRadius", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "playerWorld", "vec3")
         MaterialCustomizer.safeAddUniform(customMaterial, "cameraWorld", "vec3")
@@ -480,6 +462,12 @@ class OcclusionManager(private val scene: Scene) {
         MaterialCustomizer.safeAddUniform(customMaterial, "time", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "timePhase", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "playerToCamDir", "vec3")
+        MaterialCustomizer.safeAddUniform(customMaterial, "bandWidthPx", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "halfBand", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "innerRadius", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "invBandWidthPx", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "depthBand", "float")
+        MaterialCustomizer.safeAddUniform(customMaterial, "softnessWorld", "float")
 
         MaterialCustomizer.appendFragmentBegin(customMaterial, uniformDeclarations)
         MaterialCustomizer.appendFragmentDefinitions(customMaterial, occlusionShaderCode)
@@ -487,76 +475,30 @@ class OcclusionManager(private val scene: Scene) {
         // Use Fragment_Custom_Alpha instead of Fragment_Before_FragColor since we're only modifying the alpha
         MaterialCustomizer.appendFragmentAlphaCode(customMaterial, occlusionCallCode)
 
-        // Add a handler for the onBindObservable to set uniforms when the material is bound
-        // We only add the observer once
         val dyn = customMaterial.asDynamic()
         if (dyn._occlusionObserved == null) {
             dyn._occlusionObserved = true
             customMaterial.onBindObservable.add { _ ->
-                // Get the effect after the material is bound
-                val effect = customMaterial.getEffect()
-                if (effect == null) {
-                    return@add
-                }
-
+                val effect = customMaterial.getEffect() ?: return@add
                 try {
-                    // Skip if no player or camera
-                    val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return@add
-                    val cam = camera ?: scene.activeCamera ?: return@add
-
-                    // Get player's world position (smoothed)
-                    playerMesh.position.addToRef(tempVector3.set(0f, 0.5f, 0f), tempVector3)
-                    val playerWorldPos = trackedPlayerWorldPos ?: tempVector3
-
-                    // Get player's screen position (normalized [0,1] coordinates)
-                    Vector3.ProjectToRef(
-                        vector = playerWorldPos,
-                        world = identityMatrix,
-                        transform = scene.getTransformMatrix(),
-                        viewport = cam.viewport,
-                        result = tempVector3_2
-                    )
-                    tempVector3_2.y = 1.0f - tempVector3_2.y
-                    val playerScreenPos = tempVector3_2
-
-                    // Calculate occlusion radius based on minimum of view width/height
-                    val viewWidth = scene.getEngine().getRenderWidth()
-                    val viewHeight = scene.getEngine().getRenderHeight()
-                    val occlusionRadius = min(viewWidth, viewHeight) / 3.0f
-
-                    // Create screenSize vector once and reuse it
-                    val screenSize = tempVector2.set(viewWidth.toFloat(), viewHeight.toFloat())
-
-                    val floatingOrigin = (cam.asDynamic()._floatingOrigin as? Vector3) ?: Vector3.Zero()
-                    // Set player position uniforms
-                    effect.setVector3("playerScreenPos", playerScreenPos)
-                    
-                    playerWorldPos.subtractToRef(floatingOrigin, tempVector3_2)
-                    effect.setVector3("playerWorld", tempVector3_2)
-                    
-                    cam.globalPosition.subtractToRef(floatingOrigin, tempVector3_2)
-                    effect.setVector3("cameraWorld", tempVector3_2)
-
-                    // Set occlusion parameters
-                    effect.setFloat("occlusionRadius", occlusionRadius)
+                    effect.setVector2("playerScreenPixel", uPlayerScreenPixel)
+                    effect.setFloat("playerScreenZ", uPlayerScreenZ)
+                    effect.setVector3("playerWorld", uPlayerWorld)
+                    effect.setVector3("cameraWorld", uCameraWorld)
+                    effect.setVector3("playerToCamDir", uPlayerToCamDir)
+                    effect.setFloat("occlusionRadius", uOcclusionRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
-
-                    // Set screen size
-                    effect.setVector2("screenSize", screenSize)
-
+                    effect.setFloat("bandWidthPx", uBandWidthPx)
+                    effect.setFloat("halfBand", uHalfBand)
+                    effect.setFloat("innerRadius", uInnerRadius)
+                    effect.setFloat("invBandWidthPx", uInvBandWidthPx)
+                    effect.setFloat("depthBand", uDepthBand)
+                    effect.setFloat("softnessWorld", uSoftnessWorld)
                     effect.setBool("useRadius", useRadius)
                     effect.setBool("isEnabled", isEnabled)
-
-                    // Set time uniform for animations
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                     effect.setFloat("timePhase", timePhase)
-                    
-                    cam.globalPosition.subtractToRef(playerWorldPos, tempVector3_2)
-                    tempVector3_2.normalize()
-                    effect.setVector3("playerToCamDir", tempVector3_2)
-                } catch (e: Throwable) {
-                    // ignore binding errors
-                }
+                } catch (e: Throwable) {}
             }
         }
 
@@ -638,6 +580,60 @@ class OcclusionManager(private val scene: Scene) {
                 lastRenderHeight = h
             }
         } catch (_: Throwable) { }
+
+        // Pre-calculate all uniform values once per frame
+        updateCalculatedUniforms()
+    }
+
+    private fun updateCalculatedUniforms() {
+        val cam = camera ?: scene.activeCamera ?: return
+        val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider() ?: return
+
+        // 1. Get smoothed player world position (center of body)
+        playerMesh.position.addToRef(tempVector3.set(0f, 0.5f, 0f), tempVector3)
+        val playerWorldPos = trackedPlayerWorldPos ?: tempVector3
+
+        // 2. Project to screen (normalized [0,1] coordinates)
+        Vector3.ProjectToRef(
+            vector = playerWorldPos,
+            world = identityMatrix,
+            transform = scene.getTransformMatrix(),
+            viewport = cam.viewport,
+            result = tempVector3_2
+        )
+        tempVector3_2.y = 1.0f - tempVector3_2.y
+        uPlayerScreenZ = tempVector3_2.z
+
+        // 3. Screen dimensions
+        val eng = scene.getEngine()
+        val viewWidth = eng.getRenderWidth().toFloat()
+        val viewHeight = eng.getRenderHeight().toFloat()
+        
+        // 4. Occlusion Radius (resolution independent)
+        uOcclusionRadius = min(viewWidth, viewHeight) / 3.0f
+        
+        // 5. Derived parameters
+        uBandWidthPx = occlusionSoftness * uOcclusionRadius
+        uHalfBand = uBandWidthPx * 0.5f
+        uInnerRadius = (uOcclusionRadius - uBandWidthPx).coerceAtLeast(0f)
+        uInvBandWidthPx = if (uBandWidthPx > 0.0001f) 1.0f / uBandWidthPx else 0f
+        
+        uDepthBand = occlusionSoftness * 0.001f
+        uSoftnessWorld = occlusionSoftness * 0.4f
+        
+        uPlayerScreenPixel.set(tempVector3_2.x * viewWidth, tempVector3_2.y * viewHeight)
+
+        // 6. World-space positions relative to floating origin
+        val floatingOrigin = (cam.asDynamic()._floatingOrigin as? Vector3) 
+            ?: scene.floatingOriginOffset 
+            ?: Vector3.Zero()
+            
+        playerWorldPos.subtractToRef(floatingOrigin, uPlayerWorld)
+        cam.globalPosition.subtractToRef(floatingOrigin, uCameraWorld)
+        
+        // 7. Direction from player to camera
+        cam.globalPosition.subtractToRef(playerWorldPos, uPlayerToCamDir)
+        uPlayerToCamDir.normalize()
     }
     
     /**
