@@ -27,6 +27,14 @@ class WorldCollisionContext(val allWorldMeshes: Array<AbstractMesh>) {
     }.toTypedArray()
 
     /**
+     * Meshes that can be walked or swam on.
+     * Includes both ground and water meshes.
+     */
+    val walkableMeshes: Array<AbstractMesh> = allWorldMeshes.filter {
+        !it.isSkybox() && !it.isPassable()
+    }.toTypedArray()
+
+    /**
      * All meshes that should be considered for general path blocking checks.
      * Usually the same as ground meshes.
      */

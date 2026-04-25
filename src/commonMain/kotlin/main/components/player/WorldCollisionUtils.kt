@@ -18,6 +18,12 @@ data class EnvironmentInfo(
  * Utilities for validating movement and computing supported Y positions against world meshes.
  */
 object WorldCollisionUtils {
+    private val rayDown = Ray(Vector3(), Vector3(0f, -1f, 0f))
+    private val rayGeneral = Ray(Vector3(), Vector3())
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val downVector = Vector3(0f, -1f, 0f)
+
     /**
      * Performs a single environment check that returns all necessary information for movement/collision.
      * Consolidates multiple raycasts into one to improve performance.
@@ -29,13 +35,13 @@ object WorldCollisionUtils {
         moveCircle: Mesh? = null,
         yPadding: Float = 0.5f,
     ): EnvironmentInfo {
-        // Prepare reusable rays
-        val rayDown = Ray().also {
-            it.direction = Vector3(0f, -1f, 0f)
-        }
+        // Prepare reusable ray
+        rayDown.direction = downVector
+        rayDown.length = 1000f
 
         // 1. Raycast ground (3 probes for better accuracy near edges)
-        val groundPoints = mutableListOf<Vector3>()
+        var bestGroundPoint: Vector3? = null
+        var bestGroundDist = Float.MAX_VALUE
         
         // Exclude specific meshes only if necessary
         val filteredGroundMeshes = if (collider == null && moveCircle == null) {
@@ -46,26 +52,35 @@ object WorldCollisionUtils {
 
         val yOffsets = arrayOf(10f, 2.5f, 1f)
         for (offset in yOffsets) {
-            rayDown.origin = Vector3(position.x, position.y + offset, position.z)
+            rayDown.origin.set(position.x, position.y + offset, position.z)
             val hits = rayDown.intersectsMeshes(filteredGroundMeshes)
             for (hit in hits) {
-                hit.pickedPoint?.let {
-                    groundPoints.add(it)
-                    break
+                hit.pickedPoint?.let { p ->
+                    val d = kotlin.math.abs(p.y - position.y)
+                    if (d < bestGroundDist) {
+                        bestGroundDist = d
+                        bestGroundPoint = p
+                    }
                 }
             }
         }
 
-        val bestGroundPoint = groundPoints.minByOrNull { kotlin.math.abs(it.y - position.y) }
-
         // 2. Raycast water surface
         var waterPoint: Vector3? = null
         if (context.waterMeshes.isNotEmpty()) {
-            rayDown.origin = Vector3(position.x, position.y + 10f, position.z)
+            rayDown.origin.set(position.x, position.y + 10f, position.z)
+            rayDown.length = 1000f
             val hits = rayDown.intersectsMeshes(context.waterMeshes)
-            val bestHit = hits.filter { it.pickedPoint != null }
-                .minByOrNull { kotlin.math.abs(it.pickedPoint!!.y - position.y) }
-            waterPoint = bestHit?.pickedPoint
+            var bestWaterDist = Float.MAX_VALUE
+            for (hit in hits) {
+                hit.pickedPoint?.let { p ->
+                    val d = kotlin.math.abs(p.y - position.y)
+                    if (d < bestWaterDist) {
+                        bestWaterDist = d
+                        waterPoint = p
+                    }
+                }
+            }
         }
 
         // 3. Determine if we are on water
@@ -90,20 +105,17 @@ object WorldCollisionUtils {
         moveCircle: Mesh?,
         position: Vector3,
     ): Boolean {
-        val rayOrigin = Vector3(position.x, position.y + 1f, position.z)
-        val rayDirection = Vector3(0f, -1f, 0f)
-        val ray = Ray().also {
-            it.origin = rayOrigin
-            it.direction = rayDirection
-        }
+        rayGeneral.origin.set(position.x, position.y + 1f, position.z)
+        rayGeneral.direction = downVector
+        rayGeneral.length = 1000f
         
         val meshes = if (collider == null && moveCircle == null) {
-            context.groundMeshes
+            context.walkableMeshes
         } else {
-            context.groundMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
+            context.walkableMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
         }
         
-        val hits = ray.intersectsMeshes(meshes)
+        val hits = rayGeneral.intersectsMeshes(meshes)
         return hits.any { it.pickedPoint != null }
     }
 
@@ -151,6 +163,41 @@ object WorldCollisionUtils {
         )
     }
 
+    fun findValidYPositionToRef(
+        context: WorldCollisionContext,
+        collider: Mesh?,
+        moveCircle: Mesh?,
+        position: Vector3,
+        result: Vector3,
+        yPadding: Float = 0.5f,
+        applyWaterOffset: Boolean = true,
+    ): Boolean {
+        val info = getEnvironmentInfo(context, position, collider, moveCircle, yPadding)
+        
+        val finalMeshY = if (info.isOnWater) {
+            info.waterPoint!!.y
+        } else {
+            info.groundPoint?.y ?: return false
+        }
+
+        var finalPadding = yPadding
+        val floatingPadding = 0.0f
+        if (info.isOnWater && applyWaterOffset) {
+            finalPadding = floatingPadding
+
+            // Add gentle vertical bobbling motion
+            val time = WindSystem.timeSeconds
+            finalPadding += kotlin.math.sin(time.toDouble() * 2.0).toFloat() * 0.05f
+        }
+
+        result.set(
+            position.x,
+            finalMeshY + finalPadding,
+            position.z,
+        )
+        return true
+    }
+
     /**
      * Optimized version of isPathBlocked using pre-filtered meshes and consolidated info.
      */
@@ -165,7 +212,7 @@ object WorldCollisionUtils {
         if (to.y - from.y > 0.6f) return true
 
         // 2. Check for physical obstacles in the way at multiple heights
-        val horizontalDir = Vector3(to.x - from.x, 0f, to.z - from.z)
+        val horizontalDir = tempVector3.set(to.x - from.x, 0f, to.z - from.z)
         val distance = horizontalDir.length()
         if (distance < 0.01f) return false
 
@@ -177,18 +224,18 @@ object WorldCollisionUtils {
             context.obstacleMeshes.filter { it != collider && it != moveCircle }.toTypedArray()
         }
 
-        for (heightOffset in checkHeights) {
-            val rayOrigin = Vector3(from.x, from.y + heightOffset, from.z)
-            val ray = Ray().also {
-                it.origin = rayOrigin
-                it.direction = horizontalDir.normalize()
-                it.length = distance.toDouble()
-            }
+        horizontalDir.normalize()
 
-            val hits = ray.intersectsMeshes(targetMeshes)
+        for (heightOffset in checkHeights) {
+            rayGeneral.origin.set(from.x, from.y + heightOffset, from.z)
+            rayGeneral.direction = horizontalDir
+            rayGeneral.length = distance
+
+            val hits = rayGeneral.intersectsMeshes(targetMeshes)
             for (hit in hits) {
                 hit.pickedPoint?.let { pickedPoint ->
-                    val probePoint = pickedPoint.subtract(ray.direction.scale(0.05f))
+                    horizontalDir.scaleToRef(0.05f, tempVector3_2)
+                    val probePoint = pickedPoint.subtractToRef(tempVector3_2, tempVector3_2)
                     val validYAtHit = findValidYPosition(context, collider, moveCircle, probePoint, 0.5f)
                     
                     if (validYAtHit == null) return true
@@ -210,18 +257,23 @@ object WorldCollisionUtils {
     ): Vector3? {
         if (context.waterMeshes.isEmpty()) return null
         
-        val rayOrigin = Vector3(position.x, position.y + 10f, position.z)
-        val rayDirection = Vector3(0f, -1f, 0f)
-        val ray = Ray().also {
-            it.origin = rayOrigin
-            it.direction = rayDirection
+        rayGeneral.origin.set(position.x, position.y + 10f, position.z)
+        rayGeneral.direction = downVector
+        rayGeneral.length = 100.0f // Ensure it's long enough
+
+        val hits = rayGeneral.intersectsMeshes(meshes = context.waterMeshes)
+        var bestHit: Vector3? = null
+        var bestDist = Float.MAX_VALUE
+        for (hit in hits) {
+            hit.pickedPoint?.let { p ->
+                val d = kotlin.math.abs(p.y - position.y)
+                if (d < bestDist) {
+                    bestDist = d
+                    bestHit = p
+                }
+            }
         }
 
-        val hits = ray.intersectsMeshes(meshes = context.waterMeshes)
-        val bestHit = hits.filter { it.pickedPoint != null }
-            .minByOrNull { kotlin.math.abs(it.pickedPoint!!.y - position.y) }
-            ?: return null
-
-        return bestHit.pickedPoint
+        return bestHit
     }
 }

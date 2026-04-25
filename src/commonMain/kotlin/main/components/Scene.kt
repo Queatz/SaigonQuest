@@ -1353,7 +1353,7 @@ fun SceneComponent(url: String) {
 
             if (newPosition == null) {
                 // No movement this frame; zero out instantaneous velocity for sway
-                SceneManager.setPlayerVelocity(lib.Vector3(0f, 0f, 0f))
+                SceneManager.setPlayerVelocity(null)
             }
 
             // Update camera target if player moved and Observer Mode is OFF

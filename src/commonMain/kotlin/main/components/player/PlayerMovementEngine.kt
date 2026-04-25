@@ -20,6 +20,11 @@ class PlayerMovementEngine(
     private val movementDelta = FrameDeltaTracker()
     private val baseMovementSpeed = 3.0f
 
+    // Reusable vectors for performance
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val tempVector3_3 = Vector3()
+
     // Click-to-move state
     private var playerTargetPosition: Vector3? = null
     private var isMoving = false
@@ -55,8 +60,9 @@ class PlayerMovementEngine(
 
             // If no keyboard input, but click-to-move is active, use that direction
             if (effectiveDirection.length() == 0f && isMoving && playerTargetPosition != null) {
-                val toTarget = playerTargetPosition!!.subtract(playerPosition)
-                val toTargetXZ = Vector3(toTarget.x, 0f, toTarget.z)
+                playerTargetPosition!!.subtractToRef(playerPosition, tempVector3)
+                val toTarget = tempVector3
+                val toTargetXZ = tempVector3_2.set(toTarget.x, 0f, toTarget.z)
                 if (toTargetXZ.length() > 0.1f) {
                     effectiveDirection = toTargetXZ.normalize()
                 }
@@ -77,7 +83,8 @@ class PlayerMovementEngine(
     fun setTargetPosition(position: Vector3, currentPosition: Vector3) {
         playerTargetPosition = Vector3(position.x, position.y + 0.5f, position.z)
         isMoving = true
-        isAutoRunning = playerTargetPosition!!.subtract(currentPosition).length() > 10f
+        position.subtractToRef(currentPosition, tempVector3)
+        isAutoRunning = tempVector3.length() > 10f
         setActivity(PlayerActivity.Moving)
     }
 
@@ -132,7 +139,8 @@ class PlayerMovementEngine(
             } else {
                 val dir = jumpDirection ?: Vector3.Zero()
                 if (dir.length() > 0f) {
-                    finalMoveDirection = dir.scale(frameSpeed)
+                    dir.scaleToRef(frameSpeed, tempVector3)
+                    finalMoveDirection = tempVector3
                 }
                 isPlayerMoving = true
             }
@@ -140,13 +148,16 @@ class PlayerMovementEngine(
 
         if (!isJumping) {
             if (moveDirection.length() > 0f) {
-                finalMoveDirection = moveDirection.scale(frameSpeed)
+                moveDirection.scaleToRef(frameSpeed, tempVector3)
+                finalMoveDirection = tempVector3
                 // Notify facing update
                 onMoveDirection(moveDirection)
                 // Cancel click-to-move
                 stopMovement()
                 isPlayerMoving = true
-                val velocity = moveDirection.scale(baseMovementSpeed * actualSpeedMultiplier * speedFactor)
+                
+                moveDirection.scaleToRef(baseMovementSpeed * actualSpeedMultiplier * speedFactor, tempVector3_2)
+                val velocity = tempVector3_2
                 // Temporary wind boost while moving (extends 1s tail)
                 playerHandle.triggerWindBoost(velocity)
                 // Stand if sitting
@@ -158,8 +169,9 @@ class PlayerMovementEngine(
                 val currentPos = playerHandle.position
                 val targetPos = playerTargetPosition!!
                 // Separate horizontal (XZ) and vertical (Y) components
-                val toTarget = targetPos.subtract(currentPos)
-                val toTargetXZ = Vector3(toTarget.x, 0f, toTarget.z)
+                targetPos.subtractToRef(currentPos, tempVector3)
+                val toTarget = tempVector3
+                val toTargetXZ = tempVector3_2.set(toTarget.x, 0f, toTarget.z)
                 val distanceXZ = toTargetXZ.length()
                 // Stop when close in XZ; Y will be adjusted via ground snap
                 if (distanceXZ < 0.1f) {
@@ -168,10 +180,9 @@ class PlayerMovementEngine(
                     // XZ movement at constant speed independent of Y
                     val moveXZ = if (distanceXZ > 0f) {
                         val stepXZ = kotlin.math.min(frameSpeed, distanceXZ)
-                        val dirXZ = toTargetXZ.clone()
-                        dirXZ.normalize()
-                        dirXZ.scaleInPlace(stepXZ)
-                        dirXZ
+                        toTargetXZ.normalize()
+                        toTargetXZ.scaleInPlace(stepXZ)
+                        toTargetXZ
                     } else {
                         Vector3.Zero()
                     }
@@ -181,10 +192,16 @@ class PlayerMovementEngine(
                         val step3D = kotlin.math.min(frameSpeed, distance3D)
                         (toTarget.y / distance3D) * step3D
                     } else 0f
-                    finalMoveDirection = Vector3(moveXZ.x, moveY, moveXZ.z)
+                    
+                    tempVector3_3.set(moveXZ.x, moveY, moveXZ.z)
+                    finalMoveDirection = tempVector3_3
                     // Use horizontal direction for facing
                     onMoveDirection(moveXZ)
-                    val velocity = toTargetXZ.normalize().scale(baseMovementSpeed * actualSpeedMultiplier * speedFactor)
+                    
+                    moveXZ.normalizeToRef(tempVector3)
+                    tempVector3.scaleInPlace(baseMovementSpeed * actualSpeedMultiplier * speedFactor)
+                    val velocity = tempVector3
+                    
                     isPlayerMoving = true
                     // Temporary wind boost while moving-to-target as well
                     playerHandle.triggerWindBoost(velocity)
@@ -217,12 +234,15 @@ class PlayerMovementEngine(
 
             fun tryMove(candidatePos: Vector3): Vector3? {
                 if (WorldCollisionUtils.isValidPosition(collisionContext, collider, moveCircle, candidatePos)) {
-                    var validPos = WorldCollisionUtils.findValidYPosition(collisionContext, collider, moveCircle, candidatePos, 0.5f) ?: return null
+                    val res = Vector3()
+                    val success = WorldCollisionUtils.findValidYPositionToRef(collisionContext, collider, moveCircle, candidatePos, res, 0.5f)
+                    if (!success) return null
+                    var validPos = res
 
                     if (isJumping) {
                         val t = jumpElapsed / jumpDuration
                         val h = 4 * jumpMaxHeight * t * (1.0 - t)
-                        validPos = Vector3(validPos.x, (validPos.y + h).toFloat(), validPos.z)
+                        validPos.y += h.toFloat()
                     }
 
                     if (WorldCollisionUtils.isPathBlocked(collisionContext, collider, moveCircle, currentPos, validPos)) {
@@ -233,17 +253,18 @@ class PlayerMovementEngine(
                 return null
             }
 
-            val newPos = currentPos.add(finalMoveDirection)
+            currentPos.addToRef(finalMoveDirection, tempVector3)
+            val newPos = tempVector3
             var finalPos = tryMove(newPos)
 
             // If blocked, try sliding movement (X-only or Z-only)
             if (finalPos == null && finalMoveDirection.length() > 0.001f) {
-                val moveX = Vector3(finalMoveDirection.x, 0f, 0f)
-                val moveZ = Vector3(0f, 0f, finalMoveDirection.z)
+                val moveX = tempVector3_2.set(finalMoveDirection.x, 0f, 0f)
+                val moveZ = tempVector3_3.set(0f, 0f, finalMoveDirection.z)
 
                 // Prioritize the larger component for smoother sliding
                 val firstMove = if (kotlin.math.abs(moveX.x) > kotlin.math.abs(moveZ.z)) moveX else moveZ
-                val secondMove = if (firstMove == moveX) moveZ else moveX
+                val secondMove = if (firstMove === moveX) moveZ else moveX
 
                 finalPos = tryMove(currentPos.add(firstMove)) ?: tryMove(currentPos.add(secondMove))
             }

@@ -24,8 +24,8 @@ object WaterRippleEffect {
             }, scene)
         
         // Place slightly above water surface to avoid Z-fighting
-        mesh.position = Vector3(position.x, position.y + 0.05f, position.z)
-        mesh.rotation = Vector3(PI.toFloat() / 2f, 0f, 0f)
+        mesh.position.copyFromFloats(position.x, position.y + 0.05f, position.z)
+        mesh.rotation.copyFromFloats(PI.toFloat() / 2f, 0f, 0f)
         mesh.isPickable = false
 
         val material = StandardMaterial("waterRippleMaterial", scene)
@@ -63,7 +63,7 @@ object WaterRippleEffect {
                 mesh.dispose()
                 material.dispose()
             } else {
-                mesh.scaling = Vector3(scaleValue, scaleValue, scaleValue)
+                mesh.scaling.set(scaleValue, scaleValue, scaleValue)
                 material.alpha = alphaValue
             }
         }

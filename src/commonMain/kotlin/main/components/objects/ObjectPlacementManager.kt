@@ -295,7 +295,7 @@ fun SceneObjectManager.updateCreatePlacementPreview(x: Int, y: Int) {
         try {
             val wp = DepthPicking.getVisibleWorldPointAt(scene, x, y)
             if (wp != null) {
-                createPlacementPreview?.position = Vector3(wp.x, wp.y, wp.z)
+                createPlacementPreview?.position?.set(wp.x, wp.y, wp.z)
             }
         } catch (_: Throwable) {}
     }
@@ -401,17 +401,16 @@ fun SceneObjectManager.updateDragging(position: Vector3): Boolean {
             // Apply the stored offset to the position
             val offset = dragClickOffset ?: Vector3.Zero()
             val verticalOffset = objectVerticalOffsets[draggingObjectId!!] ?: 0f
-            val adjustedPosition = Vector3(
+            
+            // Update the node position with the adjusted position
+            node.position.set(
                 position.x + offset.x,
                 position.y + Z_FIGHTING_BUFFER + verticalOffset, // Apply ground height + z-fighting buffer + target vertical offset, ignore vertical grab offset
                 position.z + offset.z
             )
-            
-            // Update the node position with the adjusted position
-            console.log("Updating object ${draggingObjectId} position to (${adjustedPosition.x}, ${adjustedPosition.y}, ${adjustedPosition.z})")
+            console.log("Updating object ${draggingObjectId} position to (${node.position.x}, ${node.position.y}, ${node.position.z})")
             console.log("Applied offset: (${offset.x}, ${offset.y}, ${offset.z})")
-            node.position = adjustedPosition
-            spatialHash.update(draggingObjectId!!, adjustedPosition)
+            spatialHash.update(draggingObjectId!!, node.position)
             
             return true
         } else {

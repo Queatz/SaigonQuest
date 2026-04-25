@@ -114,6 +114,11 @@ class Character(
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
 
+    // Reusable vectors for performance
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val tempVector3_3 = Vector3()
+
     // Local wind boost (negation of movement)
     private var boostUntilTime: Float = 0f
     private var boostStartTime: Float = 0f
@@ -123,7 +128,7 @@ class Character(
     /** Trigger a temporary wind boost (e.g., when the character moves). */
     fun triggerWindBoost(velocity: Vector3, durationSeconds: Float = 0.5f) {
         // Store the negation of the velocity
-        boostVector = Vector3(-velocity.x, -velocity.y, -velocity.z)
+        boostVector.set(-velocity.x, -velocity.y, -velocity.z)
         boostDuration = durationSeconds.coerceAtLeast(0.001f)
         val now = WindSystem.timeSeconds
         boostStartTime = now
@@ -138,7 +143,7 @@ class Character(
 
     private fun getBoostVector(now: Float = WindSystem.timeSeconds): Vector3 {
         val influence = getBoostInfluence(now)
-        return if (influence <= 0f) Vector3(0f, 0f, 0f) else boostVector.scale(influence)
+        return if (influence <= 0f) Vector3.Zero() else boostVector.scaleToRef(influence, tempVector3)
     }
 
     // The direction to display based on camera angle
@@ -344,12 +349,13 @@ class Character(
         // Get camera direction (from camera to target)
         val cameraPosition = camera.position
         val cameraTarget = camera.target
-        val cameraDirection = cameraTarget.subtract(cameraPosition).normalize()
+        cameraTarget.subtractToRef(cameraPosition, tempVector3)
+        val cameraDirection = tempVector3.normalize()
 
         // We only care about the horizontal angle (in the XZ plane)
         // Project both vectors onto the XZ plane and normalize them
-        val cameraDirectionXZ = Vector3(cameraDirection.x, 0f, cameraDirection.z).normalize()
-        val playerDirectionXZ = Vector3(playerDirectionVector.x, 0f, playerDirectionVector.z).normalize()
+        val cameraDirectionXZ = tempVector3_2.set(cameraDirection.x, 0f, cameraDirection.z).normalize()
+        val playerDirectionXZ = tempVector3_3.set(playerDirectionVector.x, 0f, playerDirectionVector.z).normalize()
 
         // Calculate the dot product of the two vectors
         // For unit vectors, dot product = cos(angle)
@@ -506,33 +512,40 @@ class Character(
     private fun calculateWindState(): WindState {
         val camera = SceneManager.getCameraController()?.getCamera()
         val forward = if (camera != null) {
-            val d = camera.target.subtract(camera.position).normalize()
-            Vector3(d.x, 0f, d.z).normalize()
-        } else Vector3(0f, 0f, -1f)
+            camera.target.subtractToRef(camera.position, tempVector3_2)
+            tempVector3_2.y = 0f
+            tempVector3_2.normalize()
+            tempVector3_2
+        } else tempVector3_2.set(0f, 0f, -1f)
 
         // For Y-billboards, the horizontal axis is exactly the camera's Right vector.
         // In BabylonJS (left-handed), Right = Up x Forward.
         // Up = (0, 1, 0), Forward = (fx, 0, fz) => Right = (fz, 0, -fx).
-        val right = Vector3(forward.z, 0f, -forward.x)
+        val right = tempVector3_3.set(forward.z, 0f, -forward.x)
 
         val outdoors = WorldLoader.isOutdoorsActive()
         val intensity = WindSystem.getIntensity(outdoors)
         val boostWorld = getBoostVector()
-        val totalWindWorld = WindSystem.direction.scale(intensity).add(boostWorld.scale(0.15f))
+        
+        // Use tempVector3 for totalWindWorld
+        WindSystem.direction.scaleToRef(intensity, tempVector3)
+        boostWorld.scaleToRef(0.15f, tempVector3_2)
+        tempVector3.addInPlace(tempVector3_2)
+        val totalWindWorld = tempVector3
 
         // Project world wind onto the billboard's horizontal axis for displacement.
         // Use full magnitude for intensity to ensure fluttering even during head-on movement.
         val windIntensity = totalWindWorld.length()
         val windLocalX = Vector3.Dot(totalWindWorld, right)
         val windDirLocal = if (windIntensity > 0.001f) {
-            Vector3(windLocalX / windIntensity, 0f, 0f)
+            tempVector3_2.set(windLocalX / windIntensity, 0f, 0f)
         } else {
-            Vector3(0f, 0f, 0f)
+            Vector3.Zero()
         }
 
         return WindState(
             windIntensity = windIntensity,
-            windDirLocal = windDirLocal,
+            windDirLocal = windDirLocal.clone(), // Must clone because it's stored in data class
             time = WindSystem.timeSeconds,
             outdoors = outdoors,
         )

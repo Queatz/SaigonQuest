@@ -83,6 +83,9 @@ class PlayerController(private val scene: Scene) {
 
     // Coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+    // Reusable vectors for performance
+    private val tempVector3 = Vector3()
     
     init {
         // Collect position updates with 500ms debounce
@@ -279,7 +282,7 @@ class PlayerController(private val scene: Scene) {
         val coll = collider
 
         // Update internal last position and SceneManager velocity to zero
-        lastPosition = adjusted
+        if (lastPosition == null) lastPosition = adjusted.clone() else lastPosition?.copyFrom(adjusted)
         main.components.SceneManager.setPlayerVelocity(Vector3.Zero())
 
         // Apply position to physics collider and visual handle
@@ -360,13 +363,19 @@ class PlayerController(private val scene: Scene) {
         )
         if (validPos != null) {
             // Update velocity for wind sway (units per frame)
-            lastPosition?.let { prev ->
-                val vel = validPos.subtract(prev)
-                SceneManager.setPlayerVelocity(vel)
-            } ?: run {
+            val prev = lastPosition
+            if (prev != null) {
+                validPos.subtractToRef(prev, tempVector3)
+                SceneManager.setPlayerVelocity(tempVector3)
+            } else {
                 SceneManager.setPlayerVelocity(Vector3.Zero())
             }
-            lastPosition = validPos
+            
+            if (lastPosition == null) {
+                lastPosition = validPos.clone()
+            } else {
+                lastPosition?.copyFrom(validPos)
+            }
 
             coll.position = validPos
             handle.position = validPos
@@ -659,8 +668,8 @@ class PlayerController(private val scene: Scene) {
 
                 // Update HUD and movement state
                 hud.updateAllPositions(snapped)
-                SceneManager.setPlayerVelocity(Vector3(0f, 0f, 0f))
-                lastPosition = snapped
+                SceneManager.setPlayerVelocity(Vector3.Zero())
+                if (lastPosition == null) lastPosition = snapped.clone() else lastPosition?.copyFrom(snapped)
 
                 // Emit position to network (debounced)
                 playerPositionFlow.value = snapped

@@ -19,8 +19,8 @@ object MoveCircleEffect {
                 override val radius = 0.5f
                 override val tessellation = 32
             }, scene)
-        mesh.position = Vector3(position.x, position.y + 0.01f, position.z)
-        mesh.rotation = Vector3(PI.toFloat() / 2f, 0f, 0f)
+        mesh.position.copyFromFloats(position.x, position.y + 0.01f, position.z)
+        mesh.rotation.copyFromFloats(PI.toFloat() / 2f, 0f, 0f)
 
         val material = StandardMaterial("moveCircleMaterial", scene)
         material.diffuseColor = Color3(0f, 0.8f, 1f)
@@ -38,7 +38,7 @@ object MoveCircleEffect {
             if (scaleValue <= 0f) {
                 mesh.dispose()
             } else {
-                mesh.scaling = Vector3(scaleValue, scaleValue, scaleValue)
+                mesh.scaling.set(scaleValue, scaleValue, scaleValue)
                 (mesh.material as? StandardMaterial)?.alpha = scaleValue * 0.7f
             }
         }

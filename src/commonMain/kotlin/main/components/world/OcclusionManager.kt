@@ -80,6 +80,12 @@ class OcclusionManager(private val scene: Scene) {
     private val occludedMeshes = mutableSetOf<AbstractMesh>()
     private val customMaterials = mutableMapOf<AbstractMesh, PBRCustomMaterial>()
 
+    // Reusable vectors for performance
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val tempVector2 = Vector2()
+    private val identityMatrix = Matrix.Identity()
+
     // Single source of truth for current time (seconds), updated once per frame in update()
     private var currentTimeSeconds: Float = 0f
     private var timePhase: Float = 0f
@@ -380,25 +386,37 @@ class OcclusionManager(private val scene: Scene) {
                 // Skip occlusion binding if we don't have player/camera
                 val playerMesh = player ?: SceneManager.getPlayerController()?.getCollider()
                 if (playerMesh != null) {
-                    val targetWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
-                    val playerWorldPos = trackedPlayerWorldPos ?: targetWorldPos
-                    val playerScreenPos = Vector3.Project(
+                    playerMesh.position.addToRef(tempVector3.set(0f, 0.5f, 0f), tempVector3)
+                    val playerWorldPos = trackedPlayerWorldPos ?: tempVector3
+                    
+                    Vector3.ProjectToRef(
                         vector = playerWorldPos,
-                        world = Matrix.Identity(),
+                        world = identityMatrix,
                         transform = scene.getTransformMatrix(),
                         viewport = cam.viewport,
-                    ).apply { y = 1.0f - y }
+                        result = tempVector3_2
+                    )
+                    tempVector3_2.y = 1.0f - tempVector3_2.y
+                    val playerScreenPos = tempVector3_2
 
                     val viewWidth = scene.getEngine().getRenderWidth()
                     val viewHeight = scene.getEngine().getRenderHeight()
                     val occRadius = min(viewWidth, viewHeight) / 3.0f
-                    val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
+                    val screenSize = tempVector2.set(viewWidth.toFloat(), viewHeight.toFloat())
 
                     val floatingOrigin = scene.floatingOriginOffset ?: Vector3.Zero()
                     effect.setVector3("playerScreenPos", playerScreenPos)
-                    effect.setVector3("playerWorld", playerWorldPos.subtract(floatingOrigin))
-                    effect.setVector3("cameraWorld", cam.globalPosition.subtract(floatingOrigin))
-                    effect.setVector3("playerToCamDir", cam.globalPosition.subtract(playerWorldPos).normalize())
+                    
+                    playerWorldPos.subtractToRef(floatingOrigin, tempVector3_2)
+                    effect.setVector3("playerWorld", tempVector3_2)
+                    
+                    cam.globalPosition.subtractToRef(floatingOrigin, tempVector3_2)
+                    effect.setVector3("cameraWorld", tempVector3_2)
+                    
+                    cam.globalPosition.subtractToRef(playerWorldPos, tempVector3_2)
+                    tempVector3_2.normalize()
+                    effect.setVector3("playerToCamDir", tempVector3_2)
+                    
                     effect.setFloat("occlusionRadius", occRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
                     effect.setVector2("screenSize", screenSize)
@@ -487,18 +505,19 @@ class OcclusionManager(private val scene: Scene) {
                     val cam = camera ?: scene.activeCamera ?: return@add
 
                     // Get player's world position (smoothed)
-                    val targetWorldPos = playerMesh.position.add(Vector3(0f, .5f, 0f))
-                    val playerWorldPos = trackedPlayerWorldPos ?: targetWorldPos
+                    playerMesh.position.addToRef(tempVector3.set(0f, 0.5f, 0f), tempVector3)
+                    val playerWorldPos = trackedPlayerWorldPos ?: tempVector3
 
                     // Get player's screen position (normalized [0,1] coordinates)
-                    val playerScreenPos = Vector3.Project(
+                    Vector3.ProjectToRef(
                         vector = playerWorldPos,
-                        world = Matrix.Identity(),
+                        world = identityMatrix,
                         transform = scene.getTransformMatrix(),
-                        viewport = cam.viewport
-                    ).apply {
-                        y = 1.0f - y  // Invert Y coordinate
-                    }
+                        viewport = cam.viewport,
+                        result = tempVector3_2
+                    )
+                    tempVector3_2.y = 1.0f - tempVector3_2.y
+                    val playerScreenPos = tempVector3_2
 
                     // Calculate occlusion radius based on minimum of view width/height
                     val viewWidth = scene.getEngine().getRenderWidth()
@@ -506,13 +525,17 @@ class OcclusionManager(private val scene: Scene) {
                     val occlusionRadius = min(viewWidth, viewHeight) / 3.0f
 
                     // Create screenSize vector once and reuse it
-                    val screenSize = Vector2(viewWidth.toFloat(), viewHeight.toFloat())
+                    val screenSize = tempVector2.set(viewWidth.toFloat(), viewHeight.toFloat())
 
                     val floatingOrigin = (cam.asDynamic()._floatingOrigin as? Vector3) ?: Vector3.Zero()
                     // Set player position uniforms
                     effect.setVector3("playerScreenPos", playerScreenPos)
-                    effect.setVector3("playerWorld", playerWorldPos.subtract(floatingOrigin))
-                    effect.setVector3("cameraWorld", cam.globalPosition.subtract(floatingOrigin))
+                    
+                    playerWorldPos.subtractToRef(floatingOrigin, tempVector3_2)
+                    effect.setVector3("playerWorld", tempVector3_2)
+                    
+                    cam.globalPosition.subtractToRef(floatingOrigin, tempVector3_2)
+                    effect.setVector3("cameraWorld", tempVector3_2)
 
                     // Set occlusion parameters
                     effect.setFloat("occlusionRadius", occlusionRadius)
@@ -527,7 +550,10 @@ class OcclusionManager(private val scene: Scene) {
                     // Set time uniform for animations
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                     effect.setFloat("timePhase", timePhase)
-                    effect.setVector3("playerToCamDir", cam.globalPosition.subtract(playerWorldPos).normalize())
+                    
+                    cam.globalPosition.subtractToRef(playerWorldPos, tempVector3_2)
+                    tempVector3_2.normalize()
+                    effect.setVector3("playerToCamDir", tempVector3_2)
                 } catch (e: Throwable) {
                     // ignore binding errors
                 }
@@ -577,9 +603,10 @@ class OcclusionManager(private val scene: Scene) {
         // Update smoothed player world position to track real player over ~2 seconds
         val playerMeshRef = player
         if (playerMeshRef != null) {
-            val targetWorldPos = playerMeshRef.position.add(Vector3(0f, .5f, 0f))
+            playerMeshRef.position.addToRef(tempVector3.set(0f, .5f, 0f), tempVector3)
+            val targetWorldPos = tempVector3
             if (trackedPlayerWorldPos == null) {
-                trackedPlayerWorldPos = targetWorldPos
+                trackedPlayerWorldPos = targetWorldPos.clone()
                 lastSmoothingTimeSeconds = currentTimeSeconds
             } else {
                 val dt = (currentTimeSeconds - lastSmoothingTimeSeconds).coerceAtLeast(0f)
@@ -587,7 +614,7 @@ class OcclusionManager(private val scene: Scene) {
                 val duration = playerTrackTimeConstantSeconds
                 val alpha = if (duration <= 0f) 1f else (dt / duration).coerceIn(0f, 1f)
                 val cur = trackedPlayerWorldPos!!
-                trackedPlayerWorldPos = Vector3(
+                cur.set(
                     cur.x + (targetWorldPos.x - cur.x) * alpha,
                     cur.y + (targetWorldPos.y - cur.y) * alpha,
                     cur.z + (targetWorldPos.z - cur.z) * alpha,

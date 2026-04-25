@@ -15,6 +15,7 @@ import main.components.SceneManager
 class DistanceCullingSystem(private val scene: Scene) {
     private val massiveMeshes = mutableSetOf<AbstractMesh>()
     private var maxDistance = 150f // Default max visibility distance
+    private val tempVector3 = Vector3()
 
     /**
      * Registers a mesh for distance-based culling.
@@ -74,7 +75,8 @@ class DistanceCullingSystem(private val scene: Scene) {
                 
                 effect.setFloat("maxVisibilityDistance", dist)
                 val floatingOrigin = scene.floatingOriginOffset ?: Vector3.Zero()
-                effect.setVector3("cameraWorldPos", camera.globalPosition.subtract(floatingOrigin))
+                camera.globalPosition.subtractToRef(floatingOrigin, tempVector3)
+                effect.setVector3("cameraWorldPos", tempVector3)
             }
         }
         

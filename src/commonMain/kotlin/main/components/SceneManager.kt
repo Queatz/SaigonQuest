@@ -39,7 +39,8 @@ object SceneManager {
     private var pendingTeleport: lib.Vector3? = null
 
     // Last known local player velocity in world space (per frame delta)
-    private var playerVelocity: lib.Vector3? = null
+    private val playerVelocity: lib.Vector3 = lib.Vector3(0f, 0f, 0f)
+    private var isVelocityKnown: Boolean = false
     
     /**
      * Sets the pending teleport position for the next scene load.
@@ -159,10 +160,18 @@ object SceneManager {
     }
 
     /** Sets the local player's instantaneous velocity (world space units per frame). */
-    fun setPlayerVelocity(v: lib.Vector3?) { playerVelocity = v }
+    fun setPlayerVelocity(v: lib.Vector3?) {
+        if (v == null) {
+            playerVelocity.set(0f, 0f, 0f)
+            isVelocityKnown = false
+        } else {
+            playerVelocity.copyFrom(v)
+            isVelocityKnown = true
+        }
+    }
 
     /** Gets the local player's instantaneous velocity. Null if unknown. */
-    fun getPlayerVelocity(): lib.Vector3? = playerVelocity
+    fun getPlayerVelocity(): lib.Vector3? = if (isVelocityKnown) playerVelocity else null
     
     /**
      * Clears all stored references.
@@ -174,7 +183,8 @@ object SceneManager {
         playerController = null
         otherPlayersCoordinator = null
         scene = null
-        playerVelocity = null
+        playerVelocity.set(0f, 0f, 0f)
+        isVelocityKnown = false
         println("[DEBUG] SceneManager cleared")
     }
 }

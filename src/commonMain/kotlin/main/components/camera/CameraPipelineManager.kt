@@ -6,6 +6,7 @@ import lib.Color4
 import lib.DefaultRenderingPipeline
 import lib.DepthOfFieldEffectBlurLevel
 import lib.ImageProcessingPostProcess
+import lib.Matrix
 import lib.Mesh
 import lib.PostProcess
 import lib.SSAO2RenderingPipeline
@@ -32,6 +33,15 @@ class CameraPipelineManager(
     private val scene: Scene,
     private val camera: ArcRotateCamera,
 ) {
+    // Reusable objects for performance
+    private val tempVector2 = Vector2()
+    private val tempVector2_2 = Vector2()
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val tempMatrix = Matrix.Identity()
+    private val rightVector = Vector3.Right()
+    private val upVector = Vector3.Up()
+
     // Rendering pipeline for post-processing effects
     private val pipeline: DefaultRenderingPipeline = DefaultRenderingPipeline(
         name = "pbrPipeline",
@@ -290,7 +300,7 @@ class CameraPipelineManager(
                 pp.onApplyObservable.add { effect ->
                     val w = if (pp.width > 0) pp.width.toFloat() else scene.getEngine().getRenderWidth().toFloat()
                     val h = if (pp.height > 0) pp.height.toFloat() else scene.getEngine().getRenderHeight().toFloat()
-                    effect.setVector2("screenSize", Vector2(w, h))
+                    effect.setVector2("screenSize", tempVector2.set(w, h))
                     effect.setFloat("opacity", outlineOpacity)
                     effect.setFloat("thicknessScale", outlineThicknessScale)
                     effect.setFloat("colorMix", outlineColorMix)
@@ -300,12 +310,17 @@ class CameraPipelineManager(
                         cam.getTransformationMatrix()
                     } catch (_: Throwable) {}
                     
-                    effect.setMatrix("invViewProjection", cam.getTransformationMatrix().clone().invert())
+                    cam.getTransformationMatrix().invertToRef(tempMatrix)
+                    effect.setMatrix("invViewProjection", tempMatrix)
                     effect.setMatrix("viewProjection", cam.getTransformationMatrix())
-                    effect.setVector2("depthRange", Vector2(cam.minZ, cam.maxZ))
+                    effect.setVector2("depthRange", tempVector2_2.set(cam.minZ, cam.maxZ))
                     effect.setVector3("cameraPosition", cam.globalPosition)
-                    effect.setVector3("cameraRight", cam.getDirection(Vector3.Right()))
-                    effect.setVector3("cameraUp", cam.getDirection(Vector3.Up()))
+                    
+                    cam.getDirectionToRef(rightVector, tempVector3)
+                    effect.setVector3("cameraRight", tempVector3)
+                    
+                    cam.getDirectionToRef(upVector, tempVector3_2)
+                    effect.setVector3("cameraUp", tempVector3_2)
                     
                     val dr = DepthPicking.depthRenderer
                     if (dr != null) {

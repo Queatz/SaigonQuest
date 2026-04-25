@@ -851,6 +851,8 @@ external class Vector2(x: Float = definedExternally, y: Float = definedExternall
     fun normalize(): Vector2
     fun length(): Float
     fun clone(): Vector2
+    fun copyFrom(source: Vector2): Vector2
+    fun set(x: Float, y: Float): Vector2
     
     companion object {
         fun Zero(): Vector2
@@ -867,14 +869,21 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
 
     fun normalize(): Vector3
     fun copyFrom(source: Vector3): Vector3
+    fun copyFromFloats(x: Float, y: Float, z: Float): Vector3
+    fun set(x: Float, y: Float, z: Float): Vector3
     fun length(): Float
     fun scaleInPlace(scale: Float): Vector3
     fun add(otherVector: Vector3): Vector3
     fun addInPlace(otherVector: Vector3): Vector3
+    fun addToRef(otherVector: Vector3, result: Vector3): Vector3
     fun multiply(otherVector: Vector3): Vector3
     fun multiplyInPlace(otherVector: Vector3): Vector3
+    fun multiplyToRef(otherVector: Vector3, result: Vector3): Vector3
     fun scale(scale: Float): Vector3
+    fun scaleToRef(scale: Float, result: Vector3): Vector3
     fun subtract(otherVector: Vector3): Vector3
+    fun subtractToRef(otherVector: Vector3, result: Vector3): Vector3
+    fun normalizeToRef(result: Vector3): Vector3
     fun floor(): Vector3
     fun equals(otherVector: Vector3): Boolean
     fun projectOnPlaneToRef(plane: Plane, result: Vector3, origin: Vector3)
@@ -911,6 +920,13 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
             transform: Matrix,
             viewport: Viewport,
         ): Vector3
+        fun ProjectToRef(
+            vector: Vector3,
+            world: Matrix,
+            transform: Matrix,
+            viewport: Viewport,
+            result: Vector3,
+        ): Vector3
         /**
          * Unprojects a screen-space point (x,y in pixels, z in [0,1]) to world space.
          * @param source The screen-space vector where x,y are pixels and z is depth in [0,1]
@@ -935,6 +951,7 @@ external class Vector3(x: Float = definedExternally, y: Float = definedExternall
 external class Matrix {
     var m: org.khronos.webgl.Float32Array
     fun invert(): Matrix
+    fun invertToRef(result: Matrix): Matrix
     fun clone(): Matrix
     fun multiply(other: Matrix): Matrix
     fun multiplyToRef(other: Matrix, result: Matrix): Matrix
@@ -1009,6 +1026,7 @@ abstract external class Camera : Node {
     val onProjectionMatrixChangedObservable: Observable<Camera>
 
     fun getDirection(direction: Vector3): Vector3
+    fun getDirectionToRef(direction: Vector3, result: Vector3): Vector3
     fun getForwardRay(length: Float = definedExternally): Ray
     fun getProjectionMatrix(usingRightHandedSystem: Boolean = definedExternally): Matrix
     fun getTransformationMatrix(): Matrix
@@ -1132,10 +1150,14 @@ external class ExecuteCodeAction(
     action: () -> Unit
 )
 
-external class Ray {
+external class Ray(
+    origin: Vector3 = definedExternally,
+    direction: Vector3 = definedExternally,
+    length: Float = definedExternally,
+) {
     var origin: Vector3
     var direction: Vector3
-    var length: Double
+    var length: Float
 
     /**
      * Tests if the ray intersects a mesh

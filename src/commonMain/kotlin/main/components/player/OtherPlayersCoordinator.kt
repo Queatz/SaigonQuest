@@ -37,6 +37,11 @@ import models.WebSocketAction
 class OtherPlayersCoordinator(private val scene: Scene) {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val players = mutableMapOf<String, OtherPlayer>()
+    
+    // Reusable vectors for performance
+    private val tempVector3 = Vector3()
+    private val tempVector3_2 = Vector3()
+    private val tempVector3_3 = Vector3()
 
     // Managers – must be set before initialize()
     lateinit var worldObjectManager: WorldObjectManager
@@ -87,6 +92,23 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             yPadding = 0.5f
         )
         return snapped ?: position
+    }
+
+    private fun snapToGroundToRef(position: Vector3, result: Vector3) {
+        val context = collisionContext
+        if (context == null) {
+            result.copyFrom(position)
+            return
+        }
+        val success = WorldCollisionUtils.findValidYPositionToRef(
+            context = context,
+            collider = null,
+            moveCircle = null,
+            position = position,
+            result = result,
+            yPadding = 0.5f
+        )
+        if (!success) result.copyFrom(position)
     }
 
     fun initialize() {
@@ -552,7 +574,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val handle = op.handle ?: return@forEach
 
             // 1) Movement logic (Might return early)
-            val targetPos = op.targetPos?.let { snapToGround(it) } ?: return@forEach
+            val targetPos = op.targetPos ?: return@forEach
+            snapToGroundToRef(targetPos, tempVector3)
+            val snappedTargetPos = tempVector3
+            
             val currentPos = handle.position
 
             // Throttle environment check for other players (every 10 frames)
@@ -573,33 +598,36 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             val speedFactor = if (isOnWater) 0.5f else 1.0f
             val playerFrameMovementSpeed = frameMovementSpeed * speedFactor
 
-            val direction = targetPos.subtract(currentPos)
+            snappedTargetPos.subtractToRef(currentPos, tempVector3_2)
+            val direction = tempVector3_2
             val distance = direction.length()
-            val distanceXZ = Vector3(targetPos.x - currentPos.x, 0f, targetPos.z - currentPos.z).length()
+            
+            tempVector3_3.set(snappedTargetPos.x - currentPos.x, 0f, snappedTargetPos.z - currentPos.z)
+            val distanceXZ = tempVector3_3.length()
 
             if (op.shouldSnap || distance > 10f) {
                 op.shouldSnap = false
-                handle.position = targetPos
-                op.lastPos = targetPos
-                hud.updateHudPosition(op.userId, targetPos)
+                handle.position = snappedTargetPos
+                op.lastPos.copyFrom(snappedTargetPos)
+                hud.updateHudPosition(op.userId, snappedTargetPos)
                 if (op.activity == PlayerActivity.Moving) {
                     handle.updateActivity(null)
                     op.activity = null
                 }
-                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
+                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 return@forEach
             }
 
             if (distanceXZ < 0.005f) {
                 // Close enough
-                handle.position = targetPos
-                hud.updateHudPosition(op.userId, targetPos)
+                handle.position = snappedTargetPos
+                hud.updateHudPosition(op.userId, snappedTargetPos)
                 if (op.activity == PlayerActivity.Moving) {
                     handle.updateActivity(null)
                     op.activity = null
                 }
                 // Keep username billboard in sync
-                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], targetPos)
+                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 return@forEach
             }
 
@@ -614,22 +642,25 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             direction.normalize()
             val step = kotlin.math.min(playerFrameMovementSpeed, distance)
             direction.scaleInPlace(step)
-            val moved = currentPos.add(direction)
-            val newPosition = snapToGround(moved)
+            
+            currentPos.addToRef(direction, tempVector3_2)
+            val moved = tempVector3_2
+            snapToGroundToRef(moved, tempVector3_3)
+            val newPosition = tempVector3_3
+            
             handle.position = newPosition
             
             // Check for water ripples when moving
-            val now = window.performance.now()
-            if (now - op.lastRippleTime > 300) {
+            val nowTime = window.performance.now()
+            if (nowTime - op.lastRippleTime > 300) {
                 trySpawnWaterRipple(newPosition)
-                op.lastRippleTime = now
+                op.lastRippleTime = nowTime
             }
 
             // Trigger wind boost for other player's movement (convert displacement to velocity)
-            val velocity = direction.scale(1.0f / deltaTime.toFloat())
-            handle.triggerWindBoost(velocity)
+            direction.scaleToRef(1.0f / deltaTime.toFloat(), tempVector3_2)
+            handle.triggerWindBoost(tempVector3_2)
             
-            console.log("[OTHER] id=${op.userId} newPosition=$newPosition")
             hud.updateHudPosition(op.userId, newPosition)
             PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
             if (op.activity != PlayerActivity.Sit) {
