@@ -32,7 +32,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.USER_LEAVE -> UserLeaveHandler(chatRepository, userRepository)
             WebSocketAction.ADD_OBJECT -> NullHandler()
             WebSocketAction.REMOVE_OBJECT -> NullHandler()
-            WebSocketAction.OBJECT_UPDATE -> NullHandler()
+            WebSocketAction.OBJECT_UPDATE -> ObjectUpdateHandler(objectRepository)
             WebSocketAction.USER_INTERACT -> PlayerInteractHandler(objectRepository)
             WebSocketAction.USER_NEARBY -> PlayerNearbyHandler(objectRepository)
             WebSocketAction.TRIGGER_OBJECT_EVENT -> TriggerObjectEventHandler()

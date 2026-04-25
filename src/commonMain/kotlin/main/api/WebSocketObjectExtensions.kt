@@ -33,18 +33,28 @@ fun WebSocketApi.removeObject(objectId: String): Boolean {
 }
 
 /**
- * Update an object in the world
+ * Update an object in the world via WebSocket
  * 
- * This sends the updated object to all clients in the world.
- * Used primarily for position updates when objects are moved.
+ * This sends the updated object to the server, which will persist it 
+ * and broadcast it to all other clients in the world.
  * 
  * @param obj The updated object
- * @return true if the object was updated successfully, false otherwise
+ * @return true if the message was sent successfully, false otherwise
  */
-@Deprecated("Client WS object mutations are disabled. Use ObjectApi.updateObject(...) (REST). Server will broadcast OBJECT_UPDATE.")
 fun WebSocketApi.updateObject(obj: Object): Boolean {
-    console.warn("WebSocketApi.updateObject is deprecated and disabled. Use ObjectApi.updateObject(...) instead.")
-    return false
+    if (!isConnected()) {
+        console.warn("Cannot update object: WebSocket not connected")
+        return false
+    }
+    
+    try {
+        val serializedData = ApiClient.json.encodeToString(Object.serializer(), obj)
+        val message = WebSocketMessage.fromEnum(WebSocketAction.OBJECT_UPDATE, serializedData)
+        return sendMessage(message)
+    } catch (e: Throwable) {
+        console.error("Error creating update object message", e)
+        return false
+    }
 }
 
 /**

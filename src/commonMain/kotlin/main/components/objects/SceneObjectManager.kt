@@ -28,6 +28,8 @@ import main.components.world.isSkybox
 import models.Object
 import models.ObjectKind
 import models.Position
+import models.Rotation
+import models.Scale
 import models.WebSocketAction
 import models.ObjectTypingData
 import models.QuestStep
@@ -223,7 +225,7 @@ class SceneObjectManager(
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     } else {
-                        moveObject(obj.key, obj.position)
+                        updateObjectTransform(obj)
                         handleObjectStatusText(obj.key, obj.status, node)
                     }
                 } else {
@@ -267,6 +269,20 @@ class SceneObjectManager(
                 onError?.invoke("Failed to load objects: ${error.message ?: "Unknown error"}")
             }
         }
+    }
+
+    /**
+     * Updates an object's transform (position, rotation, scale) in the scene locally.
+     * This does NOT persist the change to the server.
+     */
+    fun updateObjectTransform(obj: Object) {
+        val node = objectMeshes[obj.key] ?: return
+        
+        node.position.set(obj.position.x, obj.position.y, obj.position.z)
+        node.rotation.set(obj.rotation.x, obj.rotation.y, obj.rotation.z)
+        node.scaling.set(obj.scale.x, obj.scale.y, obj.scale.z)
+        
+        spatialHash.update(obj.key, node.position)
     }
 
     fun getSelectedObject(): String? = selectedObject
