@@ -5,10 +5,12 @@ import app.softwork.routingcompose.Router
 import kotlinx.coroutines.*
 import lib.Vector3
 import main.api.*
+import main.components.player.SkillList
 import main.components.world.WorldLoader
 import main.theme.FriendsStyles
 import main.theme.Styles
 import models.Friend
+import models.Skill
 import models.Position
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
@@ -29,6 +31,7 @@ import kotlin.time.Duration.Companion.minutes
 fun FriendListItem(
     friend: Friend,
     isOnline: Boolean,
+    allSkills: List<Skill>,
     onJumpToFriend: (String, String, Position?) -> Unit,
     onError: (String) -> Unit,
     onSuccess: (String) -> Unit,
@@ -109,6 +112,11 @@ fun FriendListItem(
                     spirit = fu.spirit,
                     readOnly = true,
                     size = 18,
+                )
+
+                SkillList(
+                    skillLevels = fu.skillLevels,
+                    allSkills = allSkills,
                 )
             }
         }

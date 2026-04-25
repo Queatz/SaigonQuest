@@ -47,10 +47,15 @@ class ShadowManager(
     // Observer for graphics settings changes
     private val graphicsSettingsObserver: () -> Unit = {
         if (GraphicsSettings.isShadowsEnabled()) {
-            val newSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
+            val isLow = GraphicsSettings.isLowGraphicsModeEnabled()
+            val newSize = if (isLow) 512 else 2048
+            // Recreate if size changed OR if we changed pretty mode which affects PCSS
             if (newSize != shadowMapSize) {
                 println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
                 recreateShadowGenerator(newSize)
+            } else {
+                // Just re-apply settings (like PCSS)
+                applySoftShadowSettings(shadowGenerator)
             }
         } else {
             // If shadows are disabled, ensure active shadow casters are cleared
@@ -185,16 +190,25 @@ class ShadowManager(
      * @param generator The shadow generator to configure
      */
     private fun applySoftShadowSettings(generator: ShadowGenerator) {
+        val isLowGraphics = GraphicsSettings.isLowGraphicsModeEnabled()
+        val isPretty = GraphicsSettings.isPrettyGraphicsEnabled()
+
         // Use PCF for soft shadows
         generator.usePercentageCloserFiltering = true
-        generator.filteringQuality = ShadowGenerator.FILTERINGQUALITY_MEDIUM
-        
-        // Alternatively, PCSS (Contact Hardening Shadows) can be used for even softer, more realistic shadows:
-        generator.useContactHardeningShadow = true
-        generator.contactHardeningLightSizeUVRatio = 0.05f
-        
-        // Set darkness to make shadows less harsh (0.0 = fully dark, 1.0 = fully lit)
-        // generator.darkness = 0.2f
+        generator.filteringQuality = if (isLowGraphics) {
+            ShadowGenerator.FILTERINGQUALITY_LOW
+        } else {
+            ShadowGenerator.FILTERINGQUALITY_MEDIUM
+        }
+
+        // Only use PCSS (Contact Hardening Shadows) in Pretty mode, as it's very expensive
+        // PCSS provides realistic contact hardening but has significant GPU cost.
+        if (isPretty && !isLowGraphics) {
+            generator.useContactHardeningShadow = true
+            generator.contactHardeningLightSizeUVRatio = 0.05f
+        } else {
+            generator.useContactHardeningShadow = false
+        }
     }
     
     private var updateCounter = 0

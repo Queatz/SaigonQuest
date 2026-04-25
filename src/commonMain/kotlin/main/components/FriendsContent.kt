@@ -22,8 +22,10 @@ import main.api.addTeleportPlayerListener
 import main.api.WebSocketApiGlobal
 import main.api.addFriendStatusChangedListener
 import main.api.addFriendRequestAcceptedListener
+import main.api.SkillApi
 import main.components.world.WorldLoader
 import models.Friend
+import models.Skill
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
@@ -78,6 +80,7 @@ fun FriendsContent() {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var onlineMap by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+    var allSkills by remember { mutableStateOf<List<Skill>>(emptyList()) }
     
     // Coroutine scope for async operations
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
@@ -104,6 +107,15 @@ fun FriendsContent() {
 
     // Fetch friends when the component is first rendered
     LaunchedEffect(Unit) {
+        // Fetch skills
+        coroutineScope.launch {
+            try {
+                allSkills = SkillApi.getAllSkills()
+            } catch (e: Throwable) {
+                console.error("Error fetching skills", e)
+            }
+        }
+
         fetchFriends(
             onSuccess = { fetchedFriends ->
                 friends = fetchedFriends
@@ -322,6 +334,7 @@ fun FriendsContent() {
                         FriendListItem(
                             friend = friend,
                             isOnline = onlineMap[friend.friendId] == true,
+                            allSkills = allSkills,
                             onJumpToFriend = { friendId, worldId, position ->
                                 jumpToFriend(
                                     router = router,
@@ -366,4 +379,3 @@ fun FriendsContent() {
         }
     }
 }
-

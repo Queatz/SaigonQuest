@@ -2013,6 +2013,7 @@ object Styles : StyleSheet() {
     val playerDialogColumn by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
+        maxWidth(480.px)
     }
 
     // Bye page container: centers content both vertically and horizontally

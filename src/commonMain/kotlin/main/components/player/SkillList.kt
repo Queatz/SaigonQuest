@@ -53,7 +53,15 @@ fun SkillList(
                             }
                         })
                     }
-                    Span { Text(skill.title) }
+                    Span(
+                        attrs = {
+                            style {
+                                property("overflow", "hidden")
+                                property("text-overflow", "ellipsis")
+                                property("white-space", "nowrap")
+                            }
+                        }
+                    ) { Text(skill.title) }
                     Div(attrs = { style { property("flex-grow", "1") } })
                     Span(attrs = { style { fontWeight("bold") } }) {
                         Text("${str("Level")} $level")
