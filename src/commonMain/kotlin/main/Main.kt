@@ -27,6 +27,10 @@ import org.jetbrains.compose.web.renderComposableInBody
 import kotlinx.browser.document
 import androidx.compose.runtime.LaunchedEffect
 import main.components.chat.GlobalAiChat
+import main.components.tools.LessonEditorPage
+import main.components.tools.LessonPrintPage
+import main.components.tools.LessonScenesPage
+import main.components.worlddocs.PrintDocPage
 
 fun main() {
     // Configure BabylonJS Draco decoder very early to ensure local asset URLs are used
@@ -73,7 +77,7 @@ fun main() {
                 val router = Router.current
 
                 // Render the global, floating AI chat box once (except on doc print page)
-                if (!router.currentPath.path.startsWith("/doc/")) {
+                if (!router.currentPath.path.startsWith("/doc/") && !router.currentPath.path.contains("/print")) {
                     GlobalAiChat()
                 }
 
@@ -87,13 +91,26 @@ fun main() {
 
                 route("/doc") {
                     string { id ->
-                        main.components.worlddocs.PrintDocPage(docId = id)
+                        PrintDocPage(docId = id)
                     }
                 }
 
                 route("/tools") {
                     route("/character") {
                         CharacterToolPage()
+                    }
+                    route("/scenes") {
+                        string { id ->
+                            route("/print") {
+                                LessonPrintPage(id = id)
+                            }
+                            noMatch {
+                                LessonEditorPage(id = id)
+                            }
+                        }
+                        noMatch {
+                            LessonScenesPage()
+                        }
                     }
                 }
 

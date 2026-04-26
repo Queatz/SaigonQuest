@@ -118,6 +118,7 @@ object CollectionsConfig {
     const val PLAYER_QUEST_PROGRESS_COLLECTION = "player_quest_progress"
     const val USER_EMOJI_HISTORY_COLLECTION = "user_emoji_history"
     const val SKILLS_COLLECTION = "skills"
+    const val LESSON_SCENES_COLLECTION = "lesson_scenes"
     
     // World docs collection
     const val DOCS_COLLECTION = "docs"
@@ -168,6 +169,7 @@ object CollectionsConfig {
         AI_PROMPT_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.AiPromptHistory::class.java),
         USER_EMOJI_HISTORY_COLLECTION to CollectionSpec(documentOptions(), models.UserEmojiHistory::class.java),
         SKILLS_COLLECTION to CollectionSpec(documentOptions(), models.Skill::class.java),
+        LESSON_SCENES_COLLECTION to CollectionSpec(documentOptions(), models.LessonScene::class.java),
     )
 
     fun initializeCollections(database: ArangoDatabase) {

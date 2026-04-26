@@ -37,6 +37,7 @@ import routes.configureCostsRoutes
 import routes.configureDocRoutes
 import routes.configureAiRoutes
 import routes.configureVoiceRoutes
+import routes.configureLessonRoutes
 import routes.configureUserRequestRoutes
 import io.ktor.server.http.content.staticFiles
 import java.io.File
@@ -105,5 +106,6 @@ fun Application.module() {
         configureAiRoutes()
         configureWebSocketRoutes()
         configureVoiceRoutes()
+        configureLessonRoutes()
     }
 }

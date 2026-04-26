@@ -44,9 +44,9 @@ object AiApi {
     }
     suspend fun sendPrompt(
         prompt: String,
-        docContents: String,
-        caretStart: Int,
-        caretEnd: Int,
+        docContents: String = "",
+        caretStart: Int = 0,
+        caretEnd: Int = 0,
         docId: String? = null,
         docName: String? = null,
     ): String {

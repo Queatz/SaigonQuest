@@ -241,7 +241,7 @@ object AlibabaAiClient : AiClient {
 
     @Serializable
     private data class WanImageSynthesisRequest(
-        val model: String = "wan2.6-t2i",
+        val model: String = "qwen-image-2.0",
         val input: WanImageInput,
         val parameters: ImageSynthesisParameters = ImageSynthesisParameters(),
     )

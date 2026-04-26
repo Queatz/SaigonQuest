@@ -105,37 +105,28 @@ fun EditSkillDialog(
             }
         },
         actions = {
-            Div(attrs = {
-                style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    gap(8.px)
-                    width(100.percent)
-                }
-            }) {
-                DialogButton(
-                    onClick = { save() },
-                    style = DialogButtonStyle.Primary,
-                    isDisabled = isSaving || isDeleting,
-                    attrs = { style { width(100.percent) } }
-                ) {
-                    if (isSaving) Translated("Saving...") else Translated("Save")
-                }
-
-                DialogButton(
-                    onClick = onClose,
-                    style = DialogButtonStyle.Secondary,
-                    isDisabled = isSaving || isDeleting,
-                    attrs = { style { width(100.percent) } }
-                ) { Translated("Cancel") }
-
-                DialogButton(
-                    onClick = { showDeleteConfirm = true },
-                    style = DialogButtonStyle.Secondary,
-                    isDisabled = isSaving || isDeleting,
-                    attrs = { style { width(100.percent) } }
-                ) { Translated("Delete") }
+            DialogButton(
+                onClick = { save() },
+                style = DialogButtonStyle.Primary,
+                isDisabled = isSaving || isDeleting,
+                attrs = { style { width(100.percent) } }
+            ) {
+                if (isSaving) Translated("Saving...") else Translated("Save")
             }
+
+            DialogButton(
+                onClick = onClose,
+                style = DialogButtonStyle.Secondary,
+                isDisabled = isSaving || isDeleting,
+                attrs = { style { width(100.percent) } }
+            ) { Translated("Cancel") }
+
+            DialogButton(
+                onClick = { showDeleteConfirm = true },
+                style = DialogButtonStyle.Secondary,
+                isDisabled = isSaving || isDeleting,
+                attrs = { style { width(100.percent) } }
+            ) { Translated("Delete") }
         }
     )
 

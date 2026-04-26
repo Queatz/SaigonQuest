@@ -1,6 +1,66 @@
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val translations = """
+English lesson scenes
+vi: Các cảnh bài học tiếng Anh
+
+Create new lesson
+vi: Tạo bài học mới
+
+Edit lesson scene
+vi: Chỉnh sửa cảnh bài học
+
+Lesson title
+vi: Tiêu đề bài học
+
+Scene background
+vi: Nền cảnh
+
+Describe the scene...
+vi: Mô tả bối cảnh...
+
+Generate scene
+vi: Tạo cảnh
+
+Generate card
+vi: Tạo thẻ
+
+Generate item
+vi: Tạo vật phẩm
+
+Event cards
+vi: Thẻ sự kiện
+
+Items (white background)
+vi: Các vật phẩm (nền trắng)
+
+Add event card
+vi: Thêm thẻ sự kiện
+
+Add item
+vi: Thêm vật phẩm
+
+Save lesson
+vi: Lưu bài học
+
+Print document
+vi: In tài liệu
+
+Suggest cards
+vi: Gợi ý thẻ
+
+Suggest items
+vi: Gợi ý vật phẩm
+
+Bulk generate
+vi: Tạo hàng loạt
+
+How many?
+vi: Bao nhiêu?
+
+Remove
+vi: Xóa
+
 Rewards
 vi: Phần thưởng
 
@@ -2596,6 +2656,11 @@ vi: Người dùng
 Username
 vi: Tên người dùng
 
+Delete lesson scene?
+vi: Xóa cảnh bài học?
+
+Are you sure you want to delete this lesson? This cannot be undone.
+vi: Bạn có chắc chắn muốn xóa bài học này không? Hành động này không thể hoàn tác.
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
