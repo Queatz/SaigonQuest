@@ -77,9 +77,6 @@ object FriendsStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         padding(12.px)
-        backgroundColor(Theme.colors.white04)
-        borderRadius(8.px)
-        border(1.px, LineStyle.Solid, Theme.colors.white08)
         gap(8.px)
     }
 

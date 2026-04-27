@@ -49,14 +49,6 @@ object EditorStyles : StyleSheet() {
         alignItems(AlignItems.FlexStart)
         gap(8.px)
         padding(8.px)
-        backgroundColor(Theme.colors.surfaceVariant)
-        color(Theme.colors.onSurfaceVariant)
-        borderRadius(16.px)
-
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-            color(Theme.colors.onSurfaceVariantDark)
-        }
     }
     
     val objectTitle by style {

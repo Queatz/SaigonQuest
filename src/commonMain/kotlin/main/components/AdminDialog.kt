@@ -11,10 +11,8 @@ import kotlinx.coroutines.launch
 import main.api.AdminBalanceApi
 import main.components.inventory.AdminItemsDialog
 import models.Asset
-import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
-import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
@@ -78,31 +76,46 @@ fun AdminDialog(
                 DialogButton(
                     onClick = { showAssetsDialog = true },
                     style = DialogButtonStyle.Primary,
-                ) { Translated("Manage assets") }
+                ) {
+                    Text("📦 ")
+                    Translated("Manage assets")
+                }
 
                 // Manage items
                 DialogButton(
                     onClick = { showItemsDialog = true },
                     style = DialogButtonStyle.Primary,
-                ) { Translated("Manage items") }
+                ) {
+                    Text("🎒 ")
+                    Translated("Manage items")
+                }
 
                 // Manage quests
                 DialogButton(
                     onClick = { showQuestsDialog = true },
                     style = DialogButtonStyle.Primary,
-                ) { Translated("Manage Quests") }
+                ) {
+                    Text("🗺️ ")
+                    Translated("Manage Quests")
+                }
 
                 // Manage skills
                 DialogButton(
                     onClick = { showSkillsDialog = true },
                     style = DialogButtonStyle.Primary,
-                ) { Translated("Manage skills") }
+                ) {
+                    Text("✨ ")
+                    Translated("Manage skills")
+                }
 
                 // System notification
                 DialogButton(
                     onClick = { showSendNotificationDialog = true },
                     style = DialogButtonStyle.Secondary,
-                ) { Translated("Send system notification") }
+                ) {
+                    Text("📢 ")
+                    Translated("Send system notification")
+                }
 
                 // Balance requests section
                 Div(attrs = { style { marginBottom(8.px) } }) {
@@ -123,6 +136,7 @@ fun AdminDialog(
                     },
                     style = if ((pendingCount ?: 0) > 0) DialogButtonStyle.Primary else DialogButtonStyle.Secondary
                 ) {
+                    Text("💰 ")
                     Translated("Pending balance requests")
                 }
                 // Button to view pending user requests
@@ -138,6 +152,7 @@ fun AdminDialog(
                     },
                     style = DialogButtonStyle.Secondary,
                 ) {
+                    Text("👥 ")
                     Translated("Pending user requests")
                 }
                 adminAuthError?.let { msg ->
@@ -149,6 +164,7 @@ fun AdminDialog(
             DialogButton(
                 onClick = onClose,
             ) {
+                Text("❌ ")
                 Translated("Close")
             }
         }

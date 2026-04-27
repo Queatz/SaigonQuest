@@ -16,6 +16,7 @@ import lib.Vector3
 import main.api.NotificationApi
 import main.api.WorldApi
 import main.components.world.WorldLoader
+import main.components.Paper
 import main.components.player.WorldCollisionUtils
 import main.theme.NotificationStyles
 import main.utils.TimeUtils
@@ -148,7 +149,7 @@ private fun NotificationItem(
     // Track if the notification status has changed
     var refreshKey by remember { mutableStateOf(0) }
     
-    Div(
+    Paper(
         attrs = {
             classes(
                 NotificationStyles.notificationItem,

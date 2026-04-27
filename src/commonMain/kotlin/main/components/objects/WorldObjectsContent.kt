@@ -3,6 +3,7 @@ package main.components.objects
 import Translations.str
 import androidx.compose.runtime.*
 import main.components.*
+import main.components.Paper
 import main.components.common.Spinner
 import main.theme.EditorStyles
 import main.theme.Styles
@@ -143,7 +144,7 @@ fun ObjectItem(
     onEdit: (String) -> Unit,
     onDuplicate: (String) -> Unit
 ) {
-    Div(
+    Paper(
         attrs = {
             classes(EditorStyles.objectItem)
         }

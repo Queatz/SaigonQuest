@@ -92,24 +92,13 @@ object NotificationStyles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         padding(12.px)
         marginBottom(8.px)
-        borderRadius(4.px)
         cursor("pointer")
     }
     
     val notificationItemRead by style {
-        backgroundColor(Theme.colors.notifReadBg)
-
-        dark(self) {
-            backgroundColor(Theme.colors.notifReadBgDark)
-        }
     }
     
     val notificationItemUnread by style {
-        backgroundColor(Theme.colors.notifUnreadBg)
-
-        dark(self) {
-            backgroundColor(Theme.colors.notifUnreadBgDark)
-        }
     }
 
     // System notification accent (e.g., subtle blue left border)

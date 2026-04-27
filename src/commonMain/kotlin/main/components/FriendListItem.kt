@@ -5,6 +5,7 @@ import app.softwork.routingcompose.Router
 import kotlinx.coroutines.*
 import lib.Vector3
 import main.api.*
+import main.components.Paper
 import main.components.player.SkillList
 import main.components.world.WorldLoader
 import main.theme.FriendsStyles
@@ -56,7 +57,7 @@ fun FriendListItem(
         }
     }
     
-    Div(
+    Paper(
         attrs = {
             classes(FriendsStyles.friendListItem)
         }
