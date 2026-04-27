@@ -146,11 +146,10 @@ fun LessonEditorPage(id: String) {
 
         H3(attrs = { style { color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface) } }) { Translated("Event cards") }
         currentScene.eventCards.forEachIndexed { index, card ->
-            Div(attrs = {
+            Paper(attrs = {
                 style {
                     display(DisplayStyle.Flex); gap(16.px); padding(16.px)
-                    backgroundColor(if (darkMode) main.theme.Theme.colors.surfaceVariantDark else main.theme.Theme.colors.surfaceVariant)
-                    borderRadius(8.px); alignItems(AlignItems.Center)
+                    alignItems(AlignItems.Center)
                     color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface)
                 }
             }) {
@@ -276,11 +275,10 @@ fun LessonEditorPage(id: String) {
         H3(attrs = { style { color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface) } }) { Translated("Items") }
         Div(attrs = { style { display(DisplayStyle.Flex); flexWrap(FlexWrap.Wrap); gap(16.px) } }) {
             currentScene.items.forEachIndexed { index, item ->
-                Div(attrs = {
+                Paper(attrs = {
                     style {
                         width(120.px); display(DisplayStyle.Flex); flexDirection(FlexDirection.Column)
-                        gap(8.px); padding(8.px); backgroundColor(if (darkMode) main.theme.Theme.colors.surfaceVariantDark else main.theme.Theme.colors.surfaceVariant)
-                        borderRadius(8.px)
+                        gap(8.px); padding(8.px)
                         color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface)
                     }
                 }) {

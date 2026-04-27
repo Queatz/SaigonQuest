@@ -110,11 +110,9 @@ fun LessonScenesPage() {
             Text("Loading...")
         } else {
             scenes.forEach { scene ->
-                Div(attrs = {
+                Paper(attrs = {
                     style {
                         padding(16.px)
-                        backgroundColor(if (darkMode) main.theme.Theme.colors.surfaceVariantDark else main.theme.Theme.colors.surfaceVariant)
-                        borderRadius(8.px)
                         display(DisplayStyle.Flex)
                         justifyContent(JustifyContent.SpaceBetween)
                         alignItems(AlignItems.Center)

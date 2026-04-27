@@ -762,7 +762,7 @@ object Styles : StyleSheet() {
 
         property("background-image", "url(\"/raw/data/ui/backgrounds/whitestone.png\")")
         property("background-repeat", "repeat")
-        property("background-size", "48px 48px")
+        property("background-size", "12px 12px")
         property("background-clip", "padding-box")
         property("background-origin", "padding-box")
 
