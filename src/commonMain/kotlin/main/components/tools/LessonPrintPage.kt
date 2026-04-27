@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import main.api.LessonApi
+import main.theme.PrintStyles
 import models.LessonScene
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -35,15 +36,15 @@ fun LessonPrintPage(id: String) {
     if (scene == null) return
     val currentScene = scene!!
 
-    Div {
+    Div(attrs = {
+        classes(PrintStyles.printContainer)
+    }) {
         // Page 1: Scene Background
         Div(attrs = {
+            classes(PrintStyles.a4Page)
             style {
-                property("width", "210mm"); property("height", "297mm")
-                property("page-break-after", "always"); display(DisplayStyle.Flex)
+                display(DisplayStyle.Flex)
                 alignItems(AlignItems.Center); justifyContent(JustifyContent.Center)
-                overflow("hidden")
-                margin(0.px); padding(0.px)
                 backgroundColor(Color.black)
             }
         }) {
@@ -62,21 +63,11 @@ fun LessonPrintPage(id: String) {
         // Page 2: Event Cards (12 per page)
         currentScene.eventCards.chunked(12).forEach { cards ->
             Div(attrs = {
-                style {
-                    property("width", "210mm"); property("height", "297mm")
-                    property("page-break-after", "always"); display(DisplayStyle.Grid)
-                    property("grid-template-columns", "repeat(3, 1fr)")
-                    property("grid-template-rows", "repeat(4, 1fr)")
-                    padding(5.mm); boxSizing("border-box"); backgroundColor(Color.white)
-                }
+                classes(PrintStyles.a4Page, PrintStyles.cardsGrid)
             }) {
                 cards.forEach { card ->
                     Div(attrs = {
-                        style {
-                            border(0.1.px, LineStyle.Solid, Color.lightgray); display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column); alignItems(AlignItems.Center)
-                            justifyContent(JustifyContent.Center); padding(5.mm); gap(2.mm)
-                        }
+                        classes(PrintStyles.cardItem)
                     }) {
                         card.image?.let { 
                             Div(attrs = {
@@ -97,15 +88,12 @@ fun LessonPrintPage(id: String) {
         // Page 3: Items
         currentScene.items.chunked(15).forEach { items ->
             Div(attrs = {
-                style {
-                    property("width", "210mm"); property("height", "297mm")
-                    property("page-break-after", "always"); display(DisplayStyle.Flex)
-                    flexWrap(FlexWrap.Wrap); justifyContent(JustifyContent.SpaceAround)
-                    padding(10.mm); boxSizing("border-box"); gap(10.mm); backgroundColor(Color.white)
-                }
+                classes(PrintStyles.a4Page, PrintStyles.itemsGrid)
             }) {
                 items.forEach { item ->
-                    Div(attrs = { style { width(50.mm); height(50.mm); display(DisplayStyle.Flex); alignItems(AlignItems.Center); justifyContent(JustifyContent.Center) } }) {
+                    Div(attrs = {
+                        classes(PrintStyles.itemContainer)
+                    }) {
                         item.image?.let { Img(src = it, attrs = { style { maxWidth(100.percent); maxHeight(100.percent) } }) }
                     }
                 }

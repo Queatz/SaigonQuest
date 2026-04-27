@@ -2516,10 +2516,6 @@ object Styles : StyleSheet() {
             property("outline", "none")
         }
 
-        "body.printable, html.printable" style {
-            overflow("auto")
-            property("height", "auto")
-        }
     }
 }
 

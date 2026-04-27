@@ -232,8 +232,10 @@ fun LessonEditorPage(id: String) {
                         isSuggestingCards = true
                         error = null
                         try {
-                            val prompt = "Based on the lesson scene '${currentScene.title}' (${currentScene.scenePrompt}), suggest $cardBulkCount short event card descriptions (max 5 words each) that happen at the scene (e.g., environmental changes, unexpected visitors, or sudden occurrences) that are very specific so the student can react to them, NOT actions for the student to perform. Use sentence case for each description. Return only a comma-separated list of descriptions."
-                            val suggestionStr = AiApi.sendPrompt(prompt)
+                            val existingCards = currentScene.eventCards.map { it.text }.filter { it.isNotBlank() }.joinToString(", ")
+                            val excludePrompt = if (existingCards.isNotBlank()) " EXCLUDE these existing cards: $existingCards." else ""
+                            val prompt = "Based on the lesson scene '${currentScene.title}' (${currentScene.scenePrompt}), suggest $cardBulkCount short event card descriptions (max 5 words each) that happen at the scene (e.g., environmental changes, unexpected visitors, or sudden occurrences) that are very specific so the student can react to them, NOT actions for the student to perform.$excludePrompt Use sentence case for each description. Return only a comma-separated list of descriptions."
+                            val suggestionStr = AiApi.sendPrompt(prompt = prompt)
                             val suggestions = suggestionStr.split(",").map { it.trim() }.filter { it.isNotBlank() }.map { it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() } }
                             
                             scene = scene?.update {
@@ -359,8 +361,10 @@ fun LessonEditorPage(id: String) {
                         isSuggestingItems = true
                         error = null
                         try {
-                            val prompt = "Based on the lesson scene '${currentScene.title}' (${currentScene.scenePrompt}), suggest $itemBulkCount common items (nouns) that would be found there. Use sentence case for each item. Return only a comma-separated list of items."
-                            val suggestionStr = AiApi.sendPrompt(prompt)
+                            val existingItems = currentScene.items.map { it.name }.filter { it.isNotBlank() }.joinToString(", ")
+                            val excludePrompt = if (existingItems.isNotBlank()) " EXCLUDE these existing items: $existingItems." else ""
+                            val prompt = "Based on the lesson scene '${currentScene.title}' (${currentScene.scenePrompt}), suggest $itemBulkCount common items (nouns) that would be found there.$excludePrompt Use sentence case for each item. Return only a comma-separated list of items."
+                            val suggestionStr = AiApi.sendPrompt(prompt = prompt)
                             val suggestions = suggestionStr.split(",").map { it.trim() }.filter { it.isNotBlank() }.map { it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() } }
                             
                             scene = scene?.update {

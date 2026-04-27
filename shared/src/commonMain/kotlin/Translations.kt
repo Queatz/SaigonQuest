@@ -2661,6 +2661,9 @@ vi: Xóa cảnh bài học?
 
 Are you sure you want to delete this lesson? This cannot be undone.
 vi: Bạn có chắc chắn muốn xóa bài học này không? Hành động này không thể hoàn tác.
+
+Tools
+vi: Công cụ
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

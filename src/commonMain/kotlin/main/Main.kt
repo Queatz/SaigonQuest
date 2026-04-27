@@ -18,6 +18,7 @@ import main.theme.OverlayStyles
 import main.theme.PanelStyles
 import main.theme.Styles
 import main.theme.WorldDocsStyles
+import main.theme.PrintStyles
 import main.theme.QuestStyles
 import main.utils.PageTitleManager
 import main.components.minigame.MinigameStyles
@@ -30,6 +31,7 @@ import main.components.chat.GlobalAiChat
 import main.components.tools.LessonEditorPage
 import main.components.tools.LessonPrintPage
 import main.components.tools.LessonScenesPage
+import main.components.tools.ToolsPage
 import main.components.worlddocs.PrintDocPage
 
 fun main() {
@@ -60,6 +62,7 @@ fun main() {
             Style(WorldDocsStyles)
             Style(MinigameStyles)
             Style(QuestStyles)
+            Style(PrintStyles)
 
             // Update document title based on current world title
             LaunchedEffect(PageTitleManager.worldTitle) {
@@ -111,6 +114,9 @@ fun main() {
                         noMatch {
                             LessonScenesPage()
                         }
+                    }
+                    noMatch {
+                        ToolsPage()
                     }
                 }
 
