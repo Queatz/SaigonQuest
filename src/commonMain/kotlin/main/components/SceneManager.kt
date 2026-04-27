@@ -3,6 +3,7 @@ package main.components
 import lib.Scene
 import main.components.camera.CameraController
 import main.components.objects.SceneObjectManager
+import main.components.objects.SavedPositionManager
 import main.components.player.OtherPlayersCoordinator
 import main.components.player.PlayerController
 
@@ -25,6 +26,9 @@ object SceneManager {
     
     // The other players coordinator instance
     private var otherPlayersCoordinator: OtherPlayersCoordinator? = null
+
+    // The saved position manager instance
+    private var savedPositionManager: SavedPositionManager? = null
     
     // The BabylonJS scene instance
     private var scene: Scene? = null
@@ -139,6 +143,25 @@ object SceneManager {
     fun getOtherPlayersCoordinator(): OtherPlayersCoordinator? {
         return otherPlayersCoordinator
     }
+
+    /**
+     * Sets the saved position manager instance.
+     *
+     * @param manager The saved position manager instance to store
+     */
+    fun setSavedPositionManager(manager: SavedPositionManager) {
+        savedPositionManager = manager
+        println("[DEBUG] Saved position manager registered with SceneManager")
+    }
+
+    /**
+     * Gets the saved position manager instance.
+     *
+     * @return The saved position manager instance, or null if not set
+     */
+    fun getSavedPositionManager(): SavedPositionManager? {
+        return savedPositionManager
+    }
     
     /**
      * Sets the scene instance.
@@ -182,6 +205,7 @@ object SceneManager {
         objectManager = null
         playerController = null
         otherPlayersCoordinator = null
+        savedPositionManager = null
         scene = null
         playerVelocity.set(0f, 0f, 0f)
         isVelocityKnown = false

@@ -22,6 +22,7 @@ import routes.configureInventoryRoutes
 import routes.configureItemRoutes
 import routes.configureNotificationRoutes
 import routes.configureObjectRoutes
+import routes.configureSavedPositionRoutes
 import routes.configureUserRoutes
 import routes.configureWebSocketRoutes
 import routes.configureWorldRoutes
@@ -86,6 +87,7 @@ fun Application.module() {
         configureWorldRoutes()
         configureUserRoutes()
         configureObjectRoutes()
+        configureSavedPositionRoutes()
         configureChatRoutes()
         configureNotificationRoutes()
         configureFriendRoutes()

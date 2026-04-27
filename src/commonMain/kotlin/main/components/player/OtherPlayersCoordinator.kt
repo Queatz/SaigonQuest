@@ -268,9 +268,9 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 )
                 op.username = join.username
                 op.isPlayer = join.isPlayer
-                op.targetPos = snapToGround(Vector3(join.position.x, join.position.y, join.position.z))
+                op.targetPos = Vector3(join.position.x, join.position.y, join.position.z)
                 op.shouldSnap = true
-                attemptSpawnWithUser(op,)
+                attemptSpawnWithUser(op)
             }
         }
     }
@@ -312,14 +312,35 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private fun onPlayerPosition(pos: PlayerPositionData) {
         if (pos.userId == myUserId) return
         val op = ensurePlayer(pos.userId, pos.position)
-        scope.launch {
-            op.mutex.withLock {
-                op.isPlayer = pos.isPlayer
-                op.targetPos = snapToGround(Vector3(pos.position.x, pos.position.y, pos.position.z))
-                // Only attempt to spawn if we don't already have a handle. Avoid re-applying appearance on every movement update,
-                // which can cause visible flashing as textures/materials are repeatedly reset.
-                if (op.handle == null) {
-                    attemptSpawnWithUser(op)
+
+        // Update basic movement target immediately (update loop handles the rest)
+        op.targetPos = Vector3(pos.position.x, pos.position.y, pos.position.z)
+
+        // If isPlayer role changed, we must trigger a respawn (similar to onUpdatePlayer)
+        if (op.isPlayer != pos.isPlayer) {
+            scope.launch {
+                op.mutex.withLock {
+                    if (op.isPlayer != pos.isPlayer) {
+                        op.isPlayer = pos.isPlayer
+                        // Role changed: respawn cleanly
+                        op.handle?.remove()
+                        op.handle = null
+                        usernameTextHandles.remove(op.userId)?.remove()
+                        attemptSpawnWithUser(op)
+                    }
+                }
+            }
+            return
+        }
+
+        // Only attempt to spawn if we don't already have a handle and aren't already spawning.
+        // This avoids visible flashing as textures/materials are repeatedly reset during movement.
+        if (op.handle == null && !op.isSpawning) {
+            scope.launch {
+                op.mutex.withLock {
+                    if (op.handle == null && !op.isSpawning) {
+                        attemptSpawnWithUser(op)
+                    }
                 }
             }
         }
@@ -360,9 +381,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
                 if (prevIsPlayer != op.isPlayer) {
                     // Role changed (visitor <-> player): respawn cleanly to swap base if needed
-                    op.handle?.remove(); op.handle = null
+                    op.handle?.remove()
+                    op.handle = null
+                    op.isSpawning = false // Allow fresh spawn
                     usernameTextHandles.remove(op.userId)?.remove()
-                    attemptSpawnWithUser(op,)
+                    attemptSpawnWithUser(op)
                 }
             }
         }
@@ -377,7 +400,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         ).also { players[userId] = it }
 
     private fun spawnIfNeeded(op: OtherPlayer) {
-        if (op.handle != null) return
+        if (op.handle != null) {
+            op.isSpawning = false
+            return
+        }
         val startPos = snapToGround(op.targetPos ?: op.lastPos)
         val baseSprite = SpriteSheet.createPlayerSpriteSheetForBodyType(null, null)
         val handle: WorldObjectHandle? = worldObjectManager.createCharacter(
@@ -393,6 +419,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         }
         op.handle = handle
         op.lastPos = startPos
+        op.isSpawning = false
         // Apply any pending activity (e.g., Sit) immediately on spawn
         op.activity?.let { pending ->
             try { handle.updateActivity(pending) } catch (_: Throwable) {}
@@ -413,12 +440,14 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private fun scheduleSpawnRetry(op: OtherPlayer, reason: String) {
         // If already spawned, no retry needed
         if (op.handle != null) {
+            op.isSpawning = false
             clearSpawnRetry(op.userId)
             return
         }
         val count = (spawnRetryCounts[op.userId] ?: 0)
         if (count >= maxSpawnRetries) {
             console.warn("OtherPlayersCoordinator: spawn retries exceeded for ${op.userId} (reason=$reason)")
+            op.isSpawning = false
             clearSpawnRetry(op.userId)
             return
         }
@@ -434,10 +463,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 return@setTimeout
             }
             if (still.handle != null) {
+                still.isSpawning = false
                 clearSpawnRetry(op.userId)
                 return@setTimeout
             }
-            attemptSpawnWithUser(still,)
+            attemptSpawnWithUser(still)
         }, delay)
         spawnRetryTimeouts[op.userId] = id
     }
@@ -448,6 +478,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     }
 
     private fun attemptSpawnWithUser(op: OtherPlayer) {
+        if (op.isSpawning) return
+        op.isSpawning = true
         // Fallback: spawn placeholder if user fetch isn't quick
         val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
         scope.launch {
@@ -471,6 +503,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             op.targetPos = startPos
                             // Track the profile so we can detect future base changes
                             op.profile = user
+                            op.isSpawning = false
                             // Success: clear retry state
                             spawnRetryCounts.remove(op.userId)
                             
@@ -491,15 +524,31 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             scheduleSpawnRetry(op, "createCharacter returned null (with user)")
                         }
                     } else {
+                        op.isSpawning = false
+                        // Check if appearance actually needs updating to avoid flashing
+                        val prev = op.profile
+                        val appearanceChanged = prev == null || 
+                                prev.hairStyle != user.hairStyle || 
+                                prev.eyeColor != user.eyeColor || 
+                                prev.skinTone != user.skinTone || 
+                                prev.wornItems != user.wornItems
+                        
+                        if (appearanceChanged) {
                             val sheets = fetchAppearanceSheets(user)
                             op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                        }
+                        
+                        op.profile = user
                         if (op.status.isBlank() && user.status.isNotBlank()) {
                             op.status = user.status
                             hud.setDesiredStatus(op.userId, op.status)
                         }
                     }
+                } else {
+                    op.isSpawning = false
                 }
             } catch (t: Throwable) {
+                op.isSpawning = false
                 console.error("OtherPlayersCoordinator: attemptSpawnWithUser failed for ${op.userId}", t)
             }
         }
@@ -519,6 +568,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // Remove current mesh and trigger respawn with updated base body
                 op.handle?.remove()
                 op.handle = null
+                op.isSpawning = false
                 op.targetPos = currentPos
                 op.lastPos = currentPos
                 op.profile = user
@@ -527,12 +577,20 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 return
             }
 
-            // No base change: update only additional layers and skin tone
+            // Detect if appearance layers changed to avoid redundant flashing
+            val layersChanged = (prev == null) ||
+                    prev.hairStyle != user.hairStyle ||
+                    prev.eyeColor != user.eyeColor ||
+                    prev.skinTone != user.skinTone ||
+                    prev.wornItems != user.wornItems
+
             op.profile = user
-            val sheets = fetchAppearanceSheets(user)
-            op.additionalSpriteSheets = sheets
-            op.skinTone = user.skinTone
-            op.handle?.updateAppearance(sheets, op.skinTone)
+            if (layersChanged) {
+                val sheets = fetchAppearanceSheets(user)
+                op.additionalSpriteSheets = sheets
+                op.skinTone = user.skinTone
+                op.handle?.updateAppearance(sheets, op.skinTone)
+            }
         } catch (t: Throwable) {
             console.error("OtherPlayersCoordinator: assembleAppearance failed for ${op.userId}", t)
         }

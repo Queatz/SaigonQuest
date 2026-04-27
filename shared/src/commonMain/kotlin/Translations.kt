@@ -949,6 +949,9 @@ vi: Không có tiêu đề
 Locate
 vi: Định vị
 
+None
+vi: Không
+
 Duplicate
 vi: Nhân bản
 
@@ -2685,6 +2688,24 @@ vi: Có hoạt họa chuyển động hay không
 
 New position for the object
 vi: Vị trí mới cho vật thể
+
+Saved positions
+vi: Các vị trí đã lưu
+
+Add saved position
+vi: Thêm vị trí đã lưu
+
+Choose a saved position
+vi: Chọn một vị trí đã lưu
+
+Saved position name
+vi: Tên vị trí đã lưu
+
+No saved positions
+vi: Không có vị trí nào đã lưu
+
+Saved position
+vi: Vị trí đã lưu
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

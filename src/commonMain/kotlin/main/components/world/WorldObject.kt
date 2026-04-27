@@ -745,10 +745,20 @@ class Character(
                 material.albedoTexture = texture
                 material.emissiveTexture = texture
                 fallbackTexture.dispose()
+                
+                // Update dimensions from the actual loaded texture to ensure correct UV segmenting
+                val size = texture.getSize()
+                spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
             }
         } else {
             material.albedoTexture = texture
             material.emissiveTexture = texture
+
+            // Update dimensions from the actual loaded texture to ensure correct UV segmenting
+            texture.onLoadObservable.addOnce {
+                val size = texture.getSize()
+                spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
+            }
         }
 
         // Enable transparency for the material

@@ -9,32 +9,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import main.api.ObjectApi
+import main.api.SavedPositionApi
 import main.api.WorldApi
-import main.components.AssetBrowserDialog
-import main.components.BasicSceneRenderer
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.DialogInput
-import main.components.DialogSelect
-import main.components.IconRenderer
-import main.components.LabeledCheckbox
-import main.components.MediaSelector
-import main.components.SkillSelector
-import main.components.SelectObjectDialog
-import main.components.SelectWorldDialog
-import main.components.Translated
-import main.components.translated
+import main.components.*
 import main.theme.NodeEditorStyles
 import models.AssetType
 import models.LogicNode
 import models.NodeCategory
-import models.nodeeditor.NodeData
-import models.nodeeditor.PropertyBasedNodeData
-import models.nodeeditor.PropertyDirection
-import models.nodeeditor.PropertyKey
-import models.nodeeditor.PropertyType
-import models.nodeeditor.PropertyValue
-import models.nodeeditor.getPropertyDefinitions
+import models.SavedPosition
+import models.nodeeditor.*
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
@@ -226,6 +209,19 @@ fun PropertyPanel(
                                         value = propertyValues[propDef.key] ?: "",
                                         onUpdate = { newValue ->
                                             propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        }
+                                    )
+                                } else if (propDef.key == PropertyKey.SAVED_POSITION_ID) {
+                                    SavedPositionPropertyEditor(
+                                        worldId = worldId,
+                                        currentId = propertyValues[propDef.key] ?: "",
+                                        onUpdate = { selectedId, posStr ->
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.SAVED_POSITION_ID] = selectedId
+                                                if (posStr.isNotEmpty()) {
+                                                    it[PropertyKey.TARGET_POSITION] = posStr
+                                                }
+                                            }
                                         }
                                     )
                                 } else if (propDef.key == PropertyKey.TARGET_WORLD_ID) {
@@ -752,4 +748,51 @@ fun AssetPropertyEditor(
             onClose = { showDialog = false },
         )
     }
+}
+
+@Composable
+fun SavedPositionPropertyEditor(
+    worldId: String,
+    currentId: String,
+    onUpdate: (String, String) -> Unit
+) {
+    var savedPositions by remember { mutableStateOf<List<SavedPosition>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(worldId) {
+        if (worldId.isNotEmpty()) {
+            try {
+                val fetched = SavedPositionApi.getByWorldId(worldId)
+                savedPositions = fetched
+                
+                // If we have a selected position, ensure the x,y,z is synced on load
+                if (currentId.isNotEmpty()) {
+                    val pos = fetched.find { it.key == currentId }
+                    if (pos != null) {
+                        onUpdate(currentId, "${pos.position.x},${pos.position.y},${pos.position.z}")
+                    }
+                }
+            } catch (e: Throwable) {
+                console.error("Failed to fetch saved positions for editor", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    val options = listOf("" to "None") + savedPositions.map { it.key to it.name }
+
+    DialogSelect(
+        options = options,
+        value = currentId,
+        onInput = { selectedId ->
+            val pos = savedPositions.find { it.key == selectedId }
+            if (pos != null) {
+                onUpdate(selectedId, "${pos.position.x},${pos.position.y},${pos.position.z}")
+            } else {
+                onUpdate(selectedId, "")
+            }
+        },
+        label = null
+    )
 }

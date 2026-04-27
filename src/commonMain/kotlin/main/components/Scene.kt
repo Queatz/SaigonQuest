@@ -20,6 +20,7 @@ import main.components.input.InputHandler
 import main.components.minigame.MinigameOverlay
 import main.components.objects.IdleObjectHighlighter
 import main.components.objects.SceneObjectManager
+import main.components.objects.SavedPositionManager
 import main.components.objects.handleInventoryItemDrop
 import main.components.objects.handleObjectDrop
 import main.components.objects.update
@@ -835,6 +836,7 @@ fun SceneComponent(url: String) {
             cameraController = cameraController,
             worldObjectManager = worldObjectManager
         )
+        val savedPositionManager = SavedPositionManager(scene)
 
         // ------- Idle highlighting state -------
         val idleHighlighter = IdleObjectHighlighter(
@@ -991,6 +993,7 @@ fun SceneComponent(url: String) {
 
         // Register object manager with SceneManager for global access
         SceneManager.setObjectManager(objectManager)
+        SceneManager.setSavedPositionManager(savedPositionManager)
 
         // Create input handler after object manager is registered
         val inputHandler = InputHandler(

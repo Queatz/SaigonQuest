@@ -29,6 +29,7 @@ data class OtherPlayer(
     var isOnWater: Boolean = false,
     var lastEnvCheckFrame: Int = -1,
     var shouldSnap: Boolean = false,
+    var isSpawning: Boolean = false,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

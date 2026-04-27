@@ -125,6 +125,7 @@ enum class PropertyKey {
 
     // MoveObject properties
     ANIMATE,
+    SAVED_POSITION_ID,
 }
 
 /**
@@ -1677,11 +1678,18 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.INPUT
             ),
             NodePropertyDefinition(
+                key = PropertyKey.SAVED_POSITION_ID,
+                name = "Saved position",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                description = "Choose a saved position"
+            ),
+            NodePropertyDefinition(
                 key = PropertyKey.TARGET_POSITION,
                 name = "Position",
                 type = PropertyType.VECTOR3,
                 direction = PropertyDirection.INPUT,
-                description = "New position for the object"
+                description = "New position for the object (fallback if no saved position selected)"
             ),
             NodePropertyDefinition(
                 key = PropertyKey.ANIMATE,

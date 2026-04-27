@@ -25,6 +25,11 @@ import models.canUserEdit
 import models.AssetType
 import main.api.ItemApi
 import main.api.AssetItemApi
+import main.api.SavedPositionApi
+import main.components.objects.startCreatePlacementMode
+import main.components.objects.cancelCreatePlacementMode
+import models.SavedPosition
+import models.Position
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
@@ -207,6 +212,39 @@ fun WorldEditContent(
     var primaryOwnerName by remember { mutableStateOf<String?>(null) }
     var showOwnerPicker by remember { mutableStateOf(false) }
     var ownerIdPendingRemoval by remember { mutableStateOf<String?>(null) }
+    
+    // Saved positions state
+    var savedPositions by remember { mutableStateOf(emptyList<SavedPosition>()) }
+    var isLoadingSavedPositions by remember { mutableStateOf(false) }
+    var isSavedPositionPlacementActive by remember { mutableStateOf(false) }
+    var showSavedPositionNameDialog by remember { mutableStateOf(false) }
+    var pendingSavedPosition by remember { mutableStateOf<Position?>(null) }
+    var savedPositionError by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(Unit) {
+        val spm = SceneManager.getSavedPositionManager()
+        spm?.setShowSavedPositions(true)
+        onDispose {
+            spm?.setShowSavedPositions(false)
+            if (isSavedPositionPlacementActive) {
+                SceneManager.getObjectManager()?.cancelCreatePlacementMode()
+            }
+        }
+    }
+
+    // Fetch saved positions
+    LaunchedEffect(currentWorld?.key) {
+        val worldId = currentWorld?.key ?: return@LaunchedEffect
+        isLoadingSavedPositions = true
+        try {
+            savedPositions = SavedPositionApi.getByWorldId(worldId)
+            SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
+        } catch (e: Throwable) {
+            console.error("Failed to load saved positions", e)
+        } finally {
+            isLoadingSavedPositions = false
+        }
+    }
 
     // Re-seed local state when the incoming currentWorld changes
     LaunchedEffect(currentWorld?.key) {
@@ -692,6 +730,150 @@ fun WorldEditContent(
                         },
                         onCancel = { ownerIdPendingRemoval = null },
                     )
+                }
+            }
+        }
+
+        // Saved positions management
+        if (isEditing) {
+            Div(
+                attrs = {
+                    style {
+                        display(DisplayStyle.Flex)
+                        flexDirection(FlexDirection.Column)
+                        property("gap", "8px")
+                    }
+                }
+            ) {
+                Label(attrs = { style { fontSize(14.px) } }) { Translated("Saved positions") }
+
+                if (savedPositions.isNotEmpty()) {
+                    savedPositions.forEach { pos ->
+                        Div(attrs = {
+                            style {
+                                display(DisplayStyle.Flex)
+                                justifyContent(JustifyContent.SpaceBetween)
+                                gap(8.px)
+                                alignItems(AlignItems.Center)
+                            }
+                        }) {
+                            Div(
+                                attrs = {
+                                    style {
+                                        width(0.px)
+                                        flexGrow(1)
+                                        property("overflow", "hidden")
+                                        property("text-overflow", "ellipsis")
+                                    }
+                                }
+                            ) {
+                                Text(pos.name)
+                            }
+                            
+                            DialogButton(
+                                onClick = {
+                                    SceneManager.getCameraController()?.focusOnPosition(
+                                        lib.Vector3(pos.position.x, pos.position.y, pos.position.z)
+                                    )
+                                },
+                                style = DialogButtonStyle.Secondary
+                            ) {
+                                Translated("Locate")
+                            }
+
+                            DialogButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        try {
+                                            SavedPositionApi.delete(pos.key)
+                                            savedPositions = savedPositions.filter { it.key != pos.key }
+                                            SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
+                                        } catch (e: Throwable) {
+                                            savedPositionError = e.message
+                                        }
+                                    }
+                                },
+                                style = DialogButtonStyle.Secondary
+                            ) {
+                                Translated("Delete")
+                            }
+                        }
+                    }
+                } else if (!isLoadingSavedPositions) {
+                    P(attrs = { style { margin(0.px); color(rgba(255, 255, 255, 0.6)) } }) {
+                        Translated("No saved positions")
+                    }
+                }
+
+                if (isOwner) {
+                    DialogButton(
+                        onClick = {
+                            val objectManager = SceneManager.getObjectManager()
+                            if (isSavedPositionPlacementActive) {
+                                objectManager?.cancelCreatePlacementMode()
+                                isSavedPositionPlacementActive = false
+                            } else {
+                                isSavedPositionPlacementActive = true
+                                objectManager?.startCreatePlacementMode(
+                                    onConfirm = { vec: lib.Vector3 ->
+                                        isSavedPositionPlacementActive = false
+                                        pendingSavedPosition = Position(vec.x, vec.y, vec.z)
+                                        showSavedPositionNameDialog = true
+                                    },
+                                    onCancel = {
+                                        isSavedPositionPlacementActive = false
+                                    }
+                                )
+                            }
+                        },
+                        style = DialogButtonStyle.Primary
+                    ) {
+                        if (isSavedPositionPlacementActive) Translated("Cancel")
+                        else Translated("Add saved position")
+                    }
+                }
+
+                if (showSavedPositionNameDialog) {
+                    BasicInputDialog(
+                        title = translated("Add saved position"),
+                        placeholder = str("Saved position name"),
+                        onConfirm = { name ->
+                            val pos = pendingSavedPosition
+                            if (pos != null && name.isNotBlank()) {
+                                coroutineScope.launch {
+                                    try {
+                                        val newPos = SavedPositionApi.create(
+                                            SavedPosition(
+                                                name = name,
+                                                worldId = currentWorld.key,
+                                                position = pos
+                                            )
+                                        )
+                                        savedPositions = savedPositions + newPos
+                                        SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
+                                    } catch (e: Throwable) {
+                                        savedPositionError = e.message
+                                    } finally {
+                                        showSavedPositionNameDialog = false
+                                        pendingSavedPosition = null
+                                    }
+                                }
+                            } else {
+                                showSavedPositionNameDialog = false
+                                pendingSavedPosition = null
+                            }
+                        },
+                        onCancel = {
+                            showSavedPositionNameDialog = false
+                            pendingSavedPosition = null
+                        }
+                    )
+                }
+                
+                if (savedPositionError != null) {
+                    P(attrs = { style { color(Color("red")); fontSize(12.px); margin(0.px) } }) {
+                        Text(savedPositionError!!)
+                    }
                 }
             }
         }

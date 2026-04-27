@@ -8,6 +8,7 @@ import models.nodeeditor.NodeDataModel
 import models.nodeeditor.PropertyBasedNodeData
 import models.nodeeditor.PropertyKey
 import repository.ObjectRepository
+import repository.SavedPositionRepository
 import routes.WebSocketMessage
 import routes.handlers.WebSocketUtils
 import utils.json
@@ -39,27 +40,38 @@ class MoveObjectNodeRunner(private val context: NodeRunnerContext) : NodeRunner 
             return nodeData.properties.find { it.key == key }?.value
         }
 
-        val positionStr = fromEventOrNode(PropertyKey.TARGET_POSITION)
+        val savedPositionId = fromEventOrNode(PropertyKey.SAVED_POSITION_ID)
+        var targetPosition: Position? = null
+
+        if (!savedPositionId.isNullOrBlank()) {
+            val savedPos = SavedPositionRepository().getById(savedPositionId)
+            if (savedPos != null && savedPos.worldId == context.worldId) {
+                targetPosition = savedPos.position
+            }
+        }
+
+        if (targetPosition == null) {
+            val positionStr = fromEventOrNode(PropertyKey.TARGET_POSITION)
+            if (!positionStr.isNullOrBlank()) {
+                val parts = positionStr.split(",")
+                if (parts.size == 3) {
+                    try {
+                        targetPosition = Position(parts[0].trim().toFloat(), parts[1].trim().toFloat(), parts[2].trim().toFloat())
+                    } catch (e: Throwable) {
+                        WebSocketDebug.logError("MoveObject: failed to parse position: $positionStr", e, context.session)
+                    }
+                } else {
+                    WebSocketDebug.logError("MoveObject: invalid position format: $positionStr", null, context.session)
+                }
+            }
+        }
+
+        if (targetPosition == null) {
+            WebSocketDebug.logError("MoveObject: target position is missing or invalid", null, context.session)
+            return false
+        }
+
         val animateStr = fromEventOrNode(PropertyKey.ANIMATE) ?: "true"
-
-        if (positionStr.isNullOrBlank()) {
-            WebSocketDebug.logError("MoveObject: target position is missing", null, context.session)
-            return false
-        }
-
-        val parts = positionStr.split(",")
-        if (parts.size != 3) {
-            WebSocketDebug.logError("MoveObject: invalid position format: $positionStr", null, context.session)
-            return false
-        }
-
-        val targetPosition = try {
-            Position(parts[0].trim().toFloat(), parts[1].trim().toFloat(), parts[2].trim().toFloat())
-        } catch (e: Throwable) {
-            WebSocketDebug.logError("MoveObject: failed to parse position: $positionStr", e, context.session)
-            return false
-        }
-
         val animate = animateStr.lowercase() == "true"
 
         WebSocketDebug.logMessage("MOVE_OBJECT_VALUE", "Target position: $targetPosition, animate: $animate", context.session)
