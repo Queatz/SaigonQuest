@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import lib.AbstractMesh
+import lib.Animation
 import lib.Color3
 import lib.Mesh
 import lib.MeshMetadata
@@ -31,8 +32,11 @@ import models.Position
 import models.Rotation
 import models.Scale
 import models.WebSocketAction
+import models.MoveObjectData
 import models.ObjectTypingData
 import models.QuestStep
+import models.ChatMessage
+import models.ChatSenderType
 
 /**
  * Implementation of the ObjectManager interface for managing objects in the 3D scene.
@@ -65,6 +69,10 @@ class SceneObjectManager(
     // Typing indicators
     internal val objectTypingHandles = mutableMapOf<String, WorldObjectHandle>()
     internal val objectTypingTimeouts = mutableMapOf<String, Int>()
+
+    // Chat messages
+    internal val objectChatHandles = mutableMapOf<String, WorldObjectHandle>()
+    internal val objectChatTimeouts = mutableMapOf<String, Int>()
     
     // Tracking model sources and kinds
     internal val objectModelSources = mutableMapOf<String, Pair<String, String>>()
@@ -257,6 +265,30 @@ class SceneObjectManager(
                 console.error("Error handling OBJECT_TYPING: ${e.message}")
             }
         }
+
+        WebSocketApi.addListener(WebSocketAction.MOVE_OBJECT) { message ->
+            try {
+                val data = json.decodeFromString(MoveObjectData.serializer(), message.data)
+                this@SceneObjectManager.moveObjectLocal(
+                    data.objectId,
+                    Vector3(data.position.x, data.position.y, data.position.z),
+                    data.animate
+                )
+            } catch (e: Throwable) {
+                console.error("Error handling MOVE_OBJECT: ${e.message}")
+            }
+        }
+
+        WebSocketApi.addListener(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
+            try {
+                val chat = json.decodeFromString(models.ChatMessage.serializer(), message.data)
+                if (chat.senderType == models.ChatSenderType.OBJECT && chat.worldId == currentWorldId) {
+                    showObjectChatMessage(chat.senderId, chat.message)
+                }
+            } catch (e: Throwable) {
+                console.error("Error handling OBJECT_CHAT: ${e.message}")
+            }
+        }
     }
 
     fun loadExistingObjects(worldId: String) {
@@ -283,6 +315,32 @@ class SceneObjectManager(
         node.scaling.set(obj.scale.x, obj.scale.y, obj.scale.z)
         
         spatialHash.update(obj.key, node.position)
+    }
+
+    /**
+     * Moves an object to a new position locally, optionally with animation.
+     */
+    fun moveObjectLocal(objectId: String, position: Vector3, animate: Boolean) {
+        val node = objectMeshes[objectId] ?: return
+        
+        if (animate) {
+            Animation.CreateAndStartAnimation(
+                name = "moveObject",
+                target = node,
+                targetProperty = "position",
+                framePerSecond = 60,
+                totalFrame = 30, // 0.5 seconds
+                from = node.position,
+                to = position,
+                loopMode = Animation.ANIMATIONLOOPMODE_CONSTANT,
+                onAnimationEnd = {
+                    spatialHash.update(objectId, node.position)
+                }
+            )
+        } else {
+            node.position.set(position.x, position.y, position.z)
+            spatialHash.update(objectId, node.position)
+        }
     }
 
     fun getSelectedObject(): String? = selectedObject
@@ -320,6 +378,10 @@ class SceneObjectManager(
         objectTypingHandles.clear()
         objectTypingTimeouts.values.forEach { window.clearTimeout(it) }
         objectTypingTimeouts.clear()
+        objectChatHandles.values.forEach { it.remove() }
+        objectChatHandles.clear()
+        objectChatTimeouts.values.forEach { window.clearTimeout(it) }
+        objectChatTimeouts.clear()
         spatialHash.clear()
         cachedMeshes.clear()
         cachedHighestY.clear()

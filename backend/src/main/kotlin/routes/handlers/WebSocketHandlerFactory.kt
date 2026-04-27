@@ -66,6 +66,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.LOCATE_OBJECT -> NullHandler() // Server -> clients only
             WebSocketAction.MINIGAME_RESULT -> MinigameResultHandler()
             WebSocketAction.QUEST_PROGRESS_UPDATED -> NullHandler()
+            WebSocketAction.MOVE_OBJECT -> NullHandler() // Server -> clients only
             null -> NullHandler()
         }
     }

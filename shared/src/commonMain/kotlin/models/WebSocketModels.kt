@@ -283,3 +283,10 @@ data class FriendRequestData(
     val createdAt: Instant,
     val decidedAt: Instant? = null,
 )
+
+@Serializable
+data class MoveObjectData(
+    val objectId: String,
+    val position: Position,
+    val animate: Boolean = true
+)

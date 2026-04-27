@@ -2667,6 +2667,24 @@ vi: Công cụ
 
 Generate remaining images
 vi: Tạo các hình ảnh còn lại
+
+Move object
+vi: Di chuyển vật thể
+
+Moves this object to a different 3D position
+vi: Di chuyển vật thể này sang một vị trí 3D khác
+
+Position
+vi: Vị trí
+
+Animate
+vi: Hoạt họa
+
+Whether to animate the movement
+vi: Có hoạt họa chuyển động hay không
+
+New position for the object
+vi: Vị trí mới cho vật thể
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

@@ -598,6 +598,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Checks if a player's skill level meets a condition"
     ) : LogicNode
+
+    /**
+     * MoveObject node - moves an object to a different 3D position
+     */
+    @Serializable
+    data class MoveObject(
+        override val id: NodeId = NodeId.MoveObject,
+        override val label: String = "Move object",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Moves this object to a different 3D position"
+    ) : LogicNode
 }
 
 /**
@@ -663,6 +674,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.SetAsset(),
         LogicNode.IncreasePlayerSkill(),
         LogicNode.CheckPlayerSkill(),
+        LogicNode.MoveObject(),
     )
 }
 

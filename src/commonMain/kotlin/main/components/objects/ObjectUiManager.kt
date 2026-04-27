@@ -11,13 +11,15 @@ import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import models.ObjectTypingData
+import main.components.stripMarkdown
+import main.components.player.PlayerUi
 import kotlin.math.abs
 
 /**
  * Updates the floating UI positions and quest indicators
  */
 fun SceneObjectManager.update(deltaTime: Float) {
-    if (objectStatusTextHandles.isEmpty() && objectTypingHandles.isEmpty()) return
+    if (objectStatusTextHandles.isEmpty() && objectTypingHandles.isEmpty() && objectChatHandles.isEmpty()) return
 
     uiUpdateFrameCounter++
     // Throttle floating UI updates to every 3 frames for better performance
@@ -34,6 +36,15 @@ fun SceneObjectManager.update(deltaTime: Float) {
 
     // Update typing indicator positions
     objectTypingHandles.forEach { (objectId, handle) ->
+        updateObjectFloatingUiPosition(
+            objectId,
+            handle,
+            isStatusText = false
+        )
+    }
+
+    // Update chat message positions
+    objectChatHandles.forEach { (objectId, handle) ->
         updateObjectFloatingUiPosition(
             objectId,
             handle,
@@ -173,8 +184,9 @@ internal fun SceneObjectManager.handleObjectStatusText(objectId: String, status:
             finalStatus
         }
 
-        // If typing indicator is active, hide status text (typing has precedence)
-        if (objectTypingHandles.containsKey(objectId)) {
+        // Precedence: Typing > Chat > Status. 
+        // If typing or chat is active, hide status text
+        if (objectTypingHandles.containsKey(objectId) || objectChatHandles.containsKey(objectId)) {
             existingHandle?.remove()
             objectStatusTextHandles.remove(objectId)
             objectStatusOffsets.remove(objectId)
@@ -314,6 +326,10 @@ fun SceneObjectManager.setObjectTypingLocal(data: ObjectTypingData) {
     objectTypingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
     
     if (data.isTyping) {
+        // Chat should be removed if typing starts
+        objectChatHandles.remove(objectId)?.remove()
+        objectChatTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+
         if (!objectTypingHandles.containsKey(objectId)) {
             val statusOffsetY = objectStatusOffsets[objectId] ?: 1.0f
             val typingOffsetY = statusOffsetY + 0.4f
@@ -350,5 +366,74 @@ fun SceneObjectManager.setObjectTypingLocal(data: ObjectTypingData) {
         if (status != null) {
             handleObjectStatusText(objectId, status, node)
         }
+    }
+}
+
+/**
+ * Shows a chat message above an object
+ */
+fun SceneObjectManager.showObjectChatMessage(objectId: String, message: String) {
+    val node = objectMeshes[objectId] ?: return
+    val plainText = stripMarkdown(message)
+    if (plainText.isBlank()) return
+
+    val truncated = PlayerUi.truncateChat(plainText)
+    val isEmoji = PlayerUi.isEmojiOnly(truncated)
+
+    objectChatTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+    
+    // Remove typing indicator if it exists when a chat message arrives
+    objectTypingHandles.remove(objectId)?.remove()
+    objectTypingTimeouts.remove(objectId)?.let { window.clearTimeout(it) }
+
+    val statusOffsetY = objectStatusOffsets[objectId] ?: 1.0f
+    
+    val objectHandle = object : WorldObjectHandle {
+        override val id: String = objectId
+        override var node: Node = node
+        override fun remove() {}
+        override fun updateDirection(direction: CharacterDirection) {}
+        override fun updateActivity(activity: PlayerActivity?) {}
+        override fun updateAppearance(additionalSpriteSheets: List<SpriteSheet>?, skinTone: Float?) {}
+        override fun updateText(text: String) {}
+        override fun triggerWindBoost(velocity: Vector3, durationSeconds: Float) {}
+        override fun getMeshes(): Array<AbstractMesh> {
+            return node.getChildMeshes(false)
+        }
+    }
+
+    val textColor = if (isEmoji) "white" else PlayerUi.CHAT_TEXT_COLOR
+    val bgColor = if (isEmoji) null else PlayerUi.CHAT_BG_COLOR
+    val fontSize = if (isEmoji) PlayerUi.EMOJI_ONLY_FONT_SIZE else PlayerUi.FONT_SIZE
+
+    // Remove existing chat handle before creating new one
+    objectChatHandles.remove(objectId)?.remove()
+
+    val chatHandle = worldObjectManager.createTextBillboard(
+        text = truncated,
+        position = Vector3(0f, statusOffsetY, 0f),
+        fontSize = fontSize,
+        textColor = textColor,
+        backgroundColor = bgColor,
+    )
+
+    if (chatHandle != null) {
+        chatHandle.node.parent = node
+        objectChatHandles[objectId] = chatHandle
+        
+        // Hide status text while chat is active
+        handleObjectStatusText(objectId, objectStatusTexts[objectId] ?: "", node)
+
+        val timeoutId = window.setTimeout({
+            objectChatHandles.remove(objectId)?.remove()
+            objectChatTimeouts.remove(objectId)
+            
+            // Restore status text
+            val status = objectStatusTexts[objectId]
+            if (status != null) {
+                handleObjectStatusText(objectId, status, node)
+            }
+        }, 3000)
+        objectChatTimeouts[objectId] = timeoutId
     }
 }

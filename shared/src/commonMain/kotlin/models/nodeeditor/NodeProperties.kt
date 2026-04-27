@@ -122,6 +122,9 @@ enum class PropertyKey {
     // SetAsset properties
     FILE,
     COLLECTION,
+
+    // MoveObject properties
+    ANIMATE,
 }
 
 /**
@@ -1660,6 +1663,37 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             NodePropertyDefinition(
                 key = PropertyKey.NO,
                 name = "Doesn't meet",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // MoveObject node properties
+        is LogicNode.MoveObject -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "In",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TARGET_POSITION,
+                name = "Position",
+                type = PropertyType.VECTOR3,
+                direction = PropertyDirection.INPUT,
+                description = "New position for the object"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ANIMATE,
+                name = "Animate",
+                type = PropertyType.BOOLEAN,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "true",
+                description = "Whether to animate the movement"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Out",
                 type = PropertyType.TRIGGER,
                 direction = PropertyDirection.OUTPUT
             )

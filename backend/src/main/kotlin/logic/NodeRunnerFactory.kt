@@ -391,6 +391,14 @@ object NodeRunnerFactory {
                 )
                 CheckPlayerSkillNodeRunner(context)
             }
+            NodeId.MoveObject -> {
+                WebSocketDebug.logMessage(
+                    "MOVE_OBJECT_RUNNER_SELECTED",
+                    "Selected MoveObjectNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                MoveObjectNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

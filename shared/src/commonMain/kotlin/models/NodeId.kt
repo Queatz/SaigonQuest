@@ -55,4 +55,5 @@ enum class NodeId {
     SetAsset,
     IncreasePlayerSkill,
     CheckPlayerSkill,
+    MoveObject,
 }

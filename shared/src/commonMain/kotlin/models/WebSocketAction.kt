@@ -6,6 +6,8 @@ package models
  * This enum defines all valid actions that can be used in WebSocket messages
  * between the client and server. Using an enum instead of strings provides
  * type safety and better code completion.
+ *
+ * When adding new nodes here we MUST update `WebSocketHandlerFactory`as well.
  */
 enum class WebSocketAction {
     ADD_OBJECT,
@@ -41,6 +43,7 @@ enum class WebSocketAction {
     PLAY_SOUND,
     UPDATE_EMOJI_HISTORY,
     LOCATE_OBJECT,
+    MOVE_OBJECT,
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,
