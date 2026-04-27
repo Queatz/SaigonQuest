@@ -350,7 +350,8 @@ class CameraPipelineManager(
     fun updatePipelineSettings() {
         val isPrettyEnabled = GraphicsSettings.isPrettyGraphicsEnabled()
 
-        scene.imageProcessingConfiguration.exposure = 2f
+        scene.imageProcessingConfiguration.exposure = 1f
+        scene.imageProcessingConfiguration.contrast = 1f
 
         try {
             // Ensure image processing is always active so gamma/tone mapping are applied in all modes
@@ -394,27 +395,17 @@ class CameraPipelineManager(
             // Step 2: Configure features if they're enabled
             if (isPrettyEnabled) {
                 pipeline.apply {
-                    try {
-                        bloomThreshold = 0.25f
-                        bloomWeight = 0.25f
-                        bloomKernel = 32f
-                        bloomScale = .5f
-                        console.log("[DEBUG] Bloom settings configured successfully")
-                    } catch (e: Throwable) {
-                        console.error("[ERROR] Failed to configure bloom: ${e.message}")
-                    }
-                    
-                    try {
-                        if (depthOfFieldEnabled) {
-                            depthOfField.focalLength = 500f
-                            depthOfField.fStop = 1.2f
-                            depthOfField.focusDistance = 10_000f
-                            depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
-                            console.log("[DEBUG] Depth of field settings configured successfully")
-                        }
-                    } catch (e: Throwable) {
-                        console.error("[ERROR] Failed to configure depth of field: ${e.message}")
-                    }
+                    bloomThreshold = 0.25f
+                    bloomWeight = 0.25f
+                    bloomKernel = 32f
+                    bloomScale = .5f
+                    console.log("[DEBUG] Bloom settings configured successfully")
+
+                    depthOfField.focalLength = 500f
+                    depthOfField.fStop = 1.2f
+                    depthOfField.focusDistance = 10_000f
+                    depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
+                    console.log("[DEBUG] Depth of field settings configured successfully")
                 }
             }
             
@@ -461,16 +452,7 @@ class CameraPipelineManager(
                 }
             }
 
-            // Force-refresh depth-dependent post-processes
-            try {
-                val shouldEnableDOF = isPrettyEnabled
-                if (pipeline.depthOfFieldEnabled) {
-                    pipeline.depthOfFieldEnabled = false
-                }
-                pipeline.depthOfFieldEnabled = shouldEnableDOF
-            } catch (e: Throwable) {
-                console.error("[ERROR] Failed to force-refresh DOF: ${e.message}")
-            }
+            pipeline.depthOfFieldEnabled = isPrettyEnabled
 
             // Re-ensure outline is at the end of the post-process chain for all cameras
             registeredCameras.toList().forEach { cam ->
