@@ -56,4 +56,5 @@ enum class NodeId {
     IncreasePlayerSkill,
     CheckPlayerSkill,
     MoveObject,
+    TranscribeAudio,
 }

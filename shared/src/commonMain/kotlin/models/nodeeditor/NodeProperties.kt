@@ -1706,6 +1706,24 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             )
         )
+
+        // TranscribeAudio node properties (pure value, no triggers)
+        is LogicNode.TranscribeAudio -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.AUDIO_URL,
+                name = "Audio URL",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                description = "The URL of the audio file to transcribe"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.RESULT,
+                name = "Result",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT,
+                description = "The transcribed text"
+            )
+        )
     }
 }
 

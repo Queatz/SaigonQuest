@@ -609,6 +609,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Moves this object to a different 3D position"
     ) : LogicNode
+
+    /**
+     * TranscribeAudio node - converts an audio file to text
+     */
+    @Serializable
+    data class TranscribeAudio(
+        override val id: NodeId = NodeId.TranscribeAudio,
+        override val label: String = "Transcribe audio",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "Converts an audio file to text"
+    ) : LogicNode
 }
 
 /**
@@ -675,6 +686,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.IncreasePlayerSkill(),
         LogicNode.CheckPlayerSkill(),
         LogicNode.MoveObject(),
+        LogicNode.TranscribeAudio(),
     )
 }
 

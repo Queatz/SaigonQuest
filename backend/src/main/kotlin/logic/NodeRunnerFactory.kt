@@ -399,6 +399,14 @@ object NodeRunnerFactory {
                 )
                 MoveObjectNodeRunner(context)
             }
+            NodeId.TranscribeAudio -> {
+                WebSocketDebug.logMessage(
+                    "TRANSCRIBE_AUDIO_RUNNER_SELECTED",
+                    "Selected TranscribeAudioNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                TranscribeAudioNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(
