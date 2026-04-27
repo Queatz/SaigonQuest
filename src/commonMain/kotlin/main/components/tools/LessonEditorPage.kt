@@ -9,10 +9,8 @@ import main.api.withRetry
 import main.components.*
 import models.*
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
-import org.w3c.dom.HTMLInputElement
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -27,6 +25,7 @@ fun LessonEditorPage(id: String) {
     var isSuggestingItems by remember { mutableStateOf(false) }
     var generatingCards by remember { mutableStateOf(setOf<String>()) }
     var generatingItems by remember { mutableStateOf(setOf<String>()) }
+    var isGeneratingRemaining by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(id) {
@@ -59,8 +58,6 @@ fun LessonEditorPage(id: String) {
             }
         }
     }
-
-    val descPlaceholder = translated("Describe the scene...")
 
     Div(attrs = {
         style {
@@ -103,12 +100,11 @@ fun LessonEditorPage(id: String) {
 
         if (scene == null) return@Div
 
-        Label(attrs = { style { color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface) } }) { Translated("Lesson title") }
-        Input(type = InputType.Text, attrs = {
-            classes(main.theme.Styles.inputField)
-            value(currentScene.title)
-            onInput { scene = scene?.update { title = it.value } }
-        })
+        DialogInput(
+            label = "Lesson title",
+            value = currentScene.title,
+            onInput = { scene = scene?.update { title = it } }
+        )
 
         H3(attrs = { style { color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface) } }) { Translated("Scene background") }
         currentScene.sceneImage?.let {
@@ -116,13 +112,12 @@ fun LessonEditorPage(id: String) {
         }
         
         Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px) } }) {
-            Input(type = InputType.Text, attrs = {
-                classes(main.theme.Styles.inputField)
-                placeholder(descPlaceholder)
-                value(currentScene.scenePrompt)
-                onInput { scene = scene?.update { scenePrompt = it.value } }
-                style { flexGrow(1) }
-            })
+            DialogInput(
+                placeholder = "Describe the scene...",
+                value = currentScene.scenePrompt,
+                onInput = { scene = scene?.update { scenePrompt = it } },
+                containerAttrs = { style { flexGrow(1) } }
+            )
             DialogButton(
                 isLoading = isGeneratingScene,
                 onClick = {
@@ -163,19 +158,18 @@ fun LessonEditorPage(id: String) {
                     Img(src = it, attrs = { style { width(80.px); height(80.px); property("object-fit", "cover"); borderRadius(8.px); } })
                 }
                 Div(attrs = { style { display(DisplayStyle.Flex); flexDirection(FlexDirection.Column); flexGrow(1); gap(8.px) } }) {
-                    Input(type = InputType.Text, attrs = {
-                        classes(main.theme.Styles.inputField)
-                        value(card.text)
-                        onInput { 
+                    DialogInput(
+                        value = card.text,
+                        onInput = { newValue ->
                             scene = scene?.update { 
                                 val newList = eventCards.toMutableList()
                                 if (index < newList.size) {
-                                    newList[index] = newList[index].copy(text = it.value)
+                                    newList[index] = newList[index].copy(text = newValue)
                                 }
                                 eventCards = newList
                             }
                         }
-                    })
+                    )
                     DialogButton(
                         small = true,
                         isLoading = generatingCards.contains(card.id),
@@ -224,7 +218,7 @@ fun LessonEditorPage(id: String) {
                 }
             }
         }
-        var cardBulkCount by remember { mutableStateOf(5) }
+        var cardBulkCount by remember { mutableStateOf(6) }
         Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px); alignItems(AlignItems.Center) } }) {
             DialogButton(
                 onClick = {
@@ -238,15 +232,14 @@ fun LessonEditorPage(id: String) {
                 Translated("Add event card")
             }
 
-            Input(type = InputType.Number, attrs = {
-                classes(main.theme.Styles.inputField)
-                style { width(60.px) }
-                value(cardBulkCount.toString())
-                onInput { ev ->
-                    val v = (ev.target as HTMLInputElement).value
+            DialogInput(
+                type = InputType.Number,
+                value = cardBulkCount.toString(),
+                onInput = { v ->
                     cardBulkCount = v.toIntOrNull() ?: 1
-                }
-            })
+                },
+                containerAttrs = { style { width(6.cssRem) } }
+            )
 
             DialogButton(
                 isLoading = isSuggestingCards,
@@ -294,19 +287,18 @@ fun LessonEditorPage(id: String) {
                     item.image?.let {
                         Img(src = it, attrs = { style { width(100.percent); backgroundColor(Color.white); borderRadius(8.px); } })
                     }
-                    Input(type = InputType.Text, attrs = {
-                        classes(main.theme.Styles.inputField)
-                        value(item.name)
-                        onInput { 
+                    DialogInput(
+                        value = item.name,
+                        onInput = { newValue ->
                             scene = scene?.update { 
                                 val newList = items.toMutableList()
                                 if (index < newList.size) {
-                                    newList[index] = newList[index].copy(name = it.value)
+                                    newList[index] = newList[index].copy(name = newValue)
                                 }
                                 items = newList
                             }
                         }
-                    })
+                    )
                     DialogButton(
                         small = true,
                         isLoading = generatingItems.contains(item.id),
@@ -355,7 +347,7 @@ fun LessonEditorPage(id: String) {
                 }
             }
         }
-        var itemBulkCount by remember { mutableStateOf(5) }
+        var itemBulkCount by remember { mutableStateOf(6) }
         Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px); alignItems(AlignItems.Center) } }) {
             DialogButton(
                 onClick = {
@@ -369,15 +361,14 @@ fun LessonEditorPage(id: String) {
                 Translated("Add item")
             }
 
-            Input(type = InputType.Number, attrs = {
-                classes(main.theme.Styles.inputField)
-                style { width(60.px) }
-                value(itemBulkCount.toString())
-                onInput { ev ->
-                    val v = (ev.target as HTMLInputElement).value
+            DialogInput(
+                type = InputType.Number,
+                value = itemBulkCount.toString(),
+                onInput = { v ->
                     itemBulkCount = v.toIntOrNull() ?: 1
-                }
-            })
+                },
+                containerAttrs = { style { width(6.cssRem) } }
+            )
 
             DialogButton(
                 isLoading = isSuggestingItems,
@@ -431,7 +422,6 @@ fun LessonEditorPage(id: String) {
                 Translated("Save lesson")
             }
             DialogButton(
-                style = DialogButtonStyle.Secondary,
                 isLoading = isSaving,
                 onClick = {
                     onSave {
@@ -440,6 +430,74 @@ fun LessonEditorPage(id: String) {
                 },
             ) {
                 Translated("Print document")
+            }
+
+            val hasRemainingImages = currentScene.eventCards.any { it.image == null && it.text.isNotBlank() } ||
+                    currentScene.items.any { it.image == null && it.name.isNotBlank() }
+
+            if (hasRemainingImages) {
+                DialogButton(
+                    style = DialogButtonStyle.Secondary,
+                    isLoading = isGeneratingRemaining,
+                    onClick = {
+                        scope.launch {
+                            isGeneratingRemaining = true
+                            error = null
+                            try {
+                                val cardsToGenerate = currentScene.eventCards.filter { it.image == null && it.text.isNotBlank() }
+                                val itemsToGenerate = currentScene.items.filter { it.image == null && it.name.isNotBlank() }
+
+                                cardsToGenerate.forEach { card ->
+                                    generatingCards = generatingCards + card.id
+                                    try {
+                                        val url = withRetry {
+                                            AiApi.generateImage(
+                                                prompt = "${card.text} in the context of ${currentScene.title}. High quality."
+                                            )
+                                        }
+                                        scene = scene?.update {
+                                            val newList = eventCards.toMutableList()
+                                            val cardIndex = newList.indexOfFirst { it.id == card.id }
+                                            if (cardIndex != -1) {
+                                                newList[cardIndex] = newList[cardIndex].copy(image = url)
+                                            }
+                                            eventCards = newList
+                                        }
+                                    } finally {
+                                        generatingCards = generatingCards - card.id
+                                    }
+                                }
+
+                                itemsToGenerate.forEach { item ->
+                                    generatingItems = generatingItems + item.id
+                                    try {
+                                        val url = withRetry {
+                                            AiApi.generateImage(
+                                                prompt = "Isolated ${item.name} on a pure white background. NO shadows, NO textures, NO gradient, NO floor, pure (#ffffff) white background only. High quality, clear focus.",
+                                            )
+                                        }
+                                        scene = scene?.update {
+                                            val newList = items.toMutableList()
+                                            val itemIndex = newList.indexOfFirst { it.id == item.id }
+                                            if (itemIndex != -1) {
+                                                newList[itemIndex] = newList[itemIndex].copy(image = url)
+                                            }
+                                            items = newList
+                                        }
+                                    } finally {
+                                        generatingItems = generatingItems - item.id
+                                    }
+                                }
+                            } catch (e: Throwable) {
+                                error = e.message ?: "Failed to generate some images"
+                            } finally {
+                                isGeneratingRemaining = false
+                            }
+                        }
+                    },
+                ) {
+                    Translated("Generate remaining images")
+                }
             }
         }
     }

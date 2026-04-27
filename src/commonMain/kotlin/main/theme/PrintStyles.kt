@@ -25,7 +25,7 @@ object PrintStyles : StyleSheet() {
 
             // Force A4 and no margins for borderless printing
             "@page" style {
-                property("size", "A4")
+                property("size", "A4 portrait")
                 property("margin", "0mm")
             }
 
@@ -33,6 +33,7 @@ object PrintStyles : StyleSheet() {
             "#root" style {
                 margin(0.px)
                 padding(0.px)
+                width(100.percent)
             }
         }
     }
@@ -43,6 +44,10 @@ object PrintStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         width(100.percent)
         backgroundColor(Color.white)
+
+        media("print") {
+            display(DisplayStyle.Block)
+        }
     }
 
     val a4Page by style {
@@ -56,14 +61,14 @@ object PrintStyles : StyleSheet() {
         color(Color.black)
         position(Position.Relative)
 
+        media("print") {
+            property("margin", "0mm")
+            property("border", "none")
+        }
+
         self + lastChild style {
             property("page-break-after", "auto")
             property("break-after", "auto")
-        }
-        
-        media("print") {
-            property("margin", "0")
-            property("border", "none")
         }
     }
 
@@ -75,10 +80,11 @@ object PrintStyles : StyleSheet() {
         height(100.percent)
         padding(5.mm)
         boxSizing("border-box")
-        gap(2.mm)
+//        gap(2.mm)
     }
 
     val cardItem by style {
+        property("break-inside", "avoid")
         border(0.1.px, LineStyle.Solid, Color.lightgray)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -101,6 +107,7 @@ object PrintStyles : StyleSheet() {
     }
 
     val itemContainer by style {
+        property("break-inside", "avoid")
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)

@@ -55,6 +55,7 @@ fun LessonPrintPage(id: String) {
                         property("transform", "rotate(90deg)")
                         property("object-fit", "cover")
                         property("flex-shrink", "0")
+                        property("display", "block")
                     } 
                 })
             }
@@ -94,7 +95,7 @@ fun LessonPrintPage(id: String) {
                     Div(attrs = {
                         classes(PrintStyles.itemContainer)
                     }) {
-                        item.image?.let { Img(src = it, attrs = { style { maxWidth(100.percent); maxHeight(100.percent) } }) }
+                        item.image?.let { Img(src = it, attrs = { style { maxWidth(100.percent); maxHeight(100.percent); property("display", "block") } }) }
                     }
                 }
             }

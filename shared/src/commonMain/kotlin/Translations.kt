@@ -2664,6 +2664,9 @@ vi: Bạn có chắc chắn muốn xóa bài học này không? Hành động n�
 
 Tools
 vi: Công cụ
+
+Generate remaining images
+vi: Tạo các hình ảnh còn lại
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
