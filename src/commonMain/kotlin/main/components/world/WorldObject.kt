@@ -191,7 +191,8 @@ class Character(
         container.rotation = rotation
         container.scaling = scale
 
-        // Clear any existing additional meshes
+        // Clear any existing meshes and dispose them to avoid leaking
+        characterMesh?.dispose()
         additionalMeshes.forEach { it.dispose() }
         additionalMeshes.clear()
         windEntries.clear()
@@ -224,6 +225,9 @@ class Character(
 
         // Reset the re-render flag
         needsRerender = false
+
+        // Initialize sprite animation immediately so UVs are correct from the first frame
+        updateSpriteAnimation()
 
         this.node = container
         return container
@@ -301,8 +305,6 @@ class Character(
         // Update animation frame based on direction and movement state
         if (activity == PlayerActivity.Moving) {
             animationTime += deltaTime
-        } else {
-            animationTime = 0f
         }
 
         // Always update the sprite animation to reflect the current display direction
@@ -384,23 +386,23 @@ class Character(
         // Small epsilon widens S/N buckets slightly to avoid misclassifying near-boundary angles (e.g., 22.8°, -157.2°)
         val eps = 7.5f
         displayDirection = when {
-            // S (front-facing): widen by eps
-            signedAngleDegrees >= (-22.5f - eps) && signedAngleDegrees < (22.5f + eps) -> CharacterDirection.S
-            // SE
-            signedAngleDegrees >= (22.5f + eps) && signedAngleDegrees < 67.5f -> CharacterDirection.SE
-            // E
-            signedAngleDegrees >= 67.5f && signedAngleDegrees < 112.5f -> CharacterDirection.E
-            // NE
-            signedAngleDegrees >= 112.5f && signedAngleDegrees < (157.5f - eps) -> CharacterDirection.NE
             // N (back-facing): widen by eps
-            signedAngleDegrees >= (157.5f - eps) || signedAngleDegrees < (-157.5f + eps) -> CharacterDirection.N
+            signedAngleDegrees >= (-22.5f - eps) && signedAngleDegrees < (22.5f + eps) -> CharacterDirection.N
             // NW
-            signedAngleDegrees >= (-157.5f + eps) && signedAngleDegrees < -112.5f -> CharacterDirection.NW
+            signedAngleDegrees >= (22.5f + eps) && signedAngleDegrees < 67.5f -> CharacterDirection.NW
             // W
-            signedAngleDegrees >= -112.5f && signedAngleDegrees < -67.5f -> CharacterDirection.W
+            signedAngleDegrees >= 67.5f && signedAngleDegrees < 112.5f -> CharacterDirection.W
             // SW
-            signedAngleDegrees >= -67.5f && signedAngleDegrees < (-22.5f - eps) -> CharacterDirection.SW
-            else -> CharacterDirection.S // Default to South if something goes wrong
+            signedAngleDegrees >= 112.5f && signedAngleDegrees < (157.5f - eps) -> CharacterDirection.SW
+            // S (front-facing): widen by eps
+            signedAngleDegrees >= (157.5f - eps) || signedAngleDegrees < (-157.5f + eps) -> CharacterDirection.S
+            // SE
+            signedAngleDegrees >= (-157.5f + eps) && signedAngleDegrees < -112.5f -> CharacterDirection.SE
+            // E
+            signedAngleDegrees >= -112.5f && signedAngleDegrees < -67.5f -> CharacterDirection.E
+            // NE
+            signedAngleDegrees >= -67.5f && signedAngleDegrees < (-22.5f - eps) -> CharacterDirection.NE
+            else -> CharacterDirection.N // Default to North if something goes wrong
         }
     }
 
@@ -409,14 +411,14 @@ class Character(
      */
     private fun directionToVector(dir: CharacterDirection): Vector3 {
         return when (dir) {
-            CharacterDirection.N -> Vector3(0f, 0f, 1f)
-            CharacterDirection.NE -> Vector3(-0.7071f, 0f, 0.7071f)
-            CharacterDirection.E -> Vector3(-1f, 0f, 0f)
-            CharacterDirection.SE -> Vector3(-0.7071f, 0f, -0.7071f)
-            CharacterDirection.S -> Vector3(0f, 0f, -1f)
-            CharacterDirection.SW -> Vector3(0.7071f, 0f, -0.7071f)
-            CharacterDirection.W -> Vector3(1f, 0f, 0f)
-            CharacterDirection.NW -> Vector3(0.7071f, 0f, 0.7071f)
+            CharacterDirection.N -> Vector3(0f, 0f, -1f)
+            CharacterDirection.NE -> Vector3(0.7071f, 0f, -0.7071f)
+            CharacterDirection.E -> Vector3(1f, 0f, 0f)
+            CharacterDirection.SE -> Vector3(0.7071f, 0f, 0.7071f)
+            CharacterDirection.S -> Vector3(0f, 0f, 1f)
+            CharacterDirection.SW -> Vector3(-0.7071f, 0f, 0.7071f)
+            CharacterDirection.W -> Vector3(-1f, 0f, 0f)
+            CharacterDirection.NW -> Vector3(-0.7071f, 0f, -0.7071f)
         }
     }
 

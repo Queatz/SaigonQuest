@@ -222,7 +222,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     fun dispose() {
         // Remove meshes and HUD
-        players.values.forEach { it.handle?.remove() }
+        players.values.forEach {
+            it.spawnJob?.cancel()
+            it.handle?.remove()
+        }
         players.clear()
         hud.disposeAll()
         usernameTextHandles.values.forEach { it.remove() }
@@ -287,6 +290,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         // Also consider same-username visitors anywhere (brittle but catches common case)
         val sameName = players.values.filter { it.userId != newUserId && !it.isPlayer && it.username == newUsername }
         (candidates + sameName).distinct().forEach { dup ->
+            dup.spawnJob?.cancel()
             dup.handle?.remove()
             players.remove(dup.userId)
             hud.removeHud(dup.userId)
@@ -299,8 +303,9 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val op = players[leave.userId] ?: return
         scope.launch {
             op.mutex.withLock {
-                // Stop any pending spawn retries
+                // Stop any pending spawn retries and jobs
                 clearSpawnRetry(leave.userId)
+                op.spawnJob?.cancel()
                 op.handle?.remove()
                 players.remove(leave.userId)
                 hud.removeHud(leave.userId)
@@ -418,7 +423,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             return
         }
         op.handle = handle
-        op.lastPos = startPos
+        op.lastPos.copyFrom(startPos)
         op.isSpawning = false
         // Apply any pending activity (e.g., Sit) immediately on spawn
         op.activity?.let { pending ->
@@ -478,11 +483,16 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     }
 
     private fun attemptSpawnWithUser(op: OtherPlayer) {
-        if (op.isSpawning) return
+        // Cancel any existing spawn job to avoid race conditions and leaked characters
+        op.spawnJob?.cancel()
         op.isSpawning = true
+
         // Fallback: spawn placeholder if user fetch isn't quick
-        val fallbackId = window.setTimeout({ if (op.handle == null) spawnIfNeeded(op) }, 150)
-        scope.launch {
+        val fallbackId = window.setTimeout({
+            if (op.handle == null) spawnIfNeeded(op)
+        }, 150)
+
+        op.spawnJob = scope.launch {
             try {
                 val user = UserApi.getUserById(op.userId)
                 if (user != null) {
@@ -499,11 +509,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                         )
                         if (handle != null) {
                             op.handle = handle
-                            op.lastPos = startPos
-                            op.targetPos = startPos
+                            op.lastPos.copyFrom(startPos)
+                            op.targetPos?.copyFrom(startPos) ?: run { op.targetPos = startPos.clone() }
                             // Track the profile so we can detect future base changes
                             op.profile = user
-                            op.isSpawning = false
+                            
                             // Success: clear retry state
                             spawnRetryCounts.remove(op.userId)
                             
@@ -524,7 +534,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             scheduleSpawnRetry(op, "createCharacter returned null (with user)")
                         }
                     } else {
-                        op.isSpawning = false
                         // Check if appearance actually needs updating to avoid flashing
                         val prev = op.profile
                         val appearanceChanged = prev == null || 
@@ -544,12 +553,14 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                             hud.setDesiredStatus(op.userId, op.status)
                         }
                     }
-                } else {
-                    op.isSpawning = false
                 }
             } catch (t: Throwable) {
+                if (t !is kotlinx.coroutines.CancellationException) {
+                    console.error("OtherPlayersCoordinator: attemptSpawnWithUser failed for ${op.userId}", t)
+                }
+            } finally {
                 op.isSpawning = false
-                console.error("OtherPlayersCoordinator: attemptSpawnWithUser failed for ${op.userId}", t)
+                window.clearTimeout(fallbackId)
             }
         }
     }
@@ -632,7 +643,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         players.values.forEach { op ->
             val handle = op.handle ?: return@forEach
 
-            // 1) Movement logic (Might return early)
+            // 1) Movement logic
             val targetPos = op.targetPos ?: return@forEach
             snapToGroundToRef(targetPos, tempVector3)
             val snappedTargetPos = tempVector3
@@ -655,40 +666,63 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             
             val isOnWater = op.isOnWater
             val speedFactor = if (isOnWater) 0.5f else 1.0f
-            val playerFrameMovementSpeed = frameMovementSpeed * speedFactor
-
+            
+            // Calculate distance to target
             snappedTargetPos.subtractToRef(currentPos, tempVector3_2)
             val direction = tempVector3_2
             val distance = direction.length()
             
+            // Calculate XZ distance for activity state
             tempVector3_3.set(snappedTargetPos.x - currentPos.x, 0f, snappedTargetPos.z - currentPos.z)
             val distanceXZ = tempVector3_3.length()
 
-            if (op.shouldSnap || distance > 10f) {
+            // 2) Update Activity State (Moving vs Standing)
+            // Use a small threshold to avoid jitter, but large enough to detect intent
+            val isMovingIntent = distanceXZ > 0.01f
+
+            val desiredActivity = if (isMovingIntent && op.activity != PlayerActivity.Sit) {
+                PlayerActivity.Moving
+            } else if (op.activity == PlayerActivity.Sit) {
+                PlayerActivity.Sit
+            } else {
+                null
+            }
+
+            if (op.activity != desiredActivity) {
+                op.activity = desiredActivity
+                handle.updateActivity(desiredActivity)
+            }
+
+            // 3) Handle Movement
+            if (!isMovingIntent) {
+                // Close enough to snap and be done
+                if (distance > 0f) {
+                    handle.position.copyFrom(snappedTargetPos)
+                    op.lastPos.copyFrom(snappedTargetPos)
+                    hud.updateHudPosition(op.userId, snappedTargetPos)
+                    PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
+                }
                 op.shouldSnap = false
-                handle.position = snappedTargetPos
+                return@forEach
+            }
+
+            // If we are very far, snap to avoid long "catch up" sliding
+            if (op.shouldSnap || distance > 100f) {
+                op.shouldSnap = false
+                handle.position.copyFrom(snappedTargetPos)
                 op.lastPos.copyFrom(snappedTargetPos)
                 hud.updateHudPosition(op.userId, snappedTargetPos)
-                if (op.activity == PlayerActivity.Moving) {
-                    handle.updateActivity(null)
-                    op.activity = null
-                }
                 PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 return@forEach
             }
 
-            if (distanceXZ < 0.005f) {
-                // Close enough
-                handle.position = snappedTargetPos
-                hud.updateHudPosition(op.userId, snappedTargetPos)
-                if (op.activity == PlayerActivity.Moving) {
-                    handle.updateActivity(null)
-                    op.activity = null
-                }
-                // Keep username billboard in sync
-                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
-                return@forEach
+            // Dynamic speed: if far away, move faster to catch up (sprint-like)
+            val catchUpMultiplier = when {
+                distance > 5.0f -> 5.0f // Catch up fast
+                distance > 2.0f -> 2.5f // Catch up moderate
+                else -> 1.2f // Slightly faster than base to ensure we actually reach target between updates
             }
+            val playerFrameMovementSpeed = frameMovementSpeed * speedFactor * catchUpMultiplier
 
             // Update facing with hysteresis
             val currentFacing = op.direction
@@ -707,7 +741,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             snapToGroundToRef(moved, tempVector3_3)
             val newPosition = tempVector3_3
             
-            handle.position = newPosition
+            handle.position.copyFrom(newPosition)
             
             // Check for water ripples when moving
             val nowTime = window.performance.now()
@@ -722,12 +756,6 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             
             hud.updateHudPosition(op.userId, newPosition)
             PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
-            if (op.activity != PlayerActivity.Sit) {
-                if (op.activity != PlayerActivity.Moving) {
-                    handle.updateActivity(PlayerActivity.Moving)
-                }
-                op.activity = PlayerActivity.Moving
-            }
         }
     }
 

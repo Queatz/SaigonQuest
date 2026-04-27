@@ -28,8 +28,9 @@ data class OtherPlayer(
     var lastRippleTime: Double = 0.0,
     var isOnWater: Boolean = false,
     var lastEnvCheckFrame: Int = -1,
-    var shouldSnap: Boolean = false,
+            var shouldSnap: Boolean = false,
     var isSpawning: Boolean = false,
+    var spawnJob: kotlinx.coroutines.Job? = null,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

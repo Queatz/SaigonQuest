@@ -616,14 +616,9 @@ class WorldObjectManager(private val scene: Scene) {
             }
             
             override fun updateActivity(activity: PlayerActivity?) {
-                console.log("[DEBUG_LOG] WorldObjectHandle: updateActivity called for object ${id} with activity ${activity?.name ?: "null (Standing)"}")
-                
                 // Only update activity if this is a Character object
                 if (obj is Character) {
-                    console.log("[DEBUG_LOG] WorldObjectHandle: Updating Character activity to ${activity?.name ?: "Standing"}")
                     obj.activity = activity
-                } else {
-                    console.log("[DEBUG_LOG] WorldObjectHandle: Object is not a Character, ignoring activity update")
                 }
             }
 
@@ -633,11 +628,7 @@ class WorldObjectManager(private val scene: Scene) {
                     // We clear any previously applied additional layers before applying the new set
                     // to ensure stale layers are not retained (e.g., after removing the last worn item).
                     if (additionalSpriteSheets != null) {
-                        // 1) Clear existing additional sheets and dispose old meshes immediately
-                        obj.updateSpriteSheets(emptyList())
-                        try { obj.update(0f, null) } catch (_: Throwable) {}
-
-                        // 2) Apply the new authoritative set
+                        // Apply the new authoritative set
                         obj.updateSpriteSheets(additionalSpriteSheets)
                     }
                     // Update skin tone if provided
