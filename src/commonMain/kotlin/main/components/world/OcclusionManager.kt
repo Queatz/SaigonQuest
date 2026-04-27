@@ -610,7 +610,7 @@ class OcclusionManager(private val scene: Scene) {
         val viewHeight = eng.getRenderHeight().toFloat()
         
         // 4. Occlusion Radius (resolution independent)
-        uOcclusionRadius = min(viewWidth, viewHeight) / 3.0f
+        uOcclusionRadius = min(viewWidth, viewHeight) / 2f
         
         // 5. Derived parameters
         uBandWidthPx = occlusionSoftness * uOcclusionRadius
