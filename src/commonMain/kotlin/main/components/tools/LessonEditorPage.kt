@@ -5,6 +5,7 @@ import app.softwork.routingcompose.Router
 import kotlinx.browser.window
 import main.api.AiApi
 import main.api.LessonApi
+import main.api.withRetry
 import main.components.*
 import models.*
 import org.jetbrains.compose.web.attributes.InputType
@@ -40,6 +41,24 @@ fun LessonEditorPage(id: String) {
 
     val currentScene = scene ?: LessonScene()
     val darkMode = rememberDarkMode()
+
+    val onSave = { afterSave: () -> Unit ->
+        val s = scene
+        if (s != null) {
+            scope.launch {
+                isSaving = true
+                error = null
+                try {
+                    LessonApi.saveScene(s)
+                    afterSave()
+                } catch (e: Throwable) {
+                    error = e.message ?: "Failed to save lesson"
+                } finally {
+                    isSaving = false
+                }
+            }
+        }
+    }
 
     val descPlaceholder = translated("Describe the scene...")
 
@@ -111,10 +130,12 @@ fun LessonEditorPage(id: String) {
                         isGeneratingScene = true
                         error = null
                         try {
-                            val url = AiApi.generateImage(
-                                prompt = "${currentScene.scenePrompt}. High quality, 16:9 aspect ratio.",
-                                size = "1280*720"
-                            )
+                            val url = withRetry {
+                                AiApi.generateImage(
+                                    prompt = "${currentScene.scenePrompt}. High quality, 16:9 aspect ratio.",
+                                    size = "1280*720"
+                                )
+                            }
                             scene = scene?.update { sceneImage = url }
                         } catch (e: Throwable) {
                             error = e.message ?: "Failed to generate scene"
@@ -139,7 +160,7 @@ fun LessonEditorPage(id: String) {
                 }
             }) {
                 card.image?.let {
-                    Img(src = it, attrs = { style { width(80.px); height(80.px); property("object-fit", "cover") } })
+                    Img(src = it, attrs = { style { width(80.px); height(80.px); property("object-fit", "cover"); borderRadius(8.px); } })
                 }
                 Div(attrs = { style { display(DisplayStyle.Flex); flexDirection(FlexDirection.Column); flexGrow(1); gap(8.px) } }) {
                     Input(type = InputType.Text, attrs = {
@@ -163,9 +184,11 @@ fun LessonEditorPage(id: String) {
                                 generatingCards = generatingCards + card.id
                                 error = null
                                 try {
-                                    val url = AiApi.generateImage(
-                                        prompt = "${card.text} in the context of ${currentScene.title}. High quality."
-                                    )
+                                    val url = withRetry {
+                                        AiApi.generateImage(
+                                            prompt = "${card.text} in the context of ${currentScene.title}. High quality."
+                                        )
+                                    }
                                     scene = scene?.update { 
                                         val newList = eventCards.toMutableList()
                                         if (index < newList.size) {
@@ -269,7 +292,7 @@ fun LessonEditorPage(id: String) {
                     }
                 }) {
                     item.image?.let {
-                        Img(src = it, attrs = { style { width(100.percent); backgroundColor(Color.white) } })
+                        Img(src = it, attrs = { style { width(100.percent); backgroundColor(Color.white); borderRadius(8.px); } })
                     }
                     Input(type = InputType.Text, attrs = {
                         classes(main.theme.Styles.inputField)
@@ -292,9 +315,11 @@ fun LessonEditorPage(id: String) {
                                 generatingItems = generatingItems + item.id
                                 error = null
                                 try {
-                                    val url = AiApi.generateImage(
-                                        prompt = "Isolated ${item.name} on a pure white background. NO shadows, NO textures, NO gradient, NO floor, pure (#ffffff) white background only. High quality, clear focus.",
-                                    )
+                                    val url = withRetry {
+                                        AiApi.generateImage(
+                                            prompt = "Isolated ${item.name} on a pure white background. NO shadows, NO textures, NO gradient, NO floor, pure (#ffffff) white background only. High quality, clear focus.",
+                                        )
+                                    }
                                     scene = scene?.update { 
                                         val newList = items.toMutableList()
                                         if (index < newList.size) {
@@ -398,18 +423,8 @@ fun LessonEditorPage(id: String) {
             DialogButton(
                 isLoading = isSaving,
                 onClick = {
-                    val s = scene ?: return@DialogButton
-                    scope.launch {
-                        isSaving = true
-                        error = null
-                        try {
-                            LessonApi.saveScene(s)
-                            router.navigate("/tools/scenes")
-                        } catch (e: Throwable) {
-                            error = e.message ?: "Failed to save lesson"
-                        } finally {
-                            isSaving = false
-                        }
+                    onSave {
+                        router.navigate("/tools/scenes")
                     }
                 },
             ) {
@@ -417,7 +432,12 @@ fun LessonEditorPage(id: String) {
             }
             DialogButton(
                 style = DialogButtonStyle.Secondary,
-                onClick = { window.open("/tools/scenes/${currentScene.key}/print", "_blank") },
+                isLoading = isSaving,
+                onClick = {
+                    onSave {
+                        window.open("/tools/scenes/${currentScene.key}/print", "_blank")
+                    }
+                },
             ) {
                 Translated("Print document")
             }

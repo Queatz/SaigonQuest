@@ -31,8 +31,8 @@ vi: Tạo vật phẩm
 Event cards
 vi: Thẻ sự kiện
 
-Items (white background)
-vi: Các vật phẩm (nền trắng)
+Items
+vi: Các vật phẩm
 
 Add event card
 vi: Thêm thẻ sự kiện

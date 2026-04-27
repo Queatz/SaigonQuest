@@ -21,7 +21,7 @@ fun LessonScenesPage() {
 
     LaunchedEffect(Unit) {
         try {
-            scenes = LessonApi.getScenes()
+            scenes = LessonApi.getScenes().sortedByDescending { it.createdAt }
         } catch (e: Throwable) {
             error = e.message ?: "Failed to load scenes"
         } finally {

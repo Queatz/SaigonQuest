@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import main.api.AiApi
+import main.api.withRetry
 import main.components.DialogButton
 import main.components.DialogButtonStyle
 import main.components.DialogSelect
@@ -128,7 +129,7 @@ fun MediaAiArea(
                             // Use MainScope to continue in background even if this component is disposed
                             MainScope().launch {
                                 try {
-                                    val url = AiApi.generateImage(prompt, size)
+                                    val url = withRetry { AiApi.generateImage(prompt, size) }
                                     onSelect(url, MediaType.Image, prompt.take(30))
                                     onRefreshLibrary()
                                 } catch (t: Throwable) {

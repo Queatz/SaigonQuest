@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import main.components.*
 import main.components.common.Spinner
 import main.api.AiApi
+import main.api.withRetry
 import main.api.ContentApi
 import main.api.UserApi
 import main.components.media.UploadMediaDialog
@@ -255,7 +256,7 @@ fun MinigameConfigEditor(
                                         try {
                                             semaphore.withPermit {
                                                 val size = if (type == MinigameType.Story) "1280*720" else "1024*1024"
-                                                val url = AiApi.generateImage(item.text!! + "\n\nStyle: Realistic photo, cute, natural colors, good framing.", size)
+                                                val url = withRetry { AiApi.generateImage(item.text!! + "\n\nStyle: Realistic photo, cute, natural colors, good framing.", size) }
                                                 mutex.withLock {
                                                     val idx = currentList.indexOfFirst { it.id == item.id }
                                                     if (idx != -1) {
