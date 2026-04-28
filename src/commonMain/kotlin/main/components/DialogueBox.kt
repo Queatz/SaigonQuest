@@ -10,6 +10,7 @@ import main.components.media.AudioRecorder
 import main.components.media.AudioRecorderUI
 import main.components.media.UploadMediaDialog
 import main.components.media.rememberAudioRecorderState
+import main.components.common.Spinner
 import main.theme.Styles
 import models.DialogueData
 import models.MediaType
@@ -46,51 +47,38 @@ fun DialogueBox(
     var uploadedAudios by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var uploadMediaType by remember { mutableStateOf<MediaType?>(null) }
 
-    LaunchedEffect(currentDialogue) {
-        if (currentDialogue == null) {
-            onClose()
-            TtsManager.stop()
-        }
-    }
-
-    // Add a listener for dialogue events
-    LaunchedEffect(Unit) {
-        WebSocketApi.addDialogueListener { dialogueData ->
-            console.log("DialogueBox: Received dialogue: ${dialogueData.text}")
-            currentDialogue = dialogueData
-            isWaiting = false
-
-            if (AudioSettings.isSpeakDialogueEnabled()) {
-                val stripped = stripMarkdown(dialogueData.text)
-                if (stripped.isNotBlank()) {
-                    TtsManager.speak(stripped)
-                }
-            }
-        }
-    }
-
     // Only show the dialogue box if there's a dialogue to show
     val dialogue = currentDialogue ?: return
 
     val recorderState = rememberAudioRecorderState(
         onUpload = { file ->
-            scope.launch {
-                try {
-                    val token = UserApi.getToken() ?: ""
-                    val record = ContentApi.upload(file, token)
-                    val url = ContentApi.imageUrlFor(record.uploadedFilePath)
-                    uploadedAudios = if (dialogue.allowMultipleAudio) {
-                        uploadedAudios + (url to record.originalFileName)
-                    } else {
-                        listOf(url to record.originalFileName)
-                    }
-                } catch (t: Throwable) {
-                    console.error("Failed to upload recorded audio", t)
+            try {
+                val token = UserApi.getToken() ?: ""
+                val record = ContentApi.upload(file, token)
+                val url = ContentApi.imageUrlFor(record.uploadedFilePath)
+                uploadedAudios = if (dialogue.allowMultipleAudio) {
+                    uploadedAudios + (url to record.originalFileName)
+                } else {
+                    listOf(url to record.originalFileName)
                 }
+            } catch (t: Throwable) {
+                console.error("Failed to upload recorded audio", t)
             }
         },
-        onError = { console.error(it) }
+        onError = { 
+            console.error(it)
+        }
     )
+
+    val isUploading = recorderState.isUploading
+
+    LaunchedEffect(currentDialogue) {
+        if (currentDialogue == null) {
+            onClose()
+            TtsManager.stop()
+            recorderState.cancel()
+        }
+    }
 
     BaseDialog(
         onClose = { currentDialogue = null },
@@ -175,10 +163,10 @@ fun DialogueBox(
                                 classes(Styles.imagePreview)
                             })
                             Button(attrs = {
-                                if (isWaiting || recorderState.isRecording) disabled()
+                                if (isWaiting || recorderState.isRecording || recorderState.isUploading) disabled()
                                 classes(Styles.imageRemoveButton)
                                 onClick {
-                                    if (isWaiting || recorderState.isRecording) return@onClick
+                                    if (isWaiting || recorderState.isRecording || recorderState.isUploading) return@onClick
                                     uploadedImages = uploadedImages.filter { it != url }
                                 }
                             }) {
@@ -189,10 +177,10 @@ fun DialogueBox(
 
                     if (dialogue.allowMultipleImages || uploadedImages.isEmpty()) {
                         Button(attrs = {
-                            if (isWaiting || recorderState.isRecording) disabled()
+                            if (isWaiting || recorderState.isRecording || recorderState.isUploading) disabled()
                             classes(Styles.imageAddButton)
                             onClick {
-                                if (isWaiting || recorderState.isRecording) return@onClick
+                                if (isWaiting || recorderState.isRecording || recorderState.isUploading) return@onClick
                                 uploadMediaType = MediaType.Image
                             }
                         }) {
@@ -239,10 +227,10 @@ fun DialogueBox(
                                 }
                             })
                             Button(attrs = {
-                                if (isWaiting || recorderState.isRecording) disabled()
+                                if (isWaiting || recorderState.isRecording || recorderState.isUploading) disabled()
                                 classes(Styles.imageRemoveButton)
                                 onClick {
-                                    if (isWaiting || recorderState.isRecording) return@onClick
+                                    if (isWaiting || recorderState.isRecording || recorderState.isUploading) return@onClick
                                     uploadedAudios = uploadedAudios.filter { it.first != url }
                                 }
                             }) {
@@ -252,7 +240,19 @@ fun DialogueBox(
                     }
 
                     if (dialogue.allowMultipleAudio || uploadedAudios.isEmpty()) {
-                        if (recorderState.isRecording) {
+                        if (recorderState.isUploading) {
+                            Div({
+                                style {
+                                    display(DisplayStyle.Flex)
+                                    alignItems(AlignItems.Center)
+                                    justifyContent(JustifyContent.Center)
+                                    width(100.percent)
+                                    padding(20.px)
+                                }
+                            }) {
+                                Spinner(translated("Uploading audio..."))
+                            }
+                        } else if (recorderState.isRecording) {
                             AudioRecorderUI(
                                 state = recorderState,
                                 isFullWidth = true,
@@ -260,10 +260,10 @@ fun DialogueBox(
                             )
                         } else {
                             Button(attrs = {
-                                if (isWaiting || recorderState.isRecording) disabled()
+                                if (isWaiting || recorderState.isRecording || recorderState.isUploading) disabled()
                                 classes(Styles.imageAddButton)
                                 onClick {
-                                    if (isWaiting || recorderState.isRecording) return@onClick
+                                    if (isWaiting || recorderState.isRecording || recorderState.isUploading) return@onClick
                                     uploadMediaType = MediaType.Audio
                                 }
                             }) {
@@ -275,10 +275,10 @@ fun DialogueBox(
                                 onUpload = {},
                                 state = recorderState,
                                 buttonAttrs = {
-                                    if (isWaiting || recorderState.isRecording) classes(Styles.disabledAction)
+                                    if (isWaiting || recorderState.isRecording || recorderState.isUploading) classes(Styles.disabledAction)
                                     classes(Styles.imageAddButton)
                                 },
-                                isEnabled = !isWaiting && !recorderState.isRecording,
+                                isEnabled = !isWaiting && !recorderState.isRecording && !recorderState.isUploading,
                                 buttonContent = {
                                     Text("🎤 ")
                                     Text(translated("Record"))
@@ -309,11 +309,11 @@ fun DialogueBox(
                                 flexGrow(1)
                             }
                         },
-                        enabled = !isWaiting && !recorderState.isRecording,
+                        enabled = !isWaiting && !recorderState.isRecording && !recorderState.isUploading,
                         autoFocus = true,
                         attrs = {
                             onKeyDown { ev ->
-                                if (ev.key == "Enter" && !isWaiting && !recorderState.isRecording) {
+                                if (ev.key == "Enter" && !isWaiting && !recorderState.isRecording && !recorderState.isUploading) {
                                     isWaiting = true
                                     val scope = MainScope()
                                     scope.launch {
@@ -377,7 +377,7 @@ fun DialogueBox(
                 dialogue.buttons.forEachIndexed { index, buttonText ->
                     DialogButton(
                         onClick = {
-                            if (isWaiting || recorderState.isRecording) return@DialogButton
+                            if (isWaiting || recorderState.isRecording || recorderState.isUploading) return@DialogButton
                             isWaiting = true
                             
                             val scope = MainScope()
@@ -414,7 +414,7 @@ fun DialogueBox(
                             }
                         },
                         style = DialogButtonStyle.Primary,
-                        isDisabled = isWaiting || recorderState.isRecording,
+                        isDisabled = isWaiting || recorderState.isRecording || recorderState.isUploading,
                     ) { Text(buttonText) }
                 }
             }

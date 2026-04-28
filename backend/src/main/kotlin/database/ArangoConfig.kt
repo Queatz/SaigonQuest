@@ -120,6 +120,7 @@ object CollectionsConfig {
     const val SKILLS_COLLECTION = "skills"
     const val LESSON_SCENES_COLLECTION = "lesson_scenes"
     const val SAVED_POSITIONS_COLLECTION = "saved_positions"
+    const val USER_WORLD_POSITIONS_COLLECTION = "user_world_positions"
     
     // World docs collection
     const val DOCS_COLLECTION = "docs"
@@ -172,6 +173,7 @@ object CollectionsConfig {
         SKILLS_COLLECTION to CollectionSpec(documentOptions(), models.Skill::class.java),
         LESSON_SCENES_COLLECTION to CollectionSpec(documentOptions(), models.LessonScene::class.java),
         SAVED_POSITIONS_COLLECTION to CollectionSpec(documentOptions(), models.SavedPosition::class.java),
+        USER_WORLD_POSITIONS_COLLECTION to CollectionSpec(documentOptions(), models.UserWorldPosition::class.java),
     )
 
     fun initializeCollections(database: ArangoDatabase) {

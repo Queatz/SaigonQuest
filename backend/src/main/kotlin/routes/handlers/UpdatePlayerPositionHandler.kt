@@ -2,12 +2,12 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.json.Json
 import models.PlayerPositionData
 import models.WebSocketAction
 import routes.WebSocketConnection
 import routes.WebSocketMessage
 import state.WorldStateStore
+import repository.UserWorldPositionRepository
 import utils.json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,6 +18,10 @@ import java.util.concurrent.ConcurrentHashMap
  * When a player moves, this handler ensures all other clients see the movement.
  */
 class UpdatePlayerPositionHandler : WebSocketHandler {
+    private val userWorldPositionRepository = UserWorldPositionRepository()
+    private val lastDbUpdate = ConcurrentHashMap<String, Long>() // userId -> timestamp
+    private val DB_UPDATE_THROTTLE_MS = 5000L // 5 seconds
+
     override suspend fun handle(
         message: WebSocketMessage,
         connection: WebSocketConnection,
@@ -37,6 +41,19 @@ class UpdatePlayerPositionHandler : WebSocketHandler {
                 position = positionData.position,
                 isPlayer = positionData.isPlayer,
             )
+
+            // Persist position to DB with throttling
+            val now = System.currentTimeMillis()
+            val userId = connection.userId
+            val lastUpdate = lastDbUpdate[userId] ?: 0L
+            if (now - lastUpdate > DB_UPDATE_THROTTLE_MS) {
+                lastDbUpdate[userId] = now
+                try {
+                    userWorldPositionRepository.update(userId, worldId, positionData.position)
+                } catch (e: Throwable) {
+                    WebSocketDebug.logError("Failed to persist user position to DB", e, session)
+                }
+            }
 
             // Broadcast position update to all other clients in the same world
             val broadcastMessage = WebSocketMessage(

@@ -183,37 +183,26 @@ class OcclusionManager(private val scene: Scene) {
             return alpha;
         }
         
+        // 1. World-space distance along player-camera axis
+        vec3 toFrag = vPositionW - playerWorld;
+        float distAlongAxis = dot(toFrag, playerToCamDir);
+
         // 2. Depth check: is the pixel closer to the camera than the player?
-        float depthDiff = gl_FragCoord.z - playerScreenZ + 0.001;
-        
-        // Dithered evaluation for depth comparison (soften hard thresholds)
-        bool isOccluding = (depthDiff < 0.0);
-        if (!isOccluding && depthBand > 0.0) {
-            float depthWeight = smoothstep(depthBand, 0.0, abs(depthDiff));
-            if (depthWeight > noise(gl_FragCoord.xy + vec2(13.7, 31.1))) {
-                isOccluding = true;
-            }
-        }
+        // Use world-space distance for stability at long ranges.
+        // Positive distAlongAxis means it's between camera and player.
+        bool isOccluding = distAlongAxis > 0.0; 
         
         // 3. Directional/Height Check: "The Flashlight Cone"
         if (isOccluding) {
-            // Screen Height Weight (soft transition from below to above player)
-            float screenHeightWeight = smoothstep(-halfBand, halfBand, gl_FragCoord.y - playerScreenPixel.y);
-            
             // World Height Weight (at feet vs tall object)
             float worldHeightDiff = vPositionW.y - playerWorld.y;
             float worldHeightWeight = smoothstep(0.1 - softnessWorld, 0.1 + softnessWorld, worldHeightDiff);
             
-            // Cone check: world-space alignment with player-camera axis
-            // Optimized: use pre-calculated normalized playerToCamDir uniform
-            vec3 toFrag = vPositionW - playerWorld;
-            float distAlongAxis = dot(toFrag, playerToCamDir);
-            
             // Optimized perp distance squared: distSq(toFrag) - distAlongAxis^2
             float distSqToAxis = dot(toFrag, toFrag) - (distAlongAxis * distAlongAxis);
             
-            // Cone starts at player, grows slightly as it goes towards camera
-            float coneRadius = 0.125 + clamp(distAlongAxis * 0.1, 0.0, 1.0) * 0.5;
+            // Cone starts at player, grows as it goes towards camera
+            float coneRadius = 0.5 + max(distAlongAxis * 0.5, 0.0);
             float coneRadiusSq = coneRadius * coneRadius;
             
             // Soften the cone edge and the cone start
@@ -221,45 +210,18 @@ class OcclusionManager(private val scene: Scene) {
             coneWeight *= smoothstep(-0.2 - softnessWorld, -0.2 + softnessWorld, distAlongAxis);
             
             // Additional safety weights for "above player but far below world" and "below player but in cone"
-            float floorWeight = smoothstep(-0.4 - softnessWorld, -0.4 + softnessWorld, worldHeightDiff);
-            float safetyWeight = smoothstep(-0.5 - softnessWorld, -0.5 + softnessWorld, worldHeightDiff);
-
-            // Logic:
-            // if below player (screenHeightWeight=0.0): must be wellAbove OR (inCone AND floor)
-            // if above player (screenHeightWeight=1.0): must be wellAbove OR inCone OR safety
-            float weightBelow = max(worldHeightWeight, min(coneWeight, floorWeight));
-            float weightAbove = max(worldHeightWeight, max(coneWeight, safetyWeight));
+            float floorWeight = smoothstep(-0.2 - softnessWorld, -0.2 + softnessWorld, worldHeightDiff);
             
-            float finalProb = mix(weightBelow, weightAbove, screenHeightWeight);
+            float finalProb = min(coneWeight, floorWeight);
             
             // Apply dithering to these new checks
-            if (finalProb < 1.0) {
-                if (noise(gl_FragCoord.xy + vec2(23.1, 61.7)) > finalProb) {
-                    isOccluding = false;
-                }
+            if (noise(gl_FragCoord.xy + vec2(23.1, 61.7)) > finalProb) {
+                isOccluding = false;
             }
         }
 
-        // 4. Combine checks and apply radial mask with dithering
         if (isOccluding) {
-            float dist = distance(gl_FragCoord.xy, playerScreenPixel);
-            
-            if (!useRadius) {
-                discard;
-            } else if (bandWidthPx <= 0.0) {
-                if (dist < occlusionRadius) {
-                    discard;
-                }
-            } else {
-                if (dist < innerRadius) {
-                    discard;
-                } else if (dist < occlusionRadius) {
-                    float coverage = (dist - innerRadius) * invBandWidthPx;
-                    if (coverage < noise(gl_FragCoord.xy)) {
-                        discard;
-                    }
-                }
-            }
+            discard;
         }
         
         return alpha;

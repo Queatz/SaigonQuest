@@ -25,13 +25,30 @@ import web.navigator.navigator
 
 class AudioRecorderState(
     private val scope: kotlinx.coroutines.CoroutineScope,
-    private val onUpload: (File) -> Unit,
+    private val onUpload: suspend (File) -> Unit,
     private val onError: (String) -> Unit
 ) {
     var isRecording by mutableStateOf(false)
+    var isUploading by mutableStateOf(false)
     private var isCancelled = false
     private var mediaRecorder: MediaRecorder? = null
     private val chunks = mutableListOf<Blob>()
+
+    private val internalOnUpload: (File) -> Unit = { file ->
+        isUploading = true
+        scope.launch {
+            try {
+                onUpload(file)
+            } finally {
+                isUploading = false
+            }
+        }
+    }
+
+    private val internalOnError: (String) -> Unit = { error ->
+        isUploading = false
+        onError(error)
+    }
 
     fun start() {
         MusicManager.startRecording()
@@ -58,7 +75,7 @@ class AudioRecorderState(
                             type = "audio/webm"
                         }
                         val file = File(arrayOf(blob), "recorded-audio.webm", fileProps.unsafeCast<org.w3c.files.FilePropertyBag>())
-                        onUpload(file)
+                        internalOnUpload(file)
                     }
                     
                     val tracks = stream.asDynamic().getTracks() as Array<dynamic>
@@ -69,7 +86,7 @@ class AudioRecorderState(
                 }
 
                 recorder.onerror = {
-                    onError("Recording error")
+                    internalOnError("Recording error")
                     isRecording = false
                     MusicManager.stopRecording()
                 }
@@ -80,7 +97,7 @@ class AudioRecorderState(
                 mediaRecorder = recorder
                 isRecording = true
             } catch (t: Throwable) {
-                onError(t.message ?: "Failed to start recording")
+                internalOnError(t.message ?: "Failed to start recording")
                 MusicManager.stopRecording()
                 isRecording = false
             }
@@ -104,7 +121,7 @@ class AudioRecorderState(
 
 @Composable
 fun rememberAudioRecorderState(
-    onUpload: (File) -> Unit,
+    onUpload: suspend (File) -> Unit,
     onError: (String) -> Unit = {}
 ): AudioRecorderState {
     val scope = rememberCoroutineScope()
@@ -172,7 +189,7 @@ fun AudioRecorderUI(
 
 @Composable
 fun AudioRecorder(
-    onUpload: (File) -> Unit,
+    onUpload: suspend (File) -> Unit,
     onError: (String) -> Unit = {},
     buttonAttrs: (AttrsScope<HTMLDivElement>.() -> Unit)? = null,
     buttonContent: @Composable () -> Unit = {

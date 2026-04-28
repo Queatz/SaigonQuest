@@ -1135,6 +1135,10 @@ fun SceneComponent(url: String) {
                 val preferredStart = SceneManager.getAndClearPendingTeleport()
                 val startPosition = if (preferredStart != null) {
                     playerController.findValidYPosition(preferredStart) ?: preferredStart
+                } else if (currentWorld.value?.lastPosition != null) {
+                    val last = currentWorld.value!!.lastPosition!!
+                    val vec = lib.Vector3(last.x, last.y, last.z)
+                    playerController.findValidYPosition(vec) ?: vec
                 } else {
                     playerController.findValidStartPosition()
                 }

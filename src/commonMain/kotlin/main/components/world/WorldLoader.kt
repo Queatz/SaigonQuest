@@ -618,6 +618,7 @@ class WorldLoader(private val scene: Scene) {
                         executeWorldLoadedCallback()
                     },
                     onError = { _, message, exception ->
+                        console.error("[WORLD ERROR]: $message", exception)
                         // Resume the coroutine with an exception
                         continuation.resumeWithException(Throwable(str("Oh no! Failed to load world.")))
                     }

@@ -29,6 +29,7 @@ fun Routing.configureWorldRoutes() {
     val balances = repository.UserBalanceRepository()
     val balanceHistory = repository.UserBalanceHistoryRepository()
     val notificationRepository = NotificationRepository()
+    val userWorldPositionRepository = repository.UserWorldPositionRepository()
 
     fun checkAccess(call: ApplicationCall, world: World): ErrorResponse? {
         val principal = call.principal<JWTPrincipal>()
@@ -197,6 +198,12 @@ fun Routing.configureWorldRoutes() {
                 return@get call.respond(HttpStatusCode.Forbidden, denial)
             }
 
+            // Populate last known position for the current user
+            val userId = call.principal<JWTPrincipal>()?.let { JWTUtils.getUserId(it) }
+            if (userId != null) {
+                world.lastPosition = userWorldPositionRepository.get(userId, world.key)?.position
+            }
+
             call.respond(world)
         }
         
@@ -216,6 +223,12 @@ fun Routing.configureWorldRoutes() {
             val denial = checkAccess(call, world)
             if (denial != null) {
                 return@get call.respond(HttpStatusCode.Forbidden, denial)
+            }
+
+            // Populate last known position for the current user
+            val userId = call.principal<JWTPrincipal>()?.let { JWTUtils.getUserId(it) }
+            if (userId != null) {
+                world.lastPosition = userWorldPositionRepository.get(userId, world.key)?.position
             }
 
             call.respond(world)

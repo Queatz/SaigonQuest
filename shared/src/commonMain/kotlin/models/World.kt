@@ -35,6 +35,7 @@ data class World(
     var allowHoldersOfItemId: String? = null,
     // Chat settings
     var chatLongevity: Double = 0.0, // in days; 0.0 means forever
+    var lastPosition: Position? = null, // Transient: populated on join for the current user
 ) : BaseModel()
 
 fun World.canUserEdit(userId: String): Boolean {
