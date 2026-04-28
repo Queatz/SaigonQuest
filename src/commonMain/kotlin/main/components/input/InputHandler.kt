@@ -24,6 +24,7 @@ import main.api.WebSocketApi
 import main.api.playerInteract
 import main.components.GraphicsSettings
 import main.components.SceneManager
+import main.components.audio.SoundManager
 import main.components.camera.CameraController
 import main.components.inventory.InventoryState
 import main.components.objects.SceneObjectManager
@@ -173,6 +174,9 @@ class InputHandler(
     // Current world
     var currentWorld: World? = null
     
+    // Track the last hovered object to avoid repeated hover sounds
+    private var lastHoveredObjectId: String? = null
+    
     // Check if the current user is the owner of the world
     private suspend fun isWorldOwner(): Boolean {
         try {
@@ -307,6 +311,9 @@ class InputHandler(
                 val interactableId = objectManager?.getInteractableObjectId()
                 if (interactableId != null) {
                     console.log("InputHandler: X key pressed, interacting with object $interactableId")
+                    
+                    // Play object click sound
+                    SoundManager.playSound("raw/sounds/object_click.wav")
                     
                     // If it's an inventory object, collect it; otherwise interact with it
                     if (objectManager.isInventoryObject(interactableId)) {
@@ -630,6 +637,9 @@ class InputHandler(
 
             // If we found an object or inventory item, handle it
             if (pick.objectId != null || pick.inventoryItemId != null) {
+                // Play object click sound
+                SoundManager.playSound("raw/sounds/object_click.wav")
+                
                 val closestId = pick.objectId ?: pick.inventoryItemId
                 closestId?.let { id ->
                     console.log("[POINTER_DOWN] Selecting object: $id")
@@ -990,6 +1000,13 @@ class InputHandler(
             // Highlight the object
             val highlightId = pick.objectId ?: pick.inventoryItemId
             if (highlightId != null) {
+                if (highlightId != lastHoveredObjectId) {
+                    // Play sound only if it's not already the interactable object (which already played a sound)
+                    if (highlightId != objectManager.getInteractableObjectId()) {
+                        SoundManager.playSound("raw/sounds/object_hover.wav")
+                    }
+                    lastHoveredObjectId = highlightId
+                }
                 console.log("[DEBUG_HOVER] Highlighting: $highlightId")
                 objectManager.highlightObject(highlightId)
             }
@@ -998,6 +1015,7 @@ class InputHandler(
 
         // We're not hovering over an object, remove any existing highlight
         objectManager.unhighlightObject()
+        lastHoveredObjectId = null
 
         // 2) Player check: if no object is hovered, check for players
         var isHoveringPlayer = false

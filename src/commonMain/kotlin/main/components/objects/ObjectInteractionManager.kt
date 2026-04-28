@@ -5,6 +5,7 @@ import kotlinx.coroutines.launch
 import lib.AbstractMesh
 import lib.Node
 import lib.Vector3
+import main.components.audio.SoundManager
 import main.components.camera.CameraController
 import models.Position
 import kotlin.math.PI
@@ -62,6 +63,11 @@ fun SceneObjectManager.setObjectInteractable(objectId: String?) {
 
     // 2) Update new interactable object
     if (objectId != null) {
+        // Play hover sound when an object becomes interactable (if not already hovered by mouse)
+        if (objectId != hoveredObjectId) {
+            SoundManager.playSound("raw/sounds/object_hover.wav")
+        }
+
         val node = objectMeshes[objectId]
         if (node != null) {
             // Update status text (adds "🆇 " prefix)
