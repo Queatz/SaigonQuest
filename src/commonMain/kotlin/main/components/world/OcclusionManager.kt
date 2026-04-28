@@ -110,15 +110,10 @@ class OcclusionManager(private val scene: Scene) {
     private var occlusionSoftness = 0.2f  // Default: softness ratio [0..1] of occlusionRadius (resolution independent)
     private var isEnabled = true
     private var isForceDisabled = false
-    private var useRadius = true
 
     // Pre-calculated values for uniforms
     private val uPlayerScreenPixel = Vector2()
     private var uPlayerScreenZ = 0f
-    private var uBandWidthPx = 0f
-    private var uHalfBand = 0f
-    private var uInnerRadius = 0f
-    private var uInvBandWidthPx = 0f
     private var uDepthBand = 0f
     private var uSoftnessWorld = 0f
     private val uPlayerWorld = Vector3()
@@ -190,7 +185,8 @@ class OcclusionManager(private val scene: Scene) {
         // 2. Depth check: is the pixel closer to the camera than the player?
         // Use world-space distance for stability at long ranges.
         // Positive distAlongAxis means it's between camera and player.
-        bool isOccluding = distAlongAxis > 0.0; 
+        float clipCone = 0.5;
+        bool isOccluding = distAlongAxis > clipCone; 
         
         // 3. Directional/Height Check: "The Flashlight Cone"
         if (isOccluding) {
@@ -207,7 +203,9 @@ class OcclusionManager(private val scene: Scene) {
             
             // Soften the cone edge and the cone start
             float coneWeight = smoothstep(coneRadiusSq * (1.0 + occlusionSoftness), coneRadiusSq * (1.0 - occlusionSoftness), distSqToAxis);
-            coneWeight *= smoothstep(-0.2 - softnessWorld, -0.2 + softnessWorld, distAlongAxis);
+            
+            // Fading the cone point: starts 2 units away from the player towards the camera, with a 1 unit fade
+            coneWeight *= smoothstep(clipCone, clipCone + 0.2, distAlongAxis);
             
             // Additional safety weights for "above player but far below world" and "below player but in cone"
             float floorWeight = smoothstep(-0.2 - softnessWorld, -0.2 + softnessWorld, worldHeightDiff);
@@ -257,10 +255,6 @@ class OcclusionManager(private val scene: Scene) {
         updateEnabledState()
     }
 
-    fun setUseRadius(enabled: Boolean) {
-        useRadius = enabled
-    }
-
     private fun createDepthMaterial(original: Material?): CustomMaterial {
         val matName = if (original != null) "${customShaderName}-depth-${original.name}" else "${customShaderName}-depth-shared"
         val mat = CustomMaterial(matName, scene)
@@ -277,15 +271,10 @@ class OcclusionManager(private val scene: Scene) {
         mat.AddUniform("playerWorld", "vec3")
         mat.AddUniform("cameraWorld", "vec3")
         mat.AddUniform("occlusionSoftness", "float")
-        mat.AddUniform("useRadius", "bool")
         mat.AddUniform("isEnabled", "bool")
         mat.AddUniform("time", "float")
         mat.AddUniform("timePhase", "float")
         mat.AddUniform("playerToCamDir", "vec3")
-        mat.AddUniform("bandWidthPx", "float")
-        mat.AddUniform("halfBand", "float")
-        mat.AddUniform("innerRadius", "float")
-        mat.AddUniform("invBandWidthPx", "float")
         mat.AddUniform("depthBand", "float")
         mat.AddUniform("softnessWorld", "float")
 
@@ -359,13 +348,8 @@ class OcclusionManager(private val scene: Scene) {
                 effect.setVector3("playerToCamDir", uPlayerToCamDir)
                 effect.setFloat("occlusionRadius", uOcclusionRadius)
                 effect.setFloat("occlusionSoftness", occlusionSoftness)
-                effect.setFloat("bandWidthPx", uBandWidthPx)
-                effect.setFloat("halfBand", uHalfBand)
-                effect.setFloat("innerRadius", uInnerRadius)
-                effect.setFloat("invBandWidthPx", uInvBandWidthPx)
                 effect.setFloat("depthBand", uDepthBand)
                 effect.setFloat("softnessWorld", uSoftnessWorld)
-                effect.setBool("useRadius", useRadius)
                 effect.setBool("isEnabled", isEnabled)
                 effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                 effect.setFloat("timePhase", timePhase)
@@ -419,15 +403,10 @@ class OcclusionManager(private val scene: Scene) {
         MaterialCustomizer.safeAddUniform(customMaterial, "playerWorld", "vec3")
         MaterialCustomizer.safeAddUniform(customMaterial, "cameraWorld", "vec3")
         MaterialCustomizer.safeAddUniform(customMaterial, "occlusionSoftness", "float")
-        MaterialCustomizer.safeAddUniform(customMaterial, "useRadius", "bool")
         MaterialCustomizer.safeAddUniform(customMaterial, "isEnabled", "bool")
         MaterialCustomizer.safeAddUniform(customMaterial, "time", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "timePhase", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "playerToCamDir", "vec3")
-        MaterialCustomizer.safeAddUniform(customMaterial, "bandWidthPx", "float")
-        MaterialCustomizer.safeAddUniform(customMaterial, "halfBand", "float")
-        MaterialCustomizer.safeAddUniform(customMaterial, "innerRadius", "float")
-        MaterialCustomizer.safeAddUniform(customMaterial, "invBandWidthPx", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "depthBand", "float")
         MaterialCustomizer.safeAddUniform(customMaterial, "softnessWorld", "float")
 
@@ -450,13 +429,8 @@ class OcclusionManager(private val scene: Scene) {
                     effect.setVector3("playerToCamDir", uPlayerToCamDir)
                     effect.setFloat("occlusionRadius", uOcclusionRadius)
                     effect.setFloat("occlusionSoftness", occlusionSoftness)
-                    effect.setFloat("bandWidthPx", uBandWidthPx)
-                    effect.setFloat("halfBand", uHalfBand)
-                    effect.setFloat("innerRadius", uInnerRadius)
-                    effect.setFloat("invBandWidthPx", uInvBandWidthPx)
                     effect.setFloat("depthBand", uDepthBand)
                     effect.setFloat("softnessWorld", uSoftnessWorld)
-                    effect.setBool("useRadius", useRadius)
                     effect.setBool("isEnabled", isEnabled)
                     effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
                     effect.setFloat("timePhase", timePhase)
@@ -575,11 +549,6 @@ class OcclusionManager(private val scene: Scene) {
         uOcclusionRadius = min(viewWidth, viewHeight) / 2f
         
         // 5. Derived parameters
-        uBandWidthPx = occlusionSoftness * uOcclusionRadius
-        uHalfBand = uBandWidthPx * 0.5f
-        uInnerRadius = (uOcclusionRadius - uBandWidthPx).coerceAtLeast(0f)
-        uInvBandWidthPx = if (uBandWidthPx > 0.0001f) 1.0f / uBandWidthPx else 0f
-        
         uDepthBand = occlusionSoftness * 0.001f
         uSoftnessWorld = occlusionSoftness * 0.4f
         

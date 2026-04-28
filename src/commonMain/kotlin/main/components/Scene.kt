@@ -824,12 +824,6 @@ fun SceneComponent(url: String) {
 
         val worldLoader = WorldLoader(scene)
 
-        // Update occlusion manager's useRadius based on mobile state
-        coroutineScope.launch {
-            snapshotFlow { isMobile.value }.collect { mobile ->
-                worldLoader.getOcclusionManager()?.setUseRadius(!mobile)
-            }
-        }
         val worldObjectManager = WorldObjectManager(scene)
         val objectManager = SceneObjectManager(
             scene = scene,
@@ -982,7 +976,6 @@ fun SceneComponent(url: String) {
         WorldLoader.onWorldLoaded {
             // Ensure occlusion manager state matches current screen saver state
             worldLoader.getOcclusionManager()?.setEnabled(!isScreenSaverActive)
-            worldLoader.getOcclusionManager()?.setUseRadius(!isMobile.value)
             // Get the shadow manager from the world loader and set it on the world object manager
             worldLoader.getShadowManager()?.let { shadowManager ->
                 worldObjectManager.setShadowManager(shadowManager)
