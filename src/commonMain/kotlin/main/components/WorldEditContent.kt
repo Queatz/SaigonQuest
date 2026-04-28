@@ -1,75 +1,73 @@
 package main.components
 
+import Translations.str
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import app.softwork.routingcompose.Router
 import kotlinx.coroutines.launch
 import lib.Color3
 import lib.Scene
-import main.components.world.WorldLoader
+import main.api.AssetItemApi
+import main.api.BalanceApi
+import main.api.CostsApi
+import main.api.ItemApi
+import main.api.SavedPositionApi
 import main.api.UserApi
 import main.api.WorldApi
-import main.api.CostsApi
-import main.api.BalanceApi
 import main.components.common.formatAmount
+import main.components.friends.SelectFriendDialog
+import main.components.inventory.SelectItemDialog
+import main.components.media.UploadMediaDialog
+import main.components.objects.cancelCreatePlacementMode
+import main.components.objects.startCreatePlacementMode
+import main.components.world.LatLngPicker3D
+import main.components.world.WorldLoader
 import main.theme.Styles
+import models.AssetType
+import models.Item
+import models.MediaType
+import models.Position
+import models.SavedPosition
 import models.User
 import models.World
 import models.canUserEdit
-import models.AssetType
-import main.api.ItemApi
-import main.api.AssetItemApi
-import main.api.SavedPositionApi
-import main.components.objects.startCreatePlacementMode
-import main.components.objects.cancelCreatePlacementMode
-import models.SavedPosition
-import models.Position
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.alignItems
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.flexGrow
 import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.margin
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
-import app.softwork.routingcompose.Router
-import main.components.world.LatLngPicker3D
-import main.components.DialogInput
-import Translations.str
-import main.components.friends.SelectFriendDialog
-import models.Item
-import main.components.inventory.SelectItemDialog
-import main.components.media.UploadMediaDialog
-import models.MediaType
-import org.jetbrains.compose.web.css.AlignItems
-import org.jetbrains.compose.web.css.alignItems
-import org.jetbrains.compose.web.css.borderRadius
-import org.jetbrains.compose.web.css.gap
-import org.jetbrains.compose.web.css.width
 
 /**
  * Content component for the world edit form.
@@ -220,6 +218,8 @@ fun WorldEditContent(
     var showSavedPositionNameDialog by remember { mutableStateOf(false) }
     var pendingSavedPosition by remember { mutableStateOf<Position?>(null) }
     var savedPositionError by remember { mutableStateOf<String?>(null) }
+    var repositioningSavedPosition by remember { mutableStateOf<SavedPosition?>(null) }
+    var savedPositionToDelete by remember { mutableStateOf<SavedPosition?>(null) }
 
     DisposableEffect(Unit) {
         val spm = SceneManager.getSavedPositionManager()
@@ -781,21 +781,66 @@ fun WorldEditContent(
                                 Translated("Locate")
                             }
 
-                            DialogButton(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        try {
-                                            SavedPositionApi.delete(pos.key)
-                                            savedPositions = savedPositions.filter { it.key != pos.key }
-                                            SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
-                                        } catch (e: Throwable) {
-                                            savedPositionError = e.message
+                            if (isOwner) {
+                                DialogButton(
+                                    onClick = {
+                                        val objectManager = SceneManager.getObjectManager()
+                                        if (isSavedPositionPlacementActive && repositioningSavedPosition?.key == pos.key) {
+                                            objectManager?.cancelCreatePlacementMode()
+                                            isSavedPositionPlacementActive = false
+                                            repositioningSavedPosition = null
+                                        } else {
+                                            if (isSavedPositionPlacementActive) {
+                                                objectManager?.cancelCreatePlacementMode()
+                                            }
+
+                                            repositioningSavedPosition = pos
+                                            isSavedPositionPlacementActive = true
+                                            objectManager?.startCreatePlacementMode(
+                                                onConfirm = { vec: lib.Vector3 ->
+                                                    isSavedPositionPlacementActive = false
+                                                    val target = repositioningSavedPosition
+                                                    if (target != null) {
+                                                        coroutineScope.launch {
+                                                            try {
+                                                                val updated = SavedPositionApi.update(
+                                                                    target.key,
+                                                                    target.copy(position = Position(vec.x, vec.y, vec.z))
+                                                                )
+                                                                savedPositions = savedPositions.map {
+                                                                    if (it.key == updated.key) updated else it
+                                                                }
+                                                                SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
+                                                            } catch (e: Throwable) {
+                                                                savedPositionError = e.message
+                                                            } finally {
+                                                                repositioningSavedPosition = null
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                onCancel = {
+                                                    isSavedPositionPlacementActive = false
+                                                    repositioningSavedPosition = null
+                                                },
+                                                diameter = 0.3f,
+                                            )
                                         }
-                                    }
-                                },
-                                style = DialogButtonStyle.Secondary
-                            ) {
-                                Translated("Delete")
+                                    },
+                                    style = if (repositioningSavedPosition?.key == pos.key) DialogButtonStyle.Primary else DialogButtonStyle.Secondary
+                                ) {
+                                    if (repositioningSavedPosition?.key == pos.key) Translated("Cancel")
+                                    else Translated("Reposition")
+                                }
+
+                                DialogButton(
+                                    onClick = {
+                                        savedPositionToDelete = pos
+                                    },
+                                    style = DialogButtonStyle.Secondary
+                                ) {
+                                    Translated("Delete")
+                                }
                             }
                         }
                     }
@@ -812,7 +857,9 @@ fun WorldEditContent(
                             if (isSavedPositionPlacementActive) {
                                 objectManager?.cancelCreatePlacementMode()
                                 isSavedPositionPlacementActive = false
+                                repositioningSavedPosition = null
                             } else {
+                                repositioningSavedPosition = null
                                 isSavedPositionPlacementActive = true
                                 objectManager?.startCreatePlacementMode(
                                     onConfirm = { vec: lib.Vector3 ->
@@ -822,13 +869,14 @@ fun WorldEditContent(
                                     },
                                     onCancel = {
                                         isSavedPositionPlacementActive = false
-                                    }
+                                    },
+                                    diameter = 0.3f,
                                 )
                             }
                         },
-                        style = DialogButtonStyle.Primary
+                        style = if (isSavedPositionPlacementActive && repositioningSavedPosition == null) DialogButtonStyle.Primary else DialogButtonStyle.Primary
                     ) {
-                        if (isSavedPositionPlacementActive) Translated("Cancel")
+                        if (isSavedPositionPlacementActive && repositioningSavedPosition == null) Translated("Cancel")
                         else Translated("Add saved position")
                     }
                 }
@@ -866,6 +914,28 @@ fun WorldEditContent(
                         onCancel = {
                             showSavedPositionNameDialog = false
                             pendingSavedPosition = null
+                        }
+                    )
+                }
+
+                if (savedPositionToDelete != null) {
+                    BasicConfirmDialog(
+                        message = str("Are you sure you want to delete this saved position?"),
+                        onConfirm = {
+                            val pos = savedPositionToDelete!!
+                            savedPositionToDelete = null
+                            coroutineScope.launch {
+                                try {
+                                    SavedPositionApi.delete(pos.key)
+                                    savedPositions = savedPositions.filter { it.key != pos.key }
+                                    SceneManager.getSavedPositionManager()?.setSavedPositions(savedPositions)
+                                } catch (e: Throwable) {
+                                    savedPositionError = e.message
+                                }
+                            }
+                        },
+                        onCancel = {
+                            savedPositionToDelete = null
                         }
                     )
                 }

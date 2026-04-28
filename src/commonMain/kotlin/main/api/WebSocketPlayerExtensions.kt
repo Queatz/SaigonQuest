@@ -77,6 +77,32 @@ suspend fun WebSocketApi.updatePlayerPosition(position: Position, isPlayer: Bool
 }
 
 /**
+ * Send a player jump event
+ *
+ * This notifies all other clients that the local player has jumped.
+ *
+ * @return true if the jump event was sent successfully, false otherwise
+ */
+suspend fun WebSocketApi.playerJump(): Boolean {
+    try {
+        if (!isConnected()) {
+            return false
+        }
+
+        val user = UserApi.getCurrentUser()
+        val jumpData = models.PlayerJumpData(
+            userId = user.key
+        )
+
+        val message = WebSocketMessage.fromEnum(WebSocketAction.PLAYER_JUMP, ApiClient.json.encodeToString(jumpData))
+        return sendMessage(message)
+    } catch (e: Throwable) {
+        console.error("Error sending player jump event", e)
+        return false
+    }
+}
+
+/**
  * Send a player interaction with an object
  * 
  * This is called when a player clicks or taps on an object.

@@ -40,6 +40,14 @@ data class PlayerPositionData(
 )
 
 /**
+ * Player jump data model
+ */
+@Serializable
+data class PlayerJumpData(
+    val userId: String
+)
+
+/**
  * Player interaction data model
  */
 @Serializable

@@ -249,6 +249,7 @@ fun SceneObjectManager.consumePendingCreatePosition(): Vector3? {
 fun SceneObjectManager.startCreatePlacementMode(
     onConfirm: ((Vector3) -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
+    diameter: Float = 0.5f,
 ) {
     if (isCreatePlacementActive) return
     isCreatePlacementActive = true
@@ -266,7 +267,7 @@ fun SceneObjectManager.startCreatePlacementMode(
             scale = Vector3(1f, 1f, 1f),
             color = Color3(1f, 0f, 0f),
             emissiveColor = Color3(1f, 0f, 0f),
-            diameter = 0.5f,
+            diameter = diameter,
             segments = 8,
             alpha = 0.9f,
             isPickable = false,

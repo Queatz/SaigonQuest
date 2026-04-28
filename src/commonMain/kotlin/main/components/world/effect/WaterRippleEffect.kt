@@ -9,6 +9,7 @@ import lib.StandardMaterial
 import lib.Texture
 import lib.TextureOptions
 import lib.Vector3
+import main.components.audio.SpatialSoundManager
 import main.components.player.FrameDeltaTracker
 import kotlin.math.PI
 
@@ -44,6 +45,16 @@ object WaterRippleEffect {
         material.specularColor = Color3(0f, 0f, 0f)
         material.disableDepthWrite = true
         
+        // Add spatial sound for the splash
+        val splashSound = SpatialSoundManager.playOneShot(
+            name = "water_splash",
+            url = "/raw/sounds/water_splash.wav",
+            scene = scene,
+            mesh = mesh,
+            volume = 0.4,
+            maxDistance = 30.0,
+        )
+        
         var scaleValue = 0.5f
         var alphaValue = 0.8f
         material.alpha = alphaValue
@@ -62,6 +73,7 @@ object WaterRippleEffect {
                 callback?.let { scene.unregisterBeforeRender(it) }
                 mesh.dispose()
                 material.dispose()
+                SpatialSoundManager.safeDispose(splashSound)
             } else {
                 mesh.scaling.set(scaleValue, scaleValue, scaleValue)
                 material.alpha = alphaValue

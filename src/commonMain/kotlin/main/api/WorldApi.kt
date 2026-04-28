@@ -45,6 +45,33 @@ object WorldApi {
     }
 
     /**
+     * Gets all worlds from friends
+     */
+    suspend fun getFriendsWorlds(): List<World> {
+        try {
+            val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/world/friends") {
+                ApiClient.addAuthHeader(this)
+            }
+
+            if (response.status.isSuccess()) {
+                return response.body<List<World>>()
+            } else {
+                // Parse error response
+                val errorResponse = try {
+                    response.body<ErrorResponse>()
+                } catch (e: Throwable) {
+                    // Fallback if response is not a valid ErrorResponse
+                    ErrorResponse(message = response.bodyAsText(), code = response.status.value)
+                }
+                throw errorResponse
+            }
+        } catch (e: Throwable) {
+            console.error("Error fetching friends worlds", e)
+            throw e
+        }
+    }
+
+    /**
      * Gets a world by ID
      */
     suspend fun getWorld(id: String): World {

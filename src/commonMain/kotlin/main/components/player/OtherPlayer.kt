@@ -33,6 +33,9 @@ data class OtherPlayer(
     var spawnJob: kotlinx.coroutines.Job? = null,
     var walkSound: lib.Sound? = null,
     var lastMovingTime: Double = 0.0,
+    // Jump state
+    var isJumping: Boolean = false,
+    var jumpElapsed: Double = 0.0,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

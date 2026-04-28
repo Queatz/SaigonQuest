@@ -180,6 +180,16 @@ fun Routing.configureWorldRoutes() {
                 val worlds = worldRepository.getByUserId(userId)
                 call.respond(worlds)
             }
+
+            // Get all worlds from friends - requires authentication
+            get("/friends") {
+                // Get user ID from JWT token
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@get
+                
+                val worlds = worldRepository.getFriendsWorlds(userId)
+                call.respond(worlds)
+            }
         }
         
         // Get world by URL - optional authentication (for access checks)

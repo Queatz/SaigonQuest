@@ -22,6 +22,7 @@ import main.api.ObjectApi
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.playerInteract
+import main.api.playerJump
 import main.components.GraphicsSettings
 import main.components.SceneManager
 import main.components.audio.SoundManager
@@ -301,6 +302,9 @@ class InputHandler(
             when (info.type) {
                 KeyboardEventTypes.KEYDOWN -> {
                     playerController.jump(calculateMovementDirection())
+                    scope.launch {
+                        WebSocketApi.playerJump()
+                    }
                 }
                 else -> { /* Ignore other keyboard events */ }
             }

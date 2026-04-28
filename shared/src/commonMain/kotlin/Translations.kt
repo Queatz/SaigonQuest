@@ -67,7 +67,7 @@ vi: Phần thưởng
 Add Reward
 vi: Thêm phần thưởng
 
-Select World
+Select world
 vi: Chọn thế giới
 
 Select Object
@@ -439,8 +439,11 @@ vi: Không có hình ảnh
 No audio
 vi: Không có âm thanh
 
-My Worlds
+My worlds
 vi: Thế giới của tôi
+
+Friends worlds
+vi: Thế giới của bạn bè
 
 All types
 vi: Tất cả loại
@@ -622,7 +625,7 @@ vi: Lỗi máy chủ: Đã có sự cố từ phía chúng tôi. Vui lòng thử
 Unknown error
 vi: Lỗi không xác định
 
-Untitled World
+Untitled world
 vi: Thế giới không tên
 
 Confirm

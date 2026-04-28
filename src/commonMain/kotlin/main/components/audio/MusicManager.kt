@@ -29,8 +29,10 @@ object MusicManager {
     private var isAiSpeaking = false
 
     init {
+        console.log("[MusicManager] Initializing MusicManager")
         // React to global audio setting changes
         AudioSettings.addObserver {
+            console.log("[MusicManager] AudioSettings observer triggered")
             refreshPlayback()
         }
 
@@ -38,6 +40,7 @@ object MusicManager {
         window.document.addEventListener("play", { ev ->
             val target = ev.target
             if (target is HTMLMediaElement && target != audio) {
+                console.log("[MusicManager] External media play detected: ${target.asDynamic().src}")
                 activeExternalMedia.add(target)
                 refreshPlayback()
             }
@@ -46,6 +49,7 @@ object MusicManager {
         window.document.addEventListener("pause", { ev ->
             val target = ev.target
             if (target is HTMLMediaElement && target != audio) {
+                console.log("[MusicManager] External media pause detected")
                 activeExternalMedia.remove(target)
                 refreshPlayback()
             }
@@ -54,6 +58,7 @@ object MusicManager {
         window.document.addEventListener("ended", { ev ->
             val target = ev.target
             if (target is HTMLMediaElement && target != audio) {
+                console.log("[MusicManager] External media ended detected")
                 activeExternalMedia.remove(target)
                 refreshPlayback()
             }
@@ -68,7 +73,15 @@ object MusicManager {
     }
 
     private fun shouldBePlaying(): Boolean {
-        return AudioSettings.isMusicEnabled() && activeExternalMedia.isEmpty() && recordingCount == 0 && !isAiSpeaking
+        val musicEnabled = AudioSettings.isMusicEnabled()
+        val noExternalMedia = activeExternalMedia.isEmpty()
+        val notRecording = recordingCount == 0
+        val aiNotSpeaking = !isAiSpeaking
+        val result = musicEnabled && noExternalMedia && notRecording && aiNotSpeaking
+        if (!result) {
+            console.log("[MusicManager] shouldBePlaying=false: musicEnabled=$musicEnabled, noExternalMedia=$noExternalMedia, notRecording=$notRecording, aiNotSpeaking=$aiNotSpeaking")
+        }
+        return result
     }
 
     /**
@@ -95,8 +108,9 @@ object MusicManager {
         }
     }
 
-    private fun refreshPlayback() {
+    fun refreshPlayback() {
         try {
+            console.log("[MusicManager] Refreshing playback. RecordingCount: $recordingCount, AiSpeaking: $isAiSpeaking, MusicEnabled: ${AudioSettings.isMusicEnabled()}, ActiveMedia: ${activeExternalMedia.size}")
             // Cleanup activeExternalMedia: remove elements that are no longer playing or no longer in the document
             activeExternalMedia.removeAll { el ->
                 val shouldRemove = el.paused || el.ended || document.body?.contains(el) == false
@@ -108,6 +122,7 @@ object MusicManager {
             }
 
             val targetUrl = if (shouldBePlaying()) chooseUrl() else null
+            console.log("[MusicManager] targetUrl: $targetUrl, currentUrl: $currentUrl, audio.paused: ${audio?.paused}")
 
             if (targetUrl != null) {
                 val a = audio
@@ -128,6 +143,7 @@ object MusicManager {
     }
 
     fun setWorldMusic(dayUrl: String?, nightUrl: String?, isOutdoors: Boolean) {
+        console.log("[MusicManager] setWorldMusic(day=$dayUrl, night=$nightUrl, outdoors=$isOutdoors)")
         this.dayUrl = dayUrl?.takeIf { it.isNotBlank() }
         this.nightUrl = nightUrl?.takeIf { it.isNotBlank() }
         this.isOutdoors = isOutdoors
@@ -152,6 +168,7 @@ object MusicManager {
     }
 
     fun setIsNight(isNight: Boolean) {
+        console.log("[MusicManager] setIsNight($isNight)")
         this.isNight = isNight
         if (!AudioSettings.isMusicEnabled()) return
         if (!isOutdoors) return // day/night not relevant
@@ -176,23 +193,31 @@ object MusicManager {
 
     private fun ensureAudio(): HTMLAudioElement {
         val a = audio ?: (document.createElement("audio") as HTMLAudioElement).also {
+            console.log("[MusicManager] Creating new audio element")
             it.loop = true
             it.volume = 0.0
             audio = it
+        }
+        if (a.parentNode == null) {
+            console.log("[MusicManager] Appending audio element to document.body")
+            document.body?.appendChild(a)
         }
         return a
     }
 
     private fun chooseUrl(): String? {
-        return if (isOutdoors) {
+        val result = if (isOutdoors) {
             val night = isNight
             if (night == true) nightUrl ?: dayUrl else dayUrl ?: nightUrl
         } else {
             dayUrl
         }
+        console.log("[MusicManager] chooseUrl() -> $result (isOutdoors=$isOutdoors, isNight=$isNight, dayUrl=$dayUrl, nightUrl=$nightUrl)")
+        return result
     }
 
     private fun playUrl(url: String, fadeIn: Boolean) {
+        console.log("[MusicManager] playUrl(url=$url, fadeIn=$fadeIn)")
         currentUrl = url
         if (!shouldBePlaying()) return
 
@@ -207,7 +232,9 @@ object MusicManager {
             }
             a.loop = true
             a.play().catch { err ->
-                console.warn("[MusicManager] Autoplay prevented or error starting audio: $err")
+                console.error("[MusicManager] play() FAILED for $url: $err")
+            }.then {
+                console.log("[MusicManager] play() started successfully for $url")
             }
             if (fadeIn) fadeToVolume(AudioSettings.musicVolume(), durationMs = 1500)
             else a.volume = AudioSettings.musicVolume()
@@ -242,7 +269,9 @@ object MusicManager {
                     a.src = url
                     a.volume = 0.0
                     a.play().catch { err ->
-                        console.warn("[MusicManager] Autoplay prevented or error starting audio: $err")
+                        console.error("[MusicManager] crossfade play() FAILED for $url: $err")
+                    }.then {
+                        console.log("[MusicManager] crossfade play() started successfully for $url")
                     }
                     fadeToVolume(AudioSettings.musicVolume(), 1000)
                 }

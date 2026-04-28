@@ -2,12 +2,13 @@ package main.components
 
 import androidx.compose.runtime.*
 import Translations.str
-import kotlinx.coroutines.launch
 import main.api.WorldApi
 import main.theme.Styles
 import models.World
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
+
+private enum class WorldTab { MyWorlds, FriendsWorlds }
 
 @Composable
 fun SelectWorldDialog(
@@ -15,6 +16,7 @@ fun SelectWorldDialog(
     onSelect: (World) -> Unit,
     preselectWorldId: String? = null,
 ) {
+    var activeTab by remember { mutableStateOf(WorldTab.MyWorlds) }
     var items by remember { mutableStateOf<List<World>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -22,9 +24,15 @@ fun SelectWorldDialog(
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(activeTab) {
+        isLoading = true
+        error = null
         try {
-            val worlds = WorldApi.getWorlds()
+            val worlds = if (activeTab == WorldTab.MyWorlds) {
+                WorldApi.getWorlds()
+            } else {
+                WorldApi.getFriendsWorlds()
+            }
             // If we have a preselect ID, we could reorder but let's just make sure it's in the list
             items = if (preselectWorldId != null) {
                 val preselected = worlds.find { it.key == preselectWorldId }
@@ -50,9 +58,34 @@ fun SelectWorldDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = translated("Select World"),
+        title = translated("Select world"),
         maxWidth = "560px",
         content = {
+            Div(attrs = {
+                style {
+                    display(DisplayStyle.Flex)
+                    gap(8.px)
+                    marginBottom(12.px)
+                }
+            }) {
+                DialogButton(
+                    onClick = { activeTab = WorldTab.MyWorlds },
+                    style = if (activeTab == WorldTab.MyWorlds) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                    small = true,
+                    attrs = { style { flex(1) } }
+                ) {
+                    Translated("My worlds")
+                }
+                DialogButton(
+                    onClick = { activeTab = WorldTab.FriendsWorlds },
+                    style = if (activeTab == WorldTab.FriendsWorlds) DialogButtonStyle.Primary else DialogButtonStyle.Secondary,
+                    small = true,
+                    attrs = { style { flex(1) } }
+                ) {
+                    Translated("Friends worlds")
+                }
+            }
+
             DialogInput(
                 value = query,
                 onInput = { query = it },
@@ -93,7 +126,7 @@ fun SelectWorldDialog(
                                     }
                                 }) {
                                     Span(attrs = { style { fontWeight("bold") } }) {
-                                        Text(world.title.ifEmpty { translated("Untitled World") })
+                                        Text(world.title.ifEmpty { translated("Untitled world") })
                                         if (world.key == preselectWorldId) {
                                             Span(attrs = { style { marginLeft(8.px); fontSize(0.8.em); fontStyle("italic") } }) {
                                                 Translated("(Current)")

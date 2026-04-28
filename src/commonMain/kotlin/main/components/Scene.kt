@@ -16,6 +16,7 @@ import lib.TransformNode
 import lib.configureBabylonDracoDecoder
 import lib.initializeBabylonJSLoaders
 import main.api.*
+import main.components.audio.MusicManager
 import main.components.audio.SoundManager
 import main.components.attrs.onTouchDrop
 import main.components.camera.CameraController
@@ -831,6 +832,7 @@ fun SceneComponent(url: String) {
         initialAe?.useCustomUnlockedButton = true
         
         val unlockAudio = { event: Event ->
+            console.log("[Audio] User interaction detected (${event.type}), attempting to unlock audio...")
             val ae = getAudioEngine()
             if (ae != null) {
                 if (!ae.unlocked) {
@@ -863,6 +865,10 @@ fun SceneComponent(url: String) {
             } else {
                 console.warn("[Audio] Cannot unlock: AudioEngine is null (Instance: ${engine.audioEngine}, Static: ${Engine.audioEngine})")
             }
+
+            // Ensure world music is also refreshed/unlocked on user interaction
+            console.log("[Audio] Calling MusicManager.refreshPlayback() from unlockAudio")
+            MusicManager.refreshPlayback()
         }
         window.addEventListener("click", unlockAudio)
         window.addEventListener("mousedown", unlockAudio)

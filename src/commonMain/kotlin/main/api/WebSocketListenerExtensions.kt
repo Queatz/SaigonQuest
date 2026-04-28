@@ -83,6 +83,24 @@ fun WebSocketApi.addPlayerPositionListener(listener: (PlayerPositionData) -> Uni
 }
 
 /**
+ * Add a listener for player jump events
+ *
+ * @param listener A function that takes a PlayerJumpData and returns Unit
+ */
+fun WebSocketApi.addPlayerJumpListener(listener: (models.PlayerJumpData) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val jumpData = ApiClient.json.decodeFromString<models.PlayerJumpData>(message.data)
+            listener(jumpData)
+        } catch (e: Throwable) {
+            console.error("Error parsing player jump data", e)
+        }
+    }
+    addListener(WebSocketAction.PLAYER_JUMP, handler)
+    return ListenerToken(WebSocketAction.PLAYER_JUMP, handler)
+}
+
+/**
  * Add a listener for player update events
  * 
  * @param listener A function that takes an UpdatePlayerData and returns Unit

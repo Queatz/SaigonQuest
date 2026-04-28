@@ -27,12 +27,46 @@ object SpatialSoundManager {
         scene: Scene,
         mesh: TransformNode,
         loop: Boolean = true,
-        volume: Double = 1.0,
+        volume: Double = 0.5,
         maxDistance: Double = 50.0
+    ): Sound {
+        return createSound(
+            name = name,
+            url = url,
+            scene = scene,
+            mesh = mesh,
+            loop = loop,
+            volume = volume,
+            maxDistance = maxDistance
+        )
+    }
+
+    /**
+     * Creates a spatial sound.
+     * 
+     * @param name The name of the sound
+     * @param url The URL of the sound file
+     * @param scene The BabylonJS scene
+     * @param mesh Optional mesh to attach the sound to
+     * @param loop Whether the sound should loop
+     * @param volume The volume of the sound
+     * @param maxDistance The maximum distance at which the sound can be heard
+     * @param autoplay Whether to play the sound immediately when ready
+     * @return The created Sound object
+     */
+    fun createSound(
+        name: String,
+        url: String,
+        scene: Scene,
+        mesh: TransformNode? = null,
+        loop: Boolean = false,
+        volume: Double = 0.5,
+        maxDistance: Double = 50.0,
+        autoplay: Boolean = false,
     ): Sound {
         val options = object : ISoundOptions {
             override var loop: Boolean? = loop
-            override var autoplay: Boolean? = false
+            override var autoplay: Boolean? = autoplay
             override var spatialSound: Boolean? = true
             override var maxDistance: Number? = maxDistance
             override var volume: Number? = volume
@@ -55,10 +89,36 @@ object SpatialSoundManager {
         sound.loop = loop
         sound.setVolume(volume)
         
-        console.log("[SpatialSoundManager] Creating sound $name for url: $url (maxDist: $maxDistance, vol: $volume, loop: ${sound.loop})")
+        console.log("[SpatialSoundManager] Creating sound $name for url: $url (maxDist: $maxDistance, vol: $volume, loop: ${sound.loop}, autoplay: $autoplay)")
         
-        sound.attachToMesh(mesh)
+        if (mesh != null) {
+            sound.attachToMesh(mesh)
+        }
+        
         return sound
+    }
+
+    /**
+     * Plays a one-shot sound attached to a mesh.
+     */
+    fun playOneShot(
+        name: String,
+        url: String,
+        scene: Scene,
+        mesh: TransformNode,
+        volume: Double = 0.5,
+        maxDistance: Double = 50.0,
+    ): Sound {
+        return createSound(
+            name = name,
+            url = url,
+            scene = scene,
+            mesh = mesh,
+            loop = false,
+            volume = volume,
+            maxDistance = maxDistance,
+            autoplay = true,
+        )
     }
 
     /**

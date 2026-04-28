@@ -50,9 +50,29 @@ class WorldRepository {
     }
     
     fun getByUserId(userId: String): List<World> {
-        val query = "FOR w IN @@collection FILTER w.userId == @userId RETURN w"
+        val query = "FOR w IN @@collection FILTER w.userId == @userId OR @userId IN (w.ownerIds || []) RETURN w"
         val bindVars = mapOf(
             "@collection" to CollectionsConfig.WORLDS_COLLECTION,
+            "userId" to userId
+        )
+        
+        return ArangoConfig.db.query(query, World::class.java, bindVars).toList()
+    }
+    
+    fun getFriendsWorlds(userId: String): List<World> {
+        val query = """
+            LET friendIds = (
+                FOR f IN @@friends
+                FILTER f.userId == @userId
+                RETURN f.friendId
+            )
+            FOR w IN @@worlds
+            FILTER w.userId IN friendIds
+            RETURN w
+        """.trimIndent()
+        val bindVars = mapOf(
+            "@friends" to CollectionsConfig.FRIENDS_COLLECTION,
+            "@worlds" to CollectionsConfig.WORLDS_COLLECTION,
             "userId" to userId
         )
         

@@ -14,6 +14,7 @@ import main.api.ItemApi
 import main.api.WebSocketApi
 import main.api.WebSocketConnectionManager
 import main.api.WorldApi
+import main.api.addPlayerJumpListener
 import main.api.addPlayerPositionListener
 import main.api.addUpdatePlayerListener
 import main.api.addUserJoinListener
@@ -26,6 +27,7 @@ import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
 import main.components.audio.SpatialSoundManager
 import models.ChatMessage
+import models.PlayerJumpData
 import models.PlayerPositionData
 import models.Position
 import models.Sex
@@ -43,6 +45,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private val tempVector3 = Vector3()
     private val tempVector3_2 = Vector3()
     private val tempVector3_3 = Vector3()
+    private val tempVector3_4 = Vector3()
 
     // Managers – must be set before initialize()
     lateinit var worldObjectManager: WorldObjectManager
@@ -57,6 +60,8 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
     private var initialized = false
     private val baseMovementSpeed: Float = 3.0f
+    private val jumpDuration = 0.5
+    private val jumpMaxHeight = 0.25f
     private val movementDelta = FrameDeltaTracker()
     private val usernameTextHandles = mutableMapOf<String, WorldObjectHandle>()
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
@@ -136,6 +141,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         WebSocketApi.addUserJoinListener { onUserJoin(it) }
         WebSocketApi.addUserLeaveListener { onUserLeave(it) }
         WebSocketApi.addPlayerPositionListener { onPlayerPosition(it) }
+        WebSocketApi.addPlayerJumpListener { onPlayerJump(it) }
         WebSocketApi.addUpdatePlayerListener { onUpdatePlayer(it) }
         WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
             try {
@@ -353,6 +359,21 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                         attemptSpawnWithUser(op)
                     }
                 }
+            }
+        }
+    }
+
+    private fun onPlayerJump(jump: PlayerJumpData) {
+        if (jump.userId == myUserId) return
+        val op = players[jump.userId] ?: return
+        if (!op.isJumping) {
+            op.isJumping = true
+            op.jumpElapsed = 0.0
+            op.handle?.updateActivity(PlayerActivity.Jump)
+
+            // Trigger immediate splash if on water
+            if (op.isOnWater) {
+                op.handle?.position?.let { trySpawnWaterRipple(it) }
             }
         }
     }
@@ -666,12 +687,28 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         players.values.forEach { op ->
             val handle = op.handle ?: return@forEach
 
+            // 0) Jump logic
+            var jumpOffset = 0f
+            if (op.isJumping) {
+                op.jumpElapsed += deltaTime
+                if (op.jumpElapsed >= jumpDuration) {
+                    op.isJumping = false
+                    op.jumpElapsed = 0.0
+                    if (op.activity == PlayerActivity.Jump) {
+                        op.activity = null // Force recalculation
+                    }
+                } else {
+                    val t = op.jumpElapsed / jumpDuration
+                    jumpOffset = (4 * jumpMaxHeight * t * (1.0 - t)).toFloat()
+                }
+            }
+
             // 1) Movement logic
             val targetPos = op.targetPos ?: return@forEach
             snapToGroundToRef(targetPos, tempVector3)
             val snappedTargetPos = tempVector3
             
-            val currentPos = handle.position
+            val currentPos = op.lastPos // Use the ground-snapped last position as logical baseline
 
             // Throttle environment check for other players (every 10 frames)
             if (op.lastEnvCheckFrame == -1 || (frameCount - op.lastEnvCheckFrame) >= 10) {
@@ -707,7 +744,9 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.lastMovingTime = now
             }
 
-            val desiredActivity = if (isMovingIntent && op.activity != PlayerActivity.Sit) {
+            val desiredActivity = if (op.isJumping) {
+                PlayerActivity.Jump
+            } else if (isMovingIntent && op.activity != PlayerActivity.Sit) {
                 PlayerActivity.Moving
             } else if (op.activity == PlayerActivity.Sit) {
                 PlayerActivity.Sit
@@ -722,12 +761,13 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
             // 3) Handle Movement
             if (!isMovingIntent) {
-                // Close enough to snap and be done
-                if (distance > 0f) {
-                    handle.position.copyFrom(snappedTargetPos)
+                // In-place logic (e.g. jumping or minor adjustments)
+                if (distance > 0f || jumpOffset > 0f) {
+                    tempVector3_4.copyFrom(snappedTargetPos)
+                    tempVector3_4.y += jumpOffset
+                    handle.position.copyFrom(tempVector3_4)
+                    
                     op.lastPos.copyFrom(snappedTargetPos)
-                    hud.updateHudPosition(op.userId, snappedTargetPos)
-                    PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 }
                 op.shouldSnap = false
                 
@@ -735,67 +775,67 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 if (now - op.lastMovingTime > 200) {
                     SpatialSoundManager.pause(op.walkSound)
                 }
-                
-                return@forEach
-            }
-
-            // If we are very far, snap to avoid long "catch up" sliding
-            if (op.shouldSnap || distance > 100f) {
+            } else if (op.shouldSnap || distance > 100f) {
+                // Snap if far away to avoid long "catch up" sliding
                 op.shouldSnap = false
-                handle.position.copyFrom(snappedTargetPos)
+                
+                tempVector3_4.copyFrom(snappedTargetPos)
+                tempVector3_4.y += jumpOffset
+                handle.position.copyFrom(tempVector3_4)
+                
                 op.lastPos.copyFrom(snappedTargetPos)
-                hud.updateHudPosition(op.userId, snappedTargetPos)
-                PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 
                 // Stop walking sound when snapping
                 SpatialSoundManager.pause(op.walkSound)
+            } else {
+                // Normal interpolation
+                SpatialSoundManager.play(op.walkSound)
+
+                // Dynamic speed: if far away, move faster to catch up (sprint-like)
+                val catchUpMultiplier = when {
+                    distance > 5.0f -> 5.0f // Catch up fast
+                    distance > 2.0f -> 2.5f // Catch up moderate
+                    else -> 1.2f // Slightly faster than base to ensure we actually reach target between updates
+                }
+                val playerFrameMovementSpeed = frameMovementSpeed * speedFactor * catchUpMultiplier
+
+                // Update facing with hysteresis
+                val currentFacing = op.direction
+                val newFacing = main.components.world.calculateFacingFromVector(direction, currentFacing)
+                if (newFacing != currentFacing) {
+                    op.direction = newFacing
+                    handle.updateDirection(newFacing)
+                }
+
+                direction.normalize()
+                val step = kotlin.math.min(playerFrameMovementSpeed, distance)
+                direction.scaleInPlace(step)
                 
-                return@forEach
+                currentPos.addToRef(direction, tempVector3_2)
+                val moved = tempVector3_2
+                snapToGroundToRef(moved, tempVector3_3)
+                val newPosition = tempVector3_3
+                
+                handle.position.copyFrom(newPosition)
+                handle.position.y += jumpOffset
+                op.lastPos.copyFrom(newPosition)
+
+                // Trigger wind boost for other player's movement (convert displacement to velocity)
+                direction.scaleToRef(1.0f / deltaTime.toFloat(), tempVector3_2)
+                handle.triggerWindBoost(tempVector3_2)
             }
             
-            // Start walking sound
-            SpatialSoundManager.play(op.walkSound)
-
-            // Dynamic speed: if far away, move faster to catch up (sprint-like)
-            val catchUpMultiplier = when {
-                distance > 5.0f -> 5.0f // Catch up fast
-                distance > 2.0f -> 2.5f // Catch up moderate
-                else -> 1.2f // Slightly faster than base to ensure we actually reach target between updates
-            }
-            val playerFrameMovementSpeed = frameMovementSpeed * speedFactor * catchUpMultiplier
-
-            // Update facing with hysteresis
-            val currentFacing = op.direction
-            val newFacing = main.components.world.calculateFacingFromVector(direction, currentFacing)
-            if (newFacing != currentFacing) {
-                op.direction = newFacing
-                handle.updateDirection(newFacing)
-            }
-
-            direction.normalize()
-            val step = kotlin.math.min(playerFrameMovementSpeed, distance)
-            direction.scaleInPlace(step)
-            
-            currentPos.addToRef(direction, tempVector3_2)
-            val moved = tempVector3_2
-            snapToGroundToRef(moved, tempVector3_3)
-            val newPosition = tempVector3_3
-            
-            handle.position.copyFrom(newPosition)
-            
-            // Check for water ripples when moving
+            // 4) Common post-movement logic (Ripples, HUD update)
             val nowTime = window.performance.now()
-            if (nowTime - op.lastRippleTime > 300) {
-                trySpawnWaterRipple(newPosition)
+            val isActivelyMoving = isMovingIntent || op.isJumping
+            
+            if (isActivelyMoving && nowTime - op.lastRippleTime > 300) {
+                trySpawnWaterRipple(handle.position)
                 op.lastRippleTime = nowTime
             }
 
-            // Trigger wind boost for other player's movement (convert displacement to velocity)
-            direction.scaleToRef(1.0f / deltaTime.toFloat(), tempVector3_2)
-            handle.triggerWindBoost(tempVector3_2)
-            
-            hud.updateHudPosition(op.userId, newPosition)
-            PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], newPosition)
+            hud.updateHudPosition(op.userId, handle.position)
+            PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], handle.position)
         }
     }
 
