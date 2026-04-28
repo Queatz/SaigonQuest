@@ -32,7 +32,7 @@ class DistanceCullingSystem(private val scene: Scene) {
         
         // Add shader code
         MaterialCustomizer.appendFragmentDefinitions(customMaterial, """
-            precision mediump float;
+            precision highp float;
             
             // Hash function for dithering
             float hash(vec2 p) {

@@ -143,7 +143,7 @@ class OcclusionManager(private val scene: Scene) {
     // Fragment shader code for uniform declarations (global scope)
     private val uniformDeclarations = """
     // Set default precision for float values
-    precision mediump float;
+    precision highp float;
     
     // Constants for optimization
     const float ALPHA_THRESHOLD = 0.5;  // Higher value = more fragments discarded
@@ -154,9 +154,6 @@ class OcclusionManager(private val scene: Scene) {
 
     // Fragment shader code for occlusion effect implementation
     private val occlusionShaderCode = """
-    // Set default precision for float values
-    precision mediump float;
-
     // Stochastic dithering noise in [0,1)
     // High-quality hash-based noise to eliminate visible waves/stripes
     float hash12(vec2 p) {
@@ -228,9 +225,6 @@ class OcclusionManager(private val scene: Scene) {
 
     // Fragment shader code for function call
     private val occlusionCallCode = """
-    // Set default precision for float values
-    precision mediump float;
-
     // In Fragment_Before_FragColor, we modify the gl_FragColor directly
     // Only modify the alpha channel, preserving the original color
     alpha = applyOcclusion(alpha);
