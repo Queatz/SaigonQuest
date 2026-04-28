@@ -9,7 +9,9 @@ import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import lib.Engine
+import lib.Node
 import lib.Scene
+import lib.TransformNode
 import lib.configureBabylonDracoDecoder
 import lib.initializeBabylonJSLoaders
 import main.api.*
@@ -876,10 +878,15 @@ fun SceneComponent(url: String) {
         }
 
         fun triggerScreenSaver() {
-            if (isScreenSaverActive) return
+            console.log("[ScreenSaver] triggerScreenSaver() called")
+            if (isScreenSaverActive) {
+                console.log("[ScreenSaver] Already active, returning")
+                return
+            }
             
             // Find the first camera that isn't the main player camera and has a long enough animation
             val mainCam = cameraController.getCamera()
+            console.log("[ScreenSaver] Main camera: ${mainCam.name}")
             
             // Filter animation groups that last longer than 1 second
             val longAnimationGroups = scene.animationGroups.filter { group ->
@@ -887,14 +894,42 @@ fun SceneComponent(url: String) {
                 // Use the FPS of the first targeted animation as a reference, or default to 60
                 val fps = group.targetedAnimations.firstOrNull()?.animation?.framePerSecond?.toFloat() ?: 60f
                 val durationSeconds = durationFrames / fps
-                durationSeconds > 1.0f
+                val isLong = durationSeconds > 1.0f
+                console.log("[ScreenSaver] AnimationGroup: ${group.name}, duration: $durationSeconds s, isLong: $isLong")
+                group.targetedAnimations.forEach { 
+                    console.log("[ScreenSaver]   Target: ${it.target.asDynamic().name ?: it.target.toString()}")
+                }
+                isLong
             }
+            console.log("[ScreenSaver] Found ${longAnimationGroups.size} long animation groups")
 
-                // Find a camera that has an animation in one of these long groups
+                // Find a camera that has an animation in one of these long groups or its ancestors
                 val ssCam = scene.cameras.firstOrNull { cam ->
-                    cam != mainCam && cam.animations.isNotEmpty() && longAnimationGroups.any { group ->
-                        group.targetedAnimations.any { it.target == cam }
+                    val isNotMain = cam != mainCam
+                    val inLongGroup = longAnimationGroups.any { group ->
+                        group.targetedAnimations.any { targetedAnim ->
+                            val target = targetedAnim.target
+                            val targetName = target.asDynamic().name as? String
+                            var current: Node? = cam
+                            var matched = false
+                            while (current != null) {
+                                if (target == current || (targetName != null && targetName == current.name)) {
+                                    matched = true
+                                    break
+                                }
+                                current = current.parent
+                            }
+                            matched
+                        }
                     }
+                    console.log("[ScreenSaver] Checking camera: ${cam.name}, parent: ${cam.parent?.name}, isNotMain: $isNotMain, inLongGroup: $inLongGroup")
+                    isNotMain && inLongGroup
+                }
+
+                if (ssCam != null) {
+                    console.log("[ScreenSaver] Found screen saver camera: ${ssCam.name}")
+                } else {
+                    console.log("[ScreenSaver] No suitable screen saver camera found")
                 }
 
                 if (ssCam != null) {
@@ -906,7 +941,7 @@ fun SceneComponent(url: String) {
                             val originalParent = ssCam.parent
 
                             // Create flip node with -1 z scaling
-                            val flipNode = lib.TransformNode("cameraFlipNode_${ssCam.name}", scene)
+                            val flipNode = TransformNode("cameraFlipNode_${ssCam.name}", scene)
                             flipNode.position = ssCam.position
                             flipNode.scaling = lib.Vector3(-1f, 1f, 1f)
 
@@ -917,21 +952,44 @@ fun SceneComponent(url: String) {
                             ssCam.parent = flipNode
 
                             flippedCameras.add(ssCam)
+                            console.log("[ScreenSaver] Flipped camera: ${ssCam.name}")
                         } catch (t: Throwable) {
                             console.warn("[ScreenSaver] Failed to modify projection matrix", t)
                         }
                     }
 
-                    // Find first animation group that contains this camera
+                    // Find first animation group that contains this camera or its ancestors
                     val animationGroup = longAnimationGroups.firstOrNull { group ->
-                        group.targetedAnimations.any { it.target == ssCam }
-                    } ?: return
+                        group.targetedAnimations.any { targetedAnim ->
+                            val target = targetedAnim.target
+                            val targetName = target.asDynamic().name as? String
+                            var current: Node? = ssCam
+                            var matched = false
+                            while (current != null) {
+                                if (target == current || (targetName != null && targetName == current.name)) {
+                                    matched = true
+                                    break
+                                }
+                                current = current.parent
+                            }
+                            matched
+                        }
+                    }
+                    
+                    if (animationGroup == null) {
+                        console.log("[ScreenSaver] No animation group found for ${ssCam.name}")
+                        return
+                    }
                 
                 isScreenSaverActive = true
                 scene.activeCamera = ssCam
 
                 // Add the screensaver camera to post-processing pipeline
                 cameraController.addCameraToPipeline(ssCam)
+
+                // Sync minZ and maxZ with main camera
+                ssCam.minZ = mainCam.minZ
+                ssCam.maxZ = mainCam.maxZ
 
                 worldLoader.getOcclusionManager()?.setEnabled(false)
                 animationGroup.play(loop = true)
@@ -1377,12 +1435,12 @@ fun SceneComponent(url: String) {
                 }
             } else {
                 // Check for inactivity
-                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0 && document.activeElement == canvas) {
+                if (!isScreenSaverActive && (currentTime - lastInteractionTime) > 60_000.0) {
                     triggerScreenSaver()
                 }
 
                 // Idle highlighting starts after 15s of inactivity
-                if (!idleHighlighter.isActive() && (currentTime - lastInteractionTime) > 15_000.0 && document.activeElement == canvas) {
+                if (!idleHighlighter.isActive() && (currentTime - lastInteractionTime) > 15_000.0) {
                     triggerIdleHighlighting()
                 }
             }
