@@ -40,10 +40,18 @@ class TeleportNodeRunner(private val context: NodeRunnerContext) : NodeRunner {
             return nodeData.properties.find { it.key == key }?.value
         }
 
-        val targetWorldUrl = fromEventOrNode("target_world_id", PropertyKey.TARGET_WORLD_ID)
+        var targetWorldUrl = fromEventOrNode("target_world_id", PropertyKey.TARGET_WORLD_ID)
         
         if (targetWorldUrl == null) {
             WebSocketDebug.logError("Missing worldId in teleport node data", null, context.session)
+            return false
+        }
+
+        val worldRepository = repository.WorldRepository()
+        worldRepository.getById(targetWorldUrl)?.let { world ->
+            targetWorldUrl = world.url
+        } ?: run {
+            WebSocketDebug.logError("World with ID $targetWorldUrl not found", null, context.session)
             return false
         }
         

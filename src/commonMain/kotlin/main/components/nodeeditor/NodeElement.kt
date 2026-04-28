@@ -90,6 +90,9 @@ fun NodeElement(
     // State for object name (if this node has an Object ID)
     var objectName by remember(id) { mutableStateOf<String?>(null) }
 
+    // State for world name (if this node has a Target World ID)
+    var worldName by remember(id) { mutableStateOf<String?>(null) }
+
     // Get doc title for Doc Content, Create Doc and Open Doc nodes
     LaunchedEffect(node.data) {
         if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
@@ -150,6 +153,27 @@ fun NodeElement(
             } else {
                 objectName = null
             }
+        }
+    }
+
+    // Get world name
+    LaunchedEffect(node.data) {
+        val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
+        val worldId = nodeData.properties.find { it.key == PropertyKey.TARGET_WORLD_ID }?.value
+        if (!worldId.isNullOrBlank()) {
+            try {
+                val world = main.api.WorldApi.getWorld(worldId)
+                worldName = world.title.ifBlank { "Selected world" }
+            } catch (t: Throwable) {
+                // Only log if it's not a 404
+                val is404 = (t as? models.ErrorResponse)?.code == 404
+                if (!is404) {
+                    console.error("Failed to load world name for NodeElement", t)
+                }
+                worldName = null
+            }
+        } else {
+            worldName = null
         }
     }
 
@@ -424,7 +448,12 @@ fun NodeElement(
 
                         PropertyKey.TARGET_WORLD_ID -> {
                             Div {
-                                Text("To \"${property.value}\"")
+                                val displayWorld = when {
+                                    worldName != null -> worldName
+                                    property.value.isBlank() -> "Not selected"
+                                    else -> "..."
+                                }
+                                Text("To \"${displayWorld}\"")
                             }
                         }
 

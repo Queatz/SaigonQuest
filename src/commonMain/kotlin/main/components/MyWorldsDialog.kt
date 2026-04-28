@@ -86,7 +86,7 @@ fun MyWorldsDialog(
                                 onClick = {
                                     // Close dialog then navigate to the selected world's URL
                                     onClose()
-                                    val path = if (world.url.isEmpty()) "/" else "/${world.url}"
+                                    val path = if (world.url.isBlank()) "/" else "/${world.url}"
                                     onNavigate(path)
                                 },
                                 style = DialogButtonStyle.Secondary,
