@@ -8,6 +8,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import lib.AudioEngine
 import lib.Engine
 import lib.Node
 import lib.Scene
@@ -765,6 +766,7 @@ fun SceneComponent(url: String) {
                 override var useLargeWorldRendering: Boolean? = false // todo: we want true, but depth renderer has issues
                 override var useHighPrecisionFloats: Boolean? = true
                 override var useHighPrecisionMatrix: Boolean? = true
+                override var audioEngine: Boolean? = true
             }
         ).also {
             engineRef = it
@@ -796,7 +798,76 @@ fun SceneComponent(url: String) {
         val scene = Scene(engine).apply {
             imageProcessingConfiguration.isEnabled = true
             imageProcessingConfiguration.applyByPostProcess = true
+            audioEnabled = true
+            console.log("[Audio] Scene audio enabled: $audioEnabled")
         }
+
+        // Unlock audio on first user interaction
+        val getAudioEngine = {
+            var ae = engine.audioEngine ?: Engine.audioEngine
+            if (ae == null) {
+                try {
+                    console.log("[Audio] AudioEngine is null, attempting to create it...")
+                    val newAe = lib.AudioEngine(canvas)
+                    engine.audioEngine = newAe
+                    ae = newAe
+                } catch (t: Throwable) {
+                    console.warn("[Audio] Failed to create AudioEngine: ${t.message}")
+                }
+            }
+            ae
+        }
+
+        val initialAe = getAudioEngine()
+        if (initialAe == null) {
+            console.warn("[Audio] AudioEngine is null on initialization! (Instance: ${engine.audioEngine}, Static: ${Engine.audioEngine})")
+        } else {
+            console.log("[Audio] AudioEngine initialized. Unlocked: ${initialAe.unlocked}")
+            initialAe.onAudioUnlockedObservable.add {
+                console.log("[Audio] AudioEngine UNLOCKED via Observable. Status: ${initialAe.unlocked}")
+            }
+        }
+        
+        initialAe?.useCustomUnlockedButton = true
+        
+        val unlockAudio = { event: Event ->
+            val ae = getAudioEngine()
+            if (ae != null) {
+                if (!ae.unlocked) {
+                    console.log("[Audio] Attempting to unlock AudioEngine via user interaction (Event: ${event.type})...")
+                    ae.unlock()
+                    
+                    // Explicitly resume AudioContext if it exists and is suspended
+                    try {
+                        val ctx = ae.audioContext
+                        if (ctx != null) {
+                            val state = ctx.state
+                            console.log("[Audio] AudioContext state: $state")
+                            if (state == "suspended") {
+                                console.log("[Audio] Resuming suspended AudioContext...")
+                                ctx.resume()
+                            }
+                        }
+                    } catch (t: Throwable) {
+                        // Ignore errors here as audioContext might not be supported or accessible this way
+                    }
+                    
+                    // Re-check after a short delay as it might be async
+                    window.setTimeout({
+                        console.log("[Audio] AudioEngine unlocked status after delay: ${ae.unlocked}")
+                        if (ae.audioContext != null) {
+                            console.log("[Audio] AudioContext state after delay: ${ae.audioContext.state}")
+                        }
+                    }, 500)
+                }
+            } else {
+                console.warn("[Audio] Cannot unlock: AudioEngine is null (Instance: ${engine.audioEngine}, Static: ${Engine.audioEngine})")
+            }
+        }
+        window.addEventListener("click", unlockAudio)
+        window.addEventListener("mousedown", unlockAudio)
+        window.addEventListener("keydown", unlockAudio)
+        window.addEventListener("touchstart", unlockAudio)
 
         // Register scene with SceneManager for global access
         SceneManager.setScene(scene)
@@ -1017,7 +1088,7 @@ fun SceneComponent(url: String) {
                                     val distance = depth * (activeCam.maxZ - activeCam.minZ) + activeCam.minZ
                                     
                                     // Set focus distance in millimeters
-                                    pipeline.depthOfField.focusDistance = distance * 1000f
+                                    pipeline.depthOfField?.focusDistance = distance * 1000f
                                 }
                             }
                         } catch (t: Throwable) {
@@ -1472,6 +1543,10 @@ fun SceneComponent(url: String) {
 
             window.removeEventListener("resize", resizeHandler)
             window.removeEventListener("objectDrop", objectDropHandler)
+            window.removeEventListener("click", unlockAudio)
+            window.removeEventListener("mousedown", unlockAudio)
+            window.removeEventListener("keydown", unlockAudio)
+            window.removeEventListener("touchstart", unlockAudio)
 
             // Unregister the graphics mode observer
             GraphicsSettings.removeObserver(graphicsModeObserver)

@@ -25,6 +25,8 @@ import main.api.updatePlayerPosition
 import main.components.SceneManager
 import main.components.world.effect.WaterRippleEffect
 import main.components.inventory.InventoryState
+import main.components.audio.SpatialSoundManager
+import lib.Sound
 import main.components.objects.movePlayerToObject
 import main.components.world.CharacterDirection
 import main.components.world.PlayerActivity
@@ -46,6 +48,9 @@ class PlayerController(private val scene: Scene) {
     
     // The player character handle
     private var playerHandle: WorldObjectHandle? = null
+    
+    // Walk sound for local player
+    private var walkSound: Sound? = null
     
     // HUD manager for local player
     private val hud = SelfHudManager()
@@ -80,6 +85,9 @@ class PlayerController(private val scene: Scene) {
     
     // Time tracking for water ripples
     private var lastRippleTime = 0.0
+
+    // Time tracking for sound hysteresis
+    private var lastMovingTime = 0.0
 
     // Coroutine scope for async operations
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
@@ -163,6 +171,7 @@ class PlayerController(private val scene: Scene) {
             },
             onSetPlayerHandle = { itHandle ->
                 playerHandle = itHandle
+                initializeWalkSound()
                 trySnapToGroundNow()
             },
             onRegisterInventoryCallback = { cb -> inventoryRefreshCallback = cb }
@@ -299,7 +308,10 @@ class PlayerController(private val scene: Scene) {
     /**
      * Stops any current movement and resets movement tracking.
      */
-    fun stopMovement() { mover.stopMovement() }
+    fun stopMovement() { 
+        mover.stopMovement() 
+        SpatialSoundManager.pause(walkSound)
+    }
 
     fun isAutoRunning() = mover.isAutoRunning()
     fun isJumping() = mover.isJumping()
@@ -361,6 +373,21 @@ class PlayerController(private val scene: Scene) {
             moveCircle = moveCircle,
             speedMultiplier = speedMultiplier,
         )
+
+        // Control walking sound
+        val isActivelyMoving = moveDirection.length() > 0f || mover.isMoving() || mover.isJumping()
+        val now = window.performance.now()
+        
+        if (isActivelyMoving) {
+            lastMovingTime = now
+            SpatialSoundManager.play(walkSound)
+        } else {
+            // Stop walking sound with a small hysteresis (200ms) to avoid stuttering
+            if (now - lastMovingTime > 200) {
+                SpatialSoundManager.pause(walkSound)
+            }
+        }
+
         if (validPos != null) {
             // Update velocity for wind sway (units per frame)
             val prev = lastPosition
@@ -384,7 +411,6 @@ class PlayerController(private val scene: Scene) {
 
             // Check for water ripples when moving
             val now = window.performance.now()
-            val isActivelyMoving = moveDirection.length() > 0f || mover.isMoving() || mover.isJumping()
             if (isActivelyMoving && now - lastRippleTime > 300) {
                 trySpawnWaterRipple(validPos)
                 lastRippleTime = now
@@ -629,6 +655,9 @@ class PlayerController(private val scene: Scene) {
         
         // Ensure the new player handle is also marked as incullable
         playerHandle?.node?.setIncullable(true)
+        
+        // Re-initialize walk sound for the new handle
+        initializeWalkSound()
     }
     
     /**
@@ -637,6 +666,7 @@ class PlayerController(private val scene: Scene) {
     fun dispose() {
         collider?.dispose()
         moveCircle?.dispose()
+        SpatialSoundManager.safeDispose(walkSound)
         playerHandle?.remove()
         hud.dispose()
         
@@ -654,6 +684,17 @@ class PlayerController(private val scene: Scene) {
      * Attempts to snap the player to the ground immediately if possible.
      * Returns true if a snap occurred.
      */
+    private fun initializeWalkSound() {
+        val handle = playerHandle ?: return
+        SpatialSoundManager.safeDispose(walkSound)
+        walkSound = SpatialSoundManager.createWalkingSound(
+            name = "player_walk",
+            url = "/raw/sounds/walk.wav",
+            scene = scene,
+            mesh = handle.node.unsafeCast<lib.TransformNode>()
+        )
+    }
+
     private fun trySnapToGroundNow() {
         coroutineScope.launch {
             awaitAnimationFrame()

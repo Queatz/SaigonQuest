@@ -92,6 +92,9 @@ class CameraController(private val scene: Scene) {
     init {
         console.log("[CameraController] Initializing camera controller")
         
+        // Set as active camera for audio listener
+        scene.activeCamera = camera
+        
         // Create the camera target (will be positioned later when player is created)
         createCameraTarget()
 

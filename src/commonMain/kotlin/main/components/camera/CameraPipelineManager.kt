@@ -401,9 +401,9 @@ class CameraPipelineManager(
                     bloomScale = .5f
                     console.log("[DEBUG] Bloom settings configured successfully")
 
-                    depthOfField.focalLength = 500f
-                    depthOfField.fStop = 1.2f
-                    depthOfField.focusDistance = 10_000f
+                    depthOfField?.focalLength = 500f
+                    depthOfField?.fStop = 1.2f
+                    depthOfField?.focusDistance = 10_000f
                     depthOfFieldBlurLevel = DepthOfFieldEffectBlurLevel.Medium
                     console.log("[DEBUG] Depth of field settings configured successfully")
                 }
@@ -475,7 +475,7 @@ class CameraPipelineManager(
             }
 
             val distanceToTarget = Vector3.Distance(currentCamera.position, cameraTarget.position)
-            pipeline.depthOfField.focusDistance = distanceToTarget * 1_000f // in millimeters
+            pipeline.depthOfField?.focusDistance = distanceToTarget * 1_000f // in millimeters
         }
     }
 

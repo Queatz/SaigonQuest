@@ -316,6 +316,7 @@ external class Scene(engine: Engine? = definedExternally) {
     var clearColor: Color4
     var autoClear: Boolean
     var ambientColor: Color3
+    var audioEnabled: Boolean
     var activeCamera: Camera?
     var pointerX: Int
     var pointerY: Int
@@ -666,11 +667,20 @@ external class Engine(
     fun getFps(): Float
 
     var maxFPS: Int
+    var audioEngine: AudioEngine?
 
     companion object {
         val TEXTUREFORMAT_ALPHA: Int
-        
+        var audioEngine: AudioEngine?
     }
+}
+
+external class AudioEngine(hostElement: org.w3c.dom.HTMLElement? = definedExternally) {
+    var useCustomUnlockedButton: Boolean
+    val unlocked: Boolean
+    val audioContext: dynamic
+    val onAudioUnlockedObservable: Observable<AudioEngine>
+    fun unlock()
 }
 
 external class Observable<T> {
@@ -1247,7 +1257,7 @@ external class DefaultRenderingPipeline(
     cameras: Array<Camera?>
 ): PostProcessRenderPipeline {
     var depthOfFieldEnabled: Boolean
-    var depthOfField: DepthOfFieldEffect
+    var depthOfField: DepthOfFieldEffect?
     var depthOfFieldBlurLevel: Int
     var bloomEnabled: Boolean
     var bloomThreshold: Float
@@ -2275,6 +2285,49 @@ external class BounceEase(bounces: Int = definedExternally, bounciness: Float = 
 external class QuadraticEase : EasingFunction
 external class CubicEase : EasingFunction
 
+/**
+ * Options for creating a sound
+ */
+external interface ISoundOptions {
+    var loop: Boolean?
+    var autoplay: Boolean?
+    var spatialSound: Boolean?
+    var maxDistance: Number?
+    var rolloffFactor: Number?
+    var refDistance: Number?
+    var distanceModel: String?
+    var volume: Number?
+}
+
+/**
+ * Class used to handle audio in the scene
+ */
+open external class Sound(
+    name: String,
+    urlOrArrayBuffer: Any,
+    scene: Scene? = definedExternally,
+    readyCallback: (() -> Unit)? = definedExternally,
+    options: ISoundOptions? = definedExternally
+) {
+    open var autoplay: Boolean
+    open var loop: Boolean
+    open var name: String
+    open var spatialSound: Boolean
+    open var useCustomAttenuation: Boolean
+    open val isPlaying: Boolean
+    open val isPaused: Boolean
+    open val isReady: Boolean
+    
+    open fun play(time: Number? = definedExternally)
+    open fun stop(time: Number? = definedExternally)
+    open fun pause()
+    open fun setVolume(newVolume: Number, time: Number? = definedExternally)
+    open fun getVolume(): Number
+    open fun attachToMesh(mesh: TransformNode)
+    open fun detachFromMesh()
+    open fun dispose()
+}
+
 external class SceneLoader {
     companion object {
         /**
@@ -2513,6 +2566,9 @@ external interface EngineOptions {
         get() = definedExternally
         set(value) = definedExternally
     var useHighPrecisionMatrix: Boolean?
+        get() = definedExternally
+        set(value) = definedExternally
+    var audioEngine: Boolean?
         get() = definedExternally
         set(value) = definedExternally
 }

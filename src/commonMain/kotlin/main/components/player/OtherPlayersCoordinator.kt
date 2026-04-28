@@ -24,6 +24,7 @@ import main.components.world.PlayerActivity
 import main.components.world.SpriteSheet
 import main.components.world.WorldObjectHandle
 import main.components.world.WorldObjectManager
+import main.components.audio.SpatialSoundManager
 import models.ChatMessage
 import models.PlayerPositionData
 import models.Position
@@ -224,6 +225,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         // Remove meshes and HUD
         players.values.forEach {
             it.spawnJob?.cancel()
+            SpatialSoundManager.safeDispose(it.walkSound)
             it.handle?.remove()
         }
         players.clear()
@@ -291,6 +293,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         val sameName = players.values.filter { it.userId != newUserId && !it.isPlayer && it.username == newUsername }
         (candidates + sameName).distinct().forEach { dup ->
             dup.spawnJob?.cancel()
+            SpatialSoundManager.safeDispose(dup.walkSound)
             dup.handle?.remove()
             players.remove(dup.userId)
             hud.removeHud(dup.userId)
@@ -306,6 +309,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // Stop any pending spawn retries and jobs
                 clearSpawnRetry(leave.userId)
                 op.spawnJob?.cancel()
+                SpatialSoundManager.safeDispose(op.walkSound)
                 op.handle?.remove()
                 players.remove(leave.userId)
                 hud.removeHud(leave.userId)
@@ -328,8 +332,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     if (op.isPlayer != pos.isPlayer) {
                         op.isPlayer = pos.isPlayer
                         // Role changed: respawn cleanly
+                        SpatialSoundManager.safeDispose(op.walkSound)
                         op.handle?.remove()
                         op.handle = null
+                        op.walkSound = null
                         usernameTextHandles.remove(op.userId)?.remove()
                         attemptSpawnWithUser(op)
                     }
@@ -386,8 +392,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
                 if (prevIsPlayer != op.isPlayer) {
                     // Role changed (visitor <-> player): respawn cleanly to swap base if needed
+                    SpatialSoundManager.safeDispose(op.walkSound)
                     op.handle?.remove()
                     op.handle = null
+                    op.walkSound = null
                     op.isSpawning = false // Allow fresh spawn
                     usernameTextHandles.remove(op.userId)?.remove()
                     attemptSpawnWithUser(op)
@@ -423,6 +431,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             return
         }
         op.handle = handle
+        initializeWalkSound(op)
         op.lastPos.copyFrom(startPos)
         op.isSpawning = false
         // Apply any pending activity (e.g., Sit) immediately on spawn
@@ -509,6 +518,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                         )
                         if (handle != null) {
                             op.handle = handle
+                            initializeWalkSound(op)
                             op.lastPos.copyFrom(startPos)
                             op.targetPos?.copyFrom(startPos) ?: run { op.targetPos = startPos.clone() }
                             // Track the profile so we can detect future base changes
@@ -577,8 +587,10 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // Preserve current transform/state
                 val currentPos = op.handle?.position ?: op.targetPos ?: op.lastPos
                 // Remove current mesh and trigger respawn with updated base body
+                SpatialSoundManager.safeDispose(op.walkSound)
                 op.handle?.remove()
                 op.handle = null
+                op.walkSound = null
                 op.isSpawning = false
                 op.targetPos = currentPos
                 op.lastPos = currentPos
@@ -633,6 +645,17 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         }
     }
 
+    private fun initializeWalkSound(op: OtherPlayer) {
+        val handle = op.handle ?: return
+        SpatialSoundManager.safeDispose(op.walkSound)
+        op.walkSound = SpatialSoundManager.createWalkingSound(
+            name = "walk_${op.userId}",
+            url = "/raw/sounds/walk.wav",
+            scene = scene,
+            mesh = handle.node.unsafeCast<lib.TransformNode>()
+        )
+    }
+
     // Per-frame movement and HUD positioning
     private fun update() {
         frameCount++
@@ -678,7 +701,11 @@ class OtherPlayersCoordinator(private val scene: Scene) {
 
             // 2) Update Activity State (Moving vs Standing)
             // Use a small threshold to avoid jitter, but large enough to detect intent
-            val isMovingIntent = distanceXZ > 0.01f
+            val isMovingIntent = distanceXZ > 0.05f
+
+            if (isMovingIntent) {
+                op.lastMovingTime = now
+            }
 
             val desiredActivity = if (isMovingIntent && op.activity != PlayerActivity.Sit) {
                 PlayerActivity.Moving
@@ -703,6 +730,12 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                     PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
                 }
                 op.shouldSnap = false
+                
+                // Stop walking sound with a small hysteresis (200ms) to avoid stuttering on minor network updates
+                if (now - op.lastMovingTime > 200) {
+                    SpatialSoundManager.pause(op.walkSound)
+                }
+                
                 return@forEach
             }
 
@@ -713,8 +746,15 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.lastPos.copyFrom(snappedTargetPos)
                 hud.updateHudPosition(op.userId, snappedTargetPos)
                 PlayerUiUtils.updateUsernameBillboardPosition(usernameTextHandles[op.userId], snappedTargetPos)
+                
+                // Stop walking sound when snapping
+                SpatialSoundManager.pause(op.walkSound)
+                
                 return@forEach
             }
+            
+            // Start walking sound
+            SpatialSoundManager.play(op.walkSound)
 
             // Dynamic speed: if far away, move faster to catch up (sprint-like)
             val catchUpMultiplier = when {
@@ -800,6 +840,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
     private fun pruneSelfIfPresent() {
         val selfId = myUserId ?: return
         players.remove(selfId)?.let { selfOp ->
+            SpatialSoundManager.safeDispose(selfOp.walkSound)
             selfOp.handle?.remove()
             hud.removeHud(selfId)
             usernameTextHandles.remove(selfId)?.remove()
