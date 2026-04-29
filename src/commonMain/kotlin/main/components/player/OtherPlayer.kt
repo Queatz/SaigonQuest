@@ -36,6 +36,7 @@ data class OtherPlayer(
     // Jump state
     var isJumping: Boolean = false,
     var jumpElapsed: Double = 0.0,
+    var jumpBaseY: Float = 0f,
 ) {
     // Serialize mutations per player
     val mutex = Mutex()

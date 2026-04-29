@@ -116,10 +116,42 @@ fun LessonScenesPage() {
                         display(DisplayStyle.Flex)
                         justifyContent(JustifyContent.SpaceBetween)
                         alignItems(AlignItems.Center)
+                        gap(16.px)
                         color(if (darkMode) main.theme.Theme.colors.onSurfaceDark else main.theme.Theme.colors.onSurface)
                     }
                 }) {
-                    Text(scene.title)
+                    Div(attrs = {
+                        style {
+                            display(DisplayStyle.Flex)
+                            alignItems(AlignItems.Center)
+                            gap(16.px)
+                        }
+                    }) {
+                        scene.sceneImage?.let {
+                            Img(src = it, attrs = {
+                                style {
+                                    width(60.px)
+                                    height(60.px)
+                                    property("object-fit", "cover")
+                                    borderRadius(8.px)
+                                }
+                            })
+                        } ?: Div(attrs = {
+                            style {
+                                width(60.px)
+                                height(60.px)
+                                backgroundColor(if (darkMode) main.theme.Theme.colors.surfaceDark else main.theme.Theme.colors.surface)
+                                borderRadius(8.px)
+                                display(DisplayStyle.Flex)
+                                alignItems(AlignItems.Center)
+                                justifyContent(JustifyContent.Center)
+                                opacity(0.5)
+                            }
+                        }) {
+                            Text("🖼️")
+                        }
+                        Text(scene.title)
+                    }
                     Div(attrs = { style { display(DisplayStyle.Flex); gap(8.px) } }) {
                         DialogButton(
                             onClick = { router.navigate("/tools/scenes/${scene.key}") },

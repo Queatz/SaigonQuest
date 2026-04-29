@@ -114,6 +114,9 @@ class Character(
     private var node: TransformNode? = null
     private var animationTime: Float = 0f
 
+    // ID to track the current render pass
+    private var currentRenderId: Int = 0
+
     // Reusable vectors for performance
     private val tempVector3 = Vector3()
     private val tempVector3_2 = Vector3()
@@ -191,11 +194,41 @@ class Character(
         container.rotation = rotation
         container.scaling = scale
 
-        // Clear any existing meshes and dispose them to avoid leaking
+        this.node = container
+
+        // Set up the meshes for the character
+        setupCharacterMeshes(scene, container)
+
+        return container
+    }
+
+    /**
+     * Set up the meshes for the character, hiding the container until all textures are loaded
+     */
+    private fun setupCharacterMeshes(scene: Scene, container: TransformNode) {
+        val renderId = ++currentRenderId
+
+        // Dispose of existing meshes to avoid leaking
         characterMesh?.dispose()
         additionalMeshes.forEach { it.dispose() }
         additionalMeshes.clear()
         windEntries.clear()
+
+        val totalSheets = 1 + additionalSpriteSheets.size
+        var loadedSheets = 0
+
+        // Hide the container initially to prevent showing the character without apparel
+        container.setEnabled(false)
+
+        val onSheetLoaded = {
+            // Only proceed if this is still the current render pass
+            if (renderId == currentRenderId) {
+                loadedSheets++
+                if (loadedSheets >= totalSheets) {
+                    container.setEnabled(true)
+                }
+            }
+        }
 
         // Create the main character mesh
         val characterMesh = createMeshForSpriteSheet(
@@ -203,7 +236,8 @@ class Character(
             name = "character_${id}",
             scene = scene,
             parent = container,
-            zOffset = 0f
+            zOffset = 0f,
+            onLoaded = onSheetLoaded
         )
         this.characterMesh = characterMesh
         // Apply initial skin tone to the base mesh
@@ -218,7 +252,8 @@ class Character(
                 name = "character_additional_${index}_${id}",
                 scene = scene,
                 parent = container,
-                zOffset = zOffset
+                zOffset = zOffset,
+                onLoaded = onSheetLoaded
             )
             additionalMeshes.add(additionalMesh)
         }
@@ -228,9 +263,6 @@ class Character(
 
         // Initialize sprite animation immediately so UVs are correct from the first frame
         updateSpriteAnimation()
-
-        this.node = container
-        return container
     }
 
     /**
@@ -252,44 +284,11 @@ class Character(
     override fun update(deltaTime: Float, camera: lib.ArcRotateCamera?) {
         // Check if we need to re-render the character
         if (needsRerender) {
-            // Dispose of existing meshes
-            characterMesh?.dispose()
-            additionalMeshes.forEach { it.dispose() }
-            additionalMeshes.clear()
-            windEntries.clear()
-
-            // Re-render if we have a scene reference
-            currentScene?.let { scene ->
-                node?.let { container ->
-                    // Create the main character mesh
-                    val characterMesh = createMeshForSpriteSheet(
-                        spriteSheet,
-                        "character_${id}",
-                        scene,
-                        container,
-                        0f
-                    )
-                    this.characterMesh = characterMesh
-                    // Apply initial skin tone to the base mesh after re-render
-                    applySkinToneToBaseMesh()
-
-                    // Create meshes for additional sprite sheets with increasing z-offset
-                    additionalSpriteSheets.forEachIndexed { index, additionalSpriteSheet ->
-                        // Use a small z-offset to ensure proper layering (0.01 units per layer)
-                        val zOffset = (additionalSpriteSheets.lastIndex - index) + 1f
-                        val additionalMesh = createMeshForSpriteSheet(
-                            spriteSheet = additionalSpriteSheet,
-                            name = "character_additional_${index}_${id}",
-                            scene = scene,
-                            parent = container,
-                            zOffset = zOffset
-                        )
-                        additionalMeshes.add(additionalMesh)
-                    }
-
-                    // Reset the re-render flag
-                    needsRerender = false
-                }
+            // Re-render if we have a scene reference and a node
+            val scene = currentScene
+            val container = node
+            if (scene != null && container != null) {
+                setupCharacterMeshes(scene, container)
             }
         }
 
@@ -700,6 +699,7 @@ class Character(
         scene: Scene,
         parent: Node,
         zOffset: Float = 0f,
+        onLoaded: (() -> Unit)? = null,
     ): AbstractMesh {
         // Create a material with the sprite sheet texture
         val material: PBRMaterial = if (spriteSheet.windEnabled) {
@@ -751,6 +751,10 @@ class Character(
                 // Update dimensions from the actual loaded texture to ensure correct UV segmenting
                 val size = texture.getSize()
                 spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
+                onLoaded?.invoke()
+            }
+            texture.onErrorObservable.addOnce {
+                onLoaded?.invoke()
             }
         } else {
             material.albedoTexture = texture
@@ -760,6 +764,10 @@ class Character(
             texture.onLoadObservable.addOnce {
                 val size = texture.getSize()
                 spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
+                onLoaded?.invoke()
+            }
+            texture.onErrorObservable.addOnce {
+                onLoaded?.invoke()
             }
         }
 

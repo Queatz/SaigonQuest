@@ -24,6 +24,7 @@ import models.UserCustomizationRequest
 import models.UserEmojiHistory
 import models.VisitorRequest
 import models.WornItemsRequest
+import models.isValidUsername
 import repository.UserEmojiHistoryRepository
 import repository.UserRepository
 
@@ -58,6 +59,14 @@ fun Routing.configureUserRoutes() {
             post("/upgrade") {
                 val request = call.receive<UpgradeRequest>()
                 
+                // Validate username
+                if (!isValidUsername(request.username)) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        "Username must not contain spaces or special characters"
+                    )
+                }
+
                 // Validate password length
                 if (request.password.length < 8) {
                     return@post call.respond(

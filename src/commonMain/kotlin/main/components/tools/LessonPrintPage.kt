@@ -100,5 +100,37 @@ fun LessonPrintPage(id: String) {
                 }
             }
         }
+
+        // Page 4: Reference Pages
+        currentScene.referencePages.forEach { page ->
+            Div(attrs = {
+                classes(PrintStyles.a4Page)
+                style { padding(15.mm); boxSizing("border-box") }
+            }) {
+                Div(attrs = { classes(PrintStyles.referenceTitle) }) { Text(page.title) }
+
+                Table(attrs = { classes(PrintStyles.referenceTable) }) {
+                    Tbody {
+                        page.rows.forEach { row ->
+                            Tr(attrs = {
+                                style { property("break-inside", "avoid") }
+                            }) {
+                                Td(attrs = {
+                                    classes(PrintStyles.referenceCell)
+                                    style { width(50.mm) }
+                                }) {
+                                    row.image?.let {
+                                        Img(src = it, attrs = { style { width(100.percent); display(DisplayStyle.Block); borderRadius(2.mm) } })
+                                    }
+                                }
+                                Td(attrs = { classes(PrintStyles.referenceCell) }) {
+                                    Span(attrs = { style { fontSize(14.pt); color(Color.black) } }) { Text(row.text) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

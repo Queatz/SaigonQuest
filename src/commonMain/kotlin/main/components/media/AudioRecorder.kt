@@ -171,7 +171,10 @@ fun AudioRecorderUI(
             Text("🗑️")
         }
 
-        RecordingPreview(isRecording = state.isRecording)
+        RecordingPreview(
+            isRecording = state.isRecording,
+            defaultWidth = if (isFullWidth) 0.px else 120.px
+        )
 
         DialogButton(
             onClick = {

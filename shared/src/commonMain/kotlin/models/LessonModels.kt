@@ -12,6 +12,7 @@ data class LessonScene(
     var scenePrompt: String = "",
     var eventCards: List<EventCard> = emptyList(),
     var items: List<LessonItem> = emptyList(),
+    var referencePages: List<ReferencePage> = emptyList(),
     var createdBy: String = "",
 ) : BaseModel()
 
@@ -35,4 +36,18 @@ data class LessonItem(
     val id: String = "",
     var image: String? = null,
     var name: String = "",
+)
+
+@Serializable
+data class ReferenceRow(
+    val id: String = "",
+    var image: String? = null,
+    var text: String = "",
+)
+
+@Serializable
+data class ReferencePage(
+    val id: String = "",
+    var title: String = "",
+    var rows: List<ReferenceRow> = emptyList(),
 )

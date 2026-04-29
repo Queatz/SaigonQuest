@@ -15,6 +15,7 @@ import kotlin.math.PI
 @Composable
 fun RecordingPreview(
     isRecording: Boolean,
+    defaultWidth: CSSNumericValue<*> = 120.px
 ) {
     val scope = rememberCoroutineScope()
 
@@ -24,7 +25,7 @@ fun RecordingPreview(
                 flexGrow(1)
                 flexShrink(1)
                 height(40.px)
-                width(120.px)
+                width(defaultWidth)
                 margin(0.px, 8.px)
                 boxSizing("border-box")
             }

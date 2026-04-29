@@ -369,6 +369,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
         if (!op.isJumping) {
             op.isJumping = true
             op.jumpElapsed = 0.0
+            op.jumpBaseY = op.handle?.position?.y ?: op.lastPos.y
             op.handle?.updateActivity(PlayerActivity.Jump)
 
             // Trigger immediate splash if on water
@@ -764,7 +765,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 // In-place logic (e.g. jumping or minor adjustments)
                 if (distance > 0f || jumpOffset > 0f) {
                     tempVector3_4.copyFrom(snappedTargetPos)
-                    tempVector3_4.y += jumpOffset
+                    tempVector3_4.y = kotlin.math.max(tempVector3_4.y, op.jumpBaseY + jumpOffset)
                     handle.position.copyFrom(tempVector3_4)
                     
                     op.lastPos.copyFrom(snappedTargetPos)
@@ -780,7 +781,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 op.shouldSnap = false
                 
                 tempVector3_4.copyFrom(snappedTargetPos)
-                tempVector3_4.y += jumpOffset
+                tempVector3_4.y = kotlin.math.max(tempVector3_4.y, op.jumpBaseY + jumpOffset)
                 handle.position.copyFrom(tempVector3_4)
                 
                 op.lastPos.copyFrom(snappedTargetPos)
@@ -817,7 +818,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                 val newPosition = tempVector3_3
                 
                 handle.position.copyFrom(newPosition)
-                handle.position.y += jumpOffset
+                handle.position.y = kotlin.math.max(handle.position.y, op.jumpBaseY + jumpOffset)
                 op.lastPos.copyFrom(newPosition)
 
                 // Trigger wind boost for other player's movement (convert displacement to velocity)

@@ -106,6 +106,45 @@ vi: Tìm kiếm đối tượng...
 No objects found in this world
 vi: Không tìm thấy đối tượng nào trong thế giới này
 
+Reference pages
+vi: Các trang tham khảo
+
+Username must not contain spaces or special characters
+vi: Tên người dùng không được chứa khoảng trắng hoặc ký tự đặc biệt
+
+Add reference page
+vi: Thêm trang tham khảo
+
+Reference page title
+vi: Tiêu đề trang tham khảo
+
+Add reference row
+vi: Thêm hàng tham khảo
+
+Reference row text
+vi: Văn bản hàng tham khảo
+
+Generate row image
+vi: Tạo ảnh hàng
+
+Generate remaining images
+vi: Tạo các ảnh còn lại
+
+Suggest
+vi: Gợi ý
+
+Suggest rows
+vi: Gợi ý hàng
+
+Suggest steps
+vi: Gợi ý các bước
+
+Suggest vocabulary
+vi: Gợi ý từ vựng
+
+Suggest grammar
+vi: Gợi ý ngữ pháp
+
 Untitled Object
 vi: Đối tượng không tên
 

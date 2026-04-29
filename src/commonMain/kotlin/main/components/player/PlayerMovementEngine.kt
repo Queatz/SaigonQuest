@@ -51,11 +51,13 @@ class PlayerMovementEngine(
     private val jumpDuration = 0.5 // total seconds
     private val jumpMaxHeight = 0.25f
     private var jumpDirection: Vector3? = null
+    private var jumpBaseY = 0f
 
     fun jump(currentMoveDirection: Vector3, playerPosition: Vector3) {
         if (!isJumping && getActivity() != PlayerActivity.Sit) {
             isJumping = true
             jumpElapsed = 0.0
+            jumpBaseY = playerPosition.y
 
             var effectiveDirection = currentMoveDirection
 
@@ -243,7 +245,7 @@ class PlayerMovementEngine(
                     if (isJumping) {
                         val t = jumpElapsed / jumpDuration
                         val h = 4 * jumpMaxHeight * t * (1.0 - t)
-                        validPos.y += h.toFloat()
+                        validPos.y = kotlin.math.max(validPos.y, jumpBaseY + h.toFloat())
                     }
 
                     if (WorldCollisionUtils.isPathBlocked(collisionContext, collider, moveCircle, currentPos, validPos)) {

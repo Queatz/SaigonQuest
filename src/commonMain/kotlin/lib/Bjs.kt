@@ -602,6 +602,7 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
     var vScale: Float
     var samplingMode: Int
     val onLoadObservable: Observable<Texture>
+    val onErrorObservable: Observable<dynamic>
 
     fun clone(): Texture
     fun dispose()

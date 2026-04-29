@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import main.api.UserApi
 import main.theme.Styles
 import models.Sex
+import models.isValidUsername
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.selected
@@ -51,6 +52,11 @@ fun VisitorDialog(
         when {
             username.isBlank() -> {
                 errorMessage = str("Username cannot be empty")
+                return
+            }
+
+            !isLoginMode && !isValidUsername(username) -> {
+                errorMessage = str("Username must not contain spaces or special characters")
                 return
             }
             
@@ -126,7 +132,7 @@ fun VisitorDialog(
             if (errorMessage.isNotEmpty()) {
                 Div(
                     attrs = {
-                        classes(Styles.formErrorMessage)
+                        classes(Styles.formErrorBanner)
                     }
                 ) {
                     Text(errorMessage)

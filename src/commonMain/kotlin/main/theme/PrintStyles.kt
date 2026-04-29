@@ -64,6 +64,9 @@ object PrintStyles : StyleSheet() {
         media("print") {
             property("margin", "0mm")
             property("border", "none")
+            property("overflow", "visible")
+            property("height", "auto")
+            property("min-height", "297mm")
         }
 
         self + lastChild style {
@@ -114,5 +117,24 @@ object PrintStyles : StyleSheet() {
         width(100.percent)
         height(100.percent)
         overflow("hidden")
+    }
+
+    val referenceTable by style {
+        width(100.percent)
+        property("border-collapse", "collapse")
+        backgroundColor(Color.white)
+    }
+
+    val referenceCell by style {
+        border(0.1.px, LineStyle.Solid, Color.black)
+        padding(4.mm)
+        property("vertical-align", "middle")
+    }
+
+    val referenceTitle by style {
+        fontSize(18.pt)
+        fontWeight("bold")
+        marginBottom(5.mm)
+        textAlign("center")
     }
 }
