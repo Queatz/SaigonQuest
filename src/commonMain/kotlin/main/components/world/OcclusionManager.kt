@@ -345,7 +345,7 @@ class OcclusionManager(private val scene: Scene) {
                 effect.setFloat("depthBand", uDepthBand)
                 effect.setFloat("softnessWorld", uSoftnessWorld)
                 effect.setBool("isEnabled", isEnabled)
-                effect.setFloat("time", (currentTimeSeconds * 12).toInt() / 12f)
+                effect.setFloat("time", (currentTimeSeconds * 6).toInt() / 6f)
                 effect.setFloat("timePhase", timePhase)
             } catch (_: Throwable) {
                 // avoid crashing if effect is not ready yet

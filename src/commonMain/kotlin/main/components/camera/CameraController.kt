@@ -70,6 +70,7 @@ class CameraController(private val scene: Scene) {
     // Animation properties
     private var targetPosition: Vector3? = null
     private var isAnimating: Boolean = false
+    var isFollowActive: Boolean = true
     private var inputsAttached: Boolean = false // Track current attachment state
     private var isManuallyDisabled: Boolean = false // Track manual disabling to ignore proximity re-enabling
     private val animationSpeed: Float = 0.25f // Adjust this value to control animation speed (0.0-1.0)
@@ -211,8 +212,10 @@ class CameraController(private val scene: Scene) {
 
         if (!isAnimating || targetPosition == null || cameraTarget == null) {
             if (isTransitioning && cameraTarget != null) {
-                // Continue lerping the camera target even if the mesh is stationary
-                updateCameraTargetImmediate(cameraTarget!!.position, useAnimation = true)
+                if (isFollowActive && !cameraCaughtUp) {
+                    // Continue lerping the camera target even if the mesh is stationary
+                    updateCameraTargetImmediate(cameraTarget!!.position, useAnimation = true)
+                }
                 updateSkybox()
                 return true
             }
@@ -260,7 +263,7 @@ class CameraController(private val scene: Scene) {
 
     private fun updateSkybox() {
         // Update skybox
-        SceneManager.getObjectManager()?.getSkybox()?.let { skybox ->
+        SceneManager.getObjectManager()?.getSkyboxes()?.forEach { skybox ->
             camera.position.let { skybox.position.copyFrom(it) }
             skybox.position.x = -skybox.position.x
         }
@@ -369,8 +372,8 @@ class CameraController(private val scene: Scene) {
             createCameraTarget()
         }
         
-        // Reset animation state to ensure consistent behavior when called multiple times
-        stopAnimating()
+        // Reset animation state and disable player follow until they move again
+        stopAnimating(manual = true)
         
         // Update the camera target with animation
         updateCameraTarget(position)
@@ -391,9 +394,15 @@ class CameraController(private val scene: Scene) {
         return pipelineManager.getPipeline()
     }
 
-    fun stopAnimating() {
+    fun stopAnimating(manual: Boolean = false) {
         isAnimating = false
         targetPosition = null
+        if (manual) {
+            isFollowActive = false
+        }
+        // Sync the internal target mesh position to the current camera target
+        // This prevents the camera from snapping back to the previous target when animation stops
+        cameraTarget?.position?.copyFrom(camera.target)
     }
 
     /**

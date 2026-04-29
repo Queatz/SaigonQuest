@@ -33,7 +33,7 @@ class ShadowManager(
     
     // Task 4: Shadow Map Downscaling
     // Default size is now 2048, reduced to 1024 in Low Graphics mode
-    private var shadowMapSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
+    private var shadowMapSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 512 else 1024
     
     // List of meshes that cast shadows
     private val shadowCasters = mutableListOf<AbstractMesh>()
@@ -41,14 +41,14 @@ class ShadowManager(
     // Task 2: Shadow Distance Culling
     // Meshes currently added to the generators
     private val activeShadowCasters = mutableSetOf<AbstractMesh>()
-    private val shadowDistanceThreshold = 250f
+    private val shadowDistanceThreshold = 500f
     private val shadowDistanceThresholdSq = shadowDistanceThreshold * shadowDistanceThreshold
     
     // Observer for graphics settings changes
     private val graphicsSettingsObserver: () -> Unit = {
         if (GraphicsSettings.isShadowsEnabled()) {
             val isLow = GraphicsSettings.isLowGraphicsModeEnabled()
-            val newSize = if (isLow) 512 else 2048
+            val newSize = if (isLow) 512 else 1024
             // Recreate if size changed OR if we changed pretty mode which affects PCSS
             if (newSize != shadowMapSize) {
                 println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
@@ -194,20 +194,10 @@ class ShadowManager(
         val isPretty = GraphicsSettings.isPrettyGraphicsEnabled()
 
         // Use PCF for soft shadows
-        generator.usePercentageCloserFiltering = true
-        generator.filteringQuality = if (isLowGraphics) {
-            ShadowGenerator.FILTERINGQUALITY_LOW
-        } else {
-            ShadowGenerator.FILTERINGQUALITY_MEDIUM
-        }
+        generator.filteringQuality = ShadowGenerator.FILTERINGQUALITY_MEDIUM
 
-        // Only use PCSS (Contact Hardening Shadows) in Pretty mode, as it's very expensive
-        // PCSS provides realistic contact hardening but has significant GPU cost.
-        if (isPretty && !isLowGraphics) {
-            generator.useContactHardeningShadow = true
-            generator.contactHardeningLightSizeUVRatio = 0.05f
-        } else {
-            generator.useContactHardeningShadow = false
+        if (isPretty) {
+            generator.usePercentageCloserFiltering = true
         }
     }
     

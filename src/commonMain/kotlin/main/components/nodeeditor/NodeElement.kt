@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import main.api.DocApi
+import main.api.ItemApi
 import main.api.QuestApi
 import main.components.translated
 import main.theme.NodeEditorStyles
@@ -93,6 +94,9 @@ fun NodeElement(
     // State for world name (if this node has a Target World ID)
     var worldName by remember(id) { mutableStateOf<String?>(null) }
 
+    // State for item name (if this node has an Item ID)
+    var itemName by remember(id) { mutableStateOf<String?>(null) }
+
     // Get doc title for Doc Content, Create Doc and Open Doc nodes
     LaunchedEffect(node.data) {
         if (type is LogicNode.DocContent || type is LogicNode.CreateDoc || type is LogicNode.OpenDoc) {
@@ -174,6 +178,27 @@ fun NodeElement(
             }
         } else {
             worldName = null
+        }
+    }
+
+    // Get item name
+    LaunchedEffect(node.data) {
+        val nodeData = NodeDataParser.parseNodeData(node.type, node.data)
+        val itemId = nodeData.properties.find { it.key == PropertyKey.ITEM_ID }?.value
+        if (!itemId.isNullOrBlank()) {
+            try {
+                val item = ItemApi.getItemById(itemId)
+                itemName = item.title.ifBlank { "Selected item" }
+            } catch (t: Throwable) {
+                // Only log if it's not a 404
+                val is404 = (t as? models.ErrorResponse)?.code == 404
+                if (!is404) {
+                    console.error("Failed to load item name for NodeElement", t)
+                }
+                itemName = null
+            }
+        } else {
+            itemName = null
         }
     }
 
@@ -466,7 +491,16 @@ fun NodeElement(
                         PropertyKey.ITEM_ID -> {
                             if (property.value.isNotBlank()) {
                                 Div {
-                                    Text(property.value)
+                                    val displayItem = when {
+                                        itemName != null -> itemName
+                                        property.value.isBlank() -> "Not selected"
+                                        else -> "..."
+                                    }
+
+                                    val quantity = nodeData.properties.find { it.key == PropertyKey.QUANTITY }?.value ?: "1"
+                                    val quantitySuffix = if (quantity != "1") " (x$quantity)" else ""
+
+                                    Text("Item: ${displayItem?.ellipsize().orEmpty()}$quantitySuffix")
                                 }
                             }
                         }

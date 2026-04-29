@@ -757,33 +757,25 @@ class WorldLoader(private val scene: Scene) {
                 }
                 console.log("[MESH] Set infinite distance for skybox mesh: ${mesh.name}")
                 console.log("[MESH]", mesh.parent)
-            }
+            } else {
+                // Configure shadows for the mesh
+                shadowManager?.let { manager ->
+                    // Make ALL objects cast shadows (as per requirement)
+                    manager.addShadowCaster(mesh)
+                    shadowCasterCount++
 
-            // Configure shadows for the mesh
-            shadowManager?.let { manager ->
-                // Make ALL objects cast shadows (as per requirement)
-                manager.addShadowCaster(mesh)
-                shadowCasterCount++
-                
-                // Make all objects receive shadows
-                manager.configureShadowReceiver(mesh)
-                shadowReceiverCount++
-                
-                // Log the mesh configuration
-                console.log("[DEBUG] Configured mesh for shadows: ${mesh.name} (both caster and receiver)")
-            } ?: run {
-                console.error("[ERROR] Shadow manager is null! Cannot configure shadows for ${mesh.name}")
-            }
-            
-            // Register mesh with occlusion manager for fading when it obstructs the player's view
-            if (!mesh.isSkybox()) {
+                    // Make all objects receive shadows
+                    manager.configureShadowReceiver(mesh)
+                    shadowReceiverCount++
+                }
+
                 // Apply distance culling to massive meshes (like flower maps)
                 // This allows them to be "partially visible" by culling far fragments
                 // We exclude incullable meshes from distance culling as they should always be fully visible.
                 if (mesh.getBoundingInfo().boundingSphere.radiusWorld > 100f && !mesh.isIncullable()) {
                     distanceCullingSystem?.registerMesh(mesh)
                 }
-                
+
                 // Also apply occlusion manager to all world meshes (except skybox)
                 // The systems now use a shared MaterialCustomizer to avoid overwriting each other
                 occlusionManager?.registerMesh(mesh)

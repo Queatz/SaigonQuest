@@ -930,6 +930,7 @@ fun SceneComponent(url: String) {
         // ------- Screen saver state -------
         var lastInteractionTime = window.performance.now()
         var isScreenSaverActive = false
+        var playerWasMoving = false
         var screenSaverAnimationGroup: lib.AnimationGroup? = null
         val flippedCameras = mutableSetOf<lib.Camera>()
         var screenSaverFocusJob: Job? = null
@@ -1491,16 +1492,22 @@ fun SceneComponent(url: String) {
                 SceneManager.setPlayerVelocity(null)
             }
 
-            // Update camera target if player moved and Observer Mode is OFF
-            if (newPosition != null && !GraphicsSettings.isObserverModeEnabled()) {
+            val currentTime = window.performance.now()
+            val isPlayerMoving = moveDirection.length() > 0 || playerController.isMoving() || playerController.isJumping()
+            
+            // Resume camera follow if player just started moving
+            if (isPlayerMoving && !playerWasMoving) {
+                cameraController.isFollowActive = true
+            }
+            playerWasMoving = isPlayerMoving
+
+            // Update camera target if player moved and Observer Mode is OFF and follow is active
+            if (newPosition != null && !GraphicsSettings.isObserverModeEnabled() && cameraController.isFollowActive) {
                 cameraController.updateCameraTarget(newPosition)
             }
 
             // Update camera animation
             val isCameraAnimating = cameraController.updateAnimation()
-
-            val currentTime = window.performance.now()
-            val isPlayerMoving = moveDirection.length() > 0 || playerController.isMoving() || playerController.isJumping()
             
             if (isPlayerMoving || isCameraAnimating) {
                 lastInteractionTime = currentTime

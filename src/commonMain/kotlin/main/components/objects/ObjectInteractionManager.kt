@@ -274,7 +274,7 @@ fun SceneObjectManager.locateObject(objectId: String): Boolean {
             selectObject(objectId)
             
             // Move the camera to focus on the object
-            cameraController.focusOnPosition(node.position)
+            cameraController.focusOnPosition(node.getAbsolutePosition())
             
             console.log("Camera focused on object: $objectId")
             onSuccess?.invoke("Located object")

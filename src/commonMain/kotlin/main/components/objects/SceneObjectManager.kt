@@ -113,7 +113,7 @@ class SceneObjectManager(
     var onError: ((String) -> Unit)? = null
     var onSuccess: ((String) -> Unit)? = null
 
-    private var skybox: AbstractMesh? = null
+    private var skyboxes: List<AbstractMesh> = emptyList()
     private var worldMeshes: Array<AbstractMesh> = emptyArray()
     internal var uiUpdateFrameCounter = 0
 
@@ -204,11 +204,12 @@ class SceneObjectManager(
 
     fun setWorldMeshes(meshes: Array<AbstractMesh>) {
         this.worldMeshes = meshes
-        this.skybox = meshes.find { it.isSkybox() }
+        this.skyboxes = meshes.filter { it.isSkybox() }
     }
 
     fun getWorldMeshes(): Array<AbstractMesh> = worldMeshes
-    fun getSkybox(): AbstractMesh? = skybox
+    fun getSkyboxes(): List<AbstractMesh> = skyboxes
+    fun getSkybox(): AbstractMesh? = skyboxes.firstOrNull()
 
     fun setupWebSocketListeners(currentWorldId: String) {
         loadExistingObjects(currentWorldId)

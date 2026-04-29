@@ -574,9 +574,11 @@ class InputHandler(
                 // We only call onActivity when actually dragging or moving with intent
                 onActivity?.invoke()
 
-                // Drag to move camera
+                // Drag to move camera (pan)
                 if (info.event.ctrlKey) {
-                    cameraController.stopAnimating()
+                    cameraController.stopAnimating(manual = true)
+                    playerController.stopMovement()
+                    didRotateCameraThisPointer = true
                 }
 
                 val deltaX = abs(scene.pointerX - pointerStartX)
@@ -610,7 +612,7 @@ class InputHandler(
 
             // If moving the camera with the mouse (zoom), stop player movement
             if (isNavigationStart || isWheel) {
-                cameraController.stopAnimating()
+                cameraController.stopAnimating(manual = true)
 
                 // In observer mode, set the camera target to the point under the cursor when starting to rotate
                 // We skip this on wheel events because zoomToMouseLocation handles it automatically
@@ -853,8 +855,8 @@ class InputHandler(
                                             for ((_, meshes) in objMeshes) {
                                                 excludeList.addAll(meshes)
                                             }
-                                            // Exclude skybox if available (prevents far depth writes)
-                                            objectManager.getSkybox()?.let { excludeList.add(it) }
+                                            // Exclude skyboxes if available (prevents far depth writes)
+                                            objectManager.getSkyboxes().let { excludeList.addAll(it) }
                                             DepthPicking.beginPickingDepth(
                                                 scene = scene,
                                                 excludeMeshes = excludeList.toTypedArray(),
