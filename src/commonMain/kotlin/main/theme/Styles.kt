@@ -652,7 +652,6 @@ object Styles : StyleSheet() {
     }
 
     val baseDialogContent by style {
-        padding(24.px)
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         flexGrow(1)

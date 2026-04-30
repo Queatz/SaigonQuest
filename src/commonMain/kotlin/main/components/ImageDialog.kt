@@ -11,7 +11,6 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Img
 
 @Composable
 fun ImageDialog(
@@ -25,32 +24,26 @@ fun ImageDialog(
         onClose = onClose,
         title = null,
         showCloseButton = false,
-        maxWidth = "1200px",
+        useDefaultContentPadding = false,
+        isFullWidth = true,
+        isFullHeight = true,
         content = {
             Div({
                 style {
-                    display(DisplayStyle.Flex)
-                    flexDirection(FlexDirection.Column)
-                    alignItems(AlignItems.Center)
-                    property("gap", "12px")
+                    width(100.percent)
+                    height(100.percent)
+                    property("background-image", "url(\"$imageUrl\")")
+                    property("background-size", "contain")
+                    property("background-position", "center")
+                    property("background-repeat", "no-repeat")
+                    property("border-radius", "8px")
+                    cursor("pointer")
                 }
-            }) {
-                Img(
-                    src = imageUrl,
-                    attrs = {
-                        style {
-                            width(100.percent)
-                            property("max-width", "100%")
-                            property("object-fit", "contain")
-                            property("border-radius", "8px")
-                        }
 
-                        onClick {
-                            onClose()
-                        }
-                    }
-                )
-            }
+                onClick {
+                    onClose()
+                }
+            })
         },
         actions = {
             DialogButton(
@@ -71,7 +64,7 @@ fun ImageDialog(
                 isDisabled = copied,
             ) {
                 Translated(
-                    if (copied) "Copied!" else "Copy link",
+                    if (copied) "Copied!" else "Copy image link",
                 )
             }
 

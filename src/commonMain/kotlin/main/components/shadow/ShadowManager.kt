@@ -41,7 +41,7 @@ class ShadowManager(
     // Task 2: Shadow Distance Culling
     // Meshes currently added to the generators
     private val activeShadowCasters = mutableSetOf<AbstractMesh>()
-    private val shadowDistanceThreshold = 1000f
+    private val shadowDistanceThreshold = 500f
     private val shadowDistanceThresholdSq = shadowDistanceThreshold * shadowDistanceThreshold
     
     // Observer for graphics settings changes

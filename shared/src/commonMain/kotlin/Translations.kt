@@ -1976,6 +1976,9 @@ vi: Tìm kiếm node
 Copy link
 vi: Sao chép liên kết
 
+Copy image link
+vi: Sao chép liên kết hình ảnh
+
 Copy to chat
 vi: Sao chép vào tin nhắn
 

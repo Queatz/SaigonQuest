@@ -128,6 +128,7 @@ fun BaseDialog(
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,
     isFullWidth: Boolean = false,
+    useDefaultContentPadding: Boolean = false,
     anchorToBottom: Boolean = false,
     banner: (@Composable () -> Unit)? = null,
     useBorder: Boolean = true,
@@ -269,6 +270,10 @@ fun BaseDialog(
                         classes(Styles.baseDialogContent)
 
                         style {
+                            if (useDefaultContentPadding) {
+                                padding(24.px)
+                            }
+
                             if (isFullHeight) {
                                 height(0.px)
                             }
