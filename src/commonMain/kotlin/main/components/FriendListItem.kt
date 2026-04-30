@@ -95,17 +95,20 @@ fun FriendListItem(
             }
         }
         
-        // Friend status and status bars (if present)
-        friendUser?.let { fu ->
-            if (fu.status.isNotBlank()) {
-                Div(
-                    attrs = {
-                        classes(Styles.userStatusText, FriendsStyles.statusText)
-                    }
-                ) {
-                    Text(fu.status)
+        // Friend status (show from friend object immediately, or from user object if loaded)
+        val statusToShow = friendUser?.status ?: friend.friendStatus
+        if (statusToShow.isNotBlank()) {
+            Div(
+                attrs = {
+                    classes(Styles.userStatusText, FriendsStyles.statusText)
                 }
+            ) {
+                Text(statusToShow)
             }
+        }
+        
+        // Status bars and skills (if present)
+        friendUser?.let { fu ->
             Div {
                 UserStatusBars(
                     health = fu.health,

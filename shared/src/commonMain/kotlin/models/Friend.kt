@@ -39,5 +39,6 @@ data class Friend(
     var lastWorldId: String = "",
     var lastWorldName: String = "",
     var lastPosition: Position? = null,
-    var note: String = ""
+    var note: String = "",
+    var friendStatus: String = ""
 ) : BaseModel()

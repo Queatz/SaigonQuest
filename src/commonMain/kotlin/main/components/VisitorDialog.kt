@@ -56,7 +56,7 @@ fun VisitorDialog(
             }
 
             !isLoginMode && !isValidUsername(username) -> {
-                errorMessage = str("Username must not contain spaces or special characters")
+                errorMessage = str("Username must not contain spaces or symbols")
                 return
             }
             

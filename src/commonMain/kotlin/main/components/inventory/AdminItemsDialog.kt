@@ -2,6 +2,7 @@ package main.components.inventory
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.Paper
 import main.api.ItemApi
 import main.components.BaseDialog
 import main.components.DialogButton
@@ -77,7 +78,7 @@ fun AdminItemsDialog(
 
                 // List rows
                 for (item in items) {
-                    Div(attrs = { classes(Styles.adminItemsGridRow) }) {
+                    Paper(attrs = { classes(Styles.adminItemsGridRow) }) {
                         // image
                         Div {
                             ItemRenderer(item = item, size = 32)

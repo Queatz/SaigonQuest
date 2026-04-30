@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.AdminBalanceApi
 import main.api.UserApi
+import main.components.*
 import main.components.common.formatAmount
 import main.components.common.formatTimestampLikeChat
 import main.theme.Styles
@@ -70,7 +71,7 @@ fun AdminBalanceRequestsHistoryDialog(
             } else {
                 items.forEach { r ->
                     // Row container
-                    Div({ classes(Styles.requestRow) }) {
+                    Paper({ classes(Styles.requestRow) }) {
                         val isDeposit = r.type.toString() == "Deposit"
                         // Header line
                         Div({ classes(Styles.requestHeader) }) {

@@ -1619,13 +1619,7 @@ object Styles : StyleSheet() {
         property("grid-template-columns", "32px 100px 1.2fr 1.2fr 1fr 100px")
         gap(12.px)
         alignItems(AlignItems.Center)
-        padding(8.px, 12.px)
-        property("border", "1px solid ${Theme.colors.white08}")
-        property("border-radius", "6px")
         marginBottom(6.px)
-        dark(self) {
-            backgroundColor(Theme.colors.white05)
-        }
     }
 
     val assetsGridHeader by style {
@@ -1643,9 +1637,6 @@ object Styles : StyleSheet() {
         property("grid-template-columns", "1fr 2fr")
         property("gap", "8px")
         alignItems(AlignItems.Center)
-        padding(8.px)
-        property("border", "1px solid ${Theme.colors.white08}")
-        property("border-radius", "6px")
         marginBottom(6.px)
     }
 
@@ -1669,9 +1660,6 @@ object Styles : StyleSheet() {
         property("grid-template-columns", "48px 2fr 1fr 1fr 1fr auto")
         property("gap", "8px")
         alignItems(AlignItems.Center)
-        padding(8.px)
-        property("border", "1px solid ${Theme.colors.white08}")
-        property("border-radius", "6px")
         marginBottom(6.px)
     }
 
@@ -1729,10 +1717,6 @@ object Styles : StyleSheet() {
     val eventRow by style {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
-        padding(10.px, 12.px)
-        borderRadius(8.px)
-        backgroundColor(Theme.colors.white04)
-        property("border", "1px solid ${Theme.colors.white08}")
         marginBottom(8.px)
         property("gap", "12px")
         alignItems(alignItems = AlignItems.Center)
@@ -1790,7 +1774,6 @@ object Styles : StyleSheet() {
     val requestRow by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        padding(12.px)
         property("gap", "8px")
     }
 

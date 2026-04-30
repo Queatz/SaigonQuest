@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.*
 import main.api.SkillApi
 import main.theme.Styles
 import models.Skill
@@ -81,13 +82,12 @@ fun AdminSkillsDialog(
 
                 // List rows
                 for (skill in skills) {
-                    Div(attrs = {
+                    Paper(attrs = {
                         style {
                             display(DisplayStyle.Grid)
                             gridTemplateColumns("64px 1fr 2fr 150px")
                             gap(16.px)
-                            padding(8.px)
-                            property("border-bottom", "1px solid rgba(255,255,255,0.1)")
+                            marginBottom(8.px)
                             alignItems(AlignItems.Center)
                         }
                     }) {

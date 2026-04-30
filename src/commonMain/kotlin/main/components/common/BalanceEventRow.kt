@@ -1,21 +1,19 @@
 package main.components.common
 
 import androidx.compose.runtime.*
+import main.components.Paper
 import main.components.Translated
 import main.components.translated
 import main.components.ImageDialog
 import main.theme.Styles
 import models.UserBalanceHistory
 import models.UserBalanceHistoryEventType
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Span
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Img
+import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun BalanceEventRow(item: UserBalanceHistory) {
     var imageToView by remember { mutableStateOf<String?>(null) }
-    Div({ classes(Styles.eventRow) }) {
+    Paper({ classes(Styles.eventRow) }) {
         // Treat positive change as deposit, negative as withdraw
         val isDeposit = item.changeAmount >= 0
         val badgeClass = if (isDeposit) Styles.eventTypeDeposit else Styles.eventTypeWithdraw

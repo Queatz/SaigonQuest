@@ -52,11 +52,13 @@ data class ChangePasswordRequest(
 )
 
 /**
- * Validates a username: no spaces, no special characters.
- * Allowed: a-z, A-Z, 0-9, and underscores.
+ * Validates a username: no symbols, no white space.
+ * Allowed: Letters (including international), numbers, and underscores.
  */
 fun isValidUsername(username: String): Boolean {
     if (username.isBlank()) return false
-    val regex = Regex("^[a-zA-Z0-9_]+$")
+    // \p{L} matches any kind of letter from any language
+    // \p{N} matches any kind of numeric character in any script
+    val regex = Regex("^[\\p{L}\\p{N}_]+$")
     return regex.matches(username)
 }

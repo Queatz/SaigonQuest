@@ -63,7 +63,7 @@ fun Routing.configureUserRoutes() {
                 if (!isValidUsername(request.username)) {
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
-                        "Username must not contain spaces or special characters"
+                        "Username must not contain spaces or symbols"
                     )
                 }
 

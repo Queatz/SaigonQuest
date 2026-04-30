@@ -24,9 +24,10 @@ fun ResponsivePanel(
     headerRight: (@Composable () -> Unit)? = null,
     headerActions: (@Composable () -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
+    isFullscreen: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    if (isMobile) {
+    if (isMobile || isFullscreen) {
         // Mobile: Dialog
         Div(
             attrs = {
@@ -37,6 +38,14 @@ fun ResponsivePanel(
             FramedBorder(
                 attrs = {
                     classes(Styles.dialogContainer)
+                    style {
+                        if (isFullscreen) {
+                            property("width", "100%")
+                            property("height", "100vh")
+                            property("max-width", "100vw")
+                            property("border-radius", "0")
+                        }
+                    }
                     onClick { it.stopPropagation() }
                 }
             ) {

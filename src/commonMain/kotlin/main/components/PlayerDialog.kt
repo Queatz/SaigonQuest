@@ -316,33 +316,41 @@ fun PlayerDialog(
                         }
                     }
                     // Balance summary (clickable)
-                    Div(
+                    DialogButton(
+                        onClick = { showBalanceDialog.value = true },
+                        style = DialogButtonStyle.Alt,
                         attrs = {
-                            classes(Styles.balanceSummaryBox, Styles.clickable)
-                            onClick { showBalanceDialog.value = true }
+                            style {
+                                marginBottom(16.px)
+                            }
                         }
                     ) {
                         val b = balanceState.value
-                        if (b == null) {
-                            P { Translated("Loading...") }
-                        } else {
-                            Div(
-                                attrs = { classes(Styles.balanceAmountText) }
-                            ) {
-                                Text("${formatAmount(b.balance)} ${translated("VND")}")
+                        Div(
+                            attrs = {
+                                style {
+                                    display(DisplayStyle.Flex)
+                                    flexDirection(FlexDirection.Column)
+                                    alignItems(AlignItems.Center)
+                                    justifyContent(JustifyContent.Center)
+                                }
                             }
-                            Div(
-                                attrs = { classes(Styles.balanceSubtext) }
-                            ) {
-                                Translated("Current balance")
+                        ) {
+                            if (b == null) {
+                                Translated("Loading...")
+                            } else {
+                                Div(
+                                    attrs = { classes(Styles.balanceAmountText) }
+                                ) {
+                                    Text("${formatAmount(b.balance)} ${translated("VND")}")
+                                }
+                                Div(
+                                    attrs = { classes(Styles.balanceSubtext) }
+                                ) {
+                                    Translated("Current balance")
+                                }
                             }
                         }
-                    }
-                    DialogButton(
-                        onClick = { showBalanceDialog.value = true },
-                        style = DialogButtonStyle.Primary
-                    ) {
-                        Translated("Deposit / Withdraw")
                     }
 
                     // Language switcher

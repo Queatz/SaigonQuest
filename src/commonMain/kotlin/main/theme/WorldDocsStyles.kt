@@ -337,14 +337,6 @@ object WorldDocsStyles : StyleSheet() {
     }
 
     val historyItem by style {
-        backgroundColor(Theme.colors.surface)
-        border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
-        borderRadius(8.px)
-        padding(12.px)
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceDark)
-            border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtleDark)
-        }
     }
 
     val historyHeader by style {
@@ -442,21 +434,14 @@ object WorldDocsStyles : StyleSheet() {
 
     // Result row
     val selectDocItem by style {
-        padding(11.px)
-        borderRadius(8.px)
-        border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtle)
         backgroundColor(Color.transparent)
         dark(self) {
-            border(1.px, LineStyle.Solid, Theme.colors.panelBorderSubtleDark)
             backgroundColor(Color.transparent)
         }
     }
 
     // Selected state for result row
     val selectDocItemSelected by style {
-        // Keep base padding/radius; apply stronger border to indicate selection
-        padding(11.px)
-        borderRadius(8.px)
         backgroundColor(Theme.colors.surfaceVariant)
         color(Theme.colors.onSurfaceVariant)
         property("border", "1px solid ${Theme.colors.black30}")

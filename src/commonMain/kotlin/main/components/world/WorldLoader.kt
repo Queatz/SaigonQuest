@@ -387,7 +387,7 @@ class WorldLoader(private val scene: Scene) {
             waterTextures.forEach { texture ->
                 // Move 5% of the texture per second
 //                texture.uOffset += (0.05f * dt).toFloat()
-                texture.vOffset += (0.25f * dt).toFloat()
+                texture.vOffset += (0.125f * dt).toFloat()
             }
         }
     }

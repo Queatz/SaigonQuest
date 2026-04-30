@@ -137,8 +137,8 @@ object FriendsStyles : StyleSheet() {
     }
 
     val statusText by style {
-        padding(8.px)
-        borderRadius(8.px)
+        padding(8.px, 16.px)
+        borderRadius(16.px)
 
         backgroundColor(Theme.colors.white70)
 

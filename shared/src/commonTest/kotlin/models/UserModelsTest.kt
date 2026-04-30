@@ -11,6 +11,10 @@ class UserModelsTest {
         assertTrue(isValidUsername("user123"))
         assertTrue(isValidUsername("user_name"))
         assertTrue(isValidUsername("USER_NAME"))
+        assertTrue(isValidUsername("nguyễn")) // Vietnamese
+        assertTrue(isValidUsername("thành_phố")) // Vietnamese with underscore
+        assertTrue(isValidUsername("ユーザー")) // Japanese Katakana
+        assertTrue(isValidUsername("用户")) // Chinese
         
         assertFalse(isValidUsername(""))
         assertFalse(isValidUsername(" "))

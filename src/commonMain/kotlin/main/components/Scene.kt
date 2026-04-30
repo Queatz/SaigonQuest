@@ -417,20 +417,24 @@ fun SceneComponent(url: String) {
 
     // Helper to perform navigation with 250ms fade-to-black
     val navigateWithFade: (String, Boolean) -> Unit = { path, hardReload ->
-        scope.launch {
-            showFadeOverlay = true
-            // If overlay was hidden, start from transparent/no-blur
-            fadeOpacity = 0.0
-            fadeBlurPx = 0
-            // Next frame, animate to black + blur
-            delay(10)
-            fadeOpacity = 1.0
-            fadeBlurPx = 8
-            delay(260)
-            if (hardReload) {
-                window.location.href = path
-            } else {
-                router.navigate(path)
+        val current = router.currentPath.path.trim('/')
+        val target = path.trim('/')
+        if (current != target || hardReload) {
+            scope.launch {
+                showFadeOverlay = true
+                // If overlay was hidden, start from transparent/no-blur
+                fadeOpacity = 0.0
+                fadeBlurPx = 0
+                // Next frame, animate to black + blur
+                delay(10)
+                fadeOpacity = 1.0
+                fadeBlurPx = 8
+                delay(260)
+                if (hardReload) {
+                    window.location.href = path
+                } else {
+                    router.navigate(path)
+                }
             }
         }
     }

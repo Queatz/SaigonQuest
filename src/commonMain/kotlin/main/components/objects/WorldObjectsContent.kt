@@ -45,16 +45,16 @@ fun WorldObjectsContent(
     } else {
         objects.filter {
             it.title.contains(searchQuery, ignoreCase = true) ||
-            it.status.contains(searchQuery, ignoreCase = true)
+                    it.status.contains(searchQuery, ignoreCase = true)
         }
     }
 
     // Container for the content
     Div(
         attrs = {
-            classes(EditorStyles.worldObjectsContainer)
-
             if (!isDialog) {
+                classes(EditorStyles.worldObjectsContainer)
+
                 style {
                     padding(16.px)
                 }

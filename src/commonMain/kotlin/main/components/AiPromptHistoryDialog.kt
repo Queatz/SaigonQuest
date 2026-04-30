@@ -51,13 +51,8 @@ fun AiPromptHistoryDialog(
                             .trim()
                             .replace(Regex("\\s+"), " ")
                             .ellipsize(160)
-                        Div(attrs = {
+                        Paper(attrs = {
                             classes(Styles.clickable)
-                            style {
-                                property("padding", "11px")
-                                property("border", "1px solid rgba(255,255,255,0.1)")
-                                property("border-radius", "8px")
-                            }
                             onClick { onSelect(h.prompt) }
                         }) {
                             // Title row

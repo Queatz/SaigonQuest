@@ -97,8 +97,9 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
             val worldUrl = data["worldUrl"]
 
             if (worldUrl != null && objectId != null) {
-                val currentPath = router.currentPath.path.removePrefix("/")
-                if (currentPath != worldUrl) {
+                val current = router.currentPath.path.trim('/')
+                val target = worldUrl.trim('/')
+                if (current != target) {
                     // Navigate to target world
                     val detail: dynamic = object {}
                     detail.path = "/$worldUrl"

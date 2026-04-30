@@ -9,6 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import main.components.Paper
+import main.components.Translated
+import main.components.translated
+import main.components.BaseDialog
+import main.components.DialogButton
+import main.components.DialogButtonStyle
+import main.components.DialogInput
+import main.components.DialogSelect
 import main.api.UserRequestApi
 import main.components.common.formatAmount
 import main.theme.Styles
@@ -102,7 +110,7 @@ fun AdminUserRequestsDialog(
                     // Rows
                     for (r in requests) {
                         val note = noteInputs[r.key] ?: ""
-                        Div(attrs = { classes(Styles.assetsGridRow) }) {
+                        Paper(attrs = { classes(Styles.assetsGridRow) }) {
                             // Type
                             Span { Text(typeLabel(r.type)) }
                             // Title

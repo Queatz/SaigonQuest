@@ -95,7 +95,7 @@ fun SelectDocDialog(
                         classes(WorldDocsStyles.selectDocList)
                     }) {
                         filtered.forEach { d ->
-                            Div(attrs = {
+                            Paper(attrs = {
                                 classes(
                                     Styles.clickable,
                                     WorldDocsStyles.selectDocItem,

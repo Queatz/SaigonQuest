@@ -50,6 +50,29 @@ class UserRepository {
     }
     
     /**
+     * Get multiple users by their IDs
+     *
+     * @param ids The IDs of the users
+     * @return A list of users
+     */
+    fun getByIds(ids: Collection<String>): List<User> {
+        if (ids.isEmpty()) return emptyList()
+        
+        val query = """
+            FOR u IN @@collection
+            FILTER u._key IN @ids
+            RETURN u
+        """.trimIndent()
+        
+        val bindVars = mapOf(
+            "@collection" to CollectionsConfig.USERS_COLLECTION,
+            "ids" to ids
+        )
+        
+        return ArangoConfig.db.query(query, User::class.java, bindVars).toList()
+    }
+    
+    /**
      * Gets a user by their visitor ID
      */
     fun getByVisitorId(visitorId: String): User? {

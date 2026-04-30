@@ -1,16 +1,20 @@
 package main.components
 
 import androidx.compose.runtime.Composable
-import main.components.translated
-import Translations.str
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
+import main.components.translated
+import Translations.str
+import kotlinx.browser.document
+import main.utils.toggleFullscreen
 import main.components.chat.ChatBellButton
 import main.components.DialogButton
 import main.components.DialogButtonStyle
+import main.components.IconRenderer
 import org.jetbrains.compose.web.dom.Text
 
 /**
@@ -29,6 +33,14 @@ fun Chat(
     // Fetch world to get chat longevity
     val longevityState = remember { mutableStateOf<Double?>(null) }
     var showInfoDialog by remember { mutableStateOf(false) }
+
+    // Fullscreen state
+    var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
+    DisposableEffect(Unit) {
+        val listener: (dynamic) -> Unit = { isFullscreen = document.fullscreenElement != null }
+        document.addEventListener("fullscreenchange", listener)
+        onDispose { document.removeEventListener("fullscreenchange", listener) }
+    }
 
     LaunchedEffect(worldId) {
         try {
@@ -56,22 +68,33 @@ fun Chat(
         title = translated("Chat"),
         isMobile = isMobile,
         onClose = onClose,
+        isFullscreen = isFullscreen,
         headerActions = {
+            DialogButton(
+                onClick = { toggleFullscreen() },
+                style = DialogButtonStyle.Secondary,
+            ) {
+                IconRenderer(
+                    url = "raw/data/ui/ui.png",
+                    index = if (isFullscreen) 1 else 0,
+                    size = 24,
+                )
+            }
             ChatBellButton(worldId = worldId)
         },
         headerRight = {
-            val text = retentionText
-            if (text != null) {
-                DialogButton(
-                    onClick = { showInfoDialog = true },
-                    style = DialogButtonStyle.Secondary,
-                    attrs = {
-                        title(text)
-                    }
-                ) {
-                    Text("⏳")
-                }
-            }
+//            val text = retentionText
+//            if (text != null) {
+//                DialogButton(
+//                    onClick = { showInfoDialog = true },
+//                    style = DialogButtonStyle.Secondary,
+//                    attrs = {
+//                        title(text)
+//                    }
+//                ) {
+//                    Text("⏳")
+//                }
+//            }
         },
         onTitleClick = {
             showInfoDialog = true

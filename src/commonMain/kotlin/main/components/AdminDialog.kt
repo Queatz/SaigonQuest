@@ -96,7 +96,7 @@ fun AdminDialog(
                     style = DialogButtonStyle.Primary,
                 ) {
                     Text("🗺️ ")
-                    Translated("Manage Quests")
+                    Translated("Manage quests")
                 }
 
                 // Manage skills
@@ -164,7 +164,6 @@ fun AdminDialog(
             DialogButton(
                 onClick = onClose,
             ) {
-                Text("❌ ")
                 Translated("Close")
             }
         }

@@ -109,8 +109,8 @@ vi: Không tìm thấy đối tượng nào trong thế giới này
 Reference pages
 vi: Các trang tham khảo
 
-Username must not contain spaces or special characters
-vi: Tên người dùng không được chứa khoảng trắng hoặc ký tự đặc biệt
+Username must not contain spaces or symbols
+vi: Tên người dùng không được chứa khoảng trắng hoặc ký hiệu
 
 Add reference page
 vi: Thêm trang tham khảo
@@ -250,7 +250,7 @@ vi: Không có thế giới nào được chọn
 No object selected
 vi: Không có đối tượng nào được chọn
 
-Manage Quests
+Manage quests
 vi: Quản lý nhiệm vụ
 
 Delete Quest

@@ -3,6 +3,8 @@ package main.theme
 import org.jetbrains.compose.web.css.AlignItems
 import org.jetbrains.compose.web.css.Color
 import org.jetbrains.compose.web.css.DisplayStyle
+import org.jetbrains.compose.web.css.FlexDirection
+import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.JustifyContent
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.Position
@@ -15,12 +17,17 @@ import org.jetbrains.compose.web.css.boxSizing
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.display
+import org.jetbrains.compose.web.css.flexDirection
+import org.jetbrains.compose.web.css.flexGrow
+import org.jetbrains.compose.web.css.flexShrink
+import org.jetbrains.compose.web.css.flexWrap
 import org.jetbrains.compose.web.css.fontSize
 import org.jetbrains.compose.web.css.fontWeight
 import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.left
 import org.jetbrains.compose.web.css.letterSpacing
+import org.jetbrains.compose.web.css.media
 import org.jetbrains.compose.web.css.minHeight
 import org.jetbrains.compose.web.css.minWidth
 import org.jetbrains.compose.web.css.keywords.auto
@@ -179,6 +186,47 @@ object InventoryStyles : StyleSheet() {
     // Dialog content container
     val dialogContent by style {
         position(Position.Relative)
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(16.px)
+        width(100.percent)
+        property("overflow-x", "hidden")
+        boxSizing("border-box")
+    }
+
+    val dialogContentLandscape by style {
+        flexDirection(FlexDirection.Row)
+        alignItems(AlignItems.FlexStart)
+    }
+
+    val leftColumn by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(16.px)
+        flexShrink(0)
+        width(100.percent)
+        boxSizing("border-box")
+    }
+
+    val leftColumnLandscape by style {
+        width(280.px)
+        position(Position.Sticky)
+        top(0.px)
+    }
+
+    val rightColumn by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        gap(16.px)
+        flexGrow(1)
+        width(100.percent)
+        boxSizing("border-box")
+    }
+
+    val rightColumnLandscape by style {
+        property("flex", "1 1 0px")
+        width(auto)
+        minWidth(0.px)
     }
 
     // Section container and title
@@ -260,8 +308,8 @@ object InventoryStyles : StyleSheet() {
         display(DisplayStyle.Grid)
         property("grid-template-columns", "repeat(auto-fill, minmax(160px, 1fr))")
         gap(12.px)
-        maxWidth(100.percent)
-        width(800.px)
+        width(100.percent)
+        maxWidth(800.px)
     }
 
     // Card-style tile for each inventory item

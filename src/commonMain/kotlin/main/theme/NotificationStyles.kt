@@ -64,9 +64,9 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.Center)
         alignItems(AlignItems.Center)
         padding(32.px)
-        color(Theme.colors.textMutedDark)
+        color(Theme.colors.textMuted)
 
-        dark(self) { color(Theme.colors.textMuted) }
+        dark(self) { color(Theme.colors.textMutedDark) }
     }
     
     val errorContainer by style {

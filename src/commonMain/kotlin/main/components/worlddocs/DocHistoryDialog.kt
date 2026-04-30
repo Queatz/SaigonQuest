@@ -4,12 +4,7 @@ import Translations.str
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import main.api.DocApi
-import main.components.BaseDialog
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.Translated
-import main.components.translated
-import main.components.BasicConfirmDialog
+import main.components.*
 import main.components.common.formatTimestampLikeChat
 import main.theme.Styles
 import main.theme.WorldDocsStyles
@@ -70,7 +65,7 @@ fun DocHistoryDialog(
                 else -> {
                     Div({ classes(WorldDocsStyles.historyList) }) {
                         history.forEach { h ->
-                            Div({ classes(WorldDocsStyles.historyItem) }) {
+                            Paper({ classes(WorldDocsStyles.historyItem) }) {
                                 // Header with users and created timestamp
                                 Div({ classes(WorldDocsStyles.historyHeader) }) {
                                     Div({ classes(WorldDocsStyles.historyUsers) }) {

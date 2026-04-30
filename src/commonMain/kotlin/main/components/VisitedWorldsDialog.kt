@@ -69,7 +69,7 @@ fun VisitedWorldsDialog(
                 else -> {
                     Div(attrs = { classes(Styles.formGroup) }) {
                         items.forEach { vw ->
-                            Div(attrs = { classes(Styles.requestRow) }) {
+                            Paper(attrs = { classes(Styles.requestRow) }) {
                                 // Clickable area to navigate
                                 Div(attrs = {
                                     classes(Styles.clickable)

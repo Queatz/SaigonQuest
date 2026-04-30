@@ -386,6 +386,7 @@ class InputHandler(
                         pendingTapSingleJob?.cancel()
                         pendingTapSingleJob = null
                         playerController.stopMovement()
+                        cameraController.stopAnimating(manual = true)
                         console.log("[POINTER] Multi-touch started; suppressing tap/move until gesture ends")
                     }
                 }
@@ -590,6 +591,7 @@ class InputHandler(
                     if (!didRotateCameraThisPointer && (deltaX > singleFingerCameraSlop || deltaY > singleFingerCameraSlop)) {
                         didRotateCameraThisPointer = true
                         playerController.stopMovement()
+                        cameraController.stopAnimating(manual = true)
                     }
                 }
 
@@ -612,7 +614,7 @@ class InputHandler(
 
             // If moving the camera with the mouse (zoom), stop player movement
             if (isNavigationStart || isWheel) {
-                cameraController.stopAnimating(manual = true)
+                cameraController.stopAnimating(manual = isWheel)
 
                 // In observer mode, set the camera target to the point under the cursor when starting to rotate
                 // We skip this on wheel events because zoomToMouseLocation handles it automatically
@@ -1242,28 +1244,39 @@ class InputHandler(
         val rotationSpeed = 0.02f // Adjust as needed
         val radiusSpeed = 0.2f // Adjust as needed
 
+        var changed = false
         if ("alt" in pressedKeys) {
             // Control radius with ALT + Up/Down
             if ("arrowup" in pressedKeys) {
                 camera.radius -= radiusSpeed
+                changed = true
             }
             if ("arrowdown" in pressedKeys) {
                 camera.radius += radiusSpeed
+                changed = true
             }
         } else {
             // Normal rotation
             if ("arrowleft" in pressedKeys) {
                 camera.alpha -= rotationSpeed
+                changed = true
             }
             if ("arrowright" in pressedKeys) {
                 camera.alpha += rotationSpeed
+                changed = true
             }
             if ("arrowup" in pressedKeys) {
                 camera.beta -= rotationSpeed
+                changed = true
             }
             if ("arrowdown" in pressedKeys) {
                 camera.beta += rotationSpeed
+                changed = true
             }
+        }
+
+        if (changed) {
+            cameraController.stopAnimating(manual = true)
         }
     }
 

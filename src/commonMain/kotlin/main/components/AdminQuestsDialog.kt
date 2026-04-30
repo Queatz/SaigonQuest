@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.Paper
 import main.api.QuestApi
 import main.api.ItemApi
 import models.*
@@ -141,7 +142,7 @@ fun AdminQuestsDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = translated("Manage Quests"),
+        title = translated("Manage quests"),
         showCloseButton = true,
         isFullscreen = isFullscreen,
         isFullHeight = true,
@@ -316,14 +317,11 @@ fun AdminQuestsDialog(
                             Div(attrs = { style { display(DisplayStyle.Flex); flexWrap(FlexWrap.Wrap); gap(8.px) } }) {
                                 quest.rewards.forEach { reward ->
                                     val item = allItems.find { it.key == reward.itemId }
-                                    Div(attrs = { 
+                                    Paper(attrs = { 
                                         style { 
                                             display(DisplayStyle.Flex)
                                             alignItems(AlignItems.Center)
                                             gap(8.px)
-                                            padding(8.px)
-                                            border(1.px, LineStyle.Solid, Color("#444"))
-                                            borderRadius(8.px)
                                         } 
                                     }) {
                                         Text("${item?.title ?: reward.itemId} (x${reward.quantity})")
@@ -357,12 +355,9 @@ fun AdminQuestsDialog(
                         Div {
                             H4 { Translated("Steps") }
                             quest.steps.forEachIndexed { index, step ->
-                                Div(attrs = { 
+                                Paper(attrs = { 
                                     style { 
-                                        border(1.px, LineStyle.Solid, Color("#444"))
-                                        padding(12.px)
                                         marginBottom(12.px)
-                                        borderRadius(8.px)
                                         display(DisplayStyle.Flex)
                                         flexDirection(FlexDirection.Column)
                                         gap(8.px)
@@ -921,7 +916,7 @@ fun AdminQuestsDialog(
                             }
                         }
                     },
-                    style = DialogButtonStyle.Good
+                    style = DialogButtonStyle.Primary
                 ) {
                     Translated("Save Quest")
                 }

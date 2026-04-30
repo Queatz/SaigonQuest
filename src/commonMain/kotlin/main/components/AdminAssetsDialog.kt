@@ -2,6 +2,7 @@ package main.components
 
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import main.components.Paper
 import main.api.AssetApi
 import main.api.AssetItemApi
 import main.theme.Styles
@@ -140,7 +141,7 @@ fun AdminAssetsDialog(
 
                     // Rows
                     for (asset in filteredAssets) {
-                        Div(attrs = { classes(Styles.adminAssetsGridRow) }) {
+                        Paper(attrs = { classes(Styles.adminAssetsGridRow) }) {
                             // Icon
                             val iconIndex = when (asset.type) {
                                 AssetType.Items -> 2

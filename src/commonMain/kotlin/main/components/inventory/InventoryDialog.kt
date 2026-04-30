@@ -39,6 +39,23 @@ fun InventoryDialog(onClose: () -> Unit) {
     val isLoading = InventoryState.isLoading
     
     // Local UI state
+    val isMobile by rememberIsMobile()
+    var windowWidth by remember { mutableStateOf(window.innerWidth) }
+    var windowHeight by remember { mutableStateOf(window.innerHeight) }
+    
+    DisposableEffect(Unit) {
+        val resizeListener: (dynamic) -> Unit = {
+            windowWidth = window.innerWidth
+            windowHeight = window.innerHeight
+        }
+        window.addEventListener("resize", resizeListener)
+        onDispose {
+            window.removeEventListener("resize", resizeListener)
+        }
+    }
+    
+    val isLandscape = !isMobile && windowWidth > windowHeight
+    
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var showCreateItemDialog by remember { mutableStateOf(false) }
     var showMarketplaceDialog by remember { mutableStateOf(false) }
@@ -642,6 +659,7 @@ fun InventoryDialog(onClose: () -> Unit) {
             Div(
                 attrs = {
                     classes(InventoryStyles.dialogContent)
+                    if (isLandscape) classes(InventoryStyles.dialogContentLandscape)
                 }
             ) {
                 if (isLoading && inventory == null) {
@@ -655,84 +673,97 @@ fun InventoryDialog(onClose: () -> Unit) {
                         Translated("Loading inventory...")
                     }
                 } else {
-                    // Character renderer section
+                    // Left column: Character renderer and Status
                     Div(
                         attrs = {
-                            classes(Styles.characterRendererContainer)
+                            classes(InventoryStyles.leftColumn)
+                            if (isLandscape) classes(InventoryStyles.leftColumnLandscape)
                         }
                     ) {
-                        // Character renderer with drop zone
-                        var isDropTargetActive by remember { mutableStateOf(false) }
-
+                        // Character renderer section
                         Div(
                             attrs = {
-                                classes(Styles.characterRenderer)
+                                classes(Styles.characterRendererContainer)
+                                style {
+                                    marginBottom(0.px) // Override default margin for our column layout
+                                }
+                            }
+                        ) {
+                            // Character renderer with drop zone
+                            var isDropTargetActive by remember { mutableStateOf(false) }
 
-                                classes(
-                                    if (isDropTargetActive) InventoryStyles.characterDropZoneActive
-                                    else InventoryStyles.characterDropZoneInactive
-                                )
-                                // Make droppable
-                                onDragOver { event ->
-                                    handleDragOver(event.nativeEvent)
-                                    // Check if the dragged item is wearable before activating the drop target
-                                    val itemId = draggedItemId
-                                    if (itemId != null) {
-                                        val item = InventoryState.getItemForInventoryItemKey(itemId) ?: items[itemId]
-                                        isDropTargetActive = item?.wearable == true
+                            Div(
+                                attrs = {
+                                    classes(Styles.characterRenderer)
+
+                                    classes(
+                                        if (isDropTargetActive) InventoryStyles.characterDropZoneActive
+                                        else InventoryStyles.characterDropZoneInactive
+                                    )
+                                    // Make droppable
+                                    onDragOver { event ->
+                                        handleDragOver(event.nativeEvent)
+                                        // Check if the dragged item is wearable before activating the drop target
+                                        val itemId = draggedItemId
+                                        if (itemId != null) {
+                                            val item =
+                                                InventoryState.getItemForInventoryItemKey(itemId) ?: items[itemId]
+                                            isDropTargetActive = item?.wearable == true
+                                        }
                                     }
-                                }
-                                onDragLeave {
-                                    console.log("[DEBUG_LOG] onDragLeave: Drag left character drop zone")
-                                    isDropTargetActive = false
-                                }
-                                onDrop { event ->
-                                    handleDropOnCharacter(event.nativeEvent)
-                                    isDropTargetActive = false
-                                }
-                                onTouchDrop { _, _, data, dataType ->
-                                    if (dataType == DataType.INVENTORY_ITEM) {
-                                        try {
-                                            val payload = json.decodeFromString(InventoryDragPayload.serializer(), data)
-                                            handleWearItem(payload.inventoryItemKey)
-                                        } catch (e: Throwable) {
-                                            console.error(
-                                                "[DEBUG_LOG] onTouchDrop character: error decoding payload",
-                                                e
-                                            )
-                                            showFeedback("Error: Could not equip item", true)
-                                        } finally {
-                                            isDropTargetActive = false
+                                    onDragLeave {
+                                        console.log("[DEBUG_LOG] onDragLeave: Drag left character drop zone")
+                                        isDropTargetActive = false
+                                    }
+                                    onDrop { event ->
+                                        handleDropOnCharacter(event.nativeEvent)
+                                        isDropTargetActive = false
+                                    }
+                                    onTouchDrop { _, _, data, dataType ->
+                                        if (dataType == DataType.INVENTORY_ITEM) {
+                                            try {
+                                                val payload =
+                                                    json.decodeFromString(InventoryDragPayload.serializer(), data)
+                                                handleWearItem(payload.inventoryItemKey)
+                                            } catch (e: Throwable) {
+                                                console.error(
+                                                    "[DEBUG_LOG] onTouchDrop character: error decoding payload",
+                                                    e
+                                                )
+                                                showFeedback("Error: Could not equip item", true)
+                                            } finally {
+                                                isDropTargetActive = false
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        ) {
-                            // Character renderer
-                            currentUser?.let { user ->
-                                CharacterRenderer(
-                                    bodyType = user.bodyType,
-                                    skinTone = user.skinTone,
-                                    eyeColor = user.eyeColor,
-                                    hairStyle = user.hairStyle
-                                )
-                            }
-                        }
-
-                        // Instruction text
-                        P(
-                            attrs = {
-                                if (isDropTargetActive) {
-                                    classes(InventoryStyles.characterDropHint)
-                                } else {
-                                    classes(InventoryStyles.instructionText)
+                            ) {
+                                // Character renderer
+                                currentUser?.let { user ->
+                                    CharacterRenderer(
+                                        bodyType = user.bodyType,
+                                        skinTone = user.skinTone,
+                                        eyeColor = user.eyeColor,
+                                        hairStyle = user.hairStyle
+                                    )
                                 }
                             }
-                        ) {
-                            if (isDropTargetActive) {
-                                Translated("Drop to wear item")
-                            } else {
-                                Translated("Drag wearable items here to equip them")
+
+                            // Instruction text
+                            P(
+                                attrs = {
+                                    if (isDropTargetActive) {
+                                        classes(InventoryStyles.characterDropHint)
+                                    } else {
+                                        classes(InventoryStyles.instructionText)
+                                    }
+                                }
+                            ) {
+                                if (isDropTargetActive) {
+                                    Translated("Drop to wear item")
+                                } else {
+                                    Translated("Drag wearable items here to equip them")
+                                }
                             }
                         }
 
@@ -749,344 +780,426 @@ fun InventoryDialog(onClose: () -> Unit) {
                         }
                     }
 
-                    // Worn items section
+                    // Right column: Worn items and Inventory items
                     Div(
                         attrs = {
-                            classes(InventoryStyles.sectionContainer)
+                            classes(InventoryStyles.rightColumn)
+                            if (isLandscape) classes(InventoryStyles.rightColumnLandscape)
                         }
                     ) {
-                        // Section title
-                        H3(
+                        // Worn items section
+                        Div(
                             attrs = {
+                                classes(InventoryStyles.sectionContainer)
                                 style {
-                                    marginBottom(12.px)
-                                    fontSize(18.px)
+                                    marginBottom(0.px)
                                 }
                             }
                         ) {
-                            Translated("Worn items")
-                        }
-
-                        // Display worn items or a message if none
-                        if (currentUser?.wornItems?.isEmpty() == true) {
-                            P(
-                                attrs = {
-                                    classes(InventoryStyles.emptyWornMessage)
-                                }
-                            ) {
-                                Translated("No items worn. Drag wearable items to your character to wear them.")
-                            }
-                        } else {
-                            // Display worn items
-                            Div(
+                            // Section title
+                            H3(
                                 attrs = {
                                     style {
-                                        display(DisplayStyle.Flex)
-                                        property("flex-direction", "row")
-                                        property("flex-wrap", "wrap")
-                                        property("gap", "8px")
+                                        marginBottom(12.px)
+                                        fontSize(18.px)
                                     }
                                 }
                             ) {
-                                currentUser?.wornItems?.forEach { itemId ->
-                                    val item = items[itemId]
-                                    if (item != null) {
-                                        // Try to find the corresponding inventory item key if it exists in our map
-                                        val inventoryItemKey = InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
+                                Translated("Worn items")
+                            }
 
-                                        FramedBorder(
-                                            borderImage = "/raw/data/ui/borders/input.png",
-                                            backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
-                                            darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
-                                            attrs = {
-                                                classes(Styles.dialogInputWrapper)
-                                                classes(InventoryStyles.wornItemCard)
-                                                
-                                                // Move worn border highlight here
-                                                when (currentUser.sex) {
-                                                    Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
-                                                    Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
-                                                    else -> {}
-                                                }
-                                                
-                                                onClick { handleRemoveWornItem(itemId, isDirectItemId = true) }
+                            // Display worn items or a message if none
+                            if (currentUser?.wornItems?.isEmpty() == true) {
+                                P(
+                                    attrs = {
+                                        classes(InventoryStyles.emptyWornMessage)
+                                    }
+                                ) {
+                                    Translated("No items worn. Drag wearable items to your character to wear them.")
+                                }
+                            } else {
+                                // Display worn items
+                                Div(
+                                    attrs = {
+                                        style {
+                                            display(DisplayStyle.Flex)
+                                            property("flex-direction", "row")
+                                            property("flex-wrap", "wrap")
+                                            property("gap", "8px")
+                                        }
+                                    }
+                                ) {
+                                    currentUser?.wornItems?.forEach { itemId ->
+                                        val item = items[itemId]
+                                        if (item != null) {
+                                            // Try to find the corresponding inventory item key if it exists in our map
+                                            val inventoryItemKey =
+                                                InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
 
-                                                // Make draggable and ensure draggedItemId is set
-                                                draggable(Draggable.True)
-                                                onDragStart { event -> handleDragStart(event.nativeEvent, inventoryItemKey ?: itemId) }
-                                                onDragEnd { draggedItemId = null }
+                                            FramedBorder(
+                                                borderImage = "/raw/data/ui/borders/input.png",
+                                                backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                                darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
+                                                attrs = {
+                                                    classes(Styles.dialogInputWrapper)
+                                                    classes(InventoryStyles.wornItemCard)
 
-                                                // Touch drag support for worn items
-                                                touchDraggable(
-                                                    dataProvider = {
-                                                        val payload = InventoryDragPayload(
-                                                            inventoryItemKey = inventoryItemKey ?: itemId,
-                                                            itemKey = item.key,
-                                                            quantity = 1,
-                                                            inventoryId = null,
+                                                    // Move worn border highlight here
+                                                    when (currentUser.sex) {
+                                                        Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                                                        Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                                                        else -> {}
+                                                    }
+
+                                                    onClick {
+                                                        handleRemoveWornItem(
+                                                            itemId,
+                                                            isDirectItemId = true
                                                         )
-                                                        json.encodeToString(InventoryDragPayload.serializer(), payload)
-                                                    },
-                                                    dataType = DataType.INVENTORY_ITEM,
-                                                    previewBuilder = { preview ->
-                                                        preview.style.width = "32px"
-                                                        preview.style.height = "32px"
-                                                        preview.style.setProperty("pointer-events", "none")
-                                                        if (item.file.isNotEmpty()) {
-                                                            val url = "/raw/data/spritesheets/${item.file}.png"
-                                                            preview.style.setProperty("background-image", "url(\"$url\")")
-                                                            preview.style.setProperty("background-size", "320px 320px")
-                                                            val col = item.assetIndex % 10
-                                                            val row = item.assetIndex / 10
-                                                            preview.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
-                                                            preview.style.setProperty("background-repeat", "no-repeat")
+                                                    }
+
+                                                    // Make draggable and ensure draggedItemId is set
+                                                    draggable(Draggable.True)
+                                                    onDragStart { event ->
+                                                        handleDragStart(
+                                                            event.nativeEvent,
+                                                            inventoryItemKey ?: itemId
+                                                        )
+                                                    }
+                                                    onDragEnd { draggedItemId = null }
+
+                                                    // Touch drag support for worn items
+                                                    touchDraggable(
+                                                        dataProvider = {
+                                                            val payload = InventoryDragPayload(
+                                                                inventoryItemKey = inventoryItemKey ?: itemId,
+                                                                itemKey = item.key,
+                                                                quantity = 1,
+                                                                inventoryId = null,
+                                                            )
+                                                            json.encodeToString(InventoryDragPayload.serializer(), payload)
+                                                        },
+                                                        dataType = DataType.INVENTORY_ITEM,
+                                                        previewBuilder = { preview ->
+                                                            preview.style.width = "32px"
+                                                            preview.style.height = "32px"
+                                                            preview.style.setProperty("pointer-events", "none")
+                                                            if (item.file.isNotEmpty()) {
+                                                                val url = "/raw/data/spritesheets/${item.file}.png"
+                                                                preview.style.setProperty(
+                                                                    "background-image",
+                                                                    "url(\"$url\")"
+                                                                )
+                                                                preview.style.setProperty(
+                                                                    "background-size",
+                                                                    "320px 320px"
+                                                                )
+                                                                val col = item.assetIndex % 10
+                                                                val row = item.assetIndex / 10
+                                                                preview.style.setProperty(
+                                                                    "background-position",
+                                                                    "-${col * 32}px -${(9 - row) * 32}px"
+                                                                )
+                                                                preview.style.setProperty(
+                                                                    "background-repeat",
+                                                                    "no-repeat"
+                                                                )
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            ) {
+                                                // Item icon
+                                                InventoryBox(
+                                                    onClick = { /* Handled by parent */ },
+                                                    item = item,
+                                                    isLoading = isLoading,
+                                                    quantity = 1, // Worn items always have quantity 1
+                                                    inventoryItemKey = inventoryItemKey,
+                                                    isWorn = false, // Disable worn highlight in the box itself
+                                                    sex = currentUser.sex,
+                                                    useBorder = false, // Remove the 2nd framed border (inner)
+                                                    draggable = false,
+                                                )
+
+                                                // Item name
+                                                Div(
+                                                    attrs = {
+                                                        style {
+                                                            fontSize(12.px)
+                                                            marginTop(4.px)
+                                                            textAlign("center")
                                                         }
                                                     }
-                                                )
-                                            }
-                                        ) {
-                                            // Item icon
-                                            InventoryBox(
-                                                onClick = { /* Handled by parent */ },
-                                                item = item,
-                                                isLoading = isLoading,
-                                                quantity = 1, // Worn items always have quantity 1
-                                                inventoryItemKey = inventoryItemKey,
-                                                isWorn = false, // Disable worn highlight in the box itself
-                                                sex = currentUser.sex,
-                                                useBorder = false, // Remove the 2nd framed border (inner)
-                                                draggable = false,
-                                            )
+                                                ) {
+                                                    Text(item.title)
+                                                }
 
-                                            // Item name
-                                            Div(
-                                                attrs = {
-                                                    style {
-                                                        fontSize(12.px)
-                                                        marginTop(4.px)
-                                                        textAlign("center")
+                                                // Remove text
+                                                Div(
+                                                    attrs = {
+                                                        classes(InventoryStyles.removeTextSmall)
                                                     }
+                                                ) {
+                                                    Translated("Click to remove")
                                                 }
-                                            ) {
-                                                Text(item.title)
-                                            }
-
-                                            // Remove text
-                                            Div(
-                                                attrs = {
-                                                    classes(InventoryStyles.removeTextSmall)
-                                                }
-                                            ) {
-                                                Translated("Click to remove")
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Inventory items section
-                    H3(
-                        attrs = {
-                            style {
-                                marginBottom(12.px)
-                                fontSize(18.px)
-                            }
-                        }
-                    ) {
-                        Translated("Inventory items")
-                    }
-
-                    val itemOrder = inventory?.itemOrder ?: emptyList()
-
-                    if (itemOrder.isEmpty()) {
-                        P(
-                            attrs = {
-                                style {
-                                    textAlign("center")
-                                }
-                            }
-                        ) {
-                            Translated("Your inventory is empty. Click '+ New' to create an item.")
-                        }
-                    } else {
-                        if (itemOrder.size > 10) {
-                            DialogInput(
-                                value = searchText,
-                                onInput = { searchText = it },
-                                placeholder = str("Search"),
-                                containerAttrs = {
-                                    style {
-                                        marginBottom(12.px)
-                                        property("width", "100%")
-                                        property("box-sizing", "border-box")
-                                    }
-                                }
-                            )
-                        }
-
-                        val moveTip = translated("Double click to move to top")
-
-                        // Display inventory items
-                        val filteredItemOrder = if (searchText.isEmpty()) {
-                            itemOrder
-                        } else {
-                            itemOrder.filter { itemId ->
-                                val item = InventoryState.getItemForInventoryItemKey(itemId)
-                                item?.title?.contains(searchText, ignoreCase = true) == true ||
-                                        item?.description?.contains(searchText, ignoreCase = true) == true
-                            }
-                        }
-
-                        // Render as an adaptive grid of inventory tiles
+                        // Inventory items section
                         Div(
                             attrs = {
-                                classes(InventoryStyles.inventoryGrid)
+                                classes(InventoryStyles.sectionContainer)
+                                style {
+                                    marginBottom(0.px)
+                                }
                             }
                         ) {
-                            filteredItemOrder.forEach { itemId ->
-                                key(itemId) {
-                                    val item = InventoryState.getItemForInventoryItemKey(itemId)
-                                    if (item != null) {
-                                        val isWorn = currentUser?.wornItems?.contains(item.key) == true
-                                        FramedBorder(
-                                            borderImage = "/raw/data/ui/borders/input.png",
-                                            backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
-                                            darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
-                                            attrs = {
-                                                classes(Styles.dialogInputWrapper)
-                                                classes(InventoryStyles.inventoryCard)
+                            H3(
+                                attrs = {
+                                    style {
+                                        marginBottom(12.px)
+                                        fontSize(18.px)
+                                    }
+                                }
+                            ) {
+                                Translated("Inventory items")
+                            }
 
-                                                if (isWorn) {
-                                                    when (currentUser.sex) {
-                                                        Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
-                                                        Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
-                                                        else -> {}
-                                                    }
-                                                }
+                            val itemOrder = inventory?.itemOrder ?: emptyList()
 
-                                                // Make draggable
-                                                draggable(Draggable.True)
-                                                title(moveTip)
-                                                onDoubleClick { handleMoveToTop(itemId) }
+                            if (itemOrder.isEmpty()) {
+                                P(
+                                    attrs = {
+                                        style {
+                                            textAlign("center")
+                                        }
+                                    }
+                                ) {
+                                    Translated("Your inventory is empty. Click '+ New' to create an item.")
+                                }
+                            } else {
+                                if (itemOrder.size > 10) {
+                                    DialogInput(
+                                        value = searchText,
+                                        onInput = { searchText = it },
+                                        placeholder = str("Search"),
+                                        containerAttrs = {
+                                            style {
+                                                marginBottom(12.px)
+                                                property("width", "100%")
+                                                property("box-sizing", "border-box")
+                                            }
+                                        }
+                                    )
+                                }
 
-                                                // Capture drag start to remember the dragged inventory key for reordering
-                                                onDragStart { event -> handleDragStart(event.nativeEvent, itemId) }
-                                                onDragEnd { draggedItemId = null }
-                                                onDragOver { event -> handleDragOver(event.nativeEvent) }
-                                                onDrop { event -> handleDrop(event.nativeEvent, itemId) }
-                                                
-                                                // Touch drag support for inventory items
-                                                touchDraggable(
-                                                    dataProvider = {
-                                                        val payload = InventoryDragPayload(
-                                                            inventoryItemKey = itemId,
-                                                            itemKey = item.key,
-                                                            quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
-                                                            inventoryId = null,
+                                val moveTip = translated("Double click to move to top")
+
+                                // Display inventory items
+                                val filteredItemOrder = if (searchText.isEmpty()) {
+                                    itemOrder
+                                } else {
+                                    itemOrder.filter { itemId ->
+                                        val item = InventoryState.getItemForInventoryItemKey(itemId)
+                                        item?.title?.contains(searchText, ignoreCase = true) == true ||
+                                                item?.description?.contains(searchText, ignoreCase = true) == true
+                                    }
+                                }
+
+                                // Render as an adaptive grid of inventory tiles
+                                Div(
+                                    attrs = {
+                                        classes(InventoryStyles.inventoryGrid)
+                                    }
+                                ) {
+                                    filteredItemOrder.forEach { itemId ->
+                                        key(itemId) {
+                                            val item = InventoryState.getItemForInventoryItemKey(itemId)
+                                            if (item != null) {
+                                                val isWorn = currentUser?.wornItems?.contains(item.key) == true
+                                                FramedBorder(
+                                                    borderImage = "/raw/data/ui/borders/input.png",
+                                                    backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                                    darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
+                                                    attrs = {
+                                                        classes(Styles.dialogInputWrapper)
+                                                        classes(InventoryStyles.inventoryCard)
+
+                                                        if (isWorn) {
+                                                            when (currentUser.sex) {
+                                                                Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                                                                Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                                                                else -> {}
+                                                            }
+                                                        }
+
+                                                        // Make draggable
+                                                        draggable(Draggable.True)
+                                                        title(moveTip)
+                                                        onDoubleClick { handleMoveToTop(itemId) }
+
+                                                        // Capture drag start to remember the dragged inventory key for reordering
+                                                        onDragStart { event ->
+                                                            handleDragStart(
+                                                                event.nativeEvent,
+                                                                itemId
+                                                            )
+                                                        }
+                                                        onDragEnd { draggedItemId = null }
+                                                        onDragOver { event -> handleDragOver(event.nativeEvent) }
+                                                        onDrop { event -> handleDrop(event.nativeEvent, itemId) }
+
+                                                        // Touch drag support for inventory items
+                                                        touchDraggable(
+                                                            dataProvider = {
+                                                                val payload = InventoryDragPayload(
+                                                                    inventoryItemKey = itemId,
+                                                                    itemKey = item.key,
+                                                                    quantity = InventoryState.getQuantityForInventoryItemKey(
+                                                                        itemId
+                                                                    ),
+                                                                    inventoryId = null,
+                                                                )
+                                                                json.encodeToString(
+                                                                    InventoryDragPayload.serializer(),
+                                                                    payload
+                                                                )
+                                                            },
+                                                            dataType = DataType.INVENTORY_ITEM,
+                                                            previewBuilder = { preview ->
+                                                                preview.style.width = "32px"
+                                                                preview.style.height = "32px"
+                                                                preview.style.setProperty(
+                                                                    "pointer-events",
+                                                                    "none"
+                                                                )
+                                                                if (item.file.isNotEmpty()) {
+                                                                    val url =
+                                                                        "/raw/data/spritesheets/${item.file}.png"
+                                                                    preview.style.setProperty(
+                                                                        "background-image",
+                                                                        "url(\"$url\")"
+                                                                    )
+                                                                    preview.style.setProperty(
+                                                                        "background-size",
+                                                                        "320px 320px"
+                                                                    )
+                                                                    val col = item.assetIndex % 10
+                                                                    val row = item.assetIndex / 10
+                                                                    preview.style.setProperty(
+                                                                        "background-position",
+                                                                        "-${col * 32}px -${(9 - row) * 32}px"
+                                                                    )
+                                                                    preview.style.setProperty(
+                                                                        "background-repeat",
+                                                                        "no-repeat"
+                                                                    )
+                                                                }
+                                                            }
                                                         )
-                                                        json.encodeToString(InventoryDragPayload.serializer(), payload)
-                                                    },
-                                                    dataType = DataType.INVENTORY_ITEM,
-                                                    previewBuilder = { preview ->
-                                                        preview.style.width = "32px"
-                                                        preview.style.height = "32px"
-                                                        preview.style.setProperty("pointer-events", "none")
-                                                        if (item.file.isNotEmpty()) {
-                                                            val url = "/raw/data/spritesheets/${item.file}.png"
-                                                            preview.style.setProperty("background-image", "url(\"$url\")")
-                                                            preview.style.setProperty("background-size", "320px 320px")
-                                                            val col = item.assetIndex % 10
-                                                            val row = item.assetIndex / 10
-                                                            preview.style.setProperty("background-position", "-${col * 32}px -${(9 - row) * 32}px")
-                                                            preview.style.setProperty("background-repeat", "no-repeat")
+                                                        onTouchDrop { _, _, data, dataType ->
+                                                            if (dataType == DataType.INVENTORY_ITEM) {
+                                                                try {
+                                                                    val payload =
+                                                                        json.decodeFromString(
+                                                                            InventoryDragPayload.serializer(),
+                                                                            data
+                                                                        )
+                                                                    reorderItems(payload.inventoryItemKey, itemId)
+                                                                } catch (e: Throwable) {
+                                                                    console.error(
+                                                                        "[DEBUG_LOG] onTouchDrop tile: error decoding payload",
+                                                                        e
+                                                                    )
+                                                                }
+                                                            }
                                                         }
                                                     }
-                                                )
-                                                onTouchDrop { _, _, data, dataType ->
-                                                    if (dataType == DataType.INVENTORY_ITEM) {
-                                                        try {
-                                                            val payload =
-                                                                json.decodeFromString(InventoryDragPayload.serializer(), data)
-                                                            reorderItems(payload.inventoryItemKey, itemId)
-                                                        } catch (e: Throwable) {
-                                                            console.error(
-                                                                "[DEBUG_LOG] onTouchDrop tile: error decoding payload",
-                                                                e
+                                                ) {
+                                                    // Item sprite box (draggable via InventoryBox)
+                                                    InventoryBox(
+                                                        onClick = { /* no-op in grid */ },
+                                                        item = item,
+                                                        isLoading = isLoading,
+                                                        quantity = InventoryState.getQuantityForInventoryItemKey(
+                                                            itemId
+                                                        ),
+                                                        inventoryItemKey = itemId,
+                                                        isWorn = false,
+                                                        sex = currentUser?.sex,
+                                                        useBorder = false,
+                                                        draggable = false,
+                                                    )
+
+                                                    // Title
+                                                    Div(attrs = { classes(InventoryStyles.inventoryCardTitle) }) {
+                                                        Text(item.title)
+                                                    }
+
+                                                    // Chips: wearable + sex
+                                                    Div(attrs = { classes(InventoryStyles.inventoryCardChips) }) {
+                                                        if (item.wearable) {
+                                                            Div(attrs = { classes(InventoryStyles.wearableChip) }) {
+                                                                Translated("Wearable")
+                                                            }
+
+                                                            val sex = item.wearableSex ?: Sex.Boy
+                                                            Div(
+                                                                attrs = {
+                                                                    classes(InventoryStyles.wearableChip)
+                                                                    when (sex) {
+                                                                        Sex.Boy -> classes(
+                                                                            InventoryStyles.wearableChipBoy
+                                                                        )
+
+                                                                        Sex.Girl -> classes(
+                                                                            InventoryStyles.wearableChipGirl
+                                                                        )
+                                                                    }
+                                                                }
+                                                            ) {
+                                                                Translated(sex.name)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Primary action bar at bottom
+                                                    Div(attrs = { classes(InventoryStyles.inventoryCardActionBar) }) {
+                                                        DialogButton(
+                                                            onClick = {
+                                                                if (item.wearable) {
+                                                                    if (currentUser?.wornItems?.any { it == item.key } == true) {
+                                                                        // Take off by inventory item key
+                                                                        handleRemoveWornItem(
+                                                                            itemId,
+                                                                            isDirectItemId = false
+                                                                        )
+                                                                    } else {
+                                                                        handleWearItem(itemId)
+                                                                    }
+                                                                } else {
+                                                                    handleUseItem(itemId)
+                                                                }
+                                                            },
+                                                            style = DialogButtonStyle.Primary,
+                                                            attrs = {
+                                                                classes(InventoryStyles.inventoryCardActionButton)
+                                                            }
+                                                        ) {
+                                                            Translated(
+                                                                when {
+                                                                    item.wearable && currentUser?.wornItems?.any { it == item.key } == true -> "Take off"
+                                                                    item.wearable -> "Wear"
+                                                                    else -> "Use"
+                                                                }
                                                             )
                                                         }
                                                     }
-                                                }
-                                            }
-                                        ) {
-                                            // Item sprite box (draggable via InventoryBox)
-                                            InventoryBox(
-                                                onClick = { /* no-op in grid */ },
-                                                item = item,
-                                                isLoading = isLoading,
-                                                quantity = InventoryState.getQuantityForInventoryItemKey(itemId),
-                                                inventoryItemKey = itemId,
-                                                isWorn = false,
-                                                sex = currentUser?.sex,
-                                                useBorder = false,
-                                                draggable = false,
-                                            )
-
-                                            // Title
-                                            Div(attrs = { classes(InventoryStyles.inventoryCardTitle) }) {
-                                                Text(item.title)
-                                            }
-
-                                            // Chips: wearable + sex
-                                            Div(attrs = { classes(InventoryStyles.inventoryCardChips) }) {
-                                                if (item.wearable) {
-                                                    Div(attrs = { classes(InventoryStyles.wearableChip) }) {
-                                                        Translated("Wearable")
-                                                    }
-
-                                                    val sex = item.wearableSex ?: Sex.Boy
-                                                    Div(
-                                                        attrs = {
-                                                            classes(InventoryStyles.wearableChip)
-                                                            when (sex) {
-                                                                Sex.Boy -> classes(InventoryStyles.wearableChipBoy)
-                                                                Sex.Girl -> classes(InventoryStyles.wearableChipGirl)
-                                                            }
-                                                        }
-                                                    ) {
-                                                        Translated(sex.name)
-                                                    }
-                                                }
-                                            }
-
-                                            // Primary action bar at bottom
-                                            Div(attrs = { classes(InventoryStyles.inventoryCardActionBar) }) {
-                                                DialogButton(
-                                                    onClick = {
-                                                        if (item.wearable) {
-                                                            if (currentUser?.wornItems?.any { it == item.key } == true) {
-                                                                // Take off by inventory item key
-                                                                handleRemoveWornItem(itemId, isDirectItemId = false)
-                                                            } else {
-                                                                handleWearItem(itemId)
-                                                            }
-                                                        } else {
-                                                            handleUseItem(itemId)
-                                                        }
-                                                    },
-                                                    style = DialogButtonStyle.Primary,
-                                                    attrs = {
-                                                        classes(InventoryStyles.inventoryCardActionButton)
-                                                    }
-                                                ) {
-                                                    Translated(
-                                                        when {
-                                                            item.wearable && currentUser?.wornItems?.any { it == item.key } == true -> "Take off"
-                                                            item.wearable -> "Wear"
-                                                            else -> "Use"
-                                                        }
-                                                    )
                                                 }
                                             }
                                         }

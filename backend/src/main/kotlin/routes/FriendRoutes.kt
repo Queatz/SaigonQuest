@@ -54,6 +54,9 @@ fun Routing.configureFriendRoutes() {
             
             val friends = friendRepository.getByUserId(userId)
 
+            val friendUserIds = friends.map { it.friendId }
+            val usersById = userRepository.getByIds(friendUserIds).associateBy { it.key }
+
             // Enrich friends with live data (on-the-fly)
             val worldIdByUserId: Map<String, String> = activeConnections.flatMap { (worldId, conns) ->
                 conns.map { it.userId to worldId }
@@ -63,6 +66,7 @@ fun Routing.configureFriendRoutes() {
 
             val enriched = friends.map { f ->
                 val currentWorldId = worldIdByUserId[f.friendId]
+                val user = usersById[f.friendId]
                 if (currentWorldId != null) {
                     val snapshot = state.WorldStateStore.snapshot(currentWorldId)
                     val position = snapshot.players.firstOrNull { it.userId == f.friendId }?.position
@@ -72,10 +76,12 @@ fun Routing.configureFriendRoutes() {
                         lastWorldId = currentWorldId,
                         lastWorldName = worldName,
                         lastPosition = position,
+                        friendStatus = user?.status ?: "",
                     )
                 } else {
                     f.copy(
-                        lastActive = userRepository.getById(f.friendId)?.lastActive ?: Instant.DISTANT_PAST,
+                        lastActive = user?.lastActive ?: Instant.DISTANT_PAST,
+                        friendStatus = user?.status ?: "",
                     )
                 }
             }
@@ -300,6 +306,7 @@ fun Routing.configureFriendRoutes() {
                     lastActive = Clock.System.now(),
                     lastWorldId = "",
                     lastWorldName = "",
+                    friendStatus = other.status,
                 ))
             }
 
@@ -407,6 +414,7 @@ fun Routing.configureFriendRoutes() {
                 lastActive = Clock.System.now(),
                 lastWorldId = "",
                 lastWorldName = "",
+                friendStatus = other.status,
             ))
         }
 
