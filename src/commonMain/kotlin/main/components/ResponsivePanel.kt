@@ -27,7 +27,7 @@ fun ResponsivePanel(
     isFullscreen: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    if (isMobile || isFullscreen) {
+    if (isMobile) {
         // Mobile: Dialog
         Div(
             attrs = {

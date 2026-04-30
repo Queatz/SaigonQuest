@@ -52,6 +52,7 @@ fun ScreenshotDialog(
                 onClick = onSendToChat,
                 style = DialogButtonStyle.Primary,
                 isDisabled = isSending,
+                isLoading = isSending
             ) {
                 Translated("Send to chat")
             }

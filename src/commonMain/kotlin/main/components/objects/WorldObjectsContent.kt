@@ -52,9 +52,9 @@ fun WorldObjectsContent(
     // Container for the content
     Div(
         attrs = {
-            if (!isDialog) {
-                classes(EditorStyles.worldObjectsContainer)
+            classes(EditorStyles.worldObjectsContainer)
 
+            if (!isDialog) {
                 style {
                     padding(16.px)
                 }
