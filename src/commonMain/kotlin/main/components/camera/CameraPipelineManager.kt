@@ -431,18 +431,18 @@ class CameraPipelineManager(
                     }
 
                     // We can't use SSAO2RenderingPipeline due to it breaking DOF depth sampling, will address later
-//                    ssaoPipeline = SSAO2RenderingPipeline(
-//                        name = "ssao",
-//                        scene = scene,
-//                        ratio = 1.0,
-//                        cameras = allCameras.toTypedArray(),
-//                        forceGeometryBuffer = true,
-//                    )
+                    ssaoPipeline = SSAO2RenderingPipeline(
+                        name = "ssao",
+                        scene = scene,
+                        ratio = .25,
+                        cameras = allCameras.toTypedArray(),
+                        forceGeometryBuffer = true,
+                    )
                     
                     ssaoPipeline?.apply {
                         samples = 16
                         maxZ = 500f
-                        radius = 0.5f
+                        radius = 2f
                         totalStrength = 1.0f
                     }
                     console.log("[DEBUG] Created and configured new SSAO pipeline")

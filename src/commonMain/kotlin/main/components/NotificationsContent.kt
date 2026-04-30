@@ -7,29 +7,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import app.softwork.routingcompose.Router
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import lib.Vector3
 import main.api.NotificationApi
-import main.api.WorldApi
-import main.components.world.WorldLoader
-import main.components.Paper
-import main.components.player.WorldCollisionUtils
 import main.theme.NotificationStyles
 import main.utils.TimeUtils
 import models.Notification
 import models.NotificationType
 import main.components.Translated
 import Translations.str
-import main.theme.Styles
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.*
 
 /**
  * Content for the notifications panel/dialog.
@@ -149,7 +135,9 @@ private fun NotificationItem(
     // Track if the notification status has changed
     var refreshKey by remember { mutableStateOf(0) }
     
-    Paper(
+    DialogButton(
+        onClick = onClick,
+        style = if (notification.isRead) DialogButtonStyle.Secondary else DialogButtonStyle.Primary,
         attrs = {
             classes(
                 NotificationStyles.notificationItem,
@@ -174,8 +162,6 @@ private fun NotificationItem(
                 }
                 else -> Unit
             }
-
-            onClick { onClick() }
         }
     ) {
         // Notification header with title and timestamp

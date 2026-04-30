@@ -33,7 +33,7 @@ object WorldCollisionUtils {
         position: Vector3,
         collider: Mesh? = null,
         moveCircle: Mesh? = null,
-        yPadding: Float = 0.5f,
+        yPadding: Float = 0.125f,
     ): EnvironmentInfo {
         // Prepare reusable ray
         rayDown.direction.copyFrom(downVector)
@@ -125,7 +125,7 @@ object WorldCollisionUtils {
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
-        yPadding: Float = 0.5f,
+        yPadding: Float = 0.125f,
     ): Boolean {
         return getEnvironmentInfo(context, position, collider, moveCircle, yPadding).isOnWater
     }
@@ -135,7 +135,7 @@ object WorldCollisionUtils {
         collider: Mesh?,
         moveCircle: Mesh?,
         position: Vector3,
-        yPadding: Float = 0.5f,
+        yPadding: Float = 0.125f,
         applyWaterOffset: Boolean = true,
     ): Vector3? {
         val info = getEnvironmentInfo(context, position, collider, moveCircle, yPadding)
@@ -169,7 +169,7 @@ object WorldCollisionUtils {
         moveCircle: Mesh?,
         position: Vector3,
         result: Vector3,
-        yPadding: Float = 0.5f,
+        yPadding: Float = 0.125f,
         applyWaterOffset: Boolean = true,
     ): Boolean {
         val info = getEnvironmentInfo(context, position, collider, moveCircle, yPadding)

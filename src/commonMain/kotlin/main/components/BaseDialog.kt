@@ -128,7 +128,7 @@ fun BaseDialog(
     clickOutside: Boolean = true,
     isFullHeight: Boolean = false,
     isFullWidth: Boolean = false,
-    useDefaultContentPadding: Boolean = false,
+    useDefaultContentPadding: Boolean = true,
     anchorToBottom: Boolean = false,
     banner: (@Composable () -> Unit)? = null,
     useBorder: Boolean = true,

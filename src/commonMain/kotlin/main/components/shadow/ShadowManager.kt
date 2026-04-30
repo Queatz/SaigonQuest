@@ -182,9 +182,6 @@ class ShadowManager(
             // This ensures shadows are visible all the way to the camera's view distance
             shadowMaxZ = 500f
             
-            // Use back faces for shadow generation to reduce self-shadowing artifacts
-            forceBackFacesOnly = true
-            
             // Apply soft shadow settings
             applySoftShadowSettings(this)
             
