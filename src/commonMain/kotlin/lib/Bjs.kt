@@ -220,6 +220,8 @@ external class CascadedShadowGenerator(
     var autoCalcDepthBounds: Boolean
     var numCascades: Int
     var cascadeBlendPercentage: Float
+    var autoCalcDepthBoundsRefreshRate: Int
+    var forceBackFacesOnly: Boolean
 
     fun splitFrustum()
 }
@@ -269,6 +271,7 @@ external interface IShadowLight {
     var direction: Vector3
     var includedOnlyMeshes: Array<AbstractMesh>
     var excludedMeshes: Array<AbstractMesh>
+    var autoCalcShadowZBounds: Boolean
     fun getTypeID(): Int
     fun dispose()
 }
@@ -282,6 +285,9 @@ external class DirectionalLight(name: String, direction: Vector3, scene: Scene) 
     override var direction: Vector3
     override var includedOnlyMeshes: Array<AbstractMesh>
     override var excludedMeshes: Array<AbstractMesh>
+    var shadowOrthoScale: Float
+    override var autoCalcShadowZBounds: Boolean
+    var autoUpdateExtends: Boolean
     override fun getTypeID(): Int
     override fun dispose()
 }
@@ -295,6 +301,7 @@ external class PointLight(name: String, position: Vector3, scene: Scene) : Light
     override var direction: Vector3
     override var includedOnlyMeshes: Array<AbstractMesh>
     override var excludedMeshes: Array<AbstractMesh>
+    override var autoCalcShadowZBounds: Boolean
     override fun getTypeID(): Int
     override fun dispose()
 }
@@ -582,6 +589,8 @@ abstract external class BaseTexture {
     var gammaSpace: Boolean
     var textureFormat: Int
     var coordinatesMode: Int
+    val onLoadObservable: Observable<BaseTexture>
+    fun dispose()
 }
 
 /**
@@ -591,7 +600,15 @@ abstract external class BaseTexture {
  * @param scene The scene the texture belongs to
  * @param options Options to configure the texture
  */
-open external class Texture(url: String, scene: Scene, options: TextureOptions = definedExternally) : BaseTexture {
+open external class Texture(
+    url: String?,
+    scene: Scene?,
+    options: dynamic = definedExternally,
+    invertY: Boolean? = definedExternally,
+    samplingMode: Int? = definedExternally,
+    onLoad: (() -> Unit)? = definedExternally,
+    onError: ((message: String?, exception: dynamic) -> Unit)? = definedExternally,
+) : BaseTexture {
     var hasAlpha: Boolean
     var wrapU: Int
     var wrapV: Int
@@ -601,11 +618,8 @@ open external class Texture(url: String, scene: Scene, options: TextureOptions =
     var uScale: Float
     var vScale: Float
     var samplingMode: Int
-    val onLoadObservable: Observable<Texture>
-    val onErrorObservable: Observable<dynamic>
 
     fun clone(): Texture
-    fun dispose()
 
     /**
      * Gets the size of the texture
@@ -705,6 +719,7 @@ open external class ShadowGenerator(mapSize: Int, light: IShadowLight) {
     var contactHardeningLightSizeUVRatio: Float
     var usePoissonSampling: Boolean
     var darkness: Float
+    var depthClamp: Boolean
     fun dispose()
     
     companion object {

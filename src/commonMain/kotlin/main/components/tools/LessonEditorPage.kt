@@ -153,9 +153,9 @@ fun LessonEditorPage(id: String) {
                 val existingRows = page.rows.map { it.text }.filter { it.isNotBlank() }.joinToString(", ")
                 val excludePrompt = if (existingRows.isNotBlank()) " EXCLUDE these existing items: $existingRows." else ""
                 val typePrompt = when (suggestionType) {
-                    "vocabulary" -> "suggest $count vocabulary words with simple definitions (format: `word: definition`) that are relevant to this scene/reference page."
-                    "grammar" -> "suggest $count useful grammar points or sentence patterns (format: `pattern: explanation/example`) relevant to this scene/reference page."
-                    else -> "suggest $count steps (in format: `title: details`) that are relevant to this reference page."
+                    "vocabulary" -> "suggest $count vocabulary words with simple definitions (format: word • definition) that are relevant to this scene/reference page."
+                    "grammar" -> "suggest $count useful grammar points or sentence patterns (format: pattern • explanation/example) relevant to this scene/reference page."
+                    else -> "suggest $count steps (in format: title • details) that are relevant to this reference page."
                 }
                 val prompt = "Based on the lesson scene '${currentScene.title}' (${currentScene.scenePrompt}) and specifically for the reference page titled '${page.title}', $typePrompt$excludePrompt Use sentence case. Return only a semicolon-separated list (;). Do not include new lines."
                 val suggestionStr = AiApi.sendPrompt(prompt = prompt)

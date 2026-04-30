@@ -33,7 +33,7 @@ class ShadowManager(
     
     // Task 4: Shadow Map Downscaling
     // Default size is now 2048, reduced to 1024 in Low Graphics mode
-    private var shadowMapSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 512 else 1024
+    private var shadowMapSize = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1024 else 2048
     
     // List of meshes that cast shadows
     private val shadowCasters = mutableListOf<AbstractMesh>()
@@ -41,14 +41,14 @@ class ShadowManager(
     // Task 2: Shadow Distance Culling
     // Meshes currently added to the generators
     private val activeShadowCasters = mutableSetOf<AbstractMesh>()
-    private val shadowDistanceThreshold = 500f
+    private val shadowDistanceThreshold = 1000f
     private val shadowDistanceThresholdSq = shadowDistanceThreshold * shadowDistanceThreshold
     
     // Observer for graphics settings changes
     private val graphicsSettingsObserver: () -> Unit = {
         if (GraphicsSettings.isShadowsEnabled()) {
             val isLow = GraphicsSettings.isLowGraphicsModeEnabled()
-            val newSize = if (isLow) 512 else 1024
+            val newSize = if (isLow) 1024 else 2048
             // Recreate if size changed OR if we changed pretty mode which affects PCSS
             if (newSize != shadowMapSize) {
                 println("[DEBUG] Shadow map size changed: $shadowMapSize -> $newSize. Recreating shadow generator...")
@@ -121,12 +121,20 @@ class ShadowManager(
      */
     private fun configureLightForShadows() {
         // Set light position (important for directional light shadows)
-        // Position closer to the scene for more visible shadows
-        light.position = Vector3(10f, 20f, 10f)
+        // Set initial position, will be updated to follow camera in update()
+        light.position = Vector3(0f, 100f, 0f)
         
-        // Set shadow frustum limits
-        light.shadowMinZ = 0.1f  // Reduced to match camera minZ
-        light.shadowMaxZ = 500f // Matches camera maxZ
+        // Enable auto calculation for maximum stability in scenes with big skyboxes
+        // But use a large enough range to ensure we don't clip distant objects
+        light.autoCalcShadowZBounds = true
+        light.autoUpdateExtends = true
+        
+        // Set shadow frustum limits (used as fallbacks if auto calc fails)
+        light.shadowMinZ = 0.1f 
+        light.shadowMaxZ = 1200f
+        
+        // Use a generous shadow frustum margin to avoid clipping during rotation and low angles
+        light.shadowOrthoScale = 5.0f
         
         // Adjust direction to point at the center of the scene
         // Slight angle for better shadow projection
@@ -148,21 +156,34 @@ class ShadowManager(
     private fun configureShadowGenerator() {
         // Configure shadow generator properties
         shadowGenerator.apply {
-            lambda = .667f
-            bias = 0.001f  // Reduced bias for better contact shadows with PCF at higher resolution
-            normalBias = 0.005f // Adjust for PCF
+            // Using lambda 0.5 to prioritize shadow resolution closer to the camera
+            lambda = 0.5f
+            bias = 0.0005f  // Further reduced bias to avoid detachment with larger range
+            normalBias = 0.002f // Further reduced normalBias
             
             // Enable transparent shadows
             transparencyShadow = true
             
-            // Stabilize cascades for smoother shadows during camera movement
+            // Stabilize cascades for smoother shadows during camera movement and rotation
             stabilizeCascades = true
             
-            // Auto calculate depth bounds for better cascade distribution in big scenes
-            autoCalcDepthBounds = true
+            // Disable auto calc depth bounds to prevent "big skyboxes" from polluting the shadow map
+            // This ensures cascades stay focused on the actual scene objects
+            autoCalcDepthBounds = false
+            autoCalcDepthBoundsRefreshRate = 1
             
-            // Set shadow max Z to match light
-            shadowMaxZ = light.shadowMaxZ
+            // Set number of cascades to 4 for optimal balance
+            numCascades = 4
+            
+            // Enable depth clamping to avoid shadow clipping artifacts at frustum boundaries
+            depthClamp = true
+            
+            // Set shadow max Z to match the camera's maxZ (500)
+            // This ensures shadows are visible all the way to the camera's view distance
+            shadowMaxZ = 500f
+            
+            // Use back faces for shadow generation to reduce self-shadowing artifacts
+            forceBackFacesOnly = true
             
             // Apply soft shadow settings
             applySoftShadowSettings(this)
@@ -171,7 +192,7 @@ class ShadowManager(
             splitFrustum()
             
             // Set cascade blend percentage to soften transitions
-            cascadeBlendPercentage = 0.1f
+            cascadeBlendPercentage = 0.2f
         }
         
         println("[DEBUG] Shadow generator configured with enhanced settings:")
@@ -179,6 +200,7 @@ class ShadowManager(
         println("[DEBUG] - normalBias: ${shadowGenerator.normalBias}")
         println("[DEBUG] - lambda: ${shadowGenerator.lambda}")
         println("[DEBUG] - shadowMaxZ: ${shadowGenerator.shadowMaxZ}")
+        println("[DEBUG] - depthClamp: ${shadowGenerator.depthClamp}")
         println("[DEBUG] - usePercentageCloserFiltering: ${shadowGenerator.usePercentageCloserFiltering}")
         println("[DEBUG] - filteringQuality: ${shadowGenerator.filteringQuality}")
     }
@@ -195,6 +217,9 @@ class ShadowManager(
 
         // Use PCF for soft shadows
         generator.filteringQuality = ShadowGenerator.FILTERINGQUALITY_MEDIUM
+
+        // Enable depth clamping to avoid shadow clipping artifacts at frustum boundaries
+        generator.depthClamp = true
 
         if (isPretty) {
             generator.usePercentageCloserFiltering = true
@@ -221,6 +246,12 @@ class ShadowManager(
 
         val camera = scene.activeCamera ?: return
         
+        // Update light position to follow the camera for better shadow coverage in large scenes.
+        // We move the light position back along its direction vector relative to the camera.
+        // This ensures the camera's view frustum is always within the light's shadow frustum.
+        val lightOffset = light.direction.scale(-400f)
+        light.position = camera.position.add(lightOffset)
+
         // Performance Improvement: Throttle shadow distance check to every 10 frames
         updateCounter++
         if (updateCounter % 15 != 0) return
