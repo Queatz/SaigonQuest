@@ -631,6 +631,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Changes the world background music"
     ) : LogicNode
+
+    /**
+     * Plain text node - simple text container
+     */
+    @Serializable
+    data class PlainText(
+        override val id: NodeId = NodeId.PlainText,
+        override val label: String = "Plain text",
+        override val category: NodeCategory = NodeCategory.Input,
+        override val description: String = "A simple text node that provides its content as an output"
+    ) : LogicNode
 }
 
 /**
@@ -699,6 +710,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.MoveObject(),
         LogicNode.TranscribeAudio(),
         LogicNode.ChangeWorldMusic(),
+        LogicNode.PlainText(),
     )
 }
 

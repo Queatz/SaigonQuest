@@ -415,6 +415,15 @@ object NodeRunnerFactory {
                 )
                 ChangeWorldMusicNodeRunner(context)
             }
+
+            NodeId.PlainText -> {
+                WebSocketDebug.logMessage(
+                    "PLAIN_TEXT_RUNNER_SELECTED",
+                    "Selected PlainTextNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                PlainTextNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

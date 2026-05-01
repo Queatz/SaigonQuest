@@ -1758,6 +1758,25 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             )
         )
+
+        // Plain text node properties (pure value, no triggers)
+        is LogicNode.PlainText -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT_CONTENT,
+                name = "Text",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "",
+                description = "The text content"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.TEXT,
+                name = "Output",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.OUTPUT,
+                description = "The text content"
+            )
+        )
     }
 }
 

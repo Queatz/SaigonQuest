@@ -58,4 +58,5 @@ enum class NodeId {
     MoveObject,
     TranscribeAudio,
     ChangeWorldMusic,
+    PlainText,
 }

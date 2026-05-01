@@ -2754,6 +2754,21 @@ vi: Không có vị trí nào đã lưu
 
 Saved position
 vi: Vị trí đã lưu
+
+Plain text
+vi: Văn bản thuần túy
+
+A simple text node that provides its content as an output
+vi: Một nút văn bản đơn giản cung cấp nội dung của nó làm đầu ra
+
+Output
+vi: Đầu ra
+
+The text content
+vi: Nội dung văn bản
+
+Text
+vi: Văn bản
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
