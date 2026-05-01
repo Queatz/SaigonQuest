@@ -49,5 +49,6 @@ data class ReferenceRow(
 data class ReferencePage(
     val id: String = "",
     var title: String = "",
+    var image: String? = null,
     var rows: List<ReferenceRow> = emptyList(),
 )

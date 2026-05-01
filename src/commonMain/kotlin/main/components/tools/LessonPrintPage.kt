@@ -109,6 +109,18 @@ fun LessonPrintPage(id: String) {
             }) {
                 Div(attrs = { classes(PrintStyles.referenceTitle) }) { Text(page.title) }
 
+                page.image?.let {
+                    Img(src = it, attrs = {
+                        style {
+                            width(100.percent)
+                            maxHeight(148.mm) // ~50% of 297mm
+                            property("object-fit", "cover")
+                            borderRadius(2.mm)
+                            marginBottom(5.mm)
+                        }
+                    })
+                }
+
                 Table(attrs = { classes(PrintStyles.referenceTable) }) {
                     Tbody {
                         page.rows.forEach { row ->

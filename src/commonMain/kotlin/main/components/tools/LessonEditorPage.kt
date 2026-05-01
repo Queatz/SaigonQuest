@@ -28,6 +28,7 @@ fun LessonEditorPage(id: String) {
     var generatingCards by remember { mutableStateOf(setOf<String>()) }
     var generatingItems by remember { mutableStateOf(setOf<String>()) }
     var generatingRows by remember { mutableStateOf(setOf<String>()) }
+    var generatingPages by remember { mutableStateOf(setOf<String>()) }
     var isGeneratingRemaining by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -141,6 +142,32 @@ fun LessonEditorPage(id: String) {
                 error = e.message ?: "Failed to generate row image"
             } finally {
                 generatingRows = generatingRows - row.id
+            }
+        }
+    }
+
+    fun generatePageImage(page: ReferencePage) {
+        scope.launch {
+            generatingPages = generatingPages + page.id
+            error = null
+            try {
+                val url = withRetry {
+                    AiApi.generateImage(
+                        prompt = "A beautiful cover photo for a reference page titled '${page.title}' in the context of ${currentScene.title}. High quality, cinematic."
+                    )
+                }
+                scene = scene?.update {
+                    val newPages = referencePages.toMutableList()
+                    val targetPageIndex = newPages.indexOfFirst { it.id == page.id }
+                    if (targetPageIndex != -1) {
+                        newPages[targetPageIndex] = newPages[targetPageIndex].copy(image = url)
+                    }
+                    referencePages = newPages
+                }
+            } catch (e: Throwable) {
+                error = e.message ?: "Failed to generate page image"
+            } finally {
+                generatingPages = generatingPages - page.id
             }
         }
     }
@@ -427,8 +454,10 @@ fun LessonEditorPage(id: String) {
             ReferencePageItem(
                 page = page,
                 darkMode = darkMode,
+                sceneTitle = currentScene.title,
                 suggestingRowsForPages = suggestingRowsForPages,
                 generatingRows = generatingRows,
+                generatingPages = generatingPages,
                 onUpdatePage = { updatedPage ->
                     scene = scene?.update {
                         val newList = referencePages.toMutableList()
@@ -483,6 +512,9 @@ fun LessonEditorPage(id: String) {
                         itemsToGenerate.forEach { generateItemImage(it) }
 
                         currentScene.referencePages.forEach { page ->
+                            if (page.image == null && page.title.isNotBlank()) {
+                                generatePageImage(page)
+                            }
                             page.rows.forEach { row ->
                                 if (row.image == null && row.text.isNotBlank()) {
                                     generateRowImage(page, row)

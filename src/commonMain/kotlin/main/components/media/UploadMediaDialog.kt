@@ -29,14 +29,15 @@ fun UploadMediaDialog(
     onClose: () -> Unit,
     onSelect: (String, MediaType, String) -> Unit,
     filter: MediaType? = null,
-    preferredSize: String? = null
+    preferredSize: String? = null,
+    initialPrompt: String? = null
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
     var loading by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var renameItem by remember { mutableStateOf<UserMedia?>(null) }
-    var showAi by remember { mutableStateOf(false) }
+    var showAi by remember { mutableStateOf(initialPrompt != null) }
 
     fun imageUrlFor(path: String) = ContentApiConstants.CONTENT_BASE_URL + path
 
@@ -133,6 +134,7 @@ fun UploadMediaDialog(
                     filter = filter,
                     onRefreshLibrary = { refresh() },
                     initialSize = preferredSize,
+                    initialPrompt = initialPrompt,
                 )
             } else {
                 // Top upload area

@@ -11,6 +11,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
 import main.components.DialogInput
 import main.components.Paper
+import main.components.media.UploadMediaDialog
+import models.MediaType
 import org.jetbrains.compose.web.attributes.InputType
 import Translations.str
 import kotlin.random.Random
@@ -19,14 +21,29 @@ import kotlin.random.Random
 fun ReferencePageItem(
     page: ReferencePage,
     darkMode: Boolean,
+    sceneTitle: String,
     suggestingRowsForPages: Set<String>,
     generatingRows: Set<String>,
+    generatingPages: Set<String>,
     onUpdatePage: (ReferencePage) -> Unit,
     onRemovePage: () -> Unit,
     onSuggestRows: (String, Int) -> Unit,
     onGenerateRowImage: (ReferenceRow) -> Unit
 ) {
     var rowBulkCount by remember { mutableStateOf(6) }
+    var showUploadDialog by remember { mutableStateOf(false) }
+
+    if (showUploadDialog) {
+        UploadMediaDialog(
+            onClose = { showUploadDialog = false },
+            onSelect = { url, _, _ ->
+                onUpdatePage(page.copy(image = url))
+                showUploadDialog = false
+            },
+            filter = MediaType.Image,
+            initialPrompt = "A beautiful cover photo for a reference page titled '${page.title}' in the context of $sceneTitle. High quality, cinematic."
+        )
+    }
 
     Paper(attrs = {
         style {
@@ -49,6 +66,20 @@ fun ReferencePageItem(
                 onClick = onRemovePage
             ) {
                 Translated("Remove")
+            }
+        }
+
+        page.image?.let {
+            Img(src = it, attrs = { style { width(100.percent); maxHeight(300.px); property("object-fit", "cover"); borderRadius(8.px) } })
+        }
+
+        if (page.title.isNotBlank()) {
+            DialogButton(
+                small = true,
+                isLoading = generatingPages.contains(page.id),
+                onClick = { showUploadDialog = true }
+            ) {
+                Translated("Set cover photo")
             }
         }
 

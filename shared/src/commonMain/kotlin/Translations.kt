@@ -2000,6 +2000,9 @@ vi: Gạch dưới
 Strikethrough
 vi: Gạch ngang
 
+Set cover photo
+vi: Đặt ảnh bìa
+
 Insert audio
 vi: Chèn âm thanh
 

@@ -454,12 +454,12 @@ class CameraController(private val scene: Scene) {
      */
     fun ArcRotateCamera.updateConstraints() {
         if (GraphicsSettings.isObserverModeEnabled()) {
-            lowerRadiusLimit = 1f
+            lowerRadiusLimit = 8f
             upperRadiusLimit = 500f // Matches maxZ
             lowerBetaLimit = 0.01f
             upperBetaLimit = (PI/2f - 0.01f).toFloat()
         } else {
-            lowerRadiusLimit = 8f
+            lowerRadiusLimit = 16f
             upperRadiusLimit = 32f
             lowerBetaLimit = (57.5f * PI / 180f).toFloat()
             upperBetaLimit = (87.5f * PI / 180f).toFloat()
