@@ -137,6 +137,10 @@ class NodeLogicRunner(
                 is LogicNode.VisitorNearby -> node.nodeId == NodeId.VisitorNearby
                 is LogicNode.PlayerJoined -> node.nodeId == NodeId.PlayerJoined
                 is LogicNode.VisitorJoined -> node.nodeId == NodeId.VisitorJoined
+                is LogicNode.PlayerFar -> node.nodeId == NodeId.PlayerFar
+                is LogicNode.VisitorFar -> node.nodeId == NodeId.VisitorFar
+                is LogicNode.PlayerLeave -> node.nodeId == NodeId.PlayerLeave
+                is LogicNode.VisitorLeave -> node.nodeId == NodeId.VisitorLeave
                 else -> false
             }
             if (matches) {

@@ -42,6 +42,34 @@ fun WebSocketApi.userNearby(objectId: String, isPlayer: Boolean): Boolean {
 }
 
 /**
+ * Sends a USER_FAR event when the local user exits proximity of an object.
+ * Fires only once per exit on the client side (caller controls semantics).
+ *
+ * @param objectId The ID of the object the user moved away from
+ * @param isPlayer Whether the user is a player (true) or visitor (false)
+ * @return true if the message was queued to send successfully, false otherwise
+ */
+fun WebSocketApi.userFar(objectId: String, isPlayer: Boolean): Boolean {
+    var success = false
+    apiScope.launch {
+        try {
+            val user = UserApi.getCurrentUser()
+            val data = PlayerNearbyData(
+                objectId = objectId,
+                isPlayer = isPlayer,
+                userId = user.key,
+                isNight = main.components.audio.MusicManager.getIsNight()
+            )
+            val message = WebSocketMessage.fromEnum(WebSocketAction.USER_FAR, json.encodeToString(data))
+            success = sendMessage(message)
+        } catch (e: Throwable) {
+            console.error("Error sending user far event", e)
+        }
+    }
+    return success
+}
+
+/**
  * Extension functions for WebSocketApi related to player operations
  */
 

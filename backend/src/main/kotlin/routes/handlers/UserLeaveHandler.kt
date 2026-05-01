@@ -2,12 +2,15 @@ package routes.handlers
 
 import debug.WebSocketDebug
 import io.ktor.server.websocket.DefaultWebSocketServerSession
+import kotlinx.coroutines.launch
+import models.LogicNode
 import models.ChatMessage
 import models.ChatSenderType
 import models.UserLeaveData
 import models.WebSocketAction
 import repository.ChatRepository
 import repository.UserRepository
+import repository.ObjectRepository
 import routes.WebSocketConnection
 import routes.WebSocketMessage
 import state.WorldStateStore
@@ -23,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
 class UserLeaveHandler(
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
+    private val objectRepository: ObjectRepository,
 ) : WebSocketHandler {
     override suspend fun handle(
         message: WebSocketMessage,
@@ -90,6 +94,48 @@ class UserLeaveHandler(
                     connection.hasAnnouncedLeave = true
                 } catch (e: Throwable) {
                     WebSocketDebug.logError("Error sending system leave chat", e, session)
+                }
+            }
+
+            // Trigger logic nodes for leaves
+            val objects = objectRepository.getByWorldId(worldId)
+            val baseEventData = mapOf(
+                "userId" to correctedLeaveData.userId,
+                "worldId" to worldId,
+                "isPlayer" to connection.user.isPlayer,
+            )
+
+            if (connection.user.isPlayer) {
+                WebSocketDebug.logMessage("PLAYER_LEAVE_EVENT", "Triggering PlayerLeave logic for world: $worldId", session)
+            } else {
+                WebSocketDebug.logMessage("VISITOR_LEAVE_EVENT", "Triggering VisitorLeave logic for world: $worldId", session)
+            }
+
+            for (obj in objects) {
+                val context = logic.NodeRunnerContext(
+                    connection = connection,
+                    worldId = worldId,
+                    objectId = obj.key,
+                    activeConnections = activeConnections,
+                    session = session,
+                    isNight = null, // Leave event doesn't have night info easily available here without more work, and it's less critical
+                )
+
+                val runner = logic.NodeLogicRunner(
+                    objectData = obj,
+                    context = context,
+                )
+
+                session.launch {
+                    try {
+                        if (connection.user.isPlayer) {
+                            runner.processNodes(LogicNode.PlayerLeave(), baseEventData)
+                        } else {
+                            runner.processNodes(LogicNode.VisitorLeave(), baseEventData)
+                        }
+                    } catch (e: Throwable) {
+                        debug.WebSocketDebug.logError("Error in async leave processing", e, session)
+                    }
                 }
             }
         } catch (e: Throwable) {

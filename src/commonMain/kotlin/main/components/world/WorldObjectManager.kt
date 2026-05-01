@@ -13,6 +13,7 @@ import main.api.ApiClient
 import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.userNearby
+import main.api.userFar
 import main.components.SceneManager
 import main.components.objects.setObjectInteractable
 import main.components.objects.setObjectNearby
@@ -250,6 +251,7 @@ class WorldObjectManager(private val scene: Scene) {
         currentEntered.forEach { backendObjectId ->
             if (!nearbyCandidates.contains(backendObjectId)) {
                 enteredProximity.remove(backendObjectId)
+                WebSocketApi.userFar(objectId = backendObjectId, isPlayer = isPlayer)
                 objectManager.setObjectNearby(backendObjectId, false)
             }
         }
@@ -274,6 +276,7 @@ class WorldObjectManager(private val scene: Scene) {
             } else if (!isInside && wasInside) {
                 // Exited radius: allow future re-entry to trigger again
                 enteredProximity.remove(backendObjectId)
+                WebSocketApi.userFar(objectId = backendObjectId, isPlayer = isPlayer)
                 // Hide status if it's no longer nearby
                 objectManager.setObjectNearby(backendObjectId, false)
             }

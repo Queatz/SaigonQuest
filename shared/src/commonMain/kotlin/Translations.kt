@@ -2769,6 +2769,30 @@ vi: Nội dung văn bản
 
 Text
 vi: Văn bản
+
+Player far
+vi: Người chơi xa dần
+
+Triggers when the player moves away from this object
+vi: Kích hoạt khi người chơi di chuyển xa khỏi đối tượng này
+
+Visitor far
+vi: Khách xa dần
+
+Triggers when a visitor moves away from this object
+vi: Kích hoạt khi khách di chuyển xa khỏi đối tượng này
+
+Player leave
+vi: Người chơi rời đi
+
+Triggers when the player leaves the world
+vi: Kích hoạt khi người chơi rời khỏi thế giới
+
+Visitor leave
+vi: Khách rời đi
+
+Triggers when a visitor leaves the world
+vi: Kích hoạt khi khách rời khỏi thế giới
 """
 
 expect fun logMissingTranslation(key: String, language: String?)

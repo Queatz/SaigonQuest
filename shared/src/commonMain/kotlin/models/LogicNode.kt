@@ -336,6 +336,50 @@ sealed interface LogicNode {
     ) : LogicNode
 
     /**
+     * PlayerFar node - triggers when the player moves away from the object
+     */
+    @Serializable
+    data class PlayerFar(
+        override val id: NodeId = NodeId.PlayerFar,
+        override val label: String = "Player far",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when the player moves away from this object"
+    ) : LogicNode
+
+    /**
+     * VisitorFar node - triggers when a visitor moves away from the object
+     */
+    @Serializable
+    data class VisitorFar(
+        override val id: NodeId = NodeId.VisitorFar,
+        override val label: String = "Visitor far",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when a visitor moves away from this object"
+    ) : LogicNode
+
+    /**
+     * PlayerLeave node - triggers when the player leaves the world
+     */
+    @Serializable
+    data class PlayerLeave(
+        override val id: NodeId = NodeId.PlayerLeave,
+        override val label: String = "Player leave",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when the player leaves the world"
+    ) : LogicNode
+
+    /**
+     * VisitorLeave node - triggers when a visitor leaves the world
+     */
+    @Serializable
+    data class VisitorLeave(
+        override val id: NodeId = NodeId.VisitorLeave,
+        override val label: String = "Visitor leave",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when a visitor leaves the world"
+    ) : LogicNode
+
+    /**
      * AiChat node - opens a new AI Chat session
      */
     @Serializable
@@ -660,6 +704,10 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.VisitorInteract(),
         LogicNode.PlayerNearby(),
         LogicNode.VisitorNearby(),
+        LogicNode.PlayerFar(),
+        LogicNode.VisitorFar(),
+        LogicNode.PlayerLeave(),
+        LogicNode.VisitorLeave(),
         LogicNode.PlayerJoined(),
         LogicNode.VisitorJoined(),
         LogicNode.Teleport(),
