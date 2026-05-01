@@ -47,6 +47,30 @@ fun DialogueBox(
     var uploadedAudios by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var uploadMediaType by remember { mutableStateOf<MediaType?>(null) }
 
+    LaunchedEffect(currentDialogue) {
+        if (currentDialogue == null) {
+            onClose()
+            TtsManager.stop()
+        }
+    }
+
+    // Add a listener for dialogue events
+    LaunchedEffect(Unit) {
+        WebSocketApi.addDialogueListener { dialogueData ->
+            console.log("DialogueBox: Received dialogue: ${dialogueData.text}")
+            currentDialogue = dialogueData
+            isWaiting = false
+
+            if (AudioSettings.isSpeakDialogueEnabled()) {
+                val stripped = stripMarkdown(dialogueData.text)
+                if (stripped.isNotBlank()) {
+                    TtsManager.speak(stripped)
+                }
+            }
+        }
+    }
+
+
     // Only show the dialogue box if there's a dialogue to show
     val dialogue = currentDialogue ?: return
 
