@@ -70,6 +70,8 @@ import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.vw
 import org.jetbrains.compose.web.css.whiteSpace
 import org.jetbrains.compose.web.css.width
+import web.cssom.PropertyName.Companion.wordBreak
+import web.cssom.WordBreak
 
 object Styles : StyleSheet() {
     val md by style {
@@ -231,6 +233,7 @@ object Styles : StyleSheet() {
         gap(8.px)
         justifyContent(JustifyContent.Center)
         width(100.percent)
+        overflow("auto")
 
         mobile(self) {
             flexDirection(FlexDirection.Column)
@@ -674,6 +677,7 @@ object Styles : StyleSheet() {
         property("cursor", "pointer")
         fontWeight("bold")
         fontSize(20.px)
+        property("word-break", "break-all")
         property("transition", "filter 0.1s ease-in-out")
 
         self + hover style {
@@ -703,6 +707,7 @@ object Styles : StyleSheet() {
         fontWeight("bold")
         fontSize(20.px)
         property("transition", "filter 0.1s ease-in-out")
+        property("word-break", "break-all")
 
         self + hover style {
             property("filter", "brightness(1.2)")
@@ -732,6 +737,7 @@ object Styles : StyleSheet() {
         fontWeight("bold")
         fontSize(20.px)
         property("transition", "filter 0.1s ease-in-out")
+        property("word-break", "break-all")
 
         self + hover style {
             property("filter", "brightness(1.2)")
