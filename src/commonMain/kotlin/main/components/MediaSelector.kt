@@ -11,7 +11,7 @@ import org.jetbrains.compose.web.dom.*
 fun MediaSelector(
     url: String,
     type: MediaType,
-    onSelect: (String) -> Unit,
+    onSelect: (url: String, name: String) -> Unit,
     onClear: () -> Unit,
     preferredSize: String? = null
 ) {
@@ -77,8 +77,8 @@ fun MediaSelector(
         if (showDialog) {
             UploadMediaDialog(
                 onClose = { showDialog = false },
-                onSelect = { selectedUrl, _, _ ->
-                    onSelect(selectedUrl)
+                onSelect = { selectedUrl, _, name ->
+                    onSelect(selectedUrl, name)
                     showDialog = false
                 },
                 filter = type,

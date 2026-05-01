@@ -622,6 +622,11 @@ class PlayerController(private val scene: Scene) {
     fun initializePauseListener(router: Router) { netSync.initPauseListener(router) }
 
     /**
+     * Initializes the world music update listener
+     */
+    fun initializeWorldMusicListener() { netSync.initWorldMusicListener() }
+
+    /**
      * Updates the player's username text
      * 
      * @param username The new username to display

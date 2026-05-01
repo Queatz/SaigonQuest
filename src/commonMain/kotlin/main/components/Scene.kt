@@ -1304,6 +1304,11 @@ fun SceneComponent(url: String) {
                 playerController.initializePauseListener(router)
                 console.log("[DEBUG_LOG] Scene: Pause listener initialization completed")
 
+                // Initialize world music update listener
+                console.log("[DEBUG_LOG] Scene: Initializing world music listener")
+                playerController.initializeWorldMusicListener()
+                console.log("[DEBUG_LOG] Scene: World music listener initialization completed")
+
                 // Register player mesh as shadow caster and receiver
                 playerController.getPlayerHandle()?.node?.let { playerMesh ->
                     worldLoader.getShadowManager()?.let { shadowManager ->

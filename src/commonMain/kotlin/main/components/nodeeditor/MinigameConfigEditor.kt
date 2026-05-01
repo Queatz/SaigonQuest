@@ -101,7 +101,7 @@ fun MinigameConfigEditor(
                 MediaSelector(
                     url = heroItem?.image ?: "",
                     type = MediaType.Image,
-                    onSelect = { url ->
+                    onSelect = { url, _ ->
                         val newList = items.toMutableList()
                         val existingHeroIndex = items.indexOfFirst { it.image != null && it.hotspot == null }
                         if (existingHeroIndex != -1) {
@@ -564,14 +564,14 @@ fun MinigameItemEditor(
             MediaSelector(
                 url = item.image ?: "",
                 type = MediaType.Image,
-                onSelect = { onUpdate(item.copy(image = it)) },
+                onSelect = { url, _ -> onUpdate(item.copy(image = url)) },
                 onClear = { onUpdate(item.copy(image = null)) },
                 preferredSize = if (type == MinigameType.Story) "1280*720" else null
             )
             MediaSelector(
                 url = item.audio ?: "",
                 type = MediaType.Audio,
-                onSelect = { onUpdate(item.copy(audio = it)) },
+                onSelect = { url, _ -> onUpdate(item.copy(audio = url)) },
                 onClear = { onUpdate(item.copy(audio = null)) }
             )
         }

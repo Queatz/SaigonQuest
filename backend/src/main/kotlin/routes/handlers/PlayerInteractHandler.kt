@@ -52,7 +52,8 @@ class PlayerInteractHandler(
                     worldId = worldId,
                     objectId = interactData.objectId, // Include the objectId
                     activeConnections = activeConnections,
-                    session = session
+                    session = session,
+                    isNight = interactData.isNight
                 )
                 
                 // Create a NodeLogicRunner for this object

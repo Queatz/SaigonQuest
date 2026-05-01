@@ -488,6 +488,14 @@ fun NodeElement(
                             }
                         }
 
+                        PropertyKey.MUSIC_NAME -> {
+                            if (property.value.isNotBlank()) {
+                                Div {
+                                    Text("🎵 " + property.value.ellipsize())
+                                }
+                            }
+                        }
+
                         PropertyKey.ITEM_ID -> {
                             if (property.value.isNotBlank()) {
                                 Div {

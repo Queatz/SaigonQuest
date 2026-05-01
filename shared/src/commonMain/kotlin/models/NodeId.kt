@@ -57,4 +57,5 @@ enum class NodeId {
     CheckPlayerSkill,
     MoveObject,
     TranscribeAudio,
+    ChangeWorldMusic,
 }

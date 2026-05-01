@@ -30,6 +30,7 @@ fun WebSocketApi.userNearby(objectId: String, isPlayer: Boolean): Boolean {
                 objectId = objectId,
                 isPlayer = isPlayer,
                 userId = user.key,
+                isNight = main.components.audio.MusicManager.getIsNight()
             )
             val message = WebSocketMessage.fromEnum(WebSocketAction.USER_NEARBY, json.encodeToString(data))
             success = sendMessage(message)
@@ -121,7 +122,8 @@ fun WebSocketApi.playerInteract(objectId: String, isPlayer: Boolean): Boolean {
             val interactData = PlayerInteractData(
                 objectId = objectId,
                 isPlayer = isPlayer,
-                userId = user.key
+                userId = user.key,
+                isNight = main.components.audio.MusicManager.getIsNight()
             )
             
             val message = WebSocketMessage.fromEnum(WebSocketAction.USER_INTERACT, json.encodeToString(interactData))
@@ -307,7 +309,8 @@ fun WebSocketApi.sendUserJoin(worldId: String, position: Position, isPlayer: Boo
                 username = user.username,
                 isPlayer = isPlayer,
                 position = position,
-                worldId = worldId
+                worldId = worldId,
+                isNight = main.components.audio.MusicManager.getIsNight()
             )
             
             console.log("WebSocketApi: Created UserJoinData: $joinData")

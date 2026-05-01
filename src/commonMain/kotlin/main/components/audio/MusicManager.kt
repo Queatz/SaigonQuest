@@ -147,22 +147,29 @@ object MusicManager {
         this.dayUrl = dayUrl?.takeIf { it.isNotBlank() }
         this.nightUrl = nightUrl?.takeIf { it.isNotBlank() }
         this.isOutdoors = isOutdoors
-        this.isNight = null // unknown until realtime sun updates (if outdoors)
 
-        // Stop current playback; we'll restart when we know which one to play
-        stop()
-
-        if (!AudioSettings.isMusicEnabled()) return
+        if (!AudioSettings.isMusicEnabled()) {
+            stop()
+            return
+        }
 
         if (!isOutdoors) {
-            // Indoor worlds: immediately play dayUrl if present
-            this.dayUrl?.let { playUrl(it, fadeIn = true) }
+            this.isNight = null
+            val target = this.dayUrl
+            if (target != currentUrl) {
+                if (target != null) playUrl(target, fadeIn = true) else stop()
+            }
         } else {
-            // Outdoors: wait for setIsNight() to decide, but if both missing, do nothing
-            val guess = this.dayUrl ?: this.nightUrl
-            if (guess != null) {
-                // Optionally start with day track until we know; better to wait for realtime callback
-                // We'll do nothing here; start when setIsNight() is called
+            // Outdoors: if we already have isNight, apply immediately
+            val night = this.isNight
+            if (night != null) {
+                val next = chooseUrl()
+                if (next != currentUrl) {
+                    if (next != null) crossfadeTo(next) else stop()
+                }
+            } else {
+                // Unknown night state, stop and wait for setIsNight
+                stop()
             }
         }
     }
@@ -177,6 +184,8 @@ object MusicManager {
         // Crossfade to new track
         crossfadeTo(next)
     }
+
+    fun getIsNight(): Boolean? = isNight
 
     fun stop() {
         cancelFade()

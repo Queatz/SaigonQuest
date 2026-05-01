@@ -620,6 +620,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "Converts an audio file to text"
     ) : LogicNode
+
+    /**
+     * ChangeWorldMusic node - changes the current world's background music
+     */
+    @Serializable
+    data class ChangeWorldMusic(
+        override val id: NodeId = NodeId.ChangeWorldMusic,
+        override val label: String = "Change world music",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Changes the world background music"
+    ) : LogicNode
 }
 
 /**
@@ -687,6 +698,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.CheckPlayerSkill(),
         LogicNode.MoveObject(),
         LogicNode.TranscribeAudio(),
+        LogicNode.ChangeWorldMusic(),
     )
 }
 

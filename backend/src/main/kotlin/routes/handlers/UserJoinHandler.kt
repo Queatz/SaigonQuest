@@ -90,6 +90,7 @@ class UserJoinHandler(
                     objectId = obj.key,
                     activeConnections = activeConnections,
                     session = session,
+                    isNight = correctedJoinData.isNight,
                 )
 
                 val runner = logic.NodeLogicRunner(

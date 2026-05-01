@@ -17,5 +17,6 @@ data class NodeRunnerContext(
     val objectId: String = "", // Added objectId property with default empty string
     val activeConnections: ConcurrentHashMap<String, MutableList<WebSocketConnection>>,
     val session: DefaultWebSocketServerSession,
+    val isNight: Boolean? = null,
     var logicRunner: NodeLogicRunner? = null
 )

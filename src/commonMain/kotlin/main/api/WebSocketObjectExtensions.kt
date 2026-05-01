@@ -78,7 +78,8 @@ fun WebSocketApi.triggerObjectEvent(objectId: String, eventType: String, userId:
         val eventData = TriggerEventData(
             objectId = objectId,
             eventType = eventType,
-            userId = userId
+            userId = userId,
+            isNight = main.components.audio.MusicManager.getIsNight()
         )
         
         val message = WebSocketMessage.fromEnum(WebSocketAction.TRIGGER_OBJECT_EVENT, ApiClient.json.encodeToString(eventData))

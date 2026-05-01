@@ -56,6 +56,7 @@ class PlayerNearbyHandler(
                 objectId = nearbyData.objectId,
                 activeConnections = activeConnections,
                 session = session,
+                isNight = nearbyData.isNight,
             )
 
             val runner = NodeLogicRunner(

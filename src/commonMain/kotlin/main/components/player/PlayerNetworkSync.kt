@@ -13,6 +13,7 @@ import main.api.addTeleportPlayerListener
 import main.api.addPauseListener
 import main.api.addUpdatePlayerListener
 import main.api.addLocateObjectListener
+import main.api.addWorldMusicUpdateListener
 import models.ChatMessage
 import models.UpdatePlayerData
 import models.WebSocketAction
@@ -85,9 +86,26 @@ class PlayerNetworkSync(private val scope: CoroutineScope = CoroutineScope(Dispa
         }
     }
 
+    /**
+     * Initializes the pause listener (single-device enforcement)
+     */
     fun initPauseListener(router: Router) {
         WebSocketApi.addPauseListener(router) { pauseData ->
             console.log("PlayerNetworkSync: pause event for user ${pauseData.userId}")
+        }
+    }
+
+    /**
+     * Initializes the world music update listener
+     */
+    fun initWorldMusicListener() {
+        WebSocketApi.addWorldMusicUpdateListener { data ->
+            console.log("PlayerNetworkSync: world music update event: $data")
+            main.components.audio.MusicManager.setWorldMusic(
+                dayUrl = data.dayUrl,
+                nightUrl = data.nightUrl,
+                isOutdoors = data.isOutdoors
+            )
         }
     }
 

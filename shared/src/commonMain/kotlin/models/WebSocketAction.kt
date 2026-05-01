@@ -45,6 +45,7 @@ enum class WebSocketAction {
     UPDATE_EMOJI_HISTORY,
     LOCATE_OBJECT,
     MOVE_OBJECT,
+    UPDATE_WORLD_MUSIC,
 
     // Global, user-level events
     FRIEND_STATUS_CHANGED,

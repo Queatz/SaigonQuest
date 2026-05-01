@@ -407,6 +407,14 @@ object NodeRunnerFactory {
                 )
                 TranscribeAudioNodeRunner(context)
             }
+            NodeId.ChangeWorldMusic -> {
+                WebSocketDebug.logMessage(
+                    "CHANGE_WORLD_MUSIC_RUNNER_SELECTED",
+                    "Selected ChangeWorldMusicNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                ChangeWorldMusicNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

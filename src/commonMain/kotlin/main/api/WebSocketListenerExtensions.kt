@@ -326,3 +326,19 @@ fun WebSocketApi.addQuestProgressListener(listener: (Map<String, String>) -> Uni
     addListener(WebSocketAction.QUEST_PROGRESS_UPDATED, handler)
     return ListenerToken(WebSocketAction.QUEST_PROGRESS_UPDATED, handler)
 }
+
+/**
+ * Add a listener for world music update events
+ */
+fun WebSocketApi.addWorldMusicUpdateListener(listener: (models.WorldMusicUpdateData) -> Unit): ListenerToken {
+    val handler: (WebSocketMessage) -> Unit = { message ->
+        try {
+            val data = ApiClient.json.decodeFromString<models.WorldMusicUpdateData>(message.data)
+            listener(data)
+        } catch (e: Throwable) {
+            console.error("WebSocketApi: Error parsing world music update data", e)
+        }
+    }
+    addListener(WebSocketAction.UPDATE_WORLD_MUSIC, handler)
+    return ListenerToken(WebSocketAction.UPDATE_WORLD_MUSIC, handler)
+}

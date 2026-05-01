@@ -54,7 +54,8 @@ data class PlayerJumpData(
 data class PlayerInteractData(
     val objectId: String,
     val isPlayer: Boolean,
-    val userId: String
+    val userId: String,
+    val isNight: Boolean? = null,
 )
 
 /**
@@ -64,7 +65,8 @@ data class PlayerInteractData(
 data class PlayerNearbyData(
     val objectId: String,
     val isPlayer: Boolean,
-    val userId: String
+    val userId: String,
+    val isNight: Boolean? = null,
 )
 
 /**
@@ -74,7 +76,8 @@ data class PlayerNearbyData(
 data class TriggerEventData(
     val objectId: String,
     val eventType: String,
-    val userId: String
+    val userId: String,
+    val isNight: Boolean? = null,
 )
 
 /**
@@ -88,7 +91,8 @@ data class UserJoinData(
     val username: String,
     val isPlayer: Boolean,
     val position: Position,
-    val worldId: String
+    val worldId: String,
+    val isNight: Boolean? = null,
 )
 
 /**
@@ -297,4 +301,16 @@ data class MoveObjectData(
     val objectId: String,
     val position: Position,
     val animate: Boolean = true
+)
+
+/**
+ * World music update data model
+ */
+@Serializable
+data class WorldMusicUpdateData(
+    val dayUrl: String? = null,
+    val dayTitle: String? = null,
+    val nightUrl: String? = null,
+    val nightTitle: String? = null,
+    val isOutdoors: Boolean = false,
 )

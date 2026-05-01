@@ -126,6 +126,10 @@ enum class PropertyKey {
     // MoveObject properties
     ANIMATE,
     SAVED_POSITION_ID,
+
+    // ChangeWorldMusic properties
+    MUSIC_URL,
+    MUSIC_NAME,
 }
 
 /**
@@ -1722,6 +1726,36 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT,
                 description = "The transcribed text"
+            )
+        )
+
+        // ChangeWorldMusic node properties
+        is LogicNode.ChangeWorldMusic -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MUSIC_URL,
+                name = "Music",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.MUSIC_NAME,
+                name = "Music Name",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
             )
         )
     }

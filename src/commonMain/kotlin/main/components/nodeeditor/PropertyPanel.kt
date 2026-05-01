@@ -252,7 +252,7 @@ fun PropertyPanel(
                                     MediaSelector(
                                         url = propertyValues[propDef.key] ?: "",
                                         type = models.MediaType.Image,
-                                        onSelect = { url ->
+                                        onSelect = { url, _ ->
                                             propertyValues = propertyValues.edit { it[propDef.key] = url }
                                         },
                                         onClear = {
@@ -263,12 +263,40 @@ fun PropertyPanel(
                                     MediaSelector(
                                         url = propertyValues[propDef.key] ?: "",
                                         type = models.MediaType.Audio,
-                                        onSelect = { url ->
+                                        onSelect = { url, _ ->
                                             propertyValues = propertyValues.edit { it[propDef.key] = url }
                                         },
                                         onClear = {
                                             propertyValues = propertyValues.edit { it[propDef.key] = "" }
                                         }
+                                    )
+                                } else if (propDef.key == PropertyKey.MUSIC_URL) {
+                                    MediaSelector(
+                                        url = propertyValues[propDef.key] ?: "",
+                                        type = models.MediaType.Audio,
+                                        onSelect = { url, name ->
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.MUSIC_URL] = url
+                                                it[PropertyKey.MUSIC_NAME] = name
+                                            }
+                                        },
+                                        onClear = {
+                                            propertyValues = propertyValues.edit {
+                                                it[PropertyKey.MUSIC_URL] = ""
+                                                it[PropertyKey.MUSIC_NAME] = ""
+                                            }
+                                        }
+                                    )
+                                } else if (propDef.key == PropertyKey.MUSIC_NAME) {
+                                    // Hidden or read-only if desired, but let's allow manual edit too
+                                    DialogInput(
+                                        value = propertyValues[propDef.key] ?: "",
+                                        onInput = { newValue ->
+                                            propertyValues = propertyValues.edit {
+                                                it[propDef.key] = newValue
+                                            }
+                                        },
+                                        placeholder = propDef.defaultValue,
                                     )
                                 } else if (propDef.key == PropertyKey.ITEM_ID) {
                                     ItemPropertyEditor(

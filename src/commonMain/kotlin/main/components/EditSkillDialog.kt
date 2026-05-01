@@ -99,7 +99,7 @@ fun EditSkillDialog(
                 MediaSelector(
                     url = imageUrl,
                     type = models.MediaType.Image,
-                    onSelect = { imageUrl = it },
+                    onSelect = { url, _ -> imageUrl = url },
                     onClear = { imageUrl = "" },
                 )
             }
