@@ -2,9 +2,10 @@ package main.components.tools
 
 import androidx.compose.runtime.*
 import kotlinx.browser.window
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import main.api.LessonApi
 import main.theme.PrintStyles
+import main.utils.ImageUtils
 import models.LessonScene
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.*
@@ -12,9 +13,37 @@ import org.jetbrains.compose.web.dom.*
 @Composable
 fun LessonPrintPage(id: String) {
     var scene by remember { mutableStateOf<LessonScene?>(null) }
+    var scaledImages by remember(scene) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var scalingFinished by remember { mutableStateOf(false) }
     
     LaunchedEffect(id) {
         scene = LessonApi.getScene(id)
+    }
+
+    LaunchedEffect(scene) {
+        val currentScene = scene
+        if (currentScene == null) {
+            scalingFinished = false
+            return@LaunchedEffect
+        }
+        
+        val urlsToScale = mutableSetOf<String>()
+        currentScene.eventCards.forEach { it.image?.let { urlsToScale.add(it) } }
+        currentScene.items.forEach { it.image?.let { urlsToScale.add(it) } }
+        currentScene.referencePages.forEach { page ->
+            page.rows.forEach { it.image?.let { urlsToScale.add(it) } }
+        }
+
+        if (urlsToScale.isNotEmpty()) {
+            coroutineScope {
+                val deferreds = urlsToScale.associateWith { url ->
+                    async { ImageUtils.scaleImage(url, 0.333) }
+                }
+                scaledImages = deferreds.mapValues { it.value.await() }
+            }
+        }
+        
+        scalingFinished = true
     }
 
     DisposableEffect(Unit) {
@@ -26,8 +55,8 @@ fun LessonPrintPage(id: String) {
         }
     }
 
-    LaunchedEffect(scene) {
-        if (scene != null) {
+    LaunchedEffect(scene, scalingFinished) {
+        if (scene != null && scalingFinished) {
             delay(2000) // Increased delay to ensure images load
             window.print()
         }
@@ -77,7 +106,7 @@ fun LessonPrintPage(id: String) {
                                     overflow("hidden"); borderRadius(2.mm)
                                 }
                             }) {
-                                Img(src = it, attrs = { style { width(100.percent); height(100.percent); property("object-fit", "cover") } }) 
+                                Img(src = scaledImages[it] ?: it, attrs = { style { width(100.percent); height(100.percent); property("object-fit", "cover") } }) 
                             }
                         }
                         Span(attrs = { style { fontSize(12.pt); textAlign("center"); color(Color.black); fontWeight("bold") } }) { Text(card.text) }
@@ -95,7 +124,7 @@ fun LessonPrintPage(id: String) {
                     Div(attrs = {
                         classes(PrintStyles.itemContainer)
                     }) {
-                        item.image?.let { Img(src = it, attrs = { style { maxWidth(100.percent); maxHeight(100.percent); property("display", "block") } }) }
+                        item.image?.let { Img(src = scaledImages[it] ?: it, attrs = { style { maxWidth(100.percent); maxHeight(100.percent); property("display", "block") } }) }
                     }
                 }
             }
@@ -114,7 +143,7 @@ fun LessonPrintPage(id: String) {
                         style {
                             width(100.percent)
                             maxHeight(148.mm) // ~50% of 297mm
-                            property("object-fit", "cover")
+                            property("object-fit", "contain")
                             borderRadius(2.mm)
                             marginBottom(5.mm)
                         }
@@ -132,7 +161,7 @@ fun LessonPrintPage(id: String) {
                                     style { width(50.mm) }
                                 }) {
                                     row.image?.let {
-                                        Img(src = it, attrs = { style { width(100.percent); display(DisplayStyle.Block); borderRadius(2.mm) } })
+                                        Img(src = scaledImages[it] ?: it, attrs = { style { width(100.percent); display(DisplayStyle.Block); borderRadius(2.mm) } })
                                     }
                                 }
                                 Td(attrs = { classes(PrintStyles.referenceCell) }) {
