@@ -29,8 +29,21 @@ class ChangeWorldMusicNodeRunner(private val context: NodeRunnerContext) : NodeR
             return false
         }
 
-        val musicUrl = nodeData.properties.find { it.key == PropertyKey.MUSIC_URL }?.value?.trim().orEmpty()
-        val musicName = nodeData.properties.find { it.key == PropertyKey.MUSIC_NAME }?.value?.trim().orEmpty()
+        fun inKey(key: PropertyKey) = "${node.id}_in_${key.name.lowercase()}"
+
+        val musicUrlOverride = (eventData[inKey(PropertyKey.MUSIC_URL)] as? String)?.trim().orEmpty()
+        val musicUrl = if (musicUrlOverride.isNotBlank()) {
+            musicUrlOverride
+        } else {
+            nodeData.properties.find { it.key == PropertyKey.MUSIC_URL }?.value?.trim().orEmpty()
+        }
+
+        val musicNameOverride = (eventData[inKey(PropertyKey.MUSIC_NAME)] as? String)?.trim().orEmpty()
+        val musicName = if (musicNameOverride.isNotBlank()) {
+            musicNameOverride
+        } else {
+            nodeData.properties.find { it.key == PropertyKey.MUSIC_NAME }?.value?.trim().orEmpty()
+        }
 
         if (musicUrl.isBlank()) {
             WebSocketDebug.logError("ChangeWorldMusic: MUSIC_URL is missing or blank", null, context.session)

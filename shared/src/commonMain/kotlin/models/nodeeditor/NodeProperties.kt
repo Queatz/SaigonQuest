@@ -339,6 +339,46 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             )
         )
 
+        // PlayerFar node properties
+        is LogicNode.PlayerFar -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // VisitorFar node properties
+        is LogicNode.VisitorFar -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // PlayerLeave node properties
+        is LogicNode.PlayerLeave -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
+        // VisitorLeave node properties
+        is LogicNode.VisitorLeave -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
+
         // Dialogue node properties
         is LogicNode.Dialogue -> listOf(
             NodePropertyDefinition(
