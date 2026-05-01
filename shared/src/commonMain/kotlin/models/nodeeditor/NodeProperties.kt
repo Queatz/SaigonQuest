@@ -265,6 +265,13 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 defaultValue = ""
             ),
             NodePropertyDefinition(
+                key = PropertyKey.SAVED_POSITION_ID,
+                name = "Saved Position",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                defaultValue = ""
+            ),
+            NodePropertyDefinition(
                 key = PropertyKey.TARGET_POSITION,
                 name = "Target Position",
                 type = PropertyType.VECTOR3,
@@ -1811,7 +1818,7 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
             ),
             NodePropertyDefinition(
                 key = PropertyKey.TEXT,
-                name = "Output",
+                name = "Text",
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT,
                 description = "The text content"

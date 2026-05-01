@@ -212,8 +212,9 @@ fun PropertyPanel(
                                         }
                                     )
                                 } else if (propDef.key == PropertyKey.SAVED_POSITION_ID) {
+                                    val editorWorldId = propertyValues[PropertyKey.TARGET_WORLD_ID]?.takeIf { it.isNotEmpty() } ?: worldId
                                     SavedPositionPropertyEditor(
-                                        worldId = worldId,
+                                        worldId = editorWorldId,
                                         currentId = propertyValues[propDef.key] ?: "",
                                         onUpdate = { selectedId, posStr ->
                                             propertyValues = propertyValues.edit {
@@ -230,6 +231,18 @@ fun PropertyPanel(
                                         preselectWorldId = worldId,
                                         onUpdate = { newValue ->
                                             propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        }
+                                    )
+                                    
+                                    // Add manual entry for Target World URL
+                                    DialogInput(
+                                        value = propertyValues[propDef.key] ?: "",
+                                        onInput = { newValue ->
+                                            propertyValues = propertyValues.edit { it[propDef.key] = newValue }
+                                        },
+                                        placeholder = str("Manual World URL / ID"),
+                                        attrs = {
+                                            id("prop-${propDef.key.name.lowercase()}-manual")
                                         }
                                     )
                                 } else if (propDef.key == PropertyKey.ID && node.type is models.LogicNode.LocateObject) {

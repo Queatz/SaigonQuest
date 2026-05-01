@@ -10,6 +10,8 @@ import models.UpdatePlayerData
 import models.UserJoinData
 import models.UserLeaveData
 import models.WebSocketAction
+import lib.Vector3
+import main.components.SceneManager
 import main.utils.createCustomEvent
 
 /**
@@ -150,12 +152,26 @@ fun WebSocketApi.addTeleportPlayerListener(router: Router, listener: (Map<String
                         // If targetWorldUrl is provided, navigate to it
                         val targetWorldUrl = teleportData["targetWorldUrl"]
                         if (targetWorldUrl != null) {
+                            // Parse optional coordinates
+                            val x = teleportData["x"]?.toFloatOrNull()
+                            val y = teleportData["y"]?.toFloatOrNull()
+                            val z = teleportData["z"]?.toFloatOrNull()
+
+                            if (x != null && y != null && z != null) {
+                                console.log("WebSocketApi: Setting pending teleport to ($x, $y, $z)")
+                                SceneManager.setPendingTeleport(Vector3(x, y, z))
+                            }
+
                             // Normalize paths and compare with current world
                             val target = targetWorldUrl.trim().trim('/')
                             val current = router.currentPath.path.trim().trim('/')
 
                             if (current == target) {
                                 console.log("WebSocketApi: Teleport requested to current world ($current); skipping navigation")
+                                // If already in target world, teleport immediately
+                                SceneManager.getAndClearPendingTeleport()?.let { pos ->
+                                    SceneManager.getPlayerController()?.teleportTo(pos)
+                                }
                             } else {
                                 console.log("WebSocketApi: Teleporting with fade to world URL: $target")
                                 // Proactively disconnect WS from the current world so the server can announce leave immediately

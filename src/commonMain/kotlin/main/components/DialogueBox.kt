@@ -279,7 +279,7 @@ fun DialogueBox(
                         } else if (recorderState.isRecording) {
                             AudioRecorderUI(
                                 state = recorderState,
-                                isFullWidth = true,
+                                isFullWidth = isMobile.value,
                                 finishButtonText = "Done"
                             )
                         } else {
