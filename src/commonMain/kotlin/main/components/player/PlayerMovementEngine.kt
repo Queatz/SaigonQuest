@@ -123,7 +123,7 @@ class PlayerMovementEngine(
 
         val isOnWater = envInfo.isOnWater
         val actualSpeedMultiplier = if (isAutoRunning) {
-            max(speedMultiplier, 4.0f)
+            max(speedMultiplier, 2.0f)
         } else {
             speedMultiplier
         }

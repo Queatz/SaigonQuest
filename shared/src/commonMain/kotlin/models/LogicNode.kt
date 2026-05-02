@@ -686,6 +686,17 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Input,
         override val description: String = "A simple text node that provides its content as an output"
     ) : LogicNode
+
+    /**
+     * DropItem node - takes an item from the world owner's inventory and drops it in the world
+     */
+    @Serializable
+    data class DropItem(
+        override val id: NodeId = NodeId.DropItem,
+        override val label: String = "Drop item",
+        override val category: NodeCategory = NodeCategory.Action,
+        override val description: String = "Takes an item from the world owner's inventory and drops it in the world at a random position within a given radius"
+    ) : LogicNode
 }
 
 /**
@@ -759,6 +770,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.TranscribeAudio(),
         LogicNode.ChangeWorldMusic(),
         LogicNode.PlainText(),
+        LogicNode.DropItem(),
     )
 }
 

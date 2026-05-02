@@ -1324,6 +1324,24 @@ vi: Không đủ số lượng
 Failed to drop item
 vi: Không thể thả vật phẩm
 
+Drop item
+vi: Thả vật phẩm
+
+Takes an item from the world owner's inventory and drops it in the world at a random position within a given radius
+vi: Lấy một vật phẩm từ kho của chủ thế giới và thả nó vào thế giới tại một vị trí ngẫu nhiên trong một bán kính nhất định
+
+Radius
+vi: Bán kính
+
+The radius within which to drop the item
+vi: Bán kính mà vật phẩm sẽ được thả trong đó
+
+The items to drop (comma-separated IDs)
+vi: Các vật phẩm cần thả (ID cách nhau bằng dấu phẩy)
+
+The quantities of items to drop (comma-separated, same order as items)
+vi: Số lượng vật phẩm cần thả (cách nhau bằng dấu phẩy, cùng thứ tự với vật phẩm)
+
 Failed to pick up item
 vi: Không thể nhặt vật phẩm
 

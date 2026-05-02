@@ -130,6 +130,9 @@ enum class PropertyKey {
     // ChangeWorldMusic properties
     MUSIC_URL,
     MUSIC_NAME,
+
+    // Drop Item
+    RADIUS,
 }
 
 /**
@@ -1822,6 +1825,45 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 type = PropertyType.STRING,
                 direction = PropertyDirection.OUTPUT,
                 description = "The text content"
+            )
+        )
+
+        // DropItem node properties
+        is LogicNode.DropItem -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.TRIGGER,
+                name = "Trigger",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.INPUT
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.ITEMS,
+                name = "Items",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                description = "The items to drop (comma-separated IDs)",
+                options = listOf("ITEM_LIST")
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.QUANTITIES,
+                name = "Quantities",
+                type = PropertyType.STRING,
+                direction = PropertyDirection.INPUT,
+                description = "The quantities of items to drop (comma-separated, same order as items)"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.RADIUS,
+                name = "Radius",
+                type = PropertyType.NUMBER,
+                direction = PropertyDirection.INPUT,
+                defaultValue = "1",
+                description = "The radius within which to drop the item"
+            ),
+            NodePropertyDefinition(
+                key = PropertyKey.COMPLETE,
+                name = "Complete",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
             )
         )
     }

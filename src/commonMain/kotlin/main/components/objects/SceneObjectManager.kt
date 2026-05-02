@@ -118,11 +118,11 @@ class SceneObjectManager(
     internal var uiUpdateFrameCounter = 0
 
     init {
-        selectionOutlineLayer.outlineThickness = 4.0f
+        selectionOutlineLayer.outlineThickness = 3.0f
         selectionOutlineLayer.outlineColor = Color3.White()
 
         GraphicsSettings.addObserver {
-            selectionOutlineLayer.outlineThickness = if (GraphicsSettings.isLowGraphicsModeEnabled()) 2.0f else 4.0f
+            selectionOutlineLayer.outlineThickness = if (GraphicsSettings.isLowGraphicsModeEnabled()) 1.0f else 3.0f
         }
     }
 

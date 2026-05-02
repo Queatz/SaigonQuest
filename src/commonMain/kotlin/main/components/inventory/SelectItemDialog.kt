@@ -36,7 +36,7 @@ fun SelectItemDialog(
     initial: List<Pair<Item, Int>> = emptyList(),
     multiple: Boolean,
     useQuantities: Boolean,
-    minQuantity: Int = 0,
+    minQuantity: Int = 1,
     onConfirm: (List<Pair<Item, Int>>) -> Unit,
     onClose: () -> Unit,
 ) {

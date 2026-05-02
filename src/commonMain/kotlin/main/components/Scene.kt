@@ -1485,7 +1485,7 @@ fun SceneComponent(url: String) {
 
             // Calculate movement direction from input
             val moveDirection = inputHandler.calculateMovementDirection()
-            val speedMultiplier = if (inputHandler.isSprinting()) 4.0f else 1.0f
+            val speedMultiplier = if (inputHandler.isSprinting()) 2.0f else 1.0f
 
             // Update player position
             val newPosition = playerController.updatePlayerPosition(

@@ -424,6 +424,15 @@ object NodeRunnerFactory {
                 )
                 PlainTextNodeRunner(context)
             }
+
+            NodeId.DropItem -> {
+                WebSocketDebug.logMessage(
+                    "DROP_ITEM_RUNNER_SELECTED",
+                    "Selected DropItemNodeRunner for node: ${node.id}",
+                    context.session
+                )
+                DropItemNodeRunner(context)
+            }
             // Add more node runners as needed
             else -> {
                 WebSocketDebug.logMessage(

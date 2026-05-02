@@ -63,4 +63,5 @@ enum class NodeId {
     TranscribeAudio,
     ChangeWorldMusic,
     PlainText,
+    DropItem,
 }

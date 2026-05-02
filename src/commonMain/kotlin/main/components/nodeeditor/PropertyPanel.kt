@@ -322,7 +322,7 @@ fun PropertyPanel(
                                             }
                                         }
                                     )
-                                } else if (propDef.key == PropertyKey.ITEMS) {
+                                } else if (propDef.key == PropertyKey.ITEMS || (propDef.options.contains("ITEM_LIST") && propDef.key != PropertyKey.QUANTITIES)) {
                                     ItemListPropertyEditor(
                                         itemsCsv = propertyValues[PropertyKey.ITEMS] ?: "",
                                         quantitiesCsv = propertyValues[PropertyKey.QUANTITIES] ?: "",
