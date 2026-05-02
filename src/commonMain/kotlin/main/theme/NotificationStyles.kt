@@ -39,6 +39,7 @@ import org.jetbrains.compose.web.css.transform
 import org.jetbrains.compose.web.css.vh
 import org.jetbrains.compose.web.css.whiteSpace
 import org.jetbrains.compose.web.css.width
+import web.cssom.pct
 
 /**
  * Styles for notification components
@@ -130,6 +131,7 @@ object NotificationStyles : StyleSheet() {
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         marginBottom(4.px)
+        width(100.percent)
     }
     
     val notificationTitle by style {

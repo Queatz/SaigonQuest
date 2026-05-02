@@ -1,9 +1,17 @@
 package main.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
 import kotlinx.browser.window
+import kotlinx.coroutines.await
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 import lib.BinaryUtils
 import lib.Qr
 import lib.Vector3
@@ -32,6 +40,9 @@ fun QrDialog(
     worldDescription: String = ""
 ) {
     val router = Router.current
+    val scope = rememberCoroutineScope()
+    var isCopied by remember { mutableStateOf(false) }
+
     // Get the current URL and append player position if available
     val currentUrl = remember(playerPosition) { 
         val baseUrl = window.location.origin + router.currentPath.path
@@ -106,6 +117,29 @@ fun QrDialog(
             }
         },
         actions = {
+            // Copy link button
+            DialogButton(
+                onClick = {
+                    scope.launch {
+                        try {
+                            window.navigator.clipboard.writeText(currentUrl).await()
+                            isCopied = true
+                            delay(2.seconds)
+                            isCopied = false
+                        } catch (t: Throwable) {
+                            console.error("Failed to copy to clipboard", t)
+                        }
+                    }
+                },
+                style = DialogButtonStyle.Primary
+            ) {
+                if (isCopied) {
+                    Translated("Copied!")
+                } else {
+                    Translated("Copy link")
+                }
+            }
+
             // Close button as an action
             DialogButton(
                 onClick = onClose,
