@@ -10,8 +10,14 @@ import lib.SSAO2RenderingPipeline
 import lib.Scene
 import lib.Vector2
 import lib.Vector3
+import kotlinx.browser.document
 import main.components.GraphicsSettings
 import main.components.SceneManager
+import main.components.world.WorldLoader
+import main.components.world.PlayerActivity
+import main.components.objects.deselectCurrentObject
+import main.utils.requestPointerLock
+import main.utils.exitPointerLock
 import kotlin.math.PI
 
 /**
@@ -25,6 +31,28 @@ import kotlin.math.PI
  * - Smooth camera animations
  */
 class CameraController(private val scene: Scene) {
+    private var isFpsMode: Boolean = false
+    private var originalRadius: Float = 24f
+    private var originalMinZ: Float = 0.1f
+    private var originalFov: Float = 0.25f
+    private var originalTargetScreenOffset: Vector2 = Vector2(0f, -0.75f)
+
+    /**
+     * Checks if the camera is currently in FPS mode.
+     * 
+     * @return True if in FPS mode, false otherwise
+     */
+    fun isFpsMode(): Boolean = isFpsMode
+
+    private fun getHeadPosition(): Vector3? {
+        val playerController = SceneManager.getPlayerController()
+        val playerPos = playerController?.getPlayerPosition() ?: return null
+        val headPos = playerPos.clone()
+        val offset = if (playerController?.getPlayerActivity() == PlayerActivity.Sit) 0.3f else 0.8f
+        headPos.y += offset
+        return headPos
+    }
+
     // Initial FOV value when closest to target
     private val baseFov = 0.25f
 
@@ -144,6 +172,16 @@ class CameraController(private val scene: Scene) {
      * @return True if animation is in progress, false otherwise
      */
     fun updateAnimation(): Boolean {
+        if (isFpsMode) {
+            getHeadPosition()?.let { headPos ->
+                cameraTarget?.position?.copyFrom(headPos)
+            }
+            pipelineManager.updateDepthOfFieldFocus(cameraTarget)
+            pipelineManager.updateVignetteWeight()
+            updateSkybox()
+            return true
+        }
+
         pipelineManager.updateDepthOfFieldFocus(cameraTarget)
         pipelineManager.updateVignetteWeight()
 
@@ -525,6 +563,72 @@ class CameraController(private val scene: Scene) {
         camera.detachControl()
         
         console.log("Camera inputs disabled")
+    }
+
+    /**
+     * Toggles between FPS and Default camera modes.
+     */
+    fun toggleFpsMode() {
+        if (isLocked() && !isFpsMode) return
+
+        isFpsMode = !isFpsMode
+        val playerController = SceneManager.getPlayerController()
+
+        if (isFpsMode) {
+            // Enter FPS mode
+            originalRadius = camera.radius
+            originalMinZ = camera.minZ
+            originalFov = camera.fov
+            originalTargetScreenOffset = camera.targetScreenOffset.clone()
+
+            camera.radius = 0.1f
+            camera.lowerRadiusLimit = 0.1f
+            camera.upperRadiusLimit = 0.1f
+            camera.minZ = 0.5f
+            camera.fov = 1.0f // Standard FPS FOV (~57 degrees)
+            camera.targetScreenOffset = Vector2(0f, 0f)
+
+            // Disable OcclusionManager in FPS mode
+            WorldLoader.getCurrentOcclusionManager()?.setEnabled(false)
+
+            // Deselect any selected object when entering FPS mode
+            SceneManager.getObjectManager()?.deselectCurrentObject()
+
+            // Allow looking up and down almost fully
+            camera.lowerBetaLimit = 0.01f
+            camera.upperBetaLimit = (PI - 0.01f).toFloat()
+
+            requestPointerLock(scene.getEngine().getRenderingCanvas())
+
+            // Hide player meshes and move circle
+            playerController?.getPlayerMeshes()?.forEach { it.setEnabled(false) }
+            playerController?.getMoveCircle()?.setEnabled(false)
+            
+            // Sync cameraTarget position and ensure it's the camera's target
+            getHeadPosition()?.let { headPos ->
+                cameraTarget?.position?.copyFrom(headPos)
+                camera.setTarget(cameraTarget!!)
+            }
+        } else {
+            // Exit FPS mode
+            camera.updateConstraints()
+            camera.radius = originalRadius
+            camera.minZ = originalMinZ
+            camera.fov = originalFov
+            camera.targetScreenOffset = originalTargetScreenOffset
+
+            // Re-enable OcclusionManager when exiting FPS mode
+            WorldLoader.getCurrentOcclusionManager()?.setEnabled(true)
+
+            // Unlock pointer
+            exitPointerLock(document)
+
+            // Show player meshes and move circle
+            playerController?.getPlayerMeshes()?.forEach { it.setEnabled(true) }
+            playerController?.getMoveCircle()?.setEnabled(true)
+        }
+        
+        console.log("Camera mode toggled. FPS Mode: $isFpsMode")
     }
 
     /**

@@ -100,19 +100,20 @@ object DepthPicking {
      * Returns null if camera is missing or unprojection fails.
      */
     fun unprojectAtDepth(
-        scene: Scene,
+        camera: lib.Camera,
         x: Int,
         y: Int,
         z: Float,
     ): Vector3? {
+        val scene = camera.getScene()
         return try {
             Vector3.Unproject(
-                source = Vector3(x.toFloat(), y.toFloat(), toNonLinearDepth(scene, z)),
+                source = Vector3(x.toFloat(), y.toFloat(), toNonLinearDepth(camera, z)),
                 viewportWidth = scene.getEngine().getRenderWidth(),
                 viewportHeight = scene.getEngine().getRenderHeight(),
                 world = Matrix.Identity(),
-                view = scene.getViewMatrix(),
-                projection = scene.getProjectionMatrix(),
+                view = camera.getViewMatrix(),
+                projection = camera.getProjectionMatrix(),
             )
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -121,9 +122,9 @@ object DepthPicking {
         }
     }
 
-    fun toNonLinearDepth(scene: Scene, linearDepth: Float): Float {
-        val zNear = scene.activeCamera?.minZ ?: return 1f
-        val zFar = scene.activeCamera?.maxZ ?: return 1f
+    fun toNonLinearDepth(camera: lib.Camera, linearDepth: Float): Float {
+        val zNear = camera.minZ
+        val zFar = camera.maxZ
         return (zFar / (zFar - zNear)) * (1f - zNear / (linearDepth * (zFar - zNear) + zNear))
     }
 
@@ -145,8 +146,9 @@ object DepthPicking {
             console.error("Failed to read depth map pixel at $x,$y")
         }
         console.error("Depth at $x,$y: $d")
+        val camera = pickingCamera ?: scene.activeCamera ?: return null
         return unprojectAtDepth(
-            scene = scene,
+            camera = camera,
             x = sx,
             y = sy,
             z = d
@@ -197,6 +199,9 @@ object DepthPicking {
                         depthCam.minZ = active.minZ
                         depthCam.maxZ = active.maxZ
                         depthCam.fov = active.fov
+                        depthCam.targetScreenOffset = active.targetScreenOffset
+                        depthCam.upVector = active.upVector
+                        depthCam.viewport = active.viewport
                     }
                 }
                 scene.registerBeforeRender(sync)

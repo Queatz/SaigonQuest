@@ -47,6 +47,8 @@ import main.components.world.DepthPicking
 import main.components.world.isSkybox
 import main.utils.createObjectDoubleClickEvent
 import main.utils.createItemCollectedEvent
+import main.utils.requestPointerLock
+import main.utils.exitPointerLock
 import models.World
 import models.canUserEdit
 import kotlin.math.abs
@@ -341,6 +343,13 @@ class InputHandler(
                 else -> { /* Ignore other keyboard events */ }
             }
         }
+        // Handle Tab key to switch camera mode
+        else if (key == "tab") {
+            if (info.type == KeyboardEventTypes.KEYDOWN) {
+                event.preventDefault()
+                cameraController.toggleFpsMode()
+            }
+        }
     }
     
     private fun updateObserverTarget() {
@@ -438,12 +447,20 @@ class InputHandler(
 
         // Check if an object is selected or being dragged
         var isObjectSelected = objectManager?.getSelectedObject() != null
-        val isObjectBeingDragged = isObjectDragging || draggingObjectId != null
+        var isObjectBeingDragged = isObjectDragging || draggingObjectId != null
+        
+        if (cameraController.isFpsMode() && (isObjectSelected || isObjectBeingDragged)) {
+            cancelObjectManipulation()
+            isObjectSelected = false
+            isObjectBeingDragged = false
+        }
 
         console.log("[POINTER] ${info.type} - isObjectSelected: $isObjectSelected, isObjectBeingDragged: $isObjectBeingDragged")
 
         // Handle Babylon tap/double-tap events explicitly (touch & click)
         if (info.type == PointerEventTypes.POINTERDOUBLETAP && objectManager != null) {
+            if (cameraController.isFpsMode()) return
+
             // Ignore double-tap actions right after a multi-touch camera gesture
             if (isClickToMoveSuppressed()) {
                 console.log("[POINTER] Double-tap suppressed due to recent multi-touch gesture")
@@ -498,6 +515,8 @@ class InputHandler(
         }
 
         if (info.type == PointerEventTypes.POINTERTAP && objectManager != null) {
+            if (cameraController.isFpsMode()) return
+
             // Ignore tap actions right after a multi-touch camera gesture
             if (isClickToMoveSuppressed()) {
                 console.log("[POINTER] Tap suppressed due to recent multi-touch gesture")
@@ -626,6 +645,20 @@ class InputHandler(
 
         // Handle object selection on pointer down
         if (info.type == PointerEventTypes.POINTERDOWN && objectManager != null) {
+            if (cameraController.isFpsMode()) {
+                // Track pointer down state for drag detection even in FPS mode
+                isPointerDown = true
+                pointerStartX = scene.pointerX
+                pointerStartY = scene.pointerY
+                isDragging = false
+                didRotateCameraThisPointer = false
+
+                // Starting a new pointer interaction: cancel any pending single-tap
+                pendingTapSingleJob?.cancel()
+                pendingTapSingleJob = null
+                return
+            }
+
             // Track pointer down state and position
             isPointerDown = true
             pointerStartX = scene.pointerX
@@ -674,6 +707,24 @@ class InputHandler(
         }
 
         if (info.type == PointerEventTypes.POINTERUP) {
+            if (cameraController.isFpsMode()) {
+                if (!isDragging && !isObjectSelected) {
+                    if (document.asDynamic().pointerLockElement != null) {
+                        exitPointerLock(document)
+                    } else {
+                        requestPointerLock(scene.getEngine().getRenderingCanvas())
+                    }
+                }
+
+                // Reset pointer state if no pointers remain
+                if (activePointers == 0) {
+                    isPointerDown = false
+                    isDragging = false
+                    didRotateCameraThisPointer = false
+                }
+                return
+            }
+
             // If it was a click (not a drag) and no object is selected, handle movement
             if (!isDragging && !isObjectSelected) {
                 // Suppress click-to-move if a multi-touch gesture just occurred or is ongoing
@@ -730,11 +781,37 @@ class InputHandler(
     }
     
     /**
+     * Cancels any ongoing object manipulation and resets state.
+     */
+    private fun cancelObjectManipulation() {
+        if (isObjectDragging) {
+            try { DepthPicking.endPickingDepth() } catch (_: Throwable) {}
+            objectManager?.endDragging()
+            isObjectDragging = false
+            draggingObjectId = null
+        }
+        
+        objectManager?.deselectCurrentObject()
+        
+        if (!cameraInputsEnabled) {
+            enableCameraInputs()
+            cameraInputsEnabled = true
+        }
+        
+        objectClickPoint = null
+    }
+
+    /**
      * Handles pointer events for object manipulation.
      * 
      * @param info The pointer event information
      */
     private fun handleObjectManipulation(info: PointerInfo) {
+        if (cameraController.isFpsMode()) {
+            cancelObjectManipulation()
+            return
+        }
+        
         // This method will handle object selection, dragging, etc.
         // For now, we're just preventing player/camera movement when objects are selected
         
@@ -985,8 +1062,13 @@ class InputHandler(
      * Handles object hovering to show outline effect
      */
     private fun handleObjectHovering() {
-        if (objectManager == null) {
-            console.log("[DEBUG_HOVER] ObjectManager is null, cannot handle hovering")
+        if (cameraController.isFpsMode() || objectManager == null) {
+            objectManager?.unhighlightObject()
+            lastHoveredObjectId = null
+            if (isHoveringOverPlayer) {
+                isHoveringOverPlayer = false
+                document.body?.style?.cursor = "default"
+            }
             return
         }
         
@@ -1238,14 +1320,15 @@ class InputHandler(
      * Handles camera rotation and radius based on Arrow keys if the setting is enabled.
      */
     private fun handleCameraRotation() {
-        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled()) return
+        val isFpsMode = cameraController.isFpsMode()
+        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled() && !isFpsMode) return
 
         val camera = cameraController.getCamera()
         val rotationSpeed = 0.02f // Adjust as needed
         val radiusSpeed = 0.2f // Adjust as needed
 
         var changed = false
-        if ("alt" in pressedKeys) {
+        if ("alt" in pressedKeys && !isFpsMode) {
             // Control radius with ALT + Up/Down
             if ("arrowup" in pressedKeys) {
                 camera.radius -= radiusSpeed
@@ -1261,8 +1344,16 @@ class InputHandler(
                 camera.alpha -= rotationSpeed
                 changed = true
             }
+            if (isFpsMode && "a" in pressedKeys) {
+                camera.alpha += rotationSpeed
+                changed = true
+            }
             if ("arrowright" in pressedKeys) {
                 camera.alpha += rotationSpeed
+                changed = true
+            }
+            if (isFpsMode && "d" in pressedKeys) {
+                camera.alpha -= rotationSpeed
                 changed = true
             }
             if ("arrowup" in pressedKeys) {
@@ -1318,11 +1409,13 @@ class InputHandler(
         // WASD keys
         if ("w" in pressedKeys) moveZ += 1f
         if ("s" in pressedKeys) moveZ -= 1f
-        if ("a" in pressedKeys) moveX -= 1f
-        if ("d" in pressedKeys) moveX += 1f
+        if (!cameraController.isFpsMode()) {
+            if ("a" in pressedKeys) moveX -= 1f
+            if ("d" in pressedKeys) moveX += 1f
+        }
         
-        // Arrow keys (only control player if camera rotation is OFF and ALT is not pressed)
-        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled() && "alt" !in pressedKeys) {
+        // Arrow keys (only control player if camera rotation is OFF, not in FPS mode, and ALT is not pressed)
+        if (!GraphicsSettings.isCameraRotationWithArrowsEnabled() && !cameraController.isFpsMode() && "alt" !in pressedKeys) {
             if ("arrowup" in pressedKeys) moveZ += 1f
             if ("arrowdown" in pressedKeys) moveZ -= 1f
             if ("arrowleft" in pressedKeys) moveX -= 1f

@@ -525,6 +525,22 @@ class PlayerController(private val scene: Scene) {
      * @param moveDirection The direction vector to map
      */
     private fun updatePlayerDirection(moveDirection: Vector3) {
+        val cameraController = SceneManager.getCameraController()
+        if (cameraController?.isFpsMode() == true) {
+            val camera = cameraController.getCamera()
+            val forward = camera.getDirection(Vector3.Forward())
+            tempVector3.set(forward.x, 0f, forward.z)
+            if (tempVector3.length() > 0) {
+                tempVector3.normalize()
+            }
+            val newDirection = calculateFacingFromVector(tempVector3, playerDirection)
+            if (newDirection != playerDirection) {
+                playerDirection = newDirection
+                playerHandle?.updateDirection(playerDirection)
+            }
+            return
+        }
+
         // Normalize the direction vector to get a unit vector
         val normalizedDirection = moveDirection.clone()
         if (normalizedDirection.length() > 0) {

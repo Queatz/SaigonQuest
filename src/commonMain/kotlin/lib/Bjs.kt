@@ -1054,6 +1054,7 @@ abstract external class Camera : Node {
     fun getDirection(direction: Vector3): Vector3
     fun getDirectionToRef(direction: Vector3, result: Vector3): Vector3
     fun getForwardRay(length: Float = definedExternally): Ray
+    fun getViewMatrix(): Matrix
     fun getProjectionMatrix(usingRightHandedSystem: Boolean = definedExternally): Matrix
     fun getTransformationMatrix(): Matrix
     fun freezeProjectionMatrix()
@@ -1093,8 +1094,8 @@ external class ArcRotateCamera(
 
     fun attachControl(noPreventDefault: Boolean = definedExternally)
     fun detachControl()
-    fun getViewMatrix(): Matrix
     fun setTarget(target: Vector3)
+    fun setTarget(target: AbstractMesh)
     fun setPosition(position: Vector3)
 }
 

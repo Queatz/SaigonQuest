@@ -3,6 +3,7 @@ package main.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import main.components.SceneManager
 import main.theme.Styles
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Text
@@ -20,6 +21,7 @@ fun SettingsDialog(
     val outlineEnabled = remember { mutableStateOf(GraphicsSettings.isOutlineEnabled()) }
     val shadowsEnabled = remember { mutableStateOf(GraphicsSettings.isShadowsEnabled()) }
     val cameraRotationWithArrows = remember { mutableStateOf(GraphicsSettings.isCameraRotationWithArrowsEnabled()) }
+    val fpsMode = remember { mutableStateOf(SceneManager.getCameraController()?.isFpsMode() ?: false) }
     val alwaysShowQr = remember { mutableStateOf(GraphicsSettings.isAlwaysShowQrEnabled()) }
     val showLogoutDialog = remember { mutableStateOf(false) }
 
@@ -119,6 +121,29 @@ fun SettingsDialog(
                     }
                 ) {
                     Text("${translated("Arrow keys rotate camera")}: ${if (cameraRotationWithArrows.value) translated("On") else translated("Off")}")
+                }
+
+                // FPS Camera
+                DialogButton(
+                    onClick = {
+                        SceneManager.getCameraController()?.toggleFpsMode()
+                        fpsMode.value = SceneManager.getCameraController()?.isFpsMode() ?: false
+                    },
+                    style = DialogButtonStyle.Primary,
+                    attrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                ) {
+                    Text("${translated("FPS camera")}: ${if (fpsMode.value) translated("On") else translated("Off")}")
+                }
+                org.jetbrains.compose.web.dom.Div(
+                    attrs = {
+                        classes(Styles.hintText)
+                    }
+                ) {
+                    Text(translated("Tip: You can also press Tab to toggle"))
                 }
             }
 

@@ -445,7 +445,7 @@ fun PlayerDialog(
                                 onClick = { showMyWorldsDialog.value = true },
                                 style = DialogButtonStyle.Primary
                             ) {
-                                Translated("My Worlds")
+                                Translated("My worlds")
                             }
                         } else {
                             DialogButton(

@@ -807,7 +807,7 @@ object Styles : StyleSheet() {
         width(100.percent)
         color(Theme.colors.onSurface)
         padding(0.px)
-        fontSize(16.px)
+        fontSize(20.px)
 
         dark(self) {
             color(Theme.colors.onSurfaceDark)
@@ -2031,6 +2031,14 @@ object Styles : StyleSheet() {
         dark(self) {
             backgroundColor(Theme.colors.errorDark)
         }
+    }
+
+    val hintText by style {
+        fontSize(12.px)
+        color(Theme.colors.onSurfaceVariant)
+        dark(self) { color(Theme.colors.onSurfaceVariantDark) }
+        marginTop(4.px)
+        textAlign("center")
     }
 
     // Transient toast message centered at the bottom of the viewport

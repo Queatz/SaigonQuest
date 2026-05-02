@@ -156,3 +156,25 @@ fun toggleFullscreen() {
         console.error("Fullscreen API error: ", e)
     }
 }
+
+/**
+ * Safely requests pointer lock on an element.
+ */
+fun requestPointerLock(element: Element?) {
+    try {
+        element?.asDynamic()?.requestPointerLock()
+    } catch (e: Throwable) {
+        console.error("Pointer Lock error: ", e)
+    }
+}
+
+/**
+ * Safely exits pointer lock on a document.
+ */
+fun exitPointerLock(doc: Document) {
+    try {
+        doc.asDynamic()?.exitPointerLock()
+    } catch (e: Throwable) {
+        console.error("Pointer Lock exit error: ", e)
+    }
+}

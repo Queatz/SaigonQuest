@@ -491,7 +491,11 @@ class CameraPipelineManager(
         val activeCamera = scene.activeCamera ?: camera
         val currentRadius = (activeCamera as? ArcRotateCamera)?.radius ?: camera.radius
         
-        val weight = maxWeight - (currentRadius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
+        val weight = if (maxRadius > minRadius) {
+            maxWeight - (currentRadius - minRadius) * (maxWeight - minWeight) / (maxRadius - minRadius)
+        } else {
+            minWeight
+        }
         vignettePostProcess.vignetteWeight = weight
     }
 

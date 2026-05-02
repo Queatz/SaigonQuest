@@ -1,12 +1,10 @@
 package main.components
 
 import androidx.compose.runtime.*
+import main.components.*
 import main.api.QuestApi
 import main.api.WebSocketApi
 import main.api.addQuestProgressListener
-import main.components.CircleButton
-import main.components.FramedBorder
-import main.components.rememberIsMobile
 import main.theme.QuestStyles
 import main.theme.Styles
 import models.PlayerQuestProgress
@@ -34,8 +32,9 @@ fun QuestTracker() {
                 )
                 
                 val currentQuestsById = questsById.toMutableMap()
-                // Only fetch definitions for the quests we are actually showing (top 3, or all if dialog is open)
-                val questsToFetch = if (showAllDialog) sortedProgress else sortedProgress.take(3)
+                // Only fetch definitions for the quests we are actually showing (top 3 incomplete, or all if dialog is open)
+                val incompleteQuests = sortedProgress.filter { !it.completed }
+                val questsToFetch = if (showAllDialog) sortedProgress else incompleteQuests.take(3)
                 
                 for (p in questsToFetch) {
                     if (!currentQuestsById.containsKey(p.questId)) {
@@ -75,49 +74,58 @@ fun QuestTracker() {
         }
     }
 
+    val incompleteQuests = progressList.filter { !it.completed }
+    val completedQuests = progressList.filter { it.completed }
+
     Div(attrs = { classes(QuestStyles.leftContainer) }) {
         if (progressList.isNotEmpty()) {
             if (isMobile) {
-                CircleButton(
-                    onClick = { showAllDialog = true },
-                    icon = "📜",
-                    title = translated("Quests"),
-                    badgeCount = 0,
-                )
+                if (incompleteQuests.isNotEmpty() || completedQuests.isNotEmpty()) {
+                    CircleButton(
+                        onClick = { showAllDialog = true },
+                        icon = "📜",
+                        title = translated("Quests"),
+                        badgeCount = 0,
+                    )
+                }
             } else {
-                FramedBorder(attrs = {
-                    style {
-                        property("pointer-events", "all")
-                    }
-                }) {
-                    Div(attrs = {
+                if (incompleteQuests.isNotEmpty() || completedQuests.isNotEmpty()) {
+                    FramedBorder(attrs = {
                         style {
-                            padding(12.px)
-                            display(DisplayStyle.Flex)
-                            flexDirection(FlexDirection.Column)
-                            gap(8.px)
-                            minWidth(200.px)
+                            property("pointer-events", "all")
                         }
                     }) {
-                        progressList.take(3).forEach { progress ->
-                            val quest = questsById[progress.questId] ?: return@forEach
-                            QuestTrackerItem(
-                                quest = quest,
-                                progress = progress,
-                                onClick = { selectedQuestId = quest.key }
-                            )
-                        }
+                        Div(attrs = {
+                            style {
+                                padding(12.px)
+                                display(DisplayStyle.Flex)
+                                flexDirection(FlexDirection.Column)
+                                gap(8.px)
+                                minWidth(200.px)
+                            }
+                        }) {
+                            incompleteQuests.take(3).forEach { progress ->
+                                val quest = questsById[progress.questId] ?: return@forEach
+                                QuestTrackerItem(
+                                    quest = quest,
+                                    progress = progress,
+                                    onClick = { selectedQuestId = quest.key }
+                                )
+                            }
 
-                        if (progressList.size > 3) {
-                            Button(attrs = {
-                                classes(Styles.secondaryButton)
-                                style {
-                                    marginTop(4.px)
-                                    property("pointer-events", "all")
+                            if (incompleteQuests.size > 3 || completedQuests.isNotEmpty()) {
+                                DialogButton(
+                                    onClick = { showAllDialog = true },
+                                    style = DialogButtonStyle.Secondary,
+                                    attrs = {
+                                        style {
+                                            marginTop(4.px)
+                                            property("pointer-events", "all")
+                                        }
+                                    }
+                                ) {
+                                    Translated("View all quests")
                                 }
-                                onClick { showAllDialog = true }
-                            }) {
-                                Translated("View all quests")
                             }
                         }
                     }
@@ -227,14 +235,16 @@ fun AllQuestsDialog(
                 progressList.forEach { progress ->
                     val quest = questsById[progress.questId]
                     if (quest != null) {
-                        QuestTrackerItem(
-                            quest = quest,
-                            progress = progress,
-                            onClick = { 
-                                onQuestClick(quest.key)
-                                onClose()
-                            }
-                        )
+                        Paper {
+                            QuestTrackerItem(
+                                quest = quest,
+                                progress = progress,
+                                onClick = { 
+                                    onQuestClick(quest.key)
+                                    onClose()
+                                }
+                            )
+                        }
                     } else {
                         // Still loading or failed to load
                         Div(attrs = {

@@ -41,7 +41,7 @@ fun MyWorldsDialog(
 
     BaseDialog(
         onClose = onClose,
-        title = translated("My Worlds"),
+        title = translated("My worlds"),
         headerActions = {
             if (worlds.isNotEmpty()) {
                 DialogButton(
