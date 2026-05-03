@@ -819,7 +819,7 @@ object AlibabaAiClient : AiClient {
 
     private suspend fun callQwenImageEdit(imageUrl: String, prompt: String, apiKey: String, size: String? = null): String? {
         val request = WanImageSynthesisRequest(
-            model = "qwen-image-edit-max",
+            model = "qwen-image-edit",
             input = WanImageInput(
                 messages = listOf(
                     WanImageMessage(
@@ -938,7 +938,7 @@ object AlibabaAiClient : AiClient {
         println("[DEBUG_LOG] Alibaba Background Removal: Original image size detected: $size")
 
         // 1. Get the mask from Alibaba
-        val maskPrompt = "Isolate the foreground of this image. Return the foreground as pure white (#FFFFFF) and the background as pure black (#000000). Do not return any other colors. Do not resize, crop, or distort the original image or mask."
+        val maskPrompt = "Isolate the foreground of this image as a precise mask. Return the foreground as pure white (#FFFFFF), and the background as pure black (#000000). Do not return any other colors. Do not crop, resize, rotate, or add padding."
 
         val maskUrl = callQwenImageEdit(imageUrl, maskPrompt, apiKey, size)
         if (maskUrl == null) {

@@ -87,7 +87,7 @@ object ImageUtils {
                     id,
                     intermediateCanvas.width,
                     intermediateCanvas.height,
-                    0.5,
+                    0.125,
                 )
                 ictx.putImageData(
                     intermediateData,
@@ -151,7 +151,7 @@ object ImageUtils {
      */
     private fun applyColorBoost(data: dynamic) {
         val len = data.length as Int
-        val contrast = 1.1
+        val contrast = 1.4
         val saturation = 1.2
 
         for (i in 0 until len step 4) {

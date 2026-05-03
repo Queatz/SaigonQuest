@@ -34,6 +34,9 @@ fun UploadMediaDialog(
 ) {
     var items by remember { mutableStateOf(listOf<UserMedia>()) }
     var loading by remember { mutableStateOf(false) }
+    var loadingMore by remember { mutableStateOf(false) }
+    var offset by remember { mutableStateOf(0) }
+    var hasMore by remember { mutableStateOf(true) }
     var uploading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var renameItem by remember { mutableStateOf<UserMedia?>(null) }
@@ -46,18 +49,55 @@ fun UploadMediaDialog(
         scope.launch {
             loading = true
             error = null
+            offset = 0
+            hasMore = true
             try {
                 // Ensure we have a valid user/token (visitor or player)
                 UserApi.getCurrentUser()
-                var allItems = MediaApi.list()
+                val limit = 20
+                var allItems = MediaApi.list(limit = limit, offset = 0)
                 if (filter != null) {
                     allItems = allItems.filter { it.type == filter }
                 }
                 items = allItems
+                offset = allItems.size
+                if (allItems.size < limit) {
+                    hasMore = false
+                }
             } catch (t: Throwable) {
                 error = t.message ?: "Failed to load media"
             } finally {
                 loading = false
+            }
+        }
+    }
+
+    fun loadMore() {
+        if (loading || loadingMore || !hasMore) return
+        
+        val scope = MainScope()
+        scope.launch {
+            loadingMore = true
+            try {
+                val limit = 20
+                var newItems = MediaApi.list(limit = limit, offset = offset)
+                if (filter != null) {
+                    newItems = newItems.filter { it.type == filter }
+                }
+                
+                if (newItems.isEmpty()) {
+                    hasMore = false
+                } else {
+                    items = items + newItems
+                    offset += newItems.size
+                    if (newItems.size < limit) {
+                        hasMore = false
+                    }
+                }
+            } catch (t: Throwable) {
+                error = t.message ?: "Failed to load more media"
+            } finally {
+                loadingMore = false
             }
         }
     }
@@ -157,8 +197,15 @@ fun UploadMediaDialog(
                 style {
                     maxHeight(360.px)
                 }
+                onScroll {
+                    val target = it.target.asDynamic()
+                    val threshold = 100
+                    if (target.scrollHeight - target.scrollTop - target.clientHeight < threshold) {
+                        loadMore()
+                    }
+                }
             }) {
-                if (loading) {
+                if (loading && items.isEmpty()) {
                     P { Translated("Loading media...") }
                 } else if (items.isEmpty()) {
                     P { Translated("No media yet. Upload some media above.") }
@@ -260,6 +307,9 @@ fun UploadMediaDialog(
                                 }
                             }
                         }
+                    }
+                    if (loadingMore) {
+                        P { Translated("Loading more...") }
                     }
                 }
             }
