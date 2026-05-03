@@ -222,9 +222,6 @@ fun UploadMediaDialog(
                             if (item.type == MediaType.Image) {
                                 Img(src = src, attrs = {
                                     classes(Styles.mediaLibraryItemImage)
-                                    style {
-                                        height(100.percent)
-                                    }
                                 })
                             } else if (item.type == MediaType.Audio) {
                                 Div({

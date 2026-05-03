@@ -959,9 +959,7 @@ object Styles : StyleSheet() {
     }
 
     val mediaLibraryItemImage by style {
-        width(100.percent)
-        height(100.px)
-        property("object-fit", "cover")
+        property("object-fit", "contain")
         borderRadius(8.px)
     }
 
