@@ -27,3 +27,8 @@ data class AiImageRequest(
 data class AiImageResponse(
     val imageUrl: String,
 )
+
+@Serializable
+data class AiBackgroundRemovalRequest(
+    val imageUrl: String,
+)

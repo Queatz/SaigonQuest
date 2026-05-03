@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
+import io.ktor.http.*
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 
 /**
@@ -70,6 +71,13 @@ interface AiClient {
     ): String?
 
     /**
+     * Remove the background from the provided image URL and return the processed image bytes.
+     */
+    suspend fun removeBackground(
+        imageUrl: String,
+    ): ByteArray?
+
+    /**
      * Generate an image from the provided prompt and return a persistent local URL.
      */
     suspend fun generateImageUrl(
@@ -80,20 +88,74 @@ interface AiClient {
     ): String? {
         val styledPrompt = "$prompt\n\n$style"
         val url = generateImage(styledPrompt, size) ?: return null
-        if (url.startsWith("http") && !url.contains("/gen/") && !url.contains("/static/")) {
-            // Download and save locally or upload to content server
-            return try {
-                HttpClient(CIO).use { client ->
-                    val bytes = client.get(url).body<ByteArray>()
-                    if (token != null) {
-                        uploadAsset(bytes, "png", token)
-                    } else {
-                        saveGenFile(bytes, "png")
-                    }
+        return downloadAndSave(url, token)
+    }
+
+    /**
+     * Remove the background from the provided image URL and return a persistent local URL.
+     */
+    suspend fun removeBackgroundUrl(
+        imageUrl: String,
+        token: String? = null,
+    ): String? {
+        val bytes = removeBackground(imageUrl) ?: return null
+        return if (token != null) {
+            uploadAsset(bytes, "png", token)
+        } else {
+            saveGenFile(bytes, "png")
+        }
+    }
+
+    /**
+     * Helper to get bytes from a URL, either local or remote.
+     */
+    suspend fun getBytes(url: String): ByteArray? {
+        val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "https://api.saigon.quest").trimEnd('/')
+        if (url.startsWith(apiBase + "/gen/")) {
+            val fileName = url.substringAfter("/gen/")
+            val file = java.io.File("gen", fileName)
+            if (file.exists()) {
+                return try {
+                    file.readBytes()
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    null
                 }
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                url // Fallback to temporary URL
+            }
+        }
+        
+        return try {
+            HttpClient(CIO).use { client ->
+                val response = client.get(url)
+                if (response.status.isSuccess()) {
+                    response.body<ByteArray>()
+                } else {
+                    println("[ERROR] getBytes failed for $url: ${response.status}")
+                    null
+                }
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Helper to download an image from a URL and save it locally or upload to content server.
+     */
+    private suspend fun downloadAndSave(url: String, token: String?): String? {
+        val contentServerUrl = (System.getenv("CONTENT_SERVER_URL") ?: System.getProperty("CONTENT_SERVER_URL") ?: "https://content.saigon.quest").trimEnd('/')
+        val isAlreadyOnContent = url.startsWith(contentServerUrl)
+        val isGen = url.contains("/gen/")
+        val isStatic = url.contains("/static/")
+
+        if (url.startsWith("http") && ((token != null && !isAlreadyOnContent) || (token == null && !isGen && !isStatic))) {
+            // Download and save locally or upload to content server
+            val bytes = getBytes(url) ?: return url
+            return if (token != null) {
+                uploadAsset(bytes, "png", token)
+            } else {
+                saveGenFile(bytes, "png")
             }
         }
         return url
@@ -103,9 +165,15 @@ interface AiClient {
      * Helper to upload bytes to the content server
      */
     suspend fun uploadAsset(bytes: ByteArray, extension: String, token: String): String? {
+        println("[DEBUG_LOG] uploadAsset called with ${bytes.size} bytes")
+        if (bytes.isEmpty()) {
+            println("[ERROR] uploadAsset called with empty bytes!")
+            return null
+        }
         val tempFile = java.io.File.createTempFile("ai_gen_", ".$extension")
         return try {
             tempFile.writeBytes(bytes)
+            println("[DEBUG_LOG] uploadAsset: Written to temp file ${tempFile.absolutePath}, size: ${tempFile.length()}")
             utils.AssetUploader.upload(tempFile, token)
         } finally {
             try { tempFile.delete() } catch (_: Throwable) {}
@@ -116,12 +184,18 @@ interface AiClient {
      * Helper to save bytes to gen/ directory and return the URL
      */
     fun saveGenFile(bytes: ByteArray, extension: String): String? {
+        println("[DEBUG_LOG] saveGenFile called with ${bytes.size} bytes")
+        if (bytes.isEmpty()) {
+            println("[ERROR] saveGenFile called with empty bytes!")
+            return null
+        }
         val fileName = "${java.util.UUID.randomUUID()}.$extension"
         val dir = java.io.File("gen")
         if (!dir.exists()) dir.mkdirs()
         val file = java.io.File(dir, fileName)
         return try {
             file.writeBytes(bytes)
+            println("[DEBUG_LOG] saveGenFile: Written to ${file.absolutePath}, size: ${file.length()}")
             val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "https://api.saigon.quest").trimEnd('/')
             "$apiBase/gen/$fileName"
         } catch (e: Throwable) {

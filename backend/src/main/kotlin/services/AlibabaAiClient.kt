@@ -17,6 +17,11 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.awt.Color
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
@@ -27,6 +32,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readBytes
 import io.ktor.websocket.readText
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import utils.json as appJson
 
 /**
@@ -221,11 +227,14 @@ object AlibabaAiClient : AiClient {
         @SerialName("prompt_extend")
         val promptExtend: Boolean = true,
         val watermark: Boolean = false,
+        @SerialName("output_format")
+        val outputFormat: String? = null,
     )
 
     @Serializable
     private data class WanImageContent(
-        val text: String,
+        val text: String? = null,
+        val image: String? = null,
     )
 
     @Serializable
@@ -247,31 +256,31 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
-    private data class ImageResult(
+    internal data class ImageResult(
         val url: String? = null,
     )
 
     @Serializable
-    private data class WanImageOutputContent(
+    internal data class WanImageOutputContent(
         val image: String? = null,
         val type: String? = null,
     )
 
     @Serializable
-    private data class WanImageOutputMessage(
+    internal data class WanImageOutputMessage(
         val role: String? = null,
         val content: List<WanImageOutputContent>? = null,
     )
 
     @Serializable
-    private data class WanImageChoice(
+    internal data class WanImageChoice(
         @SerialName("finish_reason")
         val finishReason: String? = null,
         val message: WanImageOutputMessage? = null,
     )
 
     @Serializable
-    private data class ImageSynthesisOutput(
+    internal data class ImageSynthesisOutput(
         @SerialName("task_id")
         val taskId: String? = null,
         @SerialName("task_status")
@@ -286,13 +295,14 @@ object AlibabaAiClient : AiClient {
     )
 
     @Serializable
-    private data class ImageSynthesisResponse(
+    internal data class ImageSynthesisResponse(
         @SerialName("request_id")
         val requestId: String? = null,
         val output: ImageSynthesisOutput? = null,
         val code: String? = null,
         val message: String? = null,
     )
+
 
     override suspend fun promptText(
         systemPrompt: String,
@@ -727,6 +737,239 @@ object AlibabaAiClient : AiClient {
             imageUrl
         } catch (e: Throwable) {
             println("[DEBUG_LOG] Alibaba Image Synthesis exception: ${e.message}")
+            null
+        }
+    }
+
+    internal fun combineImageAndMask(originalBytes: ByteArray, maskBytes: ByteArray): ByteArray? {
+        return try {
+            val originalImage = ImageIO.read(ByteArrayInputStream(originalBytes))
+            val maskImage = ImageIO.read(ByteArrayInputStream(maskBytes))
+
+            if (originalImage == null) {
+                println("[ERROR] Alibaba Background Removal: Failed to read original image")
+                return null
+            }
+            if (maskImage == null) {
+                println("[ERROR] Alibaba Background Removal: Failed to read mask image")
+                return null
+            }
+
+            val width = originalImage.width
+            val height = originalImage.height
+
+            // Ensure original image is in a format we can easily work with, preserving alpha if any
+            val og = if (originalImage.type == BufferedImage.TYPE_INT_ARGB) originalImage else {
+                val temp = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                val g = temp.createGraphics()
+                g.drawImage(originalImage, 0, 0, null)
+                g.dispose()
+                temp
+            }
+            
+            // Prepare mask: resize to match original if necessary, use nearest neighbor for pixel art
+            val mask = if (maskImage.width == width && maskImage.height == height) maskImage else {
+                val temp = BufferedImage(width, height, maskImage.type.takeIf { it != 0 } ?: BufferedImage.TYPE_INT_RGB)
+                val g = temp.createGraphics()
+                g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
+                g.drawImage(maskImage, 0, 0, width, height, null)
+                g.dispose()
+                temp
+            }
+
+            val combined = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val rgb = og.getRGB(x, y)
+                    val maskRgb = mask.getRGB(x, y)
+                    
+                    val maskColor = Color(maskRgb)
+                    // Rec. 709 luminance for alpha
+                    val alphaValue = ((maskColor.red * 0.2126) + (maskColor.green * 0.7152) + (maskColor.blue * 0.0722)).roundToInt().coerceIn(0, 255)
+                    
+                    // Combine original pixel with mask alpha
+                    val originalAlpha = (rgb shr 24) and 0xFF
+                    val finalAlpha = ((originalAlpha * alphaValue) / 255).coerceIn(0, 255)
+                    
+                    val finalRgb = (finalAlpha shl 24) or (rgb and 0x00FFFFFF)
+                    combined.setRGB(x, y, finalRgb)
+                }
+            }
+
+            val baos = ByteArrayOutputStream()
+            val success = ImageIO.write(combined, "PNG", baos)
+            if (!success) {
+                println("[ERROR] Alibaba Background Removal: No PNG writer found!")
+                return null
+            }
+            val result = baos.toByteArray()
+            println("[DEBUG_LOG] Alibaba Background Removal: ImageIO.write success, size: ${result.size} bytes")
+            if (result.isEmpty()) {
+                println("[ERROR] Alibaba Background Removal: ImageIO.write produced 0 bytes!")
+                return null
+            }
+            result
+        } catch (e: Throwable) {
+            println("[ERROR] Alibaba combineImageAndMask exception: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private suspend fun callQwenImageEdit(imageUrl: String, prompt: String, apiKey: String, size: String? = null): String? {
+        val request = WanImageSynthesisRequest(
+            model = "qwen-image-edit-max",
+            input = WanImageInput(
+                messages = listOf(
+                    WanImageMessage(
+                        content = listOf(
+                            WanImageContent(image = imageUrl),
+                            WanImageContent(text = prompt)
+                        )
+                    )
+                )
+            ),
+            parameters = ImageSynthesisParameters(
+                size = size ?: "1024*1024",
+                outputFormat = "png"
+            )
+        )
+
+        return try {
+            val response: HttpResponse = http.post("https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation") {
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                header("X-DashScope-OssResourceResolve", "enable")
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+
+            if (!response.status.isSuccess()) {
+                val err = response.bodyAsText()
+                println("[DEBUG_LOG] Alibaba Qwen Image Edit HTTP error ${response.status}: $err")
+                return null
+            }
+
+            val rawInitial = response.bodyAsText()
+            val initialData = try {
+                appJson.decodeFromString<ImageSynthesisResponse>(rawInitial)
+            } catch (e: Throwable) {
+                println("[DEBUG_LOG] Alibaba Qwen Image Edit initial parse error: ${e.message}")
+                null
+            } ?: return null
+
+            if (!initialData.code.isNullOrBlank()) {
+                println("[DEBUG_LOG] Alibaba Qwen Image Edit business error: ${initialData.code} - ${initialData.message}")
+                return null
+            }
+
+            val directUrl = initialData.output?.results?.firstOrNull()?.url
+                ?: initialData.output?.choices?.firstOrNull()?.message?.content?.firstOrNull { it.type == "image" || it.image != null }?.image
+
+            if (directUrl != null) {
+                return directUrl
+            }
+
+            val taskId = initialData.output?.taskId ?: return null
+
+            var resultUrl: String? = null
+            var attempts = 0
+            while (attempts < 60) {
+                delay(2000)
+                val pollResp = http.get("https://dashscope-intl.aliyuncs.com/api/v1/tasks/$taskId") {
+                    header(HttpHeaders.Authorization, "Bearer $apiKey")
+                }
+
+                if (pollResp.status.isSuccess()) {
+                    val rawPoll = pollResp.bodyAsText()
+                    val pollData = try {
+                        appJson.decodeFromString<ImageSynthesisResponse>(rawPoll)
+                    } catch (e: Throwable) {
+                        null
+                    }
+
+                    if (pollData != null) {
+                        val status = pollData.output?.taskStatus
+                        val finished = pollData.output?.finished ?: false
+
+                        if (status == "SUCCEEDED" || (finished && pollData.output?.choices != null)) {
+                            resultUrl = pollData.output?.results?.firstOrNull()?.url
+                                ?: pollData.output.choices?.firstOrNull()?.message?.content?.firstOrNull { it.type == "image" || it.image != null }?.image
+                            break
+                        } else if (status == "FAILED" || status == "CANCELLED") {
+                            println("[DEBUG_LOG] Alibaba Qwen Image Edit task $status: ${pollData.output?.errorMessage}")
+                            break
+                        }
+                    }
+                }
+                attempts++
+            }
+            resultUrl
+        } catch (e: Throwable) {
+            println("[DEBUG_LOG] Alibaba Qwen Image Edit exception: ${e.message}")
+            null
+        }
+    }
+
+    override suspend fun removeBackground(imageUrl: String): ByteArray? {
+        val apiKey = System.getenv("ALIBABA_API_KEY")
+            ?: System.getProperty("ALIBABA_API_KEY")
+            ?: "sk-6c257c3e09b349bf81c631f31ef6679a"
+
+        println("[DEBUG_LOG] Alibaba Background Removal starting for $imageUrl")
+
+        // 0. Download original image and get its size
+        val originalBytes = getBytes(imageUrl)
+        if (originalBytes == null) {
+            println("[ERROR] Alibaba Background Removal: Failed to download original image")
+            return null
+        }
+
+        val size = try {
+            val img = ImageIO.read(ByteArrayInputStream(originalBytes))
+            if (img != null) {
+                "${img.width}*${img.height}"
+            } else null
+        } catch (e: Throwable) {
+            println("[ERROR] Alibaba Background Removal: Failed to read image dimensions: ${e.message}")
+            null
+        }
+
+        println("[DEBUG_LOG] Alibaba Background Removal: Original image size detected: $size")
+
+        // 1. Get the mask from Alibaba
+        val maskPrompt = "Isolate the foreground of this image. Return the foreground as pure white (#FFFFFF) and the background as pure black (#000000). Do not return any other colors. Do not resize, crop, or distort the original image or mask."
+
+        val maskUrl = callQwenImageEdit(imageUrl, maskPrompt, apiKey, size)
+        if (maskUrl == null) {
+            println("[ERROR] Alibaba Background Removal: Failed to get mask from AI")
+            return null
+        }
+
+        println("[DEBUG_LOG] Alibaba Background Removal: Mask URL obtained: $maskUrl")
+
+        return try {
+            val maskBytes = getBytes(maskUrl)
+
+            if (maskBytes == null) {
+                println("[ERROR] Alibaba Background Removal: Failed to download mask bytes")
+                return null
+            }
+
+            println("[DEBUG_LOG] Alibaba Background Removal: Downloaded original (${originalBytes.size} bytes) and mask (${maskBytes.size} bytes)")
+
+            // 3. Combine them
+            val combinedBytes = combineImageAndMask(originalBytes, maskBytes)
+            if (combinedBytes == null) {
+                println("[ERROR] Alibaba Background Removal: Failed to combine image and mask")
+                return null
+            }
+
+            println("[DEBUG_LOG] Alibaba Background Removal: Combined success, total bytes: ${combinedBytes.size}")
+            combinedBytes
+        } catch (e: Throwable) {
+            println("[ERROR] Alibaba Background Removal: Exception during image processing: ${e.message}")
+            e.printStackTrace()
             null
         }
     }

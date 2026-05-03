@@ -17,7 +17,7 @@ import models.UserMedia
  * API client for user media library
  */
 object MediaApi {
-    suspend fun list(limit: Int = 100, offset: Int = 0): List<UserMedia> {
+    suspend fun list(limit: Int = 10, offset: Int = 0): List<UserMedia> {
         val response = ApiClient.httpClient.get("${ApiConstants.API_BASE_URL}/media") {
             ApiClient.addAuthHeader(this)
         }

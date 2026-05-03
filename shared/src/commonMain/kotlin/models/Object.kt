@@ -23,7 +23,15 @@ data class Object(
     var verticalOffset: Float = 0f, // Vertical offset applied during placement
     @field:Indexed
     var kind: ObjectKind = ObjectKind.World,
+    var renderingType: ObjectRenderingType = ObjectRenderingType.Asset,
+    var imageScale: Float = 1.0f,
 ) : BaseModel()
+
+@Serializable
+enum class ObjectRenderingType {
+    Asset,
+    SingleImage,
+}
 
 enum class ObjectKind {
     World,

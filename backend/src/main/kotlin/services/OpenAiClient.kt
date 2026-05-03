@@ -321,4 +321,9 @@ object OpenAiClient : AiClient {
             null
         }
     }
+
+    override suspend fun removeBackground(imageUrl: String): ByteArray? {
+        // OpenAI does not provide a direct background removal API.
+        return null
+    }
 }

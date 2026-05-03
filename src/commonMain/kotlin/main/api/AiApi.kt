@@ -20,6 +20,7 @@ import models.AiPromptRequest
 import models.AiTtsRequest
 import models.AiImageRequest
 import models.AiImageResponse
+import models.AiBackgroundRemovalRequest
 import models.ErrorResponse
 import models.MinigameGenerateRequest
 import models.MinigameItem
@@ -40,6 +41,21 @@ object AiApi {
             val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
             val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
             throw Error(txt ?: "Image generation failed: HTTP ${resp.status.value}")
+        }
+    }
+
+    suspend fun removeBackground(imageUrl: String): String {
+        val resp = ApiClient.httpClient.post("${ApiConstants.API_BASE_URL}/ai/remove-background") {
+            contentType(ContentType.Application.Json)
+            ApiClient.addAuthHeader(this)
+            setBody(AiBackgroundRemovalRequest(imageUrl = imageUrl))
+        }
+        if (resp.status.isSuccess()) {
+            return resp.body<AiImageResponse>().imageUrl
+        } else {
+            val err = runCatching { resp.body<ErrorResponse>() }.getOrNull()
+            val txt = err?.message ?: runCatching { resp.bodyAsText() }.getOrNull()
+            throw Error(txt ?: "Background removal failed: HTTP ${resp.status.value}")
         }
     }
     suspend fun sendPrompt(

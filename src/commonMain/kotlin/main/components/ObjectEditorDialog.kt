@@ -6,24 +6,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import main.api.AiApi
+import main.api.ContentApi
 import main.api.ObjectApi
-import main.components.DialogButton
-import main.components.DialogButtonStyle
-import main.components.DialogInput
+import main.api.UserApi
+import main.components.LabeledCheckbox
+import main.components.media.UploadMediaDialog
+import main.components.AssetBrowserDialog
+import main.components.DialogSelect
 import main.components.objects.consumePendingCreatePosition
+import main.utils.ImageUtils
 import main.theme.Styles
 import models.AssetType
+import models.MediaType
 import models.Object
+import models.ObjectRenderingType
 import models.Rotation
 import models.Scale
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.FlexDirection
 import org.jetbrains.compose.web.css.JustifyContent
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.css.flexDirection
@@ -31,19 +40,19 @@ import org.jetbrains.compose.web.css.gap
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.maxHeight
+import org.jetbrains.compose.web.css.maxWidth
 import org.jetbrains.compose.web.css.opacity
+import org.jetbrains.compose.web.css.padding
+import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.rgba
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
-import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.RangeInput
 import org.jetbrains.compose.web.dom.Text
-import web.cssom.PropertyName.Companion.display
-import web.cssom.PropertyName.Companion.flexDirection
-import web.cssom.PropertyName.Companion.gap
-import web.cssom.PropertyName.Companion.justifyContent
-import web.cssom.atrule.displayMode
 
 /**
  * A dialog for creating and editing objects.
@@ -68,6 +77,8 @@ fun ObjectEditorDialog(
     var collection by remember { mutableStateOf(objectModel?.collection ?: "") }
     var status by remember { mutableStateOf(objectModel?.status ?: "") }
     var verticalOffset by remember { mutableStateOf(objectModel?.verticalOffset ?: 0f) }
+    var renderingType by remember { mutableStateOf(objectModel?.renderingType ?: ObjectRenderingType.Asset) }
+    var imageScale by remember { mutableStateOf(objectModel?.imageScale ?: 1.0f) }
     var rotationYDeg by remember {
         mutableStateOf(
             ((objectModel?.rotation?.y ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
@@ -80,6 +91,10 @@ fun ObjectEditorDialog(
     }
     // Asset browser dialog toggle
     var showCollectionBrowser by remember { mutableStateOf(false) }
+    var showMediaDialog by remember { mutableStateOf(false) }
+    var isProcessingImage by remember { mutableStateOf(false) }
+    var skipPixelArt by remember { mutableStateOf(false) }
+    var skipBackgroundRemoval by remember { mutableStateOf(false) }
     
     // State for form submission
     var isSubmitting by remember { mutableStateOf(false) }
@@ -104,7 +119,9 @@ fun ObjectEditorDialog(
             collection != objectModel.collection ||
             status != objectModel.status ||
             verticalOffset != objectModel.verticalOffset ||
-            rotationYDeg != initialRotationYDeg
+            rotationYDeg != initialRotationYDeg ||
+            renderingType != objectModel.renderingType ||
+            imageScale != objectModel.imageScale
     )
     
     // Create a coroutine scope for async operations
@@ -126,6 +143,8 @@ fun ObjectEditorDialog(
                     y = rotationYDeg * kotlin.math.PI.toFloat() / 180f,
                 ),
                 verticalOffset = verticalOffset,
+                renderingType = renderingType,
+                imageScale = imageScale,
             )
         } else {
             // Create new object at the user's selected position if available; otherwise, fall back to player's current position
@@ -154,7 +173,9 @@ fun ObjectEditorDialog(
                 rotation = Rotation(0f, rotationYDeg * kotlin.math.PI.toFloat() / 180f, 0f),
                 scale = Scale(1f, 1f, 1f),
                 status = status,
-                verticalOffset = verticalOffset
+                verticalOffset = verticalOffset,
+                renderingType = renderingType,
+                imageScale = imageScale,
             )
         }
         
@@ -251,6 +272,26 @@ fun ObjectEditorDialog(
                         }
                     }
                 )
+
+                // Rendering Type
+                DialogSelect(
+                    label = "Rendering Type",
+                    value = renderingType.name,
+                    options = ObjectRenderingType.entries.map { type ->
+                        type.name to when (type) {
+                            ObjectRenderingType.Asset -> "3D Asset"
+                            ObjectRenderingType.SingleImage -> "Single Image"
+                        }
+                    },
+                    onInput = {
+                        renderingType = ObjectRenderingType.valueOf(it)
+                    },
+                    containerAttrs = {
+                        style {
+                            marginTop(16.px)
+                        }
+                    }
+                )
                 
                 // Asset field
                 Div(
@@ -268,25 +309,107 @@ fun ObjectEditorDialog(
                             }
                         }
                     ) {
-                        Translated("Asset")
+                        Translated(if (renderingType == ObjectRenderingType.Asset) "Asset" else "Image")
                     }
                     Div {
                         DialogButton(
-                            onClick = { showCollectionBrowser = true },
+                            onClick = {
+                                if (renderingType == ObjectRenderingType.Asset) {
+                                    showCollectionBrowser = true
+                                } else {
+                                    showMediaDialog = true
+                                }
+                            },
                             style = DialogButtonStyle.Primary,
                             attrs = {
                                 style {
                                     marginBottom(8.px)
                                 }
+                            },
+                            isDisabled = isProcessingImage
+                        ) {
+                            Translated(if (isProcessingImage) "Processing..." else "Browse")
+                        }
+
+                        if (renderingType == ObjectRenderingType.SingleImage) {
+                            LabeledCheckbox(
+                                checked = skipBackgroundRemoval,
+                                label = "Skip background removal",
+                                onCheckedChange = { skipBackgroundRemoval = it }
+                            )
+                            LabeledCheckbox(
+                                checked = skipPixelArt,
+                                label = "Skip pixel art",
+                                onCheckedChange = { skipPixelArt = it }
+                            )
+                        }
+                    }
+                    if (renderingType == ObjectRenderingType.SingleImage && file.isNotEmpty()) {
+                        Div(
+                            attrs = {
+                                style {
+                                    marginTop(16.px)
+                                    display(DisplayStyle.Flex)
+                                    justifyContent(JustifyContent.Center)
+                                    backgroundColor(rgba(0, 0, 0, 0.2))
+                                    borderRadius(8.px)
+                                    padding(16.px)
+                                }
                             }
                         ) {
-                            Translated("Browse")
+                            Img(
+                                src = file,
+                                attrs = {
+                                    style {
+                                        maxWidth(100.percent)
+                                        maxHeight(200.px)
+                                        property("object-fit", "contain")
+                                        property("image-rendering", "pixelated")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (renderingType == ObjectRenderingType.SingleImage) {
+                    // Image Scale field
+                    Div {
+                        Div(
+                            attrs = {
+                                style {
+                                    marginTop(16.px)
+                                }
+                            }
+                        ) {
+                            Translated("Image Scale")
+                        }
+                        RangeInput(
+                            value = imageScale,
+                            min = 0.25f,
+                            max = 10.0f,
+                            step = 0.05f,
+                            attrs = {
+                                classes(Styles.inputField)
+                                onInput { event ->
+                                    imageScale = event.value?.toFloat()?.coerceIn(0.25f, 10.0f) ?: 1.0f
+                                }
+                            }
+                        )
+                        Div(
+                            attrs = {
+                                style {
+                                    marginTop(8.px)
+                                }
+                            }
+                        ) {
+                            Text("$imageScale")
                         }
                     }
                 }
 
                 // Preview the selected asset
-                if (file.isNotEmpty() && collection.isNotEmpty()) {
+                if (renderingType == ObjectRenderingType.Asset && file.isNotEmpty() && collection.isNotEmpty()) {
                     Div(attrs = {
                     }) {
                         BasicSceneRenderer(
@@ -498,6 +621,63 @@ fun ObjectEditorDialog(
                 collection = r.collection ?: ""
             },
             onClose = { showCollectionBrowser = false },
+        )
+    }
+
+    if (showMediaDialog) {
+        UploadMediaDialog(
+            onClose = { showMediaDialog = false },
+            onSelect = { url, type, name ->
+                if (type == MediaType.Image) {
+                    coroutineScope.launch {
+                        isProcessingImage = true
+                        errorMessage = ""
+                        try {
+                            var processedUrl = url
+                            
+                            // 1. Remove background
+                            if (!skipBackgroundRemoval) {
+                                processedUrl = AiApi.removeBackground(processedUrl)
+                            }
+                            
+                            // 2. Prepare pixel art (128px height)
+                            val finalDataUrl = if (!skipPixelArt) {
+                                ImageUtils.preparePixelArt(processedUrl, 128)
+                            } else {
+                                processedUrl
+                            }
+                            
+                            // 3. Upload to content server
+                            val record = if (finalDataUrl.startsWith("data:")) {
+                                val base64 = finalDataUrl.substringAfter(",")
+                                val binary = window.atob(base64)
+                                val bytes = ByteArray(binary.length)
+                                for (i in 0 until binary.length) {
+                                    bytes[i] = binary[i].toInt().toByte()
+                                }
+                                val token = UserApi.getToken() ?: ""
+                                ContentApi.upload(bytes, "image_${name}.png", "image/png", token)
+                            } else {
+                                null 
+                            }
+                            
+                            // 4. Update object
+                            if (record != null) {
+                                file = ContentApi.imageUrlFor(record.uploadedFilePath)
+                            } else {
+                                file = finalDataUrl
+                            }
+                            renderingType = ObjectRenderingType.SingleImage
+                        } catch (e: Throwable) {
+                            errorMessage = "Image processing failed: ${e.message}"
+                            console.error(e)
+                        } finally {
+                            isProcessingImage = false
+                        }
+                    }
+                }
+            },
+            filter = MediaType.Image
         )
     }
 

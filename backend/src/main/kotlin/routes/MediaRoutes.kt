@@ -23,7 +23,7 @@ fun Routing.configureMediaRoutes() {
             val userId = JWTUtils.getUserId(principal)
                 ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
 
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
             val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
 
             val items = repo.listForUser(userId, limit, offset)

@@ -602,9 +602,15 @@ fun WorldPropertyEditor(
     LaunchedEffect(currentId) {
         if (currentId.isNotEmpty()) {
             try {
+                // Try fetching as ID first
                 title = WorldApi.getWorld(currentId).title
             } catch (e: Throwable) {
-                // Ignore, keep ID as fallback
+                try {
+                    // Fallback to fetching by URL
+                    title = WorldApi.getWorldByUrl(currentId).title
+                } catch (e2: Throwable) {
+                    // Ignore, keep ID/URL as fallback
+                }
             }
         } else {
             title = ""
@@ -646,7 +652,7 @@ fun WorldPropertyEditor(
             onClose = { showDialog = false },
             preselectWorldId = preselectWorldId,
             onSelect = { world ->
-                onUpdate(world.key)
+                onUpdate(world.url.ifEmpty { world.key })
                 showDialog = false
             }
         )

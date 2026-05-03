@@ -145,7 +145,33 @@ class SceneObjectManager(
             handleObjectStatusText(obj.key, obj.status, fallback)
         }
 
-        if (obj.file.isNotBlank() && obj.collection.isNotBlank()) {
+        if (obj.renderingType == models.ObjectRenderingType.SingleImage && obj.file.isNotBlank()) {
+            val billboard = main.components.world.ImageBillboard(obj.file, obj.imageScale)
+            billboard.id = obj.key
+            billboard.position = position
+            billboard.rotation = rotation
+            billboard.scale = scale
+
+            val node = billboard.render(scene)
+            if (node != null) {
+                objectMeshes[obj.key] = node
+                spatialHash.update(obj.key, node.position)
+                handleObjectStatusText(obj.key, obj.status, node)
+
+                // Set objectId on the node and all its meshes for picking
+                if (node.metadata == null) node.metadata = js("{}").unsafeCast<MeshMetadata>()
+
+                node.getChildMeshes().also { meshes ->
+                    shadowManager?.addShadowCasters(meshes)
+                    shadowManager?.configureShadowReceivers(meshes)
+                    WorldLoader.getCurrentPerformanceEngine()?.let { engine ->
+                        meshes.forEach { engine.registerObjectMesh(it) }
+                    }
+                }
+            } else {
+                createFallback()
+            }
+        } else if (obj.file.isNotBlank() && obj.collection.isNotBlank()) {
             objectModelSources[obj.key] = Pair(obj.file, obj.collection)
             assetManager.getNode(obj.file, obj.collection, { node ->
                 node.position = position

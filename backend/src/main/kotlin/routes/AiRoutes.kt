@@ -13,6 +13,7 @@ import models.AiPromptRequest
 import models.AiTtsRequest
 import models.AiImageRequest
 import models.AiImageResponse
+import models.AiBackgroundRemovalRequest
 import models.ErrorResponse
 import models.MinigameGenerateRequest
 import models.MinigameType
@@ -147,6 +148,52 @@ fun Routing.configureAiRoutes() {
                 runCatching { historyRepo.insert(history) }
 
                 call.respond(AiImageResponse(imageUrl))
+            }
+
+            post("/remove-background") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = JWTUtils.getUserIdOrRespondWithError(call, principal) ?: return@post
+                val token = call.request.header(HttpHeaders.Authorization)?.removePrefix("Bearer ")
+
+                val req = try { call.receive<AiBackgroundRemovalRequest>() } catch (t: Throwable) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "Invalid request", code = HttpStatusCode.BadRequest.value, details = t.message)
+                    )
+                }
+
+                if (req.imageUrl.isBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponse(message = "imageUrl cannot be empty", code = HttpStatusCode.BadRequest.value)
+                    )
+                }
+
+                if (!AiManager.isConfigured()) {
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse(message = "AI integration not configured", code = HttpStatusCode.InternalServerError.value)
+                    )
+                }
+
+                val processedUrl = try {
+                    AiManager.client.removeBackgroundUrl(req.imageUrl, token)
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = e.message ?: "Background removal failed", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                if (processedUrl == null) {
+                    return@post call.respond(
+                        HttpStatusCode.BadGateway,
+                        ErrorResponse(message = "Failed to remove background", code = HttpStatusCode.BadGateway.value)
+                    )
+                }
+
+                call.respond(AiImageResponse(processedUrl))
             }
 
             post("/tts") {

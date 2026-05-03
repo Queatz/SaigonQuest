@@ -204,4 +204,6 @@ object DeepSeekClient : AiClient {
         prompt: String,
         size: String,
     ): String? = null
+
+    override suspend fun removeBackground(imageUrl: String): ByteArray? = null
 }
