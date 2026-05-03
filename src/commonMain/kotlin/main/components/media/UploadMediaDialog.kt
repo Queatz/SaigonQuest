@@ -169,7 +169,10 @@ fun UploadMediaDialog(
 
             if (showAi) {
                 MediaAiArea(
-                    onSelect = onSelect,
+                    onSelect = { it: String, mediaType: MediaType, s: String ->
+                        onSelect(it, mediaType, s)
+                        onClose()
+                    },
                     onError = { error = it },
                     filter = filter,
                     onRefreshLibrary = { refresh() },
@@ -215,7 +218,7 @@ fun UploadMediaDialog(
                         Div(attrs = {
                             classes(Styles.mediaLibraryItem)
                             style {
-                                height(100.px)
+                                maxHeight(240.px)
                             }
                             onClick { onSelect(src, item.type, item.originalFileName); onClose() }
                         }) {

@@ -938,7 +938,7 @@ object AlibabaAiClient : AiClient {
         println("[DEBUG_LOG] Alibaba Background Removal: Original image size detected: $size")
 
         // 1. Get the mask from Alibaba
-        val maskPrompt = "Isolate the foreground of this image as a precise mask. Return the foreground as pure white (#FFFFFF), and the background as pure black (#000000). Do not return any other colors. Do not crop, resize, rotate, or add padding."
+        val maskPrompt = "Isolate the foreground subject of this image as a precise mask. Return the foreground subject as pure white (#FFFFFF), and the background as pure black (#000000). Do not return any other colors. Do not crop, resize, rotate, or add padding."
 
         val maskUrl = callQwenImageEdit(imageUrl, maskPrompt, apiKey, size)
         if (maskUrl == null) {

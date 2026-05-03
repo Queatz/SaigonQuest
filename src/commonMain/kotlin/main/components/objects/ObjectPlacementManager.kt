@@ -551,6 +551,9 @@ fun SceneObjectManager.removeObject(objectId: String) {
         if (objectKinds.remove(objectId) != null) {
             console.log("[DEBUG_REMOVE] Removed kind tracking for object: $objectId")
         }
+        // Cleanup rendering type and image scale tracking
+        objectRenderingTypes.remove(objectId)
+        objectImageScales.remove(objectId)
     } catch (e: Throwable) {
         console.error("[DEBUG_REMOVE] Error removing object: $objectId", e)
     }

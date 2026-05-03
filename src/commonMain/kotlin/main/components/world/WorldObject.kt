@@ -14,6 +14,11 @@ sealed class WorldObject {
     var id: String = ""
 
     /**
+     * Callback for when the object has finished loading its visual assets
+     */
+    var onLoaded: (() -> Unit)? = null
+
+    /**
      * Position in the 3D world
      */
     var position: Vector3 = Vector3(0f, 0f, 0f)

@@ -47,6 +47,8 @@ class ImageBillboard(
             
             // Re-position plane to be grounded (Y axis is center-aligned by default in Babylon CreatePlane)
             planeMesh.position.y = scaleValue / 2f
+            
+            onLoaded?.invoke()
         }
 
         material.albedoTexture = texture

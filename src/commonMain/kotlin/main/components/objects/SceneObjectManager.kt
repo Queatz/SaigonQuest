@@ -74,9 +74,11 @@ class SceneObjectManager(
     internal val objectChatHandles = mutableMapOf<String, WorldObjectHandle>()
     internal val objectChatTimeouts = mutableMapOf<String, Int>()
     
-    // Tracking model sources and kinds
+    // Tracking model sources, kinds, rendering types and image scales
     internal val objectModelSources = mutableMapOf<String, Pair<String, String>>()
     internal val objectKinds = mutableMapOf<String, ObjectKind>()
+    internal val objectRenderingTypes = mutableMapOf<String, models.ObjectRenderingType>()
+    internal val objectImageScales = mutableMapOf<String, Float>()
     internal val activeQuestIndicators = mutableMapOf<String, QuestStep>()
     
     // Placement/Drag state
@@ -135,6 +137,9 @@ class SceneObjectManager(
         val rotation = Vector3(obj.rotation.x, obj.rotation.y, obj.rotation.z)
         val scale = Vector3(obj.scale.x, obj.scale.y, obj.scale.z)
 
+        objectRenderingTypes[obj.key] = obj.renderingType
+        objectImageScales[obj.key] = obj.imageScale
+
         fun createFallback() {
             val fallback = createFallbackSphere(obj.key, position, rotation, scale)
             objectMeshes[obj.key] = fallback
@@ -146,11 +151,20 @@ class SceneObjectManager(
         }
 
         if (obj.renderingType == models.ObjectRenderingType.SingleImage && obj.file.isNotBlank()) {
+            objectModelSources[obj.key] = Pair(obj.file, "")
             val billboard = main.components.world.ImageBillboard(obj.file, obj.imageScale)
             billboard.id = obj.key
             billboard.position = position
             billboard.rotation = rotation
             billboard.scale = scale
+
+            billboard.onLoaded = {
+                cachedHighestY.remove(obj.key)
+                cachedMeshes.remove(obj.key)
+                objectMeshes[obj.key]?.let { node ->
+                    handleObjectStatusText(obj.key, obj.status, node)
+                }
+            }
 
             val node = billboard.render(scene)
             if (node != null) {
@@ -256,7 +270,12 @@ class SceneObjectManager(
                     val node = objectMeshes[obj.key]
                     val existingSource = objectModelSources[obj.key]
                     val newSource = Pair(obj.file, obj.collection)
-                    if (node == null || existingSource != newSource) {
+                    val existingRenderingType = objectRenderingTypes[obj.key]
+                    val existingImageScale = objectImageScales[obj.key]
+
+                    if (node == null || existingSource != newSource || 
+                        existingRenderingType != obj.renderingType || 
+                        existingImageScale != obj.imageScale) {
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     } else {
