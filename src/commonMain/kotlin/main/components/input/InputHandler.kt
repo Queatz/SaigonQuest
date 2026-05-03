@@ -919,13 +919,13 @@ class InputHandler(
                                         cameraInputsEnabled = false
                                     }
                                     
-                                    // Start dragging the object, passing the click point
-                                    isObjectDragging = objectManager.startDragging(selectedObjectId, objectClickPoint)
+                                    // Start dragging the object
+                                    isObjectDragging = objectManager.startDragging(selectedObjectId)
                                     draggingObjectId = selectedObjectId
                                     
                                     // Log and reset the click point after starting dragging
                                     if (isObjectDragging) {
-                                        console.log("Started dragging with click point: $objectClickPoint")
+                                        console.log("Started dragging object: $selectedObjectId")
                                         // Create dedicated picking depth renderer (world-only) for the drag session
                                         try {
                                             val excludeList = mutableListOf<AbstractMesh>()

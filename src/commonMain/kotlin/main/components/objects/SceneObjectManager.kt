@@ -82,11 +82,8 @@ class SceneObjectManager(
     internal val activeQuestIndicators = mutableMapOf<String, QuestStep>()
     
     // Placement/Drag state
-    internal val objectVerticalOffsets = mutableMapOf<String, Float>()
     internal var draggingObjectId: String? = null
     internal var isDragging = false
-    internal var dragStartPosition: Vector3? = null
-    internal var dragClickOffset: Vector3? = null
     
     // Create Object Placement Mode state
     internal var isCreatePlacementActive: Boolean = false
@@ -109,7 +106,6 @@ class SceneObjectManager(
     internal var shadowManager: ShadowManager? = null
     internal val assetManager = ObjectAssetManager(scene)
     internal val coroutineScope = CoroutineScope(Dispatchers.Main)
-    internal val Z_FIGHTING_BUFFER = 0.005f
     internal val json = utils.json
     
     var onError: ((String) -> Unit)? = null

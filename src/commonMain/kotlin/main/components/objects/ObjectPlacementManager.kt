@@ -126,7 +126,7 @@ fun SceneObjectManager.handleObjectDrop(x: Int, y: Int, data: String, worldId: S
             val updatedObj = obj.copy(
                 position = Position(
                     x = position.x,
-                    y = position.y + obj.verticalOffset,
+                    y = position.y,
                     z = position.z
                 ),
                 worldId = worldId
@@ -200,7 +200,7 @@ internal suspend fun SceneObjectManager.calculatePositionFromScreenCoordinates(c
 
     return Position(
         x = basePoint.x,
-        y = basePoint.y + Z_FIGHTING_BUFFER,
+        y = basePoint.y,
         z = basePoint.z
     )
 }
@@ -210,7 +210,6 @@ internal suspend fun SceneObjectManager.calculatePositionFromScreenCoordinates(c
  */
 fun SceneObjectManager.createObjectPreferInventory(obj: Object) {
     objectKinds[obj.key] = obj.kind
-    objectVerticalOffsets[obj.key] = obj.verticalOffset
 
     if (obj.kind != ObjectKind.Inventory) {
         createObjectInScene(obj)
@@ -341,7 +340,7 @@ internal fun SceneObjectManager.endCreatePlacementMode() {
     document.body?.style?.cursor = "default"
 }
 
-fun SceneObjectManager.startDragging(objectId: String, clickPoint: Vector3? = null): Boolean {
+fun SceneObjectManager.startDragging(objectId: String): Boolean {
     // Find the object node
     val node = objectMeshes[objectId]
     if (node != null) {
@@ -352,21 +351,6 @@ fun SceneObjectManager.startDragging(objectId: String, clickPoint: Vector3? = nu
             // Store the dragging state
             draggingObjectId = objectId
             isDragging = true
-            dragStartPosition = Vector3(node.position.x, node.position.y, node.position.z)
-            
-            // Calculate and store the offset between the click point and the object's pivot
-            if (clickPoint != null) {
-                // The offset is the difference between the object's position and the click point
-                dragClickOffset = Vector3(
-                    node.position.x - clickPoint.x,
-                    0f, // Ignore vertical offset from grab point to ensure the object stays at its target vertical height (on the ground/surface)
-                    node.position.z - clickPoint.z
-                )
-                console.log("Calculated drag offset: (${dragClickOffset!!.x}, ${dragClickOffset!!.y}, ${dragClickOffset!!.z})")
-            } else {
-                // If no click point is provided, set the offset to zero
-                dragClickOffset = Vector3.Zero()
-            }
             
             // Change cursor to grabbing
             document.body?.style?.cursor = "grabbing"
@@ -399,18 +383,13 @@ fun SceneObjectManager.updateDragging(position: Vector3): Boolean {
             // Ensure the node has no parent (position is global to scene)
             node.parent = null
             
-            // Apply the stored offset to the position
-            val offset = dragClickOffset ?: Vector3.Zero()
-            val verticalOffset = objectVerticalOffsets[draggingObjectId!!] ?: 0f
-            
             // Update the node position with the adjusted position
             node.position.set(
-                position.x + offset.x,
-                position.y + Z_FIGHTING_BUFFER + verticalOffset, // Apply ground height + z-fighting buffer + target vertical offset, ignore vertical grab offset
-                position.z + offset.z
+                position.x,
+                position.y,
+                position.z
             )
             console.log("Updating object ${draggingObjectId} position to (${node.position.x}, ${node.position.y}, ${node.position.z})")
-            console.log("Applied offset: (${offset.x}, ${offset.y}, ${offset.z})")
             spatialHash.update(draggingObjectId!!, node.position)
             
             return true
@@ -456,8 +435,6 @@ fun SceneObjectManager.endDragging(): Boolean {
             isDragging = false
             val objectId = draggingObjectId
             draggingObjectId = null
-            dragStartPosition = null
-            dragClickOffset = null
             
             // Reset cursor to grab if we're still hovering over the object
             if (hoveredObjectId == objectId) {
