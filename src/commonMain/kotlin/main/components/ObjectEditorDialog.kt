@@ -99,11 +99,11 @@ fun ObjectEditorDialog(
     }
 
     val hasChanges = isEditing && (
-            title != (objectModel?.title ?: "") ||
-            file != (objectModel?.file ?: "") ||
-            collection != (objectModel?.collection ?: "") ||
-            status != (objectModel?.status ?: "") ||
-            verticalOffset != (objectModel?.verticalOffset ?: 0f) ||
+            title != objectModel.title ||
+            file != objectModel.file ||
+            collection != objectModel.collection ||
+            status != objectModel.status ||
+            verticalOffset != objectModel.verticalOffset ||
             rotationYDeg != initialRotationYDeg
     )
     

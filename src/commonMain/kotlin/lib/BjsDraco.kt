@@ -1,5 +1,3 @@
-@file:Suppress("EXTERNAL_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER")
-
 package lib
 
 import kotlin.js.JsName

@@ -274,6 +274,7 @@ class NodeEditorController(
         
         // Create and execute the add node command
         val command = AddNodeCommand(nodes, id, newNode)
+        @Suppress("UNCHECKED_CAST")
         val updatedNodes = history.executeCommand(command) as Map<String, NodeData>
         
         // Update the nodes map
@@ -299,6 +300,7 @@ class NodeEditorController(
         
         // Create and execute the delete node command
         val command = DeleteNodeCommand(nodes, connections, nodeId)
+        @Suppress("UNCHECKED_CAST")
         val result = history.executeCommand(command) as Pair<Map<String, NodeData>, List<Connection>>
         
         // Update the nodes and connections
@@ -328,6 +330,7 @@ class NodeEditorController(
             if (boundedX != currentNode.x || boundedY != currentNode.y) {
                 // Create and execute the move node command
                 val command = MoveNodeCommand(nodes, nodeId, boundedX, boundedY)
+                @Suppress("UNCHECKED_CAST")
                 val updatedNodes = history.executeCommand(command) as Map<String, NodeData>
                 
                 // Update the nodes map
@@ -351,6 +354,7 @@ class NodeEditorController(
     fun updateNode(nodeId: String, updatedNode: NodeData) {
         // Create and execute the update node command
         val command = UpdateNodeCommand(nodes, nodeId, updatedNode)
+        @Suppress("UNCHECKED_CAST")
         val updatedNodes = history.executeCommand(command) as Map<String, NodeData>
         
         // Update the nodes map

@@ -696,7 +696,7 @@ fun RichTextEditor(
                 val previewEnc = encodeURIComponent(plainText.trim().take(100))
                 val imageUrl = extractFirstImage(docToInsert.content) ?: ""
                 val imageUrlEnc = if (imageUrl.isNotBlank()) encodeURIComponent(imageUrl) else ""
-                val targetWorld = (if (!worldUrl.isNullOrBlank()) worldUrl else worldId) ?: ""
+                val targetWorld = if (!worldUrl.isNullOrBlank()) worldUrl else worldId
                 val snippet = "![doc](${docToInsert.key}|${targetWorld}|${titleEnc}|${previewEnc}|${imageUrlEnc})"
                 insertAtCursor(snippet)
             },

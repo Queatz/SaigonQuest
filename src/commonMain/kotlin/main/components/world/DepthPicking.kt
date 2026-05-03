@@ -137,8 +137,8 @@ object DepthPicking {
         y: Int
     ): Vector3? {
         val scale = getEngineScalingFactor()
-        val sx = (x / scale).toInt()
-        val sy = (y / scale).toInt()
+        val sx = x / scale
+        val sy = y / scale
         val d = readLinearDepthAt(
             x = sx,
             y = sy

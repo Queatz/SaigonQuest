@@ -48,7 +48,7 @@ class CameraController(private val scene: Scene) {
         val playerController = SceneManager.getPlayerController()
         val playerPos = playerController?.getPlayerPosition() ?: return null
         val headPos = playerPos.clone()
-        val offset = if (playerController?.getPlayerActivity() == PlayerActivity.Sit) 0.3f else 0.8f
+        val offset = if (playerController.getPlayerActivity() == PlayerActivity.Sit) 0.3f else 0.8f
         headPos.y += offset
         return headPos
     }

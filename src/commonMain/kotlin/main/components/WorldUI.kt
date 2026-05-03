@@ -185,7 +185,7 @@ fun WorldUI(
     LaunchedEffect(router.currentPath) {
         val openDocId = router.currentPath.parameters?.map?.get("openDoc")?.firstOrNull()
         if (openDocId != null) {
-            initialWorldDocId = openDocId.toString()
+            initialWorldDocId = openDocId
             isWorldDocsDialogOpen = true
         }
     }

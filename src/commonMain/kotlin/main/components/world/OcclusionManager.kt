@@ -363,7 +363,7 @@ class OcclusionManager(private val scene: Scene) {
      * Caches results per original material.
      */
     fun getDepthMaterialForMesh(mesh: AbstractMesh): CustomMaterial {
-        val original = mesh.material ?: return getOrCreateSharedWhiteDepthMaterial()
+        val original = mesh.material
         return depthMaterialCache.getOrPut(original) {
             createDepthMaterial(original)
         }

@@ -840,6 +840,7 @@ class WorldLoader(private val scene: Scene) {
 
             // getTypeID() == 0 is PointLight, 2 is SpotLight in BabylonJS
             if (light.getTypeID() == 0 || light.getTypeID() == 2) {
+                @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
                 val shadowLight = light as? IShadowLight
                 if (shadowLight != null) {
                     console.log("[DEBUG] Found light from GLB: ${light.name} (type ${light.getTypeID()}). Configuring clustered shadows.")
@@ -1204,8 +1205,8 @@ class WorldLoader(private val scene: Scene) {
                     SceneManager.getObjectManager()?.excludeMeshFromHighlight(mesh)
                     
                     // Ensure world lights don't wash out the moon's shadow/phase
-                    hemi?.excludedMeshes = (hemi.excludedMeshes ?: emptyArray()) + mesh
-                    dir?.excludedMeshes = (dir.excludedMeshes ?: emptyArray()) + mesh
+                    hemi?.excludedMeshes = hemi.excludedMeshes + mesh
+                    dir?.excludedMeshes = dir.excludedMeshes + mesh
                     
                     console.log("[DEBUG] Created realtime moon mesh")
                 }

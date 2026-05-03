@@ -711,7 +711,7 @@ class Character(
                 
                 // Update dimensions from the actual loaded texture to ensure correct UV segmenting
                 val size = texture.getSize()
-                spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
+                spriteSheet.setImageDimensions(size.width, size.height)
                 onLoaded?.invoke()
             }
         } else {
@@ -721,7 +721,7 @@ class Character(
             // Update dimensions from the actual loaded texture to ensure correct UV segmenting
             texture.onLoadObservable.addOnce {
                 val size = texture.getSize()
-                spriteSheet.setImageDimensions(size.width.toInt(), size.height.toInt())
+                spriteSheet.setImageDimensions(size.width, size.height)
                 onLoaded?.invoke()
             }
         }

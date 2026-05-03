@@ -576,7 +576,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
                         
                         if (appearanceChanged) {
                             val sheets = fetchAppearanceSheets(user)
-                            op.handle?.updateAppearance(sheets, user.skinTone ?: 0.5f)
+                            op.handle?.updateAppearance(sheets, user.skinTone)
                         }
                         
                         op.profile = user
@@ -623,8 +623,7 @@ class OtherPlayersCoordinator(private val scene: Scene) {
             }
 
             // Detect if appearance layers changed to avoid redundant flashing
-            val layersChanged = (prev == null) ||
-                    prev.hairStyle != user.hairStyle ||
+            val layersChanged = prev.hairStyle != user.hairStyle ||
                     prev.eyeColor != user.eyeColor ||
                     prev.skinTone != user.skinTone ||
                     prev.wornItems != user.wornItems

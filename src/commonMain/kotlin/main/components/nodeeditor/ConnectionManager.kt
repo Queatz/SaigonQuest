@@ -125,6 +125,7 @@ class ConnectionManager(
             
             // Create and execute the add connection command
             val command = AddConnectionCommand(connections, newConnection)
+            @Suppress("UNCHECKED_CAST")
             val updatedConnections = historyManager.executeCommand(command) as List<Connection>
             
             // Reset the connection state
@@ -155,6 +156,7 @@ class ConnectionManager(
             
             // Create and execute the add connection command
             val command = AddConnectionCommand(connections, newConnection)
+            @Suppress("UNCHECKED_CAST")
             val updatedConnections = historyManager.executeCommand(command) as List<Connection>
             
             // Reset the connection state
@@ -191,6 +193,7 @@ class ConnectionManager(
     fun deleteConnection(connections: List<Connection>, connection: Connection): List<Connection> {
         // Create and execute the delete connection command
         val command = DeleteConnectionCommand(connections, connection)
+        @Suppress("UNCHECKED_CAST")
         return historyManager.executeCommand(command) as List<Connection>
     }
 }

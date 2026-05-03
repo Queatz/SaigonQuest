@@ -89,7 +89,8 @@ object WorldDocsUtils {
         val result = mutableListOf<Doc>()
         var parentId = startDoc.parentId
         while (parentId != null) {
-            val parent = forest.asSequence().mapNotNull { findNodeInForest(it, parentId!!) }.firstOrNull()
+            val currentParentId = parentId
+            val parent = forest.asSequence().mapNotNull { findNodeInForest(it, currentParentId) }.firstOrNull()
             if (parent != null) {
                 result += parent.doc
                 parentId = parent.doc.parentId
@@ -110,8 +111,9 @@ object WorldDocsUtils {
         val result = mutableListOf<String>()
         var parentId = startDoc.parentId
         while (parentId != null) {
-            result.add(parentId!!)
-            val parent = forest.asSequence().mapNotNull { findNodeInForest(it, parentId!!) }.firstOrNull()
+            result.add(parentId)
+            val currentParentId = parentId
+            val parent = forest.asSequence().mapNotNull { findNodeInForest(it, currentParentId) }.firstOrNull()
             parentId = parent?.doc?.parentId
         }
         return result

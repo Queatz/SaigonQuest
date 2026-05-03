@@ -252,7 +252,7 @@ fun InventoryDialog(onClose: () -> Unit) {
         val itemKey = if (isDirectItemId) id else InventoryState.inventoryItemToItemMap[id]
 
         // Check if the item is actually worn
-        if (itemKey == null || currentUser.wornItems?.contains(itemKey) != true) {
+        if (itemKey == null || currentUser.wornItems.contains(itemKey) != true) {
             console.log("[DEBUG_LOG] handleRemoveWornItem: Item is not currently worn: ${item.title}, itemKey=$itemKey")
             showFeedback("Item is not currently worn: ${item.title}", true)
             return
