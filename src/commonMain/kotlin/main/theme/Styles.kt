@@ -19,6 +19,9 @@ import org.jetbrains.compose.web.css.alignSelf
 import org.jetbrains.compose.web.css.animation
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.border
+import org.jetbrains.compose.web.css.backgroundPosition
+import org.jetbrains.compose.web.css.backgroundRepeat
+import org.jetbrains.compose.web.css.backgroundSize
 import org.jetbrains.compose.web.css.borderRadius
 import org.jetbrains.compose.web.css.bottom
 import org.jetbrains.compose.web.css.boxSizing
@@ -201,6 +204,56 @@ object Styles : StyleSheet() {
                 property("text-overflow", "ellipsis")
                 whiteSpace("normal")
             }
+        }
+
+        // Item preview style
+        desc(self, className("md-item")) style {
+            display(DisplayStyle("inline-flex"))
+            flexDirection(FlexDirection.Column)
+            alignItems(AlignItems.Center)
+            justifyContent(JustifyContent.Center)
+            gap(4.px)
+            padding(6.px)
+            borderRadius(8.px)
+            backgroundColor(rgba(255, 255, 255, 0.06))
+            width(4.cssRem)
+            height(6.cssRem)
+            flexShrink(0)
+
+            desc(self, className("md-item-icon")) style {
+                property("image-rendering", "pixelated")
+                backgroundRepeat("no-repeat")
+                flexShrink(0)
+            }
+
+            desc(self, className("md-item-qty")) style {
+                fontSize(12.px)
+                marginTop(4.px)
+            }
+
+            desc(self, className("md-item-title")) style {
+                fontSize(12.px)
+                textAlign("center")
+                opacity(0.9)
+                whiteSpace("nowrap")
+                overflow("hidden")
+                property("text-overflow", "ellipsis")
+                width(100.percent)
+            }
+        }
+
+        // Consolidate media styles
+        desc(self, selector("audio")) style {
+            maxWidth(100.percent)
+            display(DisplayStyle.Flex)
+            width(100.percent)
+            borderRadius(1.cssRem)
+        }
+        desc(self, selector("video")) style {
+            maxWidth(100.percent)
+            display(DisplayStyle.Flex)
+            width(100.percent)
+            borderRadius(1.cssRem)
         }
     }
 

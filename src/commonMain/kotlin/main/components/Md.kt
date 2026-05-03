@@ -16,6 +16,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLAudioElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLMediaElement
 import org.w3c.dom.HTMLSpanElement
 import main.utils.createCustomEvent
 import kotlin.js.Json
@@ -46,7 +47,11 @@ internal fun ensureExtensionsRegistered() {
                     }
                 },
                 "renderer" to { token: Json ->
-                    "<u>${token["text"] as String}</u>"
+                    window.document.createElement("u").let { el ->
+                        el as HTMLElement
+                        el.textContent = token["text"] as String
+                        el.outerHTML
+                    }
                 },
             ),
             json(
@@ -67,7 +72,13 @@ internal fun ensureExtensionsRegistered() {
                     }
                 },
                 "renderer" to { token: Json ->
-                    "<audio src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></audio>"
+                    val href = token["href"] as String
+                    window.document.createElement("audio").let { el ->
+                        el as HTMLMediaElement
+                        el.src = href
+                        el.controls = true
+                        el.outerHTML
+                    }
                 },
             ),
             json(
@@ -88,7 +99,13 @@ internal fun ensureExtensionsRegistered() {
                     }
                 },
                 "renderer" to { token: Json ->
-                    "<video src=\"${token["href"] as String}\" controls style=\"max-width: 100%; display: flex; width: 100%; border-radius:1rem;\"></video>"
+                    val href = token["href"] as String
+                    window.document.createElement("video").let { el ->
+                        el as HTMLMediaElement
+                        el.src = href
+                        el.controls = true
+                        el.outerHTML
+                    }
                 },
             ),
             json(
@@ -118,39 +135,47 @@ internal fun ensureExtensionsRegistered() {
                     val imageUrlEnc = parts.getOrNull(4) ?: ""
                     val title = try {
                         decodeURIComponent(titleEnc)
-                    } catch (e: dynamic) {
+                    } catch (t: Throwable) {
                         titleEnc
                     }
                     val preview = try {
                         decodeURIComponent(previewEnc)
-                    } catch (e: dynamic) {
+                    } catch (t: Throwable) {
                         previewEnc
                     }
                     val imageUrl = try {
                         decodeURIComponent(imageUrlEnc)
-                    } catch (e: dynamic) {
+                    } catch (t: Throwable) {
                         imageUrlEnc
                     }
 
-                    val safeTitle = title
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace("\"", "&quot;")
-                    val safePreview = preview
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace("\"", "&quot;")
+                    window.document.createElement("div").let { root ->
+                        root as HTMLElement
+                        root.className = "md-doc"
+                        root.setAttribute("contenteditable", "false")
+                        root.setAttribute("data-doc-id", docId)
+                        root.setAttribute("data-world-id", worldId)
+                        root.setAttribute("data-image", imageUrl)
 
-                    val imgHtml = if (imageUrl.isNotBlank()) {
-                        "<div class=\"md-doc-image\" style='width:100%;height:4rem;background-image:url(\"$imageUrl\");background-size:cover;background-position:center;border-radius:4px;margin-bottom:4px;'></div>"
-                    } else ""
+                        if (imageUrl.isNotBlank()) {
+                            val img = window.document.createElement("div") as HTMLElement
+                            img.className = "md-doc-image"
+                            img.style.backgroundImage = "url(\"$imageUrl\")"
+                            root.appendChild(img)
+                        }
 
-                    "<div class=\"md-doc\" contenteditable=\"false\" data-doc-id=\"$docId\" data-world-id=\"$worldId\" data-image=\"$imageUrl\" style='display:inline-flex;flex-direction:column;gap:4px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.06);width:12rem;max-height:12rem;flex-shrink:0;cursor:pointer;overflow:hidden;border:1px solid rgba(255,255,255,0.1);vertical-align:middle;margin:8px 4px;user-select:none;'>$imgHtml" +
-                        "<div class=\"md-doc-title\" style='font-weight:bold;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>$safeTitle</div>" +
-                        "<div class=\"md-doc-preview\" style='font-size:11px;opacity:0.7;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:normal;'>$safePreview</div>" +
-                        "</div>"
+                        val titleDiv = window.document.createElement("div") as HTMLElement
+                        titleDiv.className = "md-doc-title"
+                        titleDiv.textContent = title
+                        root.appendChild(titleDiv)
+
+                        val previewDiv = window.document.createElement("div") as HTMLElement
+                        previewDiv.className = "md-doc-preview"
+                        previewDiv.textContent = preview
+                        root.appendChild(previewDiv)
+
+                        root.outerHTML
+                    }
                 },
             ),
             json(
@@ -181,7 +206,7 @@ internal fun ensureExtensionsRegistered() {
                     val qty = qtyStr.toIntOrNull() ?: 1
                     val title = try {
                          decodeURIComponent(titleEnc)
-                    } catch (e: dynamic) {
+                    } catch (t: Throwable) {
                         titleEnc
                     }
                     // Compute sprite background
@@ -190,16 +215,37 @@ internal fun ensureExtensionsRegistered() {
                     val row = index / 10
                     val posX = -(col * size)
                     val posY = -((9 - row) * size)
-                    val safeTitle = title
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace("\"", "&quot;")
-                    "<div class=\"md-item\" contenteditable=\"false\" data-item=\"${raw}\" title=\"${safeTitle}\" style='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;border-radius:8px;background:rgba(255,255,255,0.06);width:4rem;height:6rem;flex-shrink:0;'>" +
-                        "<div class=\"md-item-icon\" style='width:${size}px;height:${size}px;background-image:url(\"/raw/data/spritesheets/${file}.png\");background-size:${size * 10}px ${size * 10}px;background-repeat:no-repeat;image-rendering: pixelated;background-position:${posX}px ${posY}px;flex-shrink:0;'></div>" +
-                        (if (qty > 0) "<div class=\"md-item-qty\" style='font-size:12px;margin-top:4px;'>x${qty}</div>" else "") +
-                        "<div class=\"md-item-title\" style='font-size:12px;text-align:center;opacity:0.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;'>${safeTitle}</div>" +
-                    "</div>"
+
+                    window.document.createElement("div").let { root ->
+                        root as HTMLElement
+                        root.className = "md-item"
+                        root.setAttribute("contenteditable", "false")
+                        root.setAttribute("data-item", raw)
+                        root.setAttribute("title", title)
+
+                        val iconDiv = window.document.createElement("div") as HTMLElement
+                        iconDiv.className = "md-item-icon"
+                        iconDiv.style.width = "${size}px"
+                        iconDiv.style.height = "${size}px"
+                        iconDiv.style.backgroundImage = "url(\"/raw/data/spritesheets/$file.png\")"
+                        iconDiv.style.backgroundSize = "${size * 10}px ${size * 10}px"
+                        iconDiv.style.backgroundPosition = "${posX}px ${posY}px"
+                        root.appendChild(iconDiv)
+
+                        if (qty > 0) {
+                            val qtyDiv = window.document.createElement("div") as HTMLElement
+                            qtyDiv.className = "md-item-qty"
+                            qtyDiv.textContent = "x$qty"
+                            root.appendChild(qtyDiv)
+                        }
+
+                        val titleDiv = window.document.createElement("div") as HTMLElement
+                        titleDiv.className = "md-item-title"
+                        titleDiv.textContent = title
+                        root.appendChild(titleDiv)
+
+                        root.outerHTML
+                    }
                 },
             ),
         ),
@@ -208,6 +254,13 @@ internal fun ensureExtensionsRegistered() {
     marked.use(extension)
     extensionsRegistered = true
 }
+
+private fun String.escapeHtml(): String = this
+    .replace("&", "&amp;")
+    .replace("<", "&lt;")
+    .replace(">", "&gt;")
+    .replace("\"", "&quot;")
+    .replace("'", "&#39;")
 
 /**
  * Converts markdown to HTML using the same Marked configuration as the Md composable.
@@ -224,7 +277,7 @@ fun markdownToHtml(
     val originalLinkRenderer: dynamic = renderer.link
 
     renderer.html = { token ->
-        token.text.replace("<", "&lt;").replace(">", "&gt;")
+        token.text.escapeHtml()
     }
 
     if (clickableWords) {
@@ -239,15 +292,23 @@ fun markdownToHtml(
                 } else {
                     if (currentWord.isNotEmpty()) {
                         val w = currentWord.toString()
-                        result.add("<span class=\"word\" data-word=\"$w\">$w</span>")
+                        val span = window.document.createElement("span")
+                        span.className = "word"
+                        span.setAttribute("data-word", w)
+                        span.textContent = w
+                        result.add(span.outerHTML)
                         currentWord = StringBuilder()
                     }
-                    result.add(char.toString())
+                    result.add(char.toString().escapeHtml())
                 }
             }
             if (currentWord.isNotEmpty()) {
                 val w = currentWord.toString()
-                result.add("<span class=\"word\" data-word=\"$w\">$w</span>")
+                val span = window.document.createElement("span")
+                span.className = "word"
+                span.setAttribute("data-word", w)
+                span.textContent = w
+                result.add(span.outerHTML)
             }
             result.joinToString("")
         }
