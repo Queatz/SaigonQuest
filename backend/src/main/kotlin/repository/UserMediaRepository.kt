@@ -5,6 +5,7 @@ import com.arangodb.entity.DocumentCreateEntity
 import com.arangodb.model.DocumentCreateOptions
 import database.ArangoConfig
 import database.CollectionsConfig
+import models.MediaType
 import models.UserMedia
 
 class UserMediaRepository {
@@ -17,19 +18,24 @@ class UserMediaRepository {
         return result.new
     }
 
-    fun listForUser(userId: String, limit: Int = 100, offset: Int = 0): List<UserMedia> {
+    fun listForUser(userId: String, type: MediaType? = null, limit: Int = 100, offset: Int = 0): List<UserMedia> {
+        val typeFilter = if (type != null) "FILTER m.type == @type" else ""
         val query = """
             FOR m IN $collectionName
             FILTER m.userId == @userId
+            $typeFilter
             SORT m.favorite DESC, m.createdAt DESC
             LIMIT @offset, @limit
             RETURN m
         """.trimIndent()
-        val bindVars = mapOf(
+        val bindVars = mutableMapOf<String, Any>(
             "userId" to userId,
             "limit" to limit,
             "offset" to offset
         )
+        if (type != null) {
+            bindVars["type"] = type.name
+        }
         val cursor: ArangoCursor<UserMedia> = db.query(query, UserMedia::class.java, bindVars)
         return cursor.asListRemaining()
     }

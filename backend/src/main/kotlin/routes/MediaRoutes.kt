@@ -25,8 +25,12 @@ fun Routing.configureMediaRoutes() {
 
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
             val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+            val typeStr = call.request.queryParameters["type"]
+            val type = if (typeStr != null) {
+                MediaType.values().find { it.name.equals(typeStr, ignoreCase = true) }
+            } else null
 
-            val items = repo.listForUser(userId, limit, offset)
+            val items = repo.listForUser(userId, type, limit, offset)
             call.respond(HttpStatusCode.OK, items)
         }
 

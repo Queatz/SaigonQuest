@@ -55,10 +55,7 @@ fun UploadMediaDialog(
                 // Ensure we have a valid user/token (visitor or player)
                 UserApi.getCurrentUser()
                 val limit = 20
-                var allItems = MediaApi.list(limit = limit, offset = 0)
-                if (filter != null) {
-                    allItems = allItems.filter { it.type == filter }
-                }
+                val allItems = MediaApi.list(type = filter, limit = limit, offset = 0)
                 items = allItems
                 offset = allItems.size
                 if (allItems.size < limit) {
@@ -80,10 +77,7 @@ fun UploadMediaDialog(
             loadingMore = true
             try {
                 val limit = 20
-                var newItems = MediaApi.list(limit = limit, offset = offset)
-                if (filter != null) {
-                    newItems = newItems.filter { it.type == filter }
-                }
+                val newItems = MediaApi.list(type = filter, limit = limit, offset = offset)
                 
                 if (newItems.isEmpty()) {
                     hasMore = false
@@ -218,7 +212,11 @@ fun UploadMediaDialog(
                         Div(attrs = {
                             classes(Styles.mediaLibraryItem)
                             style {
-                                maxHeight(240.px)
+                                if (item.type == MediaType.Image) {
+                                    maxHeight(240.px)
+                                } else {
+                                    height(100.px)
+                                }
                             }
                             onClick { onSelect(src, item.type, item.originalFileName); onClose() }
                         }) {
