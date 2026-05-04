@@ -31,6 +31,9 @@ vi: Tạo vật phẩm
 Event cards
 vi: Thẻ sự kiện
 
+Move
+vi: Di chuyển
+
 Items
 vi: Các vật phẩm
 

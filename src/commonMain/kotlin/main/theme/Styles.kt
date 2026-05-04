@@ -1292,6 +1292,7 @@ object Styles : StyleSheet() {
         property("overflow-y", "auto")
         property("flex-grow", "1")
         display(DisplayStyle.Flex)
+        gap(12.px)
         property("flex-direction", "column")
         paddingTop(8.px)
         height(0.cssRem)
@@ -1391,7 +1392,6 @@ object Styles : StyleSheet() {
     }
 
     val chatMessageItem by style {
-        marginBottom(12.px)
         padding(8.px)
         cursor("pointer")
         borderRadius(8.px)
@@ -1413,16 +1413,11 @@ object Styles : StyleSheet() {
 
     // Stylistic variations for non-user messages
     val chatMessageItemObject by style {
-        backgroundColor(Theme.colors.surfaceVariant)
-        property("border", "3px solid ${Theme.colors.primary}")
-        dark(self) {
-            backgroundColor(Theme.colors.surfaceVariantDark)
-            property("border", "3px solid ${Theme.colors.primaryDark}")
-        }
+        property("border", "none")
+        property("background", "none")
     }
 
     val chatMessageItemSystem by style {
-        // Dashed border to denote system message
         property("border", "none")
         property("background", "none")
     }
