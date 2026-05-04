@@ -201,7 +201,7 @@ class WorldLoader(private val scene: Scene) {
             currentInstance = loader
         }
 
-        /** Returns the current World data if active. */
+         /** Returns the current World data if active. */
         fun getCurrentWorld(): World? {
             return currentInstance?.getCurrentWorld()
         }

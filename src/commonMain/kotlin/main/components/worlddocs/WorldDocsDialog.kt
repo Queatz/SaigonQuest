@@ -507,19 +507,20 @@ fun WorldDocsDialog(
                                             }
                                         }
                                         val trimmed = renameTitle.trim()
-                                        DialogButton(
-                                            style = DialogButtonStyle.Primary,
-                                            isDisabled = trimmed.isBlank(),
-                                            onClick = {
-                                                saveTitle()
-                                            }
-                                        ) { Translated("Save") }
-
+                                        if (trimmed != selectedDoc.title) {
+                                            DialogButton(
+                                                style = DialogButtonStyle.Primary,
+                                                isDisabled = trimmed.isBlank(),
+                                                onClick = {
+                                                    saveTitle()
+                                                }
+                                            ) { Translated("Save") }
+                                        }
                                         DialogButton(
                                             onClick = {
                                                 GlobalAiChatStore.open(
-                                                    system = "You are helping with a document. Use the following document content as context for the user's questions.\n\nDocument title: ${selectedDoc.title}\n\nDocument content:\n$editedContent",
-                                                    initialAssistantMessage = "Hello! how can I help you with \"${selectedDoc.title}\"?",
+                                                    system = "You are helping the user understand a document. Use the following document content as context for the user's questions.\n\nDocument title: ${selectedDoc.title}\n\nDocument content:\n$editedContent",
+                                                    initialAssistantMessage = "Hello! how can I help you with **\"${selectedDoc.title}\"**?",
                                                 )
                                             }
                                         ) { Translated("Ask AI") }
