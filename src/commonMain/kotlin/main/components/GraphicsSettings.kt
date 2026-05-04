@@ -107,7 +107,7 @@ object GraphicsSettings {
      * @return 3 for low graphics mode (1/3 resolution), 1 for normal mode
      */
     fun getEngineScalingFactor(): Int {
-        return if (_isLowGraphicsModeEnabled.value) 3 else 1
+        return if (_isLowGraphicsModeEnabled.value) 2 else 1
     }
     
     /**

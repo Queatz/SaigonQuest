@@ -66,6 +66,8 @@ object UserApi {
         return user?.isPlayer == true
     }
 
+    fun isPlayer() = user?.isPlayer == true
+
     /**
      * Gets the current user from local storage or creates a new visitor
      */

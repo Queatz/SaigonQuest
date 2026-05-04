@@ -326,8 +326,7 @@ class InputHandler(
                         collectInventoryItem(interactableId)
                     } else {
                         objectManager.selectObject(interactableId)
-                        val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
-                        WebSocketApi.playerInteract(interactableId, isPlayer)
+                        WebSocketApi.playerInteract(interactableId, UserApi.isPlayer())
                     }
                 }
             }
@@ -549,8 +548,7 @@ class InputHandler(
                 pendingTapSingleJob = scope.launch {
                     delay(tapDoubleClickThreshold)
                     objectManager.selectObject(objectId)
-                    val isPlayer = try { UserApi.getToken() != null } catch (_: Throwable) { false }
-                    WebSocketApi.playerInteract(objectId, isPlayer)
+                    WebSocketApi.playerInteract(objectId, UserApi.isPlayer())
                     pendingTapSingleJob = null
                 }
                 return
