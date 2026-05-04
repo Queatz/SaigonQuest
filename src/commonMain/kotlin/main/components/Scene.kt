@@ -26,6 +26,7 @@ import main.components.objects.IdleObjectHighlighter
 import main.components.objects.SceneObjectManager
 import main.components.objects.SavedPositionManager
 import main.components.objects.handleInventoryItemDrop
+import main.components.objects.handleImageDrop
 import main.components.objects.handleObjectDrop
 import main.components.objects.update
 import main.components.player.FriendshipStatus
@@ -365,17 +366,28 @@ fun SceneComponent(url: String) {
 
                 // Get the necessary data from the event
                 val drag = (event.nativeEvent as DragEvent)
-                drag.dataTransfer ?: return@onDrop
+                val dt = drag.dataTransfer ?: return@onDrop
 
                 // Adjust client coordinates to be relative to the canvas
                 val rect = canvasRef?.getBoundingClientRect()
                 val x = (drag.clientX - (rect?.left ?: 0.0)).toInt()
                 val y = (drag.clientY - (rect?.top ?: 0.0)).toInt()
                 
-                val data = drag.dataTransfer!!.getData("application/json")
+                // Check for image files being dropped
+                val files = dt.files
+                if (files != null && files.length > 0) {
+                    val file = files.item(0)
+                    if (file != null && file.type.startsWith("image/")) {
+                        val worldId = currentWorld.value?.key ?: url
+                        SceneManager.getObjectManager()?.handleImageDrop(x, y, file, worldId)
+                        return@onDrop
+                    }
+                }
+
+                val data = dt.getData("application/json")
 
                 // Get the data type from the event
-                val dataTypeString = drag.dataTransfer!!.getData("application/x-data-type")
+                val dataTypeString = dt.getData("application/x-data-type")
 
                 console.log("Data type from event: $dataTypeString")
 

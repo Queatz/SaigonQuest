@@ -77,7 +77,7 @@ fun Chat(
                 IconRenderer(
                     url = "raw/data/ui/ui.png",
                     index = if (isFullscreen) 1 else 0,
-                    size = 24,
+                    size = 32,
                 )
             }
             ChatBellButton(worldId = worldId)

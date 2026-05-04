@@ -2486,13 +2486,17 @@ object Styles : StyleSheet() {
 
     val aiChatInputRow by style {
         display(DisplayStyle.Flex)
+        flexWrap(FlexWrap.Wrap)
         alignItems(AlignItems.Center)
         gap(8.px)
         padding(12.px)
         property("border-top", "1px solid ${Theme.colors.panelBorderSubtle}")
     }
 
-    val aiChatInput by style { property("flex", "1 1 auto") }
+    val aiChatInput by style {
+        property("flex", "1 1 auto")
+        display(DisplayStyle.Flex)
+    }
     val aiChatFullscreenToggle by style {
         cursor("pointer")
         opacity(0.7)

@@ -159,6 +159,12 @@ fun GlobalAiChat() {
                 containerAttrs = {
                     classes(Styles.aiChatInput)
                 },
+                wrapperAttrs = {
+                    style {
+                        width(4.cssRem)
+                        flexGrow(1)
+                    }
+                },
                 autoFocus = true,
                 attrs = {
                     onKeyDown { ev ->

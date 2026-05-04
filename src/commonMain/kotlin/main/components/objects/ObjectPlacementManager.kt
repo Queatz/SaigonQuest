@@ -16,6 +16,8 @@ import lib.Color3
 import main.api.InventoryApi
 import main.api.ItemApi
 import main.api.ObjectApi
+import main.api.ContentApi
+import main.api.UserApi
 import main.components.inventory.InventoryState
 import main.components.world.DepthPicking
 import main.components.world.InventoryObject
@@ -25,6 +27,9 @@ import models.Item
 import models.Object
 import models.ObjectKind
 import models.Position
+import models.ObjectRenderingType
+import models.canUserEdit
+import org.w3c.files.File
 import models.WebSocketAction
 
 /**
@@ -149,6 +154,53 @@ fun SceneObjectManager.handleObjectDrop(x: Int, y: Int, data: String, worldId: S
     } catch (error: Throwable) {
         console.error("Error parsing object data", error)
         onError?.invoke("Failed to parse object data: ${error.message ?: "Unknown error"}")
+    }
+}
+
+/**
+ * Handles dropping an image into the scene
+ */
+fun SceneObjectManager.handleImageDrop(x: Int, y: Int, file: File, worldId: String) {
+    console.log("[DEBUG_DROP] Image dropped at ($x, $y) in world $worldId: ${file.name}")
+    
+    coroutineScope.launch {
+        try {
+            // Check ownership
+            val currentUser = UserApi.getCurrentUser()
+            val world = WorldLoader.getCurrentWorld()
+            
+            if (world == null || !world.canUserEdit(currentUser.key)) {
+                console.warn("User is not authorized to drop images in this world")
+                return@launch
+            }
+
+            val token = UserApi.getToken() ?: return@launch
+
+            // Upload image
+            val uploadResult = ContentApi.upload(file, token)
+            val imageUrl = ContentApi.imageUrlFor(uploadResult.uploadedFilePath)
+
+            // Calculate position
+            val position = calculatePositionFromScreenCoordinates(x, y)
+
+            // Create object model
+            val newObject = Object(
+                title = file.name.ifBlank { "Dropped Image" },
+                worldId = worldId,
+                file = imageUrl,
+                position = position,
+                renderingType = ObjectRenderingType.SingleImage,
+                imageScale = 1.0f
+            )
+
+            // Save to database
+            val savedObj = ObjectApi.createObject(newObject)
+
+            onSuccess?.invoke("Image '${savedObj.title}' uploaded and placed")
+        } catch (error: Throwable) {
+            console.error("Error handling image drop", error)
+            onError?.invoke("Failed to upload image: ${error.message ?: "Unknown error"}")
+        }
     }
 }
 
