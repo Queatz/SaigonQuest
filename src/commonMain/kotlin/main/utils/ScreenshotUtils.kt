@@ -34,6 +34,18 @@ object ScreenshotUtils {
         }
         val engine = scene.getEngine()
         val camera = scene.activeCamera
+        if (camera == null) {
+            cont.resumeWith(Result.failure(IllegalStateException("No active camera for screenshot")))
+            return@suspendCancellableCoroutine
+        }
+
+        // CRITICAL FIX: Force the camera to update its matrices before the screenshot is taken.
+        // This ensures that any manual changes (like those in CameraController during proximity lock)
+        // are fully reflected in the screenshot's view and projection matrices.
+        try {
+            camera.getTransformationMatrix()
+        } catch (_: Throwable) {}
+
         try {
             val options = object : ScreenshotOptions {
                 override val width: Int = engine.getRenderWidth()

@@ -87,6 +87,7 @@ fun DialogInput(
                 TextArea(
                     attrs = {
                         classes(Styles.dialogInputField)
+                        attr("autocomplete", "off")
                         if (placeholder != null) placeholder(placeholder)
                         value(value)
                         onInput { onInput(it.value) }
@@ -106,6 +107,7 @@ fun DialogInput(
                     type = type,
                     attrs = {
                         classes(Styles.dialogInputField)
+                        attr("autocomplete", "off")
                         if (placeholder != null) placeholder(placeholder)
                         value(value)
                         onInput {

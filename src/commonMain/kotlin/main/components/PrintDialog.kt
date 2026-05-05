@@ -361,10 +361,18 @@ fun generatePrintImage(
                 override val height: Int = scene.getEngine().getRenderHeight()
             }
             
+            // Use the active camera, and force matrix update to ensure sync
+            val camera = scene.activeCamera
+            if (camera != null) {
+                try {
+                    camera.getTransformationMatrix()
+                } catch (_: Throwable) {}
+            }
+
             // Use the Tools class to take a screenshot
             Tools.CreateScreenshot(
                 engine = scene.getEngine(),
-                camera = scene.activeCamera,
+                camera = camera,
                 options = options,
                 onSuccess = { data ->
                     drawQRCode(data)

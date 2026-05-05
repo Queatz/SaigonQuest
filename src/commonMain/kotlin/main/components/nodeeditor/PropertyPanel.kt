@@ -202,6 +202,7 @@ fun PropertyPanel(
                                         PropertyKey.TEXT_CONTENT,
                                         PropertyKey.SYSTEM_PROMPT,
                                         PropertyKey.USER_PROMPT,
+                                        PropertyKey.INITIAL_MESSAGE,
                                         PropertyKey.TEMPLATE,
                                     )
                                 ) {

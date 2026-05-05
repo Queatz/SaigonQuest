@@ -2127,7 +2127,7 @@ fun WorldEditContent(
         ) {
             Translated(
                 when {
-                    isSubmitting -> "Saving..."
+                    isEditing && isSubmitting -> "Saving..."
                     isEditing && isOwner -> "Update"
                     isSubmitting -> "Creating..."
                     else -> "Create"

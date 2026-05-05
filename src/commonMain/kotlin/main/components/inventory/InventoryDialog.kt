@@ -830,118 +830,120 @@ fun InventoryDialog(onClose: () -> Unit) {
                                     }
                                 ) {
                                     currentUser?.wornItems?.forEach { itemId ->
-                                        val item = items[itemId]
-                                        if (item != null) {
-                                            // Try to find the corresponding inventory item key if it exists in our map
-                                            val inventoryItemKey =
-                                                InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
+                                        key(itemId) {
+                                            val item = items[itemId]
+                                            if (item != null) {
+                                                // Try to find the corresponding inventory item key if it exists in our map
+                                                val inventoryItemKey =
+                                                    InventoryState.inventoryItemToItemMap.entries.find { it.value == itemId }?.key
 
-                                            FramedBorder(
-                                                borderImage = "/raw/data/ui/borders/input.png",
-                                                backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
-                                                darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
-                                                attrs = {
-                                                    classes(Styles.dialogInputWrapper)
-                                                    classes(InventoryStyles.wornItemCard)
+                                                FramedBorder(
+                                                    borderImage = "/raw/data/ui/borders/input.png",
+                                                    backgroundImage = "/raw/data/ui/backgrounds/whitestone.png",
+                                                    darkBackgroundImage = "/raw/data/ui/backgrounds/chalkboard.png",
+                                                    attrs = {
+                                                        classes(Styles.dialogInputWrapper)
+                                                        classes(InventoryStyles.wornItemCard)
 
-                                                    // Move worn border highlight here
-                                                    when (currentUser.sex) {
-                                                        Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
-                                                        Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
-                                                        else -> {}
-                                                    }
+                                                        // Move worn border highlight here
+                                                        when (currentUser.sex) {
+                                                            Sex.Boy -> classes(InventoryStyles.inventoryBoxWornBoy)
+                                                            Sex.Girl -> classes(InventoryStyles.inventoryBoxWornGirl)
+                                                            else -> {}
+                                                        }
 
-                                                    onClick {
-                                                        handleRemoveWornItem(
-                                                            itemId,
-                                                            isDirectItemId = true
-                                                        )
-                                                    }
-
-                                                    // Make draggable and ensure draggedItemId is set
-                                                    draggable(Draggable.True)
-                                                    onDragStart { event ->
-                                                        handleDragStart(
-                                                            event.nativeEvent,
-                                                            inventoryItemKey ?: itemId
-                                                        )
-                                                    }
-                                                    onDragEnd { draggedItemId = null }
-
-                                                    // Touch drag support for worn items
-                                                    touchDraggable(
-                                                        dataProvider = {
-                                                            val payload = InventoryDragPayload(
-                                                                inventoryItemKey = inventoryItemKey ?: itemId,
-                                                                itemKey = item.key,
-                                                                quantity = 1,
-                                                                inventoryId = null,
+                                                        onClick {
+                                                            handleRemoveWornItem(
+                                                                itemId,
+                                                                isDirectItemId = true
                                                             )
-                                                            json.encodeToString(InventoryDragPayload.serializer(), payload)
-                                                        },
-                                                        dataType = DataType.INVENTORY_ITEM,
-                                                        previewBuilder = { preview ->
-                                                            preview.style.width = "32px"
-                                                            preview.style.height = "32px"
-                                                            preview.style.setProperty("pointer-events", "none")
-                                                            if (item.file.isNotEmpty()) {
-                                                                val url = "/raw/data/spritesheets/${item.file}.png"
-                                                                preview.style.setProperty(
-                                                                    "background-image",
-                                                                    "url(\"$url\")"
+                                                        }
+
+                                                        // Make draggable and ensure draggedItemId is set
+                                                        draggable(Draggable.True)
+                                                        onDragStart { event ->
+                                                            handleDragStart(
+                                                                event.nativeEvent,
+                                                                inventoryItemKey ?: itemId
+                                                            )
+                                                        }
+                                                        onDragEnd { draggedItemId = null }
+
+                                                        // Touch drag support for worn items
+                                                        touchDraggable(
+                                                            dataProvider = {
+                                                                val payload = InventoryDragPayload(
+                                                                    inventoryItemKey = inventoryItemKey ?: itemId,
+                                                                    itemKey = item.key,
+                                                                    quantity = 1,
+                                                                    inventoryId = null,
                                                                 )
-                                                                preview.style.setProperty(
-                                                                    "background-size",
-                                                                    "320px 320px"
-                                                                )
-                                                                val col = item.assetIndex % 10
-                                                                val row = item.assetIndex / 10
-                                                                preview.style.setProperty(
-                                                                    "background-position",
-                                                                    "-${col * 32}px -${(9 - row) * 32}px"
-                                                                )
-                                                                preview.style.setProperty(
-                                                                    "background-repeat",
-                                                                    "no-repeat"
-                                                                )
+                                                                json.encodeToString(InventoryDragPayload.serializer(), payload)
+                                                            },
+                                                            dataType = DataType.INVENTORY_ITEM,
+                                                            previewBuilder = { preview ->
+                                                                preview.style.width = "32px"
+                                                                preview.style.height = "32px"
+                                                                preview.style.setProperty("pointer-events", "none")
+                                                                if (item.file.isNotEmpty()) {
+                                                                    val url = "/raw/data/spritesheets/${item.file}.png"
+                                                                    preview.style.setProperty(
+                                                                        "background-image",
+                                                                        "url(\"$url\")"
+                                                                    )
+                                                                    preview.style.setProperty(
+                                                                        "background-size",
+                                                                        "320px 320px"
+                                                                    )
+                                                                    val col = item.assetIndex % 10
+                                                                    val row = item.assetIndex / 10
+                                                                    preview.style.setProperty(
+                                                                        "background-position",
+                                                                        "-${col * 32}px -${(9 - row) * 32}px"
+                                                                    )
+                                                                    preview.style.setProperty(
+                                                                        "background-repeat",
+                                                                        "no-repeat"
+                                                                    )
+                                                                }
+                                                            }
+                                                        )
+                                                    }
+                                                ) {
+                                                    // Item icon
+                                                    InventoryBox(
+                                                        onClick = { /* Handled by parent */ },
+                                                        item = item,
+                                                        isLoading = isLoading,
+                                                        quantity = 1, // Worn items always have quantity 1
+                                                        inventoryItemKey = inventoryItemKey,
+                                                        isWorn = false, // Disable worn highlight in the box itself
+                                                        sex = currentUser.sex,
+                                                        useBorder = false, // Remove the 2nd framed border (inner)
+                                                        draggable = false,
+                                                    )
+
+                                                    // Item name
+                                                    Div(
+                                                        attrs = {
+                                                            style {
+                                                                fontSize(12.px)
+                                                                marginTop(4.px)
+                                                                textAlign("center")
                                                             }
                                                         }
-                                                    )
-                                                }
-                                            ) {
-                                                // Item icon
-                                                InventoryBox(
-                                                    onClick = { /* Handled by parent */ },
-                                                    item = item,
-                                                    isLoading = isLoading,
-                                                    quantity = 1, // Worn items always have quantity 1
-                                                    inventoryItemKey = inventoryItemKey,
-                                                    isWorn = false, // Disable worn highlight in the box itself
-                                                    sex = currentUser.sex,
-                                                    useBorder = false, // Remove the 2nd framed border (inner)
-                                                    draggable = false,
-                                                )
+                                                    ) {
+                                                        Text(item.title)
+                                                    }
 
-                                                // Item name
-                                                Div(
-                                                    attrs = {
-                                                        style {
-                                                            fontSize(12.px)
-                                                            marginTop(4.px)
-                                                            textAlign("center")
+                                                    // Remove text
+                                                    Div(
+                                                        attrs = {
+                                                            classes(InventoryStyles.removeTextSmall)
                                                         }
+                                                    ) {
+                                                        Translated("Click to remove")
                                                     }
-                                                ) {
-                                                    Text(item.title)
-                                                }
-
-                                                // Remove text
-                                                Div(
-                                                    attrs = {
-                                                        classes(InventoryStyles.removeTextSmall)
-                                                    }
-                                                ) {
-                                                    Translated("Click to remove")
                                                 }
                                             }
                                         }

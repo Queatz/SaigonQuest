@@ -199,7 +199,7 @@ class CameraController(private val scene: Scene) {
             baseFov
         }
 
-        // Determine intended FOV, blending between normal and locked if transitioning
+        // Determine intended FOV, minZ, maxZ and offset, blending between normal and locked if transitioning
         val blendPc = activePc ?: proximityCameraManager.getLastActiveCamera()
         val targetFov = if (blendPc != null) {
             val lockedFov = blendPc.targetCamera.fov
@@ -208,14 +208,44 @@ class CameraController(private val scene: Scene) {
             normalFov
         }
         
+        val targetMinZ = if (blendPc != null) {
+            val lockedMinZ = blendPc.targetCamera.minZ
+            originalMinZ * (1f - easedInfluence) + lockedMinZ * easedInfluence
+        } else {
+            originalMinZ
+        }
+
+        val targetMaxZ = if (blendPc != null) {
+            val lockedMaxZ = blendPc.targetCamera.maxZ
+            500f * (1f - easedInfluence) + lockedMaxZ * easedInfluence
+        } else {
+            500f
+        }
+
+        val targetOffset = if (blendPc != null) {
+            // Smoothly lerp offset to 0,0 when locked
+            val startOffset = originalTargetScreenOffset
+            Vector2(
+                startOffset.x * (1f - easedInfluence),
+                startOffset.y * (1f - easedInfluence)
+            )
+        } else {
+            originalTargetScreenOffset
+        }
+        
         // Use faster speed for FOV during proximity transitions to feel snappier
         val currentPosition = cameraTarget?.position ?: Vector3.Zero()
         val pivotDist = Vector3.Distance(camera.target, currentPosition)
         val isFarFromPlayer = pivotDist > 1.0f
         val currentFovSpeed = if (influence > 0f) animationSpeed else if (isFarFromPlayer) proximityAnimationSpeed else animationSpeed
         
-        // Smoothly lerp FOV
+        // Smoothly lerp FOV and other properties
         camera.fov = camera.fov * (1 - currentFovSpeed) + targetFov * currentFovSpeed
+        camera.minZ = camera.minZ * (1 - currentFovSpeed) + targetMinZ * currentFovSpeed
+        camera.maxZ = camera.maxZ * (1 - currentFovSpeed) + targetMaxZ * currentFovSpeed
+        
+        camera.targetScreenOffset.x = camera.targetScreenOffset.x * (1 - currentFovSpeed) + targetOffset.x * currentFovSpeed
+        camera.targetScreenOffset.y = camera.targetScreenOffset.y * (1 - currentFovSpeed) + targetOffset.y * currentFovSpeed
 
         if (activePc != null) {
             val lockedCam = activePc.targetCamera
@@ -226,8 +256,12 @@ class CameraController(private val scene: Scene) {
             // Smoothly move the camera towards the locked camera's position and orientation.
             // We modulate the speed with easedInfluence to achieve an ease-in-out effect.
             val currentProximitySpeed = proximityAnimationSpeed * easedInfluence
-            camera.setPosition(Vector3.Lerp(camera.position, targetPos, currentProximitySpeed))
+            
+            // CRITICAL FIX: Always set target BEFORE position for ArcRotateCamera.
+            // If set in reverse order, setTarget re-calculates alpha/beta/radius to maintain distance,
+            // effectively moving the camera AWAY from the position just set.
             camera.setTarget(Vector3.Lerp(camera.target, targetLookAt, currentProximitySpeed))
+            camera.setPosition(Vector3.Lerp(camera.position, targetPos, currentProximitySpeed))
             
             // Handle input enablement based on influence for a "soft" lock
             if (influence > 0.9f) {

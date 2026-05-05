@@ -1,5 +1,3 @@
-
-
 package main.components
 
 import androidx.compose.runtime.Composable
@@ -11,7 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.softwork.routingcompose.Router
-import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.*
 import js.promise.await
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -23,21 +21,23 @@ import main.api.AssetApi
 import main.api.ChatApi
 import main.api.ContentApi
 import main.api.DocApi
-import main.api.UserApi
-import models.chat.ImageAttachment
 import main.api.NotificationApi
 import main.api.ObjectApi
 import main.api.PushApi
+import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
-import main.theme.Dimens
-import main.components.QuestTracker
+import main.components.chat.ChatComposerController
+import main.components.chat.ChatStore
+import main.components.chat.GlobalAiChatStore
 import main.components.inventory.InventoryTray
 import main.components.worlddocs.WorldDocsDialog
-import main.theme.Styles
+import main.theme.Dimens
 import main.theme.OverlayStyles
-import main.utils.PathUtils
+import main.theme.Styles
 import main.utils.PageTitleManager
+import main.utils.PathUtils
+import main.utils.ScreenshotUtils
 import main.utils.createCustomEvent
 import main.utils.toggleFullscreen
 import models.ChatMessage
@@ -47,26 +47,22 @@ import models.Object
 import models.User
 import models.WebSocketAction
 import models.World
-import org.jetbrains.compose.web.css.px
+import models.canUserEdit
+import models.chat.ImageAttachment
 import org.jetbrains.compose.web.css.right
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import web.animations.awaitAnimationFrame
 import web.console.console
 import web.encoding.atob
+import web.navigator.navigator
 import web.notifications.Notification
 import web.notifications.NotificationPermission
 import web.notifications.granted
 import web.notifications.requestPermission
-import main.components.chat.ChatStore
-import main.components.chat.ChatComposerController
-import kotlinx.coroutines.flow.collect
-import main.components.chat.GlobalAiChatStore
-import models.canUserEdit
-import web.navigator.navigator
 import web.push.PushManager
 
 /**
@@ -78,10 +74,11 @@ import web.push.PushManager
 fun WorldUI(
     requestPanel: Flow<SidePanelState>,
     onRequestCanvasFocus: () -> Unit = {},
+    initialWorld: World? = null,
 ) {
     // State for UI elements
     var currentPanel by remember { mutableStateOf<SidePanelState>(SidePanelState.Chat) }
-    
+
     // State for UI elements that are not part of the panel system
     var isFullscreen by remember { mutableStateOf(document.fullscreenElement != null) }
     var isQrDialogOpen by remember { mutableStateOf(false) }
@@ -89,7 +86,7 @@ fun WorldUI(
     var isWorldDocsDialogOpen by remember { mutableStateOf(false) }
     var initialWorldDocId by remember { mutableStateOf<String?>(null) }
     var isVisitedWorldsDialogOpen by remember { mutableStateOf(false) }
-    
+
     // State for print dialog
     var showPrintDialog by remember { mutableStateOf(false) }
     var printImageUrl by remember { mutableStateOf("") }
@@ -98,10 +95,10 @@ fun WorldUI(
     var isScreenshotDialogOpen by remember { mutableStateOf(false) }
     var screenshotDataUrl by remember { mutableStateOf<String?>(null) }
     var isSendingScreenshot by remember { mutableStateOf(false) }
-    
+
     // State for unread notification count
     var unreadNotificationCount by remember { mutableStateOf(0) }
-    
+
     // State for unread chat count
     var unreadChatCount by remember { mutableStateOf(0) }
 
@@ -111,10 +108,10 @@ fun WorldUI(
     // State for active shout overlay
     var activeShout by remember { mutableStateOf<ChatMessage?>(null) }
     var shoutOpacity by remember { mutableStateOf(0.0) }
-    
+
     // State for current notification popup
     var currentNotification by remember { mutableStateOf<NotificationData?>(null) }
-    
+
     // Coroutine scope for launching async operations
     val scope = rememberCoroutineScope()
     val router = Router.current
@@ -153,8 +150,8 @@ fun WorldUI(
 
 
     // State for current world
-    var currentWorld by remember { mutableStateOf<World?>(null) }
-    var isWorldLoading by remember { mutableStateOf(true) }
+    var currentWorld by remember(initialWorld) { mutableStateOf<World?>(initialWorld) }
+    var isWorldLoading by remember(initialWorld) { mutableStateOf(initialWorld == null) }
     var worldErrorMessage by remember { mutableStateOf("") }
 
     // Listen for custom 'openDoc' event (e.g. from Md preview click)
@@ -163,11 +160,11 @@ fun WorldUI(
             val de = e.asDynamic()
             val docId = de.detail.docId as? String
             val targetWorldId = de.detail.worldId as? String
-            
+
             // Check if it's the current world by both ID (key) and URL
-            val isCurrentWorld = targetWorldId == null || 
-                targetWorldId == currentWorld?.key || 
-                (currentWorld?.url?.isNotBlank() == true && targetWorldId == currentWorld?.url)
+            val isCurrentWorld = targetWorldId == null ||
+                    targetWorldId == currentWorld?.key ||
+                    (currentWorld?.url?.isNotBlank() == true && targetWorldId == currentWorld?.url)
 
             if (!isCurrentWorld) {
                 // Navigate to other world (targetWorldId is either key or URL)
@@ -220,7 +217,7 @@ fun WorldUI(
             currentPanel = panel
         }
     }
-    
+
     // Function to fetch unread notification count
     fun fetchUnreadNotificationCount() {
         scope.launch {
@@ -232,7 +229,7 @@ fun WorldUI(
             }
         }
     }
-    
+
     // Function to fetch unread chat count
     fun fetchUnreadChatCount() {
         currentWorld?.let { world ->
@@ -260,13 +257,13 @@ fun WorldUI(
             }
         }
     }
-    
-    // Fetch unread counts when the component is first rendered
-    LaunchedEffect(Unit) {
+
+    // Fetch unread counts when the component is first rendered or user changes
+    LaunchedEffect(currentUser?.key) {
         fetchUnreadNotificationCount()
         fetchUnreadChatCount()
         fetchWorldDocsCount()
-        
+
         // Periodically refresh the unread counts (every 30 seconds)
         while (true) {
             delay(30000) // 30 seconds
@@ -276,7 +273,7 @@ fun WorldUI(
             fetchWorldDocsCount()
         }
     }
-    
+
     // Update the webpage title with the current world name
     LaunchedEffect(currentWorld?.title) {
         PageTitleManager.worldTitle = currentWorld?.title
@@ -296,7 +293,7 @@ fun WorldUI(
             delay(500)
             fetchUnreadNotificationCount()
         }
-        
+
         if (currentPanel != SidePanelState.Chat) {
             // Small delay to allow any "mark as read" operations to complete
             delay(500)
@@ -323,13 +320,13 @@ fun WorldUI(
             window.removeEventListener("worldDocsChanged", handler)
         }
     }
-    
+
     // Helper function to update the panel state
     fun updatePanelState(newState: SidePanelState) {
         // Update the currentPanel state
         currentPanel = newState
     }
-    
+
     // Helper function to toggle a panel
     fun togglePanel(panelState: SidePanelState) {
         if (currentPanel == panelState) {
@@ -338,14 +335,14 @@ fun WorldUI(
         } else {
             // Otherwise, open the requested panel
             updatePanelState(panelState)
-            
+
             // Reset unread notification count when opening notifications panel
             if (panelState == SidePanelState.Notifications) {
                 unreadNotificationCount = 0
             }
         }
     }
-    
+
     // Helper used by push registration
     // Properly decodes a Base64URL-encoded public VAPID key into a Uint8Array
     fun urlBase64ToUint8Array(base64String: String): dynamic {
@@ -367,7 +364,11 @@ fun WorldUI(
     suspend fun tryRegisterAndSubscribePush() {
         try {
             val nav = navigator
-            val perm: NotificationPermission? = try { Notification.permission } catch (_: Throwable) { null }
+            val perm: NotificationPermission? = try {
+                Notification.permission
+            } catch (_: Throwable) {
+                null
+            }
             if (perm != NotificationPermission.granted) {
                 try {
                     val res = Notification.requestPermission()
@@ -412,6 +413,8 @@ fun WorldUI(
         try {
             val user = UserApi.getCurrentUser()
             currentUser = user
+            // Apply user's language preference if set
+            user.language?.let { LanguageSettings.setLanguage(it) }
             if (user.isPlayer) {
                 tryRegisterAndSubscribePush()
             }
@@ -419,30 +422,38 @@ fun WorldUI(
             console.error("Error fetching user", error)
         }
     }
-    
+
     // Track the current URL path for world loading
     var currentPath by remember { mutableStateOf(PathUtils.getCurrentPath(router)) }
-    
+
     // Update currentPath when URL changes
     DisposableEffect(Unit) {
         val popStateListener: (dynamic) -> Unit = {
             currentPath = PathUtils.getCurrentPath(router)
         }
-        
+
         window.addEventListener("popstate", popStateListener)
-        
+
         onDispose {
             window.removeEventListener("popstate", popStateListener)
         }
     }
-    
-    // Fetch current world when path changes
-    LaunchedEffect(currentPath) {
+
+    // Fetch current world when path changes or user logs in
+    LaunchedEffect(currentPath, currentUser?.key) {
         // Get current world URL from the pathname
         val worldUrl = currentPath.trimStart('/')
+
+        // If we already have the correct world from initialWorld, skip loading
+        if (initialWorld != null && (initialWorld.url == worldUrl || initialWorld.key == worldUrl)) {
+            currentWorld = initialWorld
+            isWorldLoading = false
+            return@LaunchedEffect
+        }
+
         isWorldLoading = true
         worldErrorMessage = ""
-        
+
         try {
             val world = WorldApi.getWorldByUrl(worldUrl)
             currentWorld = world
@@ -453,6 +464,7 @@ fun WorldUI(
                 is ResponseException -> {
                     worldErrorMessage = error.message ?: "Failed to load world"
                 }
+
                 is ErrorResponse -> {
                     worldErrorMessage = error.message
                 }
@@ -460,7 +472,7 @@ fun WorldUI(
             isWorldLoading = false
         }
     }
-    
+
     // Fetch unread chat count when currentWorld changes
     LaunchedEffect(currentWorld) {
         fetchUnreadChatCount()
@@ -469,54 +481,55 @@ fun WorldUI(
             if (worldId != null && worldId.isNotEmpty()) {
                 ChatStore.preload(worldId)
             }
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+        }
     }
-    
+
     // Handle object double-click events
     DisposableEffect(Unit) {
         val objectDoubleClickListener: (dynamic) -> Unit = { event ->
             // Get the object ID from the event detail
             val objectId = event.detail.objectId as String
             console.log("[OBJECT_DOUBLE_CLICK] Received event for object: $objectId")
-            
+
             // Open the object editor dialog
             scope.launch {
                 try {
                     // Fetch the object by ID
                     val obj = ObjectApi.getObject(objectId)
-                    
+
                     // Set the current editing object and update panel state
                     currentEditingObject = obj
                     updatePanelState(SidePanelState.ObjectEditor)
-                    
+
                     console.log("[OBJECT_DOUBLE_CLICK] Opened editor for object: ${obj.title}")
                 } catch (error: Throwable) {
                     console.error("[OBJECT_DOUBLE_CLICK] Error fetching object", error)
                 }
             }
         }
-        
+
         window.addEventListener("objectDoubleClick", objectDoubleClickListener)
 
         onDispose {
             window.removeEventListener("objectDoubleClick", objectDoubleClickListener)
         }
     }
-    
+
     // Update fullscreen state when fullscreen changes
     DisposableEffect(Unit) {
         val fullscreenChangeListener: (dynamic) -> Unit = {
             isFullscreen = document.fullscreenElement != null
             onRequestCanvasFocus()
         }
-        
+
         document.addEventListener("fullscreenchange", fullscreenChangeListener)
-        
+
         onDispose {
             document.removeEventListener("fullscreenchange", fullscreenChangeListener)
         }
     }
-    
+
     // Set up WebSocket listener for notifications
     DisposableEffect(Unit) {
         // Listen for messages from Service Worker (e.g., notification clicks)
@@ -538,17 +551,18 @@ fun WorldUI(
                     }
                 }
             })
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+        }
 
         // Add listener for NOTIFICATION events
         val notificationListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.NOTIFICATION) { message ->
             try {
                 // Parse the notification data from the message
                 val notificationData = ApiClient.json.decodeFromString<NotificationData>(message.data)
-                
+
                 // Update the current notification
                 currentNotification = notificationData
-                
+
                 // Increment the unread notification count
                 unreadNotificationCount++
 
@@ -557,13 +571,13 @@ fun WorldUI(
                 console.error("Error processing notification", e)
             }
         }
-        
+
         // Clean up listener on dispose
         onDispose {
             WebSocketApi.removeListener(notificationListenerToken)
         }
     }
-    
+
     // Set up WebSocket listener for chat messages to update unread count
     DisposableEffect(Unit) {
         // Add listener for RECEIVE_CHAT_MESSAGE events
@@ -571,15 +585,16 @@ fun WorldUI(
             try {
                 // Parse the chat message data from the message
                 val chatMessage = ApiClient.json.decodeFromString<ChatMessage>(message.data)
-                
+
                 // Only count as unread if:
                 // - The message is for the current world
                 // - The Chat panel is not open
                 // - The message is not from the current user
                 val worldMatches = chatMessage.worldId == currentWorld?.key
                 val isChatOpen = currentPanel == SidePanelState.Chat
-                val fromSelf = (chatMessage.senderType == models.ChatSenderType.USER && chatMessage.senderId == currentUser?.key)
-                
+                val fromSelf =
+                    (chatMessage.senderType == models.ChatSenderType.USER && chatMessage.senderId == currentUser?.key)
+
                 if (worldMatches && !isChatOpen && !fromSelf) {
                     unreadChatCount++
                     console.log("Received chat message for world ${chatMessage.worldId}: incremented unread count to $unreadChatCount")
@@ -594,7 +609,7 @@ fun WorldUI(
             WebSocketApi.removeListener(chatListenerToken)
         }
     }
-    
+
     // Shout overlay listener for live shouted chat messages
     DisposableEffect(currentWorld?.key) {
         val shoutListenerToken = WebSocketApi.addListenerWithToken(WebSocketAction.RECEIVE_CHAT_MESSAGE) { message ->
@@ -610,7 +625,8 @@ fun WorldUI(
                             // start fade out
                             shoutOpacity = 0.0
                             delay(350)
-                        } catch (_: Throwable) { /* ignore */ }
+                        } catch (_: Throwable) { /* ignore */
+                        }
                         // clear when faded
                         if (activeShout?.key == chatMessage.key) {
                             activeShout = null
@@ -625,7 +641,7 @@ fun WorldUI(
             WebSocketApi.removeListener(shoutListenerToken)
         }
     }
-    
+
     // Listen for OPEN_CHAT to open chat panel
     DisposableEffect(Unit) {
         val openChatToken = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_CHAT) {
@@ -652,7 +668,7 @@ fun WorldUI(
         }
         onDispose { WebSocketApi.removeListener(token) }
     }
-    
+
     // Listen for OPEN_DOC to open the WorldDocsDialog with a specific doc
     DisposableEffect(Unit) {
         val token = WebSocketApi.addListenerWithToken(WebSocketAction.OPEN_DOC) { msg ->
@@ -681,7 +697,7 @@ fun WorldUI(
     WorldUIContainer {
         // Reconnecting banner at the very top (fixed)
         ReconnectBanner()
-        
+
         // World name and subtitle (center top)
         WorldTitle(
             currentWorld = currentWorld,
@@ -690,7 +706,7 @@ fun WorldUI(
             currentPanel = currentPanel,
             isMobile = isMobile
         )
-        
+
         // Shout overlay UI (shows only for live shouted messages)
         if (activeShout != null) {
             Div(
@@ -707,7 +723,7 @@ fun WorldUI(
                 }
             }
         }
-        
+
 
         var showUI by remember { mutableStateOf(true) }
 
@@ -807,7 +823,7 @@ fun WorldUI(
                     onClick = {
                         scope.launch {
                             try {
-                                val data = main.utils.ScreenshotUtils.captureCurrentScenePng()
+                                val data = ScreenshotUtils.captureCurrentScenePng()
                                 screenshotDataUrl = data
                                 isScreenshotDialogOpen = true
                             } catch (e: Throwable) {
@@ -852,24 +868,28 @@ fun WorldUI(
                     }
                 )
 
-                CircleButton(
-                    onClick = {
-                        isWorldDocsDialogOpen = true
-                    },
-                    iconIndex = 29, // Docs
-                    badgeCount = worldDocsCount,
-                    badgeIsSuccess = true,
-                    id = "worldButton",
-                    title = docsTitle,
-                    onMouseEnter = {
-                        hoveredButtonText = docsTitle
-                        hoveredButtonElement = it
-                    },
-                    onMouseLeave = {
-                        hoveredButtonText = null
-                        hoveredButtonElement = null
-                    }
-                )
+                val isPlayer = currentUser?.isPlayer == true
+
+                if (isPlayer) {
+                    CircleButton(
+                        onClick = {
+                            isWorldDocsDialogOpen = true
+                        },
+                        iconIndex = 29, // Docs
+                        badgeCount = worldDocsCount,
+                        badgeIsSuccess = true,
+                        id = "worldButton",
+                        title = docsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = docsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
+                    )
+                }
 
                 // Chat button
                 CircleButton(
@@ -900,7 +920,7 @@ fun WorldUI(
                     }
                 )
 
-                if (currentUser?.isPlayer == true) {
+                if (isPlayer) {
                     // Notifications button
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.Notifications) },
@@ -916,9 +936,6 @@ fun WorldUI(
                             hoveredButtonElement = null
                         }
                     )
-                }
-
-                if (currentUser?.isPlayer == true) {
                     // Friends button
                     CircleButton(
                         onClick = { togglePanel(SidePanelState.Friends) },
@@ -934,25 +951,25 @@ fun WorldUI(
                             hoveredButtonElement = null
                         }
                     )
-                }
 
-                // Visited worlds button
-                CircleButton(
-                    onClick = {
-                        isVisitedWorldsDialogOpen = true
-                    },
-                    iconIndex = 28, // 28: visited worlds
-                    badgeCount = 0,
-                    title = visitedWorldsTitle,
-                    onMouseEnter = {
-                        hoveredButtonText = visitedWorldsTitle
-                        hoveredButtonElement = it
-                    },
-                    onMouseLeave = {
-                        hoveredButtonText = null
-                        hoveredButtonElement = null
-                    }
-                )
+                    // Visited worlds button
+                    CircleButton(
+                        onClick = {
+                            isVisitedWorldsDialogOpen = true
+                        },
+                        iconIndex = 28, // 28: visited worlds
+                        badgeCount = 0,
+                        title = visitedWorldsTitle,
+                        onMouseEnter = {
+                            hoveredButtonText = visitedWorldsTitle
+                            hoveredButtonElement = it
+                        },
+                        onMouseLeave = {
+                            hoveredButtonText = null
+                            hoveredButtonElement = null
+                        }
+                    )
+                }
 
                 // My profile button
                 CircleButton(
@@ -1016,7 +1033,7 @@ fun WorldUI(
                 )
             }
         }
-        
+
         // Side Panel
         SidePanel(
             currentPanel = currentPanel,
@@ -1064,27 +1081,27 @@ fun WorldUI(
                 currentWorld = world
             }
         )
-        
+
         // Notification popup
         NotificationLayout(
             notification = currentNotification,
             currentPanel = currentPanel,
             isMobile = isMobile.value,
-            onDismiss = { 
-                currentNotification = null 
+            onDismiss = {
+                currentNotification = null
             },
             onClick = {
                 // Open the notifications panel
                 togglePanel(SidePanelState.Notifications)
-                
+
                 // Reset unread notification count when opening notifications
                 unreadNotificationCount = 0
-                
+
                 // Dismiss the notification
                 currentNotification = null
             }
         )
-        
+
         // Admin dialog - not part of the main panel system, kept separate
         if (isAdminDialogOpen) {
             AdminDialog(
@@ -1102,12 +1119,12 @@ fun WorldUI(
                 }
             )
         }
-        
+
         // QR code dialog - not part of the main panel system, kept separate
         if (isQrDialogOpen) {
             // Get player position from SceneManager if available
             val playerPosition = SceneManager.getPlayerController()?.getPlayerPosition()
-            
+
             QrDialog(
                 onClose = { isQrDialogOpen = false },
                 onPrint = { imageUrl ->
@@ -1120,7 +1137,7 @@ fun WorldUI(
                 worldDescription = currentWorld?.description ?: ""
             )
         }
-        
+
         // Print dialog - shown when print button is clicked in QR dialog
         if (showPrintDialog) {
             PrintDialog(
@@ -1198,7 +1215,7 @@ fun WorldUI(
                 }
             )
         }
-        
+
         // Visited worlds dialog
         if (isVisitedWorldsDialogOpen) {
             VisitedWorldsDialog(
@@ -1230,13 +1247,21 @@ fun WorldUI(
                             try {
                                 val nav = navigator
                                 val reg = nav.serviceWorker.getRegistrationAsync().await()
-                                val sub = (reg?.asDynamic()?.pushManager as? PushManager)?.getSubscriptionAsync()?.await()
+                                val sub =
+                                    (reg?.asDynamic()?.pushManager as? PushManager)?.getSubscriptionAsync()?.await()
                                 if (sub != null) {
                                     val endpoint = sub.endpoint
-                                    try { PushApi.unsubscribe(endpoint) } catch (_: Throwable) {}
-                                    try { sub.unsubscribeAsync().await() } catch (_: Throwable) {}
+                                    try {
+                                        PushApi.unsubscribe(endpoint)
+                                    } catch (_: Throwable) {
+                                    }
+                                    try {
+                                        sub.unsubscribeAsync().await()
+                                    } catch (_: Throwable) {
+                                    }
                                 }
-                            } catch (_: Throwable) {}
+                            } catch (_: Throwable) {
+                            }
                             UserApi.logout()
                             // Request a fade-to-black transition before navigating
                             val detail: dynamic = object {}
@@ -1255,6 +1280,10 @@ fun WorldUI(
                     onSuccess = { user ->
                         // Update the current user
                         currentUser = user
+
+                        // Apply user's language preference
+                        user.language?.let { LanguageSettings.setLanguage(it) }
+
                         updatePanelState(SidePanelState.None)
                         // When a visitor becomes a player, set up push
                         if (user.isPlayer) {
@@ -1268,7 +1297,7 @@ fun WorldUI(
                 )
             }
         }
-        
+
         // Always-show QR code banner above BottomText
         if (GraphicsSettings.isAlwaysShowQrEnabled()) {
             val currentUrl = window.location.origin + router.currentPath.path
@@ -1290,12 +1319,12 @@ fun WorldUI(
 
         // Quest Tracker
         if (showUI) {
-            QuestTracker()
+            QuestTracker(currentUser?.key)
         }
 
         // Bottom text with copyright information
         BottomText()
-        
+
         // Hover bubble for CircleButtons
         if (hoveredButtonText != null && hoveredButtonElement != null) {
             val rect = hoveredButtonElement!!.getBoundingClientRect()

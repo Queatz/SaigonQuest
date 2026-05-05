@@ -2165,7 +2165,7 @@ object Styles : StyleSheet() {
     val alwaysShowQrContainer by style {
         position(Position.Absolute)
         left(16.px)
-        bottom(32.px) // leave space above BottomText
+        bottom(84.px) // positioned above InventoryTray
         property("z-index", "850")
         // Do not intercept pointer events by default (canvas interactions pass through)
         property("pointer-events", "none")

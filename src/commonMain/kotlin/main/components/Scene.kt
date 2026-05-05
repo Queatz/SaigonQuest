@@ -508,8 +508,18 @@ fun SceneComponent(url: String) {
             isMobile = isMobile.value,
             onClose = { showWorldEditPanel.value = false },
             onSave = { newWorld ->
-                // After saving, fade to black then hard reload to the new world
-                navigateWithFade("/${newWorld.url}", true)
+                // Update local state to reflect the claimed/updated world immediately
+                currentWorld.value = newWorld
+                isLoaded.value = true
+                loadingFailed.value = false
+                showClaimOption.value = false
+                showWorldEditPanel.value = false
+
+                // Navigate to the world URL if it's different from the current path, without a hard reload
+                val targetPath = "/${newWorld.url}"
+                if (router.currentPath.path != targetPath) {
+                    navigateWithFade(targetPath, false)
+                }
             }
         )
     }
@@ -539,6 +549,7 @@ fun SceneComponent(url: String) {
         WorldUI(
             requestPanel = requestPanel,
             onRequestCanvasFocus = { canvasRef?.focus() },
+            initialWorld = currentWorld.value,
         )
     }
 

@@ -14,7 +14,7 @@ import org.jetbrains.compose.web.css.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun QuestTracker() {
+fun QuestTracker(userId: String? = null) {
     val scope = rememberCoroutineScope()
     var progressList by remember { mutableStateOf<List<PlayerQuestProgress>>(emptyList()) }
     var questsById by remember { mutableStateOf<Map<String, Quest>>(emptyMap()) }
@@ -55,7 +55,7 @@ fun QuestTracker() {
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userId) {
         refreshQuests()
     }
 

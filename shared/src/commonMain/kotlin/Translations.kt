@@ -2814,6 +2814,12 @@ vi: Khách rời đi
 
 Triggers when a visitor leaves the world
 vi: Kích hoạt khi khách rời khỏi thế giới
+
+Placeholder
+vi: Thay thế
+
+Player input
+vi: Nhập của người chơi
 """
 
 expect fun logMissingTranslation(key: String, language: String?)
