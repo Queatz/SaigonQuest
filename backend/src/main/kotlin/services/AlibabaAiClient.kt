@@ -817,6 +817,61 @@ object AlibabaAiClient : AiClient {
         }
     }
 
+    internal fun cropToContent(imageBytes: ByteArray): ByteArray? {
+        return try {
+            val image = ImageIO.read(ByteArrayInputStream(imageBytes)) ?: return null
+            val width = image.width
+            val height = image.height
+
+            var minX = width
+            var minY = height
+            var maxX = -1
+            var maxY = -1
+
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val alpha = (image.getRGB(x, y) shr 24) and 0xff
+                    // Crop based on 10% alpha (255 * 0.1 = 25.5)
+                    if (alpha > 25) {
+                        if (x < minX) minX = x
+                        if (x > maxX) maxX = x
+                        if (y < minY) minY = y
+                        if (y > maxY) maxY = y
+                    }
+                }
+            }
+
+            if (maxX == -1) {
+                return imageBytes
+            }
+
+            val cropX = (minX - 1).coerceAtLeast(0)
+            val cropY = (minY - 1).coerceAtLeast(0)
+            val cropX2 = (maxX + 1).coerceAtMost(width - 1)
+            val cropY2 = (maxY + 1).coerceAtMost(height - 1)
+
+            val cropWidth = cropX2 - cropX + 1
+            val cropHeight = cropY2 - cropY + 1
+
+            if (cropWidth == width && cropHeight == height) {
+                return imageBytes
+            }
+
+            val croppedImage = BufferedImage(cropWidth, cropHeight, BufferedImage.TYPE_INT_ARGB)
+            val g = croppedImage.createGraphics()
+            g.drawImage(image, 0, 0, cropWidth, cropHeight, cropX, cropY, cropX + cropWidth, cropY + cropHeight, null)
+            g.dispose()
+
+            val baos = ByteArrayOutputStream()
+            ImageIO.write(croppedImage, "PNG", baos)
+            baos.toByteArray()
+        } catch (e: Throwable) {
+            println("[ERROR] Alibaba cropToContent exception: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
     private suspend fun callQwenImageEdit(imageUrl: String, prompt: String, apiKey: String, size: String? = null): String? {
         val request = WanImageSynthesisRequest(
             model = "qwen-image-edit",
@@ -966,7 +1021,9 @@ object AlibabaAiClient : AiClient {
             }
 
             println("[DEBUG_LOG] Alibaba Background Removal: Combined success, total bytes: ${combinedBytes.size}")
-            combinedBytes
+            val croppedBytes = cropToContent(combinedBytes) ?: combinedBytes
+            println("[DEBUG_LOG] Alibaba Background Removal: Cropped success, total bytes: ${croppedBytes.size}")
+            croppedBytes
         } catch (e: Throwable) {
             println("[ERROR] Alibaba Background Removal: Exception during image processing: ${e.message}")
             e.printStackTrace()

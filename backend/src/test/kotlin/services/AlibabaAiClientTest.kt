@@ -272,4 +272,49 @@ class AlibabaAiClientTest {
         val url = data.output?.choices?.firstOrNull()?.message?.content?.firstOrNull { it.image != null }?.image
         assertEquals("https://example.com/result.png", url)
     }
+
+    @Test
+    fun testCropToContentWithAlphaThreshold() {
+        val width = 100
+        val height = 100
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        
+        // Fill a small rectangle in the middle
+        val g = image.createGraphics()
+        
+        // 5% alpha (255 * 0.05 = 12.75 -> 13) - should be cropped
+        g.color = Color(255, 0, 0, 13)
+        g.fillRect(10, 10, 5, 5)
+        
+        // 15% alpha (255 * 0.15 = 38.25 -> 38) - should be kept
+        g.color = Color(0, 255, 0, 38)
+        g.fillRect(20, 30, 10, 10) // x=20..29, y=30..39
+        
+        g.dispose()
+        
+        val baos = ByteArrayOutputStream()
+        ImageIO.write(image, "png", baos)
+        val imageBytes = baos.toByteArray()
+        
+        val croppedBytes = AlibabaAiClient.cropToContent(imageBytes)
+        assertNotNull(croppedBytes)
+        
+        val cropped = ImageIO.read(java.io.ByteArrayInputStream(croppedBytes))
+        assertNotNull(cropped)
+        
+        // Expected bounds based on 10% threshold: minX=20, minY=30, maxX=29, maxY=39
+        // (The 5% alpha rectangle at 10,10 should be ignored)
+        // With 1-pixel margin: cropX=19, cropY=29, cropX2=30, cropY2=40
+        // cropWidth = 30 - 19 + 1 = 12
+        // cropHeight = 40 - 29 + 1 = 12
+        
+        assertEquals(12, cropped.width)
+        assertEquals(12, cropped.height)
+        
+        // Verify content is preserved (relative to new 0,0)
+        // Green square was at (20,30). In cropped image it should be at (20-19, 30-29) = (1,1)
+        val pixel = Color(cropped.getRGB(1, 1), true)
+        assertEquals(255, pixel.green)
+        assertEquals(38, pixel.alpha)
+    }
 }

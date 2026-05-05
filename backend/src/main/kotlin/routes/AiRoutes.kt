@@ -135,7 +135,7 @@ fun Routing.configureAiRoutes() {
                 if (imageUrl == null) {
                     return@post call.respond(
                         HttpStatusCode.BadGateway,
-                        ErrorResponse(message = "Failed to generate image URL", code = HttpStatusCode.BadGateway.value)
+                        ErrorResponse(message = "Failed to generate image", code = HttpStatusCode.BadGateway.value)
                     )
                 }
 
