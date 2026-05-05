@@ -77,6 +77,7 @@ class SceneObjectManager(
     // Tracking model sources, kinds, rendering types and image scales
     internal val objectModelSources = mutableMapOf<String, Pair<String, String>>()
     internal val objectKinds = mutableMapOf<String, ObjectKind>()
+    internal val objectVerticalOffsets = mutableMapOf<String, Float>()
     internal val objectRenderingTypes = mutableMapOf<String, models.ObjectRenderingType>()
     internal val objectImageScales = mutableMapOf<String, Float>()
     internal val activeQuestIndicators = mutableMapOf<String, QuestStep>()
@@ -275,6 +276,7 @@ class SceneObjectManager(
                         removeObject(obj.key)
                         createObjectPreferInventory(obj)
                     } else {
+                        objectVerticalOffsets[obj.key] = obj.verticalOffset
                         updateObjectTransform(obj)
                         handleObjectStatusText(obj.key, obj.status, node)
                     }
@@ -352,6 +354,7 @@ class SceneObjectManager(
     fun updateObjectTransform(obj: Object) {
         val node = objectMeshes[obj.key] ?: return
         
+        objectVerticalOffsets[obj.key] = obj.verticalOffset
         node.position.set(obj.position.x, obj.position.y, obj.position.z)
         node.rotation.set(obj.rotation.x, obj.rotation.y, obj.rotation.z)
         node.scaling.set(obj.scale.x, obj.scale.y, obj.scale.z)

@@ -131,7 +131,7 @@ fun SceneObjectManager.handleObjectDrop(x: Int, y: Int, data: String, worldId: S
             val updatedObj = obj.copy(
                 position = Position(
                     x = position.x,
-                    y = position.y,
+                    y = position.y + obj.verticalOffset,
                     z = position.z
                 ),
                 worldId = worldId
@@ -182,15 +182,17 @@ fun SceneObjectManager.handleImageDrop(x: Int, y: Int, file: File, worldId: Stri
 
             // Calculate position
             val position = calculatePositionFromScreenCoordinates(x, y)
+            val finalPosition = position.copy(y = position.y + 0f) // default verticalOffset is 0f
 
             // Create object model
             val newObject = Object(
                 title = file.name.ifBlank { "Dropped Image" },
                 worldId = worldId,
                 file = imageUrl,
-                position = position,
+                position = finalPosition,
                 renderingType = ObjectRenderingType.SingleImage,
-                imageScale = 1.0f
+                imageScale = 1.0f,
+                verticalOffset = 0f
             )
 
             // Save to database
@@ -262,6 +264,7 @@ internal suspend fun SceneObjectManager.calculatePositionFromScreenCoordinates(c
  */
 fun SceneObjectManager.createObjectPreferInventory(obj: Object) {
     objectKinds[obj.key] = obj.kind
+    objectVerticalOffsets[obj.key] = obj.verticalOffset
 
     if (obj.kind != ObjectKind.Inventory) {
         createObjectInScene(obj)
@@ -436,9 +439,10 @@ fun SceneObjectManager.updateDragging(position: Vector3): Boolean {
             node.parent = null
             
             // Update the node position with the adjusted position
+            val verticalOffset = objectVerticalOffsets[draggingObjectId!!] ?: 0f
             node.position.set(
                 position.x,
-                position.y,
+                position.y + verticalOffset,
                 position.z
             )
             console.log("Updating object ${draggingObjectId} position to (${node.position.x}, ${node.position.y}, ${node.position.z})")
@@ -579,6 +583,10 @@ fun SceneObjectManager.removeObject(objectId: String) {
         // Cleanup object kind tracking
         if (objectKinds.remove(objectId) != null) {
             console.log("[DEBUG_REMOVE] Removed kind tracking for object: $objectId")
+        }
+        // Cleanup vertical offset tracking
+        if (objectVerticalOffsets.remove(objectId) != null) {
+            console.log("[DEBUG_REMOVE] Removed vertical offset tracking for object: $objectId")
         }
         // Cleanup rendering type and image scale tracking
         objectRenderingTypes.remove(objectId)
