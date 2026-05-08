@@ -1021,6 +1021,11 @@ object Styles : StyleSheet() {
         gap(16.px)
         padding(16.px)
         property("overflow-x", "auto")
+        maxHeight(50.percent)
+
+        mobile(self) {
+            property("grid-template-rows", "repeat(1, auto)")
+        }
     }
 
     val chatObjectApp by style {
@@ -1030,6 +1035,13 @@ object Styles : StyleSheet() {
         gap(8.px)
         cursor("pointer")
         property("flex", "0 0 auto")
+        borderRadius(24.px)
+        padding(12.px)
+        border(1.px, LineStyle.Solid, Theme.colors.outline)
+
+        dark(self) {
+            border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
+        }
     }
 
     val chatObjectAppIcon by style {
@@ -1045,12 +1057,8 @@ object Styles : StyleSheet() {
     val chatObjectAppName by style {
         fontSize(14.px)
         fontWeight("bold")
-        color(rgba(255, 255, 255, 0.8))
         textAlign("center")
         maxWidth(80.px)
-        property("overflow", "hidden")
-        property("text-overflow", "ellipsis")
-        property("white-space", "nowrap")
     }
 
     val mediaLibraryItemFavoriteOverlay by style {
