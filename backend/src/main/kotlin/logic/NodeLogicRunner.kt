@@ -141,6 +141,7 @@ class NodeLogicRunner(
                 is LogicNode.VisitorFar -> node.nodeId == NodeId.VisitorFar
                 is LogicNode.PlayerLeave -> node.nodeId == NodeId.PlayerLeave
                 is LogicNode.VisitorLeave -> node.nodeId == NodeId.VisitorLeave
+                is LogicNode.ObjectAppInteract -> node.nodeId == NodeId.ObjectAppInteract
                 else -> false
             }
             if (matches) {

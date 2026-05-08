@@ -1866,6 +1866,16 @@ fun LogicNode.getPropertyDefinitions(): List<NodePropertyDefinition> {
                 direction = PropertyDirection.OUTPUT
             )
         )
+
+        // ObjectAppInteract node properties
+        is LogicNode.ObjectAppInteract -> listOf(
+            NodePropertyDefinition(
+                key = PropertyKey.NEXT,
+                name = "Next",
+                type = PropertyType.TRIGGER,
+                direction = PropertyDirection.OUTPUT
+            )
+        )
     }
 }
 

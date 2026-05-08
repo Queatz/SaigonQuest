@@ -1,6 +1,5 @@
 package main.components.chat
 
-import Translations.str
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,9 +13,9 @@ import main.api.UserApi
 import main.api.WebSocketApi
 import main.api.WorldApi
 import main.api.deleteChatMessage
+import main.api.objectAppInteract
 import main.api.updateChatMessage
 import main.components.ImageDialog
-import main.components.Md
 import main.components.Translated
 import main.components.common.Spinner
 import main.components.translated
@@ -25,16 +24,19 @@ import models.ChatMessage
 import models.ChatSenderType
 import models.World
 import models.canUserEdit
-import org.jetbrains.compose.web.css.marginLeft
+import org.jetbrains.compose.web.css.fontSize
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.marginTop
+import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLDivElement
 import web.animations.awaitAnimationFrame
-import kotlin.js.Date
 
 /**
  * A component that displays chat messages and handles sending new messages.
@@ -290,6 +292,52 @@ fun ChatMessages(
                                     }
                                 }
                             }) { Translated("Unpin") }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Object Apps section
+        if (!isLoading && chatState.objects.isNotEmpty()) {
+            Div(attrs = {
+                classes(Styles.chatObjectAppsContainer)
+            }) {
+                chatState.objects.forEach { obj ->
+                    Div(attrs = {
+                        classes(Styles.chatObjectApp)
+                        onClick {
+                            WebSocketApi.objectAppInteract(obj.key, currentUserId.value.isNotEmpty())
+                        }
+                    }) {
+                        // App icon
+                        Div(attrs = {
+                            classes(Styles.chatObjectAppIcon)
+                        }) {
+                            if (obj.appIcon.isNotEmpty()) {
+                                Img(src = obj.appIcon, attrs = {
+                                    style {
+                                        width(100.percent)
+                                        height(100.percent)
+                                        property("object-fit", "cover")
+                                    }
+                                })
+                            } else {
+                                // Fallback icon
+                                Span(attrs = {
+                                    style {
+                                        fontSize(32.px)
+                                    }
+                                }) {
+                                    Text("📱")
+                                }
+                            }
+                        }
+                        // App name
+                        Div(attrs = {
+                            classes(Styles.chatObjectAppName)
+                        }) {
+                            Text(obj.appName.ifBlank { obj.title })
                         }
                     }
                 }

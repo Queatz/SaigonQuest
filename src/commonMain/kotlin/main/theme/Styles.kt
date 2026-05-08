@@ -1014,6 +1014,45 @@ object Styles : StyleSheet() {
         }
     }
 
+    val chatObjectAppsContainer by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-rows", "repeat(2, auto)")
+        property("grid-auto-flow", "column")
+        gap(16.px)
+        padding(16.px)
+        property("overflow-x", "auto")
+    }
+
+    val chatObjectApp by style {
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        alignItems(AlignItems.Center)
+        gap(8.px)
+        cursor("pointer")
+        property("flex", "0 0 auto")
+    }
+
+    val chatObjectAppIcon by style {
+        width(80.px)
+        height(80.px)
+        borderRadius(40.px)
+        display(DisplayStyle.Flex)
+        alignItems(AlignItems.Center)
+        justifyContent(JustifyContent.Center)
+        property("overflow", "hidden")
+    }
+
+    val chatObjectAppName by style {
+        fontSize(14.px)
+        fontWeight("bold")
+        color(rgba(255, 255, 255, 0.8))
+        textAlign("center")
+        maxWidth(80.px)
+        property("overflow", "hidden")
+        property("text-overflow", "ellipsis")
+        property("white-space", "nowrap")
+    }
+
     val mediaLibraryItemFavoriteOverlay by style {
         position(Position.Absolute)
         property("top", "6px")

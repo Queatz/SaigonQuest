@@ -697,6 +697,16 @@ sealed interface LogicNode {
         override val category: NodeCategory = NodeCategory.Action,
         override val description: String = "Takes an item from the world owner's inventory and drops it in the world at a random position within a given radius"
     ) : LogicNode
+
+    /**
+     * ObjectAppInteract node - triggers when the player clicks this object's app in the chat UI
+     */
+    data class ObjectAppInteract(
+        override val id: NodeId = NodeId.ObjectAppInteract,
+        override val label: String = "Object app interact",
+        override val category: NodeCategory = NodeCategory.Event,
+        override val description: String = "Triggers when the player clicks this object's app in the chat UI"
+    ) : LogicNode
 }
 
 /**
@@ -771,6 +781,7 @@ fun getAllNodeTypes(): List<LogicNode> {
         LogicNode.ChangeWorldMusic(),
         LogicNode.PlainText(),
         LogicNode.DropItem(),
+        LogicNode.ObjectAppInteract(),
     )
 }
 

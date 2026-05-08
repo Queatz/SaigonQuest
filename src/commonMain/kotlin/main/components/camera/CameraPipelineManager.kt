@@ -420,8 +420,8 @@ class CameraPipelineManager(
                 }
             }
             
-            // Reenable SSAO
-            if (isPrettyEnabled || false) {
+            // Disabled because of broken depth map
+            if (isPrettyEnabled && false) {
                 try {
                     val allCameras = mutableListOf<Camera>(camera)
                     scene.activeCamera?.let {

@@ -59,6 +59,16 @@ data class PlayerInteractData(
 )
 
 /**
+ * Object app interaction data model
+ */
+@Serializable
+data class ObjectAppInteractData(
+    val objectId: String,
+    val isPlayer: Boolean,
+    val userId: String,
+)
+
+/**
  * Player nearby data model
  */
 @Serializable

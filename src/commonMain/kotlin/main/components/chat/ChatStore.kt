@@ -26,6 +26,7 @@ object ChatStore {
     class ChatState {
         val messages = mutableStateListOf<ChatMessage>()
         val pins = mutableStateListOf<ChatMessagePin>()
+        val objects = mutableStateListOf<models.Object>()
         val isOwner = mutableStateOf(false)
         val isLoading = mutableStateOf(true)
         val isLoadingMore = mutableStateOf(false)
@@ -100,12 +101,18 @@ object ChatStore {
 
                 // Load latest page of messages (server defaults: limit=100, olderThan=now)
                 val chatMessages = ChatApi.getChatMessages(worldId).toList()
+                val worldObjects = try { main.api.ObjectApi.getObjectsByWorldId(worldId) } catch (_: Throwable) { emptyList() }
+                
                 val existingKeys = state.messages.map { it.key }.toSet()
                 val newMessages = chatMessages.filter { it.key !in existingKeys }
                 if (newMessages.isNotEmpty()) {
                     state.messages.addAll(newMessages)
                     state.messages.sortBy { it.timestamp }
                 }
+                
+                state.objects.clear()
+                state.objects.addAll(worldObjects.filter { it.appEnabled })
+
                 state.lastMutation.value = ChatMutationType.ReplaceAll
                 // If fewer than typical page size, assume no more
                 if (chatMessages.isEmpty()) state.hasMore.value = false
@@ -241,6 +248,56 @@ object ChatStore {
                 }
             } catch (t: Throwable) {
                 console.error("Error handling PIN_REMOVED", t)
+            }
+        }
+
+        // Objects (Apps)
+        WebSocketApi.addListener(WebSocketAction.ADD_OBJECT) { message ->
+            try {
+                if (message.isValid()) {
+                    val obj = ApiClient.json.decodeFromString<models.Object>(message.data)
+                    val st = states[obj.worldId] ?: return@addListener
+                    if (obj.appEnabled) {
+                        if (st.objects.none { it.key == obj.key }) {
+                            st.objects.add(obj)
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("Error handling ADD_OBJECT", t)
+            }
+        }
+        WebSocketApi.addListener(WebSocketAction.REMOVE_OBJECT) { message ->
+            try {
+                if (message.isValid()) {
+                    val objectId = ApiClient.json.decodeFromString<String>(message.data)
+                    states.values.forEach { st ->
+                        val idx = st.objects.indexOfFirst { it.key == objectId }
+                        if (idx >= 0) st.objects.removeAt(idx)
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("Error handling REMOVE_OBJECT", t)
+            }
+        }
+        WebSocketApi.addListener(WebSocketAction.OBJECT_UPDATE) { message ->
+            try {
+                if (message.isValid()) {
+                    val obj = ApiClient.json.decodeFromString<models.Object>(message.data)
+                    val st = states[obj.worldId] ?: return@addListener
+                    val idx = st.objects.indexOfFirst { it.key == obj.key }
+                    if (obj.appEnabled) {
+                        if (idx >= 0) {
+                            st.objects[idx] = obj
+                        } else {
+                            st.objects.add(obj)
+                        }
+                    } else if (idx >= 0) {
+                        st.objects.removeAt(idx)
+                    }
+                }
+            } catch (t: Throwable) {
+                console.error("Error handling OBJECT_UPDATE", t)
             }
         }
     }

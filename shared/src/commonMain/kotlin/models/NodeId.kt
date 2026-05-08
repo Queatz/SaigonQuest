@@ -64,4 +64,5 @@ enum class NodeId {
     ChangeWorldMusic,
     PlainText,
     DropItem,
+    ObjectAppInteract,
 }

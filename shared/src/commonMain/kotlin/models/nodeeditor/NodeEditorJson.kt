@@ -1,7 +1,6 @@
 package models.nodeeditor
 
 import kotlinx.serialization.Serializable
-import models.LogicNode
 import models.logicNodeById
 import models.NodeCategory
 import models.NodeId

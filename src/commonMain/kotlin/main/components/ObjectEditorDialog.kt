@@ -37,6 +37,7 @@ import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.css.flex
 import org.jetbrains.compose.web.css.flexDirection
 import org.jetbrains.compose.web.css.gap
+import org.jetbrains.compose.web.css.height
 import org.jetbrains.compose.web.css.justifyContent
 import org.jetbrains.compose.web.css.marginBottom
 import org.jetbrains.compose.web.css.marginTop
@@ -47,6 +48,7 @@ import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.rgba
+import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H4
 import org.jetbrains.compose.web.dom.Img
@@ -79,6 +81,9 @@ fun ObjectEditorDialog(
     var verticalOffset by remember { mutableStateOf(objectModel?.verticalOffset ?: 0f) }
     var renderingType by remember { mutableStateOf(objectModel?.renderingType ?: ObjectRenderingType.Asset) }
     var imageScale by remember { mutableStateOf(objectModel?.imageScale ?: 1.0f) }
+    var appEnabled by remember { mutableStateOf(objectModel?.appEnabled ?: false) }
+    var appName by remember { mutableStateOf(objectModel?.appName ?: "") }
+    var appIcon by remember { mutableStateOf(objectModel?.appIcon ?: "") }
     var rotationYDeg by remember {
         mutableStateOf(
             ((objectModel?.rotation?.y ?: 0f) * 180f / kotlin.math.PI.toFloat()).let { deg ->
@@ -92,6 +97,7 @@ fun ObjectEditorDialog(
     // Asset browser dialog toggle
     var showCollectionBrowser by remember { mutableStateOf(false) }
     var showMediaDialog by remember { mutableStateOf(false) }
+    var showIconMediaDialog by remember { mutableStateOf(false) }
     var isProcessingImage by remember { mutableStateOf(false) }
     var skipPixelArt by remember { mutableStateOf(false) }
     var skipBackgroundRemoval by remember { mutableStateOf(false) }
@@ -145,6 +151,9 @@ fun ObjectEditorDialog(
                 verticalOffset = verticalOffset,
                 renderingType = renderingType,
                 imageScale = imageScale,
+                appEnabled = appEnabled,
+                appName = appName,
+                appIcon = appIcon,
             )
         } else {
             // Create new object at the user's selected position if available; otherwise, fall back to player's current position
@@ -176,6 +185,9 @@ fun ObjectEditorDialog(
                 verticalOffset = verticalOffset,
                 renderingType = renderingType,
                 imageScale = imageScale,
+                appEnabled = appEnabled,
+                appName = appName,
+                appIcon = appIcon,
             )
         }
         
@@ -524,6 +536,79 @@ fun ObjectEditorDialog(
                     }
                 }
                 
+                // Object App section
+                Div(
+                    attrs = {
+                        style {
+                            marginTop(24.px)
+                            display(DisplayStyle.Flex)
+                            flexDirection(FlexDirection.Column)
+                            gap(8.px)
+                        }
+                    }
+                ) {
+                    H4(
+                        attrs = {
+                            classes(Styles.objectEditorDialogLogicTitle)
+                        }
+                    ) {
+                        Text("Object app")
+                    }
+
+                    LabeledCheckbox(
+                        checked = appEnabled,
+                        label = "Enable app",
+                        onCheckedChange = { appEnabled = it }
+                    )
+
+                    if (appEnabled) {
+                        DialogInput(
+                            label = "App name",
+                            value = appName,
+                            onInput = { appName = it },
+                            placeholder = "App name",
+                            containerAttrs = {
+                                style {
+                                    marginTop(8.px)
+                                }
+                            }
+                        )
+
+                        Div(
+                            attrs = {
+                                style {
+                                    marginTop(8.px)
+                                    display(DisplayStyle.Flex)
+                                    flexDirection(FlexDirection.Column)
+                                    gap(8.px)
+                                }
+                            }
+                        ) {
+                            Text("App icon")
+                            if (appIcon.isNotEmpty()) {
+                                Img(
+                                    src = appIcon,
+                                    attrs = {
+                                        style {
+                                            width(64.px)
+                                            height(64.px)
+                                            borderRadius(32.px)
+                                            property("object-fit", "cover")
+                                        }
+                                    }
+                                )
+                            }
+                            DialogButton(
+                                onClick = { showIconMediaDialog = true },
+                                style = DialogButtonStyle.Secondary,
+                                small = true
+                            ) {
+                                Text(if (appIcon.isEmpty()) "Select icon" else "Change icon")
+                            }
+                        }
+                    }
+                }
+
                 // Logic Editor preview (disabled)
                 FramedBorder(
                     attrs = {
@@ -676,6 +761,16 @@ fun ObjectEditorDialog(
                         }
                     }
                 }
+            },
+            filter = MediaType.Image
+        )
+    }
+
+    if (showIconMediaDialog) {
+        UploadMediaDialog(
+            onClose = { showIconMediaDialog = false },
+            onSelect = { url, _, _ ->
+                appIcon = url
             },
             filter = MediaType.Image
         )

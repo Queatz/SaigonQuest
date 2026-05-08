@@ -25,6 +25,9 @@ data class Object(
     var kind: ObjectKind = ObjectKind.World,
     var renderingType: ObjectRenderingType = ObjectRenderingType.Asset,
     var imageScale: Float = 1.0f,
+    var appEnabled: Boolean = false,
+    var appName: String = "",
+    var appIcon: String = "",
 ) : BaseModel()
 
 @Serializable

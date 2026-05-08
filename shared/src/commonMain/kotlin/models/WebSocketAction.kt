@@ -66,4 +66,7 @@ enum class WebSocketAction {
 
     // Questing
     QUEST_PROGRESS_UPDATED,
+
+    // Apps
+    OBJECT_APP_INTERACT,
 }

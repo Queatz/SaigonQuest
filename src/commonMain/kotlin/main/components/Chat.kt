@@ -70,6 +70,7 @@ fun Chat(
         onClose = onClose,
         isFullscreen = isFullscreen,
         headerActions = {
+            ChatBellButton(worldId = worldId)
             DialogButton(
                 onClick = { toggleFullscreen() },
                 style = DialogButtonStyle.Secondary,
@@ -80,7 +81,6 @@ fun Chat(
                     size = 32,
                 )
             }
-            ChatBellButton(worldId = worldId)
         },
         headerRight = {
 //            val text = retentionText

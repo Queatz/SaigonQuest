@@ -70,6 +70,7 @@ class WebSocketHandlerFactory(
             WebSocketAction.QUEST_PROGRESS_UPDATED -> NullHandler()
             WebSocketAction.MOVE_OBJECT -> NullHandler() // Server -> clients only
             WebSocketAction.UPDATE_WORLD_MUSIC -> NullHandler() // Server -> clients only
+            WebSocketAction.OBJECT_APP_INTERACT -> ObjectAppInteractHandler(objectRepository)
             null -> NullHandler()
         }
     }

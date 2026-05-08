@@ -2,6 +2,7 @@ package main.api
 
 import kotlinx.coroutines.launch
 import main.components.world.PlayerActivity
+import models.ObjectAppInteractData
 import models.PlayerInteractData
 import models.PlayerNearbyData
 import models.PlayerPositionData
@@ -162,6 +163,31 @@ fun WebSocketApi.playerInteract(objectId: String, isPlayer: Boolean): Boolean {
     }
     
     return success
+}
+
+/**
+ * Send an object app interaction
+ * 
+ * This is called when a player clicks an app icon in the chat UI.
+ * 
+ * @param objectId The ID of the object whose app is being clicked
+ * @param isPlayer True if this is a player, false if it's a visitor
+ */
+fun WebSocketApi.objectAppInteract(objectId: String, isPlayer: Boolean) {
+    apiScope.launch {
+        try {
+            val user = UserApi.getCurrentUser()
+            val data = ObjectAppInteractData(
+                objectId = objectId,
+                isPlayer = isPlayer,
+                userId = user.key
+            )
+            val message = WebSocketMessage.fromEnum(WebSocketAction.OBJECT_APP_INTERACT, json.encodeToString(data))
+            sendMessage(message)
+        } catch (e: Throwable) {
+            console.error("Error sending object app interaction", e)
+        }
+    }
 }
 
 /**
