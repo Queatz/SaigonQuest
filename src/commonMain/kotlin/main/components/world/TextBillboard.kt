@@ -59,7 +59,7 @@ class TextBillboard(
     private val scene: Scene,
     text: String = "",
     private val fontSize: Int = 32,
-    private val fontFamily: String = "Grenze Gotisch",
+    private val fontFamily: String = "Playpen Sans, Grenze Gotisch, sans-serif",
     private val textColor: String = "white",
     private val backgroundColor: String = "transparent",
     private val horizontalPadding: Float = 16f,

@@ -175,18 +175,18 @@ fun generatePrintImage(
                 
                 // Add title and subtitle
                 ctx.fillStyle = "black"
-                ctx.font = "bold 32px 'Grenze Gotisch', sans-serif"
+                ctx.font = "bold 32px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                 ctx.asDynamic().textAlign = "center"
                 ctx.fillText(worldTitle, 400.0, 490.0)
                 
                 ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-                ctx.font = "20px 'Grenze Gotisch', sans-serif"
+                ctx.font = "20px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                 ctx.fillText(worldSubtitle, 400.0, 525.0)
                 
                 // Add world description if available
                 if (worldDescription.isNotEmpty()) {
                     ctx.fillStyle = "rgba(0, 0, 0, 0.6)"
-                    ctx.font = "16px 'Grenze Gotisch', sans-serif"
+                    ctx.font = "16px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                     
                     // Handle multi-line descriptions by wrapping text
                     val maxWidth = 700.0
@@ -220,12 +220,12 @@ fun generatePrintImage(
                 
                 // Add URL text (without player position)
                 ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-                ctx.font = "16px 'Grenze Gotisch', sans-serif"
+                ctx.font = "16px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                 ctx.fillText(displayUrl, 400.0, 900.0)
                 
                 // Add footer
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
-                ctx.font = "14px 'Grenze Gotisch', sans-serif"
+                ctx.font = "14px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                 ctx.fillText(str("Saigon.Quest"), 400.0, 1020.0)
                 
                 // Draw the QR code with pixelated rendering
@@ -279,18 +279,18 @@ fun generatePrintImage(
             
             // Add title and subtitle
             ctx.fillStyle = "black"
-            ctx.font = "bold 32px 'Grenze Gotisch', sans-serif"
+            ctx.font = "bold 32px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
             ctx.asDynamic().textAlign = "center"
             ctx.fillText(worldTitle, 400.0, 490.0)
             
             ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-            ctx.font = "20px 'Grenze Gotisch', sans-serif"
+            ctx.font = "20px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
             ctx.fillText(worldSubtitle, 400.0, 525.0)
             
             // Add world description if available
             if (worldDescription.isNotEmpty()) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"
-                ctx.font = "16px 'Grenze Gotisch', sans-serif"
+                ctx.font = "16px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
                 
                 // Handle multi-line descriptions by wrapping text
                 val maxWidth = 700.0
@@ -324,12 +324,12 @@ fun generatePrintImage(
             
             // Add URL text (without player position)
             ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-            ctx.font = "16px 'Grenze Gotisch', sans-serif"
+            ctx.font = "16px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
             ctx.fillText(displayUrl, 400.0, 900.0)
             
             // Add footer
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
-            ctx.font = "14px 'Grenze Gotisch', sans-serif"
+            ctx.font = "14px 'Playpen Sans', 'Grenze Gotisch', sans-serif"
             ctx.fillText(str("Saigon.Quest"), 400.0, 1020.0)
             
             // Draw the QR code with pixelated rendering

@@ -1055,7 +1055,7 @@ object Styles : StyleSheet() {
     }
 
     val chatObjectAppName by style {
-        fontSize(14.px)
+        fontSize(20.px)
         fontWeight("bold")
         textAlign("center")
         maxWidth(80.px)
@@ -2575,7 +2575,7 @@ object Styles : StyleSheet() {
         "body, html" style {
             margin(0.cssRem)
             padding(0.cssRem)
-            property("font-family", "'Grenze Gotisch', sans-serif")
+            property("font-family", "'Playpen Sans', 'Grenze Gotisch', sans-serif")
             property("-webkit-font-smoothing", "antialiased")
             property("-moz-osx-font-smoothing", "grayscale")
             minHeight(100.vh)
