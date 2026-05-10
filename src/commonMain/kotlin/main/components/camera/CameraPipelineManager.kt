@@ -421,7 +421,7 @@ class CameraPipelineManager(
             }
             
             // Reenable SSAO
-            if (isPrettyEnabled) {
+            if (isPrettyEnabled || false) {
                 try {
                     val allCameras = mutableListOf<Camera>(camera)
                     scene.activeCamera?.let {
