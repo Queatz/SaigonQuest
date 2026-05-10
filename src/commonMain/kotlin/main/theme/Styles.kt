@@ -1038,6 +1038,7 @@ object Styles : StyleSheet() {
         borderRadius(24.px)
         padding(12.px)
         border(1.px, LineStyle.Solid, Theme.colors.outline)
+        overflow("hidden")
 
         dark(self) {
             border(1.px, LineStyle.Solid, Theme.colors.outlineDark)
@@ -1055,7 +1056,7 @@ object Styles : StyleSheet() {
     }
 
     val chatObjectAppName by style {
-        fontSize(20.px)
+        fontSize(18.px)
         fontWeight("bold")
         textAlign("center")
         maxWidth(80.px)
