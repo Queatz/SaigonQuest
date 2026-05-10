@@ -51,6 +51,7 @@ import org.jetbrains.compose.web.css.media
 import org.jetbrains.compose.web.css.mediaMaxWidth
 import org.jetbrains.compose.web.css.mediaMinWidth
 import org.jetbrains.compose.web.css.minHeight
+import org.jetbrains.compose.web.css.minWidth
 import org.jetbrains.compose.web.css.opacity
 import org.jetbrains.compose.web.css.outline
 import org.jetbrains.compose.web.css.overflow
@@ -1039,6 +1040,7 @@ object Styles : StyleSheet() {
         padding(12.px)
         border(1.px, LineStyle.Solid, Theme.colors.outline)
         overflow("hidden")
+        minWidth(120.px)
 
         dark(self) {
             border(1.px, LineStyle.Solid, Theme.colors.outlineDark)

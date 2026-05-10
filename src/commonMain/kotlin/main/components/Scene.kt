@@ -979,20 +979,16 @@ fun SceneComponent(url: String) {
 
             scene.activeCamera = cameraController.getCamera()
             worldLoader.getOcclusionManager()?.setEnabled(true)
-            console.log("[ScreenSaver] Stopped")
         }
 
         fun triggerScreenSaver() {
-            console.log("[ScreenSaver] triggerScreenSaver() called")
             if (isScreenSaverActive) {
-                console.log("[ScreenSaver] Already active, returning")
                 return
             }
             
             // Find the first camera that isn't the main player camera and has a long enough animation
             val mainCam = cameraController.getCamera()
-            console.log("[ScreenSaver] Main camera: ${mainCam.name}")
-            
+
             // Filter animation groups that last longer than 1 second
             val longAnimationGroups = scene.animationGroups.filter { group ->
                 val durationFrames = kotlin.math.abs(group.to - group.from)
@@ -1000,13 +996,10 @@ fun SceneComponent(url: String) {
                 val fps = group.targetedAnimations.firstOrNull()?.animation?.framePerSecond?.toFloat() ?: 60f
                 val durationSeconds = durationFrames / fps
                 val isLong = durationSeconds > 1.0f
-                console.log("[ScreenSaver] AnimationGroup: ${group.name}, duration: $durationSeconds s, isLong: $isLong")
-                group.targetedAnimations.forEach { 
-                    console.log("[ScreenSaver]   Target: ${it.target.asDynamic().name ?: it.target.toString()}")
+                group.targetedAnimations.forEach {
                 }
                 isLong
             }
-            console.log("[ScreenSaver] Found ${longAnimationGroups.size} long animation groups")
 
                 // Find a camera that has an animation in one of these long groups or its ancestors
                 val ssCam = scene.cameras.firstOrNull { cam ->
@@ -1027,14 +1020,11 @@ fun SceneComponent(url: String) {
                             matched
                         }
                     }
-                    console.log("[ScreenSaver] Checking camera: ${cam.name}, parent: ${cam.parent?.name}, isNotMain: $isNotMain, inLongGroup: $inLongGroup")
                     isNotMain && inLongGroup
                 }
 
                 if (ssCam != null) {
-                    console.log("[ScreenSaver] Found screen saver camera: ${ssCam.name}")
                 } else {
-                    console.log("[ScreenSaver] No suitable screen saver camera found")
                 }
 
                 if (ssCam != null) {
@@ -1057,9 +1047,7 @@ fun SceneComponent(url: String) {
                             ssCam.parent = flipNode
 
                             flippedCameras.add(ssCam)
-                            console.log("[ScreenSaver] Flipped camera: ${ssCam.name}")
                         } catch (t: Throwable) {
-                            console.warn("[ScreenSaver] Failed to modify projection matrix", t)
                         }
                     }
 
@@ -1082,7 +1070,6 @@ fun SceneComponent(url: String) {
                     }
                     
                     if (animationGroup == null) {
-                        console.log("[ScreenSaver] No animation group found for ${ssCam.name}")
                         return
                     }
                 
@@ -1099,8 +1086,6 @@ fun SceneComponent(url: String) {
                 worldLoader.getOcclusionManager()?.setEnabled(false)
                 animationGroup.play(loop = true)
                 screenSaverAnimationGroup = animationGroup
-                console.log("[ScreenSaver] Started with camera: ${ssCam.name}")
-                console.log("[ScreenSaver]", ssCam)
 
                 // Continuously update focal distance to center of view
                 screenSaverFocusJob?.cancel()
@@ -1126,7 +1111,6 @@ fun SceneComponent(url: String) {
                                 }
                             }
                         } catch (t: Throwable) {
-                            console.warn("[ScreenSaver] Focus update failed", t)
                         }
                         delay(100)
                     }
