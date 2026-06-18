@@ -19,7 +19,7 @@ object AssetUploader {
         }
     }
 
-    private val contentServerUrl = (System.getenv("CONTENT_SERVER_URL") ?: System.getProperty("CONTENT_SERVER_URL") ?: "https://content.saigon.quest").trimEnd('/')
+    private val contentServerUrl = (System.getenv("CONTENT_SERVER_URL") ?: System.getProperty("CONTENT_SERVER_URL") ?: "http://0.0.0.0:8090").trimEnd('/')
 
     /**
      * Upload a file to the content server and return the public URL.

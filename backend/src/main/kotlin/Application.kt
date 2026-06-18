@@ -8,12 +8,10 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.netty.EngineMain
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
-import kotlinx.serialization.json.Json
 import routes.configureAssetRoutes
 import routes.configureChatRoutes
 import routes.configureFriendRoutes
@@ -40,8 +38,6 @@ import routes.configureAiRoutes
 import routes.configureVoiceRoutes
 import routes.configureLessonRoutes
 import routes.configureUserRequestRoutes
-import io.ktor.server.http.content.staticFiles
-import java.io.File
 import utils.json
 import kotlin.time.Duration.Companion.seconds
 

@@ -616,8 +616,8 @@ vi: Bỏ ghim tin nhắn
 No pinned messages yet
 vi: Chưa có tin nhắn được ghim
 
-© 2025 Saigon.Quest v0.1
-vi: © 2025 Saigon.Quest v0.1
+© 2026 Saigon.Quest v0.1
+vi: © 2026 Saigon.Quest v0.1
 
 Claim this World
 vi: Yêu cầu thế giới này
