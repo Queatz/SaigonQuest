@@ -13,6 +13,6 @@ object ApiConstants {
         } catch (t: Throwable) {
             null
         }
-        fromEnv?.trimEnd('/').orEmpty().ifBlank { "http://0.0.0.0:8080" }
+        fromEnv?.trimEnd('/').orEmpty().ifBlank { "http://localhost:8080" }
     }
 }

@@ -110,7 +110,7 @@ interface AiClient {
      * Helper to get bytes from a URL, either local or remote.
      */
     suspend fun getBytes(url: String): ByteArray? {
-        val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "http://0.0.0.0:8080").trimEnd('/')
+        val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "http://localhost:8080").trimEnd('/')
         if (url.startsWith(apiBase + "/gen/")) {
             val fileName = url.substringAfter("/gen/")
             val file = java.io.File("gen", fileName)
@@ -144,7 +144,7 @@ interface AiClient {
      * Helper to download an image from a URL and save it locally or upload to content server.
      */
     private suspend fun downloadAndSave(url: String, token: String?): String? {
-        val contentServerUrl = (System.getenv("CONTENT_SERVER_URL") ?: System.getProperty("CONTENT_SERVER_URL") ?: "http://0.0.0.0:8090").trimEnd('/')
+        val contentServerUrl = (System.getenv("CONTENT_SERVER_URL") ?: System.getProperty("CONTENT_SERVER_URL") ?: "http://localhost:8090").trimEnd('/')
         val isAlreadyOnContent = url.startsWith(contentServerUrl)
         val isGen = url.contains("/gen/")
         val isStatic = url.contains("/static/")
@@ -196,7 +196,7 @@ interface AiClient {
         return try {
             file.writeBytes(bytes)
             println("[DEBUG_LOG] saveGenFile: Written to ${file.absolutePath}, size: ${file.length()}")
-            val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "http://0.0.0.0:8080").trimEnd('/')
+            val apiBase = (System.getenv("API_SERVER_URL") ?: System.getProperty("API_SERVER_URL") ?: "http://localhost:8080").trimEnd('/')
             "$apiBase/gen/$fileName"
         } catch (e: Throwable) {
             e.printStackTrace()
