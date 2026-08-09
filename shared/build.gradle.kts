@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.3.20"
+    kotlin("plugin.serialization")
 }
 
 repositories {
@@ -14,7 +14,7 @@ kotlin {
 
     jvm()
 
-    js(IR) {
+    js {
         outputModuleName = "saigon-quest-shared"
         browser {
             testTask {
@@ -30,25 +30,25 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.datetime)
                 implementation(kotlin("test"))
             }
         }
 
         val jvmMain by getting {
             dependencies {
-                implementation("com.arangodb:arangodb-java-driver:7.25.0")
-                implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+                implementation(libs.arangodb.java.driver)
+                implementation(libs.jackson.datatype.jsr310)
+                implementation(libs.jackson.module.kotlin)
             }
         }
 
         val jsMain by getting {
             dependencies {
-                implementation(npm("emoji-regex", "10.4.0"))
+                implementation(npm("emoji-regex", libs.versions.emoji.regex.get()))
             }
         }
     }

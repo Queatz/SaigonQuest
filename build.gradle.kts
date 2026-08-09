@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.3.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20"
+    kotlin("plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
 }
 
@@ -20,7 +20,9 @@ tasks.register("run") {
 
 defaultTasks("run")
 
-// Prepare service-worker.js from ':sw' for frontend: copies to the correct folder for dev or prod
+// Prepare service-worker.js from ':sw' for the frontend dist output (dev or prod).
+// Only copy into dist — not processedResources — so we don't collide with
+// js*ExecutableCompileSync inputs (that dependency path also deadlocks via :sw webpack).
 tasks.register<Copy>("prepareDevServiceWorker") {
     dependsOn(":sw:jsBrowserDevelopmentExecutableDistribution")
 
@@ -29,22 +31,17 @@ tasks.register<Copy>("prepareDevServiceWorker") {
         .file("sw/build/dist/js/$variant/service-worker.js")
 
     val destDir = layout.buildDirectory.dir("dist/js/$variant")
-    val destDir2 = layout.buildDirectory.dir("processedResources/js/main")
 
     // Defer existence check to execution time so the dependsOn task can produce it first
     doFirst {
         if (!swFile.asFile.exists()) error("Could not find service-worker.js at $swFile")
     }
 
-    // Copy to both destinations
     into(destDir)
     from(swFile)
 
-    into(destDir2)
-    from(swFile)
-
     doLast {
-        println("Copied service-worker.js to $destDir and $destDir2 (mode=dev)")
+        println("Copied service-worker.js to $destDir (mode=dev)")
     }
 }
 
@@ -126,7 +123,7 @@ tasks.register("prodApp") {
 kotlin {
     jvmToolchain(21)
 
-    js(IR) {
+    js {
         browser {
             runTask {
                 devServerProperty.set(devServerProperty.get().copy(port = 4080, open = true))
@@ -161,27 +158,27 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.ui)
 
-                implementation("app.softwork:routing-compose:0.5.0")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-browser:2026.3.16")
+                implementation(libs.routing.compose)
+                implementation(libs.kotlin.browser)
 
-                implementation(npm("marked", "17.0.1"))
-                implementation(npm("qr", "0.5.2"))
-                implementation(npm("emoji-regex", "10.4.0"))
-                implementation(npm("@babylonjs/core", "9.4.1"))
-                implementation(npm("@babylonjs/materials", "9.4.1"))
-                implementation(npm("@babylonjs/loaders", "9.4.1"))
-                implementation(npm("babylonjs-gltf2interface", "9.4.1"))
-                implementation(npm("shell-quote", "1.8.3")) // force version
-                implementation(devNpm("baseline-browser-mapping", "2.10.12"))
+                implementation(npm("marked", libs.versions.marked.get()))
+                implementation(npm("qr", libs.versions.qr.get()))
+                implementation(npm("emoji-regex", libs.versions.emoji.regex.get()))
+                implementation(npm("@babylonjs/core", libs.versions.babylonjs.get()))
+                implementation(npm("@babylonjs/materials", libs.versions.babylonjs.get()))
+                implementation(npm("@babylonjs/loaders", libs.versions.babylonjs.get()))
+                implementation(npm("babylonjs-gltf2interface", libs.versions.babylonjs.get()))
+                implementation(npm("shell-quote", libs.versions.shell.quote.get())) // force version
+                implementation(devNpm("baseline-browser-mapping", libs.versions.baseline.browser.mapping.get()))
 
                 // Ktor client
-                implementation("io.ktor:ktor-client-core:3.4.1")
-                implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-                
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
+
                 // Add shared module dependency
                 implementation(project(":shared"))
 
@@ -193,27 +190,36 @@ kotlin {
     }
 }
 
-// Ensure correct task order between service worker preparation and JS compile sync tasks
-// This fixes Gradle's implicit dependency validation by making the compile sync task
-// depend on the task that provides files in build/processedResources/js/main.
+// Draco assets land in processedResources / dist and must be ready before compile-sync.
+// Service worker prep intentionally is NOT wired here: it depends on the :sw webpack
+// pipeline, which would create a finalizer-group deadlock with this compile-sync task.
 tasks.named("jsDevelopmentExecutableCompileSync") {
     dependsOn(
-        "prepareDevServiceWorker",
         "prepareDracoAssetsResources",
         "prepareDracoAssetsDevDist",
     )
 }
 
-// Also wire the production variant for consistency
 tasks.named("jsProductionExecutableCompileSync") {
     dependsOn(
-        "prepareProdServiceWorker",
         "prepareDracoAssetsResources",
         "prepareDracoAssetsProdDist",
     )
 }
 
-
+// Copy the built service worker into the frontend dist before webpack/run/distribution.
+tasks.named("jsBrowserDevelopmentWebpack") {
+    dependsOn("prepareDevServiceWorker")
+}
+tasks.named("jsBrowserDevelopmentRun") {
+    dependsOn("prepareDevServiceWorker")
+}
+tasks.named("jsBrowserProductionWebpack") {
+    dependsOn("prepareProdServiceWorker")
+}
+tasks.named("jsBrowserDistribution") {
+    dependsOn("prepareProdServiceWorker")
+}
 
 // Ensure Draco assets are prepared before packaging JS jar
 tasks.named("jsJar") {

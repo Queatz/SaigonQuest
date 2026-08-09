@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "2.3.20"
-    id("io.ktor.plugin") version "3.4.1"
+    kotlin("plugin.serialization")
+    id("io.ktor.plugin")
     application
 }
 
@@ -25,61 +25,57 @@ kotlin {
 
 dependencies {
     implementation(project(":shared"))
-    
+
     // Ktor server
-    implementation("io.ktor:ktor-server-core:3.4.1")
-    implementation("io.ktor:ktor-server-netty:3.4.1")
-    implementation("io.ktor:ktor-server-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
-    implementation("io.ktor:ktor-server-cors:3.4.1")
-    implementation("io.ktor:ktor-server-websockets:3.4.1")
-    
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.websockets)
+
     // Ktor client (for external HTTP calls e.g., DeepSeek)
-    implementation("io.ktor:ktor-client-core:3.4.1")
-    implementation("io.ktor:ktor-client-cio:3.4.1")
-    implementation("io.ktor:ktor-client-websockets:3.4.1")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
-    
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
     // Ktor JWT Authentication
-    implementation("io.ktor:ktor-server-auth:3.4.1")
-    implementation("io.ktor:ktor-server-auth-jwt:3.4.1")
-    
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
+
     // Auth0 JWT Library
-    implementation("com.auth0:java-jwt:4.5.1")
-    
+    implementation(libs.auth0.java.jwt)
+
     // ArangoDB - Latest version as required
-    implementation("com.arangodb:arangodb-java-driver:7.25.0")
-    
+    implementation(libs.arangodb.java.driver)
+
     // Jackson modules for date/time handling
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
-    implementation("org.glassfish:jakarta.json:2.0.1")
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jakarta.json)
 
     // KotlinX Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-    
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.datetime)
+
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.26")
+    implementation(libs.logback.classic)
 
     // Web Push (VAPID + HTTP ECE)
-    implementation("nl.martijndwars:web-push:5.1.2")
-    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
-    implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
+    implementation(libs.web.push)
+    implementation(libs.bouncycastle.bcprov)
+    implementation(libs.bouncycastle.bcpkix)
 
     // Apache HttpComponents
-    implementation("org.apache.httpcomponents:httpcore:4.4.16")
+    implementation(libs.httpcore)
 
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(21)
 }

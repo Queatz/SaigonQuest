@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "2.3.20"
-    id("io.ktor.plugin") version "3.4.1"
+    kotlin("plugin.serialization")
+    id("io.ktor.plugin")
     application
 }
 
@@ -27,35 +27,31 @@ dependencies {
     implementation(project(":shared"))
 
     // Ktor server
-    implementation("io.ktor:ktor-server-core:3.4.1")
-    implementation("io.ktor:ktor-server-netty:3.4.1")
-    implementation("io.ktor:ktor-server-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
-    implementation("io.ktor:ktor-server-cors:3.4.1")
-    implementation("io.ktor:ktor-server-compression:3.4.1")
-    implementation("io.ktor:ktor-server-caching-headers:3.4.1")
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.compression)
+    implementation(libs.ktor.server.caching.headers)
 
     // Ktor client for calling API backend
-    implementation("io.ktor:ktor-client-core:3.4.1")
-    implementation("io.ktor:ktor-client-cio:3.4.1")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.1")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     // ArangoDB
-    implementation("com.arangodb:arangodb-java-driver:7.25.0")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
-    implementation("org.glassfish:jakarta.json:2.0.1")
+    implementation(libs.arangodb.java.driver)
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jakarta.json)
 
     // KotlinX
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.datetime)
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.26")
-}
-
-kotlin {
-    jvmToolchain(21)
+    implementation(libs.logback.classic)
 }
